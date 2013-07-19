@@ -36,7 +36,6 @@ void backend_cluster::update()
     //  Poll socket for a reply, with timeout
     zmq::pollitem_t items[] = { { socket_, 0, ZMQ_POLLIN, 0 } };
     zmq::poll(&items[0], 1, 0);
-
     //  If we got a reply, process it
     if (items[0].revents & ZMQ_POLLIN)
     {
@@ -44,10 +43,9 @@ void backend_cluster::update()
         if (response.recv(socket_))
             process(response);
     }
-
-    // check timestamp of requests
-    // if retries left then resend, update timestamp
-    // else server seems to be offline...
+    // Finally resend any expired requests that we didn't get
+    // a response to yet.
+    resend_expired();
 }
 
 bool backend_cluster::process(const incoming_message& response)
