@@ -45,7 +45,10 @@ int main(int argc, char** argv)
     fullnode_interface fullnode;
     fullnode.blockchain.fetch_history(payaddr, history_fetched);
     while (true)
+    {
         fullnode.update();
+        sleep(0.5);
+    }
     return 0;
 }
 

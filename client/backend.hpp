@@ -4,6 +4,7 @@
 #include <functional>
 #include <unordered_map>
 #include <system_error>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <zmq.hpp>
 
 #include "message.hpp"
@@ -22,7 +23,7 @@ public:
 private:
     struct request_container
     {
-        time_t timestamp;
+        boost::posix_time::ptime timestamp;
         size_t retries_left;
         outgoing_message message;
     };
@@ -33,6 +34,7 @@ private:
         request_retry_queue;
 
     bool process(const incoming_message& response);
+    void resend_expired();
 
     zmq::context_t context_;
     zmq::socket_t socket_;
