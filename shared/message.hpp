@@ -9,14 +9,14 @@ class incoming_message
 {
 public:
     bool recv(zmq::socket_t& socket);
-
+    bool is_signal() const;
+    const bc::data_chunk dest() const;
     const std::string& command() const;
     const uint32_t id() const;
     const bc::data_chunk& data() const;
 
 private:
-    bc::data_chunk next_message(zmq::socket_t& socket, zmq::message_t& message);
-
+    bc::data_chunk dest_;
     std::string command_;
     uint32_t id_;
     bc::data_chunk data_;
@@ -35,6 +35,7 @@ public:
     const uint32_t id() const;
 
 private:
+    bc::data_chunk dest_;
     std::string command_;
     uint32_t id_;
     bc::data_chunk data_;

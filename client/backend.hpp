@@ -7,7 +7,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <zmq.hpp>
 
-#include "message.hpp"
+#include <shared/message.hpp>
 
 class backend_cluster
 {

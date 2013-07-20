@@ -60,7 +60,7 @@ bool zmq_message::recv(zmq::socket_t& socket)
     return true;
 }
 
-const zmq_message::data_stack& zmq_message::parts() const
+const data_stack& zmq_message::parts() const
 {
     return parts_;
 }
