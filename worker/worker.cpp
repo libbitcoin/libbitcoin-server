@@ -3,7 +3,6 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/utility/logger.hpp>
 
-#include <shared/message.hpp>
 #include <shared/zmq_message.hpp>
 
 using namespace bc;
@@ -33,14 +32,10 @@ request_worker::request_worker()
     heartbeat_at_ = now() + heartbeat_interval;
     interval_ = interval_init;
 }
-request_worker::~request_worker()
-{
-    delete socket_;
-}
 
 void request_worker::create_new_socket()
 {
-    socket_ = new zmq::socket_t(context_, ZMQ_DEALER);
+    socket_ = std::make_shared<zmq::socket_t>(context_, ZMQ_DEALER);
     socket_->connect("tcp://localhost:5556");
     // Configure socket to not wait at close time
     int linger = 0;
@@ -48,6 +43,12 @@ void request_worker::create_new_socket()
     // Tell queue we're ready for work
     log_info() << "I: worker ready";
     send_string(*socket_, "READY");
+}
+
+void request_worker::attach(
+    const std::string& command, command_handler handler)
+{
+    handlers_[command] = handler;
 }
 
 void request_worker::update()
@@ -66,11 +67,18 @@ void request_worker::update()
         if (!request.is_signal())
         {
             last_heartbeat_ = now();
-            log_info() << "I: normal reply";
-            outgoing_message response(request, bc::data_chunk());
-            response.send(*socket_);
-            // Do some heavy work
-            sleep(1);
+            auto it = handlers_.find(request.command());
+            // Perform request if found.
+            if (it != handlers_.end())
+            {
+                log_info() << "I: normal reply";
+                it->second(request, socket_);
+            }
+            else
+            {
+                log_warning() << "Unhandled command '"
+                    << request.command() << "'";
+            }
         }
         else if (request.command() == "HEARTBEAT")
         {
@@ -91,7 +99,6 @@ void request_worker::update()
         {
             interval_ *= 2;
         }
-        delete socket_;
         create_new_socket();
         last_heartbeat_ = now();
     }

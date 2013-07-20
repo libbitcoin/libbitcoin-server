@@ -17,7 +17,6 @@ void zmq_message::send(zmq::socket_t& socket)
     {
         BITCOIN_ASSERT(send_more);
         const data_chunk& data = *it;
-        std::cout << "Sending: " << data << std::endl;
         zmq::message_t message(data.size());
         uint8_t* message_data = reinterpret_cast<uint8_t*>(message.data());
         std::copy(data.begin(), data.end(), message_data);
