@@ -4,6 +4,7 @@
 #include <bitcoin/utility/logger.hpp>
 
 #include <shared/zmq_message.hpp>
+#include "echo.hpp"
 
 using namespace bc;
 namespace posix_time = boost::posix_time;
@@ -41,7 +42,7 @@ void request_worker::create_new_socket()
     int linger = 0;
     socket_->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
     // Tell queue we're ready for work
-    log_info() << "I: worker ready";
+    log_info(LOG_WORKER) << "worker ready";
     send_string(*socket_, "READY");
 }
 
@@ -71,12 +72,12 @@ void request_worker::update()
             // Perform request if found.
             if (it != handlers_.end())
             {
-                log_info() << "I: normal reply";
+                log_info(LOG_WORKER) << "normal reply";
                 it->second(request, socket_);
             }
             else
             {
-                log_warning() << "Unhandled command '"
+                log_warning(LOG_WORKER) << "Unhandled command '"
                     << request.command() << "'";
             }
         }
@@ -86,14 +87,15 @@ void request_worker::update()
         }
         else
         {
-            log_warning() << "E: invalid message";
+            log_warning(LOG_WORKER) << "invalid message";
         }
         interval_ = interval_init;
     }
     else if (now() - last_heartbeat_ > seconds(interval_))
     {
-        log_warning() << "W: heartbeat failure, can't reach queue";
-        log_warning() << "W: reconnecting in " << interval_ << " seconds...";
+        log_warning(LOG_WORKER) << "heartbeat failure, can't reach queue";
+        log_warning(LOG_WORKER) << "reconnecting in "
+            << interval_ << " seconds...";
 
         if (interval_ < interval_max)
         {
@@ -107,7 +109,7 @@ void request_worker::update()
     if (now() > heartbeat_at_)
     {
         heartbeat_at_ = now() + heartbeat_interval;
-        log_info() << "I: worker heartbeat";
+        log_info(LOG_WORKER) << "worker heartbeat";
         send_string(*socket_, "HEARTBEAT");
     }
 }
