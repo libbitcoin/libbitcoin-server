@@ -5,6 +5,8 @@
 #include <bitcoin/types.hpp>
 namespace bc = libbitcoin;
 
+typedef std::shared_ptr<zmq::socket_t> zmq_socket_ptr;
+
 class incoming_message
 {
 public:

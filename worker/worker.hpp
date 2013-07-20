@@ -1,5 +1,5 @@
-#ifndef OBELISK_WORKER_WORKER
-#define OBELISK_WORKER_WORKER
+#ifndef OBELISK_WORKER_WORKER_HPP
+#define OBELISK_WORKER_WORKER_HPP
 
 #include <unordered_map>
 #include <zmq.hpp>
@@ -7,15 +7,13 @@
 
 #include <shared/message.hpp>
 
-typedef std::shared_ptr<zmq::socket_t> socket_ptr;
-
 bool send_string(zmq::socket_t& socket, const std::string& str);
 
 class request_worker
 {
 public:
     typedef std::function<void (
-        const incoming_message&, socket_ptr)> command_handler;
+        const incoming_message&, zmq_socket_ptr)> command_handler;
 
     request_worker();
     void attach(const std::string& command, command_handler handler);
@@ -27,7 +25,7 @@ private:
     void create_new_socket();
 
     zmq::context_t context_;
-    socket_ptr socket_;
+    zmq_socket_ptr socket_;
 
     boost::posix_time::ptime last_heartbeat_;
     // Send out heartbeats at regular intervals

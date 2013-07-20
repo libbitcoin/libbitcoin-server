@@ -3,6 +3,8 @@ using namespace bc;
 
 #include "interface.hpp"
 
+bool stopped = false;
+
 void history_fetched(const std::error_code& ec,
     const blockchain::history_list& history)
 {
@@ -26,6 +28,7 @@ void history_fetched(const std::error_code& ec,
     log_debug(LOG_RESULT) << "Total received: " << total_recv;
     log_debug(LOG_RESULT) << "Balance: " << balance;
     log_info(LOG_RESULT) << "History fetched";
+    stopped = true;
 }
 
 int main(int argc, char** argv)
@@ -44,11 +47,10 @@ int main(int argc, char** argv)
     }
     fullnode_interface fullnode;
     fullnode.blockchain.fetch_history(payaddr, history_fetched);
-    while (true)
+    while (!stopped)
     {
         fullnode.update();
         sleep(0.1);
-        //fullnode.blockchain.fetch_history(payaddr, history_fetched);
     }
     return 0;
 }

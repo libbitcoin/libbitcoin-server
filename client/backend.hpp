@@ -24,6 +24,7 @@ private:
     struct request_container
     {
         boost::posix_time::ptime timestamp;
+        boost::posix_time::time_duration timeout;
         size_t retries_left;
         outgoing_message message;
     };

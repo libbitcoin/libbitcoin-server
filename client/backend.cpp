@@ -5,11 +5,11 @@
 using namespace bc;
 
 namespace posix_time = boost::posix_time;
-using posix_time::milliseconds;
+using posix_time::seconds;
 using posix_time::microsec_clock;
 
 constexpr size_t request_retries = 3;
-const posix_time::time_duration request_timeout = milliseconds(2500);
+const posix_time::time_duration request_timeout_init = seconds(30);
 
 backend_cluster::backend_cluster()
   : context_(1), socket_(context_, ZMQ_DEALER)
@@ -24,8 +24,8 @@ void backend_cluster::request(const std::string& command,
     const data_chunk& data, response_handler handle)
 {
     request_container request{
-        microsec_clock::universal_time(), request_retries,
-        outgoing_message(command, data)};
+        microsec_clock::universal_time(), request_timeout_init,
+        request_retries, outgoing_message(command, data)};
     request.message.send(socket_);
     handlers_[request.message.id()] = handle;
     retry_queue_[request.message.id()] = request;
@@ -67,7 +67,7 @@ void backend_cluster::resend_expired()
     for (auto& retry: retry_queue_)
     {
         request_container& request = retry.second;
-        if (now - request.timestamp < request_timeout)
+        if (now - request.timestamp < request.timeout)
             continue;
         if (request.retries_left == 0)
         {
@@ -75,6 +75,7 @@ void backend_cluster::resend_expired()
             request.retries_left = request_retries;
             return;
         }
+        request.timeout *= 2;
         --request.retries_left;
         // Resend request again.
         request.timestamp = now;
