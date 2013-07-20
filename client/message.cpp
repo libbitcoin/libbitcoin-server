@@ -1,41 +1,13 @@
 #include "message.hpp"
 
+#include <random>
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/sha256.hpp>
-#include <random>
+
+#include <shared/zmq_message.hpp>
 
 using namespace bc;
-
-void zmsg2::append(const data_chunk& part)
-{
-    parts_.push_back(part);
-}
-
-void zmsg2::send(zmq::socket_t& socket)
-{
-    bool send_more = true;
-    for (auto it = parts_.begin(); it != parts_.end(); ++it)
-    {
-        BITCOIN_ASSERT(send_more);
-        const data_chunk& data = *it;
-        std::cout << "Sending: " << data << std::endl;
-        zmq::message_t message(data.size());
-        uint8_t* message_data = reinterpret_cast<uint8_t*>(message.data());
-        std::copy(data.begin(), data.end(), message_data);
-        if (it == parts_.end() - 1)
-            send_more = false;
-        try
-        {
-            socket.send(message, send_more ? ZMQ_SNDMORE : 0);
-        }
-        catch (zmq::error_t error)
-        {
-            BITCOIN_ASSERT(error.num() != 0);
-        }
-    }
-    parts_.clear();
-}
 
 outgoing_message::outgoing_message()
 {
@@ -55,7 +27,7 @@ outgoing_message::outgoing_message(
 
 void outgoing_message::send(zmq::socket_t& socket)
 {
-    zmsg2 message;
+    zmq_message message;
     message.append(data_chunk{0x00});
     // [ COMMAND ]
     // [ ID ]

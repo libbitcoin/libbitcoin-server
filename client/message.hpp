@@ -5,17 +5,6 @@
 #include <bitcoin/types.hpp>
 namespace bc = libbitcoin;
 
-class zmsg2
-{
-public:
-    void append(const bc::data_chunk& part);
-    void send(zmq::socket_t& socket);
-
-private:
-    typedef std::vector<bc::data_chunk> data_stack;
-    data_stack parts_;
-};
-
 class incoming_message
 {
 public:
