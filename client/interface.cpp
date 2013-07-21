@@ -49,8 +49,8 @@ void wrap_fetch_history(const data_chunk& data,
     handle_fetch(ec, history);
 }
 
-fullnode_interface::fullnode_interface()
-  : blockchain(backend_)
+fullnode_interface::fullnode_interface(const std::string& connection)
+  : backend_(connection), blockchain(backend_)
 {
 }
 void fullnode_interface::update()

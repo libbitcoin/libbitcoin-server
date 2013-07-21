@@ -1,4 +1,4 @@
-#include "backend.hpp"
+#include <obelisk/client/backend.hpp>
 
 #include <bitcoin/utility/assert.hpp>
 
@@ -11,10 +11,10 @@ using posix_time::microsec_clock;
 constexpr size_t request_retries = 3;
 const posix_time::time_duration request_timeout_init = seconds(30);
 
-backend_cluster::backend_cluster()
+backend_cluster::backend_cluster(const std::string& connection)
   : context_(1), socket_(context_, ZMQ_DEALER)
 {
-    socket_.connect("tcp://localhost:5555");
+    socket_.connect(connection.c_str());
     // Configure socket to not wait at close time.
     int linger = 0;
     socket_.setsockopt(ZMQ_LINGER, &linger, sizeof (linger));

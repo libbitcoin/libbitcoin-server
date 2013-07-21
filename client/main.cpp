@@ -1,7 +1,7 @@
 #include <bitcoin/bitcoin.hpp>
-using namespace bc;
+#include <obelisk/client/interface.hpp>
 
-#include "interface.hpp"
+using namespace bc;
 
 bool stopped = false;
 
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
         log_error() << "Invalid address";
         return -1;
     }
-    fullnode_interface fullnode;
+    fullnode_interface fullnode("tcp://localhost:5555");
     fullnode.blockchain.fetch_history(payaddr, history_fetched);
     while (!stopped)
     {

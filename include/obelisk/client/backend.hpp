@@ -13,7 +13,7 @@ class backend_cluster
 public:
     typedef std::function<void (const bc::data_chunk&)> response_handler;
 
-    backend_cluster();
+    backend_cluster(const std::string& connection);
 
     void request(const std::string& command,
         const bc::data_chunk& data, response_handler handle);

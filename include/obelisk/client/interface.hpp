@@ -17,7 +17,7 @@ private:
 class fullnode_interface
 {
 public:
-    fullnode_interface();
+    fullnode_interface(const std::string& connection);
     void update();
     blockchain_interface blockchain;
 private:
