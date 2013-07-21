@@ -6,8 +6,7 @@
 #include <system_error>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <zmq.hpp>
-
-#include <shared/message.hpp>
+#include <obelisk/message.hpp>
 
 class backend_cluster
 {

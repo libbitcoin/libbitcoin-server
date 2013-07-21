@@ -2,8 +2,7 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/utility/logger.hpp>
-
-#include <shared/zmq_message.hpp>
+#include <obelisk/zmq_message.hpp>
 #include "echo.hpp"
 
 using namespace bc;

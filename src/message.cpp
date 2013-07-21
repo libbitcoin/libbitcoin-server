@@ -1,11 +1,10 @@
-#include "message.hpp"
+#include <obelisk/message.hpp>
 
 #include <random>
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/sha256.hpp>
-
-#include <shared/zmq_message.hpp>
+#include <obelisk/zmq_message.hpp>
 
 using namespace bc;
 

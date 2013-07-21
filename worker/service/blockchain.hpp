@@ -1,7 +1,7 @@
 #ifndef OBELISK_WORKER_SERVICE_BLOCKCHAIN_HPP
 #define OBELISK_WORKER_SERVICE_BLOCKCHAIN_HPP
 
-#include <shared/message.hpp>
+#include <obelisk/message.hpp>
 
 class node_impl;
 

@@ -5,7 +5,7 @@
 #include <zmq.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include <shared/message.hpp>
+#include <obelisk/message.hpp>
 
 bool send_string(zmq::socket_t& socket, const std::string& str);
 

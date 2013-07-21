@@ -1,4 +1,4 @@
-#include "zmq_message.hpp"
+#include <obelisk/zmq_message.hpp>
 
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>

@@ -1,4 +1,4 @@
-#include <shared/message.hpp>
+#include <obelisk/message.hpp>
 #include "echo.hpp"
 #include "worker.hpp"
 #include "node_impl.hpp"
