@@ -1,0 +1,4 @@
+You will need a copy of the blockchain before running this example.
+
+  $ ./download-blockchain.sh
+
