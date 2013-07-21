@@ -2,8 +2,7 @@
 #define OBELISK_CLIENT_INTERFACE
 
 #include <bitcoin/bitcoin.hpp>
-
-#include "backend.hpp"
+#include <obelisk/client/backend.hpp>
 
 class blockchain_interface
 {

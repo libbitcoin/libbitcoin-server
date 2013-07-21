@@ -1,4 +1,4 @@
-#include "interface.hpp"
+#include <obelisk/client/interface.hpp>
 
 using namespace bc;
 using std::placeholders::_1;
