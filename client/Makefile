@@ -14,3 +14,6 @@ main.o: main.cpp
 obclient: libobelisk_client.a main.o
 	g++ main.o libobelisk_client.a -lzmq $(shell pkg-config --libs libbitcoin) -o obclient
 
+install:
+	cp libobelisk_client.a /usr/local/lib/
+

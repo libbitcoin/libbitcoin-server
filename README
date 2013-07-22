@@ -1,0 +1,6 @@
+Install:
+
+  $ sudo apt-get install libzmq-dev
+  $ make
+  $ sudo make install
+
