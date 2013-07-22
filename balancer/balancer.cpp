@@ -11,6 +11,8 @@
 #define HEARTBEAT_LIVENESS  3       //  3-5 is reasonable
 #define HEARTBEAT_INTERVAL  1000    //  msecs
 
+#include "config.hpp"
+
 //  This defines one active worker in our worker queue
 
 typedef struct {
@@ -98,15 +100,17 @@ void s_queue_purge(std::vector<worker_t>& queue)
 int main()
 {
     s_version_assert(2, 1);
+    config_map_type config;
+    load_config(config, "/etc/obelisk/balancer.cfg");
 
     // Prepare our context and sockets
     zmq::context_t context(1);
     zmq::socket_t frontend(context, ZMQ_ROUTER);
     zmq::socket_t backend(context, ZMQ_ROUTER);
     // For clients
-    frontend.bind("tcp://*:5555");
+    frontend.bind(config["frontend"].c_str());
     // For workers
-    backend.bind("tcp://*:5556");
+    backend.bind(config["backend"].c_str());
 
     // Queue of available workers
     std::vector<worker_t> queue;

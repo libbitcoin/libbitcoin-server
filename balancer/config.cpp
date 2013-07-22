@@ -26,12 +26,7 @@ void load_config(config_map_type& config, const std::string& config_path)
     catch (const libconfig::ParseException&) {}
     // Read off values
     const libconfig::Setting& root = cfg.getRoot();
-    get_value<std::string>(root, config, "output-file", "debug.log");
-    get_value<std::string>(root, config, "error-file", "error.log");
-    get_value<std::string>(root, config, "database", "database");
-    get_value<std::string>(root, config, "service", "tcp://localhost:9092");
-    get_value(root, config, "block-publish-port", 9092);
-    get_value(root, config, "tx-publish-port", 9093);
-    get_value<std::string>(root, config, "stop-secret", "");
+    get_value<std::string>(root, config, "frontend", "tcp://*:9091");
+    get_value<std::string>(root, config, "backend", "tcp://*:9092");
 }
 

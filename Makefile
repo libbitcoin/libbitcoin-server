@@ -34,7 +34,9 @@ install:
 	cp worker/download-blockchain.sh $(INSTALL_PREFIX)/download-blockchain
 	chmod +x $(INSTALL_PREFIX)/download-blockchain
 	cp -r include/obelisk $(INSTALL_PREFIX)/include/
-	cp worker/obworker.cfg /etc/
+	mkdir -p /etc/obelisk
+	cp worker/worker.cfg /etc/obelisk/
+	cp balancer/balancer.cfg /etc/obelisk/
 	cp libobelisk.a $(INSTALL_PREFIX)/lib/
 	mkdir -p $(INSTALL_PREFIX)/lib/pkgconfig
 	cp libobelisk.pc $(INSTALL_PREFIX)/lib/pkgconfig/

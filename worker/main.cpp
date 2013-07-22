@@ -20,7 +20,7 @@ void stop_worker(bool& stopped, const std::string& stop_secret,
 int main()
 {
     config_map_type config;
-    load_config(config, "/etc/obworker.cfg");
+    load_config(config, "/etc/obelisk/worker.cfg");
     // Create worker.
     request_worker worker;
     worker.start(config["service"]);
