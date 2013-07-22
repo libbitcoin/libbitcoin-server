@@ -134,15 +134,61 @@ void last_height_fetched(const std::error_code& ec, size_t last_height,
     response.send(*socket);
 }
 
+void fetch_block_header_by_hash(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
+void fetch_block_header_by_height(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
+void block_header_fetched(const std::error_code& ec,
+    const block_header_type& blk,
+    const incoming_message& request, zmq_socket_ptr socket);
 void blockchain_fetch_block_header(node_impl& node,
     const incoming_message& request, zmq_socket_ptr socket)
 {
     const data_chunk& data = request.data();
-    if (data.size() != 32 || data.size() != 4)
+    if (data.size() == 32)
+        fetch_block_header_by_hash(node, request, socket);
+    else if (data.size() == 4)
+        fetch_block_header_by_height(node, request, socket);
+    else
     {
         log_error(LOG_WORKER)
             << "Incorrect data size for blockchain.fetch_block_header";
         return;
     }
+}
+void fetch_block_header_by_hash(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    BITCOIN_ASSERT(data.size() == 32);
+    auto deserial = make_deserializer(data.begin(), data.end());
+    const hash_digest blk_hash = deserial.read_hash();
+    node.blockchain().fetch_block_header(blk_hash,
+        std::bind(block_header_fetched, _1, _2, request, socket));
+}
+void fetch_block_header_by_height(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    BITCOIN_ASSERT(data.size() == 4);
+    auto deserial = make_deserializer(data.begin(), data.end());
+    size_t height = deserial.read_4_bytes();
+    node.blockchain().fetch_block_header(height,
+        std::bind(block_header_fetched, _1, _2, request, socket));
+}
+void block_header_fetched(const std::error_code& ec,
+    const block_header_type& blk,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    data_chunk result(4 + satoshi_raw_size(blk));
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    auto it = satoshi_save(blk, serial.iterator());
+    BITCOIN_ASSERT(it == result.end());
+    outgoing_message response(request, result);
+    log_debug(LOG_WORKER)
+        << "blockchain.fetch_block_header() finished. Sending response.";
+    response.send(*socket);
 }
 

@@ -68,9 +68,9 @@ void wrap_fetch_history(const data_chunk& data,
 }
 
 void wrap_fetch_transaction(const data_chunk& data,
-    bc::blockchain::fetch_handler_transaction handle_fetch);
-void blockchain_interface::fetch_transaction(const bc::hash_digest& tx_hash,
-    bc::blockchain::fetch_handler_transaction handle_fetch)
+    blockchain::fetch_handler_transaction handle_fetch);
+void blockchain_interface::fetch_transaction(const hash_digest& tx_hash,
+    blockchain::fetch_handler_transaction handle_fetch)
 {
     data_chunk data(hash_digest_size);
     auto serial = make_serializer(data.begin());
@@ -80,7 +80,7 @@ void blockchain_interface::fetch_transaction(const bc::hash_digest& tx_hash,
         std::bind(wrap_fetch_transaction, _1, handle_fetch));
 }
 void wrap_fetch_transaction(const data_chunk& data,
-    bc::blockchain::fetch_handler_transaction handle_fetch)
+    blockchain::fetch_handler_transaction handle_fetch)
 {
     std::error_code ec;
     auto deserial = make_deserializer(data.begin(), data.end());
@@ -93,15 +93,15 @@ void wrap_fetch_transaction(const data_chunk& data,
 }
 
 void wrap_fetch_last_height(const data_chunk& data,
-    bc::blockchain::fetch_handler_last_height handle_fetch);
+    blockchain::fetch_handler_last_height handle_fetch);
 void blockchain_interface::fetch_last_height(
-    bc::blockchain::fetch_handler_last_height handle_fetch)
+    blockchain::fetch_handler_last_height handle_fetch)
 {
     backend_.request("blockchain.fetch_last_height", data_chunk(),
         std::bind(wrap_fetch_last_height, _1, handle_fetch));
 }
 void wrap_fetch_last_height(const data_chunk& data,
-    bc::blockchain::fetch_handler_last_height handle_fetch)
+    blockchain::fetch_handler_last_height handle_fetch)
 {
     if (data.size() != 8)
     {
@@ -114,5 +114,30 @@ void wrap_fetch_last_height(const data_chunk& data,
     BITCOIN_ASSERT(read_success);
     size_t last_height = deserial.read_4_bytes();
     handle_fetch(ec, last_height);
+}
+
+void wrap_fetch_block_header(const data_chunk& data,
+    blockchain::fetch_handler_block_header handle_fetch);
+void blockchain_interface::fetch_block_header(const hash_digest& blk_hash,
+    blockchain::fetch_handler_block_header handle_fetch)
+{
+    data_chunk data(hash_digest_size);
+    auto serial = make_serializer(data.begin());
+    serial.write_hash(blk_hash);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
+    backend_.request("blockchain.fetch_block_header", data,
+        std::bind(wrap_fetch_block_header, _1, handle_fetch));
+}
+void wrap_fetch_block_header(const data_chunk& data,
+    blockchain::fetch_handler_block_header handle_fetch)
+{
+    std::error_code ec;
+    auto deserial = make_deserializer(data.begin(), data.end());
+    if (!read_error_code(deserial, data.size(), ec))
+        return;
+    BITCOIN_ASSERT(deserial.iterator() == data.begin() + 4);
+    block_header_type blk;
+    satoshi_load(deserial.iterator(), data.end(), blk);
+    handle_fetch(ec, blk);
 }
 

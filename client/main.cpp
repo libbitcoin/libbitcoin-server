@@ -49,7 +49,18 @@ void last_height_fetched(const std::error_code& ec, size_t last_height)
         log_error() << "Failed to fetch history: " << ec.message();
         return;
     }
-    log_debug(LOG_RESULT) << "#" << last_height;
+    log_debug(LOG_RESULT) << "Block #" << last_height;
+}
+
+void block_header_fetched(const std::error_code& ec,
+    const block_header_type& blk)
+{
+    if (ec)
+    {
+        log_error() << "Failed to fetch block header: " << ec.message();
+        return;
+    }
+    log_debug(LOG_RESULT) << "Block " << hash_block_header(blk);
 }
 
 int main(int argc, char** argv)
@@ -74,7 +85,10 @@ int main(int argc, char** argv)
     //fullnode.blockchain.fetch_transaction(
     //    decode_hex_digest<hash_digest>("fb13bc04ac2d701caa630ce7a8588b69c13120a8083aad568a17d341943e978e"),
     //    tx_fetched);
-    fullnode.blockchain.fetch_last_height(last_height_fetched);
+    //fullnode.blockchain.fetch_last_height(last_height_fetched);
+    fullnode.blockchain.fetch_block_header(
+        decode_hex_digest<hash_digest>("010000000000006a4c0127f26e6e57f9db53924d6f94919edb519faf68099092"),
+        block_header_fetched);
     while (!stopped)
     {
         fullnode.update();
