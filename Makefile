@@ -1,12 +1,9 @@
-all: bin/obclient bin/obbalancer bin/obworker
+INSTALL_PREFIX=/usr/local
+
+all: libobelisk.a bin/obbalancer bin/obworker
 
 shared:
 	cd src && $(MAKE)
-
-bin/obclient: shared
-	cd client && $(MAKE)
-	mkdir -p bin
-	mv client/obclient bin/
 
 bin/obbalancer: shared
 	cd balancer && $(MAKE)
@@ -16,13 +13,21 @@ bin/obworker: shared
 	cd worker && $(MAKE)
 	mv worker/obworker bin/
 
-PREFIX=/usr/local
+client/backend.o:
+	cd client && $(MAKE) backend.o
+client/interface.o:
+	cd client && $(MAKE) interface.o
+
+libobelisk.a: bin/obclient
+	ar rvs libobelisk.a src/zmq_message.o client/interface.o src/message.o client/backend.o
 
 install:
-	cp bin/obbalancer bin/obworker $(PREFIX)/bin/
-	cp worker/download-blockchain.sh $(PREFIX)/download-blockchain
-	chmod +x $(PREFIX)/download-blockchain
-	cp -r include/obelisk $(PREFIX)/include/
+	cp bin/obbalancer bin/obworker $(INSTALL_PREFIX)/bin/
+	cp worker/download-blockchain.sh $(INSTALL_PREFIX)/download-blockchain
+	chmod +x $(INSTALL_PREFIX)/download-blockchain
+	cp -r include/obelisk $(INSTALL_PREFIX)/include/
 	cp worker/obworker.cfg /etc/
-	cd client && $(MAKE) install
+	cp libobelisk.a /usr/local/lib/
+	mkdir -p $(INSTALL_PREFIX)/lib/pkgconfig
+	cp libobelisk.pc $(INSTALL_PREFIX)/lib/pkgconfig/
 
