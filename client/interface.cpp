@@ -3,6 +3,20 @@
 using namespace bc;
 using std::placeholders::_1;
 
+template <typename Deserializer>
+bool read_error_code(Deserializer& deserial,
+    size_t data_size, std::error_code& ec)
+{
+    if (data_size < 4)
+    {
+        log_error() << "No error_code in response.";
+        return false;
+    }
+    uint32_t val = deserial.read_4_bytes();
+    ec = static_cast<error::error_code_t>(val);
+    return true;
+}
+
 blockchain_interface::blockchain_interface(backend_cluster& backend)
   : backend_(backend)
 {
@@ -25,15 +39,19 @@ void blockchain_interface::fetch_history(const payment_address& address,
 void wrap_fetch_history(const data_chunk& data,
     blockchain::fetch_handler_history handle_fetch)
 {
+    std::error_code ec;
+    auto deserial = make_deserializer(data.begin(), data.end());
+    if (!read_error_code(deserial, data.size(), ec))
+        return;
     size_t row_size = 36 + 4 + 8 + 36 + 4;
-    if (data.size() % row_size != 0)
+    BITCOIN_ASSERT(data.size() >= 4);
+    if ((data.size() - 4) % row_size != 0)
     {
         log_error() << "Malformed response for blockchain.fetch_history";
         return;
     }
-    std::error_code ec;
-    blockchain::history_list history(data.size() / row_size);
-    auto deserial = make_deserializer(data.begin(), data.end());
+    size_t number_rows = (data.size() - 4) / row_size;
+    blockchain::history_list history(number_rows);
     for (size_t i = 0; i < history.size(); ++i)
     {
         blockchain::history_row& row = history[i];

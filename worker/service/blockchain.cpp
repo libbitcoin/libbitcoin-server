@@ -7,6 +7,13 @@ using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+template <typename Serializer>
+void write_error_code(Serializer& serial, const std::error_code& ec)
+{
+    uint32_t val = ec.value();
+    serial.write_4_bytes(val);
+}
+
 void history_fetched(const std::error_code& ec,
     const blockchain::history_list& history,
     const incoming_message& request, zmq_socket_ptr socket);
@@ -44,8 +51,9 @@ void history_fetched(const std::error_code& ec,
     const incoming_message& request, zmq_socket_ptr socket)
 {
     size_t row_size = 36 + 4 + 8 + 36 + 4;
-    data_chunk result(row_size * history.size());
+    data_chunk result(4 + row_size * history.size());
     auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
     for (const blockchain::history_row row: history)
     {
         serial.write_hash(row.output.hash);
