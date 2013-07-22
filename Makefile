@@ -2,8 +2,11 @@ INSTALL_PREFIX=/usr/local
 
 all: libobelisk.a bin/obbalancer bin/obworker
 
+src/zmq_message.o:
+	cd src && $(MAKE) zmq_message.o
+src/message.o:
+	cd src && $(MAKE) message.o
 shared: src/zmq_message.o src/message.o
-	cd src && $(MAKE)
 
 bin/obbalancer: shared
 	cd balancer && $(MAKE)
