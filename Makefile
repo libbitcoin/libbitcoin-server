@@ -7,10 +7,12 @@ shared: src/zmq_message.o src/message.o
 
 bin/obbalancer: shared
 	cd balancer && $(MAKE)
+	mkdir -p bin/
 	mv balancer/obbalancer bin/
 
 bin/obworker: shared
 	cd worker && $(MAKE)
+	mkdir -p bin/
 	mv worker/obworker bin/
 
 client/backend.o:
