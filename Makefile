@@ -16,10 +16,13 @@ bin/obworker: shared
 	cd worker && $(MAKE)
 	mv worker/obworker bin/
 
+PREFIX=/usr/local
+
 install:
-	cp bin/obbalancer bin/obworker /usr/local/bin/
-	cp worker/download-blockchain.sh /usr/local/bin/download-blockchain
-	chmod +x /usr/local/bin/download-blockchain
+	cp bin/obbalancer bin/obworker $(PREFIX)/bin/
+	cp worker/download-blockchain.sh $(PREFIX)/download-blockchain
+	chmod +x $(PREFIX)/download-blockchain
+	cp -r include/obelisk $(PREFIX)/include/
 	cp worker/obworker.cfg /etc/
 	cd client && $(MAKE) install
 
