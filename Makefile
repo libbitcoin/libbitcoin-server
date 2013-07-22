@@ -18,5 +18,5 @@ bin/obworker: shared
 
 install:
 	cp bin/obbalancer bin/obworker /usr/local/bin/
-	cd worker && $(MAKE) install
+	cd client && $(MAKE) install
 
