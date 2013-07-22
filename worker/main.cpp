@@ -10,7 +10,7 @@ using std::placeholders::_2;
 int main()
 {
     config_map_type config;
-    load_config(config, "worker.cfg");
+    load_config(config, "/etc/obworker.cfg");
     // Create worker.
     request_worker worker;
     // Fullnode

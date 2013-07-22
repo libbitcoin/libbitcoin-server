@@ -18,5 +18,8 @@ bin/obworker: shared
 
 install:
 	cp bin/obbalancer bin/obworker /usr/local/bin/
+	cp worker/download-blockchain.sh /usr/local/bin/download-blockchain
+	chmod +x /usr/local/bin/download-blockchain
+	cp worker/obworker.cfg /etc/
 	cd client && $(MAKE) install
 
