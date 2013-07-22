@@ -97,11 +97,17 @@ void s_queue_purge(std::vector<worker_t>& queue)
     }
 }
 
-int main()
+int main(int argc, char** argv)
 {
     s_version_assert(2, 1);
     config_map_type config;
-    load_config(config, "/etc/obelisk/balancer.cfg");
+    if (argc == 2)
+    {
+        std::cout << "Using config file: " << argv[1] << std::endl;
+        load_config(config, argv[1]);
+    }
+    else
+        load_config(config, "/etc/obelisk/balancer.cfg");
 
     // Prepare our context and sockets
     zmq::context_t context(1);

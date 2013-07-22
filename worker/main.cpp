@@ -17,10 +17,16 @@ void stop_worker(bool& stopped, const std::string& stop_secret,
         stopped = true;
 }
 
-int main()
+int main(int argc, char** argv)
 {
     config_map_type config;
-    load_config(config, "/etc/obelisk/worker.cfg");
+    if (argc == 2)
+    {
+        echo() << "Using config file: " << argv[1];
+        load_config(config, argv[1]);
+    }
+    else
+        load_config(config, "/etc/obelisk/worker.cfg");
     // Create worker.
     request_worker worker;
     worker.start(config["service"]);
