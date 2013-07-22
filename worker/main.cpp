@@ -37,7 +37,7 @@ int main()
         };
     attach("blockchain.fetch_history", blockchain_fetch_history);
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
-    attach("blockchain.fetch_last_depth", blockchain_fetch_last_depth);
+    attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
     // Method to stop the worker over the network.
     bool stopped = false;

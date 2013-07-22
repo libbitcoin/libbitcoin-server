@@ -92,3 +92,27 @@ void wrap_fetch_transaction(const data_chunk& data,
     handle_fetch(ec, tx);
 }
 
+void wrap_fetch_last_height(const data_chunk& data,
+    bc::blockchain::fetch_handler_last_height handle_fetch);
+void blockchain_interface::fetch_last_height(
+    bc::blockchain::fetch_handler_last_height handle_fetch)
+{
+    backend_.request("blockchain.fetch_last_height", data_chunk(),
+        std::bind(wrap_fetch_last_height, _1, handle_fetch));
+}
+void wrap_fetch_last_height(const data_chunk& data,
+    bc::blockchain::fetch_handler_last_height handle_fetch)
+{
+    if (data.size() != 8)
+    {
+        log_error() << "Malformed response for blockchain.fetch_history";
+        return;
+    }
+    std::error_code ec;
+    auto deserial = make_deserializer(data.begin(), data.end());
+    bool read_success = read_error_code(deserial, data.size(), ec);
+    BITCOIN_ASSERT(read_success);
+    size_t last_height = deserial.read_4_bytes();
+    handle_fetch(ec, last_height);
+}
+

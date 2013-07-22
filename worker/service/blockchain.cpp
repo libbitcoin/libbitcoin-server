@@ -105,16 +105,33 @@ void transaction_fetched(const std::error_code& ec,
     response.send(*socket);
 }
 
-void blockchain_fetch_last_depth(node_impl& node,
+void last_height_fetched(const std::error_code& ec, size_t last_height,
+    const incoming_message& request, zmq_socket_ptr socket);
+void blockchain_fetch_last_height(node_impl& node,
     const incoming_message& request, zmq_socket_ptr socket)
 {
     const data_chunk& data = request.data();
     if (!data.empty())
     {
         log_error(LOG_WORKER)
-            << "Incorrect data size for blockchain.fetch_last_depth";
+            << "Incorrect data size for blockchain.fetch_last_height";
         return;
     }
+    node.blockchain().fetch_last_height(
+        std::bind(last_height_fetched, _1, _2, request, socket));
+}
+void last_height_fetched(const std::error_code& ec, size_t last_height,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    data_chunk result(8);
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    serial.write_4_bytes(last_height);
+    BITCOIN_ASSERT(serial.iterator() == result.end());
+    outgoing_message response(request, result);
+    log_debug(LOG_WORKER)
+        << "blockchain.fetch_last_height() finished. Sending response.";
+    response.send(*socket);
 }
 
 void blockchain_fetch_block_header(node_impl& node,

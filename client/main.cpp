@@ -42,6 +42,16 @@ void tx_fetched(const std::error_code& ec, const transaction_type& tx)
     log_debug(LOG_RESULT) << "Fetched tx: " << hash_transaction(tx);
 }
 
+void last_height_fetched(const std::error_code& ec, size_t last_height)
+{
+    if (ec)
+    {
+        log_error() << "Failed to fetch history: " << ec.message();
+        return;
+    }
+    log_debug(LOG_RESULT) << "#" << last_height;
+}
+
 int main(int argc, char** argv)
 {
     //if (argc != 2)
@@ -61,9 +71,10 @@ int main(int argc, char** argv)
     //sleep(1);
     //return 0;
     //fullnode.blockchain.fetch_history(payaddr, history_fetched);
-    fullnode.blockchain.fetch_transaction(
-        decode_hex_digest<hash_digest>("fb13bc04ac2d701caa630ce7a8588b69c13120a8083aad568a17d341943e978e"),
-        tx_fetched);
+    //fullnode.blockchain.fetch_transaction(
+    //    decode_hex_digest<hash_digest>("fb13bc04ac2d701caa630ce7a8588b69c13120a8083aad568a17d341943e978e"),
+    //    tx_fetched);
+    fullnode.blockchain.fetch_last_height(last_height_fetched);
     while (!stopped)
     {
         fullnode.update();
