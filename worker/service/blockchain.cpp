@@ -71,3 +71,61 @@ void history_fetched(const std::error_code& ec,
     response.send(*socket);
 }
 
+void transaction_fetched(const std::error_code& ec,
+    const transaction_type& tx,
+    const incoming_message& request, zmq_socket_ptr socket);
+void blockchain_fetch_transaction(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    if (data.size() != 32)
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_history";
+        return;
+    }
+    auto deserial = make_deserializer(data.begin(), data.end());
+    const hash_digest tx_hash = deserial.read_hash();
+    node.blockchain().fetch_transaction(tx_hash,
+        std::bind(transaction_fetched, _1, _2, request, socket));
+}
+void transaction_fetched(const std::error_code& ec,
+    const transaction_type& tx,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    data_chunk result(4 + satoshi_raw_size(tx));
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    auto it = satoshi_save(tx, serial.iterator());
+    BITCOIN_ASSERT(it == result.end());
+    outgoing_message response(request, result);
+    log_debug(LOG_WORKER)
+        << "blockchain.fetch_transaction() finished. Sending response.";
+    response.send(*socket);
+}
+
+void blockchain_fetch_last_depth(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    if (!data.empty())
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_last_depth";
+        return;
+    }
+}
+
+void blockchain_fetch_block_header(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    if (data.size() != 32 || data.size() != 4)
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_block_header";
+        return;
+    }
+}
+

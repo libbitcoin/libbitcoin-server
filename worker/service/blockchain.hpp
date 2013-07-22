@@ -8,11 +8,14 @@ class node_impl;
 void blockchain_fetch_history(node_impl& node,
     const incoming_message& request, zmq_socket_ptr socket);
 
-// fetch_tx
+void blockchain_fetch_transaction(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
 
-// fetch_last_depth
+void blockchain_fetch_last_depth(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
 
-// fetch_block_header
+void blockchain_fetch_block_header(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
 
 #endif
 
