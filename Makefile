@@ -20,12 +20,14 @@ bin/obworker: shared
 
 client/backend.o: client/backend.cpp
 	cd client && $(MAKE) backend.o
-client/interface.o: client/interface.cpp
-	cd client && $(MAKE) interface.o
-client: client/backend.o client/interface.o
+client/interface/blockchain.o: client/interface/blockchain.cpp
+	cd client && $(MAKE) interface/blockchain.o
+client/interface/interface.o: client/interface/interface.cpp
+	cd client && $(MAKE) interface/interface.o
+client: client/backend.o client/interface/interface.o client/interface/blockchain.o
 
 libobelisk.a: shared client
-	ar rvs libobelisk.a src/zmq_message.o client/interface.o src/message.o client/backend.o
+	ar rvs libobelisk.a src/zmq_message.o client/interface/blockchain.o client/interface/interface.o src/message.o client/backend.o
 
 install:
 	cp bin/obbalancer bin/obworker $(INSTALL_PREFIX)/bin/
