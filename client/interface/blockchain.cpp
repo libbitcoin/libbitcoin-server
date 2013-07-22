@@ -25,12 +25,13 @@ blockchain_interface::blockchain_interface(backend_cluster& backend)
 void wrap_fetch_history(const data_chunk& data,
     blockchain::fetch_handler_history handle_fetch);
 void blockchain_interface::fetch_history(const payment_address& address,
-    blockchain::fetch_handler_history handle_fetch)
+    blockchain::fetch_handler_history handle_fetch, size_t from_height)
 {
-    data_chunk data(1 + short_hash_size);
+    data_chunk data(1 + short_hash_size + 4);
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
     serial.write_short_hash(address.hash());
+    serial.write_4_bytes(from_height);
     BITCOIN_ASSERT(serial.iterator() == data.end());
     backend_.request("blockchain.fetch_history", data,
         std::bind(wrap_fetch_history, _1, handle_fetch));

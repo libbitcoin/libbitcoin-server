@@ -22,17 +22,16 @@ void blockchain_fetch_history(node_impl& node,
     const incoming_message& request, zmq_socket_ptr socket)
 {
     const data_chunk& data = request.data();
-    if (data.size() != 1 + short_hash_size)
+    if (data.size() != 1 + short_hash_size + 4)
     {
         log_error(LOG_WORKER)
             << "Incorrect data size for blockchain.fetch_history";
         return;
     }
-    uint8_t version_byte;
-    short_hash hash;
     auto deserial = make_deserializer(data.begin(), data.end());
-    version_byte = deserial.read_byte();
-    hash = deserial.read_short_hash();
+    uint8_t version_byte = deserial.read_byte();
+    short_hash hash = deserial.read_short_hash();
+    uint32_t from_height = deserial.read_4_bytes();
     BITCOIN_ASSERT(deserial.iterator() == data.end());
     payment_address payaddr;
     if (!payaddr.set_raw(version_byte, hash))
@@ -44,7 +43,7 @@ void blockchain_fetch_history(node_impl& node,
     log_debug(LOG_WORKER) << "blockchain.fetch_history("
         << payaddr.encoded() << ")";
     node.blockchain().fetch_history(payaddr,
-        std::bind(history_fetched, _1, _2, request, socket));
+        std::bind(history_fetched, _1, _2, request, socket), from_height);
 }
 void history_fetched(const std::error_code& ec,
     const blockchain::history_list& history,

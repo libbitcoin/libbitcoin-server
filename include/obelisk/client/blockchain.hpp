@@ -9,7 +9,8 @@ class blockchain_interface
 public:
     blockchain_interface(backend_cluster& backend);
     void fetch_history(const bc::payment_address& address,
-        bc::blockchain::fetch_handler_history handle_fetch);
+        bc::blockchain::fetch_handler_history handle_fetch,
+        size_t from_height=0);
     void fetch_transaction(const bc::hash_digest& tx_hash,
         bc::blockchain::fetch_handler_transaction handle_fetch);
     void fetch_last_height(
