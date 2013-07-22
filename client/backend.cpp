@@ -26,9 +26,13 @@ void backend_cluster::request(const std::string& command,
     request_container request{
         microsec_clock::universal_time(), request_timeout_init,
         request_retries, outgoing_message(command, data)};
-    request.message.send(socket_);
     handlers_[request.message.id()] = handle;
     retry_queue_[request.message.id()] = request;
+    send(request.message);
+}
+void backend_cluster::send(const outgoing_message& message)
+{
+    message.send(socket_);
 }
 
 void backend_cluster::update()

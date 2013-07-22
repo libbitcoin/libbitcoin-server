@@ -2,7 +2,6 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/utility/logger.hpp>
-#include <obelisk/zmq_message.hpp>
 #include "echo.hpp"
 
 using namespace bc;
@@ -27,6 +26,10 @@ bool send_string(zmq::socket_t& socket, const std::string& str)
 request_worker::request_worker()
   : context_(1)
 {
+}
+void request_worker::start(const std::string& connection)
+{
+    connection_ = connection;
     create_new_socket();
     last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;
@@ -36,7 +39,8 @@ request_worker::request_worker()
 void request_worker::create_new_socket()
 {
     socket_ = std::make_shared<zmq::socket_t>(context_, ZMQ_DEALER);
-    socket_->connect("tcp://localhost:5556");
+    log_debug(LOG_WORKER) << "Connecting: " << connection_;
+    socket_->connect(connection_.c_str());
     // Configure socket to not wait at close time
     int linger = 0;
     socket_->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));

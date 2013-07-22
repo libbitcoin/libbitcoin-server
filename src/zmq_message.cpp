@@ -10,7 +10,7 @@ void zmq_message::append(const data_chunk& part)
     parts_.push_back(part);
 }
 
-void zmq_message::send(zmq::socket_t& socket)
+void zmq_message::send(zmq::socket_t& socket) const
 {
     bool send_more = true;
     for (auto it = parts_.begin(); it != parts_.end(); ++it)
@@ -31,7 +31,6 @@ void zmq_message::send(zmq::socket_t& socket)
             BITCOIN_ASSERT(error.num() != 0);
         }
     }
-    parts_.clear();
 }
 
 bool zmq_message::recv(zmq::socket_t& socket)

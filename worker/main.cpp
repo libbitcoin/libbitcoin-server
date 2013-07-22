@@ -4,8 +4,18 @@
 #include "node_impl.hpp"
 #include "service/blockchain.hpp"
 
+using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
+
+void stop_worker(bool& stopped, const std::string& stop_secret,
+    const incoming_message& request)
+{
+    const data_chunk& data = request.data();
+    std::string user_secret(data.begin(), data.end());
+    if (user_secret == stop_secret)
+        stopped = true;
+}
 
 int main()
 {
@@ -13,6 +23,7 @@ int main()
     load_config(config, "/etc/obworker.cfg");
     // Create worker.
     request_worker worker;
+    worker.start(config["service"]);
     // Fullnode
     node_impl node;
     // Attach commands
@@ -25,12 +36,17 @@ int main()
                 std::bind(handler, std::ref(node), _1, _2));
         };
     attach("blockchain.fetch_history", blockchain_fetch_history);
+    // Method to stop the worker over the network.
+    bool stopped = false;
+    const std::string stop_secret = config["stop-secret"];
+    worker.attach("stop",
+        std::bind(stop_worker, std::ref(stopped), stop_secret, _1));
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.
     if (!node.start(config))
         return 1;
     echo() << "Node started.";
-    while (true)
+    while (!stopped)
     {
         worker.update();
         sleep(0.1);

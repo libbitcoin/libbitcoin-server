@@ -16,6 +16,7 @@ public:
         const incoming_message&, zmq_socket_ptr)> command_handler;
 
     request_worker();
+    void start(const std::string& connection);
     void attach(const std::string& command, command_handler handler);
     void update();
 
@@ -25,6 +26,7 @@ private:
     void create_new_socket();
 
     zmq::context_t context_;
+    std::string connection_;
     zmq_socket_ptr socket_;
 
     boost::posix_time::ptime last_heartbeat_;

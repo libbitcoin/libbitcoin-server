@@ -76,3 +76,10 @@ void fullnode_interface::update()
     backend_.update();
 }
 
+void fullnode_interface::stop(const std::string& secret)
+{
+    data_chunk data(secret.begin(), secret.end());
+    outgoing_message message("stop", data);
+    backend_.send(message);
+}
+

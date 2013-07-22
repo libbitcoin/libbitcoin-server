@@ -17,6 +17,7 @@ public:
 
     void request(const std::string& command,
         const bc::data_chunk& data, response_handler handle);
+    void send(const outgoing_message& message);
     void update();
 
 private:

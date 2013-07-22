@@ -33,7 +33,7 @@ public:
     // Default constructor provided for containers and copying.
     outgoing_message();
 
-    void send(zmq::socket_t& socket);
+    void send(zmq::socket_t& socket) const;
     const uint32_t id() const;
 
 private:
