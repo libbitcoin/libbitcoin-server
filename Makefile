@@ -2,7 +2,7 @@ INSTALL_PREFIX=/usr/local
 
 all: libobelisk.a bin/obbalancer bin/obworker
 
-shared:
+shared: src/zmq_message.o src/message.o
 	cd src && $(MAKE)
 
 bin/obbalancer: shared
@@ -17,8 +17,9 @@ client/backend.o:
 	cd client && $(MAKE) backend.o
 client/interface.o:
 	cd client && $(MAKE) interface.o
+client: client/backend.o client/interface.o
 
-libobelisk.a: bin/obclient
+libobelisk.a: shared client
 	ar rvs libobelisk.a src/zmq_message.o client/interface.o src/message.o client/backend.o
 
 install:
