@@ -5,7 +5,10 @@ AM_CPPFLAGS = ${libbitcoin_CFLAGS} -I$(srcdir)/../include -DSYSCONFDIR=\"${sysco
 lib_LTLIBRARIES = libobelisk.la
 libobelisk_la_SOURCES = \
     message.cpp \
-    zmq_message.cpp
+    zmq_message.cpp \
+    client/backend.cpp \
+    client/interface/interface.cpp \
+    client/interface/blockchain.cpp
 
 bin_PROGRAMS = obbalancer obworker
 

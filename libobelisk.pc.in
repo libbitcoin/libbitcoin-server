@@ -6,7 +6,7 @@ includedir=@includedir@
 Name: libobelisk
 Description: Obelisk network interface for scalable asynchronous blockchain queries.
 Version: @PACKAGE_VERSION@
-Requires: libzmq libbitcoin
+Requires: libzmq libconfig++ libbitcoin
 Cflags: -I${includedir} -std=c++11
-Libs: -L${libdir}
+Libs: -L${libdir} -lobelisk
 
