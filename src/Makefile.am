@@ -1,12 +1,18 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
+AM_CPPFLAGS = ${libbitcoin_CFLAGS} -I$(srcdir)/../include -DSYSCONFDIR=\"${sysconfdir}\"
+
 lib_LTLIBRARIES = libobelisk.la
-AM_CPPFLAGS = ${libbitcoin_CFLAGS} -I$(srcdir)/../include
 libobelisk_la_SOURCES = \
     message.cpp \
     zmq_message.cpp
 
 bin_PROGRAMS = obbalancer obworker
+
+confdir=$(sysconfdir)/obelisk
+conf_DATA = \
+    balancer/balancer.cfg \
+    worker/worker.cfg
 
 obbalancer_SOURCES = \
     balancer/balancer.cpp \

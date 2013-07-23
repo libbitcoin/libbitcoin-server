@@ -107,7 +107,7 @@ int main(int argc, char** argv)
         load_config(config, argv[1]);
     }
     else
-        load_config(config, "/etc/obelisk/balancer.cfg");
+        load_config(config, SYSCONFDIR);
 
     // Prepare our context and sockets
     zmq::context_t context(1);

@@ -27,7 +27,7 @@ int main(int argc, char** argv)
         load_config(config, argv[1]);
     }
     else
-        load_config(config, "/etc/obelisk/worker.cfg");
+        load_config(config, SYSCONFDIR);
     // Create worker.
     request_worker worker;
     worker.start(config["service"]);
