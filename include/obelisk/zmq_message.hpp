@@ -9,7 +9,7 @@ class zmq_message
 {
 public:
     void append(const bc::data_chunk& part);
-    void send(zmq::socket_t& socket) const;
+    bool send(zmq::socket_t& socket) const;
     bool recv(zmq::socket_t& socket);
     const bc::data_stack& parts() const;
 

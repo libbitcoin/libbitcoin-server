@@ -13,7 +13,7 @@ class backend_cluster
 public:
     typedef std::function<void (const bc::data_chunk&)> response_handler;
 
-    backend_cluster(const std::string& connection);
+    backend_cluster(zmq::context_t& context, const std::string& connection);
 
     void request(const std::string& command,
         const bc::data_chunk& data, response_handler handle);
@@ -37,7 +37,7 @@ private:
     bool process(const incoming_message& response);
     void resend_expired();
 
-    zmq::context_t context_;
+    zmq::context_t& context_;
     zmq::socket_t socket_;
     response_handler_map handlers_;
     request_retry_queue retry_queue_;

@@ -8,9 +8,17 @@
 class node_impl
 {
 public:
+    typedef std::function<void (size_t, const bc::block_type&)>
+        block_notify_callback;
+    typedef std::function<void (const bc::transaction_type&)>
+        transaction_notify_callback;
+
     node_impl();
     bool start(config_map_type& config);
     bool stop();
+
+    void subscribe_blocks(block_notify_callback notify_block);
+    void subscribe_transactions(transaction_notify_callback notify_tx);
 
     // Access to underlying services.
     bc::blockchain& blockchain();
@@ -25,6 +33,11 @@ private:
         const std::error_code& ec, const bc::index_list& unconfirmed,
         const bc::transaction_type& tx, bc::channel_ptr node);
 
+    void reorganize(const std::error_code& ec,
+        size_t fork_point,
+        const bc::blockchain::block_list& new_blocks,
+        const bc::blockchain::block_list& replaced_blocks);
+
     std::ofstream outfile_, errfile_;
     bc::threadpool network_pool_, disk_pool_, mem_pool_;
     // Services
@@ -36,6 +49,9 @@ private:
     bc::poller poller_;
     bc::transaction_pool txpool_;
     bc::session session_;
+
+    block_notify_callback notify_block_;
+    transaction_notify_callback notify_tx_;
 };
 
 #endif

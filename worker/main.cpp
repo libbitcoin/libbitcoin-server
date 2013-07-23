@@ -2,6 +2,7 @@
 #include "echo.hpp"
 #include "worker.hpp"
 #include "node_impl.hpp"
+#include "publisher.hpp"
 #include "service/blockchain.hpp"
 
 using namespace bc;
@@ -32,6 +33,9 @@ int main(int argc, char** argv)
     worker.start(config["service"]);
     // Fullnode
     node_impl node;
+    // Publisher
+    publisher publish(node);
+    publish.start(config);
     // Attach commands
     typedef std::function<void (node_impl&,
         const incoming_message&, zmq_socket_ptr)> basic_command_handler;
@@ -60,6 +64,7 @@ int main(int argc, char** argv)
         worker.update();
         sleep(0.1);
     }
+    publish.stop();
     if (!node.stop())
         return -1;
     return 0;

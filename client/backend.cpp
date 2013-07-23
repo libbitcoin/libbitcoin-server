@@ -11,8 +11,9 @@ using posix_time::microsec_clock;
 constexpr size_t request_retries = 3;
 const posix_time::time_duration request_timeout_init = seconds(30);
 
-backend_cluster::backend_cluster(const std::string& connection)
-  : context_(1), socket_(context_, ZMQ_DEALER)
+backend_cluster::backend_cluster(
+    zmq::context_t& context, const std::string& connection)
+  : context_(context), socket_(context_, ZMQ_DEALER)
 {
     socket_.connect(connection.c_str());
     // Configure socket to not wait at close time.

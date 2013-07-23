@@ -63,6 +63,11 @@ void block_header_fetched(const std::error_code& ec,
     log_debug(LOG_RESULT) << "Block " << hash_block_header(blk);
 }
 
+void notify_transaction(const transaction_type& tx)
+{
+    log_debug(LOG_RESULT) << "Transaction: " << hash_transaction(tx);
+}
+
 int main(int argc, char** argv)
 {
     //if (argc != 2)
@@ -78,6 +83,9 @@ int main(int argc, char** argv)
     //    return -1;
     //}
     fullnode_interface fullnode("tcp://localhost:9091");
+    bool success = fullnode.subscribe_transactions(
+        "tcp://localhost:9094", notify_transaction);
+    BITCOIN_ASSERT(success);
     //fullnode.stop("password");
     //sleep(1);
     //return 0;

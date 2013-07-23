@@ -32,6 +32,9 @@ void output_cerr_and_file(std::ofstream& file, log_level level,
     file << output.str() << std::endl;
 }
 
+auto ignore_block = [](size_t height, const block_type&) {};
+auto ignore_tx = [](const transaction_type&) {};
+
 node_impl::node_impl()
   : network_pool_(1), disk_pool_(6), mem_pool_(1),
     hosts_(network_pool_),
@@ -42,7 +45,8 @@ node_impl::node_impl()
     poller_(mem_pool_, chain_),
     txpool_(mem_pool_, chain_),
     session_(mem_pool_, {
-        handshake_, protocol_, chain_, poller_, txpool_})
+        handshake_, protocol_, chain_, poller_, txpool_}),
+    notify_block_(ignore_block), notify_tx_(ignore_tx)
 {
 }
 
@@ -77,6 +81,8 @@ bool node_impl::start(config_map_type& config)
         log_error() << "Couldn't start blockchain: " << ec.message();
         return false;
     }
+    chain_.subscribe_reorganize(
+        std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
     // Transaction pool
     txpool_.start();
     // Start session
@@ -113,6 +119,15 @@ bool node_impl::stop()
     mem_pool_.join();
     chain_.stop();
     return true;
+}
+
+void node_impl::subscribe_blocks(block_notify_callback notify_block)
+{
+    notify_block_ = notify_block;
+}
+void node_impl::subscribe_transactions(transaction_notify_callback notify_tx)
+{
+    notify_tx_ = notify_tx;
 }
 
 blockchain& node_impl::blockchain()
@@ -165,5 +180,25 @@ void node_impl::handle_mempool_store(
     const transaction_type& tx, channel_ptr node)
 {
     log_info() << "Accepted transaction: " << hash_transaction(tx);
+    mem_pool_.service().post(
+        std::bind(notify_tx_, tx));
+}
+
+void node_impl::reorganize(const std::error_code& ec,
+    size_t fork_point,
+    const bc::blockchain::block_list& new_blocks,
+    const bc::blockchain::block_list& replaced_blocks)
+{
+    // Don't bother publishing blocks when in the initial blockchain download.
+    if (fork_point > 235866)
+        for (size_t i = 0; i < new_blocks.size(); ++i)
+        {
+            size_t height = fork_point + i + 1;
+            const block_type& blk = *new_blocks[i];
+            mem_pool_.service().post(
+                std::bind(notify_block_, height, blk));
+        }
+    chain_.subscribe_reorganize(
+        std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
 }
 

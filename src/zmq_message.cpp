@@ -10,7 +10,7 @@ void zmq_message::append(const data_chunk& part)
     parts_.push_back(part);
 }
 
-void zmq_message::send(zmq::socket_t& socket) const
+bool zmq_message::send(zmq::socket_t& socket) const
 {
     bool send_more = true;
     for (auto it = parts_.begin(); it != parts_.end(); ++it)
@@ -24,13 +24,16 @@ void zmq_message::send(zmq::socket_t& socket) const
             send_more = false;
         try
         {
-            socket.send(message, send_more ? ZMQ_SNDMORE : 0);
+            if (!socket.send(message, send_more ? ZMQ_SNDMORE : 0))
+                return false;
         }
         catch (zmq::error_t error)
         {
             BITCOIN_ASSERT(error.num() != 0);
+            return false;
         }
     }
+    return true;
 }
 
 bool zmq_message::recv(zmq::socket_t& socket)
@@ -47,6 +50,7 @@ bool zmq_message::recv(zmq::socket_t& socket)
         }
         catch (zmq::error_t error)
         {
+            BITCOIN_ASSERT(error.num() != 0);
             return false;
         }
         uint8_t* msg_begin = reinterpret_cast<uint8_t*>(message.data());
