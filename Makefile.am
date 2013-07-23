@@ -1,5 +1,5 @@
 pkgconfig_DATA = libobelisk.pc
 
-SUBDIRS = src
+SUBDIRS = include/obelisk src
 ACLOCAL_AMFLAGS = -I m4
 
