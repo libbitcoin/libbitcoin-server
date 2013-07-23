@@ -1,11 +1,11 @@
-prefix=/usr/local/
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
-includedir=${prefix}/include
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
 
 Name: libobelisk
 Description: Obelisk network interface for scalable asynchronous blockchain queries.
-Version: 0.2
+Version: @PACKAGE_VERSION@
 Requires: libzmq libbitcoin
 Cflags: -I${includedir} -std=c++11
 Libs: -L${libdir}
