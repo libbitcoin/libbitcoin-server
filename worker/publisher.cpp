@@ -54,11 +54,7 @@ bool send_raw(const bc::data_chunk& raw,
 
 void append_hash(zmq_message& message, const hash_digest& hash)
 {
-    data_chunk raw_hash(hash_digest_size);
-    auto serial = make_serializer(raw_hash.begin());
-    serial.write_hash(hash);
-    BITCOIN_ASSERT(serial.iterator() == raw_hash.end());
-    message.append(raw_hash);
+    message.append(data_chunk(hash.begin(), hash.end()));
 }
 
 bool publisher::send_blk(uint32_t height, const block_type& blk)

@@ -71,14 +71,12 @@ void subscriber_part::update()
 
 bool read_hash(hash_digest& hash, const data_chunk& raw_hash)
 {
-    if (raw_hash.size() != hash_digest_size)
+    if (raw_hash.size() != hash.size())
     {
         log_warning(LOG_SUBSCRIBER) << "Wrong size for hash. Dropping.";
         return false;
     }
-    auto deserial = make_deserializer(raw_hash.begin(), raw_hash.end());
-    hash = deserial.read_hash();
-    BITCOIN_ASSERT(deserial.iterator() == raw_hash.end());
+    std::copy(raw_hash.begin(), raw_hash.end(), hash.begin());
     return true;
 }
 
