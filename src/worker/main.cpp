@@ -27,7 +27,7 @@ int main(int argc, char** argv)
         load_config(config, argv[1]);
     }
     else
-        load_config(config, SYSCONFDIR);
+        load_config(config, "worker.cfg");
     // Create worker.
     request_worker worker;
     worker.start(config["service"]);
