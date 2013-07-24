@@ -1,4 +1,6 @@
 You will need a copy of the blockchain before running this example.
 
-  $ ./download-blockchain.sh
+Use libbitcoin/bin/download-blockchain.sh
+
+  $ download-blockchain.sh ~/obworker-data/
 
