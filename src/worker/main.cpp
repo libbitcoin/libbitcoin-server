@@ -59,11 +59,23 @@ int main(int argc, char** argv)
     if (!node.start(config))
         return 1;
     echo() << "Node started.";
+    std::thread thr([&stopped]()
+        {
+            while (true)
+            {
+                std::string user_cmd;
+                std::getline(std::cin, user_cmd);
+                if (user_cmd == "stop")
+                    break;
+            }
+            stopped = true;
+        });
     while (!stopped)
     {
         worker.update();
         sleep(0.1);
     }
+    thr.join();
     publish.stop();
     if (!node.stop())
         return -1;
