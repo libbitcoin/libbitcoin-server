@@ -65,6 +65,7 @@ node_impl::node_impl()
     chain_(disk_pool_),
     poller_(mem_pool_, chain_),
     txpool_(mem_pool_, chain_),
+    indexer_(mem_pool_),
     session_(mem_pool_, {
         handshake_, protocol_, chain_, poller_, txpool_}),
     notify_block_(ignore_block), notify_tx_(ignore_tx)
@@ -159,6 +160,10 @@ transaction_pool& node_impl::transaction_pool()
 {
     return txpool_;
 }
+transaction_indexer& node_impl::transaction_indexer()
+{
+    return indexer_;
+}
 protocol& node_impl::protocol()
 {
     return protocol_;
@@ -185,10 +190,19 @@ void node_impl::recv_transaction(const std::error_code& ec,
         log_error() << "recv_transaction: " << ec.message();
         return;
     }
-    auto handle_confirm = [](const std::error_code& ec)
+    auto handle_deindex = [](const std::error_code& ec)
         {
             if (ec)
-                log_warning() << "Confirm error: " << ec.message();
+                log_error() << "Deindex error: " << ec.message();
+        };
+    // Called when the transaction becomes confirmed in a block.
+    auto handle_confirm = [this, tx, handle_deindex](
+        const std::error_code& ec)
+        {
+            if (ec)
+                log_error() << "Confirm error: " << ec.message();
+            else
+                indexer_.deindex(tx, handle_deindex);
         };
     txpool_.store(tx, handle_confirm,
         std::bind(&node_impl::handle_mempool_store, this, _1, _2, tx, node));
@@ -200,6 +214,12 @@ void node_impl::handle_mempool_store(
     const std::error_code& ec, const index_list& unconfirmed,
     const transaction_type& tx, channel_ptr node)
 {
+    auto handle_index = [](const std::error_code& ec)
+        {
+            if (ec)
+                log_error() << "Index error: " << ec.message();
+        };
+    indexer_.index(tx, handle_index);
     log_info() << "Accepted transaction: " << hash_transaction(tx);
     mem_pool_.service().post(
         std::bind(notify_tx_, tx));

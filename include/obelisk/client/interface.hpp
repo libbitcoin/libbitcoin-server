@@ -46,6 +46,10 @@ public:
     void stop(const std::string& secret);
     blockchain_interface blockchain;
 
+    void fetch_history(const bc::payment_address& address,
+        bc::blockchain::fetch_handler_history handle_fetch,
+        size_t from_height=0);
+
 private:
     zmq::context_t context_;
     backend_cluster backend_;

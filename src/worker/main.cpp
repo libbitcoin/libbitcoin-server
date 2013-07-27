@@ -3,6 +3,7 @@
 #include "worker.hpp"
 #include "node_impl.hpp"
 #include "publisher.hpp"
+#include "service/fullnode.hpp"
 #include "service/blockchain.hpp"
 
 using namespace bc;
@@ -45,6 +46,7 @@ int main(int argc, char** argv)
             worker.attach(command,
                 std::bind(handler, std::ref(node), _1, _2));
         };
+    attach("fetch_history", fullnode_fetch_history);
     attach("blockchain.fetch_history", blockchain_fetch_history);
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);

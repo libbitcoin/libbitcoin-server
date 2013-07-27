@@ -1,6 +1,6 @@
 #include <obelisk/client/backend.hpp>
 
-#include <bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 using namespace bc;
 

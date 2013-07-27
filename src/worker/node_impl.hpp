@@ -23,6 +23,7 @@ public:
     // Access to underlying services.
     bc::blockchain& blockchain();
     bc::transaction_pool& transaction_pool();
+    bc::transaction_indexer& transaction_indexer();
     bc::protocol& protocol();
 
 private:
@@ -48,6 +49,7 @@ private:
     bc::leveldb_blockchain chain_;
     bc::poller poller_;
     bc::transaction_pool txpool_;
+    bc::transaction_indexer indexer_;
     bc::session session_;
 
     block_notify_callback notify_block_;
