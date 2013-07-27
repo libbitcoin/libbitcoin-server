@@ -1,6 +1,5 @@
 #include "worker.hpp"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/utility/logger.hpp>
 #include "echo.hpp"
 
