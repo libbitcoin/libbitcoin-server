@@ -31,7 +31,7 @@ void load_config(config_map_type& config, const std::string& filename)
     const libconfig::Setting& root = cfg.getRoot();
     get_value<std::string>(root, config, "output-file", "debug.log");
     get_value<std::string>(root, config, "error-file", "error.log");
-    get_value<std::string>(root, config, "database", "database");
+    get_value<std::string>(root, config, "blockchain-path", "blockchain");
     get_value<std::string>(root, config, "service", "tcp://localhost:9092");
     get_value<std::string>(root, config, "block-publish", "tcp://*:9093");
     get_value<std::string>(root, config, "tx-publish", "tcp://*:9094");

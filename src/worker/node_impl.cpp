@@ -96,7 +96,7 @@ bool node_impl::start(config_map_type& config)
         {
             ec_chain.set_value(ec);
         };
-    chain_.start(config["database"], blockchain_started);
+    chain_.start(config["blockchain-path"], blockchain_started);
     // Query the error_code and wait for startup completion.
     std::error_code ec = ec_chain.get_future().get();
     if (ec)
