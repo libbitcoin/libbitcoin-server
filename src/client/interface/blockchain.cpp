@@ -71,6 +71,13 @@ void wrap_fetch_last_height(const data_chunk& data,
 
 void wrap_fetch_block_header(const data_chunk& data,
     blockchain::fetch_handler_block_header handle_fetch);
+void blockchain_interface::fetch_block_header(size_t height,
+    bc::blockchain::fetch_handler_block_header handle_fetch)
+{
+    data_chunk data = uncast_type<uint32_t>(height);
+    backend_.request("blockchain.fetch_block_header", data,
+        std::bind(wrap_fetch_block_header, _1, handle_fetch));
+}
 void blockchain_interface::fetch_block_header(const hash_digest& blk_hash,
     blockchain::fetch_handler_block_header handle_fetch)
 {

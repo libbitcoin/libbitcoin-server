@@ -15,6 +15,8 @@ public:
         bc::blockchain::fetch_handler_transaction handle_fetch);
     void fetch_last_height(
         bc::blockchain::fetch_handler_last_height handle_fetch);
+    void fetch_block_header(size_t height,
+        bc::blockchain::fetch_handler_block_header handle_fetch);
     void fetch_block_header(const bc::hash_digest& blk_hash,
         bc::blockchain::fetch_handler_block_header handle_fetch);
 private:

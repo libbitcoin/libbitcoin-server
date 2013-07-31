@@ -13,6 +13,11 @@ public:
         transaction_notify_callback;
 
     subscriber_part(zmq::context_t& context);
+
+    // Non-copyable
+    subscriber_part(const subscriber_part&) = delete;
+    void operator=(const subscriber_part&) = delete;
+
     bool subscribe_blocks(const std::string& connection,
         block_notify_callback notify_block);
     bool subscribe_transactions(const std::string& connection,
@@ -38,6 +43,11 @@ class fullnode_interface
 {
 public:
     fullnode_interface(const std::string& connection);
+
+    // Non-copyable
+    fullnode_interface(const fullnode_interface&) = delete;
+    void operator=(const fullnode_interface&) = delete;
+
     bool subscribe_blocks(const std::string& connection,
         subscriber_part::block_notify_callback notify_block);
     bool subscribe_transactions(const std::string& connection,
