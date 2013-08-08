@@ -1,3 +1,4 @@
+#include <boost/filesystem.hpp>
 #include <obelisk/message.hpp>
 #include "echo.hpp"
 #include "worker.hpp"
@@ -28,7 +29,11 @@ int main(int argc, char** argv)
         load_config(config, argv[1]);
     }
     else
-        load_config(config, "worker.cfg");
+    {
+        using boost::filesystem::path;
+        path conf_filename = path(SYSCONFDIR) / "worker.cfg";
+        load_config(config, conf_filename.native());
+    }
     // Create worker.
     request_worker worker;
     worker.start(config["service"]);
@@ -36,7 +41,8 @@ int main(int argc, char** argv)
     node_impl node;
     // Publisher
     publisher publish(node);
-    publish.start(config);
+    if (!publish.start(config))
+        return 1;
     // Attach commands
     typedef std::function<void (node_impl&,
         const incoming_message&, zmq_socket_ptr)> basic_command_handler;
