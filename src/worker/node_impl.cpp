@@ -215,6 +215,13 @@ void node_impl::handle_mempool_store(
     const std::error_code& ec, const index_list& unconfirmed,
     const transaction_type& tx, channel_ptr node)
 {
+    if (ec)
+    {
+        log_warning()
+            << "Error storing memory pool transaction "
+            << hash_transaction(tx) << ": " << ec.message();
+        return;
+    }
     auto handle_index = [](const std::error_code& ec)
         {
             if (ec)
