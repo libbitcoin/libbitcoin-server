@@ -201,9 +201,10 @@ void node_impl::recv_transaction(const std::error_code& ec,
         const std::error_code& ec)
         {
             if (ec)
-                log_error() << "Confirm error: " << ec.message();
-            else
-                indexer_.deindex(tx, handle_deindex);
+                log_warning() << "Confirm transaction: " << ec.message();
+            // Always try to deindex tx.
+            // The error could be error::forced_removal from txpool.
+            indexer_.deindex(tx, handle_deindex);
         };
     txpool_.store(tx, handle_confirm,
         std::bind(&node_impl::handle_mempool_store, this, _1, _2, tx, node));
