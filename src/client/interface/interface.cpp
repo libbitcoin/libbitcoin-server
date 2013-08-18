@@ -143,7 +143,8 @@ void subscriber_part::recv_block()
 }
 
 fullnode_interface::fullnode_interface(const std::string& connection)
-  : context_(1), backend_(context_, connection), blockchain(backend_),
+  : context_(1), backend_(context_, connection),
+    blockchain(backend_), transaction_pool(backend_),
     subscriber_(context_)
 {
 }

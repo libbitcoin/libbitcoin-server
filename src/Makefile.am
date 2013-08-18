@@ -9,7 +9,8 @@ libobelisk_la_SOURCES = \
     client/backend.cpp \
     client/interface/interface.cpp \
     client/interface/fetch_history.cpp \
-    client/interface/blockchain.cpp
+    client/interface/blockchain.cpp \
+    client/interface/transaction_pool.cpp
 
 bin_PROGRAMS = obbalancer obworker
 
@@ -32,7 +33,8 @@ obworker_SOURCES = \
     worker/worker.cpp \
     worker/service/fullnode.cpp \
     worker/service/fetch_history.cpp \
-    worker/service/blockchain.cpp
+    worker/service/blockchain.cpp \
+    worker/service/transaction_pool.cpp
 
 obworker_LDADD = ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS} -lobelisk
 

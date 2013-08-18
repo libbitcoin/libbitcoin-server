@@ -3,6 +3,7 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/client/blockchain.hpp>
+#include <obelisk/client/transaction_pool.hpp>
 
 class subscriber_part
 {
@@ -55,6 +56,7 @@ public:
     void update();
     void stop(const std::string& secret);
     blockchain_interface blockchain;
+    transaction_pool_interface transaction_pool;
 
     void fetch_history(const bc::payment_address& address,
         bc::blockchain::fetch_handler_history handle_fetch,

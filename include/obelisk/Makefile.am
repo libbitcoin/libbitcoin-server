@@ -7,5 +7,6 @@ obelisk_client_includedir = $(includedir)/obelisk/client
 obelisk_client_include_HEADERS = \
     client/backend.hpp \
     client/interface.hpp \
-    client/blockchain.hpp
+    client/blockchain.hpp \
+    client/transaction_pool.hpp
 

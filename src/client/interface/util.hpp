@@ -2,6 +2,7 @@
 #define OBELISK_WORKER_CLIENT_UTIL_HPP
 
 #include <system_error>
+#include <bitcoin/utility/logger.hpp>
 
 template <typename Deserializer>
 bool read_error_code(Deserializer& deserial,
@@ -9,11 +10,12 @@ bool read_error_code(Deserializer& deserial,
 {
     if (data_size < 4)
     {
-        log_error() << "No error_code in response.";
+        bc::log_error() << "No error_code in response.";
         return false;
     }
     uint32_t val = deserial.read_4_bytes();
-    ec = static_cast<error::error_code_t>(val);
+    if (val)
+        ec = static_cast<bc::error::error_code_t>(val);
     return true;
 }
 

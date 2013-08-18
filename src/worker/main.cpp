@@ -6,6 +6,7 @@
 #include "publisher.hpp"
 #include "service/fullnode.hpp"
 #include "service/blockchain.hpp"
+#include "service/transaction_pool.hpp"
 
 using namespace bc;
 using std::placeholders::_1;
@@ -57,6 +58,7 @@ int main(int argc, char** argv)
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
+    attach("transaction_pool.validate", transaction_pool_validate);
     // Method to stop the worker over the network.
     bool stopped = false;
     const std::string stop_secret = config["stop-secret"];
