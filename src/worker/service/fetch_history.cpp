@@ -21,12 +21,7 @@ bool unwrap_fetch_history_args(
     short_hash hash = deserial.read_short_hash();
     from_height = deserial.read_4_bytes();
     BITCOIN_ASSERT(deserial.iterator() == data.end());
-    if (!payaddr.set_raw(version_byte, hash))
-    {
-        log_error(LOG_WORKER)
-            << "Problem setting address in .fetch_history";
-        return false;
-    }
+    payaddr.set(version_byte, hash);
     return true;
 }
 bool send_history_result(const std::error_code& ec,
