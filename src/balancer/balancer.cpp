@@ -209,20 +209,44 @@ int main(int argc, char** argv)
         }
         if (items [1].revents & ZMQ_POLLIN)
         {
-            // Now get next client request, route to next worker
-            std::string worker_identity = s_worker_dequeue(queue);
-
+            // Get client request.
             zmq_message msg_in;
             msg_in.recv(frontend);
             const bc::data_stack& in_parts = msg_in.parts();
-            BITCOIN_ASSERT(in_parts.size() == 6);
-            // First item should be client's identity
+            BITCOIN_ASSERT(in_parts.size() == 7);
+            // First item is client's identity.
             BITCOIN_ASSERT(in_parts[0].size() == 17);
+            // Second item is worker identity or nothing.
+            BITCOIN_ASSERT(in_parts[1].size() == 17 || in_parts[1].empty());
+
+            // We now deconstruct the request message to the frontend
+            // which looks like:
+            //   [CLIENT UUID]
+            //   [WORKER UUID]
+            //   ...
+            // And create a new message that looks like:
+            //   [WORKER UUID]
+            //   [CLIENT UUID]
+            //   ...
+            // Before sending it to the worker.
 
             zmq_message msg_out;
-            msg_out.append(decode_uuid(worker_identity));
-            for (const bc::data_chunk& part: in_parts)
-                msg_out.append(part);
+            // If second frame is nothing, then we select a random worker.
+            if (in_parts[1].empty())
+            {
+                // Route to next worker
+                std::string worker_identity = s_worker_dequeue(queue);
+                msg_out.append(decode_uuid(worker_identity));
+            }
+            else
+            {
+                // Route to client's preferred worker.
+                msg_out.append(in_parts[1]);
+            }
+            msg_out.append(in_parts[0]);
+            // Copy the remaining data.
+            for (auto it = in_parts.begin() + 2; it != in_parts.end(); ++it)
+                msg_out.append(*it);
             msg_out.send(backend);
         }
 

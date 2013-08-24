@@ -95,8 +95,7 @@ outgoing_message::outgoing_message(
 void outgoing_message::send(zmq::socket_t& socket) const
 {
     zmq_message message;
-    if (!dest_.empty())
-        message.append(dest_);
+    message.append(dest_);
     message.append(data_chunk{0x00});
     // [ COMMAND ]
     // [ ID ]
