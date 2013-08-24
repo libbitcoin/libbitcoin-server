@@ -38,7 +38,6 @@ bool zmq_message::send(zmq::socket_t& socket) const
 
 bool zmq_message::recv(zmq::socket_t& socket)
 {
-    parts_.clear();
     int64_t more = 1;
     while (more)
     {

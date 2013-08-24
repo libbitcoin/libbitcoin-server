@@ -22,7 +22,8 @@ conf_DATA = \
 obbalancer_SOURCES = \
     balancer/balancer.cpp \
     balancer/config.cpp
-obbalancer_LDADD = ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS}
+
+obbalancer_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS}
 
 obworker_SOURCES = \
     worker/config.cpp \
@@ -36,5 +37,5 @@ obworker_SOURCES = \
     worker/service/blockchain.cpp \
     worker/service/transaction_pool.cpp
 
-obworker_LDADD = ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS} -lobelisk
+obworker_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS}
 

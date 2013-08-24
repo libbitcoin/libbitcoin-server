@@ -4,6 +4,8 @@
 //     Andreas Hoelzlwimmer <andreas.hoelzlwimmer@fh-hagenberg.at>
 //
 #include "zmsg.hpp"
+#include <bitcoin/bitcoin.hpp>
+#include <obelisk/zmq_message.hpp>
 
 #include <stdint.h>
 #include <vector>
@@ -97,6 +99,45 @@ void s_queue_purge(std::vector<worker_t>& queue)
     }
 }
 
+bc::data_chunk encode_uuid(const bc::data_chunk& data)
+{
+    static char hex_char[] = "0123456789ABCDEF";
+    BITCOIN_ASSERT(data.size() == 17);
+    BITCOIN_ASSERT(data[0] == 0x00);
+    bc::data_chunk uuid(33);
+    uuid[0] = '@';
+    for (size_t i = 0; i < 16; ++i)
+    {
+        uuid[i * 2 + 1] = hex_char[data[i + 1] >> 4];
+        uuid[i * 2 + 2] = hex_char[data[i + 1] & 15];
+    }
+    return uuid;
+}
+
+
+bc::data_chunk decode_uuid(const std::string& uuid)
+{
+    static char hex_to_bin[128] = {
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /* */
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /* */
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /* */
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1, /* 0..9 */
+        -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1, /* A..F */
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /* */
+        -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1, /* a..f */
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1  /* */
+    };
+    BITCOIN_ASSERT(uuid.size() == 33);
+    BITCOIN_ASSERT(uuid[0] == '@');
+    bc::data_chunk data(17);
+    data[0] = 0x00;
+    for (size_t i = 0; i < 16; ++i)
+        data[i + 1] =
+            (hex_to_bin[uuid[i * 2 + 1] & 127] << 4) +
+               (hex_to_bin[uuid[i * 2 + 2] & 127]);
+    return data;
+}
+
 int main(int argc, char** argv)
 {
     s_version_assert(2, 1);
@@ -169,10 +210,20 @@ int main(int argc, char** argv)
         if (items [1].revents & ZMQ_POLLIN)
         {
             // Now get next client request, route to next worker
-            zmsg msg(frontend);
-            std::string identity = s_worker_dequeue(queue);
-            msg.push_front((char*)identity.c_str());
-            msg.send(backend);
+            std::string worker_identity = s_worker_dequeue(queue);
+
+            zmq_message msg_in;
+            msg_in.recv(frontend);
+            const bc::data_stack& in_parts = msg_in.parts();
+            BITCOIN_ASSERT(in_parts.size() == 6);
+            // First item should be client's identity
+            BITCOIN_ASSERT(in_parts[0].size() == 17);
+
+            zmq_message msg_out;
+            msg_out.append(decode_uuid(worker_identity));
+            for (const bc::data_chunk& part: in_parts)
+                msg_out.append(part);
+            msg_out.send(backend);
         }
 
         //  Send heartbeats to idle workers if it's time

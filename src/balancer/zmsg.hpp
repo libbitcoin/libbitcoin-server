@@ -89,6 +89,36 @@ public:
        }
    }
 
+   bool recv2(zmq::socket_t & socket) {
+      clear();
+      while(1) {
+         zmq::message_t message(0);
+         try {
+            if (!socket.recv(&message, 0)) {
+               return false;
+            }
+         } catch (zmq::error_t error) {
+            std::cout << "E: " << error.what() << std::endl;
+            return false;
+         }
+         ustring data;
+         data.resize(message.size());
+         unsigned char* msg_begin = reinterpret_cast<unsigned char*>(message.data());
+         std::copy(msg_begin, msg_begin + message.size(), data.begin());
+         //std::cerr << "recv: \"" << (unsigned char*) message.data() << "\", size " << message.size() << std::endl;
+         //bc::data_chunk rdata(msg_begin, msg_begin + message.size());
+         //std::cout << "recv: " << bc::encode_hex(rdata) << std::endl;
+         m_part_data.push_back(data);
+         int64_t more = 0;
+         size_t more_size = sizeof(more);
+         socket.getsockopt(ZMQ_RCVMORE, &more, &more_size);
+         if (!more) {
+            break;
+         }
+      }
+      return true;
+   }
+
    bool recv(zmq::socket_t & socket) {
       clear();
       while(1) {
@@ -289,26 +319,16 @@ public:
 
    void dump()
    {
-      std::cerr << "--------------------------------------" << std::endl;
+      std::cerr << "DUMP ---------------------------------" << std::endl;
       for (unsigned int part_nbr = 0; part_nbr < m_part_data.size(); part_nbr++) {
-          ustring data = m_part_data [part_nbr];
-
-          // Dump the message as text or binary
-          int is_text = 1;
-          for (unsigned int char_nbr = 0; char_nbr < data.size(); char_nbr++)
-              if (data [char_nbr] < 32 || data [char_nbr] > 127)
-                  is_text = 0;
-
-          std::cerr << "[" << std::setw(3) << std::setfill('0') << (int) data.size() << "] ";
-          for (unsigned int char_nbr = 0; char_nbr < data.size(); char_nbr++) {
-              if (is_text) {
-                  std::cerr << (char) data [char_nbr];
-              } else {
-                  std::cerr << std::hex << std::setw(2) << std::setfill('0') << (short int) data [char_nbr];
-              }
-          }
-          std::cerr << std::endl;
+        std::stringstream ss;
+        ss << std::hex;
+        ustring data = m_part_data [part_nbr];
+        for (int val: data)
+            ss << std::setw(2) << std::setfill('0') << val;
+          std::cerr << ss.str() << std::endl;
       }
+      std::cerr << "--------------------------------------" << std::endl;
    }
 
    static int
@@ -391,7 +411,7 @@ public:
       return 0;
    }
 
-private:
+//private:
    std::vector<ustring> m_part_data;
 };
 
