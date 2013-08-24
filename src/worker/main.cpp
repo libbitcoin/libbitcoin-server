@@ -12,15 +12,6 @@ using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-void stop_worker(bool& stopped, const std::string& stop_secret,
-    const incoming_message& request)
-{
-    const data_chunk& data = request.data();
-    std::string user_secret(data.begin(), data.end());
-    if (user_secret == stop_secret)
-        stopped = true;
-}
-
 int main(int argc, char** argv)
 {
     config_map_type config;
@@ -59,16 +50,12 @@ int main(int argc, char** argv)
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
     attach("transaction_pool.validate", transaction_pool_validate);
-    // Method to stop the worker over the network.
-    bool stopped = false;
-    const std::string stop_secret = config["stop-secret"];
-    worker.attach("stop",
-        std::bind(stop_worker, std::ref(stopped), stop_secret, _1));
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.
     if (!node.start(config))
         return 1;
     echo() << "Node started.";
+    bool stopped = false;
     std::thread thr([&stopped]()
         {
             while (true)

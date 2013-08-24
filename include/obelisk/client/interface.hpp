@@ -49,12 +49,13 @@ public:
     fullnode_interface(const fullnode_interface&) = delete;
     void operator=(const fullnode_interface&) = delete;
 
+    void update();
+
     bool subscribe_blocks(const std::string& connection,
         subscriber_part::block_notify_callback notify_block);
     bool subscribe_transactions(const std::string& connection,
         subscriber_part::transaction_notify_callback notify_tx);
-    void update();
-    void stop(const std::string& secret);
+
     blockchain_interface blockchain;
     transaction_pool_interface transaction_pool;
 

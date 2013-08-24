@@ -149,6 +149,12 @@ fullnode_interface::fullnode_interface(const std::string& connection)
 {
 }
 
+void fullnode_interface::update()
+{
+    backend_.update();
+    subscriber_.update();
+}
+
 bool fullnode_interface::subscribe_blocks(const std::string& connection,
     subscriber_part::block_notify_callback notify_block)
 {
@@ -158,19 +164,6 @@ bool fullnode_interface::subscribe_transactions(const std::string& connection,
     subscriber_part::transaction_notify_callback notify_tx)
 {
     return subscriber_.subscribe_transactions(connection, notify_tx);
-}
-
-void fullnode_interface::update()
-{
-    backend_.update();
-    subscriber_.update();
-}
-
-void fullnode_interface::stop(const std::string& secret)
-{
-    bc::data_chunk data(secret.begin(), secret.end());
-    outgoing_message message({}, "stop", data);
-    backend_.send(message);
 }
 
 void fullnode_interface::fetch_history(const payment_address& address,
