@@ -169,17 +169,17 @@ void fullnode_interface::update()
 void fullnode_interface::stop(const std::string& secret)
 {
     bc::data_chunk data(secret.begin(), secret.end());
-    outgoing_message message("stop", data);
+    outgoing_message message({}, "stop", data);
     backend_.send(message);
 }
 
 void fullnode_interface::fetch_history(const payment_address& address,
     bc::blockchain::fetch_handler_history handle_fetch,
-    size_t from_height)
+    size_t from_height, const data_chunk& worker_uuid)
 {
     data_chunk data;
     wrap_fetch_history_args(data, address, from_height);
     backend_.request("fetch_history", data,
-        std::bind(receive_history_result, _1, handle_fetch));
+        std::bind(receive_history_result, _1, handle_fetch), worker_uuid);
 }
 

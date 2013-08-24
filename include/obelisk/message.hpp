@@ -27,7 +27,10 @@ private:
 class outgoing_message
 {
 public:
-    outgoing_message(const std::string& command, const bc::data_chunk& data);
+    // Empty dest = unspecified destination.
+    outgoing_message(
+        const bc::data_chunk& dest, const std::string& command,
+        const bc::data_chunk& data);
     outgoing_message(
         const incoming_message& request, const bc::data_chunk& data);
     // Default constructor provided for containers and copying.

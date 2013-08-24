@@ -60,7 +60,8 @@ public:
 
     void fetch_history(const bc::payment_address& address,
         bc::blockchain::fetch_handler_history handle_fetch,
-        size_t from_height=0);
+        size_t from_height=0,
+        const bc::data_chunk& worker_uuid=bc::data_chunk());
 
 private:
     zmq::context_t context_;

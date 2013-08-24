@@ -80,8 +80,10 @@ outgoing_message::outgoing_message()
 }
 
 outgoing_message::outgoing_message(
-    const std::string& command, const data_chunk& data)
-  : command_(command), id_(rand()), data_(data)
+    const data_chunk& dest, const std::string& command,
+    const data_chunk& data)
+  : dest_(dest), command_(command),
+    id_(rand()), data_(data)
 {
 }
 

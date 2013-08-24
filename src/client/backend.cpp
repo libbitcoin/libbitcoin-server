@@ -21,12 +21,13 @@ backend_cluster::backend_cluster(
     socket_.setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
 }
 
-void backend_cluster::request(const std::string& command,
-    const data_chunk& data, response_handler handle)
+void backend_cluster::request(
+    const std::string& command, const data_chunk& data,
+    response_handler handle, const data_chunk& dest)
 {
     request_container request{
         microsec_clock::universal_time(), request_timeout_init,
-        request_retries, outgoing_message(command, data)};
+        request_retries, outgoing_message(dest, command, data)};
     handlers_[request.message.id()] = handle;
     retry_queue_[request.message.id()] = request;
     send(request.message);

@@ -15,8 +15,9 @@ public:
 
     backend_cluster(zmq::context_t& context, const std::string& connection);
 
-    void request(const std::string& command,
-        const bc::data_chunk& data, response_handler handle);
+    void request(
+        const std::string& command, const bc::data_chunk& data,
+        response_handler handle, const bc::data_chunk& dest=bc::data_chunk());
     void send(const outgoing_message& message);
     void update();
 
