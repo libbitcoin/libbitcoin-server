@@ -255,8 +255,10 @@ int main(int argc, char** argv)
         {
             for (auto it = queue.begin(); it < queue.end(); ++it)
             {
-                zmsg msg("HEARTBEAT");
-                msg.wrap(it->identity.c_str(), NULL);
+                zmq_message msg;
+                msg.append(decode_uuid(it->identity));
+                std::string command = "HEARTBEAT";
+                msg.append(bc::data_chunk(command.begin(), command.end()));
                 msg.send(backend);
             }
             heartbeat_at = s_clock() + HEARTBEAT_INTERVAL;

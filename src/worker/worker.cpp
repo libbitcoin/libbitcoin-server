@@ -85,6 +85,7 @@ void request_worker::update()
         }
         else if (request.command() == "HEARTBEAT")
         {
+            log_debug(LOG_WORKER) << "Received heartbeat";
             last_heartbeat_ = now();
         }
         else
@@ -111,7 +112,7 @@ void request_worker::update()
     if (now() > heartbeat_at_)
     {
         heartbeat_at_ = now() + heartbeat_interval;
-        log_info(LOG_WORKER) << "worker heartbeat";
+        log_debug(LOG_WORKER) << "Sending heartbeat";
         send_string(*socket_, "HEARTBEAT");
     }
 }
