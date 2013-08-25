@@ -21,7 +21,6 @@ public:
     void request(
         const std::string& command, const bc::data_chunk& data,
         response_handler handle, const worker_uuid& dest=worker_uuid());
-    void send(const outgoing_message& message);
     void update();
 
 private:
@@ -38,6 +37,7 @@ private:
     typedef std::unordered_map<uint32_t, request_container>
         request_retry_queue;
 
+    void send(const outgoing_message& message);
     bool process(const incoming_message& response);
     void resend_expired();
 

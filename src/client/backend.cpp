@@ -85,7 +85,7 @@ void backend_cluster::resend_expired()
         --request.retries_left;
         // Resend request again.
         request.timestamp = now;
-        request.message.send(socket_);
+        send(request.message);
     }
 }
 
