@@ -48,7 +48,7 @@ typedef struct {
 
 //  Insert worker at end of queue, reset expiry
 //  Worker must not already be in queue
-void s_worker_append(std::vector<worker_t>& queue, std::string& identity)
+void s_worker_append(std::vector<worker_t>& queue, const std::string& identity)
 {
     bool found = false;
     for (auto it = queue.begin(); it < queue.end(); ++it)
@@ -70,7 +70,7 @@ void s_worker_append(std::vector<worker_t>& queue, std::string& identity)
 }
 
 //  Remove worker from queue, if present
-void s_worker_delete(std::vector<worker_t>& queue, std::string& identity)
+void s_worker_delete(std::vector<worker_t>& queue, const std::string& identity)
 {
     for (auto it = queue.begin(); it < queue.end(); ++it)
     {
@@ -83,7 +83,7 @@ void s_worker_delete(std::vector<worker_t>& queue, std::string& identity)
 }
 
 //  Reset worker expiry, worker must be present
-void s_worker_refresh(std::vector<worker_t>& queue, std::string& identity)
+void s_worker_refresh(std::vector<worker_t>& queue, const std::string& identity)
 {
     bool found = false;
     for (auto it = queue.begin(); it < queue.end(); ++it)
@@ -224,8 +224,64 @@ void forward_request(zmq::socket_t& frontend, zmq::socket_t& backend,
     msg_out.send(backend);
 }
 
-void passback_response(zmq::socket_t& backend, zmq::socket_t& frontend)
+void handle_control_message(const data_stack& in_parts,
+    worker_queue& queue, const std::string& identity)
 {
+    std::string command(in_parts[1].begin(), in_parts[1].end());
+    log_info(LOG_BALANCER) << "command: " << command;
+    if (command == "READY")
+    {
+        s_worker_delete(queue, identity);
+        s_worker_append(queue, identity);
+    }
+    else if (command == "HEARTBEAT")
+    {
+        s_worker_refresh(queue, identity);
+    }
+    else
+        log_error(LOG_BALANCER)
+            << "Invalid command from " << identity;
+}
+
+void passback_response(zmq::socket_t& backend, zmq::socket_t& frontend,
+    worker_queue& queue)
+{
+    zmq_message msg_in;
+    msg_in.recv(backend);
+    const data_stack& in_parts = msg_in.parts();
+    BITCOIN_ASSERT(in_parts.size() == 2 || in_parts.size() == 6);
+    std::string identity = encode_uuid(in_parts[0]);
+
+    // Return reply to client if it's not a control message
+    if (in_parts.size() == 2)
+        return handle_control_message(in_parts, queue, identity);
+
+    // We now deconstruct the request message to the frontend
+    // which looks like:
+    //   [WORKER UUID]
+    //   [CLIENT UUID]
+    //   ...
+    // And create a new message that looks like:
+    //   [CLIENT UUID]
+    //   [WORKER UUID]
+    //   ...
+    // Before sending it to the backend.
+
+    // This is so the client will know which worker
+    // responded to their request.
+
+    BITCOIN_ASSERT(in_parts.size() == 6);
+    zmq_message msg_out;
+    BITCOIN_ASSERT(in_parts[1].size() == 17);
+    msg_out.append(in_parts[1]);
+    BITCOIN_ASSERT(in_parts[0].size() == 17);
+    msg_out.append(in_parts[0]);
+    for (auto it = in_parts.begin() + 2; it != in_parts.end(); ++it)
+        msg_out.append(*it);
+    BITCOIN_ASSERT(in_parts.size() == msg_out.parts().size());
+    msg_out.send(frontend);
+    // Add worker back to available pool of workers.
+    s_worker_append(queue, identity);
 }
 
 int main(int argc, char** argv)
@@ -269,61 +325,7 @@ int main(int argc, char** argv)
 
         // Handle worker activity on backend
         if (items [0].revents & ZMQ_POLLIN)
-        {
-            zmq_message msg_in;
-            msg_in.recv(backend);
-            const data_stack& in_parts = msg_in.parts();
-            BITCOIN_ASSERT(in_parts.size() == 2 || in_parts.size() == 6);
-            std::string identity = encode_uuid(in_parts[0]);
-
-            // Return reply to client if it's not a control message
-            if (in_parts.size() == 2)
-            {
-                std::string command(in_parts[1].begin(), in_parts[1].end());
-                log_info(LOG_BALANCER) << "command: " << command;
-                if (command == "READY")
-                {
-                    s_worker_delete(queue, identity);
-                    s_worker_append(queue, identity);
-                }
-                else if (command == "HEARTBEAT")
-                {
-                    s_worker_refresh(queue, identity);
-                }
-                else
-                    log_error(LOG_BALANCER)
-                        << "Invalid command from " << identity;
-            }
-            else if (in_parts.size() == 6)
-            {
-                // We now deconstruct the request message to the frontend
-                // which looks like:
-                //   [WORKER UUID]
-                //   [CLIENT UUID]
-                //   ...
-                // And create a new message that looks like:
-                //   [CLIENT UUID]
-                //   [WORKER UUID]
-                //   ...
-                // Before sending it to the backend.
-
-                // This is so the client will know which worker
-                // responded to their request.
-
-                BITCOIN_ASSERT(in_parts.size() == 6);
-                zmq_message msg_out;
-                BITCOIN_ASSERT(in_parts[1].size() == 17);
-                msg_out.append(in_parts[1]);
-                BITCOIN_ASSERT(in_parts[0].size() == 17);
-                msg_out.append(in_parts[0]);
-                for (auto it = in_parts.begin() + 2; it != in_parts.end(); ++it)
-                    msg_out.append(*it);
-                BITCOIN_ASSERT(in_parts.size() == msg_out.parts().size());
-                msg_out.send(frontend);
-                // Add worker back to available pool of workers.
-                s_worker_append(queue, identity);
-            }
-        }
+            passback_response(backend, frontend, queue);
         if (items [1].revents & ZMQ_POLLIN)
             forward_request(frontend, backend, queue);
 
