@@ -8,6 +8,10 @@
 
 #include "config.hpp"
 
+#define LOG_BALANCER "balancer"
+
+using namespace bc;
+
 static void s_version_assert(int want_major, int want_minor)
 {
     int major, minor, patch;
@@ -119,7 +123,7 @@ void s_queue_purge(std::vector<worker_t>& queue)
     }
 }
 
-std::string encode_uuid(const bc::data_chunk& data)
+std::string encode_uuid(const data_chunk& data)
 {
     static char hex_char[] = "0123456789ABCDEF";
     BITCOIN_ASSERT(data.size() == 17);
@@ -135,7 +139,7 @@ std::string encode_uuid(const bc::data_chunk& data)
 }
 
 
-bc::data_chunk decode_uuid(const std::string& uuid)
+data_chunk decode_uuid(const std::string& uuid)
 {
     static char hex_to_bin[128] = {
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /* */
@@ -149,13 +153,79 @@ bc::data_chunk decode_uuid(const std::string& uuid)
     };
     BITCOIN_ASSERT(uuid.size() == 33);
     BITCOIN_ASSERT(uuid[0] == '@');
-    bc::data_chunk data(17);
+    data_chunk data(17);
     data[0] = 0x00;
     for (size_t i = 0; i < 16; ++i)
         data[i + 1] =
             (hex_to_bin[uuid[i * 2 + 1] & 127] << 4) +
                (hex_to_bin[uuid[i * 2 + 2] & 127]);
     return data;
+}
+
+typedef std::vector<worker_t> worker_queue;
+
+void forward_request(zmq::socket_t& frontend, zmq::socket_t& backend,
+    worker_queue& queue)
+{
+    // Get client request.
+    zmq_message msg_in;
+    msg_in.recv(frontend);
+    const data_stack& in_parts = msg_in.parts();
+
+    if (in_parts.size() != 6)
+    {
+        log_warning(LOG_BALANCER) << "Wrong sized message";
+        return;
+    }
+    // First item is client's identity.
+    if (in_parts[0].size() != 17)
+    {
+        log_warning(LOG_BALANCER) << "Client UUID malformed";
+        return;
+    }
+    // Second item is worker identity or nothing.
+    if (in_parts[1].size() != 17 && !in_parts[1].empty())
+    {
+        log_warning(LOG_BALANCER) << "Worker UUID malformed";
+        return;
+    }
+
+    // We now deconstruct the request message to the backend
+    // which looks like:
+    //   [CLIENT UUID]
+    //   [WORKER UUID]
+    //   ...
+    // And create a new message that looks like:
+    //   [WORKER UUID]
+    //   [CLIENT UUID]
+    //   ...
+    // Before sending it to the worker.
+
+    // This is so the client can specify a worker to send their
+    // request specifically to.
+
+    zmq_message msg_out;
+    // If second frame is nothing, then we select a random worker.
+    if (in_parts[1].empty())
+    {
+        // Route to next worker
+        std::string worker_identity = s_worker_dequeue(queue);
+        msg_out.append(decode_uuid(worker_identity));
+    }
+    else
+    {
+        // Route to client's preferred worker.
+        msg_out.append(in_parts[1]);
+    }
+    msg_out.append(in_parts[0]);
+    // Copy the remaining data.
+    for (auto it = in_parts.begin() + 2; it != in_parts.end(); ++it)
+        msg_out.append(*it);
+    msg_out.send(backend);
+}
+
+void passback_response(zmq::socket_t& backend, zmq::socket_t& frontend)
+{
 }
 
 int main(int argc, char** argv)
@@ -180,7 +250,7 @@ int main(int argc, char** argv)
     backend.bind(config["backend"].c_str());
 
     // Queue of available workers
-    std::vector<worker_t> queue;
+    worker_queue queue;
     // Send out heartbeats at regular intervals
     int64_t heartbeat_at = s_clock() + HEARTBEAT_INTERVAL;
 
@@ -202,7 +272,7 @@ int main(int argc, char** argv)
         {
             zmq_message msg_in;
             msg_in.recv(backend);
-            const bc::data_stack& in_parts = msg_in.parts();
+            const data_stack& in_parts = msg_in.parts();
             BITCOIN_ASSERT(in_parts.size() == 2 || in_parts.size() == 6);
             std::string identity = encode_uuid(in_parts[0]);
 
@@ -210,7 +280,7 @@ int main(int argc, char** argv)
             if (in_parts.size() == 2)
             {
                 std::string command(in_parts[1].begin(), in_parts[1].end());
-                std::cout << "command: " << command << std::endl;
+                log_info(LOG_BALANCER) << "command: " << command;
                 if (command == "READY")
                 {
                     s_worker_delete(queue, identity);
@@ -221,8 +291,8 @@ int main(int argc, char** argv)
                     s_worker_refresh(queue, identity);
                 }
                 else
-                    std::cerr << "Error: invalid command '" << command
-                        << "' from " << identity << std::endl;
+                    log_error(LOG_BALANCER)
+                        << "Invalid command from " << identity;
             }
             else if (in_parts.size() == 6)
             {
@@ -253,56 +323,9 @@ int main(int argc, char** argv)
                 // Add worker back to available pool of workers.
                 s_worker_append(queue, identity);
             }
-            else
-                std::cerr << "Error: invalid packet for frontend" << std::endl;
         }
         if (items [1].revents & ZMQ_POLLIN)
-        {
-            // Get client request.
-            zmq_message msg_in;
-            msg_in.recv(frontend);
-            const bc::data_stack& in_parts = msg_in.parts();
-
-            // TODO: Shouldn't be in production version.
-            BITCOIN_ASSERT(in_parts.size() == 6);
-            // First item is client's identity.
-            BITCOIN_ASSERT(in_parts[0].size() == 17);
-            // Second item is worker identity or nothing.
-            BITCOIN_ASSERT(in_parts[1].size() == 17 || in_parts[1].empty());
-
-            // We now deconstruct the request message to the backend
-            // which looks like:
-            //   [CLIENT UUID]
-            //   [WORKER UUID]
-            //   ...
-            // And create a new message that looks like:
-            //   [WORKER UUID]
-            //   [CLIENT UUID]
-            //   ...
-            // Before sending it to the worker.
-
-            // This is so the client can specify a worker to send their
-            // request specifically to.
-
-            zmq_message msg_out;
-            // If second frame is nothing, then we select a random worker.
-            if (in_parts[1].empty())
-            {
-                // Route to next worker
-                std::string worker_identity = s_worker_dequeue(queue);
-                msg_out.append(decode_uuid(worker_identity));
-            }
-            else
-            {
-                // Route to client's preferred worker.
-                msg_out.append(in_parts[1]);
-            }
-            msg_out.append(in_parts[0]);
-            // Copy the remaining data.
-            for (auto it = in_parts.begin() + 2; it != in_parts.end(); ++it)
-                msg_out.append(*it);
-            msg_out.send(backend);
-        }
+            forward_request(frontend, backend, queue);
 
         //  Send heartbeats to idle workers if it's time
         if (s_clock() > heartbeat_at)
@@ -312,7 +335,7 @@ int main(int argc, char** argv)
                 zmq_message msg;
                 msg.append(decode_uuid(it->identity));
                 std::string command = "HEARTBEAT";
-                msg.append(bc::data_chunk(command.begin(), command.end()));
+                msg.append(data_chunk(command.begin(), command.end()));
                 msg.send(backend);
             }
             heartbeat_at = s_clock() + HEARTBEAT_INTERVAL;
