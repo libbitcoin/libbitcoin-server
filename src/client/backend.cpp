@@ -23,7 +23,7 @@ backend_cluster::backend_cluster(
 
 void backend_cluster::request(
     const std::string& command, const data_chunk& data,
-    response_handler handle, const data_chunk& dest)
+    response_handler handle, const worker_uuid& dest)
 {
     request_container request{
         microsec_clock::universal_time(), request_timeout_init,
@@ -60,7 +60,7 @@ bool backend_cluster::process(const incoming_message& response)
     // Unknown response. Not in our map.
     if (handle_it == handlers_.end())
         return false;
-    handle_it->second(response.data());
+    handle_it->second(response.data(), response.origin());
     handlers_.erase(handle_it);
     size_t n_erased = retry_queue_.erase(response.id());
     BITCOIN_ASSERT(n_erased == 1);

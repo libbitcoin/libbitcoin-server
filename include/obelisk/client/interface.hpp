@@ -40,8 +40,6 @@ private:
     transaction_notify_callback notify_tx_;
 };
 
-typedef bc::data_chunk worker_uuid;
-
 class address_subscriber
 {
 public:

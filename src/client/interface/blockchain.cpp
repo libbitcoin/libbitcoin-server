@@ -5,6 +5,7 @@
 
 using namespace bc;
 using std::placeholders::_1;
+using std::placeholders::_2;
 
 blockchain_interface::blockchain_interface(backend_cluster& backend)
   : backend_(backend)
@@ -16,8 +17,16 @@ void blockchain_interface::fetch_history(const payment_address& address,
 {
     data_chunk data;
     wrap_fetch_history_args(data, address, from_height);
+    // Use this to discard the worker_uuid
+    auto handle_fetch_proxy =
+        [handle_fetch](const std::error_code& ec,
+            const bc::blockchain::history_list& history,
+            const worker_uuid&)
+        {
+            handle_fetch(ec, history);
+        };
     backend_.request("blockchain.fetch_history", data,
-        std::bind(receive_history_result, _1, handle_fetch));
+        std::bind(receive_history_result, _1, _2, handle_fetch_proxy));
 }
 
 void wrap_fetch_transaction(const data_chunk& data,

@@ -8,16 +8,19 @@
 #include <zmq.hpp>
 #include <obelisk/message.hpp>
 
+typedef bc::data_chunk worker_uuid;
+
 class backend_cluster
 {
 public:
-    typedef std::function<void (const bc::data_chunk&)> response_handler;
+    typedef std::function<void (
+        const bc::data_chunk&, const worker_uuid&)> response_handler;
 
     backend_cluster(zmq::context_t& context, const std::string& connection);
 
     void request(
         const std::string& command, const bc::data_chunk& data,
-        response_handler handle, const bc::data_chunk& dest=bc::data_chunk());
+        response_handler handle, const worker_uuid& dest=worker_uuid());
     void send(const outgoing_message& message);
     void update();
 

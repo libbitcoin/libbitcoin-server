@@ -13,8 +13,8 @@ void wrap_fetch_history_args(data_chunk& data,
     BITCOIN_ASSERT(serial.iterator() == data.end());
 }
 
-void receive_history_result(const data_chunk& data,
-    blockchain::fetch_handler_history handle_fetch)
+void receive_history_result(const data_chunk& data, const worker_uuid& worker,
+    address_subscriber::fetch_handler_history handle_fetch)
 {
     std::error_code ec;
     auto deserial = make_deserializer(data.begin(), data.end());
@@ -42,6 +42,6 @@ void receive_history_result(const data_chunk& data,
         row.spend_height = deserial.read_4_bytes();
     }
     BITCOIN_ASSERT(deserial.iterator() == data.end());
-    handle_fetch(ec, history);
+    handle_fetch(ec, history, worker);
 }
 

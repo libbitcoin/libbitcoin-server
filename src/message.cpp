@@ -23,7 +23,7 @@ bool incoming_message::recv(zmq::socket_t& socket)
         return false;
     auto it = parts.begin();
     // [ DESTINATION ]
-    dest_ = *it;
+    origin_ = *it;
     ++it;
     // [ COMMAND ]
     const data_chunk& raw_command = *it;
@@ -53,9 +53,9 @@ bool incoming_message::is_signal() const
     return id_ == std::numeric_limits<uint32_t>::max();
 }
 
-const bc::data_chunk incoming_message::dest() const
+const bc::data_chunk incoming_message::origin() const
 {
-    return dest_;
+    return origin_;
 }
 const std::string& incoming_message::command() const
 {
@@ -84,7 +84,7 @@ outgoing_message::outgoing_message(
 
 outgoing_message::outgoing_message(
     const incoming_message& request, const data_chunk& data)
-  : dest_(request.dest()), command_(request.command()),
+  : dest_(request.origin()), command_(request.command()),
     id_(request.id()), data_(data)
 {
 }
