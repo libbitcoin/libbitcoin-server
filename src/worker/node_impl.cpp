@@ -75,8 +75,9 @@ node_impl::node_impl()
 
 bool node_impl::start(config_map_type& config)
 {
-    outfile_.open(config["output-file"]);
-    errfile_.open(config["error-file"].c_str());
+    auto file_mode = std::ofstream::out | std::ofstream::app;
+    outfile_.open(config["output-file"], file_mode);
+    errfile_.open(config["error-file"], file_mode);
     log_debug().set_output_function(
         std::bind(output_file, std::ref(outfile_), _1, _2, _3));
     log_info().set_output_function(

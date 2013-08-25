@@ -19,16 +19,11 @@ bool incoming_message::recv(zmq::socket_t& socket)
         command_ = std::string(parts[0].begin(), parts[0].end());
         return true;
     }
-    else if (parts.size() != 5 && parts.size() != 6)
+    else if (parts.size() != 5)
         return false;
     auto it = parts.begin();
-    // Read destination if exists.
-    if (parts.size() == 6)
-    {
-        dest_ = *it;
-        ++it;
-    }
-    // Discard empty frame.
+    // [ DESTINATION ]
+    dest_ = *it;
     ++it;
     // [ COMMAND ]
     const data_chunk& raw_command = *it;
@@ -98,7 +93,6 @@ void outgoing_message::send(zmq::socket_t& socket) const
 {
     zmq_message message;
     message.append(dest_);
-    message.append(data_chunk{0x00});
     // [ COMMAND ]
     // [ ID ]
     // [ DATA ]
