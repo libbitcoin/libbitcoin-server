@@ -40,8 +40,10 @@ private:
 
     zmq::context_t& context_;
     zmq::socket_t socket_;
+    // Requests
     response_handler_map handlers_;
     request_retry_queue retry_queue_;
+    // Subscriptions
 };
 
 #endif

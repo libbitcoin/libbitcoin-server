@@ -40,6 +40,38 @@ private:
     transaction_notify_callback notify_tx_;
 };
 
+typedef bc::data_chunk worker_uuid;
+
+class address_subscriber
+{
+public:
+    typedef std::function<void (
+        const std::error_code&, const bc::blockchain::history_list&,
+        const worker_uuid&)> fetch_handler_history;
+
+    typedef std::function<void (
+        const std::error_code&, size_t, const bc::hash_digest&,
+        const bc::transaction_type&)> update_handler;
+
+    typedef std::function<void (const std::error_code&)> subscribe_handler;
+
+    address_subscriber(backend_cluster& backend);
+
+    // Non-copyable
+    address_subscriber(const address_subscriber&) = delete;
+    void operator=(const address_subscriber&) = delete;
+
+    void fetch_history(const bc::payment_address& address,
+        fetch_handler_history handle_fetch, size_t from_height=0);
+
+    void subscribe(const bc::payment_address& address,
+        update_handler handle_update, subscribe_handler handle_subscribe,
+        const worker_uuid& worker=worker_uuid());
+
+private:
+    backend_cluster& backend_;
+};
+
 class fullnode_interface
 {
 public:
@@ -59,10 +91,7 @@ public:
     blockchain_interface blockchain;
     transaction_pool_interface transaction_pool;
 
-    void fetch_history(const bc::payment_address& address,
-        bc::blockchain::fetch_handler_history handle_fetch,
-        size_t from_height=0,
-        const bc::data_chunk& worker_uuid=bc::data_chunk());
+    address_subscriber address;
 
 private:
     zmq::context_t context_;

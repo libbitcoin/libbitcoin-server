@@ -142,9 +142,36 @@ void subscriber_part::recv_block()
     notify_block_(height, blk);
 }
 
+address_subscriber::address_subscriber(backend_cluster& backend)
+  : backend_(backend)
+{
+}
+
+void address_subscriber::fetch_history(const payment_address& address,
+    fetch_handler_history handle_fetch, size_t from_height)
+{
+    data_chunk data;
+    wrap_fetch_history_args(data, address, from_height);
+    // TODO: worker is empty for now.
+    auto handle_fetch_proxy = [handle_fetch](
+            const std::error_code& ec, const blockchain::history_list& history)
+        {
+            handle_fetch(ec, history, worker_uuid());
+        };
+    backend_.request("fetch_history", data,
+        std::bind(receive_history_result, _1, handle_fetch_proxy));
+}
+
+void address_subscriber::subscribe(const bc::payment_address& address,
+    update_handler handle_update, subscribe_handler handle_subscribe,
+    const worker_uuid& worker)
+{
+    // Unimplemented...
+}
+
 fullnode_interface::fullnode_interface(const std::string& connection)
   : context_(1), backend_(context_, connection),
-    blockchain(backend_), transaction_pool(backend_),
+    blockchain(backend_), transaction_pool(backend_), address(backend_),
     subscriber_(context_)
 {
 }
@@ -164,15 +191,5 @@ bool fullnode_interface::subscribe_transactions(const std::string& connection,
     subscriber_part::transaction_notify_callback notify_tx)
 {
     return subscriber_.subscribe_transactions(connection, notify_tx);
-}
-
-void fullnode_interface::fetch_history(const payment_address& address,
-    bc::blockchain::fetch_handler_history handle_fetch,
-    size_t from_height, const data_chunk& worker_uuid)
-{
-    data_chunk data;
-    wrap_fetch_history_args(data, address, from_height);
-    backend_.request("fetch_history", data,
-        std::bind(receive_history_result, _1, handle_fetch), worker_uuid);
 }
 
