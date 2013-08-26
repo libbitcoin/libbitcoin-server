@@ -6,7 +6,6 @@
 
 using namespace bc;
 using std::placeholders::_1;
-using std::placeholders::_2;
 
 #define LOG_SUBSCRIBER "subscriber"
 
@@ -149,12 +148,12 @@ address_subscriber::address_subscriber(backend_cluster& backend)
 }
 
 void address_subscriber::fetch_history(const payment_address& address,
-    fetch_handler_history handle_fetch, size_t from_height)
+    blockchain::fetch_handler_history handle_fetch, size_t from_height)
 {
     data_chunk data;
     wrap_fetch_history_args(data, address, from_height);
     backend_.request("fetch_history", data,
-        std::bind(receive_history_result, _1, _2, handle_fetch));
+        std::bind(receive_history_result, _1, handle_fetch));
 }
 
 void address_subscriber::subscribe(const bc::payment_address& address,

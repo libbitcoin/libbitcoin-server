@@ -44,14 +44,11 @@ class address_subscriber
 {
 public:
     typedef std::function<void (
-        const std::error_code&, const bc::blockchain::history_list&,
-        const worker_uuid&)> fetch_handler_history;
-
-    typedef std::function<void (
         const std::error_code&, size_t, const bc::hash_digest&,
         const bc::transaction_type&)> update_handler;
 
-    typedef std::function<void (const std::error_code&)> subscribe_handler;
+    typedef std::function<void (
+        const std::error_code&, const worker_uuid&)> subscribe_handler;
 
     address_subscriber(backend_cluster& backend);
 
@@ -60,7 +57,8 @@ public:
     void operator=(const address_subscriber&) = delete;
 
     void fetch_history(const bc::payment_address& address,
-        fetch_handler_history handle_fetch, size_t from_height=0);
+        bc::blockchain::fetch_handler_history handle_fetch,
+        size_t from_height=0);
 
     void subscribe(const bc::payment_address& address,
         update_handler handle_update, subscribe_handler handle_subscribe,

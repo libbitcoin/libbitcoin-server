@@ -38,6 +38,7 @@ private:
         request_retry_queue;
 
     void send(const outgoing_message& message);
+    void receive_incoming();
     bool process(const incoming_message& response);
     void resend_expired();
 

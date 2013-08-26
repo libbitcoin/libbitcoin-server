@@ -44,14 +44,18 @@ void backend_cluster::update()
     zmq::poll(&items[0], 1, 0);
     //  If we got a reply, process it
     if (items[0].revents & ZMQ_POLLIN)
-    {
-        incoming_message response;
-        if (response.recv(socket_))
-            process(response);
-    }
+        receive_incoming();
     // Finally resend any expired requests that we didn't get
     // a response to yet.
     resend_expired();
+}
+
+void backend_cluster::receive_incoming()
+{
+    incoming_message response;
+    if (!response.recv(socket_))
+        return;
+    process(response);
 }
 
 bool backend_cluster::process(const incoming_message& response)
