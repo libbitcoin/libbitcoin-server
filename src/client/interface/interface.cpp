@@ -6,6 +6,7 @@
 
 using namespace bc;
 using std::placeholders::_1;
+using std::placeholders::_2;
 
 #define LOG_SUBSCRIBER "subscriber"
 
@@ -147,20 +148,33 @@ address_subscriber::address_subscriber(backend_cluster& backend)
 {
 }
 
+void address_subscriber::subscribe(const bc::payment_address& address,
+    update_handler handle_update, subscribe_handler handle_subscribe)
+{
+    data_chunk data(1 + short_hash_size);
+    auto serial = make_serializer(data.begin());
+    serial.write_byte(address.version());
+    serial.write_short_hash(address.hash());
+    BITCOIN_ASSERT(serial.iterator() == data.end());
+    backend_.request("address.subscribe", data,
+        std::bind(&address_subscriber::receive_subscribe_result,
+            this, _1, _2, handle_update, handle_subscribe));
+}
+void address_subscriber::receive_subscribe_result(
+    const data_chunk& data, const worker_uuid& worker,
+    update_handler handle_update, subscribe_handler handle_subscribe)
+{
+    handle_subscribe(std::error_code(), worker);
+}
+
 void address_subscriber::fetch_history(const payment_address& address,
-    blockchain::fetch_handler_history handle_fetch, size_t from_height)
+    blockchain::fetch_handler_history handle_fetch,
+    size_t from_height, const worker_uuid& worker)
 {
     data_chunk data;
     wrap_fetch_history_args(data, address, from_height);
-    backend_.request("fetch_history", data,
-        std::bind(receive_history_result, _1, handle_fetch));
-}
-
-void address_subscriber::subscribe(const bc::payment_address& address,
-    update_handler handle_update, subscribe_handler handle_subscribe,
-    const worker_uuid& worker)
-{
-    // Unimplemented...
+    backend_.request("address.fetch_history", data,
+        std::bind(receive_history_result, _1, handle_fetch), worker);
 }
 
 fullnode_interface::fullnode_interface(const std::string& connection)

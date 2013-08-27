@@ -10,7 +10,7 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 publisher::publisher(node_impl& node)
-  : node_(node), context_(1)
+  : context_(1)
 {
     node.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
     node.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));

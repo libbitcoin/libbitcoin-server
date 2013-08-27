@@ -23,7 +23,6 @@ private:
     bool send_blk(uint32_t height, const bc::block_type& blk);
     bool send_tx(const bc::transaction_type& tx);
 
-    node_impl& node_;
     zmq::context_t context_;
     zmq_socket_uniqptr socket_block_, socket_tx_;
 };

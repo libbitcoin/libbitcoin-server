@@ -56,15 +56,19 @@ public:
     address_subscriber(const address_subscriber&) = delete;
     void operator=(const address_subscriber&) = delete;
 
+    // You should generally call subscribe() before fetch_history().
+    void subscribe(const bc::payment_address& address,
+        update_handler handle_update, subscribe_handler handle_subscribe);
+
     void fetch_history(const bc::payment_address& address,
         bc::blockchain::fetch_handler_history handle_fetch,
-        size_t from_height=0);
-
-    void subscribe(const bc::payment_address& address,
-        update_handler handle_update, subscribe_handler handle_subscribe,
-        const worker_uuid& worker=worker_uuid());
+        size_t from_height=0, const worker_uuid& worker=worker_uuid());
 
 private:
+    void receive_subscribe_result(
+        const bc::data_chunk& data, const worker_uuid& worker,
+        update_handler handle_update, subscribe_handler handle_subscribe);
+
     backend_cluster& backend_;
 };
 

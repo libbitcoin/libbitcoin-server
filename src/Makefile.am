@@ -31,6 +31,7 @@ obworker_SOURCES = \
     worker/main.cpp \
     worker/node_impl.cpp \
     worker/publisher.cpp \
+    worker/subscribe_manager.cpp \
     worker/worker.cpp \
     worker/service/fullnode.cpp \
     worker/service/fetch_history.cpp \

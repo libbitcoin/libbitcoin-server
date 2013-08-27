@@ -4,6 +4,7 @@
 #include "worker.hpp"
 #include "node_impl.hpp"
 #include "publisher.hpp"
+#include "subscribe_manager.hpp"
 #include "service/fullnode.hpp"
 #include "service/blockchain.hpp"
 #include "service/transaction_pool.hpp"
@@ -35,6 +36,8 @@ int main(int argc, char** argv)
     publisher publish(node);
     if (!publish.start(config))
         return 1;
+    // Address subscriptions
+    subscribe_manager addr_sub(node);
     // Attach commands
     typedef std::function<void (node_impl&,
         const incoming_message&, zmq_socket_ptr)> basic_command_handler;
@@ -44,7 +47,9 @@ int main(int argc, char** argv)
             worker.attach(command,
                 std::bind(handler, std::ref(node), _1, _2));
         };
-    attach("fetch_history", fullnode_fetch_history);
+    worker.attach("address.subscribe",
+        std::bind(&subscribe_manager::subscribe, &addr_sub, _1, _2));
+    attach("address.fetch_history", fullnode_fetch_history);
     attach("blockchain.fetch_history", blockchain_fetch_history);
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
