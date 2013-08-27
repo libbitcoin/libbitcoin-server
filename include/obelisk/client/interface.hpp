@@ -4,6 +4,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/client/blockchain.hpp>
 #include <obelisk/client/transaction_pool.hpp>
+#include <obelisk/client/protocol.hpp>
 
 class subscriber_part
 {
@@ -90,6 +91,7 @@ public:
 
     blockchain_interface blockchain;
     transaction_pool_interface transaction_pool;
+    protocol_interface protocol;
 
     address_subscriber address;
 

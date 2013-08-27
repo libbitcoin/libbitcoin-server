@@ -8,5 +8,6 @@ obelisk_client_include_HEADERS = \
     client/backend.hpp \
     client/interface.hpp \
     client/blockchain.hpp \
+    client/protocol.hpp \
     client/transaction_pool.hpp
 

@@ -7,6 +7,7 @@
 #include "subscribe_manager.hpp"
 #include "service/fullnode.hpp"
 #include "service/blockchain.hpp"
+#include "service/protocol.hpp"
 #include "service/transaction_pool.hpp"
 
 using namespace bc;
@@ -54,6 +55,7 @@ int main(int argc, char** argv)
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
+    attach("protocol.broadcast_transaction", protocol_broadcast_transaction);
     attach("transaction_pool.validate", transaction_pool_validate);
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.

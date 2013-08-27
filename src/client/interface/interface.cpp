@@ -179,7 +179,8 @@ void address_subscriber::fetch_history(const payment_address& address,
 
 fullnode_interface::fullnode_interface(const std::string& connection)
   : context_(1), backend_(context_, connection),
-    blockchain(backend_), transaction_pool(backend_), address(backend_),
+    blockchain(backend_), transaction_pool(backend_),
+    protocol(backend_), address(backend_),
     subscriber_(context_)
 {
 }
