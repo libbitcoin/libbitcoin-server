@@ -51,7 +51,7 @@ public:
     typedef std::function<void (
         const std::error_code&, const worker_uuid&)> subscribe_handler;
 
-    address_subscriber(backend_cluster& backend);
+    address_subscriber(bc::threadpool& pool, backend_cluster& backend);
 
     // Non-copyable
     address_subscriber(const address_subscriber&) = delete;
@@ -66,7 +66,8 @@ public:
         size_t from_height=0, const worker_uuid& worker=worker_uuid());
 
     // unsubscribe() -> simply remove from subs_ map.
-    // update() -> loop through subscriptions, send renew packets
+
+    void update();
 
 private:
     struct subscription
@@ -81,10 +82,15 @@ private:
 
     void receive_subscribe_result(
         const bc::data_chunk& data, const worker_uuid& worker,
+        const bc::payment_address& address,
         update_handler handle_update, subscribe_handler handle_subscribe);
+    void decode_reply(
+        const bc::data_chunk& data, const worker_uuid& worker,
+        subscribe_handler handle_subscribe);
 
     backend_cluster& backend_;
     // Register subscription. Periodically send renew packets.
+    bc::async_strand strand_;
     subscription_map subs_;
 };
 

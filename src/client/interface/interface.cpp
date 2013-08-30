@@ -8,8 +8,13 @@
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
+namespace posix_time = boost::posix_time;
+using posix_time::minutes;
+using posix_time::second_clock;
 
 #define LOG_SUBSCRIBER "subscriber"
+
+const posix_time::time_duration sub_renew = minutes(5);
 
 subscriber_part::subscriber_part(zmq::context_t& context)
   : context_(context)
@@ -144,12 +149,13 @@ void subscriber_part::recv_block()
     notify_block_(height, blk);
 }
 
-address_subscriber::address_subscriber(backend_cluster& backend)
-  : backend_(backend)
+address_subscriber::address_subscriber(
+    threadpool& pool, backend_cluster& backend)
+  : backend_(backend), strand_(pool)
 {
 }
 
-void address_subscriber::subscribe(const bc::payment_address& address,
+void address_subscriber::subscribe(const payment_address& address,
     update_handler handle_update, subscribe_handler handle_subscribe)
 {
     data_chunk data(1 + short_hash_size);
@@ -158,12 +164,26 @@ void address_subscriber::subscribe(const bc::payment_address& address,
     serial.write_short_hash(address.hash());
     BITCOIN_ASSERT(serial.iterator() == data.end());
     backend_.request("address.subscribe", data,
-        std::bind(&address_subscriber::receive_subscribe_result,
-            this, _1, _2, handle_update, handle_subscribe));
+        strand_.wrap(&address_subscriber::receive_subscribe_result,
+            this, _1, _2, address, handle_update, handle_subscribe));
 }
 void address_subscriber::receive_subscribe_result(
     const data_chunk& data, const worker_uuid& worker,
+    const payment_address& address,
     update_handler handle_update, subscribe_handler handle_subscribe)
+{
+    // Insert listener into backend.
+    const posix_time::ptime now = second_clock::universal_time();
+    subs_.emplace(address,
+        subscription{now + sub_renew, worker, handle_update});
+    // We will periodically send subscription
+    // update messages with the Bitcoin address.
+    // Decode std::error_code indicating success.
+    decode_reply(data, worker, handle_subscribe);
+}
+void address_subscriber::decode_reply(
+    const data_chunk& data, const worker_uuid& worker,
+    subscribe_handler handle_subscribe)
 {
     std::error_code ec;
     BITCOIN_ASSERT(data.size() == 4);
@@ -172,9 +192,11 @@ void address_subscriber::receive_subscribe_result(
         return;
     BITCOIN_ASSERT(deserial.iterator() == data.end());
     handle_subscribe(ec, worker);
-    // Insert listener into backend.
-    // Periodically send subscription update messages with the Bitcoin address.
-    // Receive back std::error_code indicating success.
+}
+
+void address_subscriber::update()
+{
+    // Loop through subscriptions, send renew packets.
 }
 
 void address_subscriber::fetch_history(const payment_address& address,
@@ -191,7 +213,7 @@ fullnode_interface::fullnode_interface(
     threadpool& pool, const std::string& connection)
   : context_(1), backend_(pool, context_, connection),
     blockchain(backend_), transaction_pool(backend_),
-    protocol(backend_), address(backend_),
+    protocol(backend_), address(pool, backend_),
     subscriber_(context_)
 {
 }
