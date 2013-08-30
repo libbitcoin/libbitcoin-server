@@ -1,5 +1,6 @@
 #include "worker.hpp"
 
+#include <bitcoin/format.hpp>
 #include <bitcoin/utility/logger.hpp>
 #include "echo.hpp"
 
@@ -59,7 +60,7 @@ void request_worker::update()
     zmq::pollitem_t items [] = { { *socket_,  0, ZMQ_POLLIN, 0 } };
     zmq::poll(items, 1, 0);
 
-    if (items [0].revents & ZMQ_POLLIN)
+    if (items[0].revents & ZMQ_POLLIN)
     {
         // Get message
         // - 6-part envelope + content -> request
@@ -74,13 +75,15 @@ void request_worker::update()
             // Perform request if found.
             if (it != handlers_.end())
             {
-                log_info(LOG_WORKER) << "normal reply";
+                log_debug(LOG_WORKER)
+                    << request.command() << " from " << request.origin();
                 it->second(request, socket_);
             }
             else
             {
-                log_warning(LOG_WORKER) << "Unhandled command '"
-                    << request.command() << "'";
+                log_warning(LOG_WORKER)
+                    << "Unhandled request: " << request.command()
+                    << " from " << request.origin();
             }
         }
         else if (request.command() == "HEARTBEAT")

@@ -170,6 +170,10 @@ protocol& node_impl::protocol()
 {
     return protocol_;
 }
+threadpool& node_impl::memory_related_threadpool()
+{
+    return mem_pool_;
+}
 
 void node_impl::monitor_tx(const std::error_code& ec, channel_ptr node)
 {

@@ -7,6 +7,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <zmq.hpp>
 #include <obelisk/message.hpp>
+#include <bitcoin/threadpool.hpp>
 
 typedef bc::data_chunk worker_uuid;
 
@@ -16,7 +17,8 @@ public:
     typedef std::function<void (
         const bc::data_chunk&, const worker_uuid&)> response_handler;
 
-    backend_cluster(zmq::context_t& context, const std::string& connection);
+    backend_cluster(bc::threadpool& pool,
+        zmq::context_t& context, const std::string& connection);
 
     void request(
         const std::string& command, const bc::data_chunk& data,
@@ -39,15 +41,18 @@ private:
 
     void send(const outgoing_message& message);
     void receive_incoming();
-    bool process(const incoming_message& response);
+
+    void process(const incoming_message& response);
+    bool process_as_reply(const incoming_message& response);
+
     void resend_expired();
 
     zmq::context_t& context_;
     zmq::socket_t socket_;
     // Requests
+    bc::async_strand strand_;
     response_handler_map handlers_;
     request_retry_queue retry_queue_;
-    // Subscriptions
 };
 
 #endif

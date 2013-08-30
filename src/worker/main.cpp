@@ -75,10 +75,7 @@ int main(int argc, char** argv)
             stopped = true;
         });
     while (!stopped)
-    {
         worker.update();
-        sleep(0.1);
-    }
     thr.join();
     publish.stop();
     if (!node.stop())

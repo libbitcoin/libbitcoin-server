@@ -3,6 +3,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/zmq_message.hpp>
 #include "fetch_history.hpp"
+#include "util.hpp"
 
 using namespace bc;
 using std::placeholders::_1;
@@ -164,7 +165,16 @@ void address_subscriber::receive_subscribe_result(
     const data_chunk& data, const worker_uuid& worker,
     update_handler handle_update, subscribe_handler handle_subscribe)
 {
-    handle_subscribe(std::error_code(), worker);
+    std::error_code ec;
+    BITCOIN_ASSERT(data.size() == 4);
+    auto deserial = make_deserializer(data.begin(), data.end());
+    if (!read_error_code(deserial, data.size(), ec))
+        return;
+    BITCOIN_ASSERT(deserial.iterator() == data.end());
+    handle_subscribe(ec, worker);
+    // Insert listener into backend.
+    // Periodically send subscription update messages with the Bitcoin address.
+    // Receive back std::error_code indicating success.
 }
 
 void address_subscriber::fetch_history(const payment_address& address,
@@ -177,8 +187,9 @@ void address_subscriber::fetch_history(const payment_address& address,
         std::bind(receive_history_result, _1, handle_fetch), worker);
 }
 
-fullnode_interface::fullnode_interface(const std::string& connection)
-  : context_(1), backend_(context_, connection),
+fullnode_interface::fullnode_interface(
+    threadpool& pool, const std::string& connection)
+  : context_(1), backend_(pool, context_, connection),
     blockchain(backend_), transaction_pool(backend_),
     protocol(backend_), address(backend_),
     subscriber_(context_)

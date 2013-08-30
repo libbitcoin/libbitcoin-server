@@ -11,9 +11,9 @@ using posix_time::microsec_clock;
 constexpr size_t request_retries = 3;
 const posix_time::time_duration request_timeout_init = seconds(30);
 
-backend_cluster::backend_cluster(
+backend_cluster::backend_cluster(threadpool& pool,
     zmq::context_t& context, const std::string& connection)
-  : context_(context), socket_(context_, ZMQ_DEALER)
+  : context_(context), socket_(context_, ZMQ_DEALER), strand_(pool)
 {
     socket_.connect(connection.c_str());
     // Configure socket to not wait at close time.
@@ -28,9 +28,13 @@ void backend_cluster::request(
     request_container request{
         microsec_clock::universal_time(), request_timeout_init,
         request_retries, outgoing_message(dest, command, data)};
-    handlers_[request.message.id()] = handle;
-    retry_queue_[request.message.id()] = request;
-    send(request.message);
+    auto insert_request = [this, handle, request]
+    {
+        handlers_[request.message.id()] = handle;
+        retry_queue_[request.message.id()] = request;
+        send(request.message);
+    };
+    strand_.randomly_queue(insert_request);
 }
 void backend_cluster::send(const outgoing_message& message)
 {
@@ -47,7 +51,8 @@ void backend_cluster::update()
         receive_incoming();
     // Finally resend any expired requests that we didn't get
     // a response to yet.
-    resend_expired();
+    strand_.randomly_queue(
+        std::bind(&backend_cluster::resend_expired, this));
 }
 
 void backend_cluster::receive_incoming()
@@ -55,10 +60,16 @@ void backend_cluster::receive_incoming()
     incoming_message response;
     if (!response.recv(socket_))
         return;
-    process(response);
+    strand_.randomly_queue(
+        std::bind(&backend_cluster::process, this, response));
 }
 
-bool backend_cluster::process(const incoming_message& response)
+void backend_cluster::process(const incoming_message& response)
+{
+    if (process_as_reply(response))
+        return;
+}
+bool backend_cluster::process_as_reply(const incoming_message& response)
 {
     auto handle_it = handlers_.find(response.id());
     // Unknown response. Not in our map.

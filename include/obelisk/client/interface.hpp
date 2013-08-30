@@ -65,18 +65,33 @@ public:
         bc::blockchain::fetch_handler_history handle_fetch,
         size_t from_height=0, const worker_uuid& worker=worker_uuid());
 
+    // unsubscribe() -> simply remove from subs_ map.
+    // update() -> loop through subscriptions, send renew packets
+
 private:
+    struct subscription
+    {
+        boost::posix_time::ptime renew_time;
+        const worker_uuid worker;
+        update_handler handle_update;
+    };
+
+    typedef std::unordered_map<bc::payment_address, subscription>
+        subscription_map;
+
     void receive_subscribe_result(
         const bc::data_chunk& data, const worker_uuid& worker,
         update_handler handle_update, subscribe_handler handle_subscribe);
 
     backend_cluster& backend_;
+    // Register subscription. Periodically send renew packets.
+    subscription_map subs_;
 };
 
 class fullnode_interface
 {
 public:
-    fullnode_interface(const std::string& connection);
+    fullnode_interface(bc::threadpool& pool, const std::string& connection);
 
     // Non-copyable
     fullnode_interface(const fullnode_interface&) = delete;

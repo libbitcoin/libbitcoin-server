@@ -26,6 +26,9 @@ public:
     bc::transaction_indexer& transaction_indexer();
     bc::protocol& protocol();
 
+    // Threadpool for memory related operations.
+    bc::threadpool& memory_related_threadpool();
+
 private:
     void monitor_tx(const std::error_code& ec, bc::channel_ptr node);
     void recv_transaction(const std::error_code& ec,
