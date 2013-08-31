@@ -153,9 +153,9 @@ address_subscriber::address_subscriber(
     threadpool& pool, backend_cluster& backend)
   : backend_(backend), strand_(pool)
 {
-    backend_.append_filter("address.update",
-        strand_.wrap(&address_subscriber::receive_update,
-            this, _1, _2));
+    //backend_.append_filter("address.update",
+    //    strand_.wrap(&address_subscriber::receive_update,
+    //        this, _1, _2));
 }
 
 void address_subscriber::subscribe(const payment_address& address,
