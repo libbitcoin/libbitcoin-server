@@ -129,7 +129,7 @@ void subscriber_part::recv_block()
     const data_stack& parts = message.parts();
     if (parts.size() != 3)
     {
-        log_warning() << "Malformed block response. Dropping.";
+        log_warning(LOG_SUBSCRIBER) << "Malformed block response. Dropping.";
         return;
     }
     hash_digest blk_hash;
@@ -153,6 +153,9 @@ address_subscriber::address_subscriber(
     threadpool& pool, backend_cluster& backend)
   : backend_(backend), strand_(pool)
 {
+    backend_.append_filter("address.update",
+        strand_.wrap(&address_subscriber::receive_update,
+            this, _1, _2));
 }
 
 void address_subscriber::subscribe(const payment_address& address,
@@ -192,6 +195,45 @@ void address_subscriber::decode_reply(
         return;
     BITCOIN_ASSERT(deserial.iterator() == data.end());
     handle_subscribe(ec, worker);
+}
+
+void address_subscriber::receive_update(
+    const bc::data_chunk& data, const worker_uuid& worker)
+{
+    // Deserialize data -> address, height, block hash, tx
+    constexpr size_t info_size = 1 + short_hash_size + 4 + hash_digest_size;
+    auto deserial = make_deserializer(data.begin(), data.begin() + info_size);
+    // [ addr,version ] (1 byte)
+    uint8_t version_byte = deserial.read_byte();
+    // [ addr.hash ] (20 bytes)
+    short_hash addr_hash = deserial.read_short_hash();
+    payment_address address(version_byte, addr_hash);
+    // [ height ] (4 bytes)
+    uint32_t height = deserial.read_4_bytes();
+    // [ block_hash ] (32 bytes)
+    const hash_digest blk_hash = deserial.read_hash();
+    // [ tx ]
+    BITCOIN_ASSERT(deserial.iterator() == data.begin() + info_size);
+    transaction_type tx;
+    satoshi_load(deserial.iterator(), data.end(), tx);
+    post_updates(address, worker, height, blk_hash, tx);
+}
+void address_subscriber::post_updates(
+    const bc::payment_address& address, const worker_uuid& worker,
+    size_t height, const bc::hash_digest& blk_hash,
+    const bc::transaction_type& tx)
+{
+    auto it = subs_.find(address);
+    if (it == subs_.end())
+        return;
+    const subscription& sub = it->second;
+    if (sub.worker != worker)
+    {
+        log_error(LOG_SUBSCRIBER)
+            << "Server sent update from a different worker than expected.";
+        return;
+    }
+    sub.handle_update(std::error_code(), height, blk_hash, tx);
 }
 
 void address_subscriber::update()

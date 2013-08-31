@@ -30,6 +30,9 @@ public:
     bc::threadpool& memory_related_threadpool();
 
 private:
+    typedef std::vector<block_notify_callback> block_notify_list;
+    typedef std::vector<transaction_notify_callback> transaction_notify_list;
+
     void monitor_tx(const std::error_code& ec, bc::channel_ptr node);
     void recv_transaction(const std::error_code& ec,
         const bc::transaction_type& tx, bc::channel_ptr node);
@@ -55,8 +58,8 @@ private:
     bc::transaction_indexer indexer_;
     bc::session session_;
 
-    block_notify_callback notify_block_;
-    transaction_notify_callback notify_tx_;
+    block_notify_list notify_blocks_;
+    transaction_notify_list notify_txs_;
 };
 
 #endif

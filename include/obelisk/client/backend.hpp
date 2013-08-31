@@ -25,6 +25,8 @@ public:
         response_handler handle, const worker_uuid& dest=worker_uuid());
     void update();
 
+    void append_filter(const std::string& command, response_handler filter);
+
 private:
     struct request_container
     {
@@ -39,10 +41,13 @@ private:
     typedef std::unordered_map<uint32_t, request_container>
         request_retry_queue;
 
+    typedef std::unordered_map<std::string, response_handler> filter_map;
+
     void send(const outgoing_message& message);
     void receive_incoming();
 
     void process(const incoming_message& response);
+    bool process_filters(const incoming_message& response);
     bool process_as_reply(const incoming_message& response);
 
     void resend_expired();
@@ -53,6 +58,8 @@ private:
     bc::async_strand strand_;
     response_handler_map handlers_;
     request_retry_queue retry_queue_;
+    // Preprocessing filters. If any of these succeed then process() stops.
+    filter_map filters_;
 };
 
 #endif

@@ -67,6 +67,7 @@ public:
 
     // unsubscribe() -> simply remove from subs_ map.
 
+    // Sends renew messages to worker.
     void update();
 
 private:
@@ -87,6 +88,13 @@ private:
     void decode_reply(
         const bc::data_chunk& data, const worker_uuid& worker,
         subscribe_handler handle_subscribe);
+
+    void receive_update(
+        const bc::data_chunk& data, const worker_uuid& worker);
+    void post_updates(
+        const bc::payment_address& address, const worker_uuid& worker,
+        size_t height, const bc::hash_digest& blk_hash,
+        const bc::transaction_type& tx);
 
     backend_cluster& backend_;
     // Register subscription. Periodically send renew packets.

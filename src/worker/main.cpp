@@ -33,10 +33,12 @@ int main(int argc, char** argv)
     worker.start(config["service"]);
     // Fullnode
     node_impl node;
+#ifdef OB_PUBLISHER
     // Publisher
     publisher publish(node);
     if (!publish.start(config))
         return 1;
+#endif
     // Address subscriptions
     subscribe_manager addr_sub(node);
     // Attach commands
@@ -77,7 +79,9 @@ int main(int argc, char** argv)
     while (!stopped)
         worker.update();
     thr.join();
+#ifdef OB_PUBLISHER
     publish.stop();
+#endif
     if (!node.stop())
         return -1;
     return 0;

@@ -55,6 +55,16 @@ void backend_cluster::update()
         std::bind(&backend_cluster::resend_expired, this));
 }
 
+void backend_cluster::append_filter(
+    const std::string& command, response_handler filter)
+{
+    strand_.randomly_queue(
+        [this, command, filter]
+        {
+            filters_[command] = filter;
+        });
+}
+
 void backend_cluster::receive_incoming()
 {
     incoming_message response;
@@ -66,8 +76,18 @@ void backend_cluster::receive_incoming()
 
 void backend_cluster::process(const incoming_message& response)
 {
+    if (process_filters(response))
+        return;
     if (process_as_reply(response))
         return;
+}
+bool backend_cluster::process_filters(const incoming_message& response)
+{
+    auto filter_it = filters_.find(response.command());
+    if (filter_it == filters_.end())
+        return false;
+    filter_it->second(response.data(), response.origin());
+    return true;
 }
 bool backend_cluster::process_as_reply(const incoming_message& response)
 {

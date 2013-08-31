@@ -54,9 +54,6 @@ void error_both(std::ofstream& file, log_level level,
     log_to_both(std::cerr, file, level, domain, body);
 }
 
-auto ignore_block = [](size_t height, const block_type&) {};
-auto ignore_tx = [](const transaction_type&) {};
-
 node_impl::node_impl()
   : network_pool_(1), disk_pool_(6), mem_pool_(1),
     hosts_(network_pool_),
@@ -68,8 +65,7 @@ node_impl::node_impl()
     txpool_(mem_pool_, chain_),
     indexer_(mem_pool_),
     session_(mem_pool_, {
-        handshake_, protocol_, chain_, poller_, txpool_}),
-    notify_block_(ignore_block), notify_tx_(ignore_tx)
+        handshake_, protocol_, chain_, poller_, txpool_})
 {
 }
 
@@ -147,11 +143,11 @@ bool node_impl::stop()
 
 void node_impl::subscribe_blocks(block_notify_callback notify_block)
 {
-    notify_block_ = notify_block;
+    notify_blocks_.push_back(notify_block);
 }
 void node_impl::subscribe_transactions(transaction_notify_callback notify_tx)
 {
-    notify_tx_ = notify_tx;
+    notify_txs_.push_back(notify_tx);
 }
 
 blockchain& node_impl::blockchain()
@@ -235,8 +231,8 @@ void node_impl::handle_mempool_store(
         };
     indexer_.index(tx, handle_index);
     log_info() << "Accepted transaction: " << hash_transaction(tx);
-    mem_pool_.service().post(
-        std::bind(notify_tx_, tx));
+    for (auto notify: notify_txs_)
+        notify(tx);
 }
 
 void node_impl::reorganize(const std::error_code& ec,
@@ -250,8 +246,8 @@ void node_impl::reorganize(const std::error_code& ec,
         {
             size_t height = fork_point + i + 1;
             const block_type& blk = *new_blocks[i];
-            mem_pool_.service().post(
-                std::bind(notify_block_, height, blk));
+            for (auto notify: notify_blocks_)
+                notify(height, blk);
         }
     chain_.subscribe_reorganize(
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));

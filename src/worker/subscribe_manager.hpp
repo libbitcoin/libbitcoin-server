@@ -12,9 +12,10 @@ class subscribe_manager
 public:
     subscribe_manager(node_impl& node);
     void subscribe(const incoming_message& request, zmq_socket_ptr socket);
-    // renew(req, sock)
-    //
-    // submit(height, tx)
+    //void renew(const incoming_message& request, zmq_socket_ptr socket);
+
+    void submit(size_t height, const bc::hash_digest& block_hash,
+        const bc::transaction_type& tx);
 
 private:
     struct subscription
@@ -30,6 +31,13 @@ private:
     void do_subscribe(const incoming_message& request, zmq_socket_ptr socket);
 
     // sweep_expired()
+
+    void do_submit(
+        size_t height, const bc::hash_digest& block_hash,
+        const bc::transaction_type& tx);
+    void post_updates(const bc::payment_address& address,
+        size_t height, const bc::hash_digest& block_hash,
+        const bc::transaction_type& tx);
 
     bc::async_strand strand_;
     subscription_map subs_;
