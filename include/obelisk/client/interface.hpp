@@ -118,16 +118,20 @@ public:
     bool subscribe_transactions(const std::string& connection,
         subscriber_part::transaction_notify_callback notify_tx);
 
+private:
+    zmq::context_t context_;
+    backend_cluster backend_;
+    subscriber_part subscriber_;
+
+// These depend on the above components and
+// should be constructed afterwards.
+public:
+
     blockchain_interface blockchain;
     transaction_pool_interface transaction_pool;
     protocol_interface protocol;
 
     address_subscriber address;
-
-private:
-    zmq::context_t context_;
-    backend_cluster backend_;
-    subscriber_part subscriber_;
 };
 
 #endif

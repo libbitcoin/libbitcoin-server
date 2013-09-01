@@ -52,7 +52,7 @@ void backend_cluster::update()
     // Finally resend any expired requests that we didn't get
     // a response to yet.
     strand_.randomly_queue(
-        std::bind(&backend_cluster::resend_expired, this));
+        &backend_cluster::resend_expired, this);
 }
 
 void backend_cluster::append_filter(
@@ -71,7 +71,7 @@ void backend_cluster::receive_incoming()
     if (!response.recv(socket_))
         return;
     strand_.randomly_queue(
-        std::bind(&backend_cluster::process, this, response));
+        &backend_cluster::process, this, response);
 }
 
 void backend_cluster::process(const incoming_message& response)
