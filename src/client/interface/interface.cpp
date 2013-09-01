@@ -14,7 +14,7 @@ using posix_time::second_clock;
 
 #define LOG_SUBSCRIBER "subscriber"
 
-const posix_time::time_duration sub_renew = minutes(5);
+const posix_time::time_duration sub_renew = minutes(2);
 
 subscriber_part::subscriber_part(zmq::context_t& context)
   : context_(context)
@@ -151,7 +151,8 @@ void subscriber_part::recv_block()
 
 address_subscriber::address_subscriber(
     threadpool& pool, backend_cluster& backend)
-  : backend_(backend), strand_(pool)
+  : backend_(backend), strand_(pool),
+    last_renew_(second_clock::universal_time())
 {
     backend_.append_filter("address.update",
         strand_.wrap(&address_subscriber::receive_update,
@@ -176,9 +177,8 @@ void address_subscriber::receive_subscribe_result(
     update_handler handle_update, subscribe_handler handle_subscribe)
 {
     // Insert listener into backend.
-    const posix_time::ptime now = second_clock::universal_time();
     subs_.emplace(address,
-        subscription{now + sub_renew, worker, handle_update});
+        subscription{worker, handle_update});
     // We will periodically send subscription
     // update messages with the Bitcoin address.
     // Decode std::error_code indicating success.
@@ -198,7 +198,7 @@ void address_subscriber::decode_reply(
 }
 
 void address_subscriber::receive_update(
-    const bc::data_chunk& data, const worker_uuid& worker)
+    const data_chunk& data, const worker_uuid& worker)
 {
     // Deserialize data -> address, height, block hash, tx
     constexpr size_t info_size = 1 + short_hash_size + 4 + hash_digest_size;
@@ -238,7 +238,30 @@ void address_subscriber::post_updates(
 
 void address_subscriber::update()
 {
+    auto renewal_sent = [](const data_chunk&, const worker_uuid&) {};
     // Loop through subscriptions, send renew packets.
+    auto send_renew = [this, renewal_sent](
+        const payment_address& address, const worker_uuid& worker)
+    {
+        data_chunk data(1 + short_hash_size);
+        auto serial = make_serializer(data.begin());
+        serial.write_byte(address.version());
+        serial.write_short_hash(address.hash());
+        BITCOIN_ASSERT(serial.iterator() == data.end());
+        backend_.request("address.renew", data, renewal_sent, worker);
+    };
+    auto loop_subs = [this, send_renew]
+    {
+        for (const auto& keyvalue_pair: subs_)
+            send_renew(keyvalue_pair.first, keyvalue_pair.second.worker);
+    };
+    const posix_time::ptime now = second_clock::universal_time();
+    // Send renews...
+    if (last_renew_ - now > sub_renew)
+    {
+        strand_.randomly_queue(loop_subs);
+        last_renew_ = now;
+    }
 }
 
 void address_subscriber::fetch_history(const payment_address& address,
@@ -264,6 +287,8 @@ void fullnode_interface::update()
 {
     backend_.update();
     subscriber_.update();
+    // Address subcomponent.
+    address.update();
 }
 
 bool fullnode_interface::subscribe_blocks(const std::string& connection,

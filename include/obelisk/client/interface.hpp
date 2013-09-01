@@ -73,7 +73,6 @@ public:
 private:
     struct subscription
     {
-        boost::posix_time::ptime renew_time;
         const worker_uuid worker;
         update_handler handle_update;
     };
@@ -100,6 +99,8 @@ private:
     // Register subscription. Periodically send renew packets.
     bc::async_strand strand_;
     subscription_map subs_;
+    // Send renew packets periodically.
+    boost::posix_time::ptime last_renew_;
 };
 
 class fullnode_interface

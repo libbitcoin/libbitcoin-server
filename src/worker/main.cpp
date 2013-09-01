@@ -52,6 +52,8 @@ int main(int argc, char** argv)
         };
     worker.attach("address.subscribe",
         std::bind(&subscribe_manager::subscribe, &addr_sub, _1, _2));
+    worker.attach("address.renew",
+        std::bind(&subscribe_manager::renew, &addr_sub, _1, _2));
     attach("address.fetch_history", fullnode_fetch_history);
     attach("blockchain.fetch_history", blockchain_fetch_history);
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
