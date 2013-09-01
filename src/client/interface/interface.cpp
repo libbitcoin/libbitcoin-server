@@ -257,7 +257,7 @@ void address_subscriber::update()
     };
     const posix_time::ptime now = second_clock::universal_time();
     // Send renews...
-    if (last_renew_ - now > sub_renew)
+    if (now - last_renew_ > sub_renew)
     {
         strand_.randomly_queue(loop_subs);
         last_renew_ = now;

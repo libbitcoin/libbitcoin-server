@@ -104,8 +104,8 @@ void subscribe_manager::submit(
     size_t height, const bc::hash_digest& block_hash,
     const bc::transaction_type& tx)
 {
-    strand_.queue(std::bind(&subscribe_manager::do_submit,
-        this, height, block_hash, tx));
+    strand_.queue(
+        &subscribe_manager::do_submit, this, height, block_hash, tx);
 }
 void subscribe_manager::do_submit(
     size_t height, const bc::hash_digest& block_hash,
