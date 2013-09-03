@@ -6,6 +6,8 @@
 #include <bitcoin/utility/sha256.hpp>
 #include <obelisk/zmq_message.hpp>
 
+namespace obelisk {
+
 using namespace bc;
 
 bool incoming_message::recv(zmq::socket_t& socket)
@@ -112,4 +114,6 @@ const uint32_t outgoing_message::id() const
 {
     return id_;
 }
+
+} // namespace obelisk
 

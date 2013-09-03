@@ -2,6 +2,8 @@
 
 #include <bitcoin/bitcoin.hpp>
 
+namespace obelisk {
+
 using namespace bc;
 
 namespace posix_time = boost::posix_time;
@@ -123,4 +125,6 @@ void backend_cluster::resend_expired()
         send(request.message);
     }
 }
+
+} // namespace obelisk
 

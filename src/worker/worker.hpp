@@ -7,6 +7,8 @@
 
 #include <obelisk/message.hpp>
 
+namespace obelisk {
+
 bool send_string(zmq::socket_t& socket, const std::string& str);
 
 class request_worker
@@ -36,6 +38,8 @@ private:
 
     command_map handlers_;
 };
+
+} // namespace obelisk
 
 #endif
 

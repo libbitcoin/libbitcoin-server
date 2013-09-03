@@ -4,6 +4,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/client/backend.hpp>
 
+namespace obelisk {
+
 class transaction_pool_interface
 {
 public:
@@ -13,6 +15,8 @@ public:
 private:
     backend_cluster& backend_;
 };
+
+} // namespace obelisk
 
 #endif
 

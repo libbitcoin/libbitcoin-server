@@ -4,6 +4,8 @@
 #include <boost/lexical_cast.hpp>
 #include <libconfig.h++>
 
+namespace obelisk {
+
 template <typename T>
 void get_value(const libconfig::Setting& root, config_map_type& config,
     const std::string& key_name, const T& fallback_value)
@@ -32,4 +34,6 @@ void load_config(config_map_type& config, const std::string& filename)
     get_value<std::string>(root, config, "frontend", "tcp://*:9091");
     get_value<std::string>(root, config, "backend", "tcp://*:9092");
 }
+
+} // namespace obelisk
 

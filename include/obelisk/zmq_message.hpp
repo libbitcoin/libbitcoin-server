@@ -3,6 +3,9 @@
 
 #include <zmq.hpp>
 #include <bitcoin/types.hpp>
+
+namespace obelisk {
+
 namespace bc = libbitcoin;
 
 class zmq_message
@@ -16,6 +19,8 @@ public:
 private:
     bc::data_stack parts_;
 };
+
+} // namespace obelisk
 
 #endif
 

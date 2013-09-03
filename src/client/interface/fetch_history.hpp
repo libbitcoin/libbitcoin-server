@@ -4,6 +4,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/message.hpp>
 
+namespace obelisk {
+
 using namespace bc;
 
 void wrap_fetch_history_args(data_chunk& data,
@@ -11,6 +13,8 @@ void wrap_fetch_history_args(data_chunk& data,
 
 void receive_history_result(const data_chunk& data,
     blockchain::fetch_handler_history handle_fetch);
+
+} // namespace obelisk
 
 #endif
 

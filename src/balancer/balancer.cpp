@@ -11,6 +11,7 @@
 #define LOG_BALANCER "balancer"
 
 using namespace bc;
+using namespace obelisk;
 
 static void s_version_assert(int want_major, int want_minor)
 {

@@ -4,6 +4,8 @@
 #include <bitcoin/utility/logger.hpp>
 #include "echo.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 namespace posix_time = boost::posix_time;
 using posix_time::milliseconds;
@@ -119,4 +121,6 @@ void request_worker::update()
         send_string(*socket_, "HEARTBEAT");
     }
 }
+
+} // namespace obelisk
 

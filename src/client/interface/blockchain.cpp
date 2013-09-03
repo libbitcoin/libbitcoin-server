@@ -3,6 +3,8 @@
 #include "fetch_history.hpp"
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 
@@ -100,4 +102,6 @@ void wrap_fetch_block_header(const data_chunk& data,
     satoshi_load(deserial.iterator(), data.end(), blk);
     handle_fetch(ec, blk);
 }
+
+} // namespace obelisk
 

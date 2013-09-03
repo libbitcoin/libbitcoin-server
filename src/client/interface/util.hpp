@@ -4,6 +4,8 @@
 #include <system_error>
 #include <bitcoin/utility/logger.hpp>
 
+namespace obelisk {
+
 template <typename Deserializer>
 bool read_error_code(Deserializer& deserial,
     size_t data_size, std::error_code& ec)
@@ -18,6 +20,8 @@ bool read_error_code(Deserializer& deserial,
         ec = static_cast<bc::error::error_code_t>(val);
     return true;
 }
+
+} // namespace obelisk
 
 #endif
 

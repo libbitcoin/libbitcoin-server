@@ -1,5 +1,6 @@
 obelisk_includedir = $(includedir)/obelisk
 obelisk_include_HEADERS = \
+    obelisk.hpp \
     message.hpp \
     zmq_message.hpp
 

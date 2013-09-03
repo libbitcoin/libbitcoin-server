@@ -3,6 +3,8 @@
 #include "../echo.hpp"
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 
 bool unwrap_fetch_history_args(
@@ -48,4 +50,6 @@ bool send_history_result(const std::error_code& ec,
         << "*.fetch_history() finished. Sending response.";
     response.send(*socket);
 }
+
+} // namespace obelisk
 

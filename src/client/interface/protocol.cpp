@@ -2,6 +2,8 @@
 
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 
@@ -32,4 +34,6 @@ void wrap_broadcast_transaction(const data_chunk& data,
     BITCOIN_ASSERT(deserial.iterator() == data.end());
     handle_broadcast(ec);
 }
+
+} // namespace obelisk
 

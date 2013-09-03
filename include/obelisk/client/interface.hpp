@@ -6,6 +6,8 @@
 #include <obelisk/client/transaction_pool.hpp>
 #include <obelisk/client/protocol.hpp>
 
+namespace obelisk {
+
 class subscriber_part
 {
 public:
@@ -134,6 +136,8 @@ public:
 
     address_subscriber address;
 };
+
+} // namespace obelisk
 
 #endif
 

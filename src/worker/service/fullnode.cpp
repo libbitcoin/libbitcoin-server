@@ -4,6 +4,8 @@
 #include "../echo.hpp"
 #include "fetch_history.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -21,4 +23,6 @@ void fullnode_fetch_history(node_impl& node,
         std::bind(send_history_result, _1, _2, request, socket),
         from_height);
 }
+
+} // namespace obelisk
 

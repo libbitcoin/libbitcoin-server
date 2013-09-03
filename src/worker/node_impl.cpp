@@ -2,6 +2,8 @@
 
 #include <future>
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -252,4 +254,6 @@ void node_impl::reorganize(const std::error_code& ec,
     chain_.subscribe_reorganize(
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
 }
+
+} // namespace obelisk
 

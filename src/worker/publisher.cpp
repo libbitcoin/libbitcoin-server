@@ -5,6 +5,8 @@
 
 #define LOG_PUBLISHER LOG_WORKER
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -91,4 +93,6 @@ bool publisher::send_tx(const transaction_type& tx)
     }
     return true;
 }
+
+} // namespace obelisk
 

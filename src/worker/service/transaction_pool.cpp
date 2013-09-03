@@ -4,6 +4,8 @@
 #include "../echo.hpp"
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -47,4 +49,6 @@ void transaction_validated(
         << "transaction_pool.validate() finished. Sending response.";
     response.send(*socket);
 }
+
+} // namespace obelisk
 

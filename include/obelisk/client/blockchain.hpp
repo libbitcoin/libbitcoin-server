@@ -4,6 +4,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/client/backend.hpp>
 
+namespace obelisk {
+
 class blockchain_interface
 {
 public:
@@ -22,6 +24,8 @@ public:
 private:
     backend_cluster& backend_;
 };
+
+} // namespace obelisk
 
 #endif
 

@@ -11,6 +11,7 @@
 #include "service/transaction_pool.hpp"
 
 using namespace bc;
+using namespace obelisk;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -88,3 +89,4 @@ int main(int argc, char** argv)
         return -1;
     return 0;
 }
+

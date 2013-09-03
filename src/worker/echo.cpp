@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+namespace obelisk {
+
 stdout_wrapper::stdout_wrapper()
 {
 }
@@ -18,4 +20,6 @@ stdout_wrapper echo()
 {
     return stdout_wrapper();
 }
+
+} // namespace obelisk
 

@@ -4,6 +4,8 @@
 #include "../node_impl.hpp"
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 
 void protocol_broadcast_transaction(node_impl& node,
@@ -33,4 +35,6 @@ void protocol_broadcast_transaction(node_impl& node,
     outgoing_message response(request, result);
     response.send(*socket);
 }
+
+} // namespace obelisk
 

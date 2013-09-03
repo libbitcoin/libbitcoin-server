@@ -5,6 +5,8 @@
 #include "fetch_history.hpp"
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -301,4 +303,6 @@ bool fullnode_interface::subscribe_transactions(const std::string& connection,
 {
     return subscriber_.subscribe_transactions(connection, notify_tx);
 }
+
+} // namespace obelisk
 

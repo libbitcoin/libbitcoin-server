@@ -4,6 +4,8 @@
 #include <obelisk/message.hpp>
 #include "../node_impl.hpp"
 
+namespace obelisk {
+
 bool unwrap_fetch_history_args(
     bc::payment_address& payaddr, uint32_t& from_height,
     const incoming_message& request);
@@ -11,6 +13,8 @@ bool unwrap_fetch_history_args(
 bool send_history_result(const std::error_code& ec,
     const bc::blockchain::history_list& history,
     const incoming_message& request, zmq_socket_ptr socket);
+
+} // namespace obelisk
 
 #endif
 

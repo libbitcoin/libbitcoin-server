@@ -2,6 +2,8 @@
 
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 
@@ -38,4 +40,6 @@ void wrap_validate_transaction(const data_chunk& data,
     }
     handle_validate(ec, unconfirmed);
 }
+
+} // namespace obelisk
 

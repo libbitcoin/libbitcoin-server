@@ -5,6 +5,8 @@
 #include "fetch_history.hpp"
 #include "util.hpp"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -147,4 +149,6 @@ void block_header_fetched(const std::error_code& ec,
         << "blockchain.fetch_block_header() finished. Sending response.";
     response.send(*socket);
 }
+
+} // namespace obelisk
 

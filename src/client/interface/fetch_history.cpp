@@ -2,6 +2,8 @@
 
 #include "util.hpp"
 
+namespace obelisk {
+
 void wrap_fetch_history_args(data_chunk& data,
     const payment_address& address, size_t from_height)
 {
@@ -44,4 +46,6 @@ void receive_history_result(const data_chunk& data,
     BITCOIN_ASSERT(deserial.iterator() == data.end());
     handle_fetch(ec, history);
 }
+
+} // namespace obelisk
 

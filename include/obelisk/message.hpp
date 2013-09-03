@@ -3,6 +3,9 @@
 
 #include <zmq.hpp>
 #include <bitcoin/types.hpp>
+
+namespace obelisk {
+
 namespace bc = libbitcoin;
 
 typedef std::shared_ptr<zmq::socket_t> zmq_socket_ptr;
@@ -45,6 +48,8 @@ private:
     uint32_t id_;
     bc::data_chunk data_;
 };
+
+} // namespace obelisk
 
 #endif
 

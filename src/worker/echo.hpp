@@ -5,6 +5,8 @@
 
 #define LOG_WORKER "worker"
 
+namespace obelisk {
+
 class stdout_wrapper
 {
 public:
@@ -13,7 +15,7 @@ public:
     ~stdout_wrapper();
 
     template <typename T>
-    stdout_wrapper& operator<<(T const& value) 
+    stdout_wrapper& operator<<(T const& value)
     {
         stream_ << value;
         return *this;
@@ -24,6 +26,8 @@ private:
 };
 
 stdout_wrapper echo();
+
+} // namespace obelisk
 
 #endif
 

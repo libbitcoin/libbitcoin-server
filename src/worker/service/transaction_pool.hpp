@@ -3,10 +3,14 @@
 
 #include <obelisk/message.hpp>
 
+namespace obelisk {
+
 class node_impl;
 
 void transaction_pool_validate(node_impl& node,
     const incoming_message& request, zmq_socket_ptr socket);
+
+} // namespace obelisk
 
 #endif
 

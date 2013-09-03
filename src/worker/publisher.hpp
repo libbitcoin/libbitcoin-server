@@ -7,6 +7,8 @@
 #include "config.hpp"
 #include "node_impl.hpp"
 
+namespace obelisk {
+
 class publisher
 {
 public:
@@ -26,6 +28,8 @@ private:
     zmq::context_t context_;
     zmq_socket_uniqptr socket_block_, socket_tx_;
 };
+
+} // namespace obelisk
 
 #endif
 

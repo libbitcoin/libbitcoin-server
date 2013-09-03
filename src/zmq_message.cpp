@@ -3,6 +3,8 @@
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
 
+namespace obelisk {
+
 using namespace bc;
 
 void zmq_message::append(const data_chunk& part)
@@ -65,4 +67,6 @@ const data_stack& zmq_message::parts() const
 {
     return parts_;
 }
+
+} // namespace obelisk
 

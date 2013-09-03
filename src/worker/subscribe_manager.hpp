@@ -7,6 +7,8 @@
 #include <obelisk/message.hpp>
 #include "node_impl.hpp"
 
+namespace obelisk {
+
 class subscribe_manager
 {
 public:
@@ -43,6 +45,8 @@ private:
     bc::async_strand strand_;
     subscription_map subs_;
 };
+
+} // namespace obelisk
 
 #endif
 

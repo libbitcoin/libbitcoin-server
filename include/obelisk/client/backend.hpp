@@ -9,6 +9,8 @@
 #include <obelisk/message.hpp>
 #include <bitcoin/threadpool.hpp>
 
+namespace obelisk {
+
 typedef bc::data_chunk worker_uuid;
 
 class backend_cluster
@@ -61,6 +63,8 @@ private:
     // Preprocessing filters. If any of these succeed then process() stops.
     filter_map filters_;
 };
+
+} // namespace obelisk
 
 #endif
 

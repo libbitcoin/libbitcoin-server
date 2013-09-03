@@ -4,6 +4,8 @@
 
 #define LOG_SUBSCRIBER "subscriber"
 
+namespace obelisk {
+
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -182,4 +184,6 @@ void subscribe_manager::sweep_expired()
             ++it;
     }
 }
+
+} // namespace obelisk
 

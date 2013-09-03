@@ -5,6 +5,8 @@
 
 #include "config.hpp"
 
+namespace obelisk {
+
 class node_impl
 {
 public:
@@ -61,6 +63,8 @@ private:
     block_notify_list notify_blocks_;
     transaction_notify_list notify_txs_;
 };
+
+} // namespace obelisk
 
 #endif
 
