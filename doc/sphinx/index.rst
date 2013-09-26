@@ -13,4 +13,6 @@ Contents:
    connecting
    messages
    example
+   api
+   subscribe
 

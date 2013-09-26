@@ -90,14 +90,14 @@ Request & Reply
 
 The format of request and reply fields are very similar.
 
-============== ===========
+============== ====================
 Request Fields Type
-============== ===========
-destination    worker_uuid
+============== ====================
+destination    worker_uuid(0 or 17)
 command        string
-id             uint32_t
+id             uint32(4)
 data           data
-============== ===========
+============== ====================
 
 `destination` describes which backend worker the load balancer should direct
 the message to. If empty, then the load balancer picks a random backend
@@ -113,14 +113,14 @@ requests the client sent.
 
 `data` is the remote method parameter serialized as binary data.
 
-============== ===========
+============== ====================
 Reply Fields   Type
-============== ===========
-origin         worker_uuid
+============== ====================
+origin         worker_uuid(0 or 17)
 command        string
-id             uint32_t
+id             uint32(4)
 data           data
-============== ===========
+============== ====================
 
 The only difference with replies, is the first field indicates which worker
 responded back. This is useful for if we want to batch a series of requests
