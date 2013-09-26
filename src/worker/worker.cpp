@@ -29,9 +29,10 @@ request_worker::request_worker()
   : context_(1)
 {
 }
-void request_worker::start(const std::string& connection)
+bool request_worker::start(config_map_type& config)
 {
-    connection_ = connection;
+    connection_ = config["service"];
+    name_ = config["name"];
     create_new_socket();
     last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;
@@ -42,6 +43,10 @@ void request_worker::create_new_socket()
 {
     socket_ = std::make_shared<zmq::socket_t>(context_, ZMQ_DEALER);
     log_debug(LOG_WORKER) << "Connecting: " << connection_;
+    // Set the socket identity name.
+    if (!name_.empty())
+        socket_->setsockopt(ZMQ_IDENTITY, name_.c_str(), name_.size());
+    // Connect...
     socket_->connect(connection_.c_str());
     // Configure socket to not wait at close time
     int linger = 0;

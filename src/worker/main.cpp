@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     }
     // Create worker.
     request_worker worker;
-    worker.start(config["service"]);
+    worker.start(config);
     // Fullnode
     node_impl node;
 #ifdef OB_PUBLISHER
