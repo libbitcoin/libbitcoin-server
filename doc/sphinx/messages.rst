@@ -91,12 +91,13 @@ Request & Reply
 The format of request and reply fields are very similar.
 
 ============== ====================
-Request Fields Type
+Request Fields Type(Size)
 ============== ====================
 destination    worker_uuid(0 or 17)
 command        string
 id             uint32(4)
 data           data
+checksum       uint32(4)
 ============== ====================
 
 `destination` describes which backend worker the load balancer should direct
@@ -113,13 +114,17 @@ requests the client sent.
 
 `data` is the remote method parameter serialized as binary data.
 
+`checksum` is a 4 byte checksum of `data`, calculated using the Bitcoin
+checksum method. Checksum = first 4 bytes of `sha256(sha256(data))`.
+
 ============== ====================
-Reply Fields   Type
+Reply Fields   Type(Size)
 ============== ====================
 origin         worker_uuid(0 or 17)
 command        string
 id             uint32(4)
 data           data
+checksum       uint32(4)
 ============== ====================
 
 The only difference with replies, is the first field indicates which worker
