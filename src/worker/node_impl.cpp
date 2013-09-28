@@ -203,8 +203,8 @@ void node_impl::recv_transaction(const std::error_code& ec,
     auto handle_confirm = [this, tx, handle_deindex](
         const std::error_code& ec)
         {
-            if (ec)
-                log_warning() << "Confirm transaction: " << ec.message();
+            log_debug() << "Confirm transaction: " << ec.message()
+                << " " << hash_transaction(tx);
             // Always try to deindex tx.
             // The error could be error::forced_removal from txpool.
             indexer_.deindex(tx, handle_deindex);

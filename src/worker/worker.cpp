@@ -65,7 +65,8 @@ void request_worker::attach(
 void request_worker::update()
 {
     zmq::pollitem_t items [] = { { *socket_,  0, ZMQ_POLLIN, 0 } };
-    zmq::poll(items, 1, 0);
+    int rc = zmq::poll(items, 1, 0);
+    BITCOIN_ASSERT(rc >= 0);
 
     if (items[0].revents & ZMQ_POLLIN)
     {

@@ -80,8 +80,19 @@ int main(int argc, char** argv)
             stopped = true;
         });
     while (!stopped)
-        worker.update();
-    thr.join();
+    {
+        try
+        {
+            worker.update();
+        }
+        catch (zmq::error_t error)
+        {
+            log_error(LOG_WORKER) << "ZMQ: " << error.what();
+            echo() << "Closing down because of error.";
+            stopped = true;
+        }
+    }
+    thr.detach();
 #ifdef OB_PUBLISHER
     publish.stop();
 #endif
