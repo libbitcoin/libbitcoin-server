@@ -3,7 +3,7 @@ while [ 1 ]; do
     echo "Polling a bunch of addresses..."
     ADDRS=$(python latest-addrs.py)
     for ADDR in $ADDRS; do
-        echo "Query start: $(date +%x)"
+        echo "Query start: $ADDR $(date +%s)"
         sx history $ADDR
         echo $?
         if [ "$?" -ne "0" ]; then
