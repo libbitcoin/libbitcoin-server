@@ -38,13 +38,22 @@ subscribe_manager::subscribe_manager(node_impl& node)
     register_with_node(*this, node);
 }
 
-payment_address deserialize_address(const data_chunk& data)
+bool deserialize_address(payment_address& addr, const data_chunk& data)
 {
     auto deserial = make_deserializer(data.begin(), data.end());
-    uint8_t version_byte = deserial.read_byte();
-    short_hash hash = deserial.read_short_hash();
-    BITCOIN_ASSERT(deserial.iterator() == data.end());
-    return payment_address(version_byte, hash);
+    try
+    {
+        uint8_t version_byte = deserial.read_byte();
+        short_hash hash = deserial.read_short_hash();
+        addr.set(version_byte, hash);
+    }
+    catch (end_of_stream)
+    {
+        return false;
+    }
+    if (deserial.iterator() != data.end())
+        return false;
+    return true;
 }
 
 void subscribe_manager::subscribe(
@@ -56,8 +65,12 @@ void subscribe_manager::subscribe(
 void subscribe_manager::do_subscribe(
     const incoming_message& request, zmq_socket_ptr socket)
 {
-    const payment_address addr_key =
-        deserialize_address(request.data());
+    payment_address addr_key;
+    if (!deserialize_address(addr_key, request.data()))
+    {
+        log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
+        return;
+    }
     // Now create subscription.
     const posix_time::ptime now = second_clock::universal_time();
     subs_.emplace(addr_key, subscription{
@@ -79,8 +92,12 @@ void subscribe_manager::renew(
 void subscribe_manager::do_renew(
     const incoming_message& request, zmq_socket_ptr socket)
 {
-    const payment_address addr_key =
-        deserialize_address(request.data());
+    payment_address addr_key;
+    if (!deserialize_address(addr_key, request.data()))
+    {
+        log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
+        return;
+    }
     const posix_time::ptime now = second_clock::universal_time();
     // Find entry and update expiry_time.
     auto range = subs_.equal_range(addr_key);

@@ -4,6 +4,9 @@ while [ 1 ]; do
     ADDRS=$(python latest-addrs.py)
     for ADDR in $ADDRS; do
         echo "Query start: $ADDR $(date +%s)"
+        if [[ "$ADDR" == "1VayNert3x1KzbpzMGt2qdqrAThiRovi8" ]]; then
+            continue
+        fi
         sx history $ADDR
         echo $?
         if [ "$?" -ne "0" ]; then
