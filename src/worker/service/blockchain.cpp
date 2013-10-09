@@ -10,6 +10,7 @@ namespace obelisk {
 using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
+using std::placeholders::_3;
 
 void chain_history_fetched(const std::error_code& ec,
     const blockchain::history_list& history,
@@ -39,7 +40,7 @@ void blockchain_fetch_transaction(node_impl& node,
     if (data.size() != 32)
     {
         log_error(LOG_WORKER)
-            << "Incorrect data size for blockchain.fetch_history";
+            << "Incorrect data size for blockchain.fetch_transaction";
         return;
     }
     auto deserial = make_deserializer(data.begin(), data.end());
@@ -147,6 +148,41 @@ void block_header_fetched(const std::error_code& ec,
     outgoing_message response(request, result);
     log_debug(LOG_WORKER)
         << "blockchain.fetch_block_header() finished. Sending response.";
+    response.send(*socket);
+}
+
+void transaction_index_fetched(const std::error_code& ec,
+    size_t block_height, size_t index,
+    const incoming_message& request, zmq_socket_ptr socket);
+void blockchain_fetch_transaction_index(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    if (data.size() != 32)
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_transaction_index";
+        return;
+    }
+    auto deserial = make_deserializer(data.begin(), data.end());
+    const hash_digest tx_hash = deserial.read_hash();
+    node.blockchain().fetch_transaction_index(tx_hash,
+        std::bind(transaction_index_fetched, _1, _2, _3, request, socket));
+}
+void transaction_index_fetched(const std::error_code& ec,
+    size_t block_height, size_t index,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    // error_code (4), block_height (4), index (4)
+    data_chunk result(12);
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_4_bytes(block_height);
+    serial.write_4_bytes(index);
+    outgoing_message response(request, result);
+    log_debug(LOG_WORKER)
+        << "blockchain.fetch_transaction_index() finished. Sending response.";
     response.send(*socket);
 }
 

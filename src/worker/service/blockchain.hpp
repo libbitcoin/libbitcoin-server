@@ -19,6 +19,9 @@ void blockchain_fetch_last_height(node_impl& node,
 void blockchain_fetch_block_header(node_impl& node,
     const incoming_message& request, zmq_socket_ptr socket);
 
+void blockchain_fetch_transaction_index(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
+
 } // namespace obelisk
 
 #endif

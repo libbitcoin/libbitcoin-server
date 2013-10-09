@@ -21,6 +21,8 @@ public:
         bc::blockchain::fetch_handler_block_header handle_fetch);
     void fetch_block_header(const bc::hash_digest& blk_hash,
         bc::blockchain::fetch_handler_block_header handle_fetch);
+    void fetch_transaction_index(const bc::hash_digest& tx_hash,
+        bc::blockchain::fetch_handler_transaction_index handle_fetch);
 private:
     backend_cluster& backend_;
 };

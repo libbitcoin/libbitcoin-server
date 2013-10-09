@@ -103,5 +103,33 @@ void wrap_fetch_block_header(const data_chunk& data,
     handle_fetch(ec, blk);
 }
 
+void wrap_fetch_transaction_index(const data_chunk& data,
+    blockchain::fetch_handler_transaction_index handle_fetch);
+void blockchain_interface::fetch_transaction_index(const hash_digest& tx_hash,
+    blockchain::fetch_handler_transaction_index handle_fetch)
+{
+    data_chunk data(hash_digest_size);
+    auto serial = make_serializer(data.begin());
+    serial.write_hash(tx_hash);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
+    backend_.request("blockchain.fetch_transaction_index", data,
+        std::bind(wrap_fetch_transaction_index, _1, handle_fetch));
+}
+void wrap_fetch_transaction_index(const data_chunk& data,
+    blockchain::fetch_handler_transaction_index handle_fetch)
+{
+    // error_code (4), block_height (4), index (4)
+    BITCOIN_ASSERT(data.size() == 12);
+    std::error_code ec;
+    auto deserial = make_deserializer(data.begin(), data.end());
+    if (!read_error_code(deserial, data.size(), ec))
+        return;
+    BITCOIN_ASSERT(deserial.iterator() == data.begin() + 4);
+    uint32_t block_height = deserial.read_4_bytes();
+    uint32_t index = deserial.read_4_bytes();
+    BITCOIN_ASSERT(deserial.iterator() == data.end());
+    handle_fetch(ec, block_height, index);
+}
+
 } // namespace obelisk
 
