@@ -92,9 +92,9 @@ bool node_impl::start(config_map_type& config)
     std::promise<std::error_code> ec_chain;
     auto blockchain_started =
         [&](const std::error_code& ec)
-        {
-            ec_chain.set_value(ec);
-        };
+    {
+        ec_chain.set_value(ec);
+    };
     chain_.start(config["blockchain-path"], blockchain_started);
     // Query the error_code and wait for startup completion.
     std::error_code ec = ec_chain.get_future().get();
@@ -111,9 +111,9 @@ bool node_impl::start(config_map_type& config)
     std::promise<std::error_code> ec_session;
     auto session_started =
         [&](const std::error_code& ec)
-        {
-            ec_session.set_value(ec);
-        };
+    {
+        ec_session.set_value(ec);
+    };
     session_.start(session_started);
     // Query the error_code and wait for startup completion.
     ec = ec_session.get_future().get();
@@ -195,20 +195,20 @@ void node_impl::recv_transaction(const std::error_code& ec,
         return;
     }
     auto handle_deindex = [](const std::error_code& ec)
-        {
-            if (ec)
-                log_error() << "Deindex error: " << ec.message();
-        };
+    {
+        if (ec)
+            log_error() << "Deindex error: " << ec.message();
+    };
     // Called when the transaction becomes confirmed in a block.
     auto handle_confirm = [this, tx, handle_deindex](
         const std::error_code& ec)
-        {
-            log_debug() << "Confirm transaction: " << ec.message()
-                << " " << hash_transaction(tx);
-            // Always try to deindex tx.
-            // The error could be error::forced_removal from txpool.
-            indexer_.deindex(tx, handle_deindex);
-        };
+    {
+        log_debug() << "Confirm transaction: " << ec.message()
+            << " " << hash_transaction(tx);
+        // Always try to deindex tx.
+        // The error could be error::forced_removal from txpool.
+        indexer_.deindex(tx, handle_deindex);
+    };
     txpool_.store(tx, handle_confirm,
         std::bind(&node_impl::handle_mempool_store, this, _1, _2, tx, node));
     node->subscribe_transaction(
@@ -227,10 +227,10 @@ void node_impl::handle_mempool_store(
         return;
     }
     auto handle_index = [](const std::error_code& ec)
-        {
-            if (ec)
-                log_error() << "Index error: " << ec.message();
-        };
+    {
+        if (ec)
+            log_error() << "Index error: " << ec.message();
+    };
     indexer_.index(tx, handle_index);
     log_info() << "Accepted transaction: " << hash_transaction(tx);
     for (auto notify: notify_txs_)
