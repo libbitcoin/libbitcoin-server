@@ -105,7 +105,12 @@ the message to. If empty, then the load balancer picks a random backend
 worker. This should only be set in specific conditions where you want to
 avoid race conditions. In general it's better to write more resilient code
 that is able to handle asynchronity without demanding total consistency.
-The worker_uuid should be 17 bytes.
+The worker_uuid usually should be 17 bytes if specifying a destination.
+If not then it is 0 bytes (load balancer selects a worker).
+
+Note: that there is a feature to name the workers. If so, then this field
+size can vary depending on the number of bytes needed for the custom
+worker_uuid.
 
 `command` is the remote method invoked on the worker.
 
