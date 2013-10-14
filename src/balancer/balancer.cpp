@@ -1,4 +1,5 @@
 #include <vector>
+#include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/zmq_message.hpp>
 #include "config.hpp"
@@ -256,7 +257,11 @@ int main(int argc, char** argv)
         load_config(config, argv[1]);
     }
     else
-        load_config(config, "balancer.cfg");
+    {
+        using boost::filesystem::path;
+        path conf_filename = path(SYSCONFDIR) / "obelisk" / "balancer.cfg";
+        load_config(config, conf_filename.native());
+    }
 
     // Prepare our context and sockets
     zmq::context_t context(1);

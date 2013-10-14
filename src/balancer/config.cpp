@@ -1,6 +1,5 @@
 #include "config.hpp"
 
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <libconfig.h++>
 
@@ -19,13 +18,11 @@ void get_value(const libconfig::Setting& root, config_map_type& config,
 
 void load_config(config_map_type& config, const std::string& filename)
 {
-    using boost::filesystem::path;
-    path conf_path = path(SYSCONFDIR) / filename;
     libconfig::Config cfg;
     // Ignore error if unable to read config file.
     try
     {
-        cfg.readFile(conf_path.native().c_str());
+        cfg.readFile(filename.c_str());
     }
     catch (const libconfig::FileIOException&) {}
     catch (const libconfig::ParseException&) {}

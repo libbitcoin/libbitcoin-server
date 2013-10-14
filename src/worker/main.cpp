@@ -26,7 +26,7 @@ int main(int argc, char** argv)
     else
     {
         using boost::filesystem::path;
-        path conf_filename = path(SYSCONFDIR) / "worker.cfg";
+        path conf_filename = path(SYSCONFDIR) / "obelisk" / "worker.cfg";
         load_config(config, conf_filename.native());
     }
     // Create worker.
