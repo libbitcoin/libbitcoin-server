@@ -151,6 +151,66 @@ void block_header_fetched(const std::error_code& ec,
     response.send(*socket);
 }
 
+void fetch_block_transaction_hashes_by_hash(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
+void fetch_block_transaction_hashes_by_height(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket);
+void block_transaction_hashes_fetched(const std::error_code& ec,
+    const hash_digest_list& hashes,
+    const incoming_message& request, zmq_socket_ptr socket);
+void fetch_block_transaction_hashes(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    if (data.size() == 32)
+        fetch_block_transaction_hashes_by_hash(node, request, socket);
+    else if (data.size() == 4)
+        fetch_block_transaction_hashes_by_height(node, request, socket);
+    else
+    {
+        log_error(LOG_WORKER) << "Incorrect data size for "
+            "blockchain.fetch_block_transaction_hashes_by_height";
+        return;
+    }
+}
+void fetch_block_transaction_hashes_by_hash(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    BITCOIN_ASSERT(data.size() == 32);
+    auto deserial = make_deserializer(data.begin(), data.end());
+    const hash_digest blk_hash = deserial.read_hash();
+    node.blockchain().fetch_block_transaction_hashes(blk_hash,
+        std::bind(block_transaction_hashes_fetched, _1, _2, request, socket));
+}
+void fetch_block_transaction_hashes_by_height(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    BITCOIN_ASSERT(data.size() == 4);
+    auto deserial = make_deserializer(data.begin(), data.end());
+    size_t height = deserial.read_4_bytes();
+    node.blockchain().fetch_block_transaction_hashes(height,
+        std::bind(block_transaction_hashes_fetched, _1, _2, request, socket));
+}
+void block_transaction_hashes_fetched(const std::error_code& ec,
+    const hash_digest_list& hashes,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    data_chunk result(4 + 4 + hash_digest_size * hashes.size());
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_4_bytes(hashes.size());
+    for (const hash_digest& tx_hash: hashes)
+        serial.write_hash(tx_hash);
+    BITCOIN_ASSERT(serial.iterator() == result.end());
+    outgoing_message response(request, result);
+    log_debug(LOG_WORKER) << "blockchain.fetch_block_transaction_hashes()"
+       " finished. Sending response.";
+    response.send(*socket);
+}
+
 void transaction_index_fetched(const std::error_code& ec,
     size_t block_height, size_t index,
     const incoming_message& request, zmq_socket_ptr socket);
