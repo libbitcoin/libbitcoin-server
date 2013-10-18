@@ -12,10 +12,8 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 publisher::publisher(node_impl& node)
-  : context_(1)
+  : context_(1), node_(node)
 {
-    node.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
-    node.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
 }
 
 bool publisher::setup_socket(const std::string& connection,
@@ -32,6 +30,8 @@ bool publisher::setup_socket(const std::string& connection,
 
 bool publisher::start(config_map_type& config)
 {
+    node_.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
+    node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
     log_debug(LOG_PUBLISHER) << "Publishing blocks: "
         << config["block-publish"];
     if (!setup_socket(config["block-publish"], socket_block_))

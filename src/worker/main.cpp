@@ -34,12 +34,11 @@ int main(int argc, char** argv)
     worker.start(config);
     // Fullnode
     node_impl node;
-#ifdef OB_PUBLISHER
     // Publisher
     publisher publish(node);
-    if (!publish.start(config))
-        return 1;
-#endif
+    if (config["publisher"] == "enabled")
+        if (!publish.start(config))
+            return 1;
     // Address subscriptions
     subscribe_manager addr_sub(node);
     // Attach commands
@@ -95,9 +94,8 @@ int main(int argc, char** argv)
         }
     }
     thr.detach();
-#ifdef OB_PUBLISHER
-    publish.stop();
-#endif
+    if (config["publisher"] == "enabled")
+        publish.stop();
     if (!node.stop())
         return -1;
     return 0;

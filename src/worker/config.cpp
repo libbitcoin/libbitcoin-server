@@ -32,6 +32,7 @@ void load_config(config_map_type& config, const std::string& filename)
     get_value<std::string>(root, config, "error-file", "error.log");
     get_value<std::string>(root, config, "blockchain-path", "blockchain");
     get_value<std::string>(root, config, "service", "tcp://localhost:9092");
+    get_value<std::string>(root, config, "publisher", "disabled");
     get_value<std::string>(root, config, "block-publish", "tcp://*:9093");
     get_value<std::string>(root, config, "tx-publish", "tcp://*:9094");
     get_value<std::string>(root, config, "name", "");
