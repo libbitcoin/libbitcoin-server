@@ -41,7 +41,6 @@ header.
 The client should be buffering unconfirmed transactions, and only requesting
 the transactions which they need but don't have in their buffer from the server.
 
-==================================
 Unconfirmed Validated Transactions
 ==================================
 
