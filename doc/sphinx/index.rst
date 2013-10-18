@@ -15,4 +15,5 @@ Contents:
    example
    api
    subscribe
+   publisher
 
