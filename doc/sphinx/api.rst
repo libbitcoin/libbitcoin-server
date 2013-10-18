@@ -12,6 +12,8 @@ Blockchain
 These commands are prefixed with "blockchain.". For instance
 "blockchain.fetch_transaction".
 
+Fetch a transaction by hash from the blockchain:
+
 ================= ===========
 fetch_transaction
 ================= ===========
@@ -19,7 +21,7 @@ Request           tx_hash(32)
 Reply             ec(4) + tx
 ================= ===========
 
-Fetch a transaction by hash from the blockchain.
+Fetch the last height of the latest block:
 
 ================= ==================
 fetch_last_height
@@ -28,7 +30,7 @@ Request
 Reply             ec(4) + height(4)
 ================= ==================
 
-Fetch the last height of the latest block.
+Fetch a block header by height:
 
 ================== ==================
 fetch_block_header
@@ -37,7 +39,7 @@ Request            height(4)
 Reply              ec(4) + header(80)
 ================== ==================
 
-Fetch a block header by height.
+Fetch a block header by hash:
 
 ================== ==================
 fetch_block_header
@@ -46,7 +48,21 @@ Request            block_hash(32)
 Reply              ec(4) + header(80)
 ================== ==================
 
-Fetch a block header by hash.
+Fetch a list of ordered transaction hashes belonging to a block.
+
+============================== ==============================================
+fetch_block_transaction_hashes
+============================== ==============================================
+Request                        height(4)
+Reply                          ec(4) + hashes_size(4) + hashes(32 bytes each)
+============================== ==============================================
+
+============================== ==============================================
+fetch_block_transaction_hashes
+============================== ==============================================
+Request                        block_hash(32)
+Reply                          ec(4) + hashes_size(4) + hashes(32 bytes each)
+============================== ==============================================
 
 Transaction pool
 ================
