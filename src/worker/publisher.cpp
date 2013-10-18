@@ -63,14 +63,28 @@ void append_hash(zmq_message& message, const hash_digest& hash)
 
 bool publisher::send_blk(uint32_t height, const block_type& blk)
 {
+    // Serialize the height.
     data_chunk raw_height = bc::uncast_type(height);
     BITCOIN_ASSERT(raw_height.size() == 4);
-    data_chunk raw_block(bc::satoshi_raw_size(blk));
-    satoshi_save(blk, raw_block.begin());
+    // Serialize the 80 byte header.
+    data_chunk raw_blk_header(bc::satoshi_raw_size(blk.header));
+    satoshi_save(blk.header, raw_blk_header.begin());
+    // Construct the message.
+    //   height   [4 bytes]
+    //   hash     [32 bytes]
+    //   txs size [4 bytes]
+    //   ... txs ...
     zmq_message message;
     message.append(raw_height);
     append_hash(message, hash_block_header(blk.header));
-    message.append(raw_block);
+    message.append(raw_blk_header);
+    data_chunk raw_txs_size = bc::uncast_type(blk.transactions.size());
+    message.append(raw_txs_size);
+    // Clients should be buffering their unconfirmed txs
+    // and only be requesting those they don't have.
+    for (const bc::transaction_type& tx: blk.transactions)
+        append_hash(message, hash_transaction(tx));
+    // Finished. Send message.
     if (!message.send(*socket_block_))
     {
         log_warning(LOG_PUBLISHER) << "Problem publishing block data.";
