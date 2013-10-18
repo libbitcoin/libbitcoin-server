@@ -19,10 +19,7 @@ int main(int argc, char** argv)
 {
     config_map_type config;
     if (argc == 2)
-    {
-        echo() << "Using config file: " << argv[1];
         load_config(config, argv[1]);
-    }
     else
     {
         using boost::filesystem::path;

@@ -2,6 +2,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <libconfig.h++>
+#include "echo.hpp"
 
 namespace obelisk {
 
@@ -18,6 +19,7 @@ void get_value(const libconfig::Setting& root, config_map_type& config,
 
 void load_config(config_map_type& config, const std::string& filename)
 {
+    echo() << "Using config file: " << filename;
     libconfig::Config cfg;
     // Ignore error if unable to read config file.
     try

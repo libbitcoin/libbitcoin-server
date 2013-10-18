@@ -18,6 +18,7 @@ void get_value(const libconfig::Setting& root, config_map_type& config,
 
 void load_config(config_map_type& config, const std::string& filename)
 {
+    std::cout << "Using config file: " << std::endl;
     libconfig::Config cfg;
     // Ignore error if unable to read config file.
     try
