@@ -17,7 +17,8 @@ void fullnode_fetch_history(node_impl& node,
     uint32_t from_height;
     if (!unwrap_fetch_history_args(payaddr, from_height, request))
         return;
-    log_debug(LOG_WORKER) << "fetch_history(" << payaddr.encoded() << ")";
+    log_debug(LOG_WORKER) << "fetch_history("
+        << payaddr.encoded() << ", from_height=" << from_height << ")";
     fetch_history(node.blockchain(), node.transaction_indexer(),
         payaddr,
         std::bind(send_history_result, _1, _2, request, socket),
