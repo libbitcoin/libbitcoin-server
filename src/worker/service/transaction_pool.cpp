@@ -36,11 +36,10 @@ void transaction_validated(
     const std::error_code& ec, const index_list& unconfirmed,
     const incoming_message& request, zmq_socket_ptr socket)
 {
-    data_chunk result(4 + 4 + unconfirmed.size() * 4);
+    data_chunk result(4 + unconfirmed.size() * 4);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    serial.write_4_bytes(unconfirmed.size());
     for (uint32_t unconfirm_index: unconfirmed)
         serial.write_4_bytes(unconfirm_index);
     BITCOIN_ASSERT(serial.iterator() == result.end());

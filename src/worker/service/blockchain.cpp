@@ -197,11 +197,10 @@ void block_transaction_hashes_fetched(const std::error_code& ec,
     const hash_digest_list& hashes,
     const incoming_message& request, zmq_socket_ptr socket)
 {
-    data_chunk result(4 + 4 + hash_digest_size * hashes.size());
+    data_chunk result(4 + hash_digest_size * hashes.size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    serial.write_4_bytes(hashes.size());
     for (const hash_digest& tx_hash: hashes)
         serial.write_hash(tx_hash);
     BITCOIN_ASSERT(serial.iterator() == result.end());

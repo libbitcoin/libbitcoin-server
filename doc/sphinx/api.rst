@@ -6,6 +6,8 @@ API Calls
 
 The values in brackets indicate the size of the value.
 
+Variable length lists can be calculated using the size of the message.
+
 Blockchain
 ==========
 
@@ -54,14 +56,14 @@ Fetch a list of ordered transaction hashes belonging to a block.
 fetch_block_transaction_hashes
 ============================== ==========================================================
 Request                        height(4)
-Reply                          ec(4) + hash_list_size(4) + hash_list(hash_list_size * 32)
+Reply                          ec(4) + hash_list(hash_list_size * 32)
 ============================== ==========================================================
 
 ============================== ==========================================================
 fetch_block_transaction_hashes
 ============================== ==========================================================
 Request                        block_hash(32)
-Reply                          ec(4) + hash_list_size(4) + hash_list(hash_list_size * 32)
+Reply                          ec(4) + hash_list(hash_list_size * 32)
 ============================== ==========================================================
 
 Transaction pool
@@ -74,7 +76,7 @@ These commands are prefixed with "transaction_pool.". For instance
 validate
 ======== ============================================================
 Request  tx
-Reply    ec(4) + index_list_size(4) + index_list(index_list_size * 4)
+Reply    ec(4) + index_list(index_list_size * 4)
 ======== ============================================================
 
 Validates an unconfirmed transaction using the transaction pool. The index
