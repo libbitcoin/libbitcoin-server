@@ -158,7 +158,7 @@ void fetch_block_transaction_hashes_by_height(node_impl& node,
 void block_transaction_hashes_fetched(const std::error_code& ec,
     const hash_digest_list& hashes,
     const incoming_message& request, zmq_socket_ptr socket);
-void fetch_block_transaction_hashes(node_impl& node,
+void blockchain_fetch_block_transaction_hashes(node_impl& node,
     const incoming_message& request, zmq_socket_ptr socket)
 {
     const data_chunk& data = request.data();
