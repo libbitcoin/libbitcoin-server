@@ -56,9 +56,12 @@ int main(int argc, char** argv)
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
-    attach("blockchain.fetch_block_transaction_hashes", blockchain_fetch_block_transaction_hashes);
+    attach("blockchain.fetch_block_transaction_hashes",
+        blockchain_fetch_block_transaction_hashes);
     attach("blockchain.fetch_transaction_index",
         blockchain_fetch_transaction_index);
+    attach("blockchain.fetch_spend", blockchain_fetch_spend);
+    attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
     attach("protocol.broadcast_transaction", protocol_broadcast_transaction);
     attach("transaction_pool.validate", transaction_pool_validate);
     // Start the node last so that all subscriptions to new blocks

@@ -245,5 +245,72 @@ void transaction_index_fetched(const std::error_code& ec,
     response.send(*socket);
 }
 
+void spend_fetched(const std::error_code& ec, const input_point& inpoint,
+    const incoming_message& request, zmq_socket_ptr socket);
+void blockchain_fetch_spend(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    if (data.size() != 36)
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_spend";
+        return;
+    }
+    auto deserial = make_deserializer(data.begin(), data.end());
+    output_point outpoint;
+    outpoint.hash = deserial.read_hash();
+    outpoint.index = deserial.read_4_bytes();
+    node.blockchain().fetch_spend(outpoint,
+        std::bind(spend_fetched, _1, _2, request, socket));
+}
+void spend_fetched(const std::error_code& ec, const input_point& inpoint,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    // error_code (4), hash (32), index (4)
+    data_chunk result(40);
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_hash(inpoint.hash);
+    serial.write_4_bytes(inpoint.index);
+    outgoing_message response(request, result);
+    log_debug(LOG_WORKER)
+        << "blockchain.fetch_spend() finished. Sending response.";
+    response.send(*socket);
+}
+
+void block_height_fetched(const std::error_code& ec, size_t block_height,
+    const incoming_message& request, zmq_socket_ptr socket);
+void blockchain_fetch_block_height(node_impl& node,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    const data_chunk& data = request.data();
+    if (data.size() != 32)
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_block_height";
+        return;
+    }
+    auto deserial = make_deserializer(data.begin(), data.end());
+    const hash_digest blk_hash = deserial.read_hash();
+    node.blockchain().fetch_block_height(blk_hash,
+        std::bind(block_height_fetched, _1, _2, request, socket));
+}
+void block_height_fetched(const std::error_code& ec, size_t block_height,
+    const incoming_message& request, zmq_socket_ptr socket)
+{
+    // error_code (4), height (4)
+    data_chunk result(8);
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_4_bytes(block_height);
+    outgoing_message response(request, result);
+    log_debug(LOG_WORKER)
+        << "blockchain.fetch_block_height() finished. Sending response.";
+    response.send(*socket);
+}
+
 } // namespace obelisk
 
