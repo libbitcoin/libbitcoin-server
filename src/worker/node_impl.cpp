@@ -107,6 +107,9 @@ bool node_impl::start(config_map_type& config)
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
     // Transaction pool
     txpool_.start();
+    // Avoid starting session and connecting to p2p network if disabled.
+    if (config["p2p-network"] == "disabled")
+        return true;
     // Start session
     std::promise<std::error_code> ec_session;
     auto session_started =

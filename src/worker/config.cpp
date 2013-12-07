@@ -38,6 +38,7 @@ void load_config(config_map_type& config, const std::string& filename)
     get_value<std::string>(root, config, "block-publish", "tcp://*:9093");
     get_value<std::string>(root, config, "tx-publish", "tcp://*:9094");
     get_value<std::string>(root, config, "name", "");
+    get_value<std::string>(root, config, "p2p-network", "enabled");
 }
 
 } // namespace obelisk
