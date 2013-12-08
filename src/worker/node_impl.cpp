@@ -1,6 +1,7 @@
 #include "node_impl.hpp"
 
 #include <future>
+#include <boost/lexical_cast.hpp>
 
 namespace obelisk {
 
@@ -107,9 +108,11 @@ bool node_impl::start(config_map_type& config)
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
     // Transaction pool
     txpool_.start();
-    // Avoid starting session and connecting to p2p network if disabled.
-    if (config["p2p-network"] == "disabled")
-        return true;
+    // Outgoing connections setting in config file before we
+    // start p2p network subsystem.
+    int outgoing_connections = boost::lexical_cast<int>(
+        config["outgoing-connections"]);
+    protocol_.set_max_outbound(outgoing_connections);
     // Start session
     std::promise<std::error_code> ec_session;
     auto session_started =
