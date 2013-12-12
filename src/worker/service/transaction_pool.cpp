@@ -45,7 +45,8 @@ void transaction_validated(
     BITCOIN_ASSERT(serial.iterator() == result.end());
     outgoing_message response(request, result);
     log_debug(LOG_WORKER)
-        << "transaction_pool.validate() finished. Sending response.";
+        << "transaction_pool.validate() finished. Sending response: "
+        << "ec=" << ec.message();
     response.send(*socket);
 }
 

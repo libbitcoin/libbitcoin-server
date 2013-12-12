@@ -77,7 +77,10 @@ int main(int argc, char** argv)
                 std::string user_cmd;
                 std::getline(std::cin, user_cmd);
                 if (user_cmd == "stop")
+                {
+                    echo() << "Stopping... Please wait.";
                     break;
+                }
             }
             stopped = true;
         });
