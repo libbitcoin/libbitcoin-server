@@ -131,14 +131,21 @@ bool node_impl::start(config_map_type& config)
     return true;
 }
 
-void session_stop(const std::error_code& ec)
-{
-    if (ec)
-        log_error() << "Problem stopping session: " << ec.message();
-}
 bool node_impl::stop()
 {
-    session_.stop(session_stop);
+    // Stop session
+    std::promise<std::error_code> ec_session;
+    auto session_stopped =
+        [&](const std::error_code& ec)
+    {
+        ec_session.set_value(ec);
+    };
+    session_.stop(session_stopped);
+    // Query the error_code and wait for startup completion.
+    std::error_code ec = ec_session.get_future().get();
+    if (ec)
+        log_error() << "Problem stopping session: " << ec.message();
+    // Stop the threadpools.
     network_pool_.stop();
     disk_pool_.stop();
     mem_pool_.stop();
