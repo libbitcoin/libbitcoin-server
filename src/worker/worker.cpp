@@ -29,10 +29,10 @@ request_worker::request_worker()
   : context_(1)
 {
 }
-bool request_worker::start(config_map_type& config)
+bool request_worker::start(config_type& config)
 {
-    connection_ = config["service"];
-    name_ = config["name"];
+    connection_ = config.service;
+    name_ = config.name;
     create_new_socket();
     last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;

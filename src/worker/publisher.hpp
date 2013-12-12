@@ -13,7 +13,7 @@ class publisher
 {
 public:
     publisher(node_impl& node);
-    bool start(config_map_type& config);
+    bool start(config_type& config);
     bool stop();
 
 private:

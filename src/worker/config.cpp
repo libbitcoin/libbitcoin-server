@@ -6,19 +6,27 @@
 
 namespace obelisk {
 
-template <typename T>
-void get_value(const libconfig::Setting& root, config_map_type& config,
-    const std::string& key_name, const T& fallback_value)
+void load_nodes(const libconfig::Setting& root, config_type& config)
 {
-    T value;
-    if (root.lookupValue(key_name, value))
-        config[key_name] = boost::lexical_cast<std::string>(value);
-    else
-        config[key_name] = boost::lexical_cast<std::string>(fallback_value);
+    try
+    {
+        const libconfig::Setting& setting = root["nodes"];
+        for (size_t i = 0; i < setting.getLength(); ++i)
+        {
+            const libconfig::Setting& node = setting[i];
+            echo() << (const char*)node[0];
+        }
+    }
+    catch (const libconfig::SettingTypeException)
+    {
+        std::cerr << "Incorrectly formed nodes setting in config." << std::endl;
+    }
+    catch (const libconfig::SettingNotFoundException&) {}
 }
 
-void load_config(config_map_type& config, const std::string& filename)
+void load_config(config_type& config, const std::string& filename)
 {
+    // Load values from config file.
     echo() << "Using config file: " << filename;
     libconfig::Config cfg;
     // Ignore error if unable to read config file.
@@ -30,15 +38,17 @@ void load_config(config_map_type& config, const std::string& filename)
     catch (const libconfig::ParseException&) {}
     // Read off values
     const libconfig::Setting& root = cfg.getRoot();
-    get_value<std::string>(root, config, "output-file", "debug.log");
-    get_value<std::string>(root, config, "error-file", "error.log");
-    get_value<std::string>(root, config, "blockchain-path", "blockchain");
-    get_value<std::string>(root, config, "service", "tcp://localhost:9092");
-    get_value<std::string>(root, config, "publisher", "disabled");
-    get_value<std::string>(root, config, "block-publish", "tcp://*:9093");
-    get_value<std::string>(root, config, "tx-publish", "tcp://*:9094");
-    get_value<std::string>(root, config, "name", "");
-    get_value<int>(root, config, "outgoing-connections", 8);
+    root.lookupValue("output-file", config.output_file);
+    root.lookupValue("error-file", config.error_file);
+    root.lookupValue("blockchain-path", config.blockchain_path);
+    root.lookupValue("service", config.service);
+    root.lookupValue("publisher_enabled", config.publisher_enabled);
+    root.lookupValue("block-publish", config.block_publish);
+    root.lookupValue("tx-publish", config.tx_publish);
+    root.lookupValue("name", config.name);
+    root.lookupValue("outgoing-connections", config.outgoing_connections);
+    root.lookupValue("listener_enabled", config.listener_enabled);
+    load_nodes(root, config);
 }
 
 } // namespace obelisk

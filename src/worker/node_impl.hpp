@@ -16,7 +16,7 @@ public:
         transaction_notify_callback;
 
     node_impl();
-    bool start(config_map_type& config);
+    bool start(config_type& config);
     bool stop();
 
     void subscribe_blocks(block_notify_callback notify_block);

@@ -17,7 +17,7 @@ using std::placeholders::_2;
 
 int main(int argc, char** argv)
 {
-    config_map_type config;
+    config_type config;
     if (argc == 2)
         load_config(config, argv[1]);
     else
@@ -26,6 +26,7 @@ int main(int argc, char** argv)
         path conf_filename = path(SYSCONFDIR) / "obelisk" / "worker.cfg";
         load_config(config, conf_filename.native());
     }
+    echo() << "Type stop[ENTER] to shut down.";
     // Create worker.
     request_worker worker;
     worker.start(config);
@@ -33,7 +34,7 @@ int main(int argc, char** argv)
     node_impl node;
     // Publisher
     publisher publish(node);
-    if (config["publisher"] == "enabled")
+    if (config.publisher_enabled)
         if (!publish.start(config))
             return 1;
     // Address subscriptions
@@ -98,7 +99,7 @@ int main(int argc, char** argv)
         }
     }
     thr.detach();
-    if (config["publisher"] == "enabled")
+    if (config.publisher_enabled)
         publish.stop();
     if (!node.stop())
         return -1;

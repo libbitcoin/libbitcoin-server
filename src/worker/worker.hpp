@@ -18,7 +18,7 @@ public:
         const incoming_message&, zmq_socket_ptr)> command_handler;
 
     request_worker();
-    bool start(config_map_type& config);
+    bool start(config_type& config);
     void attach(const std::string& command, command_handler handler);
     void update();
 

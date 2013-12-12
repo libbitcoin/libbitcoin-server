@@ -72,11 +72,11 @@ node_impl::node_impl()
 {
 }
 
-bool node_impl::start(config_map_type& config)
+bool node_impl::start(config_type& config)
 {
     auto file_mode = std::ofstream::out | std::ofstream::app;
-    outfile_.open(config["output-file"], file_mode);
-    errfile_.open(config["error-file"], file_mode);
+    outfile_.open(config.output_file, file_mode);
+    errfile_.open(config.error_file, file_mode);
     log_debug().set_output_function(
         std::bind(output_file, std::ref(outfile_), _1, _2, _3));
     log_info().set_output_function(
@@ -96,7 +96,7 @@ bool node_impl::start(config_map_type& config)
     {
         ec_chain.set_value(ec);
     };
-    chain_.start(config["blockchain-path"], blockchain_started);
+    chain_.start(config.blockchain_path, blockchain_started);
     // Query the error_code and wait for startup completion.
     std::error_code ec = ec_chain.get_future().get();
     if (ec)
@@ -111,7 +111,7 @@ bool node_impl::start(config_map_type& config)
     // Outgoing connections setting in config file before we
     // start p2p network subsystem.
     int outgoing_connections = boost::lexical_cast<int>(
-        config["outgoing-connections"]);
+        config.outgoing_connections);
     protocol_.set_max_outbound(outgoing_connections);
     // Start session
     std::promise<std::error_code> ec_session;
