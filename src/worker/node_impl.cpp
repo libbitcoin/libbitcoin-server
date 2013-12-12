@@ -113,6 +113,7 @@ bool node_impl::start(config_type& config)
     int outgoing_connections = boost::lexical_cast<int>(
         config.outgoing_connections);
     protocol_.set_max_outbound(outgoing_connections);
+    protocol_.set_hosts_filename(config.hosts_file);
     if (!config.listener_enabled)
         protocol_.disable_listener();
     for (const auto node: config.nodes)

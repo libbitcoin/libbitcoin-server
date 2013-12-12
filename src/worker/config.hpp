@@ -20,6 +20,7 @@ struct config_type
     std::string output_file = "debug.log";
     std::string error_file = "error.log";
     std::string blockchain_path = "blockchain/";
+    std::string hosts_file = "hosts";
     std::string service = "tcp://localhost:9092";
     bool publisher_enabled = false;
     std::string block_publish;
