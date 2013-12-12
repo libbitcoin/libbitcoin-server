@@ -13,8 +13,11 @@ void load_nodes(const libconfig::Setting& root, config_type& config)
         const libconfig::Setting& setting = root["nodes"];
         for (size_t i = 0; i < setting.getLength(); ++i)
         {
-            const libconfig::Setting& node = setting[i];
-            echo() << (const char*)node[0];
+            const libconfig::Setting& node_setting = setting[i];
+            node_config_object node;
+            node.hostname = (const char*)node_setting[0];
+            node.port = (unsigned int)node_setting[1];
+            config.nodes.push_back(node);
         }
     }
     catch (const libconfig::SettingTypeException)

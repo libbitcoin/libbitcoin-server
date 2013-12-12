@@ -113,6 +113,13 @@ bool node_impl::start(config_type& config)
     int outgoing_connections = boost::lexical_cast<int>(
         config.outgoing_connections);
     protocol_.set_max_outbound(outgoing_connections);
+    if (!config.listener_enabled)
+        protocol_.disable_listener();
+    for (const auto node: config.nodes)
+    {
+        log_info() << "Adding node: " << node.hostname << " " << node.port;
+        protocol_.maintain_connection(node.hostname, node.port);
+    }
     // Start session
     std::promise<std::error_code> ec_session;
     auto session_started =
