@@ -56,7 +56,7 @@ if [ -z "`grep -E \"\/var\/lib\/blockchain\/\" /etc/obelisk/worker.cfg`" ]; then
 fi
 
 #to prevent the error.log and debug.log files from getting too big with obworker...
-sudo ln -sf /opt/mastercoind/sysinstall/linux/logrotate.d/obworker /etc/logrotate.d/obworker
+sudo ln -sf sysinstall/linux/logrotate.d/obworker /etc/logrotate.d/obworker
 
 #up open file limits for ob user (which obelisk runs as) because libbitcoin needs higher limits
 sudo bash -c "echo \"ob  soft  nofile 4096\" >> /etc/security/limits.conf"
