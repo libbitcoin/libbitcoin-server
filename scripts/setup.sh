@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ ! -e sysinstall ]; then
+    echo "Please run the script from the same directory as you checked it out, like './setup.sh'"
+    exit 1
+fi
+
 printPlain() { /bin/echo -e "${1}" >&2; }
 printGreen() { /bin/echo -e "\033[32;1m${1}\033[0m" >&2; }
 printBlue() { /bin/echo -e "\033[34;1m${1}\033[0m" >&2; }
@@ -60,8 +65,8 @@ sudo bash -c "sudo echo \"session required pam_limits.so\" >> /etc/pam.d/common-
 
 #setup init scripts
 printBlue "Setting up init scripts..."
-sudo ln -sf /opt/mastercoind/sysinstall/linux/init.d/obworker /etc/init.d/obworker
-sudo ln -sf /opt/mastercoind/sysinstall/linux/init.d/obbalancer /etc/init.d/obbalancer
+sudo ln -sf sysinstall/linux/init.d/obworker /etc/init.d/obworker
+sudo ln -sf sysinstall/linux/init.d/obbalancer /etc/init.d/obbalancer
 sudo update-rc.d obworker defaults 80
 sudo update-rc.d obbalancer defaults 81
 
@@ -70,7 +75,6 @@ sudo service obworker start
 
 #create necessary local config files for sx
 cp /usr/local/share/sx/sx.cfg ~/.sx.cfg
-sudo cp /usr/local/share/sx/sx.cfg ~mastercoind/.sx.cfg
 
 printGreen "All done!"
 

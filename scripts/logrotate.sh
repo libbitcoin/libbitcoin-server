@@ -5,5 +5,6 @@
     compress
     delaycompress
     notifempty
+    create 644 ob ob
     sharedscripts
 }
