@@ -32,7 +32,7 @@ void wrap_validate_transaction(const data_chunk& data,
         return;
     BITCOIN_ASSERT(deserial.iterator() == data.begin() + 4);
     index_list unconfirmed;
-    size_t unconfirmed_size = deserial.read_4_bytes();
+    size_t unconfirmed_size = (data.size() - 4) / 4;
     for (size_t i = 0; i < unconfirmed_size; ++i)
     {
         size_t unconfirm_index = deserial.read_4_bytes();
