@@ -53,6 +53,7 @@ bool request_worker::start(config_type& config)
 }
 void request_worker::stop()
 {
+    // Stop send watching thread.
     send_stopped_ = true;
     send_condition_.notify_one();
     send_thread_.join();
