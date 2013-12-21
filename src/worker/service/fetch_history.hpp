@@ -3,6 +3,7 @@
 
 #include <obelisk/message.hpp>
 #include "../node_impl.hpp"
+#include "util.hpp"
 
 namespace obelisk {
 
@@ -12,7 +13,7 @@ bool unwrap_fetch_history_args(
 
 bool send_history_result(const std::error_code& ec,
     const bc::blockchain::history_list& history,
-    const incoming_message& request, zmq_socket_ptr socket);
+    const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace obelisk
 

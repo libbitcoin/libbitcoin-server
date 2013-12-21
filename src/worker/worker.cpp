@@ -64,6 +64,13 @@ void request_worker::attach(
 
 void request_worker::update()
 {
+    poll();
+    send_pending();
+}
+
+void request_worker::poll()
+{
+    // Poll for network updates.
     zmq::pollitem_t items [] = { { *socket_,  0, ZMQ_POLLIN, 0 } };
     int rc = zmq::poll(items, 1, 50000);
     BITCOIN_ASSERT(rc >= 0);
@@ -85,7 +92,11 @@ void request_worker::update()
             {
                 log_debug(LOG_WORKER)
                     << request.command() << " from " << request.origin();
-                it->second(request, socket_);
+                auto queue_send = [this](const outgoing_message& message)
+                {
+                    send_queue_.produce(message);
+                };
+                it->second(request, queue_send);
             }
             else
             {
@@ -126,6 +137,12 @@ void request_worker::update()
         log_debug(LOG_WORKER) << "Sending heartbeat";
         send_string(*socket_, "HEARTBEAT");
     }
+}
+
+void request_worker::send_pending()
+{
+    for (const outgoing_message& message: lockless_iterable(send_queue_))
+        message.send(*socket_);
 }
 
 } // namespace obelisk

@@ -6,6 +6,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/message.hpp>
 #include "node_impl.hpp"
+#include "service/util.hpp"
 
 namespace obelisk {
 
@@ -13,8 +14,10 @@ class subscribe_manager
 {
 public:
     subscribe_manager(node_impl& node);
-    void subscribe(const incoming_message& request, zmq_socket_ptr socket);
-    void renew(const incoming_message& request, zmq_socket_ptr socket);
+    void subscribe(
+        const incoming_message& request, queue_send_callback queue_send);
+    void renew(
+        const incoming_message& request, queue_send_callback queue_send);
 
     void submit(size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
@@ -24,14 +27,16 @@ private:
     {
         boost::posix_time::ptime expiry_time;
         const bc::data_chunk client_origin;
-        const zmq_socket_ptr socket;
+        queue_send_callback queue_send;
     };
 
     typedef std::unordered_multimap<bc::payment_address, subscription>
         subscription_map;
 
-    void do_subscribe(const incoming_message& request, zmq_socket_ptr socket);
-    void do_renew(const incoming_message& request, zmq_socket_ptr socket);
+    void do_subscribe(
+        const incoming_message& request, queue_send_callback queue_send);
+    void do_renew(
+        const incoming_message& request, queue_send_callback queue_send);
 
     void do_submit(
         size_t height, const bc::hash_digest& block_hash,

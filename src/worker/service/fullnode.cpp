@@ -11,7 +11,7 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 void fullnode_fetch_history(node_impl& node,
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     payment_address payaddr;
     uint32_t from_height;
@@ -21,7 +21,7 @@ void fullnode_fetch_history(node_impl& node,
         << payaddr.encoded() << ", from_height=" << from_height << ")";
     fetch_history(node.blockchain(), node.transaction_indexer(),
         payaddr,
-        std::bind(send_history_result, _1, _2, request, socket),
+        std::bind(send_history_result, _1, _2, request, queue_send),
         from_height);
 }
 

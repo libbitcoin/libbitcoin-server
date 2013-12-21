@@ -2,7 +2,6 @@
 
 #include "../node_impl.hpp"
 #include "../echo.hpp"
-#include "util.hpp"
 
 namespace obelisk {
 
@@ -12,9 +11,9 @@ using std::placeholders::_2;
 
 void transaction_validated(
     const std::error_code& ec, const index_list& unconfirmed,
-    const incoming_message& request, zmq_socket_ptr socket);
+    const incoming_message& request, queue_send_callback queue_send);
 void transaction_pool_validate(node_impl& node,
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
     transaction_type tx;
@@ -26,15 +25,15 @@ void transaction_pool_validate(node_impl& node,
     {
         // error
         transaction_validated(error::bad_stream, index_list(),
-            request, socket);
+            request, queue_send);
         return;
     }
     node.transaction_pool().validate(tx,
-        std::bind(transaction_validated, _1, _2, request, socket));
+        std::bind(transaction_validated, _1, _2, request, queue_send));
 }
 void transaction_validated(
     const std::error_code& ec, const index_list& unconfirmed,
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     data_chunk result(4 + unconfirmed.size() * 4);
     auto serial = make_serializer(result.begin());
@@ -43,11 +42,11 @@ void transaction_validated(
     for (uint32_t unconfirm_index: unconfirmed)
         serial.write_4_bytes(unconfirm_index);
     BITCOIN_ASSERT(serial.iterator() == result.end());
-    outgoing_message response(request, result);
     log_debug(LOG_WORKER)
         << "transaction_pool.validate() finished. Sending response: "
         << "ec=" << ec.message();
-    response.send(*socket);
+    outgoing_message response(request, result);
+    queue_send(response);
 }
 
 } // namespace obelisk

@@ -28,7 +28,7 @@ bool unwrap_fetch_history_args(
 }
 bool send_history_result(const std::error_code& ec,
     const blockchain::history_list& history,
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     size_t row_size = 36 + 4 + 8 + 36 + 4;
     data_chunk result(4 + row_size * history.size());
@@ -45,10 +45,10 @@ bool send_history_result(const std::error_code& ec,
         serial.write_4_bytes(row.spend_height);
     }
     BITCOIN_ASSERT(serial.iterator() == result.end());
-    outgoing_message response(request, result);
     log_debug(LOG_WORKER)
         << "*.fetch_history() finished. Sending response.";
-    response.send(*socket);
+    outgoing_message response(request, result);
+    queue_send(response);
 }
 
 } // namespace obelisk

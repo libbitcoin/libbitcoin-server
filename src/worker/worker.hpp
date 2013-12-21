@@ -6,6 +6,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <obelisk/message.hpp>
 #include "config.hpp"
+#include "lockless_queue.hpp"
+#include "service/util.hpp"
 
 namespace obelisk {
 
@@ -15,7 +17,7 @@ class request_worker
 {
 public:
     typedef std::function<void (
-        const incoming_message&, zmq_socket_ptr)> command_handler;
+        const incoming_message&, queue_send_callback)> command_handler;
 
     request_worker();
     bool start(config_type& config);
@@ -24,8 +26,12 @@ public:
 
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
+    typedef lockless_queue<outgoing_message> send_message_queue;
 
     void create_new_socket();
+
+    void poll();
+    void send_pending();
 
     zmq::context_t context_;
     std::string connection_;
@@ -38,6 +44,7 @@ private:
     size_t interval_;
 
     command_map handlers_;
+    send_message_queue send_queue_;
 };
 
 } // namespace obelisk

@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     subscribe_manager addr_sub(node);
     // Attach commands
     typedef std::function<void (node_impl&,
-        const incoming_message&, zmq_socket_ptr)> basic_command_handler;
+        const incoming_message&, queue_send_callback)> basic_command_handler;
     auto attach = [&worker, &node](
         const std::string& command, basic_command_handler handler)
         {

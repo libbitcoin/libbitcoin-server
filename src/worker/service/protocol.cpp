@@ -2,6 +2,7 @@
 
 #include <bitcoin/satoshi_serialize.hpp>
 #include "../node_impl.hpp"
+#include "../echo.hpp"
 #include "util.hpp"
 
 namespace obelisk {
@@ -9,7 +10,7 @@ namespace obelisk {
 using namespace bc;
 
 void protocol_broadcast_transaction(node_impl& node,
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
     transaction_type tx;
@@ -24,7 +25,7 @@ void protocol_broadcast_transaction(node_impl& node,
         // error
         write_error_code(serial, error::bad_stream);
         outgoing_message response(request, result);
-        response.send(*socket);
+        queue_send(response);
         return;
     }
     auto ignore_send = [](const std::error_code&, size_t) {};
@@ -32,8 +33,10 @@ void protocol_broadcast_transaction(node_impl& node,
     node.protocol().broadcast(tx, ignore_send);
     // Response back to user saying everything is fine.
     write_error_code(serial, std::error_code());
+    log_debug(LOG_WORKER)
+        << "protocol.broadcast_transaction() finished. Sending response.";
     outgoing_message response(request, result);
-    response.send(*socket);
+    queue_send(response);
 }
 
 } // namespace obelisk

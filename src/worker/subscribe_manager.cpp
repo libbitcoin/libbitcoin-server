@@ -57,13 +57,13 @@ bool deserialize_address(payment_address& addr, const data_chunk& data)
 }
 
 void subscribe_manager::subscribe(
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     strand_.queue(
-        &subscribe_manager::do_subscribe, this, request, socket);
+        &subscribe_manager::do_subscribe, this, request, queue_send);
 }
 void subscribe_manager::do_subscribe(
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     payment_address addr_key;
     if (!deserialize_address(addr_key, request.data()))
@@ -74,23 +74,23 @@ void subscribe_manager::do_subscribe(
     // Now create subscription.
     const posix_time::ptime now = second_clock::universal_time();
     subs_.emplace(addr_key, subscription{
-        now + sub_expiry, request.origin(), socket});
+        now + sub_expiry, request.origin(), queue_send});
     // Send response.
     data_chunk result(4);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, std::error_code());
     outgoing_message response(request, result);
-    response.send(*socket);
+    queue_send(response);
 }
 
 void subscribe_manager::renew(
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     strand_.randomly_queue(
-        &subscribe_manager::do_renew, this, request, socket);
+        &subscribe_manager::do_renew, this, request, queue_send);
 }
 void subscribe_manager::do_renew(
-    const incoming_message& request, zmq_socket_ptr socket)
+    const incoming_message& request, queue_send_callback queue_send)
 {
     payment_address addr_key;
     if (!deserialize_address(addr_key, request.data()))
@@ -116,7 +116,7 @@ void subscribe_manager::do_renew(
     auto serial = make_serializer(result.begin());
     write_error_code(serial, std::error_code());
     outgoing_message response(request, result);
-    response.send(*socket);
+    queue_send(response);
 }
 
 void subscribe_manager::submit(
@@ -179,7 +179,7 @@ void subscribe_manager::post_updates(const payment_address& address,
         const subscription& sub_detail = it->second;
         outgoing_message update(
             sub_detail.client_origin, "address.update", data);
-        update.send(*sub_detail.socket);
+        sub_detail.queue_send(update);
     }
 }
 
