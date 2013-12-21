@@ -45,8 +45,9 @@ bool send_history_result(const std::error_code& ec,
         serial.write_4_bytes(row.spend_height);
     }
     BITCOIN_ASSERT(serial.iterator() == result.end());
-    log_debug(LOG_WORKER)
-        << "*.fetch_history() finished. Sending response.";
+    // TODO: Slows down queries!
+    //log_debug(LOG_WORKER)
+    //    << "*.fetch_history() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
 }

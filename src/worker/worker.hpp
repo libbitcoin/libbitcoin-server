@@ -1,6 +1,9 @@
 #ifndef OBELISK_WORKER_WORKER_HPP
 #define OBELISK_WORKER_WORKER_HPP
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include <unordered_map>
 #include <zmq.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -21,6 +24,7 @@ public:
 
     request_worker();
     bool start(config_type& config);
+    void stop();
     void attach(const std::string& command, command_handler handler);
     void update();
 
@@ -31,6 +35,8 @@ private:
     void create_new_socket();
 
     void poll();
+
+    // Wait for pending sends and send them.
     void send_pending();
 
     zmq::context_t context_;
@@ -44,7 +50,15 @@ private:
     size_t interval_;
 
     command_map handlers_;
+
+    // When the send is ready, then the sending thread is woken up.
     send_message_queue send_queue_;
+    std::thread send_thread_;
+    // Only the sending thread uses this mutex.
+    // Needed by send_condition_.wait(lk) 
+    std::mutex send_mutex_;
+    std::condition_variable send_condition_;
+    bool send_stopped_ = false;
 };
 
 } // namespace obelisk

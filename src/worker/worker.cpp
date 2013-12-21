@@ -14,6 +14,7 @@ using posix_time::microsec_clock;
 
 const posix_time::time_duration heartbeat_interval = milliseconds(1000);
 constexpr size_t interval_init = 4, interval_max = 32;
+constexpr long poll_sleep_interval = 50000;
 
 auto now = []() { return microsec_clock::universal_time(); };
 
@@ -37,6 +38,24 @@ bool request_worker::start(config_type& config)
     last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;
     interval_ = interval_init;
+    // Start thread for processing sends.
+    auto process_sends = [this]
+    {
+        while (!send_stopped_)
+        {
+            std::unique_lock<std::mutex> lk(send_mutex_);
+            send_condition_.wait(lk);
+            lk.unlock();
+            send_pending();
+        }
+    };
+    send_thread_ = std::thread(process_sends);
+}
+void request_worker::stop()
+{
+    send_stopped_ = true;
+    send_condition_.notify_one();
+    send_thread_.join();
 }
 
 void request_worker::create_new_socket()
@@ -65,14 +84,13 @@ void request_worker::attach(
 void request_worker::update()
 {
     poll();
-    send_pending();
 }
 
 void request_worker::poll()
 {
     // Poll for network updates.
     zmq::pollitem_t items [] = { { *socket_,  0, ZMQ_POLLIN, 0 } };
-    int rc = zmq::poll(items, 1, 50000);
+    int rc = zmq::poll(items, 1, poll_sleep_interval);
     BITCOIN_ASSERT(rc >= 0);
 
     if (items[0].revents & ZMQ_POLLIN)
@@ -90,11 +108,13 @@ void request_worker::poll()
             // Perform request if found.
             if (it != handlers_.end())
             {
+                // TODO: Slows down queries!
                 log_debug(LOG_WORKER)
                     << request.command() << " from " << request.origin();
                 auto queue_send = [this](const outgoing_message& message)
                 {
                     send_queue_.produce(message);
+                    send_condition_.notify_one();
                 };
                 it->second(request, queue_send);
             }

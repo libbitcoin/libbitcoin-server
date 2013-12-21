@@ -98,6 +98,7 @@ int main(int argc, char** argv)
             stopped = true;
         }
     }
+    worker.stop();
     thr.detach();
     if (config.publisher_enabled)
         publish.stop();
