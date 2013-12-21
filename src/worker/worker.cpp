@@ -7,6 +7,7 @@
 namespace obelisk {
 
 using namespace bc;
+using std::placeholders::_1;
 namespace posix_time = boost::posix_time;
 using posix_time::milliseconds;
 using posix_time::seconds;
@@ -26,6 +27,45 @@ bool send_string(zmq::socket_t& socket, const std::string& str)
     return socket.send(message);
 }
 
+void send_worker::set_socket(zmq_socket_ptr socket)
+{
+    // Ensure exclusive access to socket device.
+    std::unique_lock<std::mutex> lk(mutex_);
+    socket_ = socket;
+}
+void send_worker::start()
+{
+    // Start thread for processing sends.
+    auto process_sends = [this]
+    {
+        while (!stopped_)
+        {
+            std::unique_lock<std::mutex> lk(mutex_);
+            send_condition_.wait(lk);
+            send_pending();
+        }
+    };
+    send_thread_ = std::thread(process_sends);
+}
+void send_worker::stop()
+{
+    // Stop send watching thread.
+    stopped_ = true;
+    send_condition_.notify_one();
+    send_thread_.join();
+}
+void send_worker::queue_send(const outgoing_message& message)
+{
+    send_queue_.produce(message);
+    send_condition_.notify_one();
+}
+void send_worker::send_pending()
+{
+    BITCOIN_ASSERT(socket_);
+    for (const outgoing_message& message: lockless_iterable(send_queue_))
+        message.send(*socket_);
+}
+
 request_worker::request_worker()
   : context_(1)
 {
@@ -38,25 +78,11 @@ bool request_worker::start(config_type& config)
     last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;
     interval_ = interval_init;
-    // Start thread for processing sends.
-    auto process_sends = [this]
-    {
-        while (!send_stopped_)
-        {
-            std::unique_lock<std::mutex> lk(send_mutex_);
-            send_condition_.wait(lk);
-            lk.unlock();
-            send_pending();
-        }
-    };
-    send_thread_ = std::thread(process_sends);
+    sender_.start();
 }
 void request_worker::stop()
 {
-    // Stop send watching thread.
-    send_stopped_ = true;
-    send_condition_.notify_one();
-    send_thread_.join();
+    sender_.stop();
 }
 
 void request_worker::create_new_socket()
@@ -74,6 +100,7 @@ void request_worker::create_new_socket()
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
     send_string(*socket_, "READY");
+    sender_.set_socket(socket_);
 }
 
 void request_worker::attach(
@@ -112,12 +139,8 @@ void request_worker::poll()
                 // TODO: Slows down queries!
                 log_debug(LOG_WORKER)
                     << request.command() << " from " << request.origin();
-                auto queue_send = [this](const outgoing_message& message)
-                {
-                    send_queue_.produce(message);
-                    send_condition_.notify_one();
-                };
-                it->second(request, queue_send);
+                it->second(request,
+                    std::bind(&send_worker::queue_send, &sender_, _1));
             }
             else
             {
@@ -158,12 +181,6 @@ void request_worker::poll()
         log_debug(LOG_WORKER) << "Sending heartbeat";
         send_string(*socket_, "HEARTBEAT");
     }
-}
-
-void request_worker::send_pending()
-{
-    for (const outgoing_message& message: lockless_iterable(send_queue_))
-        message.send(*socket_);
 }
 
 } // namespace obelisk
