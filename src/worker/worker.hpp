@@ -71,6 +71,7 @@ private:
 
     void create_new_socket();
     void poll();
+    void send_control_message(const std::string& command);
 
     zmq::context_t context_;
     std::string connection_;

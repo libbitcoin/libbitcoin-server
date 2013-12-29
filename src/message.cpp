@@ -10,6 +10,8 @@ namespace obelisk {
 
 using namespace bc;
 
+constexpr uint32_t control_id = std::numeric_limits<uint32_t>::max();
+
 bool incoming_message::recv(zmq::socket_t& socket)
 {
     zmq_message message;
@@ -17,7 +19,7 @@ bool incoming_message::recv(zmq::socket_t& socket)
     const data_stack& parts = message.parts();
     if (parts.size() == 1)
     {
-        id_ = std::numeric_limits<uint32_t>::max();
+        id_ = control_id;
         command_ = std::string(parts[0].begin(), parts[0].end());
         return true;
     }
@@ -91,22 +93,41 @@ outgoing_message::outgoing_message(
 {
 }
 
+outgoing_message::outgoing_message(const std::string& command)
+  : id_(control_id), command_(command)
+{
+}
+
+void append_str(zmq_message& message, const std::string& command)
+{
+    message.append(data_chunk(command.begin(), command.end()));
+}
+
 void outgoing_message::send(zmq::socket_t& socket) const
 {
     zmq_message message;
+    if (id_ == control_id)
+    {
+        // Control message. Don't bother with other fields.
+        append_str(message, command_);
+        message.send(socket);
+        return;
+    }
+    // [ DEST ]
     message.append(dest_);
     // [ COMMAND ]
+    append_str(message, command_);
     // [ ID ]
-    // [ DATA ]
-    // [ CHECKSUM ]
-    message.append(data_chunk(command_.begin(), command_.end()));
     data_chunk raw_id = uncast_type(id_);
     BITCOIN_ASSERT(raw_id.size() == 4);
     message.append(raw_id);
+    // [ DATA ]
     message.append(data_);
+    // [ CHECKSUM ]
     data_chunk raw_checksum = uncast_type(generate_sha256_checksum(data_));
     BITCOIN_ASSERT(raw_checksum.size() == 4);
     message.append(raw_checksum);
+    // Send.
     message.send(socket);
 }
 

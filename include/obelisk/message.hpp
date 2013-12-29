@@ -36,6 +36,8 @@ public:
         const bc::data_chunk& data);
     outgoing_message(
         const incoming_message& request, const bc::data_chunk& data);
+    // Control messages sent to the bouncer.
+    outgoing_message(const std::string& command);
     // Default constructor provided for containers and copying.
     outgoing_message();
 

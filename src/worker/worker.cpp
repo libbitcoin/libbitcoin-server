@@ -19,14 +19,6 @@ constexpr long poll_sleep_interval = 50000;
 
 auto now = []() { return microsec_clock::universal_time(); };
 
-bool send_string(zmq::socket_t& socket, const std::string& str)
-{
-    zmq::message_t message(str.size());
-    char* msg_begin = reinterpret_cast<char*>(message.data());
-    std::copy(str.begin(), str.end(), msg_begin);
-    return socket.send(message);
-}
-
 void send_worker::set_socket(zmq_socket_ptr socket)
 {
     // Ensure exclusive access to socket device.
@@ -99,7 +91,7 @@ void request_worker::create_new_socket()
     socket_->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
-    send_string(*socket_, "READY");
+    send_control_message("READY");
     sender_.set_socket(socket_);
 }
 
@@ -137,8 +129,8 @@ void request_worker::poll()
             if (it != handlers_.end())
             {
                 // TODO: Slows down queries!
-                log_debug(LOG_WORKER)
-                    << request.command() << " from " << request.origin();
+                //log_debug(LOG_WORKER)
+                //    << request.command() << " from " << request.origin();
                 it->second(request,
                     std::bind(&send_worker::queue_send, &sender_, _1));
             }
@@ -179,8 +171,14 @@ void request_worker::poll()
     {
         heartbeat_at_ = now() + heartbeat_interval;
         log_debug(LOG_WORKER) << "Sending heartbeat";
-        send_string(*socket_, "HEARTBEAT");
+        send_control_message("HEARTBEAT");
     }
+}
+
+void request_worker::send_control_message(const std::string& command)
+{
+    outgoing_message message(command);
+    sender_.queue_send(message);
 }
 
 } // namespace obelisk
