@@ -9,6 +9,12 @@
 
 #define LOG_BALANCER "balancer"
 
+#if ZMQ_VERSION_MAJOR == 4
+    constexpr size_t zmq_uuid_size = 5;
+#else
+    constexpr size_t zmq_uuid_size = 17;
+#endif
+
 using namespace bc;
 using namespace obelisk;
 
@@ -141,9 +147,9 @@ void forward_request(zmq::socket_t& frontend, zmq::socket_t& backend,
         return;
     }
     // First item is client's identity.
-    if (in_parts[0].size() != 17)
+    if (in_parts[0].size() != zmq_uuid_size)
     {
-        log_warning(LOG_BALANCER) << "Client UUID malformed";
+        log_warning(LOG_BALANCER) << "Client UUID malformed " << in_parts[0];
         return;
     }
     // Second item is worker identity or nothing.
@@ -235,7 +241,7 @@ void passback_response(zmq::socket_t& backend, zmq::socket_t& frontend,
 
     BITCOIN_ASSERT(in_parts.size() == 6);
     zmq_message msg_out;
-    BITCOIN_ASSERT(in_parts[1].size() == 17);
+    BITCOIN_ASSERT(in_parts[1].size() == zmq_uuid_size);
     msg_out.append(in_parts[1]);
     BITCOIN_ASSERT(in_parts[0].size() > 0 && in_parts[0].size() < 256);
     msg_out.append(in_parts[0]);
