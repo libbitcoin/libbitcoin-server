@@ -91,8 +91,8 @@ void request_worker::create_new_socket()
     socket_->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
-    send_control_message("READY");
     sender_.set_socket(socket_);
+    send_control_message("READY");
 }
 
 void request_worker::attach(
