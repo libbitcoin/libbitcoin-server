@@ -14,7 +14,15 @@
 
 namespace obelisk {
 
-bool send_string(zmq::socket_t& socket, const std::string& str);
+struct socket_factory
+{
+    socket_factory();
+    zmq_socket_ptr spawn_socket();
+
+    zmq::context_t context;
+    std::string connection;
+    std::string name;
+};
 
 /**
  * We don't want to block the originating threads that execute a send
@@ -33,25 +41,15 @@ bool send_string(zmq::socket_t& socket, const std::string& str);
 class send_worker
 {
 public:
-    void set_socket(zmq_socket_ptr socket);
-    void start();
-    void stop();
+    send_worker(zmq::context_t& context);
     void queue_send(const outgoing_message& message);
-    // Wait for pending sends and send them.
-    void send_pending();
 
 private:
     typedef lockless_queue<outgoing_message> send_message_queue;
 
-    bool stopped_ = false;
-    zmq_socket_ptr socket_;
+    zmq::context_t& context_;
     // When the send is ready, then the sending thread is woken up.
     send_message_queue send_queue_;
-    std::thread send_thread_;
-    // Only the sending thread uses this mutex.
-    // Needed by send_condition_.wait(lk) 
-    std::mutex mutex_;
-    std::condition_variable send_condition_;
 };
 
 class request_worker
@@ -73,10 +71,11 @@ private:
     void poll();
     void send_control_message(const std::string& command);
 
-    zmq::context_t context_;
-    std::string connection_;
+    socket_factory factory_;
+    // Main socket.
     zmq_socket_ptr socket_;
-    std::string name_;
+    // Socket to trigger wakeup for send.
+    zmq::socket_t wakeup_socket_;
 
     boost::posix_time::ptime last_heartbeat_;
     // Send out heartbeats at regular intervals

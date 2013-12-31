@@ -2,6 +2,7 @@
 
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/logger.hpp>
+#include <obelisk/zmq_message.hpp>
 #include "echo.hpp"
 
 namespace obelisk {
@@ -19,79 +20,61 @@ constexpr long poll_sleep_interval = 50000;
 
 auto now = []() { return microsec_clock::universal_time(); };
 
-void send_worker::set_socket(zmq_socket_ptr socket)
+socket_factory::socket_factory()
+  : context(1)
 {
-    // Ensure exclusive access to socket device.
-    std::unique_lock<std::mutex> lk(mutex_);
-    socket_ = socket;
 }
-void send_worker::start()
+zmq_socket_ptr socket_factory::spawn_socket()
 {
-    // Start thread for processing sends.
-    auto process_sends = [this]
-    {
-        while (!stopped_)
-        {
-            std::unique_lock<std::mutex> lk(mutex_);
-            send_condition_.wait(lk);
-            send_pending();
-        }
-    };
-    send_thread_ = std::thread(process_sends);
+    zmq_socket_ptr socket =
+        std::make_shared<zmq::socket_t>(context, ZMQ_DEALER);
+    // Set the socket identity name.
+    if (!name.empty())
+        socket->setsockopt(ZMQ_IDENTITY, name.c_str(), name.size());
+    // Connect...
+    socket->connect(connection.c_str());
+    // Configure socket to not wait at close time
+    int linger = 0;
+    socket->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
+    return socket;
 }
-void send_worker::stop()
+
+send_worker::send_worker(zmq::context_t& context)
+  : context_(context)
 {
-    // Stop send watching thread.
-    stopped_ = true;
-    send_condition_.notify_one();
-    send_thread_.join();
 }
 void send_worker::queue_send(const outgoing_message& message)
 {
-    send_queue_.produce(message);
-    send_condition_.notify_one();
-}
-void send_worker::send_pending()
-{
-    BITCOIN_ASSERT(socket_);
-    for (const outgoing_message& message: lockless_iterable(send_queue_))
-        message.send(*socket_);
+    zmq::socket_t queue_socket(context_, ZMQ_PUSH);
+    queue_socket.connect("inproc://trigger-send");
+    message.send(queue_socket);
 }
 
 request_worker::request_worker()
-  : context_(1)
+  : sender_(factory_.context),
+    wakeup_socket_(factory_.context, ZMQ_PULL)
 {
+    wakeup_socket_.bind("inproc://trigger-send");
 }
 bool request_worker::start(config_type& config)
 {
-    connection_ = config.service;
-    name_ = config.name;
+    factory_.connection = config.service;
+    factory_.name = config.name;
     create_new_socket();
     last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;
     interval_ = interval_init;
-    sender_.start();
 }
 void request_worker::stop()
 {
-    sender_.stop();
 }
 
 void request_worker::create_new_socket()
 {
-    socket_ = std::make_shared<zmq::socket_t>(context_, ZMQ_DEALER);
-    log_debug(LOG_WORKER) << "Connecting: " << connection_;
-    // Set the socket identity name.
-    if (!name_.empty())
-        socket_->setsockopt(ZMQ_IDENTITY, name_.c_str(), name_.size());
-    // Connect...
-    socket_->connect(connection_.c_str());
-    // Configure socket to not wait at close time
-    int linger = 0;
-    socket_->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
+    log_debug(LOG_WORKER) << "Connecting: " << factory_.connection;
+    socket_ = factory_.spawn_socket();
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
-    sender_.set_socket(socket_);
     send_control_message("READY");
 }
 
@@ -109,8 +92,10 @@ void request_worker::update()
 void request_worker::poll()
 {
     // Poll for network updates.
-    zmq::pollitem_t items [] = { { *socket_,  0, ZMQ_POLLIN, 0 } };
-    int rc = zmq::poll(items, 1, poll_sleep_interval);
+    zmq::pollitem_t items [] = {
+        { *socket_,  0, ZMQ_POLLIN, 0 },
+        { wakeup_socket_,  0, ZMQ_POLLIN, 0 } };
+    int rc = zmq::poll(items, 2, poll_sleep_interval);
     BITCOIN_ASSERT(rc >= 0);
 
     if (items[0].revents & ZMQ_POLLIN)
@@ -151,6 +136,13 @@ void request_worker::poll()
             log_warning(LOG_WORKER) << "invalid message";
         }
         interval_ = interval_init;
+    }
+    else if (items[1].revents & ZMQ_POLLIN)
+    {
+        // Send queued message.
+        zmq_message message;
+        message.recv(wakeup_socket_);
+        message.send(*socket_);
     }
     else if (now() - last_heartbeat_ > seconds(interval_))
     {
