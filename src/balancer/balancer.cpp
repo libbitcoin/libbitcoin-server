@@ -290,11 +290,11 @@ int main(int argc, char** argv)
             { frontend, 0, ZMQ_POLLIN, 0 }
         };
 
-        //  Poll frontend only if we have available workers
-        if (queue.size())
-            zmq::poll(items, 2, HEARTBEAT_INTERVAL * 1000);
-        else
+        // Poll frontend only if we have available workers
+        if (queue.empty())
             zmq::poll(items, 1, HEARTBEAT_INTERVAL * 1000);
+        else
+            zmq::poll(items, 2, HEARTBEAT_INTERVAL * 1000);
 
         // Handle worker activity on backend
         if (items [0].revents & ZMQ_POLLIN)
