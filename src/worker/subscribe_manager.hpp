@@ -33,6 +33,8 @@ private:
     typedef std::unordered_multimap<bc::payment_address, subscription>
         subscription_map;
 
+    std::error_code add_subscription(
+        const incoming_message& request, queue_send_callback queue_send);
     void do_subscribe(
         const incoming_message& request, queue_send_callback queue_send);
     void do_renew(
@@ -48,6 +50,7 @@ private:
     void sweep_expired();
 
     bc::async_strand strand_;
+    size_t subscribe_limit_ = 100000000;
     subscription_map subs_;
 };
 

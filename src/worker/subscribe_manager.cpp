@@ -62,23 +62,32 @@ void subscribe_manager::subscribe(
     strand_.queue(
         &subscribe_manager::do_subscribe, this, request, queue_send);
 }
-void subscribe_manager::do_subscribe(
+std::error_code subscribe_manager::add_subscription(
     const incoming_message& request, queue_send_callback queue_send)
 {
     payment_address addr_key;
     if (!deserialize_address(addr_key, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
-        return;
+        return error::bad_stream;
     }
     // Now create subscription.
     const posix_time::ptime now = second_clock::universal_time();
+    // Limit absolute number of subscriptions to prevent exhaustion attacks.
+    if (subs_.size() >= subscribe_limit_)
+        return error::pool_filled;
     subs_.emplace(addr_key, subscription{
         now + sub_expiry, request.origin(), queue_send});
+    return std::error_code();
+}
+void subscribe_manager::do_subscribe(
+    const incoming_message& request, queue_send_callback queue_send)
+{
+    std::error_code ec = add_subscription(request, queue_send);
     // Send response.
     data_chunk result(4);
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, std::error_code());
+    write_error_code(serial, ec);
     outgoing_message response(request, result);
     queue_send(response);
 }
