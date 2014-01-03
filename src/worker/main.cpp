@@ -1,5 +1,6 @@
 #include <boost/filesystem.hpp>
 #include <obelisk/message.hpp>
+#include <signal.h>
 #include "echo.hpp"
 #include "worker.hpp"
 #include "node_impl.hpp"
@@ -15,6 +16,13 @@ using namespace obelisk;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+void interrupt_handler(int)
+{
+    echo() << "Stopping... Please wait.";
+    // ZeroMQ will catch this signal and propagate it
+    // as an exception in the main runloop below.
+}
+
 int main(int argc, char** argv)
 {
     config_type config;
@@ -26,7 +34,7 @@ int main(int argc, char** argv)
         path conf_filename = path(SYSCONFDIR) / "obelisk" / "worker.cfg";
         load_config(config, conf_filename.native());
     }
-    echo() << "Type stop[ENTER] to shut down.";
+    echo() << "Press CTRL-C to shut down.";
     // Create worker.
     request_worker worker;
     worker.start(config);
@@ -44,10 +52,10 @@ int main(int argc, char** argv)
         const incoming_message&, queue_send_callback)> basic_command_handler;
     auto attach = [&worker, &node](
         const std::string& command, basic_command_handler handler)
-        {
-            worker.attach(command,
-                std::bind(handler, std::ref(node), _1, _2));
-        };
+    {
+        worker.attach(command,
+            std::bind(handler, std::ref(node), _1, _2));
+    };
     worker.attach("address.subscribe",
         std::bind(&subscribe_manager::subscribe, &addr_sub, _1, _2));
     worker.attach("address.renew",
@@ -70,22 +78,8 @@ int main(int argc, char** argv)
     if (!node.start(config))
         return 1;
     echo() << "Node started.";
-    bool stopped = false;
-    std::thread thr([&stopped]()
-        {
-            while (true)
-            {
-                std::string user_cmd;
-                std::getline(std::cin, user_cmd);
-                if (user_cmd == "stop")
-                {
-                    echo() << "Stopping... Please wait.";
-                    break;
-                }
-            }
-            stopped = true;
-        });
-    while (!stopped)
+    signal(SIGINT, interrupt_handler);
+    while (true)
     {
         try
         {
@@ -93,13 +87,18 @@ int main(int argc, char** argv)
         }
         catch (zmq::error_t error)
         {
-            log_error(LOG_WORKER) << "ZMQ: " << error.what();
-            echo() << "Closing down because of error.";
-            stopped = true;
+            // SIGINT caught.
+            if (error.num() == EINTR)
+                break;
+            else
+            {
+                log_error(LOG_WORKER) << "ZMQ: " << error.what();
+                echo() << "Closing down because of error.";
+                throw;
+            }
         }
     }
     worker.stop();
-    thr.detach();
     if (config.publisher_enabled)
         publish.stop();
     if (!node.stop())
