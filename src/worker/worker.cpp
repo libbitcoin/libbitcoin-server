@@ -5,6 +5,9 @@
 #include <obelisk/zmq_message.hpp>
 #include "echo.hpp"
 
+// Needed for the ZMQ version macros below.
+#include <zmq.h>
+
 namespace obelisk {
 
 using namespace bc;
@@ -16,7 +19,16 @@ using posix_time::microsec_clock;
 
 const posix_time::time_duration heartbeat_interval = milliseconds(1000);
 constexpr size_t interval_init = 4, interval_max = 32;
-constexpr long poll_sleep_interval = 50000;
+
+#if ZMQ_VERSION_MAJOR >= 3
+    // Milliseconds
+    constexpr long poll_sleep_interval = 500;
+#elif ZMQ_VERSION_MAJOR == 2
+    // Microseconds
+    constexpr long poll_sleep_interval = 500000;
+#else
+    #error ZMQ_VERSION_MAJOR macro undefined.
+#endif
 
 auto now = []() { return microsec_clock::universal_time(); };
 
