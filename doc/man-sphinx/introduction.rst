@@ -18,7 +18,10 @@ Scale up by starting more workers. Each worker maintains their own blockchain
 and connects to a load balancer. If a worker is unavailable then requests are
 routed to the other available workers (redundancy).
 
-* setup
+* install
+* setup worker
 ** testing
+* history / sub combo.
+* caching unconfirm tx for confirm blks
 * atomic reqs
 
