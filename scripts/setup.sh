@@ -1,80 +1,92 @@
 #!/bin/bash
-
-if [ ! -e sysinstall ]; then
-    echo "Please run the script from the same directory as you checked it out, like './setup.sh'"
-    exit 1
+#
+# Designed for a fairly Debian standard. 
+#
+# Compatible with Fedora standard too.
+# 
+# Debian | Fedora 
+#
+# Script to setup obworker an obbalancer daemons.
+#
+# Requires previous instalation of libbitcoin, libwallet and obelisk.
+# Download and execute the install-sx.sh:
+# <wget http://sx.dyne.org/install-sx.sh>
+# And run:
+# <sudo bash install-sx.sh>
+# If you are setting up a oblisk node you need to run this script to create and configure
+# obworker and obbalancer daemons.
+#
+# 
+set -e
+if [ `id -u` = "0" ]; then
+    SOURCE=/usr/local/src/obelisk-git/scripts
+    WORKER=/etc/obelisk/worker.cfg
+else    
+    echo 
+    echo " --> ERROR: You need be root to run this script."
+    echo "     <sudo bash $SOURCE/setup.sh>"
 fi
 
-printPlain() { /bin/echo -e "${1}" >&2; }
-printGreen() { /bin/echo -e "\033[32;1m${1}\033[0m" >&2; }
-printBlue() { /bin/echo -e "\033[34;1m${1}\033[0m" >&2; }
-printYellow() { /bin/echo -e "\033[33;1m${1}\033[0m" >&2; }
-printRed() { /bin/echo -e "\033[31;1m${1}\033[0m" >&2; }
+create_ob_user(){
+    if [ -z "`getent passwd ob`" ]; then 
+    	echo
+        echo " --> Creating ob user"
+    	echo
+    	adduser --system --disabled-password --shell /bin/bash --home /var/lib/blockchain --group ob
+    	sx initchain /var/lib/blockchain/
+    else
+	    sx initchain /var/lib/blockchain/
+	    echo " --> ob user already exists: skipping..."
+        echo
+    fi
+}
 
-printGreen "Installing Required Packages"
-sudo apt-get -y update
-sudo apt-get -y install wget git-core
+config_logfiles(){
+    if [ -n "`grep -E \"\/var\/lib\/blockchain\/\" /etc/obelisk/worker.cfg`" ]; then
+    	sed -r -i -e "s/blockchain\-path =.*?$/blockchain-path = \"\/var\/lib\/blockchain\/\"/g" $WORKER 
+    	sed -r -i -e "s/debug\.log/\/var\/lib\/blockchain\/debug.log/g" $WORKER 
+    	sed -r -i -e "s/error\.log/\/var\/lib\/blockchain\/error.log/g" $WORKER
+    else
+	    echo " ERROR: --> You need to have installed libbitcoin, sx and obelisk before run this script."
+	    echo " Read the header of this script:"
+	    echo " <cat /user/local/src/obelist-git/scripts/setup.sh>"
+        echo
+    fi
+}
 
-#install and configure sx
-INSTALL_SX=1
-if [ -e /usr/local/bin/sx ]; then
-  read -p "sx is already installed, reinstall? (y/n): " -e REINSTALL_SX
-  if [ "${REINSTALL_SX}" != 'y' ]; then
-    INSTALL_SX=0
-  fi
-fi
-if [ $INSTALL_SX -eq 1 ]; then
- printGreen "Installing sx..."
- CURDIR=`pwd`
- cd /tmp
- wget http://sx.dyne.org/install-sx.sh
- sudo sed -r -i -e "s/apt-get install/apt-get -y install/g" /tmp/install-sx.sh
- #^ makes the script run a bit more user friendly
- sudo bash ./install-sx.sh
- cd ${CURDIR}
-fi
+config_logrotate(){
+    ln -sf $SOURCE/logrotate.sh /etc/logrotate.d/logrotate.sh
+}
 
-#create ob user
-if [ -z "`getent passwd ob`" ]; then
-  printGreen "Creating ob user"
-  sudo adduser --system --disabled-password --shell /bin/bash --home /var/lib/blockchain --group ob
-else
-  printYellow "ob user already exists: skipping..."
-fi
+up_limits(){
+    bash -c "echo \"ob  soft  nofile 4096\" >> /etc/security/limits.conf"
+    bash -c "sudo echo \"ob  hard  nofile 65000\" >> /etc/security/limits.conf"
+    bash -c "sudo echo \"session required pam_limits.so\" >> /etc/pam.d/common-session"
+}
 
-#setup blockchain data dir 
-if [ ! -e /var/lib/blockchain/block ]; then
- sudo sx initchain /var/lib/blockchain/
-fi
-sudo chown -R ob:ob /var/lib/blockchain
+setup_init_scripts(){
+    echo " --> Setting up init scripts..."
+    echo
+    chmod +x $SOURCE/init.d/obworker      
+    chmod +x $SOURCE/init.d/obbalancer      
+    ln -sf $SOURCE/init.d/obworker /etc/init.d/obworker     
+    ln -sf $SOURCE/init.d/obbalancer /etc/init.d/obbalancer
+    update-rc.d obworker defaults 80
+    echo
+    update-rc.d obbalancer defaults 81
+    echo
+    echo "Starting services..."
+    echo
+    service obworker start
+    echo
+    service obbalancer start
+    echo "All done!"
+    echo
+}
 
-#configure obworker to throw its logfiles into /var/lib/blockchain/
-if [ -z "`grep -E \"\/var\/lib\/blockchain\/\" /etc/obelisk/worker.cfg`" ]; then
- sudo sed -r -i -e "s/blockchain\-path =.*?$/blockchain-path = \"\/var\/lib\/blockchain\/\"/g" /etc/obelisk/worker.cfg 
- sudo sed -r -i -e "s/debug\.log/\/var\/lib\/blockchain\/debug.log/g" /etc/obelisk/worker.cfg 
- sudo sed -r -i -e "s/error\.log/\/var\/lib\/blockchain\/error.log/g" /etc/obelisk/worker.cfg
-fi
-
-#to prevent the error.log and debug.log files from getting too big with obworker...
-sudo ln -sf sysinstall/linux/logrotate.d/obworker /etc/logrotate.d/obworker
-
-#up open file limits for ob user (which obelisk runs as) because libbitcoin needs higher limits
-sudo bash -c "echo \"ob  soft  nofile 4096\" >> /etc/security/limits.conf"
-sudo bash -c "sudo echo \"ob  hard  nofile 65000\" >> /etc/security/limits.conf"
-sudo bash -c "sudo echo \"session required pam_limits.so\" >> /etc/pam.d/common-session"
-
-#setup init scripts
-printBlue "Setting up init scripts..."
-sudo ln -sf sysinstall/linux/init.d/obworker /etc/init.d/obworker
-sudo ln -sf sysinstall/linux/init.d/obbalancer /etc/init.d/obbalancer
-sudo update-rc.d obworker defaults 80
-sudo update-rc.d obbalancer defaults 81
-
-printBlue "Starting services..."
-sudo service obworker start
-
-#create necessary local config files for sx
-cp /usr/local/share/sx/sx.cfg ~/.sx.cfg
-
-printGreen "All done!"
+create_ob_user
+config_logfiles
+config_logrotate
+up_limits
+setup_init_scripts
 
