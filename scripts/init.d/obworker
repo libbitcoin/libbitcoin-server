@@ -14,7 +14,7 @@
 DAEMON=/usr/local/bin/obworker
 DAEMON_ARGS=
 DAEMON_NAME=obworker
-DAEMON_USER=obworder
+DAEMON_USER=ob
 PIDFILE=/var/run/$DAEMON_NAME.pid
  
 #set -x
