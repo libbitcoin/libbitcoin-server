@@ -132,7 +132,7 @@ void request_worker::poll()
             if (it != handlers_.end())
             {
                 if (log_requests_)
-                    log_debug(LOG_WORKER)
+                    log_debug(LOG_REQUEST)
                         << request.command() << " from " << request.origin();
                 it->second(request,
                     std::bind(&send_worker::queue_send, &sender_, _1));
