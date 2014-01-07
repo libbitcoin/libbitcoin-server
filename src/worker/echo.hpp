@@ -4,6 +4,7 @@
 #include <sstream>
 
 #define LOG_WORKER "worker"
+#define LOG_REQUEST "request"
 
 namespace obelisk {
 

@@ -23,7 +23,7 @@ void blockchain_fetch_history(node_impl& node,
     uint32_t from_height;
     if (!unwrap_fetch_history_args(payaddr, from_height, request))
         return;
-    log_debug(LOG_WORKER) << "blockchain.fetch_history("
+    log_debug(LOG_REQUEST) << "blockchain.fetch_history("
         << payaddr.encoded() << ", from_height=" << from_height << ")";
     node.blockchain().fetch_history(payaddr,
         std::bind(send_history_result,
@@ -58,7 +58,7 @@ void transaction_fetched(const std::error_code& ec,
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
     auto it = satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(it == result.end());
-    log_debug(LOG_WORKER)
+    log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
@@ -87,7 +87,7 @@ void last_height_fetched(const std::error_code& ec, size_t last_height,
     write_error_code(serial, ec);
     serial.write_4_bytes(last_height);
     BITCOIN_ASSERT(serial.iterator() == result.end());
-    log_debug(LOG_WORKER)
+    log_debug(LOG_REQUEST)
         << "blockchain.fetch_last_height() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
@@ -145,7 +145,7 @@ void block_header_fetched(const std::error_code& ec,
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
     auto it = satoshi_save(blk, serial.iterator());
     BITCOIN_ASSERT(it == result.end());
-    log_debug(LOG_WORKER)
+    log_debug(LOG_REQUEST)
         << "blockchain.fetch_block_header() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
@@ -206,7 +206,7 @@ void block_transaction_hashes_fetched(const std::error_code& ec,
     for (const hash_digest& tx_hash: hashes)
         serial.write_hash(tx_hash);
     BITCOIN_ASSERT(serial.iterator() == result.end());
-    log_debug(LOG_WORKER) << "blockchain.fetch_block_transaction_hashes()"
+    log_debug(LOG_REQUEST) << "blockchain.fetch_block_transaction_hashes()"
        " finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
@@ -241,7 +241,7 @@ void transaction_index_fetched(const std::error_code& ec,
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
     serial.write_4_bytes(block_height);
     serial.write_4_bytes(index);
-    log_debug(LOG_WORKER)
+    log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction_index() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
@@ -276,7 +276,7 @@ void spend_fetched(const std::error_code& ec, const input_point& inpoint,
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
     serial.write_hash(inpoint.hash);
     serial.write_4_bytes(inpoint.index);
-    log_debug(LOG_WORKER)
+    log_debug(LOG_REQUEST)
         << "blockchain.fetch_spend() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
@@ -308,7 +308,7 @@ void block_height_fetched(const std::error_code& ec, size_t block_height,
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
     serial.write_4_bytes(block_height);
-    log_debug(LOG_WORKER)
+    log_debug(LOG_REQUEST)
         << "blockchain.fetch_block_height() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);

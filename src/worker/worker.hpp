@@ -84,6 +84,8 @@ private:
 
     command_map handlers_;
     send_worker sender_;
+
+    bool log_requests_ = false;
 };
 
 } // namespace obelisk

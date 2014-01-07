@@ -53,6 +53,7 @@ void load_config(config_type& config, const std::string& filename)
     root.lookupValue("outgoing-connections", config.outgoing_connections);
     root.lookupValue("listener_enabled", config.listener_enabled);
     load_nodes(root, config);
+    root.lookupValue("log_requests", config.log_requests);
 }
 
 } // namespace obelisk

@@ -2,6 +2,7 @@
 
 #include <future>
 #include <boost/lexical_cast.hpp>
+#include "echo.hpp"
 
 namespace obelisk {
 
@@ -12,9 +13,11 @@ using std::placeholders::_3;
 using std::placeholders::_4;
 
 void log_to_file(std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body)
+    const std::string& domain, const std::string& body, bool log_requests)
 {
     if (body.empty())
+        return;
+    if (!log_requests && domain == LOG_REQUEST)
         return;
     file << level_repr(level);
     if (!domain.empty())
@@ -22,9 +25,11 @@ void log_to_file(std::ofstream& file, log_level level,
     file << ": " << body << std::endl;
 }
 void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body)
+    const std::string& domain, const std::string& body, bool log_requests)
 {
     if (body.empty())
+        return;
+    if (!log_requests && domain == LOG_REQUEST)
         return;
     std::ostringstream output;
     output << level_repr(level);
@@ -36,25 +41,25 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
 }
 
 void output_file(std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body)
+    const std::string& domain, const std::string& body, bool log_requests)
 {
-    log_to_file(file, level, domain, body);
+    log_to_file(file, level, domain, body, log_requests);
 }
 void output_both(std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body)
+    const std::string& domain, const std::string& body, bool log_requests)
 {
-    log_to_both(std::cout, file, level, domain, body);
+    log_to_both(std::cout, file, level, domain, body, log_requests);
 }
 
 void error_file(std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body)
+    const std::string& domain, const std::string& body, bool log_requests)
 {
-    log_to_file(file, level, domain, body);
+    log_to_file(file, level, domain, body, log_requests);
 }
 void error_both(std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body)
+    const std::string& domain, const std::string& body, bool log_requests)
 {
-    log_to_both(std::cerr, file, level, domain, body);
+    log_to_both(std::cerr, file, level, domain, body, log_requests);
 }
 
 node_impl::node_impl()
@@ -78,15 +83,20 @@ bool node_impl::start(config_type& config)
     outfile_.open(config.output_file, file_mode);
     errfile_.open(config.error_file, file_mode);
     log_debug().set_output_function(
-        std::bind(output_file, std::ref(outfile_), _1, _2, _3));
+        std::bind(output_file, std::ref(outfile_),
+            _1, _2, _3, config.log_requests));
     log_info().set_output_function(
-        std::bind(output_both, std::ref(outfile_), _1, _2, _3));
+        std::bind(output_both, std::ref(outfile_),
+            _1, _2, _3, config.log_requests));
     log_warning().set_output_function(
-        std::bind(error_file, std::ref(errfile_), _1, _2, _3));
+        std::bind(error_file, std::ref(errfile_),
+            _1, _2, _3, config.log_requests));
     log_error().set_output_function(
-        std::bind(error_both, std::ref(errfile_), _1, _2, _3));
+        std::bind(error_both, std::ref(errfile_),
+            _1, _2, _3, config.log_requests));
     log_fatal().set_output_function(
-        std::bind(error_both, std::ref(errfile_), _1, _2, _3));
+        std::bind(error_both, std::ref(errfile_),
+            _1, _2, _3, config.log_requests));
     protocol_.subscribe_channel(
         std::bind(&node_impl::monitor_tx, this, _1, _2));
     // Start blockchain.

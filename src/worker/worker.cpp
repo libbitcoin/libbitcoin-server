@@ -70,9 +70,13 @@ request_worker::request_worker()
 }
 bool request_worker::start(config_type& config)
 {
+    // Load config values.
     factory_.connection = config.service;
     factory_.name = config.name;
+    log_requests_ = config.log_requests;
+    // Start ZeroMQ socket.
     create_new_socket();
+    // Timer stuff
     last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;
     interval_ = interval_init;
@@ -110,6 +114,8 @@ void request_worker::poll()
     int rc = zmq::poll(items, 2, poll_sleep_interval);
     BITCOIN_ASSERT(rc >= 0);
 
+    // TODO: refactor this code.
+
     if (items[0].revents & ZMQ_POLLIN)
     {
         // Get message
@@ -125,9 +131,9 @@ void request_worker::poll()
             // Perform request if found.
             if (it != handlers_.end())
             {
-                // TODO: Slows down queries!
-                //log_debug(LOG_WORKER)
-                //    << request.command() << " from " << request.origin();
+                if (log_requests_)
+                    log_debug(LOG_WORKER)
+                        << request.command() << " from " << request.origin();
                 it->second(request,
                     std::bind(&send_worker::queue_send, &sender_, _1));
             }

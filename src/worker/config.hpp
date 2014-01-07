@@ -29,6 +29,7 @@ struct config_type
     unsigned int outgoing_connections = 8;
     bool listener_enabled = true;
     nodes_list nodes;
+    bool log_requests = false;
 };
 
 void load_config(config_type& config, const std::string& config_path);
