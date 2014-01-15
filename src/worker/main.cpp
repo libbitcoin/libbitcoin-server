@@ -73,6 +73,8 @@ int main(int argc, char** argv)
     attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
     attach("protocol.broadcast_transaction", protocol_broadcast_transaction);
     attach("transaction_pool.validate", transaction_pool_validate);
+    attach("transaction_pool.fetch_transaction",
+        transaction_pool_fetch_transaction);
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.
     if (!node.start(config))

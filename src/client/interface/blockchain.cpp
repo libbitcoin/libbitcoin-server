@@ -1,6 +1,6 @@
 #include <obelisk/client/blockchain.hpp>
 
-#include "fetch_history.hpp"
+#include "fetch_x.hpp"
 #include "util.hpp"
 
 namespace obelisk {
@@ -22,29 +22,13 @@ void blockchain_interface::fetch_history(const payment_address& address,
         std::bind(receive_history_result, _1, handle_fetch));
 }
 
-void wrap_fetch_transaction(const data_chunk& data,
-    blockchain::fetch_handler_transaction handle_fetch);
 void blockchain_interface::fetch_transaction(const hash_digest& tx_hash,
     blockchain::fetch_handler_transaction handle_fetch)
 {
-    data_chunk data(hash_digest_size);
-    auto serial = make_serializer(data.begin());
-    serial.write_hash(tx_hash);
-    BITCOIN_ASSERT(serial.iterator() == data.end());
+    data_chunk data;
+    wrap_fetch_transaction_args(data, tx_hash);
     backend_.request("blockchain.fetch_transaction", data,
-        std::bind(wrap_fetch_transaction, _1, handle_fetch));
-}
-void wrap_fetch_transaction(const data_chunk& data,
-    blockchain::fetch_handler_transaction handle_fetch)
-{
-    std::error_code ec;
-    auto deserial = make_deserializer(data.begin(), data.end());
-    if (!read_error_code(deserial, data.size(), ec))
-        return;
-    BITCOIN_ASSERT(deserial.iterator() == data.begin() + 4);
-    transaction_type tx;
-    satoshi_load(deserial.iterator(), data.end(), tx);
-    handle_fetch(ec, tx);
+        std::bind(receive_transaction_result, _1, handle_fetch));
 }
 
 void wrap_fetch_last_height(const data_chunk& data,

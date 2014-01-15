@@ -2,7 +2,7 @@
 
 #include "../node_impl.hpp"
 #include "../echo.hpp"
-#include "fetch_history.hpp"
+#include "fetch_x.hpp"
 #include "util.hpp"
 
 namespace obelisk {
@@ -30,38 +30,16 @@ void blockchain_fetch_history(node_impl& node,
             _1, _2, request, queue_send), from_height);
 }
 
-void transaction_fetched(const std::error_code& ec,
-    const transaction_type& tx,
-    const incoming_message& request, queue_send_callback queue_send);
 void blockchain_fetch_transaction(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
-    if (data.size() != 32)
-    {
-        log_error(LOG_WORKER)
-            << "Incorrect data size for blockchain.fetch_transaction";
+    hash_digest tx_hash;
+    if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
-    }
-    auto deserial = make_deserializer(data.begin(), data.end());
-    const hash_digest tx_hash = deserial.read_hash();
+    log_debug(LOG_REQUEST) << "blockchain.fetch_transaction("
+        << tx_hash << ")";
     node.blockchain().fetch_transaction(tx_hash,
         std::bind(transaction_fetched, _1, _2, request, queue_send));
-}
-void transaction_fetched(const std::error_code& ec,
-    const transaction_type& tx,
-    const incoming_message& request, queue_send_callback queue_send)
-{
-    data_chunk result(4 + satoshi_raw_size(tx));
-    auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    auto it = satoshi_save(tx, serial.iterator());
-    BITCOIN_ASSERT(it == result.end());
-    log_debug(LOG_REQUEST)
-        << "blockchain.fetch_transaction() finished. Sending response.";
-    outgoing_message response(request, result);
-    queue_send(response);
 }
 
 void last_height_fetched(const std::error_code& ec, size_t last_height,

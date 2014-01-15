@@ -2,7 +2,7 @@
 
 #include "../node_impl.hpp"
 #include "../echo.hpp"
-#include "fetch_history.hpp"
+#include "fetch_x.hpp"
 
 namespace obelisk {
 

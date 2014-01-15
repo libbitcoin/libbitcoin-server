@@ -1,5 +1,6 @@
 #include <obelisk/client/transaction_pool.hpp>
 
+#include "fetch_x.hpp"
 #include "util.hpp"
 
 namespace obelisk {
@@ -13,9 +14,9 @@ transaction_pool_interface::transaction_pool_interface(backend_cluster& backend)
 }
 
 void wrap_validate_transaction(const data_chunk& data,
-    bc::transaction_pool::validate_handler handle_validate);
-void transaction_pool_interface::validate(const bc::transaction_type& tx,
-    bc::transaction_pool::validate_handler handle_validate)
+    transaction_pool::validate_handler handle_validate);
+void transaction_pool_interface::validate(const transaction_type& tx,
+    transaction_pool::validate_handler handle_validate)
 {
     data_chunk raw_tx(satoshi_raw_size(tx));
     auto it = satoshi_save(tx, raw_tx.begin());
@@ -39,6 +40,16 @@ void wrap_validate_transaction(const data_chunk& data,
         unconfirmed.push_back(unconfirm_index);
     }
     handle_validate(ec, unconfirmed);
+}
+
+void transaction_pool_interface::fetch_transaction(
+    const bc::hash_digest& tx_hash,
+    transaction_pool::fetch_handler handle_fetch)
+{
+    data_chunk data;
+    wrap_fetch_transaction_args(data, tx_hash);
+    backend_.request("transaction_pool.fetch_transaction", data,
+        std::bind(receive_transaction_result, _1, handle_fetch));
 }
 
 } // namespace obelisk

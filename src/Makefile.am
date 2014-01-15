@@ -8,7 +8,7 @@ libobelisk_la_SOURCES = \
     zmq_message.cpp \
     client/backend.cpp \
     client/interface/interface.cpp \
-    client/interface/fetch_history.cpp \
+    client/interface/fetch_x.cpp \
     client/interface/blockchain.cpp \
     client/interface/protocol.cpp \
     client/interface/transaction_pool.cpp
@@ -35,7 +35,7 @@ obworker_SOURCES = \
     worker/subscribe_manager.cpp \
     worker/worker.cpp \
     worker/service/fullnode.cpp \
-    worker/service/fetch_history.cpp \
+    worker/service/fetch_x.cpp \
     worker/service/blockchain.cpp \
     worker/service/protocol.cpp \
     worker/service/transaction_pool.cpp

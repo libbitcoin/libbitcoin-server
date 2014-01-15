@@ -1,8 +1,10 @@
-#include "fetch_history.hpp"
+#include "fetch_x.hpp"
 
 #include "util.hpp"
 
 namespace obelisk {
+
+// fetch_history stuff
 
 void wrap_fetch_history_args(data_chunk& data,
     const payment_address& address, size_t from_height)
@@ -45,6 +47,29 @@ void receive_history_result(const data_chunk& data,
     }
     BITCOIN_ASSERT(deserial.iterator() == data.end());
     handle_fetch(ec, history);
+}
+
+// fetch_transaction stuff
+
+void wrap_fetch_transaction_args(data_chunk& data, const hash_digest& tx_hash)
+{
+    data.resize(hash_digest_size);
+    auto serial = make_serializer(data.begin());
+    serial.write_hash(tx_hash);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
+}
+
+void receive_transaction_result(const data_chunk& data,
+    blockchain::fetch_handler_transaction handle_fetch)
+{
+    std::error_code ec;
+    auto deserial = make_deserializer(data.begin(), data.end());
+    if (!read_error_code(deserial, data.size(), ec))
+        return;
+    BITCOIN_ASSERT(deserial.iterator() == data.begin() + 4);
+    transaction_type tx;
+    satoshi_load(deserial.iterator(), data.end(), tx);
+    handle_fetch(ec, tx);
 }
 
 } // namespace obelisk

@@ -2,7 +2,7 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/zmq_message.hpp>
-#include "fetch_history.hpp"
+#include "fetch_x.hpp"
 #include "util.hpp"
 
 namespace obelisk {

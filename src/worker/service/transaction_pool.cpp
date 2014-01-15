@@ -2,6 +2,7 @@
 
 #include "../node_impl.hpp"
 #include "../echo.hpp"
+#include "fetch_x.hpp"
 
 namespace obelisk {
 
@@ -42,11 +43,23 @@ void transaction_validated(
     for (uint32_t unconfirm_index: unconfirmed)
         serial.write_4_bytes(unconfirm_index);
     BITCOIN_ASSERT(serial.iterator() == result.end());
-    log_debug(LOG_WORKER)
+    log_debug(LOG_REQUEST)
         << "transaction_pool.validate() finished. Sending response: "
         << "ec=" << ec.message();
     outgoing_message response(request, result);
     queue_send(response);
+}
+
+void transaction_pool_fetch_transaction(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send)
+{
+    hash_digest tx_hash;
+    if (!unwrap_fetch_transaction_args(tx_hash, request))
+        return;
+    log_debug(LOG_REQUEST) << "transaction_pool.fetch_transaction("
+        << tx_hash << ")";
+    node.transaction_pool().fetch(tx_hash,
+        std::bind(transaction_fetched, _1, _2, request, queue_send));
 }
 
 } // namespace obelisk
