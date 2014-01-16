@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CPPFLAGS = ${libbitcoin_CFLAGS} -I$(srcdir)/../include -DSYSCONFDIR=\"${sysconfdir}\"
+AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS} -DSYSCONFDIR=\"${sysconfdir}\"
 
 lib_LTLIBRARIES = libobelisk.la
 libobelisk_la_SOURCES = \
