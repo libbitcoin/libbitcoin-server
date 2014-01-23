@@ -1,23 +1,28 @@
 #!/bin/bash
 #
-# Designed for a fairly Debian standard. 
+# Script to setup obworker and obbalancer daemons, required for an Obelisk node.
 #
-# Compatible with Fedora standard too.
-# 
-# Debian | Fedora 
+# For Debian, Ubuntu or Fedora GNU/Linux distributions.
 #
-# Script to setup obworker an obbalancer daemons.
+# Requires sudo. 
 #
-# Requires previous instalation of libbitcoin, libwallet and obelisk.
+# Requires previous installation of libbitcoin, libwallet and obelisk IN DEFAULT LOCATIONS.
 # Download and execute the install-sx.sh:
 # <wget http://sx.dyne.org/install-sx.sh>
 # And run:
 # <sudo bash install-sx.sh>
-# If you are setting up a oblisk node you need to run this script to create and configure
-# obworker and obbalancer daemons.
 #
-# 
+# To execute this script, run:
+# <sudo bash setup.sh>
+#
+#
 set -e
+echo
+echo " [+] Welcome to Obelisk worker and balancer daemon setup."
+echo " IMPORTANT: This script requires previous installation of"
+echo " libbitcoin, libwallet and obelisk IN DEFAULT LOCATIONS."
+echo
+sleep 0.3
 if [ `id -u` = "0" ]; then
     SOURCE=/usr/local/src/obelisk-git/scripts
     WORKER=/etc/obelisk/worker.cfg
@@ -49,13 +54,13 @@ config_logfiles(){
     else
 	    echo " ERROR: --> You need to have installed libbitcoin, sx and obelisk before run this script."
 	    echo " Read the header of this script:"
-	    echo " <cat /user/local/src/obelist-git/scripts/setup.sh>"
+	    echo " <cat $SOURCE/setup.sh>"
         echo
     fi
 }
 
 config_logrotate(){
-    ln -sf $SOURCE/logrotate.sh /etc/logrotate.d/logrotate.sh
+    ln -sf $SOURCE/logrotate.sh /etc/logrotate.d/
 }
 
 up_limits(){
