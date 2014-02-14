@@ -31,6 +31,9 @@ void blockchain_fetch_spend(node_impl& node,
 void blockchain_fetch_block_height(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send);
 
+void blockchain_fetch_stealth(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send);
+
 } // namespace obelisk
 
 #endif

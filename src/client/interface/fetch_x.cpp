@@ -20,13 +20,13 @@ void wrap_fetch_history_args(data_chunk& data,
 void receive_history_result(const data_chunk& data,
     blockchain::fetch_handler_history handle_fetch)
 {
+    BITCOIN_ASSERT(data.size() >= 4);
     std::error_code ec;
     auto deserial = make_deserializer(data.begin(), data.end());
     if (!read_error_code(deserial, data.size(), ec))
         return;
     BITCOIN_ASSERT(deserial.iterator() == data.begin() + 4);
     size_t row_size = 36 + 4 + 8 + 36 + 4;
-    BITCOIN_ASSERT(data.size() >= 4);
     if ((data.size() - 4) % row_size != 0)
     {
         log_error() << "Malformed response for *.fetch_history";

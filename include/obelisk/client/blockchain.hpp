@@ -23,6 +23,9 @@ public:
         bc::blockchain::fetch_handler_block_header handle_fetch);
     void fetch_transaction_index(const bc::hash_digest& tx_hash,
         bc::blockchain::fetch_handler_transaction_index handle_fetch);
+    void fetch_stealth(const bc::stealth_prefix& prefix,
+        bc::blockchain::fetch_handler_stealth handle_fetch,
+        size_t from_height=0);
 private:
     backend_cluster& backend_;
 };

@@ -292,5 +292,49 @@ void block_height_fetched(const std::error_code& ec, size_t block_height,
     queue_send(response);
 }
 
+void stealth_fetched(const std::error_code& ec,
+    const blockchain::stealth_list& stealth_results,
+    const incoming_message& request, queue_send_callback queue_send);
+void blockchain_fetch_stealth(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send)
+{
+    const data_chunk& data = request.data();
+    if (data.size() != 9)
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_stealth";
+        return;
+    }
+    auto deserial = make_deserializer(data.begin(), data.end());
+    stealth_prefix prefix;
+    prefix.number_bits = deserial.read_byte();
+    prefix.bitfield = deserial.read_4_bytes();
+    size_t from_height = deserial.read_4_bytes();
+    node.blockchain().fetch_stealth(prefix,
+        std::bind(stealth_fetched, _1, _2, request, queue_send), from_height);
+}
+void stealth_fetched(const std::error_code& ec,
+    const blockchain::stealth_list& stealth_results,
+    const incoming_message& request, queue_send_callback queue_send)
+{
+    // [ ephemkey:33 ][ address:21 ][ tx_hash:32 ]
+    constexpr size_t row_size = 33 + 21 + 32;
+    data_chunk result(4 + row_size * stealth_results.size());
+    auto serial = make_serializer(result.begin());
+    write_error_code(serial, ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    for (const blockchain::stealth_row row: stealth_results)
+    {
+        serial.write_data(row.ephemkey);
+        serial.write_byte(row.address.version());
+        serial.write_short_hash(row.address.hash());
+        serial.write_hash(row.transaction_hash);
+    }
+    log_debug(LOG_REQUEST)
+        << "blockchain.fetch_stealth() finished. Sending response.";
+    outgoing_message response(request, result);
+    queue_send(response);
+}
+
 } // namespace obelisk
 

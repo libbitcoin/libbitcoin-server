@@ -32,7 +32,7 @@ bool send_history_result(const std::error_code& ec,
     const blockchain::history_list& history,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    size_t row_size = 36 + 4 + 8 + 36 + 4;
+    constexpr size_t row_size = 36 + 4 + 8 + 36 + 4;
     data_chunk result(4 + row_size * history.size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
