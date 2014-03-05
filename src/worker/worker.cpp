@@ -88,7 +88,6 @@ void request_worker::create_new_socket()
     socket_ = factory_.spawn_socket();
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
-    //send_control_message("READY");
 }
 
 void request_worker::attach(

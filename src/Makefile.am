@@ -13,18 +13,11 @@ libobelisk_la_SOURCES = \
     client/interface/protocol.cpp \
     client/interface/transaction_pool.cpp
 
-bin_PROGRAMS = obbalancer obworker
+bin_PROGRAMS = obworker
 
 confdir=$(sysconfdir)/obelisk
 conf_DATA = \
-    balancer/balancer.cfg \
     worker/worker.cfg
-
-obbalancer_SOURCES = \
-    balancer/balancer.cpp \
-    balancer/config.cpp
-
-obbalancer_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS}
 
 obworker_SOURCES = \
     worker/config.cpp \
