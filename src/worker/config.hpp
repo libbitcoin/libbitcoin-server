@@ -21,7 +21,8 @@ struct config_type
     std::string error_file = "error.log";
     std::string blockchain_path = "blockchain/";
     std::string hosts_file = "hosts";
-    std::string service = "tcp://localhost:9092";
+    std::string service = "tcp://*:9091";
+    std::string heartbeat = "tcp://*:9092";
     bool publisher_enabled = false;
     std::string block_publish;
     std::string tx_publish;

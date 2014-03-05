@@ -69,13 +69,16 @@ private:
 
     void create_new_socket();
     void poll();
-    void send_control_message();
+    void publish_heartbeat();
 
     socket_factory factory_;
     // Main socket.
     zmq_socket_ptr socket_;
     // Socket to trigger wakeup for send.
     zmq::socket_t wakeup_socket_;
+    // We publish a heartbeat every so often so clients
+    // can know our availability.
+    zmq::socket_t heartbeat_socket_;
 
     // Send out heartbeats at regular intervals
     boost::posix_time::ptime heartbeat_at_;

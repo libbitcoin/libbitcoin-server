@@ -63,7 +63,8 @@ void send_worker::queue_send(const outgoing_message& message)
 
 request_worker::request_worker()
   : sender_(factory_.context),
-    wakeup_socket_(factory_.context, ZMQ_PULL)
+    wakeup_socket_(factory_.context, ZMQ_PULL),
+    heartbeat_socket_(factory_.context, ZMQ_PUB)
 {
     wakeup_socket_.bind("inproc://trigger-send");
 }
@@ -73,8 +74,10 @@ bool request_worker::start(config_type& config)
     factory_.connection = config.service;
     factory_.name = config.name;
     log_requests_ = config.log_requests;
-    // Start ZeroMQ socket.
+    // Start ZeroMQ sockets.
     create_new_socket();
+    log_debug(LOG_WORKER) << "Heartbeat: " << config.heartbeat;
+    heartbeat_socket_.bind(config.heartbeat.c_str());
     // Timer stuff
     heartbeat_at_ = now() + heartbeat_interval;
 }
@@ -84,7 +87,7 @@ void request_worker::stop()
 
 void request_worker::create_new_socket()
 {
-    log_debug(LOG_WORKER) << "Connecting: " << factory_.connection;
+    log_debug(LOG_WORKER) << "Listening: " << factory_.connection;
     socket_ = factory_.spawn_socket();
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
@@ -150,19 +153,16 @@ void request_worker::poll()
     {
         heartbeat_at_ = now() + heartbeat_interval;
         log_debug(LOG_WORKER) << "Sending heartbeat";
-        send_control_message();
+        publish_heartbeat();
     }
 }
 
-void append_str(zmq_message& message, const std::string& command)
-{
-    message.append(data_chunk(command.begin(), command.end()));
-}
-void request_worker::send_control_message()
+void request_worker::publish_heartbeat()
 {
     static uint32_t counter = 0;
     zmq_message message;
     message.append(uncast_type(counter));
+    message.send(heartbeat_socket_);
     ++counter;
 }
 

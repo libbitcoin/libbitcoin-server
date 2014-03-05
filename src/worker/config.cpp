@@ -46,6 +46,7 @@ void load_config(config_type& config, const std::string& filename)
     root.lookupValue("blockchain-path", config.blockchain_path);
     root.lookupValue("hosts-file", config.hosts_file);
     root.lookupValue("service", config.service);
+    root.lookupValue("heartbeat", config.heartbeat);
     root.lookupValue("publisher_enabled", config.publisher_enabled);
     root.lookupValue("block-publish", config.block_publish);
     root.lookupValue("tx-publish", config.tx_publish);
