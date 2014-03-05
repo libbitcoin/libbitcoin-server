@@ -23,12 +23,15 @@ bool incoming_message::recv(zmq::socket_t& socket)
         command_ = std::string(parts[0].begin(), parts[0].end());
         return true;
     }
-    else if (parts.size() != 5)
+    else if (parts.size() != 5 && parts.size() != 4)
         return false;
     auto it = parts.begin();
     // [ DESTINATION ]
-    origin_ = *it;
-    ++it;
+    if (parts.size() == 5)
+    {
+        origin_ = *it;
+        ++it;
+    }
     // [ COMMAND ]
     const data_chunk& raw_command = *it;
     command_ = std::string(raw_command.begin(), raw_command.end());
@@ -114,7 +117,8 @@ void outgoing_message::send(zmq::socket_t& socket) const
         return;
     }
     // [ DEST ]
-    message.append(dest_);
+    if (!dest_.empty())
+        message.append(dest_);
     // [ COMMAND ]
     append_str(message, command_);
     // [ ID ]

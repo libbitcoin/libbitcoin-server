@@ -39,12 +39,12 @@ socket_factory::socket_factory()
 zmq_socket_ptr socket_factory::spawn_socket()
 {
     zmq_socket_ptr socket =
-        std::make_shared<zmq::socket_t>(context, ZMQ_DEALER);
+        std::make_shared<zmq::socket_t>(context, ZMQ_ROUTER);
     // Set the socket identity name.
     if (!name.empty())
         socket->setsockopt(ZMQ_IDENTITY, name.c_str(), name.size());
     // Connect...
-    socket->connect(connection.c_str());
+    socket->bind(connection.c_str());
     // Configure socket to not wait at close time
     int linger = 0;
     socket->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
@@ -91,7 +91,7 @@ void request_worker::create_new_socket()
     socket_ = factory_.spawn_socket();
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
-    send_control_message("READY");
+    //send_control_message("READY");
 }
 
 void request_worker::attach(
@@ -162,6 +162,7 @@ void request_worker::poll()
         message.recv(wakeup_socket_);
         message.send(*socket_);
     }
+#if 0
     else if (now() - last_heartbeat_ > seconds(interval_))
     {
         log_warning(LOG_WORKER) << "heartbeat failure, can't reach queue";
@@ -183,6 +184,7 @@ void request_worker::poll()
         log_debug(LOG_WORKER) << "Sending heartbeat";
         send_control_message("HEARTBEAT");
     }
+#endif
 }
 
 void request_worker::send_control_message(const std::string& command)
