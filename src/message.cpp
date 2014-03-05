@@ -15,10 +15,10 @@ bool incoming_message::recv(zmq::socket_t& socket)
     zmq_message message;
     message.recv(socket);
     const data_stack& parts = message.parts();
-    if (parts.size() != 5 && parts.size() != 4)
+    if (parts.size() != 4 && parts.size() != 5)
         return false;
     auto it = parts.begin();
-    // [ DESTINATION ]
+    // [ DESTINATION ] (optional - ROUTER sockets strip this)
     if (parts.size() == 5)
     {
         origin_ = *it;
@@ -91,7 +91,7 @@ void append_str(zmq_message& message, const std::string& command)
 void outgoing_message::send(zmq::socket_t& socket) const
 {
     zmq_message message;
-    // [ DEST ]
+    // [ DESTINATION ] (optional - ROUTER sockets strip this)
     if (!dest_.empty())
         message.append(dest_);
     // [ COMMAND ]
