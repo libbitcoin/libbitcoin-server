@@ -10,20 +10,12 @@ namespace obelisk {
 
 using namespace bc;
 
-constexpr uint32_t control_id = std::numeric_limits<uint32_t>::max();
-
 bool incoming_message::recv(zmq::socket_t& socket)
 {
     zmq_message message;
     message.recv(socket);
     const data_stack& parts = message.parts();
-    if (parts.size() == 1)
-    {
-        id_ = control_id;
-        command_ = std::string(parts[0].begin(), parts[0].end());
-        return true;
-    }
-    else if (parts.size() != 5 && parts.size() != 4)
+    if (parts.size() != 5 && parts.size() != 4)
         return false;
     auto it = parts.begin();
     // [ DESTINATION ]
@@ -53,11 +45,6 @@ bool incoming_message::recv(zmq::socket_t& socket)
     ++it;
     BITCOIN_ASSERT(it == parts.end());
     return true;
-}
-
-bool incoming_message::is_signal() const
-{
-    return id_ == std::numeric_limits<uint32_t>::max();
 }
 
 const bc::data_chunk incoming_message::origin() const
@@ -96,11 +83,6 @@ outgoing_message::outgoing_message(
 {
 }
 
-outgoing_message::outgoing_message(const std::string& command)
-  : id_(control_id), command_(command)
-{
-}
-
 void append_str(zmq_message& message, const std::string& command)
 {
     message.append(data_chunk(command.begin(), command.end()));
@@ -109,13 +91,6 @@ void append_str(zmq_message& message, const std::string& command)
 void outgoing_message::send(zmq::socket_t& socket) const
 {
     zmq_message message;
-    if (id_ == control_id)
-    {
-        // Control message. Don't bother with other fields.
-        append_str(message, command_);
-        message.send(socket);
-        return;
-    }
     // [ DEST ]
     if (!dest_.empty())
         message.append(dest_);

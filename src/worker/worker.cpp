@@ -18,7 +18,6 @@ using posix_time::seconds;
 using posix_time::microsec_clock;
 
 const posix_time::time_duration heartbeat_interval = milliseconds(1000);
-constexpr size_t interval_init = 4, interval_max = 32;
 
 #if ZMQ_VERSION_MAJOR >= 3
     // Milliseconds
@@ -77,9 +76,7 @@ bool request_worker::start(config_type& config)
     // Start ZeroMQ socket.
     create_new_socket();
     // Timer stuff
-    last_heartbeat_ = now();
     heartbeat_at_ = now() + heartbeat_interval;
-    interval_ = interval_init;
 }
 void request_worker::stop()
 {
@@ -124,36 +121,22 @@ void request_worker::poll()
         incoming_message request;
         request.recv(*socket_);
 
-        if (!request.is_signal())
+        auto it = handlers_.find(request.command());
+        // Perform request if found.
+        if (it != handlers_.end())
         {
-            last_heartbeat_ = now();
-            auto it = handlers_.find(request.command());
-            // Perform request if found.
-            if (it != handlers_.end())
-            {
-                if (log_requests_)
-                    log_debug(LOG_REQUEST)
-                        << request.command() << " from " << request.origin();
-                it->second(request,
-                    std::bind(&send_worker::queue_send, &sender_, _1));
-            }
-            else
-            {
-                log_warning(LOG_WORKER)
-                    << "Unhandled request: " << request.command()
-                    << " from " << request.origin();
-            }
-        }
-        else if (request.command() == "HEARTBEAT")
-        {
-            log_debug(LOG_WORKER) << "Received heartbeat";
-            last_heartbeat_ = now();
+            if (log_requests_)
+                log_debug(LOG_REQUEST)
+                    << request.command() << " from " << request.origin();
+            it->second(request,
+                std::bind(&send_worker::queue_send, &sender_, _1));
         }
         else
         {
-            log_warning(LOG_WORKER) << "invalid message";
+            log_warning(LOG_WORKER)
+                << "Unhandled request: " << request.command()
+                << " from " << request.origin();
         }
-        interval_ = interval_init;
     }
     else if (items[1].revents & ZMQ_POLLIN)
     {
@@ -162,35 +145,26 @@ void request_worker::poll()
         message.recv(wakeup_socket_);
         message.send(*socket_);
     }
-#if 0
-    else if (now() - last_heartbeat_ > seconds(interval_))
-    {
-        log_warning(LOG_WORKER) << "heartbeat failure, can't reach queue";
-        log_warning(LOG_WORKER) << "reconnecting in "
-            << interval_ << " seconds...";
 
-        if (interval_ < interval_max)
-        {
-            interval_ *= 2;
-        }
-        create_new_socket();
-        last_heartbeat_ = now();
-    }
-
-    // Send heartbeat to queue if it's time
+    // Publish heartbeat.
     if (now() > heartbeat_at_)
     {
         heartbeat_at_ = now() + heartbeat_interval;
         log_debug(LOG_WORKER) << "Sending heartbeat";
-        send_control_message("HEARTBEAT");
+        send_control_message();
     }
-#endif
 }
 
-void request_worker::send_control_message(const std::string& command)
+void append_str(zmq_message& message, const std::string& command)
 {
-    outgoing_message message(command);
-    sender_.queue_send(message);
+    message.append(data_chunk(command.begin(), command.end()));
+}
+void request_worker::send_control_message()
+{
+    static uint32_t counter = 0;
+    zmq_message message;
+    message.append(uncast_type(counter));
+    ++counter;
 }
 
 } // namespace obelisk

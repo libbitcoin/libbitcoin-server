@@ -14,7 +14,6 @@ class incoming_message
 {
 public:
     bool recv(zmq::socket_t& socket);
-    bool is_signal() const;
     const bc::data_chunk origin() const;
     const std::string& command() const;
     const uint32_t id() const;
@@ -36,8 +35,6 @@ public:
         const bc::data_chunk& data);
     outgoing_message(
         const incoming_message& request, const bc::data_chunk& data);
-    // Control messages sent to the bouncer.
-    outgoing_message(const std::string& command);
     // Default constructor provided for containers and copying.
     outgoing_message();
 

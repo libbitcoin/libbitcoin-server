@@ -69,7 +69,7 @@ private:
 
     void create_new_socket();
     void poll();
-    void send_control_message(const std::string& command);
+    void send_control_message();
 
     socket_factory factory_;
     // Main socket.
@@ -77,10 +77,8 @@ private:
     // Socket to trigger wakeup for send.
     zmq::socket_t wakeup_socket_;
 
-    boost::posix_time::ptime last_heartbeat_;
     // Send out heartbeats at regular intervals
     boost::posix_time::ptime heartbeat_at_;
-    size_t interval_;
 
     command_map handlers_;
     send_worker sender_;
