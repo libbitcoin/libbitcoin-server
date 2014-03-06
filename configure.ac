@@ -13,6 +13,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([libbitcoin], [libbitcoin])
 PKG_CHECK_MODULES([libzmq], [libzmq])
+PKG_CHECK_MODULES([libsodium], [libsodium])
+PKG_CHECK_MODULES([libczmq], [libczmq])
 PKG_CHECK_MODULES([libconfigxx], [libconfig++])
 
 AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],

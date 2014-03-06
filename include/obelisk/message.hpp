@@ -3,12 +3,11 @@
 
 #include <zmq.hpp>
 #include <bitcoin/types.hpp>
+#include <obelisk/zmq_wrapper.hpp>
 
 namespace obelisk {
 
 namespace bc = libbitcoin;
-
-typedef std::shared_ptr<zmq::socket_t> zmq_socket_ptr;
 
 class incoming_message
 {

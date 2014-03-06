@@ -8,21 +8,12 @@
 #include <zmq.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <obelisk/message.hpp>
+#include <obelisk/zmq_wrapper.hpp>
 #include "config.hpp"
 #include "lockless_queue.hpp"
 #include "service/util.hpp"
 
 namespace obelisk {
-
-struct socket_factory
-{
-    socket_factory();
-    zmq_socket_ptr spawn_socket();
-
-    zmq::context_t context;
-    std::string connection;
-    std::string name;
-};
 
 /**
  * We don't want to block the originating threads that execute a send
@@ -67,13 +58,15 @@ public:
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void create_new_socket();
+    void create_new_socket(config_type& config);
     void poll();
     void publish_heartbeat();
 
-    socket_factory factory_;
+    zmq::context_t context_;
     // Main socket.
     zmq_socket_ptr socket_;
+    zmq_cert cert_;
+    zmq::auth_t auth_;
     // Socket to trigger wakeup for send.
     zmq::socket_t wakeup_socket_;
     // We publish a heartbeat every so often so clients

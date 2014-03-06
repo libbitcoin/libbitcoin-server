@@ -6,6 +6,7 @@ lib_LTLIBRARIES = libobelisk.la
 libobelisk_la_SOURCES = \
     message.cpp \
     zmq_message.cpp \
+    zmq_wrapper.cpp \
     client/backend.cpp \
     client/interface/interface.cpp \
     client/interface/fetch_x.cpp \
@@ -33,5 +34,5 @@ obworker_SOURCES = \
     worker/service/protocol.cpp \
     worker/service/transaction_pool.cpp
 
-obworker_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS}
+obworker_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libsodium_LIBS} ${libczmq_LIBS} ${libconfigxx_LIBS}
 

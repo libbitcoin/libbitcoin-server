@@ -16,6 +16,7 @@ struct node_config_object
 struct config_type
 {
     typedef std::vector<node_config_object> nodes_list;
+    typedef std::vector<std::string> ipaddress_list;
 
     std::string output_file = "debug.log";
     std::string error_file = "error.log";
@@ -26,6 +27,8 @@ struct config_type
     bool publisher_enabled = false;
     std::string block_publish;
     std::string tx_publish;
+    std::string certificate = "server.cert";
+    ipaddress_list whitelist;
     std::string name;
     unsigned int outgoing_connections = 8;
     bool listener_enabled = true;

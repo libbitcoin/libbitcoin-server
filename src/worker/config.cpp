@@ -27,6 +27,26 @@ void load_nodes(const libconfig::Setting& root, config_type& config)
     catch (const libconfig::SettingNotFoundException&) {}
 }
 
+void load_whitelist(const libconfig::Setting& root, config_type& config)
+{
+    try
+    {
+        const libconfig::Setting& setting = root["whitelist"];
+        for (size_t i = 0; i < setting.getLength(); ++i)
+        {
+            const libconfig::Setting& address_setting = setting[i];
+            std::string address = (const char*)address_setting[0];
+            config.whitelist.push_back(address);
+        }
+    }
+    catch (const libconfig::SettingTypeException)
+    {
+        std::cerr << "Incorrectly formed whitelist setting in config."
+            << std::endl;
+    }
+    catch (const libconfig::SettingNotFoundException&) {}
+}
+
 void load_config(config_type& config, const std::string& filename)
 {
     // Load values from config file.
@@ -50,6 +70,8 @@ void load_config(config_type& config, const std::string& filename)
     root.lookupValue("publisher_enabled", config.publisher_enabled);
     root.lookupValue("block-publish", config.block_publish);
     root.lookupValue("tx-publish", config.tx_publish);
+    root.lookupValue("certificate", config.certificate);
+    load_whitelist(root, config);
     root.lookupValue("name", config.name);
     root.lookupValue("outgoing-connections", config.outgoing_connections);
     root.lookupValue("listener_enabled", config.listener_enabled);

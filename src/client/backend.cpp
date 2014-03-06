@@ -19,8 +19,7 @@ backend_cluster::backend_cluster(threadpool& pool,
 {
     socket_.connect(connection.c_str());
     // Configure socket to not wait at close time.
-    int linger = 0;
-    socket_.setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
+    socket_.set_linger(0);
 }
 
 void backend_cluster::request(
