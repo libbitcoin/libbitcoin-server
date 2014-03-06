@@ -55,10 +55,10 @@ bool request_worker::start(config_type& config)
 {
     // Load config values.
     log_requests_ = config.log_requests;
-    //for (const std::string& ip_address: config.whitelist)
-    //    auth_.allow(ip_address.c_str());
-    //auth_.configure_curve("*", CURVE_ALLOW_ANY);
-    //cert_.load(config.certificate);
+    for (const std::string& ip_address: config.whitelist)
+        auth_.allow(ip_address.c_str());
+    auth_.configure_curve("*", CURVE_ALLOW_ANY);
+    cert_.load(config.certificate);
     // Start ZeroMQ sockets.
     create_new_socket(config);
     log_debug(LOG_WORKER) << "Heartbeat: " << config.heartbeat;
@@ -76,14 +76,12 @@ void request_worker::create_new_socket(config_type& config)
     socket_ = std::make_shared<zmq::socket_t>(context_, ZMQ_ROUTER);
     // Set the socket identity name.
     if (!config.name.empty())
-        socket_->setsockopt(ZMQ_IDENTITY,
-            config.name.c_str(), config.name.size());
-    //cert_.apply(socket_);
+        socket_->set_identity(config.name.c_str());
+    cert_.apply(socket_);
     // Connect...
     socket_->bind(config.service.c_str());
     // Configure socket to not wait at close time
-    int linger = 0;
-    socket_->setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
+    socket_->set_linger(0);
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
 }
