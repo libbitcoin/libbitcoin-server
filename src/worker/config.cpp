@@ -34,8 +34,7 @@ void load_whitelist(const libconfig::Setting& root, config_type& config)
         const libconfig::Setting& setting = root["whitelist"];
         for (size_t i = 0; i < setting.getLength(); ++i)
         {
-            const libconfig::Setting& address_setting = setting[i];
-            std::string address = (const char*)address_setting[0];
+            std::string address = (const char*)setting[i];
             config.whitelist.push_back(address);
         }
     }
@@ -71,6 +70,7 @@ void load_config(config_type& config, const std::string& filename)
     root.lookupValue("block-publish", config.block_publish);
     root.lookupValue("tx-publish", config.tx_publish);
     root.lookupValue("certificate", config.certificate);
+    root.lookupValue("client-allowed-certs", config.client_allowed_certs);
     load_whitelist(root, config);
     root.lookupValue("name", config.name);
     root.lookupValue("outgoing-connections", config.outgoing_connections);

@@ -29,6 +29,7 @@ struct config_type
     std::string tx_publish;
     std::string certificate = "server.cert";
     ipaddress_list whitelist;
+    std::string client_allowed_certs = "ALLOW_ALL_CERTS";
     std::string name;
     unsigned int outgoing_connections = 8;
     bool listener_enabled = true;

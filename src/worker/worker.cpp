@@ -57,7 +57,11 @@ bool request_worker::start(config_type& config)
     log_requests_ = config.log_requests;
     for (const std::string& ip_address: config.whitelist)
         auth_.allow(ip_address.c_str());
-    auth_.configure_curve("*", CURVE_ALLOW_ANY);
+    log_debug() << config.client_allowed_certs;
+    if (config.client_allowed_certs == "ALLOW_ALL_CERTS")
+        auth_.configure_curve("*", CURVE_ALLOW_ANY);
+    else
+        auth_.configure_curve("*", config.client_allowed_certs.c_str());
     cert_.load(config.certificate);
     // Start ZeroMQ sockets.
     create_new_socket(config);
