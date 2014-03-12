@@ -27,7 +27,7 @@ struct config_type
     bool publisher_enabled = false;
     std::string block_publish;
     std::string tx_publish;
-    std::string certificate = "server.cert";
+    std::string certificate = "";
     ipaddress_list whitelist;
     std::string client_allowed_certs = "ALLOW_ALL_CERTS";
     std::string name;

@@ -43,15 +43,8 @@ bool request_worker::start(config_type& config)
 {
     // Load config values.
     log_requests_ = config.log_requests;
-    if (log_requests_)
-        auth_.set_verbose(true);
-    for (const std::string& ip_address: config.whitelist)
-        auth_.allow(ip_address);
-    if (config.client_allowed_certs == "ALLOW_ALL_CERTS")
-        auth_.configure_curve("*", CURVE_ALLOW_ANY);
-    else
-        auth_.configure_curve("*", config.client_allowed_certs);
-    cert_.reset(czmqpp::load_cert(config.certificate));
+    if (!config.certificate.empty())
+        enable_crypto(config);
     // Start ZeroMQ sockets.
     create_new_socket(config);
     log_debug(LOG_WORKER) << "Heartbeat: " << config.heartbeat;
@@ -64,14 +57,26 @@ void request_worker::stop()
 {
 }
 
+void request_worker::enable_crypto(config_type& config)
+{
+    if (log_requests_)
+        auth_.set_verbose(true);
+    for (const std::string& ip_address: config.whitelist)
+        auth_.allow(ip_address);
+    if (config.client_allowed_certs == "ALLOW_ALL_CERTS")
+        auth_.configure_curve("*", CURVE_ALLOW_ANY);
+    else
+        auth_.configure_curve("*", config.client_allowed_certs);
+    cert_.reset(czmqpp::load_cert(config.certificate));
+    cert_.apply(socket_);
+    socket_.set_curve_server(1);
+}
 void request_worker::create_new_socket(config_type& config)
 {
     log_debug(LOG_WORKER) << "Listening: " << config.service;
     // Set the socket identity name.
     if (!config.name.empty())
         socket_.set_identity(config.name.c_str());
-    cert_.apply(socket_);
-    socket_.set_curve_server(1);
     // Connect...
     socket_.bind(config.service);
     // Configure socket to not wait at close time
