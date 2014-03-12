@@ -5,10 +5,9 @@
 #include <mutex>
 #include <thread>
 #include <unordered_map>
-#include <zmq.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <czmq++/czmq.hpp>
 #include <obelisk/message.hpp>
-#include <obelisk/zmq_wrapper.hpp>
 #include "config.hpp"
 #include "lockless_queue.hpp"
 #include "service/util.hpp"
@@ -32,13 +31,13 @@ namespace obelisk {
 class send_worker
 {
 public:
-    send_worker(zmq::context_t& context);
+    send_worker(czmqpp::context& context);
     void queue_send(const outgoing_message& message);
 
 private:
     typedef lockless_queue<outgoing_message> send_message_queue;
 
-    zmq::context_t& context_;
+    czmqpp::context& context_;
     // When the send is ready, then the sending thread is woken up.
     send_message_queue send_queue_;
 };
@@ -62,16 +61,16 @@ private:
     void poll();
     void publish_heartbeat();
 
-    zmq::context_t context_;
+    czmqpp::context context_;
     // Main socket.
-    zmq_socket_ptr socket_;
-    zmq_cert cert_;
-    zmq::auth_t auth_;
+    czmqpp::socket socket_;
+    czmqpp::certificate cert_;
+    czmqpp::authenticator auth_;
     // Socket to trigger wakeup for send.
-    zmq::socket_t wakeup_socket_;
+    czmqpp::socket wakeup_socket_;
     // We publish a heartbeat every so often so clients
     // can know our availability.
-    zmq::socket_t heartbeat_socket_;
+    czmqpp::socket heartbeat_socket_;
 
     // Send out heartbeats at regular intervals
     boost::posix_time::ptime heartbeat_at_;

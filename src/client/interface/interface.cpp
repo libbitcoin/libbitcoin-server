@@ -1,7 +1,6 @@
 #include <obelisk/client/interface.hpp>
 
 #include <bitcoin/bitcoin.hpp>
-#include <obelisk/zmq_message.hpp>
 #include "fetch_x.hpp"
 #include "util.hpp"
 
@@ -18,28 +17,21 @@ using posix_time::second_clock;
 
 const posix_time::time_duration sub_renew = minutes(2);
 
-subscriber_part::subscriber_part(zmq::context_t& context)
-  : context_(context)
+subscriber_part::subscriber_part(czmqpp::context& context)
+  : socket_block_(context, ZMQ_SUB), socket_tx_(context, ZMQ_SUB)
 {
 }
 
-bool subscriber_part::setup_socket(const std::string& connection,
-    zmq_socket_uniqptr& socket)
+bool subscriber_part::setup_socket(
+    const std::string& connection, czmqpp::socket socket)
 {
-    socket.reset(new zmq::socket_t(context_, ZMQ_SUB));
-    try
+    if (!socket.connect(connection))
     {
-        socket->connect(connection.c_str());
-        socket->setsockopt(ZMQ_SUBSCRIBE, 0, 0);
-    }
-    catch (zmq::error_t error)
-    {
-        socket.reset();
         log_warning(LOG_SUBSCRIBER)
             << "Subscriber failed to connect: " << connection;
-        BITCOIN_ASSERT(error.num() != 0);
         return false;
     }
+    socket.set_subscribe("");
     return true;
 }
 
@@ -63,21 +55,17 @@ bool subscriber_part::subscribe_transactions(const std::string& connection,
 
 void subscriber_part::update()
 {
+    czmqpp::poller poller;
+    if (socket_tx_.self())
+        poller.add(socket_tx_);
+    if (socket_block_.self())
+        poller.add(socket_block_);
+    czmqpp::socket which = poller.wait(0);
     //  Poll socket for a reply, with timeout
-    if (socket_tx_)
-    {
-        zmq::pollitem_t items[] = { { *socket_tx_, 0, ZMQ_POLLIN, 0 } };
-        zmq::poll(&items[0], 1, 0);
-        if (items[0].revents & ZMQ_POLLIN)
-            recv_tx();
-    }
-    if (socket_block_)
-    {
-        zmq::pollitem_t items[] = { { *socket_block_, 0, ZMQ_POLLIN, 0 } };
-        zmq::poll(&items[0], 1, 0);
-        if (items[1].revents & ZMQ_POLLIN)
-            recv_block();
-    }
+    if (socket_tx_.self() && which == socket_tx_)
+        recv_tx();
+    if (socket_block_.self() && which == socket_block_)
+        recv_block();
 }
 
 bool read_hash(hash_digest& hash, const data_chunk& raw_hash)
@@ -93,8 +81,8 @@ bool read_hash(hash_digest& hash, const data_chunk& raw_hash)
 
 void subscriber_part::recv_tx()
 {
-    zmq_message message;
-    bool success = message.recv(*socket_tx_);
+    czmqpp::message message;
+    bool success = message.receive(socket_tx_);
     BITCOIN_ASSERT(success);
     // [ tx hash ]
     // [ raw tx ]
@@ -122,8 +110,8 @@ void subscriber_part::recv_tx()
 
 void subscriber_part::recv_block()
 {
-    zmq_message message;
-    bool success = message.recv(*socket_block_);
+    czmqpp::message message;
+    bool success = message.receive(socket_block_);
     BITCOIN_ASSERT(success);
     // [ block hash ]
     // [ height ]
@@ -277,8 +265,9 @@ void address_subscriber::fetch_history(const payment_address& address,
 }
 
 fullnode_interface::fullnode_interface(
-    threadpool& pool, const std::string& connection)
-  : context_(1), backend_(pool, context_, connection),
+    threadpool& pool, const std::string& connection,
+    const std::string& cert_filename, const std::string& server_pubkey)
+  : backend_(pool, context_, connection, cert_filename, server_pubkey),
     blockchain(backend_), transaction_pool(backend_),
     protocol(backend_), address(pool, backend_),
     subscriber_(context_)

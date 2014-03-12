@@ -4,16 +4,15 @@
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/sha256.hpp>
-#include <obelisk/zmq_message.hpp>
 
 namespace obelisk {
 
 using namespace bc;
 
-bool incoming_message::recv(zmq::socket_t& socket)
+bool incoming_message::recv(czmqpp::socket& socket)
 {
-    zmq_message message;
-    message.recv(socket);
+    czmqpp::message message;
+    message.receive(socket);
     const data_stack& parts = message.parts();
     if (parts.size() != 4 && parts.size() != 5)
         return false;
@@ -83,14 +82,14 @@ outgoing_message::outgoing_message(
 {
 }
 
-void append_str(zmq_message& message, const std::string& command)
+void append_str(czmqpp::message& message, const std::string& command)
 {
     message.append(data_chunk(command.begin(), command.end()));
 }
 
-void outgoing_message::send(zmq::socket_t& socket) const
+void outgoing_message::send(czmqpp::socket& socket) const
 {
-    zmq_message message;
+    czmqpp::message message;
     // [ DESTINATION ] (optional - ROUTER sockets strip this)
     if (!dest_.empty())
         message.append(dest_);

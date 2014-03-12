@@ -1,9 +1,8 @@
 #ifndef OBELISK_CLIENT_MESSAGE
 #define OBELISK_CLIENT_MESSAGE
 
-#include <zmq.hpp>
+#include <czmq++/czmq.hpp>
 #include <bitcoin/types.hpp>
-#include <obelisk/zmq_wrapper.hpp>
 
 namespace obelisk {
 
@@ -12,7 +11,7 @@ namespace bc = libbitcoin;
 class incoming_message
 {
 public:
-    bool recv(zmq::socket_t& socket);
+    bool recv(czmqpp::socket& socket);
     const bc::data_chunk origin() const;
     const std::string& command() const;
     const uint32_t id() const;
@@ -37,7 +36,7 @@ public:
     // Default constructor provided for containers and copying.
     outgoing_message();
 
-    void send(zmq::socket_t& socket) const;
+    void send(czmqpp::socket& socket) const;
     const uint32_t id() const;
 
 private:
