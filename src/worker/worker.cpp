@@ -43,7 +43,13 @@ bool request_worker::start(config_type& config)
 {
     // Load config values.
     log_requests_ = config.log_requests;
-    if (!config.certificate.empty())
+    if (log_requests_)
+        auth_.set_verbose(true);
+    if (!config.whitelist.empty())
+        whitelist(config.whitelist);
+    if (config.certificate.empty())
+        socket_.set_zap_domain("global");
+    else
         enable_crypto(config);
     // Start ZeroMQ sockets.
     create_new_socket(config);
@@ -57,12 +63,13 @@ void request_worker::stop()
 {
 }
 
+void request_worker::whitelist(config_type::ipaddress_list& addrs)
+{
+    for (const std::string& ip_address: addrs)
+        auth_.allow(ip_address);
+}
 void request_worker::enable_crypto(config_type& config)
 {
-    if (log_requests_)
-        auth_.set_verbose(true);
-    for (const std::string& ip_address: config.whitelist)
-        auth_.allow(ip_address);
     if (config.client_allowed_certs == "ALLOW_ALL_CERTS")
         auth_.configure_curve("*", CURVE_ALLOW_ANY);
     else

@@ -57,6 +57,7 @@ public:
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
+    void whitelist(config_type::ipaddress_list& addrs);
     void enable_crypto(config_type& config);
     void create_new_socket(config_type& config);
     void poll();
