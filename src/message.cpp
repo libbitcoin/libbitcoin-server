@@ -14,11 +14,11 @@ bool incoming_message::recv(czmqpp::socket& socket)
     czmqpp::message message;
     message.receive(socket);
     const data_stack& parts = message.parts();
-    if (parts.size() != 4 && parts.size() != 5)
+    if (parts.size() != 3 && parts.size() != 4)
         return false;
     auto it = parts.begin();
     // [ DESTINATION ] (optional - ROUTER sockets strip this)
-    if (parts.size() == 5)
+    if (parts.size() == 4)
     {
         origin_ = *it;
         ++it;
@@ -35,12 +35,6 @@ bool incoming_message::recv(czmqpp::socket& socket)
     ++it;
     // [ DATA ]
     data_ = *it;
-    ++it;
-    // [ CHECKSUM ]
-    const data_chunk& raw_checksum = *it;
-    uint32_t checksum = cast_chunk<uint32_t>(raw_checksum);
-    if (checksum != generate_sha256_checksum(data_))
-        return false;
     ++it;
     BITCOIN_ASSERT(it == parts.end());
     return true;
@@ -101,10 +95,6 @@ void outgoing_message::send(czmqpp::socket& socket) const
     message.append(raw_id);
     // [ DATA ]
     message.append(data_);
-    // [ CHECKSUM ]
-    data_chunk raw_checksum = uncast_type(generate_sha256_checksum(data_));
-    BITCOIN_ASSERT(raw_checksum.size() == 4);
-    message.append(raw_checksum);
     // Send.
     message.send(socket);
 }
