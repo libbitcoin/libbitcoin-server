@@ -14,13 +14,26 @@ constexpr size_t request_retries = 3;
 const posix_time::time_duration request_timeout_init = seconds(30);
 
 backend_cluster::backend_cluster(threadpool& pool,
-    zmq::context_t& context, const std::string& connection)
+    czmqpp::context& context, const std::string& connection,
+    const std::string& cert_filename, const std::string& server_pubkey)
   : context_(context), socket_(context_, ZMQ_DEALER), strand_(pool)
 {
-    socket_.connect(connection.c_str());
+    BITCOIN_ASSERT(socket_.self());
+    if (!server_pubkey.empty())
+        enable_crypto(cert_filename, server_pubkey);
+    // Connect
+    socket_.connect(connection);
     // Configure socket to not wait at close time.
-    int linger = 0;
-    socket_.setsockopt(ZMQ_LINGER, &linger, sizeof (linger));
+    socket_.set_linger(0);
+}
+
+void backend_cluster::enable_crypto(
+    const std::string& cert_filename, const std::string& server_pubkey)
+{
+    cert_.reset(czmqpp::load_cert(cert_filename));
+    BITCOIN_ASSERT(cert_.self());
+    cert_.apply(socket_);
+    socket_.set_curve_serverkey(server_pubkey);
 }
 
 void backend_cluster::request(
@@ -40,17 +53,18 @@ void backend_cluster::request(
 }
 void backend_cluster::send(const outgoing_message& message)
 {
+    BITCOIN_ASSERT(socket_.self());
     message.send(socket_);
 }
 
 void backend_cluster::update()
 {
     //  Poll socket for a reply, with timeout
-    zmq::pollitem_t items[] = { { socket_, 0, ZMQ_POLLIN, 0 } };
-    zmq::poll(&items[0], 1, 0);
+    czmqpp::poller poller(socket_);
+    BITCOIN_ASSERT(poller.self());
+    czmqpp::socket which = poller.wait(0);
     //  If we got a reply, process it
-    if (items[0].revents & ZMQ_POLLIN)
-        receive_incoming();
+    receive_incoming();
     // Finally resend any expired requests that we didn't get
     // a response to yet.
     strand_.randomly_queue(

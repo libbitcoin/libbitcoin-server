@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <system_error>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <zmq.hpp>
 #include <obelisk/message.hpp>
 #include <bitcoin/threadpool.hpp>
 
@@ -20,7 +19,8 @@ public:
         const bc::data_chunk&, const worker_uuid&)> response_handler;
 
     backend_cluster(bc::threadpool& pool,
-        zmq::context_t& context, const std::string& connection);
+        czmqpp::context& context, const std::string& connection,
+        const std::string& cert_filename, const std::string& server_pubkey);
 
     void request(
         const std::string& command, const bc::data_chunk& data,
@@ -45,6 +45,8 @@ private:
 
     typedef std::unordered_map<std::string, response_handler> filter_map;
 
+    void enable_crypto(
+        const std::string& cert_filename, const std::string& server_pubkey);
     void send(const outgoing_message& message);
     void receive_incoming();
 
@@ -54,8 +56,9 @@ private:
 
     void resend_expired();
 
-    zmq::context_t& context_;
-    zmq::socket_t socket_;
+    czmqpp::context& context_;
+    czmqpp::socket socket_;
+    czmqpp::certificate cert_;
     // Requests
     bc::async_strand strand_;
     response_handler_map handlers_;

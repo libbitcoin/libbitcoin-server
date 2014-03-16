@@ -3,8 +3,6 @@
 
 // Convenience header that includes everything
 // Not to be used internally. For API users.
-#include <obelisk/zmq_message.hpp>
-#include <obelisk/obelisk.hpp>
 #include <obelisk/client/transaction_pool.hpp>
 #include <obelisk/client/backend.hpp>
 #include <obelisk/client/blockchain.hpp>

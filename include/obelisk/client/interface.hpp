@@ -16,7 +16,7 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    subscriber_part(zmq::context_t& context);
+    subscriber_part(czmqpp::context& context);
 
     // Non-copyable
     subscriber_part(const subscriber_part&) = delete;
@@ -29,16 +29,13 @@ public:
     void update();
 
 private:
-    typedef std::unique_ptr<zmq::socket_t> zmq_socket_uniqptr;
-
-    bool setup_socket(const std::string& connection,
-        zmq_socket_uniqptr& socket);
+    bool setup_socket(
+        const std::string& connection, czmqpp::socket socket);
 
     void recv_tx();
     void recv_block();
 
-    zmq::context_t& context_;
-    zmq_socket_uniqptr socket_block_, socket_tx_;
+    czmqpp::socket socket_block_, socket_tx_;
     block_notify_callback notify_block_;
     transaction_notify_callback notify_tx_;
 };
@@ -108,7 +105,8 @@ private:
 class fullnode_interface
 {
 public:
-    fullnode_interface(bc::threadpool& pool, const std::string& connection);
+    fullnode_interface(bc::threadpool& pool, const std::string& connection,
+        const std::string& cert_filename, const std::string& server_pubkey);
 
     // Non-copyable
     fullnode_interface(const fullnode_interface&) = delete;
@@ -122,7 +120,7 @@ public:
         subscriber_part::transaction_notify_callback notify_tx);
 
 private:
-    zmq::context_t context_;
+    czmqpp::context context_;
     backend_cluster backend_;
     subscriber_part subscriber_;
 

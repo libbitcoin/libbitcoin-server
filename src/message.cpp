@@ -4,31 +4,25 @@
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/sha256.hpp>
-#include <obelisk/zmq_message.hpp>
 
 namespace obelisk {
 
 using namespace bc;
 
-constexpr uint32_t control_id = std::numeric_limits<uint32_t>::max();
-
-bool incoming_message::recv(zmq::socket_t& socket)
+bool incoming_message::recv(czmqpp::socket& socket)
 {
-    zmq_message message;
-    message.recv(socket);
+    czmqpp::message message;
+    message.receive(socket);
     const data_stack& parts = message.parts();
-    if (parts.size() == 1)
-    {
-        id_ = control_id;
-        command_ = std::string(parts[0].begin(), parts[0].end());
-        return true;
-    }
-    else if (parts.size() != 5)
+    if (parts.size() != 3 && parts.size() != 4)
         return false;
     auto it = parts.begin();
-    // [ DESTINATION ]
-    origin_ = *it;
-    ++it;
+    // [ DESTINATION ] (optional - ROUTER sockets strip this)
+    if (parts.size() == 4)
+    {
+        origin_ = *it;
+        ++it;
+    }
     // [ COMMAND ]
     const data_chunk& raw_command = *it;
     command_ = std::string(raw_command.begin(), raw_command.end());
@@ -42,19 +36,8 @@ bool incoming_message::recv(zmq::socket_t& socket)
     // [ DATA ]
     data_ = *it;
     ++it;
-    // [ CHECKSUM ]
-    const data_chunk& raw_checksum = *it;
-    uint32_t checksum = cast_chunk<uint32_t>(raw_checksum);
-    if (checksum != generate_sha256_checksum(data_))
-        return false;
-    ++it;
     BITCOIN_ASSERT(it == parts.end());
     return true;
-}
-
-bool incoming_message::is_signal() const
-{
-    return id_ == std::numeric_limits<uint32_t>::max();
 }
 
 const bc::data_chunk incoming_message::origin() const
@@ -93,28 +76,17 @@ outgoing_message::outgoing_message(
 {
 }
 
-outgoing_message::outgoing_message(const std::string& command)
-  : id_(control_id), command_(command)
-{
-}
-
-void append_str(zmq_message& message, const std::string& command)
+void append_str(czmqpp::message& message, const std::string& command)
 {
     message.append(data_chunk(command.begin(), command.end()));
 }
 
-void outgoing_message::send(zmq::socket_t& socket) const
+void outgoing_message::send(czmqpp::socket& socket) const
 {
-    zmq_message message;
-    if (id_ == control_id)
-    {
-        // Control message. Don't bother with other fields.
-        append_str(message, command_);
-        message.send(socket);
-        return;
-    }
-    // [ DEST ]
-    message.append(dest_);
+    czmqpp::message message;
+    // [ DESTINATION ] (optional - ROUTER sockets strip this)
+    if (!dest_.empty())
+        message.append(dest_);
     // [ COMMAND ]
     append_str(message, command_);
     // [ ID ]
@@ -123,10 +95,6 @@ void outgoing_message::send(zmq::socket_t& socket) const
     message.append(raw_id);
     // [ DATA ]
     message.append(data_);
-    // [ CHECKSUM ]
-    data_chunk raw_checksum = uncast_type(generate_sha256_checksum(data_));
-    BITCOIN_ASSERT(raw_checksum.size() == 4);
-    message.append(raw_checksum);
     // Send.
     message.send(socket);
 }

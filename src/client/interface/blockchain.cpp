@@ -115,5 +115,50 @@ void wrap_fetch_transaction_index(const data_chunk& data,
     handle_fetch(ec, block_height, index);
 }
 
+void wrap_fetch_stealth(const data_chunk& data,
+    blockchain::fetch_handler_stealth handle_fetch);
+void blockchain_interface::fetch_stealth(const stealth_prefix& prefix,
+    blockchain::fetch_handler_stealth handle_fetch,
+    size_t from_height)
+{
+    data_chunk data(9);
+    auto serial = make_serializer(data.begin());
+    serial.write_byte(prefix.number_bits);
+    serial.write_4_bytes(prefix.bitfield);
+    serial.write_4_bytes(from_height);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
+    backend_.request("blockchain.fetch_stealth", data,
+        std::bind(wrap_fetch_stealth, _1, handle_fetch));
+}
+void wrap_fetch_stealth(const data_chunk& data,
+    blockchain::fetch_handler_stealth handle_fetch)
+{
+    BITCOIN_ASSERT(data.size() >= 4);
+    std::error_code ec;
+    auto deserial = make_deserializer(data.begin(), data.end());
+    if (!read_error_code(deserial, data.size(), ec))
+        return;
+    BITCOIN_ASSERT(deserial.iterator() == data.begin() + 4);
+    size_t row_size = 33 + 21 + 32;
+    if ((data.size() - 4) % row_size != 0)
+    {
+        log_error() << "Malformed response for blockchain.fetch_stealth";
+        return;
+    }
+    size_t number_rows = (data.size() - 4) / row_size;
+    blockchain::stealth_list stealth_results(number_rows);
+    for (size_t i = 0; i < stealth_results.size(); ++i)
+    {
+        blockchain::stealth_row& row = stealth_results[i];
+        row.ephemkey = deserial.read_data(33);
+        uint8_t address_version = deserial.read_byte();
+        const short_hash address_hash = deserial.read_short_hash();
+        row.address.set(address_version, address_hash);
+        row.transaction_hash = deserial.read_hash();
+    }
+    BITCOIN_ASSERT(deserial.iterator() == data.end());
+    handle_fetch(ec, stealth_results);
+}
+
 } // namespace obelisk
 

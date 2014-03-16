@@ -4,10 +4,8 @@
 Connecting
 **********
 
-We use the ZeroMQ ROUTER-DEALER combination with the load balancer to perform
-asynchronous request-reply pairs. If the balancer server does not respond in
-time then the client can resend the request to a different worker. A good
-timeout value to use is 30 seconds.
+We use the ZeroMQ ROUTER-DEALER combination with the backend worker to perform
+asynchronous request-reply pairs.
 
 To connect to the server using ZeroMQ in C++, we use:
 ::

@@ -43,8 +43,6 @@ Imagine we send 5 messages:
 
     socket.send(msg1, ZMQ_SNDMORE)
     socket.send(msg2, ZMQ_SNDMORE)
-    socket.send(msg3, ZMQ_SNDMORE)
-    socket.send(msg4, ZMQ_SNDMORE)
     socket.send(msg5, 0)
 
 When the message 5 arrives to the server, then message 1-4 will be available
@@ -53,22 +51,22 @@ too for the server to receive. ZeroMQ calls this a *frame*.
 Different ZeroMQ socket types can modify the frame by popping off beginning
 messages before passing them to the API.
 
-In this document, we will imagine an abstract message type called
-:class:`obelisk_message` with the folowing methods.
+In this document, we use the class:`czmqpp::message` class
+which implements the folowing methods.
 
-.. cpp:function:: void obelisk_message::append(part)
+.. cpp:function:: void czmqpp::append(part)
 
    Add a new field to the message.
 
-.. cpp:function:: parts_list obelisk_message::parts()
+.. cpp:function:: parts_list czmqpp::parts()
 
    Return array of all appended parts.
 
-.. cpp:function:: bool obelisk_message::send(socket)
+.. cpp:function:: bool czmqpp::send(socket)
 
    Send entire frame to socket ending on last appended part.
 
-.. cpp:function:: bool obelisk_message::recv(socket)
+.. cpp:function:: bool czmqpp::receive(socket)
 
    Receive from the socket until no more messages are available in this frame.
 
@@ -93,24 +91,10 @@ The format of request and reply fields are very similar.
 ============== ====================
 Request Fields Type(Size)
 ============== ====================
-destination    worker_uuid(0 or 17)
 command        string
 id             uint32(4)
 data           data
-checksum       uint32(4)
 ============== ====================
-
-`destination` describes which backend worker the load balancer should direct
-the message to. If empty, then the load balancer picks a random backend
-worker. This should only be set in specific conditions where you want to
-avoid race conditions. In general it's better to write more resilient code
-that is able to handle asynchronity without demanding total consistency.
-The worker_uuid usually should be 17 bytes if specifying a destination.
-If not then it is 0 bytes (load balancer selects a worker).
-
-Note: that there is a feature to name the workers. If so, then this field
-size can vary depending on the number of bytes needed for the custom
-worker_uuid.
 
 `command` is the remote method invoked on the worker.
 
@@ -119,27 +103,11 @@ requests the client sent.
 
 `data` is the remote method parameter serialized as binary data.
 
-`checksum` is a 4 byte checksum of `data`, calculated using the Bitcoin
-checksum method. Checksum = first 4 bytes of `sha256(sha256(data))`.
-
 ============== ====================
 Reply Fields   Type(Size)
 ============== ====================
-origin         worker_uuid(0 or 17)
 command        string
 id             uint32(4)
 data           data
-checksum       uint32(4)
 ============== ====================
-
-The only difference with replies, is the first field indicates which worker
-responded back. This is useful for if we want to batch a series of requests
-to the same worker. An example might be subscribing to an address, and fetching
-the history for the same address. Such an operation should be called on the
-same worker to guarantee against a race condition.
-
-But this feature should not be abused. Taking the example futher, if we are
-iterating a list of addresses in a wallet, we should **not** be sending all
-requests to the same worker, overloading the same worker with operations that
-aren't interlinked.
 

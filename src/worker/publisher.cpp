@@ -1,6 +1,5 @@
 #include "publisher.hpp"
 
-#include <obelisk/zmq_message.hpp>
 #include "echo.hpp"
 
 #define LOG_PUBLISHER LOG_WORKER
@@ -12,20 +11,18 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 publisher::publisher(node_impl& node)
-  : context_(1), node_(node)
+  : node_(node),
+    socket_block_(context_, ZMQ_PUB),
+    socket_tx_(context_, ZMQ_PUB)
 {
 }
 
-bool publisher::setup_socket(const std::string& connection,
-    zmq_socket_uniqptr& socket)
+bool publisher::setup_socket(
+    const std::string& connection, czmqpp::socket& socket)
 {
-    if (connection != "")
-    {
-        socket.reset(new zmq::socket_t(context_, ZMQ_PUB));
-        socket->bind(connection.c_str());
+    if (connection.empty())
         return true;
-    }
-    return false;
+    return socket.bind(connection) != -1;
 }
 
 bool publisher::start(config_type& config)
@@ -48,15 +45,7 @@ bool publisher::stop()
     return true;
 }
 
-bool send_raw(const bc::data_chunk& raw,
-    zmq::socket_t& socket, bool send_more=false)
-{
-    zmq::message_t message(raw.size());
-    memcpy(message.data(), raw.data(), raw.size());
-    return socket.send(message, send_more ? ZMQ_SNDMORE : 0);
-}
-
-void append_hash(zmq_message& message, const hash_digest& hash)
+void append_hash(czmqpp::message& message, const hash_digest& hash)
 {
     message.append(data_chunk(hash.begin(), hash.end()));
 }
@@ -74,7 +63,7 @@ bool publisher::send_blk(uint32_t height, const block_type& blk)
     //   hash     [32 bytes]
     //   txs size [4 bytes]
     //   ... txs ...
-    zmq_message message;
+    czmqpp::message message;
     message.append(raw_height);
     append_hash(message, hash_block_header(blk.header));
     message.append(raw_blk_header);
@@ -85,7 +74,7 @@ bool publisher::send_blk(uint32_t height, const block_type& blk)
     for (const bc::transaction_type& tx: blk.transactions)
         append_hash(message, hash_transaction(tx));
     // Finished. Send message.
-    if (!message.send(*socket_block_))
+    if (!message.send(socket_block_))
     {
         log_warning(LOG_PUBLISHER) << "Problem publishing block data.";
         return false;
@@ -97,10 +86,10 @@ bool publisher::send_tx(const transaction_type& tx)
 {
     data_chunk raw_tx(bc::satoshi_raw_size(tx));
     satoshi_save(tx, raw_tx.begin());
-    zmq_message message;
+    czmqpp::message message;
     append_hash(message, hash_transaction(tx));
     message.append(raw_tx);
-    if (!message.send(*socket_tx_))
+    if (!message.send(socket_tx_))
     {
         log_warning(LOG_PUBLISHER) << "Problem publishing tx data.";
         return false;

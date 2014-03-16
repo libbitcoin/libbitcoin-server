@@ -253,7 +253,7 @@ void node_impl::handle_mempool_store(
     if (ec)
     {
         log_warning()
-            << "Error storing memory pool transaction "
+            << "Failed to store transaction in mempool "
             << hash_transaction(tx) << ": " << ec.message();
         return;
     }

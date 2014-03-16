@@ -16,11 +16,11 @@ using namespace obelisk;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+bool stopped = false;
 void interrupt_handler(int)
 {
     echo() << "Stopping... Please wait.";
-    // ZeroMQ will catch this signal and propagate it
-    // as an exception in the main runloop below.
+    stopped = true;
 }
 
 int main(int argc, char** argv)
@@ -44,7 +44,11 @@ int main(int argc, char** argv)
     publisher publish(node);
     if (config.publisher_enabled)
         if (!publish.start(config))
+        {
+            std::cerr << "Failed to start publisher: "
+                << zmq_strerror(zmq_errno()) << std::endl;
             return 1;
+        }
     // Address subscriptions
     subscribe_manager addr_sub(node);
     // Attach commands
@@ -71,6 +75,7 @@ int main(int argc, char** argv)
         blockchain_fetch_transaction_index);
     attach("blockchain.fetch_spend", blockchain_fetch_spend);
     attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
+    attach("blockchain.fetch_stealth", blockchain_fetch_stealth);
     attach("protocol.broadcast_transaction", protocol_broadcast_transaction);
     attach("transaction_pool.validate", transaction_pool_validate);
     attach("transaction_pool.fetch_transaction",
@@ -78,33 +83,21 @@ int main(int argc, char** argv)
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.
     if (!node.start(config))
+    {
+        std::cerr << "Failed to start Bitcoin node." << std::endl;
         return 1;
+    }
     echo() << "Node started.";
     signal(SIGINT, interrupt_handler);
-    while (true)
-    {
-        try
-        {
-            worker.update();
-        }
-        catch (zmq::error_t error)
-        {
-            // SIGINT caught.
-            if (error.num() == EINTR)
-                break;
-            else
-            {
-                log_error(LOG_WORKER) << "ZMQ: " << error.what();
-                echo() << "Closing down because of error.";
-                throw;
-            }
-        }
-    }
+    // Main loop.
+    while (!stopped)
+        worker.update();
     worker.stop();
     if (config.publisher_enabled)
         publish.stop();
     if (!node.stop())
         return -1;
+    echo() << "Node shutdown cleanly.";
     return 0;
 }
 

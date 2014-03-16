@@ -1,11 +1,10 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS} -DSYSCONFDIR=\"${sysconfdir}\"
+AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS} ${libczmqpp_LIBS} ${libconfigxx_CFLAGS} -DSYSCONFDIR=\"${sysconfdir}\"
 
 lib_LTLIBRARIES = libobelisk.la
 libobelisk_la_SOURCES = \
     message.cpp \
-    zmq_message.cpp \
     client/backend.cpp \
     client/interface/interface.cpp \
     client/interface/fetch_x.cpp \
@@ -13,18 +12,11 @@ libobelisk_la_SOURCES = \
     client/interface/protocol.cpp \
     client/interface/transaction_pool.cpp
 
-bin_PROGRAMS = obbalancer obworker
+bin_PROGRAMS = obworker
 
 confdir=$(sysconfdir)/obelisk
 conf_DATA = \
-    balancer/balancer.cfg \
     worker/worker.cfg
-
-obbalancer_SOURCES = \
-    balancer/balancer.cpp \
-    balancer/config.cpp
-
-obbalancer_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS}
 
 obworker_SOURCES = \
     worker/config.cpp \
@@ -40,5 +32,5 @@ obworker_SOURCES = \
     worker/service/protocol.cpp \
     worker/service/transaction_pool.cpp
 
-obworker_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libconfigxx_LIBS}
+obworker_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libsodium_LIBS} ${libczmq_LIBS} ${libczmqpp_LIBS} ${libconfigxx_LIBS}
 
