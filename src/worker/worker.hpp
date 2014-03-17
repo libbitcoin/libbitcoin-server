@@ -9,7 +9,6 @@
 #include <czmq++/czmq.hpp>
 #include <obelisk/message.hpp>
 #include "config.hpp"
-#include "lockless_queue.hpp"
 #include "service/util.hpp"
 
 namespace obelisk {
@@ -19,14 +18,9 @@ namespace obelisk {
  * as that would slow down requests if they all have to sync access
  * to a single socket.
  *
- * Instead we have a lockless queue where send requests are pushed,
+ * Instead we have a queue (push socket) where send requests are pushed,
  * and then the send_worker is notified. The worker wakes up and pushes
  * all pending requests to the socket.
- *
- * We have to manage reconnects, so there's still the need to sync access
- * to the socket which is shared with the receiving request_worker.
- * This is however only for set_socket() and queue_send() so thread
- * contention is kept to the minimum and sending is (mostly) lockfree.
  */
 class send_worker
 {
@@ -35,11 +29,7 @@ public:
     void queue_send(const outgoing_message& message);
 
 private:
-    typedef lockless_queue<outgoing_message> send_message_queue;
-
-    czmqpp::context& context_;
-    // When the send is ready, then the sending thread is woken up.
-    send_message_queue send_queue_;
+    czmqpp::socket socket_;
 };
 
 class request_worker
