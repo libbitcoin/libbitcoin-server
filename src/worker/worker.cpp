@@ -30,7 +30,7 @@ void send_worker::queue_send(const outgoing_message& message)
     int rc = socket.connect("inproc://trigger-send");
     BITCOIN_ASSERT(rc == 0);
     message.send(socket);
-    zsocket_destroy(context_.self(), socket.self());
+    socket.destroy(context_);
 }
 
 request_worker::request_worker()

@@ -30,7 +30,7 @@ public:
 
 private:
     bool setup_socket(
-        const std::string& connection, czmqpp::socket socket);
+        const std::string& connection, czmqpp::socket& socket);
 
     void recv_tx();
     void recv_block();
