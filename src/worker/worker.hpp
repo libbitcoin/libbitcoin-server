@@ -29,7 +29,7 @@ public:
     void queue_send(const outgoing_message& message);
 
 private:
-    czmqpp::socket socket_;
+    czmqpp::context& context_;
 };
 
 class request_worker

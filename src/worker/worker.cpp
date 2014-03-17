@@ -20,15 +20,16 @@ constexpr long poll_sleep_interval = 1000;
 auto now = []() { return microsec_clock::universal_time(); };
 
 send_worker::send_worker(czmqpp::context& context)
-  : socket_(context, ZMQ_PUSH)
+  : context_(context)
 {
-    BITCOIN_ASSERT(socket_.self());
-    int rc = socket_.connect("inproc://trigger-send");
-    BITCOIN_ASSERT(rc == 0);
 }
 void send_worker::queue_send(const outgoing_message& message)
 {
-    message.send(socket_);
+    czmqpp::socket socket(context_, ZMQ_PUSH);
+    BITCOIN_ASSERT(socket.self());
+    int rc = socket.connect("inproc://trigger-send");
+    BITCOIN_ASSERT(rc == 0);
+    message.send(socket);
 }
 
 request_worker::request_worker()
