@@ -25,9 +25,12 @@ send_worker::send_worker(czmqpp::context& context)
 }
 void send_worker::queue_send(const outgoing_message& message)
 {
-    czmqpp::socket queue_socket(context_, ZMQ_PUSH);
-    queue_socket.connect("inproc://trigger-send");
-    message.send(queue_socket);
+    czmqpp::socket socket(context_, ZMQ_PUSH);
+    BITCOIN_ASSERT(socket.self());
+    int rc = socket.connect("inproc://trigger-send");
+    BITCOIN_ASSERT(rc == 0);
+    message.send(socket);
+    socket.destroy(context_);
 }
 
 request_worker::request_worker()
@@ -37,7 +40,11 @@ request_worker::request_worker()
     wakeup_socket_(context_, ZMQ_PULL),
     heartbeat_socket_(context_, ZMQ_PUB)
 {
-    wakeup_socket_.bind("inproc://trigger-send");
+    BITCOIN_ASSERT(socket_.self());
+    BITCOIN_ASSERT(wakeup_socket_.self());
+    BITCOIN_ASSERT(heartbeat_socket_.self());
+    int rc = wakeup_socket_.bind("inproc://trigger-send");
+    BITCOIN_ASSERT(rc != -1);
 }
 bool request_worker::start(config_type& config)
 {

@@ -23,7 +23,7 @@ subscriber_part::subscriber_part(czmqpp::context& context)
 }
 
 bool subscriber_part::setup_socket(
-    const std::string& connection, czmqpp::socket socket)
+    const std::string& connection, czmqpp::socket& socket)
 {
     if (!socket.connect(connection))
     {

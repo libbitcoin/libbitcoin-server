@@ -30,7 +30,7 @@ public:
 
 private:
     bool setup_socket(
-        const std::string& connection, czmqpp::socket socket);
+        const std::string& connection, czmqpp::socket& socket);
 
     void recv_tx();
     void recv_block();
@@ -106,7 +106,8 @@ class fullnode_interface
 {
 public:
     fullnode_interface(bc::threadpool& pool, const std::string& connection,
-        const std::string& cert_filename, const std::string& server_pubkey);
+        const std::string& cert_filename="",
+        const std::string& server_pubkey="");
 
     // Non-copyable
     fullnode_interface(const fullnode_interface&) = delete;
