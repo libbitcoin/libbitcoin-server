@@ -57,18 +57,16 @@ bool publisher::send_blk(uint32_t height, const block_type& blk)
     BITCOIN_ASSERT(raw_height.size() == 4);
     // Serialize the 80 byte header.
     data_chunk raw_blk_header(bc::satoshi_raw_size(blk.header));
-    satoshi_save(blk.header, raw_blk_header.begin());
+    auto it = satoshi_save(blk.header, raw_blk_header.begin());
+    BITCOIN_ASSERT(it == raw_blk_header.end());
+    BITCOIN_ASSERT(raw_blk_header.size() == 80);
     // Construct the message.
     //   height   [4 bytes]
-    //   hash     [32 bytes]
-    //   txs size [4 bytes]
+    //   header   [80 bytes]
     //   ... txs ...
     czmqpp::message message;
     message.append(raw_height);
-    append_hash(message, hash_block_header(blk.header));
     message.append(raw_blk_header);
-    data_chunk raw_txs_size = bc::uncast_type(blk.transactions.size());
-    message.append(raw_txs_size);
     // Clients should be buffering their unconfirmed txs
     // and only be requesting those they don't have.
     for (const bc::transaction_type& tx: blk.transactions)
@@ -85,9 +83,9 @@ bool publisher::send_blk(uint32_t height, const block_type& blk)
 bool publisher::send_tx(const transaction_type& tx)
 {
     data_chunk raw_tx(bc::satoshi_raw_size(tx));
-    satoshi_save(tx, raw_tx.begin());
+    auto it = satoshi_save(tx, raw_tx.begin());
+    BITCOIN_ASSERT(it == raw_tx.end());
     czmqpp::message message;
-    append_hash(message, hash_transaction(tx));
     message.append(raw_tx);
     if (!message.send(socket_tx_))
     {
