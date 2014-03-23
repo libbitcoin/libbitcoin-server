@@ -52,6 +52,9 @@ bool send_history_result(const std::error_code& ec,
     //    << "*.fetch_history() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
+
+    // Must return a value - what should it be?
+    return false;
 }
 
 // fetch_transaction stuff

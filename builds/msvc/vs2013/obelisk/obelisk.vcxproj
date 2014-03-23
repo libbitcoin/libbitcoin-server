@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\..\..\nuget\LevelDB.1.16.0.5\build\native\LevelDB.props" Condition="Exists('..\..\..\..\..\..\nuget\LevelDB.1.16.0.5\build\native\LevelDB.props')" />
+  <Import Project="..\..\..\..\..\..\nuget\Snappy.1.1.1.7\build\native\Snappy.props" Condition="Exists('..\..\..\..\..\..\nuget\Snappy.1.1.1.7\build\native\Snappy.props')" />
+  <Import Project="..\..\..\..\..\..\nuget\Crc32C.1.0.4\build\native\Crc32C.props" Condition="Exists('..\..\..\..\..\..\nuget\Crc32C.1.0.4\build\native\Crc32C.props')" />
+  <Import Project="..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.props" Condition="Exists('..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.props')" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B0BB6841-1FA9-4E09-8672-5B5419971EF6}</ProjectGuid>
+    <ProjectName>obelisk</ProjectName>
+    <RootNamespace>obelisk12</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugDLL|Win32">
+      <Configuration>DebugDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|Win32">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugDLL|x64">
+      <Configuration>DebugDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|x64">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLTCG|Win32">
+      <Configuration>DebugLTCG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLTCG|Win32">
+      <Configuration>ReleaseLTCG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLTCG|x64">
+      <Configuration>DebugLTCG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLTCG|x64">
+      <Configuration>ReleaseLTCG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLIB|Win32">
+      <Configuration>DebugLIB</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLIB|Win32">
+      <Configuration>ReleaseLIB</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLIB|x64">
+      <Configuration>DebugLIB</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLIB|x64">
+      <Configuration>ReleaseLIB</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Configuration">
+    <PlatformToolset>CTP_Nov2013</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLIB|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLIB|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLIB|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLIB|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\DynamicDebug.props" />
+    <Import Project="$(ProjectDir)..\properties\Win32.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\DynamicRelease.props" />
+    <Import Project="$(ProjectDir)..\properties\Win32.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\DynamicDebug.props" />
+    <Import Project="$(ProjectDir)..\properties\x64.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\DynamicRelease.props" />
+    <Import Project="$(ProjectDir)..\properties\x64.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticDebugLinkTimeCodeGeneration.props" />
+    <Import Project="$(ProjectDir)..\properties\Win32.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticReleaseLinkTimeCodeGeneration.props" />
+    <Import Project="$(ProjectDir)..\properties\Win32.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticDebugLinkTimeCodeGeneration.props" />
+    <Import Project="$(ProjectDir)..\properties\x64.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticReleaseLinkTimeCodeGeneration.props" />
+    <Import Project="$(ProjectDir)..\properties\x64.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLIB|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticDebug.props" />
+    <Import Project="$(ProjectDir)..\properties\Win32.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLIB|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticRelease.props" />
+    <Import Project="$(ProjectDir)..\properties\Win32.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLIB|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticDebug.props" />
+    <Import Project="$(ProjectDir)..\properties\x64.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLIB|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+    <Import Project="$(ProjectDir)..\properties\StaticRelease.props" />
+    <Import Project="$(ProjectDir)..\properties\x64.props" />
+  </ImportGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Source\nuget\LevelDB.1.16.0.5\lib\native\include\;C:\Source\nuget\Snappy.1.1.1.7\lib\native\include\;C:\Source\nuget\Crc32C.1.0.4\lib\native\include\;$(ProjectDir)..\..\..\..\include\;$(ProjectDir)..\..\..\..\include\obelisk\;$(ProjectDir)..\..\..\..\include\obelisk\client\;$(ProjectDir)..\..\..\..\..\libbitcoin\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\client\backend.cpp" />
+    <ClCompile Include="..\..\..\..\src\client\interface\blockchain.cpp" />
+    <ClCompile Include="..\..\..\..\src\client\interface\fetch_x.cpp" />
+    <ClCompile Include="..\..\..\..\src\client\interface\interface.cpp" />
+    <ClCompile Include="..\..\..\..\src\client\interface\protocol.cpp" />
+    <ClCompile Include="..\..\..\..\src\client\interface\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\message.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\config.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\echo.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\main.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\node_impl.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\publisher.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\service\blockchain.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\service\fetch_x.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\service\fullnode.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\service\protocol.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\service\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\subscribe_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker\worker.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\include\obelisk\client\backend.hpp" />
+    <ClInclude Include="..\..\..\..\include\obelisk\client\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\obelisk\client\interface.hpp" />
+    <ClInclude Include="..\..\..\..\include\obelisk\client\protocol.hpp" />
+    <ClInclude Include="..\..\..\..\include\obelisk\client\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\obelisk\message.hpp" />
+    <ClInclude Include="..\..\..\..\include\obelisk\obelisk.hpp" />
+    <ClInclude Include="..\..\..\..\src\client\interface\fetch_x.hpp" />
+    <ClInclude Include="..\..\..\..\src\client\interface\util.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\config.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\echo.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\node_impl.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\publisher.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\service\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\service\fetch_x.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\service\fullnode.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\service\protocol.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\service\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\service\util.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\subscribe_manager.hpp" />
+    <ClInclude Include="..\..\..\..\src\worker\worker.hpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="..\..\..\..\..\..\nuget\boost.1.55.0.16\build\native\boost.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost.1.55.0.16\build\native\boost.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\libconfig.1.4.9.2\build\native\package.targets" Condition="Exists('..\..\..\..\..\..\nuget\libconfig.1.4.9.2\build\native\package.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\openssl.redist.1.0.1.24\build\native\openssl.redist.targets" Condition="Exists('..\..\..\..\..\..\nuget\openssl.redist.1.0.1.24\build\native\openssl.redist.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.targets" Condition="Exists('..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\zlib.redist.1.2.8.6\build\native\zlib.redist.targets" Condition="Exists('..\..\..\..\..\..\nuget\zlib.redist.1.2.8.6\build\native\zlib.redist.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\zlib.1.2.8.6\build\native\zlib.targets" Condition="Exists('..\..\..\..\..\..\nuget\zlib.1.2.8.6\build\native\zlib.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\libconfig.1.4.9.2\build\native\package.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\libconfig.1.4.9.2\build\native\package.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost.1.55.0.16\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost.1.55.0.16\build\native\boost.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl.redist.1.0.1.24\build\native\openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl.redist.1.0.1.24\build\native\openssl.redist.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.props'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl.1.0.1.24\build\native\openssl.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\Crc32C.1.0.4\build\native\Crc32C.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\Crc32C.1.0.4\build\native\Crc32C.props'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\Snappy.1.1.1.7\build\native\Snappy.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\Snappy.1.1.1.7\build\native\Snappy.props'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\LevelDB.1.16.0.5\build\native\LevelDB.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\LevelDB.1.16.0.5\build\native\LevelDB.props'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\zlib.redist.1.2.8.6\build\native\zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\zlib.redist.1.2.8.6\build\native\zlib.redist.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\zlib.1.2.8.6\build\native\zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\zlib.1.2.8.6\build\native\zlib.targets'))" />
+  </Target>
+</Project>

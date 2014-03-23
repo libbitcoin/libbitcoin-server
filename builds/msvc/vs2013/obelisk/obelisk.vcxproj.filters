@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{559ba96f-087f-47ca-a18d-f04da96b961a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{4f4c1fc2-9930-4c62-a158-572bd1e5c542}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\worker">
+      <UniqueIdentifier>{82823cc2-0267-4669-985c-48b73fe1a4e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\worker\service">
+      <UniqueIdentifier>{4fe68349-e5e5-4bd4-b275-b8edf595a296}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\client">
+      <UniqueIdentifier>{57e5532d-63a4-44ac-a3a4-016f7eb79c04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\client\interface">
+      <UniqueIdentifier>{0c2d2de9-8e95-4ab4-9be9-163f4f8f01fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\client">
+      <UniqueIdentifier>{ec10c881-3efc-477c-ba13-c69d398876eb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\message.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\config.cpp">
+      <Filter>src\worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\echo.cpp">
+      <Filter>src\worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\main.cpp">
+      <Filter>src\worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\node_impl.cpp">
+      <Filter>src\worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\publisher.cpp">
+      <Filter>src\worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\subscribe_manager.cpp">
+      <Filter>src\worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\worker.cpp">
+      <Filter>src\worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\service\blockchain.cpp">
+      <Filter>src\worker\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\service\fetch_x.cpp">
+      <Filter>src\worker\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\service\fullnode.cpp">
+      <Filter>src\worker\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\service\protocol.cpp">
+      <Filter>src\worker\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker\service\transaction_pool.cpp">
+      <Filter>src\worker\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\backend.cpp">
+      <Filter>src\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\fetch_x.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\interface.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\protocol.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\transaction_pool.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\blockchain.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\leveldb-single-file.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\snappy-single-file.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\crc32c.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\worker\subscribe_manager.hpp">
+      <Filter>src\worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\worker.hpp">
+      <Filter>src\worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\config.hpp">
+      <Filter>src\worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\echo.hpp">
+      <Filter>src\worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\node_impl.hpp">
+      <Filter>src\worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\publisher.hpp">
+      <Filter>src\worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\service\util.hpp">
+      <Filter>src\worker\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\service\blockchain.hpp">
+      <Filter>src\worker\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\service\fetch_x.hpp">
+      <Filter>src\worker\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\service\fullnode.hpp">
+      <Filter>src\worker\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\service\protocol.hpp">
+      <Filter>src\worker\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker\service\transaction_pool.hpp">
+      <Filter>src\worker\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\client\interface\fetch_x.hpp">
+      <Filter>src\client\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\client\interface\util.hpp">
+      <Filter>src\client\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\obelisk.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\message.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\client\blockchain.hpp">
+      <Filter>include\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\client\interface.hpp">
+      <Filter>include\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\client\protocol.hpp">
+      <Filter>include\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\client\transaction_pool.hpp">
+      <Filter>include\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\client\backend.hpp">
+      <Filter>include\client</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

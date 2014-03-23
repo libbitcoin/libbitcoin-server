@@ -11,7 +11,7 @@ void load_nodes(const libconfig::Setting& root, config_type& config)
     try
     {
         const libconfig::Setting& setting = root["nodes"];
-        for (size_t i = 0; i < setting.getLength(); ++i)
+        for (int i = 0; i < setting.getLength(); ++i)
         {
             const libconfig::Setting& node_setting = setting[i];
             node_config_object node;
@@ -32,7 +32,7 @@ void load_whitelist(const libconfig::Setting& root, config_type& config)
     try
     {
         const libconfig::Setting& setting = root["whitelist"];
-        for (size_t i = 0; i < setting.getLength(); ++i)
+        for (int i = 0; i < setting.getLength(); ++i)
         {
             std::string address = (const char*)setting[i];
             config.whitelist.push_back(address);

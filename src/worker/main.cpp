@@ -1,5 +1,6 @@
 #include <boost/filesystem.hpp>
 #include <obelisk/message.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <signal.h>
 #include "echo.hpp"
 #include "worker.hpp"
@@ -15,6 +16,7 @@ using namespace bc;
 using namespace obelisk;
 using std::placeholders::_1;
 using std::placeholders::_2;
+using boost::filesystem::path;
 
 bool stopped = false;
 void interrupt_handler(int)
@@ -23,6 +25,26 @@ void interrupt_handler(int)
     stopped = true;
 }
 
+#ifdef _WIN32
+#include <shlobj.h>
+#include <windows.h>
+const wchar_t* system_config_directory()
+{
+    wchar_t app_data_path[MAX_PATH];
+    auto result = SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL,
+        SHGFP_TYPE_CURRENT, app_data_path);
+
+    // fix
+    return SUCCEEDED(result) ? app_data_path : nullptr;
+}
+#else
+const char* system_config_directory()
+{
+    // verify
+    return SYSCONFDIR;
+}
+#endif
+
 int main(int argc, char** argv)
 {
     config_type config;
@@ -30,9 +52,8 @@ int main(int argc, char** argv)
         load_config(config, argv[1]);
     else
     {
-        using boost::filesystem::path;
-        path conf_filename = path(SYSCONFDIR) / "obelisk" / "worker.cfg";
-        load_config(config, conf_filename.native());
+        path conf_filename = path(system_config_directory()) / "obelisk" / "worker.cfg";
+        load_config(config, conf_filename.generic_string());
     }
     echo() << "Press CTRL-C to shut down.";
     // Create worker.
