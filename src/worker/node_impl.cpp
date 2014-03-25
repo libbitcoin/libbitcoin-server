@@ -1,16 +1,20 @@
 #include "node_impl.hpp"
 
 #include <future>
+#include <iostream>
 #include <boost/lexical_cast.hpp>
 #include "echo.hpp"
 
 namespace obelisk {
 
 using namespace bc;
+using namespace boost::posix_time;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
+
+const time_duration retry_start_duration = seconds(30);
 
 void log_to_file(std::ofstream& file, log_level level,
     const std::string& domain, const std::string& body, bool log_requests)
@@ -73,7 +77,8 @@ node_impl::node_impl()
     txpool_(mem_pool_, chain_),
     indexer_(mem_pool_),
     session_(mem_pool_, {
-        handshake_, protocol_, chain_, poller_, txpool_})
+        handshake_, protocol_, chain_, poller_, txpool_}),
+    retry_start_timer_(mem_pool_.service())
 {
 }
 
@@ -131,22 +136,28 @@ bool node_impl::start(config_type& config)
         log_info() << "Adding node: " << node.hostname << " " << node.port;
         protocol_.maintain_connection(node.hostname, node.port);
     }
+    start_session();
+    return true;
+}
+void node_impl::start_session()
+{
     // Start session
-    std::promise<std::error_code> ec_session;
-    auto session_started =
-        [&](const std::error_code& ec)
+    auto session_started = [this](const std::error_code& ec)
     {
-        ec_session.set_value(ec);
+        if (ec)
+            wait_and_retry_start(ec);
     };
     session_.start(session_started);
-    // Query the error_code and wait for startup completion.
-    ec = ec_session.get_future().get();
-    if (ec)
-    {
-        log_error() << "Unable to start session: " << ec.message();
-        return false;
-    }
-    return true;
+}
+void node_impl::wait_and_retry_start(const std::error_code& ec)
+{
+    BITCOIN_ASSERT(ec);
+    log_error() << "Unable to start session: " << ec.message();
+    log_error() << "Retrying in "
+        << retry_start_duration.seconds() << " seconds.";
+    retry_start_timer_.expires_from_now(retry_start_duration);
+    retry_start_timer_.async_wait(
+        std::bind(&node_impl::start_session, this));
 }
 
 bool node_impl::stop()

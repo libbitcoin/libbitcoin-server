@@ -1,6 +1,6 @@
 #include <obelisk/client/protocol.hpp>
 
-#include "util.hpp"
+#include "client_util.hpp"
 
 namespace obelisk {
 

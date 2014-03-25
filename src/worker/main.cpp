@@ -2,6 +2,7 @@
 #include <obelisk/message.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <signal.h>
+#include <string>
 #include "echo.hpp"
 #include "worker.hpp"
 #include "node_impl.hpp"
@@ -12,11 +13,11 @@
 #include "service/protocol.hpp"
 #include "service/transaction_pool.hpp"
 
-using namespace bc;
 using namespace obelisk;
+using namespace obelisk::bc;
+
 using std::placeholders::_1;
 using std::placeholders::_2;
-using boost::filesystem::path;
 
 bool stopped = false;
 void interrupt_handler(int)
@@ -25,46 +26,28 @@ void interrupt_handler(int)
     stopped = true;
 }
 
-#ifdef _WIN32
-#include <shlobj.h>
-#include <windows.h>
-const wchar_t* system_config_directory()
+int tmain(int argc, tchar* argv[])
 {
-    wchar_t app_data_path[MAX_PATH];
-    auto result = SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL,
-        SHGFP_TYPE_CURRENT, app_data_path);
+    config_type configuration;
+    tpath config_path = argc < 2 ?
+        tpath(system_config_directory()) / "obelisk" / "worker.cfg" :
+        tpath(argv[1]);
 
-    // fix
-    return SUCCEEDED(result) ? app_data_path : nullptr;
-}
-#else
-const char* system_config_directory()
-{
-    // verify
-    return SYSCONFDIR;
-}
-#endif
+    // libconfig is ANSI/MBCS on Windows - no Unicode support.
+    // This translates the path from Unicode to a "generic" path in
+    // ANSI/MBCS, which can result in failures.
+    load_config(configuration, config_path);
 
-int main(int argc, char** argv)
-{
-    config_type config;
-    if (argc == 2)
-        load_config(config, argv[1]);
-    else
-    {
-        path conf_filename = path(system_config_directory()) / "obelisk" / "worker.cfg";
-        load_config(config, conf_filename.generic_string());
-    }
     echo() << "Press CTRL-C to shut down.";
     // Create worker.
     request_worker worker;
-    worker.start(config);
+    worker.start(configuration);
     // Fullnode
     node_impl node;
     // Publisher
     publisher publish(node);
-    if (config.publisher_enabled)
-        if (!publish.start(config))
+    if (configuration.publisher_enabled)
+        if (!publish.start(configuration))
         {
             std::cerr << "Failed to start publisher: "
                 << zmq_strerror(zmq_errno()) << std::endl;
@@ -103,7 +86,7 @@ int main(int argc, char** argv)
         transaction_pool_fetch_transaction);
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.
-    if (!node.start(config))
+    if (!node.start(configuration))
     {
         std::cerr << "Failed to start Bitcoin node." << std::endl;
         return 1;
@@ -114,7 +97,7 @@ int main(int argc, char** argv)
     while (!stopped)
         worker.update();
     worker.stop();
-    if (config.publisher_enabled)
+    if (configuration.publisher_enabled)
         publish.stop();
     if (!node.stop())
         return -1;

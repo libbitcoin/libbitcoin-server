@@ -1,7 +1,7 @@
 #include <obelisk/client/blockchain.hpp>
 
-#include "fetch_x.hpp"
-#include "util.hpp"
+#include "client_fetch_x.hpp"
+#include "client_util.hpp"
 
 namespace obelisk {
 

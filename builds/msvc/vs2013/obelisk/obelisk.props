@@ -8,14 +8,14 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
 
+  <!-- TODO: incorporate _MSC_VER in places where there is a MSVC (vs. Windows/_WIN32) dependency. -->
+  <!-- If the version number of the Visual C++ compiler is 17.00.51106.1, the _MSC_VER macro evaluates to 1700. -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\include\;$(ProjectDir)..\..\..\..\include\obelisk\;$(ProjectDir)..\..\..\..\include\obelisk\client\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\czmqpp\include\;$(ProjectDir)..\..\..\..\..\czmq\include\;$(ProjectDir)..\..\..\..\..\libzmq\include\;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\include\;%(AdditionalIncludeDirectories);$(ProjectDir)..\..\..\..\..\libbitcoin\include\;$(ProjectDir)..\..\..\..\..\czmqpp\include\;$(ProjectDir)..\..\..\..\..\czmq\include\;$(ProjectDir)..\..\..\..\..\libzmq\include\;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4290;4275;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>_WINDOWS;LEVELDB_ENABLED;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LEVELDB_ENABLED;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libbitcoin.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -41,7 +41,7 @@
   <ItemDefinitionGroup Condition="$(Configuration.IndexOf('Debug')) != -1">
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin\bin\$(PlatformName)\Debug\</AdditionalLibraryDirectories>
-      <!--<AdditionalDependencies>czmqpp_d.lib;czmq_d.lib;libzmq_d.lib;%(AdditionalDependencies)</AdditionalDependencies>-->
+      <AdditionalDependencies>czmqpp_d.lib;czmq_d.lib;libzmq_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 

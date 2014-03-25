@@ -1,5 +1,7 @@
 #include "config.hpp"
 
+#include <iostream>
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <libconfig.h++>
 #include "echo.hpp"
@@ -46,20 +48,67 @@ void load_whitelist(const libconfig::Setting& root, config_type& config)
     catch (const libconfig::SettingNotFoundException&) {}
 }
 
-void load_config(config_type& config, const std::string& filename)
+// Address string cross-compile as char and std::string are non-unicode on
+// Windows, which pre-dates unicode so char is ANSI and wchar_t is UCS-16.
+// TODO: centralize this in cross-compile header(s).
+#if defined(_WIN32) && defined(UNICODE)
+#define tmain wmain
+typedef wchar_t tchar;
+typedef std::wstring tstring;
+typedef boost::filesystem::wpath tpath;
+#else
+#define tmain main
+#define L
+typedef char tchar;
+typedef std::string tstring;
+typedef boost::filesystem::path tpath;
+#endif
+
+#ifdef _WIN32
+#include <shlobj.h>
+#include <windows.h>
+tstring system_config_directory()
 {
-    // Load values from config file.
-    echo() << "Using config file: " << filename;
-    libconfig::Config cfg;
+    // Use explicitly wide char functions and compile for unicode.
+    tchar app_data_path[MAX_PATH];
+    auto result = SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL,
+        SHGFP_TYPE_CURRENT, app_data_path);
+    return tstring(SUCCEEDED(result) ? app_data_path : L"");
+}
+#else
+tstring system_config_directory()
+{
+    return tstring(SYSCONFDIR);
+}
+#endif
+
+void set_config_path(libconfig::Config& configuration, const tpath& config_path)
+{
     // Ignore error if unable to read config file.
     try
     {
-        cfg.readFile(filename.c_str());
+        // libconfig is ANSI/MBCS on Windows - no Unicode support.
+        // This translates the path from Unicode to a "generic" path in
+        // ANSI/MBCS, which can result in failures.
+        configuration.readFile(config_path.generic_string().c_str());
     }
     catch (const libconfig::FileIOException&) {}
     catch (const libconfig::ParseException&) {}
-    // Read off values
-    const libconfig::Setting& root = cfg.getRoot();
+}
+
+void load_config(config_type& config, tpath& config_path)
+{
+    // Load values from config file.
+    echo() << "Using config file: " << config_path;
+
+    libconfig::Config configuration;
+    set_config_path(configuration, config_path);
+
+    // Read off values.
+    // libconfig is ANSI/MBCS on Windows - no Unicode support.
+    // This reads ANSI/MBCS values from XML. If they are UTF-8 (and above the
+    // ASCII band) the values will be misinterpreted upon use.
+    const libconfig::Setting& root = configuration.getRoot();
     root.lookupValue("output-file", config.output_file);
     root.lookupValue("error-file", config.error_file);
     root.lookupValue("blockchain-path", config.blockchain_path);

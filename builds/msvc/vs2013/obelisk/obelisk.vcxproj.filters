@@ -69,24 +69,24 @@
     <ClCompile Include="..\..\..\..\src\client\backend.cpp">
       <Filter>src\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\client\interface\fetch_x.cpp">
-      <Filter>src\client\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\client\interface\interface.cpp">
-      <Filter>src\client\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\client\interface\protocol.cpp">
-      <Filter>src\client\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\client\interface\transaction_pool.cpp">
-      <Filter>src\client\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\client\interface\blockchain.cpp">
-      <Filter>src\client\interface</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\leveldb-single-file.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\snappy-single-file.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\crc32c.cpp" />
+    <ClCompile Include="..\..\..\..\src\client\interface\client_blockchain.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\client_fetch_x.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\client_interface.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\client_protocol.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\client\interface\client_transaction_pool.cpp">
+      <Filter>src\client\interface</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\worker\subscribe_manager.hpp">
@@ -125,12 +125,6 @@
     <ClInclude Include="..\..\..\..\src\worker\service\transaction_pool.hpp">
       <Filter>src\worker\service</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\client\interface\fetch_x.hpp">
-      <Filter>src\client\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\client\interface\util.hpp">
-      <Filter>src\client\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\obelisk\obelisk.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -151,6 +145,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\obelisk\client\backend.hpp">
       <Filter>include\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\client\interface\client_fetch_x.hpp">
+      <Filter>src\client\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\client\interface\client_util.hpp">
+      <Filter>src\client\interface</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

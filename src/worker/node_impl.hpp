@@ -35,6 +35,9 @@ private:
     typedef std::vector<block_notify_callback> block_notify_list;
     typedef std::vector<transaction_notify_callback> transaction_notify_list;
 
+    void start_session();
+    void wait_and_retry_start(const std::error_code& ec);
+
     void monitor_tx(const std::error_code& ec, bc::channel_ptr node);
     void recv_transaction(const std::error_code& ec,
         const bc::transaction_type& tx, bc::channel_ptr node);
@@ -62,6 +65,8 @@ private:
 
     block_notify_list notify_blocks_;
     transaction_notify_list notify_txs_;
+
+    boost::asio::deadline_timer retry_start_timer_;
 };
 
 } // namespace obelisk
