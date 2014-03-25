@@ -82,7 +82,8 @@ tstring system_config_directory()
 }
 #endif
 
-void set_config_path(libconfig::Config& configuration, const tpath& config_path)
+void set_config_path(libconfig::Config& configuration, 
+    const tpath& config_path)
 {
     // Ignore error if unable to read config file.
     try

@@ -28,7 +28,7 @@ void interrupt_handler(int)
 
 int tmain(int argc, tchar* argv[])
 {
-    config_type configuration;
+    config_type config;
     tpath config_path = argc < 2 ?
         tpath(system_config_directory()) / "obelisk" / "worker.cfg" :
         tpath(argv[1]);
@@ -36,18 +36,18 @@ int tmain(int argc, tchar* argv[])
     // libconfig is ANSI/MBCS on Windows - no Unicode support.
     // This translates the path from Unicode to a "generic" path in
     // ANSI/MBCS, which can result in failures.
-    load_config(configuration, config_path);
+    load_config(config, config_path);
 
     echo() << "Press CTRL-C to shut down.";
     // Create worker.
     request_worker worker;
-    worker.start(configuration);
+    worker.start(config);
     // Fullnode
     node_impl node;
     // Publisher
     publisher publish(node);
-    if (configuration.publisher_enabled)
-        if (!publish.start(configuration))
+    if (config.publisher_enabled)
+        if (!publish.start(config))
         {
             std::cerr << "Failed to start publisher: "
                 << zmq_strerror(zmq_errno()) << std::endl;
@@ -86,7 +86,7 @@ int tmain(int argc, tchar* argv[])
         transaction_pool_fetch_transaction);
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.
-    if (!node.start(configuration))
+    if (!node.start(config))
     {
         std::cerr << "Failed to start Bitcoin node." << std::endl;
         return 1;
@@ -97,7 +97,7 @@ int tmain(int argc, tchar* argv[])
     while (!stopped)
         worker.update();
     worker.stop();
-    if (configuration.publisher_enabled)
+    if (config.publisher_enabled)
         publish.stop();
     if (!node.stop())
         return -1;
