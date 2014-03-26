@@ -6,11 +6,11 @@ lib_LTLIBRARIES = libobelisk.la
 libobelisk_la_SOURCES = \
     message.cpp \
     client/backend.cpp \
-    client/interface/interface.cpp \
-    client/interface/fetch_x.cpp \
-    client/interface/blockchain.cpp \
-    client/interface/protocol.cpp \
-    client/interface/transaction_pool.cpp
+    client/interface/client_interface.cpp \
+    client/interface/client_fetch_x.cpp \
+    client/interface/client_blockchain.cpp \
+    client/interface/client_protocol.cpp \
+    client/interface/client_transaction_pool.cpp
 
 bin_PROGRAMS = obworker
 
