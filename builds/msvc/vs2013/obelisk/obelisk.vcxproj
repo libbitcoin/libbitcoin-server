@@ -168,14 +168,46 @@
     <Import Project="$(ProjectDir)..\properties\StaticRelease.props" />
     <Import Project="$(ProjectDir)..\properties\x64.props" />
   </ImportGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">
-    <ClCompile />
-  </ItemDefinitionGroup>
-  <!--<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>C:\Source\nuget\LevelDB.1.16.0.5\lib\native\include\;C:\Source\nuget\Snappy.1.1.1.7\lib\native\include\;C:\Source\nuget\Crc32C.1.0.4\lib\native\include\;$(ProjectDir)..\..\..\..\include\;$(ProjectDir)..\..\..\..\include\obelisk\;$(ProjectDir)..\..\..\..\include\obelisk\client\;$(ProjectDir)..\..\..\..\..\libbitcoin\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>-->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|Win32'">
+    <Linkage-libconfig>ltcg</Linkage-libconfig>
+    <Linkage-zlib>ltcg</Linkage-zlib>
+    <Linkage-openssl>ltcg</Linkage-openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">
+    <Linkage-libconfig>ltcg</Linkage-libconfig>
+    <Linkage-zlib>ltcg</Linkage-zlib>
+    <Linkage-openssl>ltcg</Linkage-openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|x64'">
+    <Linkage-libconfig>ltcg</Linkage-libconfig>
+    <Linkage-zlib>ltcg</Linkage-zlib>
+    <Linkage-openssl>ltcg</Linkage-openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">
+    <Linkage-libconfig>ltcg</Linkage-libconfig>
+    <Linkage-zlib>ltcg</Linkage-zlib>
+    <Linkage-openssl>ltcg</Linkage-openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLIB|Win32'">
+    <Linkage-libconfig>static</Linkage-libconfig>
+    <Linkage-zlib>static</Linkage-zlib>
+    <Linkage-openssl>static</Linkage-openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLIB|Win32'">
+    <Linkage-libconfig>static</Linkage-libconfig>
+    <Linkage-zlib>static</Linkage-zlib>
+    <Linkage-openssl>static</Linkage-openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLIB|x64'">
+    <Linkage-libconfig>static</Linkage-libconfig>
+    <Linkage-zlib>static</Linkage-zlib>
+    <Linkage-openssl>static</Linkage-openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLIB|x64'">
+    <Linkage-libconfig>static</Linkage-libconfig>
+    <Linkage-zlib>static</Linkage-zlib>
+    <Linkage-openssl>static</Linkage-openssl>
+  </PropertyGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
