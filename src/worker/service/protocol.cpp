@@ -29,13 +29,8 @@ void protocol_broadcast_transaction(node_impl& node,
         return;
     }
     auto ignore_send = [](const std::error_code&, size_t) {};
-#ifdef _MSC_VER
-#pragma message( "WARNING: line temporarily disabled, work in progress." )
-#else
-    // THIS LINE CONSISTENTLY CAUSES A FAILURE IN CTP_Nov2013 COMPILER (CL.EXE)
     // Send and hope for the best!
     node.protocol().broadcast(tx, ignore_send);
-#endif
     // Response back to user saying everything is fine.
     write_error_code(serial, std::error_code());
     log_debug(LOG_WORKER)

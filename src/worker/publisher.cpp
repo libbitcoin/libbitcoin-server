@@ -27,14 +27,8 @@ bool publisher::setup_socket(
 
 bool publisher::start(config_type& config)
 {
-#ifdef _MSC_VER
-#pragma message( "WARNING: line temporarily disabled, work in progress." )
-#pragma message( "WARNING: line temporarily disabled, work in progress." )
-#else
-    // THESE LINES FAIL COMPILATION ON CTP_Nov2013
     node_.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
-#endif
     log_debug(LOG_PUBLISHER) << "Publishing blocks: "
         << config.block_publish;
     if (!setup_socket(config.block_publish, socket_block_))
@@ -56,7 +50,7 @@ void append_hash(czmqpp::message& message, const hash_digest& hash)
     message.append(data_chunk(hash.begin(), hash.end()));
 }
 
-bool publisher::send_blk(uint32_t height, const block_type& blk)
+void publisher::send_blk(uint32_t height, const block_type& blk)
 {
     // Serialize the height.
     data_chunk raw_height = bc::uncast_type(height);
@@ -81,12 +75,11 @@ bool publisher::send_blk(uint32_t height, const block_type& blk)
     if (!message.send(socket_block_))
     {
         log_warning(LOG_PUBLISHER) << "Problem publishing block data.";
-        return false;
+        return;
     }
-    return true;
 }
 
-bool publisher::send_tx(const transaction_type& tx)
+void publisher::send_tx(const transaction_type& tx)
 {
     data_chunk raw_tx(bc::satoshi_raw_size(tx));
     auto it = satoshi_save(tx, raw_tx.begin());
@@ -96,9 +89,8 @@ bool publisher::send_tx(const transaction_type& tx)
     if (!message.send(socket_tx_))
     {
         log_warning(LOG_PUBLISHER) << "Problem publishing tx data.";
-        return false;
+        return;
     }
-    return true;
 }
 
 } // namespace obelisk

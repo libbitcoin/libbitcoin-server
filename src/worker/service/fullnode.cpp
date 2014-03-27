@@ -20,15 +20,10 @@ void fullnode_fetch_history(node_impl& node,
     // TODO: Slows down queries!
     //log_debug(LOG_WORKER) << "fetch_history("
     //    << payaddr.encoded() << ", from_height=" << from_height << ")";
-#ifdef _MSC_VER
-#pragma message( "WARNING: line temporarily disabled, work in progress." )
-#else
-    // THIS LINE FAILS COMPILATION ON CTP_Nov2013
     fetch_history(node.blockchain(), node.transaction_indexer(),
         payaddr,
         std::bind(send_history_result, _1, _2, request, queue_send),
         from_height);
-#endif
 }
 
 } // namespace obelisk

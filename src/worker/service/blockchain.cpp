@@ -25,14 +25,9 @@ void blockchain_fetch_history(node_impl& node,
         return;
     log_debug(LOG_REQUEST) << "blockchain.fetch_history("
         << payaddr.encoded() << ", from_height=" << from_height << ")";
-#ifdef _MSC_VER
-#pragma message( "WARNING: line temporarily disabled, work in progress." )
-#else
-    // THIS LINE FAILS COMPILATION ON CTP_Nov2013
     node.blockchain().fetch_history(payaddr,
         std::bind(send_history_result,
             _1, _2, request, queue_send), from_height);
-#endif
 }
 
 void blockchain_fetch_transaction(node_impl& node,
