@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <_PropertySheetDisplayName>SX Library Common Settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>Obelisk Library Common Settings</_PropertySheetDisplayName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
