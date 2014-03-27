@@ -50,7 +50,7 @@ void append_hash(czmqpp::message& message, const hash_digest& hash)
     message.append(data_chunk(hash.begin(), hash.end()));
 }
 
-bool publisher::send_blk(uint32_t height, const block_type& blk)
+void publisher::send_blk(uint32_t height, const block_type& blk)
 {
     // Serialize the height.
     data_chunk raw_height = bc::uncast_type(height);
@@ -75,12 +75,11 @@ bool publisher::send_blk(uint32_t height, const block_type& blk)
     if (!message.send(socket_block_))
     {
         log_warning(LOG_PUBLISHER) << "Problem publishing block data.";
-        return false;
+        return;
     }
-    return true;
 }
 
-bool publisher::send_tx(const transaction_type& tx)
+void publisher::send_tx(const transaction_type& tx)
 {
     data_chunk raw_tx(bc::satoshi_raw_size(tx));
     auto it = satoshi_save(tx, raw_tx.begin());
@@ -90,9 +89,8 @@ bool publisher::send_tx(const transaction_type& tx)
     if (!message.send(socket_tx_))
     {
         log_warning(LOG_PUBLISHER) << "Problem publishing tx data.";
-        return false;
+        return;
     }
-    return true;
 }
 
 } // namespace obelisk

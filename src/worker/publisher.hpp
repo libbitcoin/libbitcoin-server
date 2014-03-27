@@ -20,8 +20,8 @@ private:
     bool setup_socket(
         const std::string& connection, czmqpp::socket& socket);
 
-    bool send_blk(uint32_t height, const bc::block_type& blk);
-    bool send_tx(const bc::transaction_type& tx);
+    void send_blk(uint32_t height, const bc::block_type& blk);
+    void send_tx(const bc::transaction_type& tx);
 
     node_impl& node_;
     czmqpp::context context_;
