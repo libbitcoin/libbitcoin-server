@@ -26,7 +26,13 @@ void interrupt_handler(int)
     stopped = true;
 }
 
+#ifdef _MSC_VER
+// This compiles for all platforms, but there is an aspect of the linux build 
+// system that expects to see 'int main(...) in the source, so need both lines.
 int tmain(int argc, tchar* argv[])
+#else
+int main(int argc, char* argv[])
+#endif
 {
     config_type config;
     tpath config_path = argc < 2 ?
