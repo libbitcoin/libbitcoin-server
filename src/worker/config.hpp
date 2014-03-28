@@ -4,6 +4,22 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <stdint.h>
+#include <boost/filesystem.hpp>
+
+// Address string cross-compile as char and std::string are non-unicode on
+// Windows, which pre-dates unicode so char is ANSI and wchar_t is UCS-16.
+// TODO: centralize this in cross-compile header(s).
+#if defined(_WIN32) && defined(UNICODE)
+typedef wchar_t tchar;
+typedef std::wstring tstring;
+typedef boost::filesystem::wpath tpath;
+#else
+#define L
+typedef char tchar;
+typedef std::string tstring;
+typedef boost::filesystem::path tpath;
+#endif
 
 namespace obelisk {
 
@@ -37,9 +53,10 @@ struct config_type
     bool log_requests = false;
 };
 
-void load_config(config_type& config, const std::string& config_path);
+typedef std::map<std::string, std::string> config_map_type;
+void load_config(config_type& config, tpath& config_path);
+tstring system_config_directory();
 
 } // namespace obelisk
 
 #endif
-

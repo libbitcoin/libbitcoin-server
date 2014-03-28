@@ -1,13 +1,14 @@
 #include "node_impl.hpp"
 
 #include <future>
+#include <iostream>
 #include <boost/lexical_cast.hpp>
 #include "echo.hpp"
 
 namespace obelisk {
 
-using namespace boost::posix_time;
 using namespace bc;
+using namespace boost::posix_time;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;

@@ -1,6 +1,8 @@
 #include <boost/filesystem.hpp>
 #include <obelisk/message.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <signal.h>
+#include <string>
 #include "echo.hpp"
 #include "worker.hpp"
 #include "node_impl.hpp"
@@ -11,8 +13,9 @@
 #include "service/protocol.hpp"
 #include "service/transaction_pool.hpp"
 
-using namespace bc;
 using namespace obelisk;
+using namespace obelisk::bc;
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -23,17 +26,24 @@ void interrupt_handler(int)
     stopped = true;
 }
 
-int main(int argc, char** argv)
+#ifdef _MSC_VER
+// This compiles for all platforms, but there is an aspect of the linux build 
+// system that expects to see 'int main(...)' in the source, so need both lines.
+int tmain(int argc, tchar* argv[])
+#else
+int main(int argc, char* argv[])
+#endif
 {
     config_type config;
-    if (argc == 2)
-        load_config(config, argv[1]);
-    else
-    {
-        using boost::filesystem::path;
-        path conf_filename = path(SYSCONFDIR) / "obelisk" / "worker.cfg";
-        load_config(config, conf_filename.native());
-    }
+    tpath config_path = argc < 2 ?
+        tpath(system_config_directory()) / "obelisk" / "worker.cfg" :
+        tpath(argv[1]);
+
+    // libconfig is ANSI/MBCS on Windows - no Unicode support.
+    // This translates the path from Unicode to a "generic" path in
+    // ANSI/MBCS, which can result in failures.
+    load_config(config, config_path);
+
     echo() << "Press CTRL-C to shut down.";
     // Create worker.
     request_worker worker;

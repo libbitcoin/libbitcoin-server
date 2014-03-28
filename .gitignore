@@ -18,3 +18,5 @@ libobelisk.pc
 
 /src/obbalancer
 /src/obworker
+/bin/
+/obj/

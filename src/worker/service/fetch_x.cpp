@@ -28,7 +28,7 @@ bool unwrap_fetch_history_args(
     payaddr.set(version_byte, hash);
     return true;
 }
-bool send_history_result(const std::error_code& ec,
+void send_history_result(const std::error_code& ec,
     const blockchain::history_list& history,
     const incoming_message& request, queue_send_callback queue_send)
 {
