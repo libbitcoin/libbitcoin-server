@@ -12,50 +12,54 @@
   
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\include\;%(AdditionalIncludeDirectories);$(ProjectDir)..\..\..\..\..\libbitcoin\include\;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\include\;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4290;4275;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>LEVELDB_ENABLED;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-    <Link>
-      <AdditionalDependencies>libbitcoin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup Condition="$(Configuration.IndexOf('Release')) != -1">
-    <ClCompile>
-      <PreprocessorDefinitions>BITCOIN_DISABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='StaticLibrary'">OBELISK_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration.IndexOf('Release')) != -1">BITCOIN_DISABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
-  <!-- Extensions -->
+  <!-- Dependencies -->
+  
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(SolutionDir)libbitcoin.import.props" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <Option-leveldb>true</Option-leveldb>
+  </PropertyGroup>
 
   <PropertyGroup Condition="$(Configuration.IndexOf('DLL')) != -1">
-    <Linkage-libconfig>dynamic</Linkage-libconfig>
     <Linkage-zlib>dynamic</Linkage-zlib>
     <Linkage-openssl>dynamic</Linkage-openssl>
     <Linkage-czmqpp>dynamic</Linkage-czmqpp>
     <Linkage-czmq>dynamic</Linkage-czmq>
     <Linkage-libzmq>dynamic</Linkage-libzmq>
     <Linkage-libsodium>dynamic</Linkage-libsodium>
+    <Linkage-libconfig>dynamic</Linkage-libconfig>
+    <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
   </PropertyGroup>
   <PropertyGroup Condition="$(Configuration.IndexOf('LTCG')) != -1">
-    <Linkage-libconfig>ltcg</Linkage-libconfig>
     <Linkage-zlib>ltcg</Linkage-zlib>
     <Linkage-openssl>ltcg</Linkage-openssl>
     <Linkage-czmqpp>ltcg</Linkage-czmqpp>
     <Linkage-czmq>ltcg</Linkage-czmq>
     <Linkage-libzmq>ltcg</Linkage-libzmq>
     <Linkage-libsodium>ltcg</Linkage-libsodium>
+    <Linkage-libconfig>ltcg</Linkage-libconfig>
+    <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
   </PropertyGroup>
   <PropertyGroup Condition="$(Configuration.IndexOf('LIB')) != -1">
-    <Linkage-libconfig>static</Linkage-libconfig>
     <Linkage-zlib>static</Linkage-zlib>
     <Linkage-openssl>static</Linkage-openssl>
     <Linkage-czmqpp>static</Linkage-czmqpp>
     <Linkage-czmq>static</Linkage-czmq>
     <Linkage-libzmq>static</Linkage-libzmq>
     <Linkage-libsodium>static</Linkage-libsodium>
+    <Linkage-libconfig>static</Linkage-libconfig>
+    <Linkage-libbitcoin>static</Linkage-libbitcoin>
   </PropertyGroup>
   
   <!-- Messages -->
@@ -68,6 +72,7 @@
     <Message Text="Linkage-libsodium : $(Linkage-libsodium)" Importance="high"/>
     <Message Text="Linkage-zlib      : $(Linkage-zlib)" Importance="high"/>
     <Message Text="Linkage-openssl   : $(Linkage-openssl)" Importance="high"/>
+    <Message Text="Linkage-libbitcoin: $(Linkage-libbitcoin)" Importance="high"/>
   </Target>
 
 </Project>
