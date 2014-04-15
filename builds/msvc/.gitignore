@@ -1,3 +1,5 @@
-*.v12.suo
+*.suo
 *.opensdf
 *.sdf
+*.user
+
