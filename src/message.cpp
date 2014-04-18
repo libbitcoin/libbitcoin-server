@@ -3,7 +3,6 @@
 #include <random>
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
-#include <bitcoin/utility/sha256.hpp>
 
 namespace obelisk {
 
