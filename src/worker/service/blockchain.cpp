@@ -177,7 +177,7 @@ void block_transaction_hashes_fetched(const std::error_code& ec,
     const hash_digest_list& hashes,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    data_chunk result(4 + hash_digest_size * hashes.size());
+    data_chunk result(4 + hash_size * hashes.size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);

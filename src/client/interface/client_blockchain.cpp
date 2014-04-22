@@ -67,7 +67,7 @@ void blockchain_interface::fetch_block_header(size_t height,
 void blockchain_interface::fetch_block_header(const hash_digest& blk_hash,
     blockchain::fetch_handler_block_header handle_fetch)
 {
-    data_chunk data(hash_digest_size);
+    data_chunk data(hash_size);
     auto serial = make_serializer(data.begin());
     serial.write_hash(blk_hash);
     BITCOIN_ASSERT(serial.iterator() == data.end());
@@ -92,7 +92,7 @@ void wrap_fetch_transaction_index(const data_chunk& data,
 void blockchain_interface::fetch_transaction_index(const hash_digest& tx_hash,
     blockchain::fetch_handler_transaction_index handle_fetch)
 {
-    data_chunk data(hash_digest_size);
+    data_chunk data(hash_size);
     auto serial = make_serializer(data.begin());
     serial.write_hash(tx_hash);
     BITCOIN_ASSERT(serial.iterator() == data.end());

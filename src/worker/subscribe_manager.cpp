@@ -171,7 +171,7 @@ void subscribe_manager::post_updates(const payment_address& address,
     // [ height ] (4 bytes)
     // [ block_hash ] (32 bytes)
     // [ tx ]
-    constexpr size_t info_size = 1 + short_hash_size + 4 + hash_digest_size;
+    constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
     data_chunk data(info_size + satoshi_raw_size(tx));
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
