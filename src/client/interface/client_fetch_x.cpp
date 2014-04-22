@@ -53,7 +53,7 @@ void receive_history_result(const data_chunk& data,
 
 void wrap_fetch_transaction_args(data_chunk& data, const hash_digest& tx_hash)
 {
-    data.resize(hash_digest_size);
+    data.resize(hash_size);
     auto serial = make_serializer(data.begin());
     serial.write_hash(tx_hash);
     BITCOIN_ASSERT(serial.iterator() == data.end());

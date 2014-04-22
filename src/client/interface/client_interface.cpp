@@ -191,7 +191,7 @@ void address_subscriber::receive_update(
     const data_chunk& data, const worker_uuid& worker)
 {
     // Deserialize data -> address, height, block hash, tx
-    constexpr size_t info_size = 1 + short_hash_size + 4 + hash_digest_size;
+    constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
     auto deserial = make_deserializer(data.begin(), data.begin() + info_size);
     // [ addr,version ] (1 byte)
     uint8_t version_byte = deserial.read_byte();
