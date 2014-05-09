@@ -60,7 +60,7 @@ void wrap_fetch_block_header(const data_chunk& data,
 void blockchain_interface::fetch_block_header(size_t height,
     bc::blockchain::fetch_handler_block_header handle_fetch)
 {
-    data_chunk data = uncast_type<uint32_t>(height);
+    data_chunk data = to_data_chunk(to_little_endian<uint32_t>(height));
     backend_.request("blockchain.fetch_block_header", data,
         std::bind(wrap_fetch_block_header, _1, handle_fetch));
 }

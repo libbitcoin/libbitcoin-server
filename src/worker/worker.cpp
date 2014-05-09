@@ -163,7 +163,8 @@ void request_worker::publish_heartbeat()
 {
     static uint32_t counter = 0;
     czmqpp::message message;
-    message.append(uncast_type(counter));
+    data_chunk raw_counter = to_data_chunk(to_little_endian(counter));
+    message.append(raw_counter);
     message.send(heartbeat_socket_);
     ++counter;
 }

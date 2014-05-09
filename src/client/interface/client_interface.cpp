@@ -125,7 +125,7 @@ void subscriber_part::recv_block()
     hash_digest blk_hash;
     if (!read_hash(blk_hash, parts[0]))
         return;
-    uint32_t height = cast_chunk<uint32_t>(parts[1]);
+    uint32_t height = from_little_endian<uint32_t>(parts[1].begin());
     const data_chunk& raw_blk = parts[2];
     block_type blk;
     satoshi_load(raw_blk.begin(), raw_blk.end(), blk);
