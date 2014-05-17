@@ -306,9 +306,9 @@ void blockchain_fetch_stealth(node_impl& node,
         return;
     }
     auto deserial = make_deserializer(data.begin(), data.end());
-    stealth_prefix prefix;
-    prefix.number_bits = deserial.read_byte();
-    prefix.bitfield = deserial.read_4_bytes();
+    auto number_bits = deserial.read_byte();
+    auto bitfield = deserial.read_4_bytes();
+    stealth_prefix prefix(number_bits, bitfield);
     size_t from_height = deserial.read_4_bytes();
     node.blockchain().fetch_stealth(prefix,
         std::bind(stealth_fetched, _1, _2, request, queue_send), from_height);
