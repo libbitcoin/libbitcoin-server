@@ -299,16 +299,27 @@ void blockchain_fetch_stealth(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
-    if (data.size() != 9)
+    if (data.empty())
     {
         log_error(LOG_WORKER)
             << "Incorrect data size for blockchain.fetch_stealth";
         return;
     }
     auto deserial = make_deserializer(data.begin(), data.end());
-    stealth_prefix prefix;
-    prefix.number_bits = deserial.read_byte();
-    prefix.bitfield = deserial.read_4_bytes();
+    // number_bits
+    uint8_t number_bits = deserial.read_byte();
+    stealth_prefix prefix(number_bits);
+    log_info(LOG_WORKER) << data.size() << " " << prefix.num_blocks();
+    if (data.size() != 1 + prefix.num_blocks() + 4)
+    {
+        log_error(LOG_WORKER)
+            << "Incorrect data size for blockchain.fetch_stealth";
+        return;
+    }
+    // actual bitfield data
+    data_chunk bitfield = deserial.read_data(prefix.num_blocks());
+    boost::from_block_range(bitfield.begin(), bitfield.end(), prefix);
+    // from_height
     size_t from_height = deserial.read_4_bytes();
     node.blockchain().fetch_stealth(prefix,
         std::bind(stealth_fetched, _1, _2, request, queue_send), from_height);

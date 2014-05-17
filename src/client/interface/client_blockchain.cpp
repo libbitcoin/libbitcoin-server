@@ -121,10 +121,15 @@ void blockchain_interface::fetch_stealth(const stealth_prefix& prefix,
     blockchain::fetch_handler_stealth handle_fetch,
     size_t from_height)
 {
-    data_chunk data(9);
+    data_chunk data(1 + prefix.num_blocks() + 4);
     auto serial = make_serializer(data.begin());
-    serial.write_byte(prefix.number_bits);
-    serial.write_4_bytes(prefix.bitfield);
+    // number_bits
+    serial.write_byte(prefix.size());
+    // Serialize bitfield to raw bytes and serialize
+    data_chunk bitfield(prefix.num_blocks());
+    boost::to_block_range(prefix, bitfield.begin());
+    serial.write_data(bitfield);
+    // from_height
     serial.write_4_bytes(from_height);
     BITCOIN_ASSERT(serial.iterator() == data.end());
     backend_.request("blockchain.fetch_stealth", data,
