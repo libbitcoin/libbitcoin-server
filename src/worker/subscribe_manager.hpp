@@ -23,15 +23,17 @@ public:
         const bc::transaction_type& tx);
 
 private:
+    typedef bc::stealth_prefix address_prefix;
+
     struct subscription
     {
+        address_prefix prefix;
         boost::posix_time::ptime expiry_time;
-        const bc::data_chunk client_origin;
+        bc::data_chunk client_origin;
         queue_send_callback queue_send;
     };
 
-    typedef std::unordered_multimap<bc::payment_address, subscription>
-        subscription_map;
+    typedef std::vector<subscription> subscription_list;
 
     std::error_code add_subscription(
         const incoming_message& request, queue_send_callback queue_send);
@@ -51,7 +53,7 @@ private:
 
     bc::async_strand strand_;
     size_t subscribe_limit_ = 100000000;
-    subscription_map subs_;
+    subscription_list subs_;
 };
 
 } // namespace obelisk

@@ -40,6 +40,8 @@ private:
     transaction_notify_callback notify_tx_;
 };
 
+typedef bc::stealth_prefix address_prefix;
+
 class address_subscriber
 {
 public:
@@ -57,7 +59,7 @@ public:
     void operator=(const address_subscriber&) = delete;
 
     // You should generally call subscribe() before fetch_history().
-    void subscribe(const bc::payment_address& address,
+    void subscribe(const address_prefix& prefix,
         update_handler handle_update, subscribe_handler handle_subscribe);
 
     void fetch_history(const bc::payment_address& address,
@@ -72,16 +74,15 @@ public:
 private:
     struct subscription
     {
-        const worker_uuid worker;
+        address_prefix prefix;
         update_handler handle_update;
     };
 
-    typedef std::unordered_map<bc::payment_address, subscription>
-        subscription_map;
+    typedef std::vector<subscription> subscription_list;
 
     void receive_subscribe_result(
         const bc::data_chunk& data, const worker_uuid& worker,
-        const bc::payment_address& address,
+        const address_prefix& prefix,
         update_handler handle_update, subscribe_handler handle_subscribe);
     void decode_reply(
         const bc::data_chunk& data, const worker_uuid& worker,
@@ -97,7 +98,7 @@ private:
     backend_cluster& backend_;
     // Register subscription. Periodically send renew packets.
     bc::async_strand strand_;
-    subscription_map subs_;
+    subscription_list subs_;
     // Send renew packets periodically.
     boost::posix_time::ptime last_renew_;
 };
