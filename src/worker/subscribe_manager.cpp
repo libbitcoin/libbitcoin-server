@@ -38,14 +38,16 @@ subscribe_manager::subscribe_manager(node_impl& node)
     register_with_node(*this, node);
 }
 
-bool deserialize_address(payment_address& addr, const data_chunk& data)
+template <typename AddressPrefix>
+bool deserialize_address(AddressPrefix& addr, const data_chunk& data)
 {
     auto deserial = make_deserializer(data.begin(), data.end());
     try
     {
-        uint8_t version_byte = deserial.read_byte();
-        short_hash hash = deserial.read_short_hash();
-        addr.set(version_byte, hash);
+        uint8_t number_bits = deserial.read_byte();
+        addr.resize(number_bits);
+        data_chunk bitfield = deserial.read_data(addr.num_blocks());
+        boost::from_block_range(bitfield.begin(), bitfield.end(), addr);
     }
     catch (end_of_stream)
     {
@@ -65,19 +67,20 @@ void subscribe_manager::subscribe(
 std::error_code subscribe_manager::add_subscription(
     const incoming_message& request, queue_send_callback queue_send)
 {
-    payment_address addr_key;
+    address_prefix addr_key;
     if (!deserialize_address(addr_key, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
         return error::bad_stream;
     }
     // Now create subscription.
-    const posix_time::ptime now = second_clock::universal_time();
+    const auto now = second_clock::universal_time();
+    const auto expire_time = now + sub_expiry;
     // Limit absolute number of subscriptions to prevent exhaustion attacks.
     if (subs_.size() >= subscribe_limit_)
         return error::pool_filled;
-    subs_.emplace(addr_key, subscription{
-        now + sub_expiry, request.origin(), queue_send});
+    subs_.emplace_back(subscription{
+        addr_key, expire_time, request.origin(), queue_send});
     return std::error_code();
 }
 void subscribe_manager::do_subscribe(
@@ -101,7 +104,7 @@ void subscribe_manager::renew(
 void subscribe_manager::do_renew(
     const incoming_message& request, queue_send_callback queue_send)
 {
-    payment_address addr_key;
+    address_prefix addr_key;
     if (!deserialize_address(addr_key, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
@@ -109,10 +112,11 @@ void subscribe_manager::do_renew(
     }
     const posix_time::ptime now = second_clock::universal_time();
     // Find entry and update expiry_time.
-    auto range = subs_.equal_range(addr_key);
-    for (auto it = range.first; it != range.second; ++it)
+    for (subscription& sub: subs_)
     {
-        subscription& sub = it->second;
+        // Find matching prefix subscription.
+        if (sub.prefix != addr_key)
+            continue;
         // Only update subscriptions which were created by
         // the same client as this request originated from.
         if (sub.client_origin != request.origin())
@@ -158,14 +162,11 @@ void subscribe_manager::do_submit(
     if (height)
         sweep_expired();
 }
+
 void subscribe_manager::post_updates(const payment_address& address,
     size_t height, const bc::hash_digest& block_hash,
     const bc::transaction_type& tx)
 {
-    auto range = subs_.equal_range(address);
-    // Avoid expensive serialization if not needed.
-    if (range.first == range.second)
-        return;
     // [ addr,version ] (1 byte)
     // [ addr.hash ] (20 bytes)
     // [ height ] (4 bytes)
@@ -183,12 +184,14 @@ void subscribe_manager::post_updates(const payment_address& address,
     auto rawtx_end_it = satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(rawtx_end_it == data.end());
     // Send the result to everyone interested.
-    for (auto it = range.first; it != range.second; ++it)
+    for (subscription& sub: subs_)
     {
-        const subscription& sub_detail = it->second;
+        const short_hash& addr = address.hash();
+        if (!stealth_match(sub.prefix, addr.data()))
+            continue;
         outgoing_message update(
-            sub_detail.client_origin, "address.update", data);
-        sub_detail.queue_send(update);
+            sub.client_origin, "address.update", data);
+        sub.queue_send(update);
     }
 }
 
@@ -198,12 +201,12 @@ void subscribe_manager::sweep_expired()
     const posix_time::ptime now = second_clock::universal_time();
     for (auto it = subs_.begin(); it != subs_.end(); )
     {
-        const subscription& sub_detail = it->second;
+        const subscription& sub = *it;
         // Already expired? If so, then erase.
-        if (sub_detail.expiry_time < now)
+        if (sub.expiry_time < now)
         {
             log_debug(LOG_SUBSCRIBER) << "Deleting expired subscription: "
-                << it->first.encoded() << " from " << sub_detail.client_origin;
+                << sub.prefix << " from " << sub.client_origin;
             it = subs_.erase(it);
         }
         else
