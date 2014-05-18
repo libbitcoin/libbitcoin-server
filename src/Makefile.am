@@ -12,13 +12,13 @@ libobelisk_la_SOURCES = \
     client/interface/client_protocol.cpp \
     client/interface/client_transaction_pool.cpp
 
-bin_PROGRAMS = obworker
+bin_PROGRAMS = obelisk-server
 
 confdir=$(sysconfdir)/obelisk
 conf_DATA = \
     worker/worker.cfg
 
-obworker_SOURCES = \
+obelisk_server_SOURCES = \
     worker/config.cpp \
     worker/echo.cpp \
     worker/main.cpp \
@@ -32,5 +32,5 @@ obworker_SOURCES = \
     worker/service/protocol.cpp \
     worker/service/transaction_pool.cpp
 
-obworker_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libsodium_LIBS} ${libczmq_LIBS} ${libczmqpp_LIBS} ${libconfigxx_LIBS}
+obelisk_server_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libsodium_LIBS} ${libczmq_LIBS} ${libczmqpp_LIBS} ${libconfigxx_LIBS}
 
