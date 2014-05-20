@@ -3,6 +3,7 @@
 #include <future>
 #include <iostream>
 #include <boost/lexical_cast.hpp>
+#include <boost/date_time.hpp>
 #include "echo.hpp"
 
 namespace obelisk {
@@ -16,32 +17,35 @@ using std::placeholders::_4;
 
 const time_duration retry_start_duration = seconds(30);
 
-void log_to_file(std::ofstream& file, log_level level,
+static std::string make_log_string(log_level level,
     const std::string& domain, const std::string& body, bool log_requests)
 {
     if (body.empty())
-        return;
+        return "";
     if (!log_requests && domain == LOG_REQUEST)
-        return;
-    file << level_repr(level);
-    if (!domain.empty())
-        file << " [" << domain << "]";
-    file << ": " << body << std::endl;
-}
-void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body, bool log_requests)
-{
-    if (body.empty())
-        return;
-    if (!log_requests && domain == LOG_REQUEST)
-        return;
+        return "";
     std::ostringstream output;
+    output << microsec_clock::local_time().time_of_day() << " ";
     output << level_repr(level);
     if (!domain.empty())
         output << " [" << domain << "]";
     output << ": " << body;
-    device << output.str() << std::endl;
-    file << output.str() << std::endl;
+    output << std::endl;
+    return output.str();
+}
+
+void log_to_file(std::ofstream& file, log_level level,
+    const std::string& domain, const std::string& body, bool log_requests)
+{
+    file << make_log_string(level, domain, body, log_requests);
+}
+void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
+    const std::string& domain, const std::string& body, bool log_requests)
+{
+    std::string output;
+    output = make_log_string(level, domain, body, log_requests);
+    device << output;
+    file << output;
 }
 
 void output_file(std::ofstream& file, log_level level,
