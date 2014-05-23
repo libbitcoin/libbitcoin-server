@@ -1,6 +1,5 @@
-#include <obelisk/client/interface.hpp>
-
 #include <bitcoin/bitcoin.hpp>
+#include <obelisk/client/interface.hpp>
 #include "client_fetch_x.hpp"
 #include "client_util.hpp"
 

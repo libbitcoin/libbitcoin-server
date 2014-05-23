@@ -1,8 +1,7 @@
-#include "protocol.hpp"
-
 #include <bitcoin/satoshi_serialize.hpp>
 #include "../node_impl.hpp"
 #include "../echo.hpp"
+#include "protocol.hpp"
 #include "util.hpp"
 
 namespace obelisk {

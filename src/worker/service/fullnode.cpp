@@ -1,8 +1,7 @@
-#include "fullnode.hpp"
-
 #include "../node_impl.hpp"
 #include "../echo.hpp"
 #include "fetch_x.hpp"
+#include "fullnode.hpp"
 
 namespace obelisk {
 

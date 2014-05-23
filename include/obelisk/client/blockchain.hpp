@@ -3,6 +3,7 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <obelisk/client/backend.hpp>
+#include <obelisk/define.hpp>
 
 namespace obelisk {
 

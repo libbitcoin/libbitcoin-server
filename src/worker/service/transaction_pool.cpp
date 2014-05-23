@@ -1,8 +1,7 @@
-#include "transaction_pool.hpp"
-
 #include "../node_impl.hpp"
 #include "../echo.hpp"
 #include "fetch_x.hpp"
+#include "transaction_pool.hpp"
 
 namespace obelisk {
 

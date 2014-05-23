@@ -1,9 +1,8 @@
-#include "config.hpp"
-
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <libconfig.h++>
+#include "config.hpp"
 #include "echo.hpp"
 
 namespace obelisk {

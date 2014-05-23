@@ -1,7 +1,6 @@
-#include "blockchain.hpp"
-
-#include "../node_impl.hpp"
 #include "../echo.hpp"
+#include "../node_impl.hpp"
+#include "blockchain.hpp"
 #include "fetch_x.hpp"
 #include "util.hpp"
 

@@ -1,6 +1,5 @@
-#include "subscribe_manager.hpp"
-
 #include "service/util.hpp"
+#include "subscribe_manager.hpp"
 
 #define LOG_SUBSCRIBER "subscriber"
 

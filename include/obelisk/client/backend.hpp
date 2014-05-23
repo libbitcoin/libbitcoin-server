@@ -2,8 +2,8 @@
 #define OBELISK_CLIENT_BACKEND
 
 #include <functional>
-#include <unordered_map>
 #include <system_error>
+#include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <obelisk/message.hpp>
 #include <bitcoin/threadpool.hpp>

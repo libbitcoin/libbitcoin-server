@@ -1,17 +1,17 @@
-#include <boost/filesystem.hpp>
-#include <obelisk/message.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <signal.h>
 #include <string>
+#include <boost/filesystem.hpp>
+#include <bitcoin/bitcoin.hpp>
+#include <obelisk/message.hpp>
 #include "echo.hpp"
-#include "worker.hpp"
 #include "node_impl.hpp"
 #include "publisher.hpp"
-#include "subscribe_manager.hpp"
-#include "service/fullnode.hpp"
 #include "service/blockchain.hpp"
+#include "service/fullnode.hpp"
 #include "service/protocol.hpp"
 #include "service/transaction_pool.hpp"
+#include "subscribe_manager.hpp"
+#include "worker.hpp"
 
 using namespace obelisk;
 using namespace obelisk::bc;

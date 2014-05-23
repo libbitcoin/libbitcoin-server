@@ -1,6 +1,5 @@
-#include "fetch_x.hpp"
-
 #include "../echo.hpp"
+#include "fetch_x.hpp"
 #include "util.hpp"
 
 namespace obelisk {
