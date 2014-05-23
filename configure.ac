@@ -24,5 +24,6 @@ AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
 AC_SUBST([pkgconfigdir])
 
 AC_CONFIG_FILES([Makefile include/obelisk/Makefile src/Makefile libobelisk.pc])
+AC_DEFINE(LEVELDB_ENABLED)
 AC_OUTPUT
 
