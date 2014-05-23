@@ -152,5 +152,8 @@
     <ClInclude Include="..\..\..\..\src\client\interface\client_util.hpp">
       <Filter>src\client\interface</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\obelisk\define.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

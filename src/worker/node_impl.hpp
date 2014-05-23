@@ -2,7 +2,6 @@
 #define OBELISK_WORKER_NODE_IMPL_HPP
 
 #include <bitcoin/bitcoin.hpp>
-
 #include "config.hpp"
 
 namespace obelisk {

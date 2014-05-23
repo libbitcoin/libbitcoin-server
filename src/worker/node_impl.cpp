@@ -1,10 +1,9 @@
-#include "node_impl.hpp"
-
 #include <future>
 #include <iostream>
-#include <boost/lexical_cast.hpp>
 #include <boost/date_time.hpp>
+#include <boost/lexical_cast.hpp>
 #include "echo.hpp"
+#include "node_impl.hpp"
 
 namespace obelisk {
 

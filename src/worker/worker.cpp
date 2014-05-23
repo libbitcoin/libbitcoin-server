@@ -1,8 +1,7 @@
-#include "worker.hpp"
-
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/logger.hpp>
 #include "echo.hpp"
+#include "worker.hpp"
 
 namespace obelisk {
 

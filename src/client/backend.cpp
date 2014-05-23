@@ -1,6 +1,5 @@
-#include <obelisk/client/backend.hpp>
-
 #include <bitcoin/bitcoin.hpp>
+#include <obelisk/client/backend.hpp>
 
 namespace obelisk {
 

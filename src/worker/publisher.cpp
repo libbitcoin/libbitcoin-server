@@ -1,6 +1,5 @@
-#include "publisher.hpp"
-
 #include "echo.hpp"
+#include "publisher.hpp"
 
 #define LOG_PUBLISHER LOG_WORKER
 

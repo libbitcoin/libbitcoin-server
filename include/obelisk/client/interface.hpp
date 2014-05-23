@@ -5,6 +5,7 @@
 #include <obelisk/client/blockchain.hpp>
 #include <obelisk/client/transaction_pool.hpp>
 #include <obelisk/client/protocol.hpp>
+#include <obelisk/define.hpp>
 
 namespace obelisk {
 

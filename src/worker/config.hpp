@@ -2,9 +2,9 @@
 #define OBELISK_WORKER_CONFIG_HPP
 
 #include <map>
+#include <stdint.h>
 #include <string>
 #include <vector>
-#include <stdint.h>
 #include <boost/filesystem.hpp>
 
 // Address string cross-compile as char and std::string are non-unicode on
