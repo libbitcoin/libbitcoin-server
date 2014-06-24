@@ -301,7 +301,7 @@ void blockchain_fetch_stealth(node_impl& node,
     if (data.empty())
     {
         log_error(LOG_WORKER)
-            << "Incorrect data size for blockchain.fetch_stealth";
+            << "Incorrect data size (empty) for blockchain.fetch_stealth";
         return;
     }
     auto deserial = make_deserializer(data.begin(), data.end());
@@ -312,7 +312,8 @@ void blockchain_fetch_stealth(node_impl& node,
     if (data.size() != 1 + prefix.num_blocks() + 4)
     {
         log_error(LOG_WORKER)
-            << "Incorrect data size for blockchain.fetch_stealth";
+            << "Incorrect data size (" << data.size()
+	    << ") for blockchain.fetch_stealth";
         return;
     }
     // actual bitfield data
