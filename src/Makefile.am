@@ -22,15 +22,15 @@ obelisk_server_SOURCES = \
     worker/config.cpp \
     worker/echo.cpp \
     worker/main.cpp \
-    worker/node_impl.cpp \
-    worker/publisher.cpp \
-    worker/subscribe_manager.cpp \
-    worker/worker.cpp \
-    worker/service/fullnode.cpp \
-    worker/service/fetch_x.cpp \
-    worker/service/blockchain.cpp \
-    worker/service/protocol.cpp \
-    worker/service/transaction_pool.cpp
+    worker/worker.cpp
+#    worker/node_impl.cpp
+#    worker/publisher.cpp
+#    worker/subscribe_manager.cpp
+#    worker/service/fullnode.cpp
+#    worker/service/fetch_x.cpp
+#    worker/service/blockchain.cpp
+#    worker/service/protocol.cpp
+#    worker/service/transaction_pool.cpp
 
 obelisk_server_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libsodium_LIBS} ${libczmq_LIBS} ${libczmqpp_LIBS} ${libconfigxx_LIBS}
 
