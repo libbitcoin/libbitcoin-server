@@ -2,11 +2,9 @@
 #define OBELISK_CLIENT_MESSAGE
 
 #include <czmq++/czmq.hpp>
-#include <bitcoin/types.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace obelisk {
-
-namespace bc = libbitcoin;
 
 class incoming_message
 {

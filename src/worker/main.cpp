@@ -14,7 +14,6 @@
 #include "worker.hpp"
 
 using namespace obelisk;
-using namespace obelisk::bc;
 
 using std::placeholders::_1;
 using std::placeholders::_2;
