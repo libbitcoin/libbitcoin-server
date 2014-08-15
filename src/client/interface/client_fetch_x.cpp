@@ -1,6 +1,8 @@
 #include "client_fetch_x.hpp"
 #include "client_util.hpp"
 
+using namespace bc;
+
 namespace obelisk {
 
 // fetch_history stuff
