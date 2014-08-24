@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <NuGetPackageImportStamp>ccf3c72d</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>9aa32b93</NuGetPackageImportStamp>
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <ProjectGuid>{B0BB6841-1FA9-4E09-8672-5B5419971EF6}</ProjectGuid>
     <ProjectName>obelisk</ProjectName>
@@ -140,7 +140,6 @@
     <Import Project="..\..\..\..\..\..\nuget\czmq_vc120.2.2.0.7\build\native\czmq_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\czmq_vc120.2.2.0.7\build\native\czmq_vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\czmqpp_vc120.1.0.0.7\build\native\czmqpp_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\czmqpp_vc120.1.0.0.7\build\native\czmqpp_vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\libsodium_vc120.0.5.0.0\build\native\libsodium_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\libsodium_vc120.0.5.0.0\build\native\libsodium_vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.703\build\native\openssl_no-asm_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.703\build\native\openssl_no-asm_vc120.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -152,6 +151,5 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\czmq_vc120.2.2.0.7\build\native\czmq_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\czmq_vc120.2.2.0.7\build\native\czmq_vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\czmqpp_vc120.1.0.0.7\build\native\czmqpp_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\czmqpp_vc120.1.0.0.7\build\native\czmqpp_vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\libsodium_vc120.0.5.0.0\build\native\libsodium_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\libsodium_vc120.0.5.0.0\build\native\libsodium_vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.703\build\native\openssl_no-asm_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.703\build\native\openssl_no-asm_vc120.targets'))" />
   </Target>
 </Project>
