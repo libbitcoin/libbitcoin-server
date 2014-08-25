@@ -69,9 +69,6 @@
     <ClCompile Include="..\..\..\..\src\client\backend.cpp">
       <Filter>src\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\leveldb-single-file.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\snappy-single-file.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\crc32c.cpp" />
     <ClCompile Include="..\..\..\..\src\client\interface\client_blockchain.cpp">
       <Filter>src\client\interface</Filter>
     </ClCompile>

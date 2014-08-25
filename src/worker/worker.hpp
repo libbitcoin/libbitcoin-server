@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <czmq++/czmq.hpp>
+#include <obelisk/define.hpp>
 #include <obelisk/message.hpp>
 #include "config.hpp"
 #include "service/util.hpp"
@@ -25,8 +26,8 @@ namespace obelisk {
 class send_worker
 {
 public:
-    send_worker(czmqpp::context& context);
-    void queue_send(const outgoing_message& message);
+    BCS_API send_worker(czmqpp::context& context);
+    BCS_API void queue_send(const outgoing_message& message);
 
 private:
     czmqpp::context& context_;
@@ -35,14 +36,14 @@ private:
 class request_worker
 {
 public:
-    typedef std::function<void (
+    typedef std::function<void(
         const incoming_message&, queue_send_callback)> command_handler;
 
-    request_worker();
-    bool start(config_type& config);
-    void stop();
-    void attach(const std::string& command, command_handler handler);
-    void update();
+    BCS_API request_worker();
+    BCS_API bool start(config_type& config);
+    BCS_API void stop();
+    BCS_API void attach(const std::string& command, command_handler handler);
+    BCS_API void update();
 
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
