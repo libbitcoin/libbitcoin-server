@@ -56,7 +56,7 @@ private:
     bc::handshake handshake_;
     bc::network network_;
     bc::protocol protocol_;
-    bc::leveldb_blockchain chain_;
+//    bc::leveldb_blockchain chain_;
     bc::poller poller_;
     bc::transaction_pool txpool_;
     bc::transaction_indexer indexer_;

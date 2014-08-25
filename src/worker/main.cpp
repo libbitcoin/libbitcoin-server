@@ -14,7 +14,6 @@
 #include "worker.hpp"
 
 using namespace obelisk;
-using namespace obelisk::bc;
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -34,6 +33,7 @@ int tmain(int argc, tchar* argv[])
 int main(int argc, char* argv[])
 #endif
 {
+#ifdef UNDEFINED
     config_type config;
     tpath config_path = argc < 2 ?
         tpath(system_config_directory()) / "obelisk" / "worker.cfg" :
@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
     if (!node.stop())
         return -1;
     echo() << "Node shutdown cleanly.";
+#endif
     return 0;
 }
 
