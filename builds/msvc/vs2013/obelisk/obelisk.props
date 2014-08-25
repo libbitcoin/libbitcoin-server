@@ -25,6 +25,7 @@
   
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)libbitcoin.import.props" />
+    <Import Project="$(SolutionDir)libwallet.import.props" />
   </ImportGroup>
   
   <PropertyGroup>
@@ -32,43 +33,43 @@
   </PropertyGroup>  
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
-    <Linkage-openssl>dynamic</Linkage-openssl>
     <Linkage-czmqpp>dynamic</Linkage-czmqpp>
     <Linkage-czmq>dynamic</Linkage-czmq>
     <Linkage-libzmq>dynamic</Linkage-libzmq>
     <Linkage-libsodium>dynamic</Linkage-libsodium>
     <Linkage-libconfig>dynamic</Linkage-libconfig>
     <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
+    <Linkage-libwallet>dynamic</Linkage-libwallet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
-    <Linkage-openssl>static</Linkage-openssl>
     <Linkage-czmqpp>ltcg</Linkage-czmqpp>
     <Linkage-czmq>ltcg</Linkage-czmq>
     <Linkage-libzmq>ltcg</Linkage-libzmq>
     <Linkage-libsodium>ltcg</Linkage-libsodium>
     <Linkage-libconfig>ltcg</Linkage-libconfig>
     <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
+    <Linkage-libwallet>ltcg</Linkage-libwallet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
-    <Linkage-openssl>static</Linkage-openssl>
     <Linkage-czmqpp>static</Linkage-czmqpp>
     <Linkage-czmq>static</Linkage-czmq>
     <Linkage-libzmq>static</Linkage-libzmq>
     <Linkage-libsodium>static</Linkage-libsodium>
     <Linkage-libconfig>static</Linkage-libconfig>
     <Linkage-libbitcoin>static</Linkage-libbitcoin>
+    <Linkage-libwallet>static</Linkage-libwallet>
   </PropertyGroup>
   
   <!-- Messages -->
 
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
-    <Message Text="Linkage-openssl   : $(Linkage-openssl)" Importance="high"/>
     <Message Text="Linkage-czmqpp    : $(Linkage-czmqpp)" Importance="high"/>
     <Message Text="Linkage-czmq      : $(Linkage-czmq)" Importance="high"/>
     <Message Text="Linkage-libzmq    : $(Linkage-libzmq)" Importance="high"/>
     <Message Text="Linkage-libsodium : $(Linkage-libsodium)" Importance="high"/>
     <Message Text="Linkage-libconfig : $(Linkage-libconfig)" Importance="high"/>
     <Message Text="Linkage-libbitcoin: $(Linkage-libbitcoin)" Importance="high"/>
+    <Message Text="Linkage-libwallet : $(Linkage-libwallet)" Importance="high"/>
   </Target>
 
 </Project>
