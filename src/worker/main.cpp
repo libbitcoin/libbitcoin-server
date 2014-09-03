@@ -25,23 +25,14 @@ void interrupt_handler(int)
     stopped = true;
 }
 
-#ifdef _MSC_VER
-// This compiles for all platforms, but there is an aspect of the linux build 
-// system that expects to see 'int main(...)' in the source, so need both lines.
-int tmain(int argc, tchar* argv[])
-#else
-int main(int argc, char* argv[])
-#endif
+int main(int /* argc */, char*[] /* argv */)
 {
 #ifdef UNDEFINED
     config_type config;
-    tpath config_path = argc < 2 ?
-        tpath(system_config_directory()) / "obelisk" / "worker.cfg" :
-        tpath(argv[1]);
+    path config_path = argc < 2 ?
+        path(system_config_directory()) / "obelisk" / "worker.cfg" :
+        path(argv[1]);
 
-    // libconfig is ANSI/MBCS on Windows - no Unicode support.
-    // This translates the path from Unicode to a "generic" path in
-    // ANSI/MBCS, which can result in failures.
     load_config(config, config_path);
 
     echo() << "Press CTRL-C to shut down.";
