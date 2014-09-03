@@ -12,8 +12,8 @@ class protocol_interface
 public:
     typedef std::function<void (const std::error_code&)> broadcast_handler;
 
-    protocol_interface(backend_cluster& backend);
-    void broadcast_transaction(const bc::transaction_type& tx,
+    BCS_API protocol_interface(backend_cluster& backend);
+    BCS_API void broadcast_transaction(const bc::transaction_type& tx,
         broadcast_handler handle_broadcast);
 private:
     backend_cluster& backend_;

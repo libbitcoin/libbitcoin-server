@@ -6,30 +6,17 @@
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
-
-// Address string cross-compile as char and std::string are non-unicode on
-// Windows, which pre-dates unicode so char is ANSI and wchar_t is UCS-16.
-// TODO: centralize this in cross-compile header(s).
-#if defined(_WIN32) && defined(UNICODE)
-typedef wchar_t tchar;
-typedef std::wstring tstring;
-typedef boost::filesystem::wpath tpath;
-#else
-#define L
-typedef char tchar;
-typedef std::string tstring;
-typedef boost::filesystem::path tpath;
-#endif
+#include <obelisk/define.hpp>
 
 namespace obelisk {
 
-struct node_config_object
+struct BCS_API node_config_object
 {
     std::string hostname;
     uint16_t port;
 };
 
-struct config_type
+struct BCS_API config_type
 {
     typedef std::vector<node_config_object> nodes_list;
     typedef std::vector<std::string> ipaddress_list;
@@ -54,8 +41,9 @@ struct config_type
 };
 
 typedef std::map<std::string, std::string> config_map_type;
-void load_config(config_type& config, tpath& config_path);
-tstring system_config_directory();
+BCS_API void load_config(config_type& config, 
+    boost::filesystem::path& config_path);
+BCS_API std::string system_config_directory();
 
 } // namespace obelisk
 

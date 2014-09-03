@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <obelisk/define.hpp>
 #include <obelisk/message.hpp>
 #include "node_impl.hpp"
 #include "service/util.hpp"
@@ -13,13 +14,13 @@ namespace obelisk {
 class subscribe_manager
 {
 public:
-    subscribe_manager(node_impl& node);
-    void subscribe(
+    BCS_API subscribe_manager(node_impl& node);
+    BCS_API void subscribe(
         const incoming_message& request, queue_send_callback queue_send);
-    void renew(
+    BCS_API void renew(
         const incoming_message& request, queue_send_callback queue_send);
 
-    void submit(size_t height, const bc::hash_digest& block_hash,
+    BCS_API void submit(size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
 
 private:

@@ -2,6 +2,7 @@
 #define OBELISK_WORKER_NODE_IMPL_HPP
 
 #include <bitcoin/bitcoin.hpp>
+#include <obelisk/define.hpp>
 #include "config.hpp"
 
 namespace obelisk {
@@ -14,21 +15,21 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    node_impl();
-    bool start(config_type& config);
-    bool stop();
+    BCS_API node_impl();
+    BCS_API bool start(config_type& config);
+    BCS_API bool stop();
 
-    void subscribe_blocks(block_notify_callback notify_block);
-    void subscribe_transactions(transaction_notify_callback notify_tx);
+    BCS_API void subscribe_blocks(block_notify_callback notify_block);
+    BCS_API void subscribe_transactions(transaction_notify_callback notify_tx);
 
     // Access to underlying services.
-    bc::blockchain& blockchain();
-    bc::transaction_pool& transaction_pool();
-    bc::transaction_indexer& transaction_indexer();
-    bc::protocol& protocol();
+    BCS_API bc::blockchain& blockchain();
+    BCS_API bc::transaction_pool& transaction_pool();
+    BCS_API bc::transaction_indexer& transaction_indexer();
+    BCS_API bc::protocol& protocol();
 
     // Threadpool for memory related operations.
-    bc::threadpool& memory_related_threadpool();
+    BCS_API bc::threadpool& memory_related_threadpool();
 
 private:
     typedef std::vector<block_notify_callback> block_notify_list;

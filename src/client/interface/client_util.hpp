@@ -3,6 +3,7 @@
 
 #include <system_error>
 #include <bitcoin/utility/logger.hpp>
+#include <obelisk/define.hpp>
 
 namespace obelisk {
 
