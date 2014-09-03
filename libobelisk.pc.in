@@ -4,9 +4,10 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: libobelisk
-Description: Obelisk network interface for scalable asynchronous blockchain queries.
+Description: Full peer-to-peer Bitcoin node and custom network interface for high performing blockchain queries.
+URL: https://github.com/libbitcoin/libbitcoin
 Version: @PACKAGE_VERSION@
-Requires: libczmq++ libconfig++ libbitcoin
 Cflags: -I${includedir} -std=c++11
+Requires: libsodium >= 0.6.0 libczmq++ >= 0.4.1 libconfig++ >= 1.3.2 libbitcoin >= 2.0.1
 Libs: -L${libdir} -lobelisk
 
