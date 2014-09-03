@@ -207,7 +207,7 @@ void address_subscriber::receive_update(
     post_updates(address, worker, height, blk_hash, tx);
 }
 void address_subscriber::post_updates(
-    const bc::payment_address& address, const worker_uuid& worker,
+    const bc::payment_address& address, const worker_uuid& /* worker */,
     size_t height, const bc::hash_digest& blk_hash,
     const bc::transaction_type& tx)
 {
@@ -259,9 +259,8 @@ fullnode_interface::fullnode_interface(
     threadpool& pool, const std::string& connection,
     const std::string& cert_filename, const std::string& server_pubkey)
   : backend_(pool, context_, connection, cert_filename, server_pubkey),
-    blockchain(backend_), transaction_pool(backend_),
-    protocol(backend_), address(pool, backend_),
-    subscriber_(context_)
+    subscriber_(context_), blockchain(backend_), transaction_pool(backend_),
+    protocol(backend_), address(pool, backend_)
 {
 }
 
