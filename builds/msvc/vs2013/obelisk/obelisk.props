@@ -25,7 +25,6 @@
   
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)libbitcoin.import.props" />
-    <Import Project="$(SolutionDir)libwallet.import.props" />
   </ImportGroup>
   
   <PropertyGroup>
@@ -39,7 +38,6 @@
     <Linkage-libsodium>dynamic</Linkage-libsodium>
     <Linkage-libconfig>dynamic</Linkage-libconfig>
     <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
-    <Linkage-libwallet>dynamic</Linkage-libwallet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-czmqpp>ltcg</Linkage-czmqpp>
@@ -48,7 +46,6 @@
     <Linkage-libsodium>ltcg</Linkage-libsodium>
     <Linkage-libconfig>ltcg</Linkage-libconfig>
     <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
-    <Linkage-libwallet>ltcg</Linkage-libwallet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-czmqpp>static</Linkage-czmqpp>
@@ -57,7 +54,6 @@
     <Linkage-libsodium>static</Linkage-libsodium>
     <Linkage-libconfig>static</Linkage-libconfig>
     <Linkage-libbitcoin>static</Linkage-libbitcoin>
-    <Linkage-libwallet>static</Linkage-libwallet>
   </PropertyGroup>
   
   <!-- Messages -->
@@ -69,7 +65,6 @@
     <Message Text="Linkage-libsodium : $(Linkage-libsodium)" Importance="high"/>
     <Message Text="Linkage-libconfig : $(Linkage-libconfig)" Importance="high"/>
     <Message Text="Linkage-libbitcoin: $(Linkage-libbitcoin)" Importance="high"/>
-    <Message Text="Linkage-libwallet : $(Linkage-libwallet)" Importance="high"/>
   </Target>
 
 </Project>
