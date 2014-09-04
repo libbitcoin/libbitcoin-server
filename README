@@ -1,7 +1,7 @@
 Install:
 
   $ sudo apt-get install libzmq-dev libconfig++-dev
-  $ autoreconf -i
+  $ ./autogen.sh
   $ ./configure
   $ make
   $ sudo make install

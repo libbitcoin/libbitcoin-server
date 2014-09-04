@@ -33,11 +33,11 @@ void send_worker::queue_send(const outgoing_message& message)
 }
 
 request_worker::request_worker()
-  : auth_(context_),
-    sender_(context_),
-    socket_(context_, ZMQ_ROUTER),
+  : socket_(context_, ZMQ_ROUTER),
+    auth_(context_),
     wakeup_socket_(context_, ZMQ_PULL),
-    heartbeat_socket_(context_, ZMQ_PUB)
+    heartbeat_socket_(context_, ZMQ_PUB),
+    sender_(context_)
 {
     BITCOIN_ASSERT(socket_.self());
     BITCOIN_ASSERT(wakeup_socket_.self());

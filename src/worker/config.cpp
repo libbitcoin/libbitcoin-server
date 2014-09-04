@@ -47,42 +47,29 @@ void load_whitelist(const libconfig::Setting& root, config_type& config)
     catch (const libconfig::SettingNotFoundException&) {}
 }
 
-// Address string cross-compile as char and std::string are non-unicode on
-// Windows, which pre-dates unicode so char is ANSI and wchar_t is UCS-16.
-// TODO: centralize this in cross-compile header(s).
-#if defined(_WIN32) && defined(UNICODE)
-#define tmain wmain
-typedef wchar_t tchar;
-typedef std::wstring tstring;
-typedef boost::filesystem::wpath tpath;
-#else
-#define tmain main
-#define L
-typedef char tchar;
-typedef std::string tstring;
-typedef boost::filesystem::path tpath;
-#endif
-
 #ifdef _WIN32
 #include <shlobj.h>
 #include <windows.h>
-tstring system_config_directory()
+std::string system_config_directory()
 {
     // Use explicitly wide char functions and compile for unicode.
-    tchar app_data_path[MAX_PATH];
-    auto result = SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL,
+    char app_data_path[MAX_PATH];
+    auto result = SHGetFolderPathA(NULL, CSIDL_COMMON_APPDATA, NULL,
         SHGFP_TYPE_CURRENT, app_data_path);
-    return tstring(SUCCEEDED(result) ? app_data_path : L"");
+    if (SUCCEEDED(result))
+        return std::string(app_data_path);
+
+    return "";
 }
 #else
-tstring system_config_directory()
+std::string system_config_directory()
 {
-    return tstring(SYSCONFDIR);
+    return std::string(SYSCONFDIR);
 }
 #endif
 
 void set_config_path(libconfig::Config& configuration, 
-    const tpath& config_path)
+    const boost::filesystem::path& config_path)
 {
     // Ignore error if unable to read config file.
     try
@@ -96,7 +83,7 @@ void set_config_path(libconfig::Config& configuration,
     catch (const libconfig::ParseException&) {}
 }
 
-void load_config(config_type& config, tpath& config_path)
+void load_config(config_type& config, boost::filesystem::path& config_path)
 {
     // Load values from config file.
     echo() << "Using config file: " << config_path;

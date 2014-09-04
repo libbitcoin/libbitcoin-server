@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <system_error>
+#include <obelisk/define.hpp>
 #include <obelisk/message.hpp>
 
 namespace obelisk {
