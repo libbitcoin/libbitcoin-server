@@ -1,9 +1,1 @@
-Install:
-
-  $ sudo apt-get install libzmq-dev libconfig++-dev
-  $ ./autogen.sh
-  $ ./configure
-  $ make
-  $ sudo make install
-  $ sudo ldconfig
-
+This library is a fork of libbitcoin/obelisk and should not be used.
