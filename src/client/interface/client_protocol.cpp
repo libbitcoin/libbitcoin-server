@@ -1,5 +1,4 @@
 #include <obelisk/client/protocol.hpp>
-
 #include "client_util.hpp"
 
 namespace obelisk {

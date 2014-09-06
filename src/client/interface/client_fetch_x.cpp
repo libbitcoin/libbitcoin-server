@@ -1,6 +1,9 @@
+#include <bitcoin/bitcoin.hpp>
+#include <obelisk/client/blockchain.hpp>
 #include "client_fetch_x.hpp"
-
 #include "client_util.hpp"
+
+using namespace bc;
 
 namespace obelisk {
 
@@ -46,7 +49,11 @@ void receive_history_result(const data_chunk& data,
         row.spend_height = deserial.read_4_bytes();
     }
     BITCOIN_ASSERT(deserial.iterator() == data.end());
-    handle_fetch(ec, history);
+
+    // HACK: temp workaround for build break due to change to blockchain 
+    // interface in libbitcoin.
+    size_t index_type = 0;
+    handle_fetch(ec, history, index_type);
 }
 
 // fetch_transaction stuff

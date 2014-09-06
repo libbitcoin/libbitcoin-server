@@ -1,8 +1,7 @@
-#include <obelisk/message.hpp>
-
 #include <random>
 #include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
+#include <obelisk/message.hpp>
 
 namespace obelisk {
 
@@ -47,7 +46,7 @@ const std::string& incoming_message::command() const
 {
     return command_;
 }
-const uint32_t incoming_message::id() const
+uint32_t incoming_message::id() const
 {
     return id_;
 }
@@ -98,7 +97,7 @@ void outgoing_message::send(czmqpp::socket& socket) const
     message.send(socket);
 }
 
-const uint32_t outgoing_message::id() const
+uint32_t outgoing_message::id() const
 {
     return id_;
 }

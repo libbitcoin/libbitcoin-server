@@ -1,8 +1,15 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS} ${libczmqpp_LIBS} ${libconfigxx_CFLAGS} -DSYSCONFDIR=\"${sysconfdir}\"
-
 lib_LTLIBRARIES = libobelisk.la
+
+AM_CPPFLAGS = \
+    -I$(srcdir)/../include \
+    ${bitcoin_CFLAGS} \
+    ${sodium_CFLAGS} \
+    ${czmqpp_CFLAGS} \
+    ${configpp_CFLAGS} \
+    -DSYSCONFDIR=\"${sysconfdir}\"
+
 libobelisk_la_SOURCES = \
     message.cpp \
     client/backend.cpp \
@@ -12,25 +19,35 @@ libobelisk_la_SOURCES = \
     client/interface/client_protocol.cpp \
     client/interface/client_transaction_pool.cpp
 
-bin_PROGRAMS = obworker
+libobelisk_la_LIBADD = \
+    ${bitcoin_LIBS} \
+    ${sodium_LIBS} \
+    ${czmqpp_LIBS} \
+    ${configpp_LIBS}
 
-confdir=$(sysconfdir)/obelisk
-conf_DATA = \
-    worker/worker.cfg
+bin_PROGRAMS = obelisk
 
-obworker_SOURCES = \
+obelisk_SOURCES = \
     worker/config.cpp \
     worker/echo.cpp \
     worker/main.cpp \
-    worker/node_impl.cpp \
-    worker/publisher.cpp \
-    worker/subscribe_manager.cpp \
-    worker/worker.cpp \
-    worker/service/fullnode.cpp \
-    worker/service/fetch_x.cpp \
-    worker/service/blockchain.cpp \
-    worker/service/protocol.cpp \
-    worker/service/transaction_pool.cpp
+    worker/worker.cpp
+#    worker/node_impl.cpp
+#    worker/publisher.cpp
+#    worker/subscribe_manager.cpp
+#    worker/service/fullnode.cpp
+#    worker/service/fetch_x.cpp
+#    worker/service/blockchain.cpp
+#    worker/service/protocol.cpp
+#    worker/service/transaction_pool.cpp
 
-obworker_LDADD = -lobelisk ${libbitcoin_LIBS} ${libzmq_LIBS} ${libsodium_LIBS} ${libczmq_LIBS} ${libczmqpp_LIBS} ${libconfigxx_LIBS}
+obelisk_LDADD = \
+    -L$(srcdir)/../src/ \
+    -lobelisk \
+    ${bitcoin_LIBS} \
+    ${sodium_LIBS} \
+    ${czmqpp_LIBS} \
+    ${configpp_LIBS}
 
+confdir=${sysconfdir}/obelisk
+conf_DATA = worker/worker.cfg

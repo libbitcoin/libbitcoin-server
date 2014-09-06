@@ -1,20 +1,19 @@
-#include <boost/filesystem.hpp>
-#include <obelisk/message.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <signal.h>
 #include <string>
+#include <boost/filesystem.hpp>
+#include <bitcoin/bitcoin.hpp>
+#include <obelisk/message.hpp>
 #include "echo.hpp"
-#include "worker.hpp"
 #include "node_impl.hpp"
 #include "publisher.hpp"
-#include "subscribe_manager.hpp"
-#include "service/fullnode.hpp"
 #include "service/blockchain.hpp"
+#include "service/fullnode.hpp"
 #include "service/protocol.hpp"
 #include "service/transaction_pool.hpp"
+#include "subscribe_manager.hpp"
+#include "worker.hpp"
 
 using namespace obelisk;
-using namespace obelisk::bc;
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -26,22 +25,14 @@ void interrupt_handler(int)
     stopped = true;
 }
 
-#ifdef _MSC_VER
-// This compiles for all platforms, but there is an aspect of the linux build 
-// system that expects to see 'int main(...)' in the source, so need both lines.
-int tmain(int argc, tchar* argv[])
-#else
-int main(int argc, char* argv[])
-#endif
+int main(int /* argc */, char*[] /* argv */)
 {
+#ifdef UNDEFINED
     config_type config;
-    tpath config_path = argc < 2 ?
-        tpath(system_config_directory()) / "obelisk" / "worker.cfg" :
-        tpath(argv[1]);
+    path config_path = argc < 2 ?
+        path(system_config_directory()) / "obelisk" / "worker.cfg" :
+        path(argv[1]);
 
-    // libconfig is ANSI/MBCS on Windows - no Unicode support.
-    // This translates the path from Unicode to a "generic" path in
-    // ANSI/MBCS, which can result in failures.
     load_config(config, config_path);
 
     echo() << "Press CTRL-C to shut down.";
@@ -108,6 +99,7 @@ int main(int argc, char* argv[])
     if (!node.stop())
         return -1;
     echo() << "Node shutdown cleanly.";
+#endif
     return 0;
 }
 

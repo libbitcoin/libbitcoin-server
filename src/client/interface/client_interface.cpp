@@ -1,6 +1,5 @@
-#include <obelisk/client/interface.hpp>
-
 #include <bitcoin/bitcoin.hpp>
+#include <obelisk/client/interface.hpp>
 #include "client_fetch_x.hpp"
 #include "client_util.hpp"
 
@@ -149,28 +148,27 @@ address_subscriber::address_subscriber(
             this, _1, _2));
 }
 
-void address_subscriber::subscribe(const payment_address& address,
+void address_subscriber::subscribe(const address_prefix& prefix,
     update_handler handle_update, subscribe_handler handle_subscribe)
 {
-    data_chunk data(1 + short_hash_size);
-    auto serial = make_serializer(data.begin());
-    serial.write_byte(address.version());
-    serial.write_short_hash(address.hash());
-    BITCOIN_ASSERT(serial.iterator() == data.end());
+    BITCOIN_ASSERT(prefix.size() <= 255);
+    data_chunk data(1 + prefix.num_blocks());
+    data[0] = prefix.size();
+    boost::to_block_range(prefix, data.begin() + 1);
     backend_.request("address.subscribe", data,
         strand_.wrap(&address_subscriber::receive_subscribe_result,
-            this, _1, _2, address, handle_update, handle_subscribe));
+            this, _1, _2, prefix, handle_update, handle_subscribe));
 }
 void address_subscriber::receive_subscribe_result(
     const data_chunk& data, const worker_uuid& worker,
-    const payment_address& address,
+    const address_prefix& prefix,
     update_handler handle_update, subscribe_handler handle_subscribe)
 {
     // Insert listener into backend.
-    subs_.emplace(address,
-        subscription{worker, handle_update});
+    subs_.emplace_back(subscription{
+        prefix, handle_update});
     // We will periodically send subscription
-    // update messages with the Bitcoin address.
+    // update messages with the address prefix.
     // Decode std::error_code indicating success.
     decode_reply(data, worker, handle_subscribe);
 }
@@ -209,21 +207,16 @@ void address_subscriber::receive_update(
     post_updates(address, worker, height, blk_hash, tx);
 }
 void address_subscriber::post_updates(
-    const bc::payment_address& address, const worker_uuid& worker,
+    const bc::payment_address& address, const worker_uuid& /* worker */,
     size_t height, const bc::hash_digest& blk_hash,
     const bc::transaction_type& tx)
 {
-    auto it = subs_.find(address);
-    if (it == subs_.end())
-        return;
-    const subscription& sub = it->second;
-    if (sub.worker != worker)
+    for (const subscription& sub: subs_)
     {
-        log_error(LOG_SUBSCRIBER)
-            << "Server sent update from a different worker than expected.";
-        return;
+        if (!stealth_match(sub.prefix, address.hash().data()))
+            continue;
+        sub.handle_update(std::error_code(), height, blk_hash, tx);
     }
-    sub.handle_update(std::error_code(), height, blk_hash, tx);
 }
 
 void address_subscriber::update()
@@ -231,19 +224,17 @@ void address_subscriber::update()
     auto renewal_sent = [](const data_chunk&, const worker_uuid&) {};
     // Loop through subscriptions, send renew packets.
     auto send_renew = [this, renewal_sent](
-        const payment_address& address, const worker_uuid& worker)
+        const address_prefix& prefix)
     {
-        data_chunk data(1 + short_hash_size);
-        auto serial = make_serializer(data.begin());
-        serial.write_byte(address.version());
-        serial.write_short_hash(address.hash());
-        BITCOIN_ASSERT(serial.iterator() == data.end());
-        backend_.request("address.renew", data, renewal_sent, worker);
+        data_chunk data(1 + prefix.num_blocks());
+        data[0] = prefix.size();
+        boost::to_block_range(prefix, data.begin() + 1);
+        backend_.request("address.renew", data, renewal_sent);
     };
     auto loop_subs = [this, send_renew]
     {
-        for (const auto& keyvalue_pair: subs_)
-            send_renew(keyvalue_pair.first, keyvalue_pair.second.worker);
+        for (const auto& sub: subs_)
+            send_renew(sub.prefix);
     };
     const posix_time::ptime now = second_clock::universal_time();
     // Send renews...
@@ -268,9 +259,8 @@ fullnode_interface::fullnode_interface(
     threadpool& pool, const std::string& connection,
     const std::string& cert_filename, const std::string& server_pubkey)
   : backend_(pool, context_, connection, cert_filename, server_pubkey),
-    blockchain(backend_), transaction_pool(backend_),
-    protocol(backend_), address(pool, backend_),
-    subscriber_(context_)
+    subscriber_(context_), blockchain(backend_), transaction_pool(backend_),
+    protocol(backend_), address(pool, backend_)
 {
 }
 

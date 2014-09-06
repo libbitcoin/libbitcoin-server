@@ -1,6 +1,5 @@
-#include <obelisk/client/backend.hpp>
-
 #include <bitcoin/bitcoin.hpp>
+#include <obelisk/client/backend.hpp>
 
 namespace obelisk {
 
@@ -62,7 +61,7 @@ void backend_cluster::update()
     // Poll socket for a reply, with timeout
     czmqpp::poller poller(socket_);
     BITCOIN_ASSERT(poller.self());
-    czmqpp::socket which = poller.wait(0);
+    /* czmqpp::socket which = */ poller.wait(0);
     // If we got a reply, process it
     receive_incoming();
     // Finally resend any expired requests that we didn't get

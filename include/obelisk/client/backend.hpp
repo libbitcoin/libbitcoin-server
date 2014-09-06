@@ -2,9 +2,10 @@
 #define OBELISK_CLIENT_BACKEND
 
 #include <functional>
-#include <unordered_map>
 #include <system_error>
+#include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <obelisk/define.hpp>
 #include <obelisk/message.hpp>
 #include <bitcoin/threadpool.hpp>
 
@@ -18,16 +19,16 @@ public:
     typedef std::function<void (
         const bc::data_chunk&, const worker_uuid&)> response_handler;
 
-    backend_cluster(bc::threadpool& pool,
+    BCS_API backend_cluster(bc::threadpool& pool,
         czmqpp::context& context, const std::string& connection,
         const std::string& cert_filename, const std::string& server_pubkey);
 
-    void request(
+    BCS_API void request(
         const std::string& command, const bc::data_chunk& data,
         response_handler handle, const worker_uuid& dest=worker_uuid());
-    void update();
+    BCS_API void update();
 
-    void append_filter(const std::string& command, response_handler filter);
+    BCS_API void append_filter(const std::string& command, response_handler filter);
 
 private:
     struct request_container

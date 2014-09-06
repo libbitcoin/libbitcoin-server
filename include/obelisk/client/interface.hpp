@@ -5,6 +5,7 @@
 #include <obelisk/client/blockchain.hpp>
 #include <obelisk/client/transaction_pool.hpp>
 #include <obelisk/client/protocol.hpp>
+#include <obelisk/define.hpp>
 
 namespace obelisk {
 
@@ -16,17 +17,17 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    subscriber_part(czmqpp::context& context);
+    BCS_API subscriber_part(czmqpp::context& context);
 
     // Non-copyable
-    subscriber_part(const subscriber_part&) = delete;
-    void operator=(const subscriber_part&) = delete;
+    BCS_API subscriber_part(const subscriber_part&) = delete;
+    BCS_API void operator=(const subscriber_part&) = delete;
 
-    bool subscribe_blocks(const std::string& connection,
+    BCS_API bool subscribe_blocks(const std::string& connection,
         block_notify_callback notify_block);
-    bool subscribe_transactions(const std::string& connection,
+    BCS_API bool subscribe_transactions(const std::string& connection,
         transaction_notify_callback notify_tx);
-    void update();
+    BCS_API void update();
 
 private:
     bool setup_socket(
@@ -40,6 +41,8 @@ private:
     transaction_notify_callback notify_tx_;
 };
 
+typedef bc::stealth_prefix address_prefix;
+
 class address_subscriber
 {
 public:
@@ -50,17 +53,17 @@ public:
     typedef std::function<void (
         const std::error_code&, const worker_uuid&)> subscribe_handler;
 
-    address_subscriber(bc::threadpool& pool, backend_cluster& backend);
+    BCS_API address_subscriber(bc::threadpool& pool, backend_cluster& backend);
 
     // Non-copyable
-    address_subscriber(const address_subscriber&) = delete;
-    void operator=(const address_subscriber&) = delete;
+    BCS_API address_subscriber(const address_subscriber&) = delete;
+    BCS_API void operator=(const address_subscriber&) = delete;
 
     // You should generally call subscribe() before fetch_history().
-    void subscribe(const bc::payment_address& address,
+    BCS_API void subscribe(const address_prefix& prefix,
         update_handler handle_update, subscribe_handler handle_subscribe);
 
-    void fetch_history(const bc::payment_address& address,
+    BCS_API void fetch_history(const bc::payment_address& address,
         bc::blockchain::fetch_handler_history handle_fetch,
         size_t from_height=0, const worker_uuid& worker=worker_uuid());
 
@@ -72,16 +75,15 @@ public:
 private:
     struct subscription
     {
-        const worker_uuid worker;
+        address_prefix prefix;
         update_handler handle_update;
     };
 
-    typedef std::unordered_map<bc::payment_address, subscription>
-        subscription_map;
+    typedef std::vector<subscription> subscription_list;
 
     void receive_subscribe_result(
         const bc::data_chunk& data, const worker_uuid& worker,
-        const bc::payment_address& address,
+        const address_prefix& prefix,
         update_handler handle_update, subscribe_handler handle_subscribe);
     void decode_reply(
         const bc::data_chunk& data, const worker_uuid& worker,
@@ -97,7 +99,7 @@ private:
     backend_cluster& backend_;
     // Register subscription. Periodically send renew packets.
     bc::async_strand strand_;
-    subscription_map subs_;
+    subscription_list subs_;
     // Send renew packets periodically.
     boost::posix_time::ptime last_renew_;
 };
@@ -105,19 +107,19 @@ private:
 class fullnode_interface
 {
 public:
-    fullnode_interface(bc::threadpool& pool, const std::string& connection,
-        const std::string& cert_filename="",
+    BCS_API fullnode_interface(bc::threadpool& pool, 
+        const std::string& connection, const std::string& cert_filename="",
         const std::string& server_pubkey="");
 
     // Non-copyable
-    fullnode_interface(const fullnode_interface&) = delete;
-    void operator=(const fullnode_interface&) = delete;
+    BCS_API fullnode_interface(const fullnode_interface&) = delete;
+    BCS_API void operator=(const fullnode_interface&) = delete;
 
-    void update();
+    BCS_API void update();
 
-    bool subscribe_blocks(const std::string& connection,
+    BCS_API bool subscribe_blocks(const std::string& connection,
         subscriber_part::block_notify_callback notify_block);
-    bool subscribe_transactions(const std::string& connection,
+    BCS_API bool subscribe_transactions(const std::string& connection,
         subscriber_part::transaction_notify_callback notify_tx);
 
 private:
@@ -128,11 +130,9 @@ private:
 // These depend on the above components and
 // should be constructed afterwards.
 public:
-
     blockchain_interface blockchain;
     transaction_pool_interface transaction_pool;
     protocol_interface protocol;
-
     address_subscriber address;
 };
 

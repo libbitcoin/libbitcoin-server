@@ -1,6 +1,5 @@
-#include "echo.hpp"
-
 #include <iostream>
+#include "echo.hpp"
 
 namespace obelisk {
 

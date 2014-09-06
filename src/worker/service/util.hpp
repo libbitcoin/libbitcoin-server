@@ -1,8 +1,9 @@
 #ifndef OBELISK_WORKER_SERVICE_UTIL_HPP
 #define OBELISK_WORKER_SERVICE_UTIL_HPP
 
-#include <system_error>
 #include <functional>
+#include <system_error>
+#include <obelisk/define.hpp>
 #include <obelisk/message.hpp>
 
 namespace obelisk {

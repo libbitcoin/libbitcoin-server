@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <obelisk/define.hpp>
 #include <obelisk/message.hpp>
 #include "node_impl.hpp"
 #include "service/util.hpp"
@@ -13,25 +14,27 @@ namespace obelisk {
 class subscribe_manager
 {
 public:
-    subscribe_manager(node_impl& node);
-    void subscribe(
+    BCS_API subscribe_manager(node_impl& node);
+    BCS_API void subscribe(
         const incoming_message& request, queue_send_callback queue_send);
-    void renew(
+    BCS_API void renew(
         const incoming_message& request, queue_send_callback queue_send);
 
-    void submit(size_t height, const bc::hash_digest& block_hash,
+    BCS_API void submit(size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
 
 private:
+    typedef bc::stealth_prefix address_prefix;
+
     struct subscription
     {
+        address_prefix prefix;
         boost::posix_time::ptime expiry_time;
-        const bc::data_chunk client_origin;
+        bc::data_chunk client_origin;
         queue_send_callback queue_send;
     };
 
-    typedef std::unordered_multimap<bc::payment_address, subscription>
-        subscription_map;
+    typedef std::vector<subscription> subscription_list;
 
     std::error_code add_subscription(
         const incoming_message& request, queue_send_callback queue_send);
@@ -51,7 +54,7 @@ private:
 
     bc::async_strand strand_;
     size_t subscribe_limit_ = 100000000;
-    subscription_map subs_;
+    subscription_list subs_;
 };
 
 } // namespace obelisk
