@@ -1,1 +1,4 @@
-This library is a fork of libbitcoin/obelisk and should not be used.
+libbitcoin-server
+=================
+
+What will eventually become the new obelisk server/library
