@@ -1,8 +1,8 @@
 @ECHO OFF
 ECHO.
-ECHO Downloading obelisk dependencies from NuGet
-CALL nuget.exe install ..\vs2013\obelisk\packages.config
+ECHO Downloading libbitcoin_server dependencies from NuGet
+CALL nuget.exe install ..\vs2013\libbitcoin_server\packages.config
 ECHO.
-CALL buildbase.bat ..\vs2013\obelisk.sln 12
+CALL buildbase.bat ..\vs2013\libbitcoin_server.sln 12
 ECHO.
 PAUSE
