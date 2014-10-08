@@ -2,12 +2,7 @@ AC_INIT([obelisk], [0.1.1], [genjix@riseup.net])
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG(C++)
 AC_CONFIG_AUX_DIR([build-aux])
-
-# The BOOST_ROOT environment variable is *not* prioritize by the m4 tests.
-# As a result there may be dependency conflicts between installed versions
-# and a version specified in BOOST_ROOT.
 AC_CONFIG_MACRO_DIR([m4])
-
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_PROG_AR
 LT_INIT
@@ -22,14 +17,14 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AX_BOOST_BASE([1.50],,
     [AC_MSG_ERROR([Boost 1.50 or later is required but was not found.])])
 
-PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.0.1])
+PKG_PROG_PKG_CONFIG
+
+PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.4.0])
 PKG_CHECK_MODULES([sodium], [libsodium >= 0.6.0])
 PKG_CHECK_MODULES([zmq], [libzmq >= 4.0.0])
 PKG_CHECK_MODULES([czmq], [libczmq >= 2.2.0])
 PKG_CHECK_MODULES([czmqpp], [libczmq++ >= 0.4.1])
 PKG_CHECK_MODULES([configpp], [libconfig++ >= 1.3.2])
-
-PKG_PROG_PKG_CONFIG
 
 # Do not add contextual build parameters in configuration.
 # http://stackoverflow.com/a/4680578
