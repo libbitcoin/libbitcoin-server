@@ -141,8 +141,8 @@ void blockchain_fetch_block_transaction_hashes(node_impl& node,
     const data_chunk& data = request.data();
     if (data.size() == 32)
         fetch_block_transaction_hashes_by_hash(node, request, queue_send);
-    else if (data.size() == 4)
-        fetch_block_transaction_hashes_by_height(node, request, queue_send);
+    //else if (data.size() == 4)
+    //    fetch_block_transaction_hashes_by_height(node, request, queue_send);
     else
     {
         log_error(LOG_WORKER) << "Incorrect data size for "
