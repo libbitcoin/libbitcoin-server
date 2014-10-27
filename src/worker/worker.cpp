@@ -1,5 +1,4 @@
-#include <bitcoin/format.hpp>
-#include <bitcoin/utility/logger.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include "echo.hpp"
 #include "worker.hpp"
 

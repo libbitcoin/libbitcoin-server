@@ -19,7 +19,8 @@ AX_BOOST_BASE([1.50],,
 
 PKG_PROG_PKG_CONFIG
 
-PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.4.0])
+PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.5.0])
+PKG_CHECK_MODULES([bitcoin_blockchain], [libbitcoin-blockchain >= 2.5.0])
 PKG_CHECK_MODULES([sodium], [libsodium >= 0.6.0])
 PKG_CHECK_MODULES([zmq], [libzmq >= 4.0.0])
 PKG_CHECK_MODULES([czmq], [libczmq >= 2.2.0])

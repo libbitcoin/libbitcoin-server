@@ -7,7 +7,6 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <obelisk/define.hpp>
 #include <obelisk/message.hpp>
-#include <bitcoin/threadpool.hpp>
 
 namespace obelisk {
 

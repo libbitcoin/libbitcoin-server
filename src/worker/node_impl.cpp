@@ -47,13 +47,13 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
     file << output;
 }
 
-node_impl::node_impl()
+node_impl::node_impl(config_type& config)
   : network_pool_(1), disk_pool_(6), mem_pool_(1),
     hosts_(network_pool_),
     handshake_(network_pool_),
     network_(network_pool_),
     protocol_(network_pool_, hosts_, handshake_, network_),
-    chain_(disk_pool_),
+    chain_(disk_pool_, config.blockchain_path),
     poller_(mem_pool_, chain_),
     txpool_(mem_pool_, chain_),
     indexer_(mem_pool_),
@@ -86,18 +86,9 @@ bool node_impl::start(config_type& config)
     protocol_.subscribe_channel(
         std::bind(&node_impl::monitor_tx, this, _1, _2));
     // Start blockchain.
-    std::promise<std::error_code> ec_chain;
-    auto blockchain_started =
-        [&](const std::error_code& ec)
+    if (!chain_.start())
     {
-        ec_chain.set_value(ec);
-    };
-    chain_.start(config.blockchain_path, blockchain_started);
-    // Query the error_code and wait for startup completion.
-    std::error_code ec = ec_chain.get_future().get();
-    if (ec)
-    {
-        log_error() << "Couldn't start blockchain: " << ec.message();
+        log_error() << "Couldn't start blockchain.";
         return false;
     }
     chain_.subscribe_reorganize(
@@ -187,7 +178,7 @@ transaction_indexer& node_impl::transaction_indexer()
 {
     return indexer_;
 }
-protocol& node_impl::protocol()
+network::protocol& node_impl::protocol()
 {
     return protocol_;
 }
@@ -196,7 +187,7 @@ threadpool& node_impl::memory_related_threadpool()
     return mem_pool_;
 }
 
-void node_impl::monitor_tx(const std::error_code& ec, channel_ptr node)
+void node_impl::monitor_tx(const std::error_code& ec, network::channel_ptr node)
 {
     if (ec)
     {
@@ -210,7 +201,7 @@ void node_impl::monitor_tx(const std::error_code& ec, channel_ptr node)
 }
 
 void node_impl::recv_transaction(const std::error_code& ec,
-    const transaction_type& tx, channel_ptr node)
+    const transaction_type& tx, network::channel_ptr node)
 {
     if (ec)
     {
@@ -240,7 +231,7 @@ void node_impl::recv_transaction(const std::error_code& ec,
 
 void node_impl::handle_mempool_store(
     const std::error_code& ec, const index_list& unconfirmed,
-    const transaction_type& tx, channel_ptr node)
+    const transaction_type& tx, network::channel_ptr node)
 {
     if (ec)
     {

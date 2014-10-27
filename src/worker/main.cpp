@@ -17,6 +17,7 @@ using namespace obelisk;
 
 using std::placeholders::_1;
 using std::placeholders::_2;
+using boost::filesystem::path;
 
 bool stopped = false;
 void interrupt_handler(int)
@@ -25,9 +26,8 @@ void interrupt_handler(int)
     stopped = true;
 }
 
-int main(int /* argc */, char*[] /* argv */)
+int main(int argc, char** argv)
 {
-#ifdef UNDEFINED
     config_type config;
     path config_path = argc < 2 ?
         path(system_config_directory()) / "obelisk" / "worker.cfg" :
@@ -40,7 +40,7 @@ int main(int /* argc */, char*[] /* argv */)
     request_worker worker;
     worker.start(config);
     // Fullnode
-    node_impl node;
+    node_impl node(config);
     // Publisher
     publisher publish(node);
     if (config.publisher_enabled)
@@ -99,7 +99,6 @@ int main(int /* argc */, char*[] /* argv */)
     if (!node.stop())
         return -1;
     echo() << "Node shutdown cleanly.";
-#endif
     return 0;
 }
 

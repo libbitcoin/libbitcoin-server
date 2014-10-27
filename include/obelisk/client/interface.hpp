@@ -1,7 +1,6 @@
 #ifndef OBELISK_CLIENT_INTERFACE
 #define OBELISK_CLIENT_INTERFACE
 
-#include <bitcoin/bitcoin.hpp>
 #include <obelisk/client/blockchain.hpp>
 #include <obelisk/client/transaction_pool.hpp>
 #include <obelisk/client/protocol.hpp>

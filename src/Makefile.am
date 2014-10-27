@@ -5,6 +5,7 @@ lib_LTLIBRARIES = libobelisk.la
 AM_CPPFLAGS = \
     -I$(srcdir)/../include \
     ${bitcoin_CFLAGS} \
+    ${bitcoin_blockchain_CFLAGS} \
     ${sodium_CFLAGS} \
     ${czmqpp_CFLAGS} \
     ${configpp_CFLAGS} \
@@ -21,6 +22,7 @@ libobelisk_la_SOURCES = \
 
 libobelisk_la_LIBADD = \
     ${bitcoin_LIBS} \
+    ${bitcoin_blockchain_LIBS} \
     ${sodium_LIBS} \
     ${czmqpp_LIBS} \
     ${configpp_LIBS}
@@ -31,20 +33,20 @@ obelisk_SOURCES = \
     worker/config.cpp \
     worker/echo.cpp \
     worker/main.cpp \
-    worker/worker.cpp
-#    worker/node_impl.cpp
-#    worker/publisher.cpp
-#    worker/subscribe_manager.cpp
-#    worker/service/fullnode.cpp
-#    worker/service/fetch_x.cpp
-#    worker/service/blockchain.cpp
-#    worker/service/protocol.cpp
-#    worker/service/transaction_pool.cpp
+    worker/worker.cpp \
+    worker/node_impl.cpp \
+    worker/publisher.cpp \
+    worker/subscribe_manager.cpp \
+    worker/service/fullnode.cpp \
+    worker/service/fetch_x.cpp \
+    worker/service/blockchain.cpp \
+    worker/service/protocol.cpp \
+    worker/service/transaction_pool.cpp
 
 obelisk_LDADD = \
     -L$(srcdir)/../src/ \
     -lobelisk \
-    ${bitcoin_LIBS} \
+    ${bitcoin_blockchain_LIBS} \
     ${sodium_LIBS} \
     ${czmqpp_LIBS} \
     ${configpp_LIBS}

@@ -133,7 +133,7 @@ void fetch_block_transaction_hashes_by_hash(node_impl& node,
 void fetch_block_transaction_hashes_by_height(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send);
 void block_transaction_hashes_fetched(const std::error_code& ec,
-    const hash_digest_list& hashes,
+    const hash_list& hashes,
     const incoming_message& request, queue_send_callback queue_send);
 void blockchain_fetch_block_transaction_hashes(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
@@ -168,12 +168,12 @@ void fetch_block_transaction_hashes_by_height(node_impl& node,
     BITCOIN_ASSERT(data.size() == 4);
     auto deserial = make_deserializer(data.begin(), data.end());
     size_t height = deserial.read_4_bytes();
-    node.blockchain().fetch_block_transaction_hashes(height,
-        std::bind(block_transaction_hashes_fetched,
-            _1, _2, request, queue_send));
+    //node.blockchain().fetch_block_transaction_hashes(height,
+    //    std::bind(block_transaction_hashes_fetched,
+    //        _1, _2, request, queue_send));
 }
 void block_transaction_hashes_fetched(const std::error_code& ec,
-    const hash_digest_list& hashes,
+    const hash_list& hashes,
     const incoming_message& request, queue_send_callback queue_send)
 {
     data_chunk result(4 + hash_size * hashes.size());

@@ -1,7 +1,6 @@
 #ifndef OBELISK_CLIENT_BLOCKCHAIN_HPP
 #define OBELISK_CLIENT_BLOCKCHAIN_HPP
 
-#include <bitcoin/bitcoin.hpp>
 #include <obelisk/client/backend.hpp>
 #include <obelisk/define.hpp>
 

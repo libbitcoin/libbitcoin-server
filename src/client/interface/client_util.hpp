@@ -2,7 +2,7 @@
 #define OBELISK_WORKER_CLIENT_UTIL_HPP
 
 #include <system_error>
-#include <bitcoin/utility/logger.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <obelisk/define.hpp>
 
 namespace obelisk {

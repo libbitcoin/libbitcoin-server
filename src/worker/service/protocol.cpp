@@ -1,4 +1,3 @@
-#include <bitcoin/satoshi_serialize.hpp>
 #include "../node_impl.hpp"
 #include "../echo.hpp"
 #include "protocol.hpp"
