@@ -18,6 +18,8 @@ public:
 
     BCS_API node_impl(config_type& config);
     BCS_API bool start(config_type& config);
+    // Should only be called from the main thread.
+    // It's an error to join() a thread from inside it.
     BCS_API bool stop();
 
     BCS_API void subscribe_blocks(block_notify_callback notify_block);
@@ -39,9 +41,14 @@ private:
     void start_session();
     void wait_and_retry_start(const std::error_code& ec);
 
+    // New connection has been started.
+    // Subscribe to new transaction messages from the network.
     void monitor_tx(const std::error_code& ec, bc::network::channel_ptr node);
+    // New transaction message from the network.
+    // Attempt to validate it by storing it in the transaction pool.
     void recv_transaction(const std::error_code& ec,
         const bc::transaction_type& tx, bc::network::channel_ptr node);
+    // Result of store operation in transaction pool.
     void handle_mempool_store(
         const std::error_code& ec, const bc::index_list& unconfirmed,
         const bc::transaction_type& tx, bc::network::channel_ptr node);
@@ -52,6 +59,7 @@ private:
         const bc::blockchain::block_list& replaced_blocks);
 
     std::ofstream outfile_, errfile_;
+    // Threadpools
     bc::threadpool network_pool_, disk_pool_, mem_pool_;
     // Services
     bc::network::hosts hosts_;

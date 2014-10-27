@@ -48,15 +48,21 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
 }
 
 node_impl::node_impl(config_type& config)
+    // Threadpools and the number of threads they spawn.
+    // 6 threads spawned in total.
   : network_pool_(1), disk_pool_(6), mem_pool_(1),
+    // Networking related services.
     hosts_(network_pool_),
     handshake_(network_pool_),
     network_(network_pool_),
     protocol_(network_pool_, hosts_, handshake_, network_),
+    // Blockchain database service.
     chain_(disk_pool_, config.blockchain_path),
+    // Poll new blocks, tx memory pool and tx indexer.
     poller_(mem_pool_, chain_),
     txpool_(mem_pool_, chain_),
     indexer_(mem_pool_),
+    // Session manager service. Convenience wrapper.
     session_(mem_pool_, {
         handshake_, protocol_, chain_, poller_, txpool_}),
     retry_start_timer_(mem_pool_.service())
@@ -83,6 +89,7 @@ bool node_impl::start(config_type& config)
     log_fatal().set_output_function(
         std::bind(log_to_both, std::ref(std::cerr), std::ref(errfile_),
             _1, _2, _3, config.log_requests));
+    // Subscribe to new connections.
     protocol_.subscribe_channel(
         std::bind(&node_impl::monitor_tx, this, _1, _2));
     // Start blockchain.
@@ -93,7 +100,7 @@ bool node_impl::start(config_type& config)
     }
     chain_.subscribe_reorganize(
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
-    // Transaction pool
+    // Start transaction pool
     txpool_.start();
     // Outgoing connections setting in config file before we
     // start p2p network subsystem.
@@ -150,9 +157,11 @@ bool node_impl::stop()
     network_pool_.stop();
     disk_pool_.stop();
     mem_pool_.stop();
+    // Join threadpools. Wait for them to finish.
     network_pool_.join();
     disk_pool_.join();
     mem_pool_.join();
+    // Safely close blockchain database.
     chain_.stop();
     return true;
 }
@@ -194,8 +203,10 @@ void node_impl::monitor_tx(const std::error_code& ec, network::channel_ptr node)
         log_warning() << "Couldn't start connection: " << ec.message();
         return;
     }
+    // Subscribe to transaction messages from this node.
     node->subscribe_transaction(
         std::bind(&node_impl::recv_transaction, this, _1, _2, node));
+    // Stay subscribed to new connections.
     protocol_.subscribe_channel(
         std::bind(&node_impl::monitor_tx, this, _1, _2));
 }
@@ -223,8 +234,11 @@ void node_impl::recv_transaction(const std::error_code& ec,
         // The error could be error::forced_removal from txpool.
         indexer_.deindex(tx, handle_deindex);
     };
+    // Validate the transaction from the network.
+    // Attempt to store in the transaction pool and check the result.
     txpool_.store(tx, handle_confirm,
         std::bind(&node_impl::handle_mempool_store, this, _1, _2, tx, node));
+    // Resubscribe to transaction messages from this node.
     node->subscribe_transaction(
         std::bind(&node_impl::recv_transaction, this, _1, _2, node));
 }
