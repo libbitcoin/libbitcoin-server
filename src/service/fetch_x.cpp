@@ -27,23 +27,24 @@ bool unwrap_fetch_history_args(
     payaddr.set(version_byte, hash);
     return true;
 }
-void send_history_result(const std::error_code& ec,
-    const blockchain::history_list& history,
+void send_history_result(
+    const std::error_code& ec, const history_list& history,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    constexpr size_t row_size = 36 + 4 + 8 + 36 + 4;
+    constexpr size_t row_size = 1 + 36 + 4 + 8;
     data_chunk result(4 + row_size * history.size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
-    for (const blockchain::history_row row: history)
+    for (const history_row& row: history)
     {
-        serial.write_hash(row.output.hash);
-        serial.write_4_bytes(row.output.index);
-        serial.write_4_bytes(row.output_height);
+        if (row.id == point_ident::output)
+            serial.write_byte(0);
+        else // if (row.id == point_ident::spend)
+            serial.write_byte(1);
+        serial.write_hash(row.point.hash);
+        serial.write_4_bytes(row.point.index);
+        serial.write_4_bytes(row.height);
         serial.write_8_bytes(row.value);
-        serial.write_hash(row.spend.hash);
-        serial.write_4_bytes(row.spend.index);
-        serial.write_4_bytes(row.spend_height);
     }
     BITCOIN_ASSERT(serial.iterator() == result.end());
     // TODO: Slows down queries!

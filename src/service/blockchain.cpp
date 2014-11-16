@@ -11,10 +11,6 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 
-void chain_history_fetched(const std::error_code& ec,
-    const blockchain::history_list& history,
-    const incoming_message& request, queue_send_callback queue_send);
-
 void blockchain_fetch_history(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
@@ -161,6 +157,9 @@ void fetch_block_transaction_hashes_by_hash(node_impl& node,
         std::bind(block_transaction_hashes_fetched,
             _1, _2, request, queue_send));
 }
+// Disabled because method no longer exists in libbitcoin.
+// I'm not actually sure that it's useful when we have fetch by hash instead.
+/*
 void fetch_block_transaction_hashes_by_height(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
@@ -168,10 +167,11 @@ void fetch_block_transaction_hashes_by_height(node_impl& node,
     BITCOIN_ASSERT(data.size() == 4);
     auto deserial = make_deserializer(data.begin(), data.end());
     size_t height = deserial.read_4_bytes();
-    //node.blockchain().fetch_block_transaction_hashes(height,
-    //    std::bind(block_transaction_hashes_fetched,
-    //        _1, _2, request, queue_send));
+    node.blockchain().fetch_block_transaction_hashes(height,
+        std::bind(block_transaction_hashes_fetched,
+            _1, _2, request, queue_send));
 }
+*/
 void block_transaction_hashes_fetched(const std::error_code& ec,
     const hash_list& hashes,
     const incoming_message& request, queue_send_callback queue_send)
@@ -291,8 +291,8 @@ void block_height_fetched(const std::error_code& ec, size_t block_height,
     queue_send(response);
 }
 
-void stealth_fetched(const std::error_code& ec,
-    const blockchain::stealth_list& stealth_results,
+void stealth_fetched(
+    const std::error_code& ec, const stealth_list& stealth_results,
     const incoming_message& request, queue_send_callback queue_send);
 void blockchain_fetch_stealth(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
@@ -324,21 +324,20 @@ void blockchain_fetch_stealth(node_impl& node,
     node.blockchain().fetch_stealth(prefix,
         std::bind(stealth_fetched, _1, _2, request, queue_send), from_height);
 }
-void stealth_fetched(const std::error_code& ec,
-    const blockchain::stealth_list& stealth_results,
+void stealth_fetched(
+    const std::error_code& ec, const stealth_list& stealth_results,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    // [ ephemkey:33 ][ address:21 ][ tx_hash:32 ]
-    constexpr size_t row_size = 33 + 21 + 32;
+    // [ ephemkey:32 ][ address:20 ][ tx_hash:32 ]
+    constexpr size_t row_size = 32 + 20 + 32;
     data_chunk result(4 + row_size * stealth_results.size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    for (const blockchain::stealth_row row: stealth_results)
+    for (const stealth_row& row: stealth_results)
     {
-        serial.write_data(row.ephemkey);
-        serial.write_byte(row.address.version());
-        serial.write_short_hash(row.address.hash());
+        serial.write_hash(row.ephemkey);
+        serial.write_short_hash(row.address);
         serial.write_hash(row.transaction_hash);
     }
     log_debug(LOG_REQUEST)

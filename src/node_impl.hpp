@@ -16,23 +16,23 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    BCS_API node_impl(config_type& config);
-    BCS_API bool start(config_type& config);
+    node_impl(config_type& config);
+    bool start(config_type& config);
     // Should only be called from the main thread.
     // It's an error to join() a thread from inside it.
-    BCS_API bool stop();
+    bool stop();
 
-    BCS_API void subscribe_blocks(block_notify_callback notify_block);
-    BCS_API void subscribe_transactions(transaction_notify_callback notify_tx);
+    void subscribe_blocks(block_notify_callback notify_block);
+    void subscribe_transactions(transaction_notify_callback notify_tx);
 
     // Access to underlying services.
-    BCS_API bc::blockchain& blockchain();
-    BCS_API bc::transaction_pool& transaction_pool();
-    BCS_API bc::transaction_indexer& transaction_indexer();
-    BCS_API bc::network::protocol& protocol();
+    bc::blockchain& blockchain();
+    bc::transaction_pool& transaction_pool();
+    bc::transaction_indexer& transaction_indexer();
+    bc::network::protocol& protocol();
 
     // Threadpool for memory related operations.
-    BCS_API bc::threadpool& memory_related_threadpool();
+    bc::threadpool& memory_related_threadpool();
 
 private:
     typedef std::vector<block_notify_callback> block_notify_list;

@@ -2,7 +2,7 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <obelisk/message.hpp>
+#include "message.hpp"
 #include "echo.hpp"
 #include "node_impl.hpp"
 #include "publisher.hpp"

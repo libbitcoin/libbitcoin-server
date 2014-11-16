@@ -6,17 +6,16 @@
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
-#include <obelisk/define.hpp>
 
 namespace obelisk {
 
-struct BCS_API node_config_object
+struct node_config_object
 {
     std::string hostname;
     uint16_t port;
 };
 
-struct BCS_API config_type
+struct config_type
 {
     typedef std::vector<node_config_object> nodes_list;
     typedef std::vector<std::string> ipaddress_list;
@@ -41,9 +40,9 @@ struct BCS_API config_type
 };
 
 typedef std::map<std::string, std::string> config_map_type;
-BCS_API void load_config(config_type& config, 
+void load_config(config_type& config, 
     boost::filesystem::path& config_path);
-BCS_API std::string system_config_directory();
+std::string system_config_directory();
 
 } // namespace obelisk
 

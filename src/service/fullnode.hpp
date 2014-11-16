@@ -9,7 +9,7 @@ namespace obelisk {
 
 class node_impl;
 
-BCS_API void fullnode_fetch_history(node_impl& node,
+void fullnode_fetch_history(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace obelisk

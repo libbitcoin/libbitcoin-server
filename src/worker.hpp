@@ -26,8 +26,8 @@ namespace obelisk {
 class send_worker
 {
 public:
-    BCS_API send_worker(czmqpp::context& context);
-    BCS_API void queue_send(const outgoing_message& message);
+    send_worker(czmqpp::context& context);
+    void queue_send(const outgoing_message& message);
 
 private:
     czmqpp::context& context_;
@@ -39,11 +39,11 @@ public:
     typedef std::function<void(
         const incoming_message&, queue_send_callback)> command_handler;
 
-    BCS_API request_worker();
-    BCS_API bool start(config_type& config);
-    BCS_API void stop();
-    BCS_API void attach(const std::string& command, command_handler handler);
-    BCS_API void update();
+    request_worker();
+    bool start(config_type& config);
+    void stop();
+    void attach(const std::string& command, command_handler handler);
+    void update();
 
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;

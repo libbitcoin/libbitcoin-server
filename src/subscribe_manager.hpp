@@ -14,13 +14,13 @@ namespace obelisk {
 class subscribe_manager
 {
 public:
-    BCS_API subscribe_manager(node_impl& node);
-    BCS_API void subscribe(
+    subscribe_manager(node_impl& node);
+    void subscribe(
         const incoming_message& request, queue_send_callback queue_send);
-    BCS_API void renew(
+    void renew(
         const incoming_message& request, queue_send_callback queue_send);
 
-    BCS_API void submit(size_t height, const bc::hash_digest& block_hash,
+    void submit(size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
 
 private:

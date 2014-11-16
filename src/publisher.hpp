@@ -12,9 +12,9 @@ namespace obelisk {
 class publisher
 {
 public:
-    BCS_API publisher(node_impl& node);
-    BCS_API bool start(config_type& config);
-    BCS_API bool stop();
+    publisher(node_impl& node);
+    bool start(config_type& config);
+    bool stop();
 
 private:
     bool setup_socket(
