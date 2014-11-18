@@ -7,9 +7,8 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <czmq++/czmq.hpp>
-#include <obelisk/define.hpp>
-#include <obelisk/message.hpp>
 #include "config.hpp"
+#include "message.hpp"
 #include "service/util.hpp"
 
 namespace obelisk {

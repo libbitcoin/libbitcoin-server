@@ -1,8 +1,6 @@
 #ifndef OBELISK_WORKER_SERVICE_FULLNODE_HPP
 #define OBELISK_WORKER_SERVICE_FULLNODE_HPP
 
-#include <obelisk/define.hpp>
-#include <obelisk/message.hpp>
 #include "util.hpp"
 
 namespace obelisk {

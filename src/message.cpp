@@ -1,5 +1,5 @@
 #include <random>
-#include <obelisk/message.hpp>
+#include "message.hpp"
 
 namespace obelisk {
 

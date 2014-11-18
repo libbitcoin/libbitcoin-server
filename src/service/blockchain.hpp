@@ -1,7 +1,6 @@
 #ifndef OBELISK_WORKER_SERVICE_BLOCKCHAIN_HPP
 #define OBELISK_WORKER_SERVICE_BLOCKCHAIN_HPP
 
-#include <obelisk/define.hpp>
 #include "util.hpp"
 
 namespace obelisk {

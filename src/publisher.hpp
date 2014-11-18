@@ -3,7 +3,6 @@
 
 #include <czmq++/czmq.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <obelisk/define.hpp>
 #include "config.hpp"
 #include "node_impl.hpp"
 

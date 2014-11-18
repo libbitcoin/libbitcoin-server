@@ -4,9 +4,8 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <obelisk/define.hpp>
-#include <obelisk/message.hpp>
 #include "node_impl.hpp"
+#include "message.hpp"
 #include "service/util.hpp"
 
 namespace obelisk {

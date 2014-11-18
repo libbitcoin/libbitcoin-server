@@ -4,7 +4,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/node.hpp>
-#include <obelisk/define.hpp>
 #include "config.hpp"
 
 namespace obelisk {

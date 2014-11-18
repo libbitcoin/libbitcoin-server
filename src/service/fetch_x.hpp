@@ -1,8 +1,6 @@
 #ifndef OBELISK_WORKER_SERVICE_FETCH_X_HPP
 #define OBELISK_WORKER_SERVICE_FETCH_X_HPP
 
-#include <obelisk/define.hpp>
-#include <obelisk/message.hpp>
 #include "../node_impl.hpp"
 #include "util.hpp"
 
