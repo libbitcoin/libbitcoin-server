@@ -6,7 +6,7 @@
 #include <thread>
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <czmq++/czmq.hpp>
+#include <czmq++/czmqpp.hpp>
 #include "config.hpp"
 #include "message.hpp"
 #include "service/util.hpp"

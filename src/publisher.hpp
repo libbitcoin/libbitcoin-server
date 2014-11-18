@@ -1,7 +1,7 @@
 #ifndef QUERY_PUBLISHER_HPP
 #define QUERY_PUBLISHER_HPP
 
-#include <czmq++/czmq.hpp>
+#include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include "config.hpp"
 #include "node_impl.hpp"
