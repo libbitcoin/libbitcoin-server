@@ -7,6 +7,7 @@
 namespace obelisk {
 
 using namespace bc;
+using namespace bc::chain;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;

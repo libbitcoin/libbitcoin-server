@@ -3,6 +3,7 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
+#include <bitcoin/node.hpp>
 #include <obelisk/define.hpp>
 #include "config.hpp"
 
@@ -26,9 +27,9 @@ public:
     void subscribe_transactions(transaction_notify_callback notify_tx);
 
     // Access to underlying services.
-    bc::blockchain& blockchain();
-    bc::transaction_pool& transaction_pool();
-    bc::transaction_indexer& transaction_indexer();
+    bc::chain::blockchain& blockchain();
+    bc::chain::transaction_pool& transaction_pool();
+    bc::node::transaction_indexer& transaction_indexer();
     bc::network::protocol& protocol();
 
     // Threadpool for memory related operations.
@@ -55,8 +56,8 @@ private:
 
     void reorganize(const std::error_code& ec,
         size_t fork_point,
-        const bc::blockchain::block_list& new_blocks,
-        const bc::blockchain::block_list& replaced_blocks);
+        const bc::chain::blockchain::block_list& new_blocks,
+        const bc::chain::blockchain::block_list& replaced_blocks);
 
     std::ofstream outfile_, errfile_;
     // Threadpools
@@ -67,10 +68,10 @@ private:
     bc::network::network network_;
     bc::network::protocol protocol_;
     bc::chain::blockchain_impl chain_;
-    bc::poller poller_;
-    bc::transaction_pool txpool_;
-    bc::transaction_indexer indexer_;
-    bc::session session_;
+    bc::node::poller poller_;
+    bc::chain::transaction_pool txpool_;
+    bc::node::transaction_indexer indexer_;
+    bc::node::session session_;
 
     block_notify_list notify_blocks_;
     transaction_notify_list notify_txs_;

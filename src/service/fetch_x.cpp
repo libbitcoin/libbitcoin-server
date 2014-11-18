@@ -5,6 +5,7 @@
 namespace obelisk {
 
 using namespace bc;
+using namespace bc::chain;
 
 // fetch_history stuff
 

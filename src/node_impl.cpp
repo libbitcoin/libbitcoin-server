@@ -8,6 +8,8 @@
 namespace obelisk {
 
 using namespace bc;
+using namespace bc::chain;
+using namespace bc::node;
 using namespace boost::posix_time;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -267,8 +269,8 @@ void node_impl::handle_mempool_store(
 
 void node_impl::reorganize(const std::error_code& ec,
     size_t fork_point,
-    const bc::blockchain::block_list& new_blocks,
-    const bc::blockchain::block_list& replaced_blocks)
+    const blockchain::block_list& new_blocks,
+    const blockchain::block_list& replaced_blocks)
 {
     // Don't bother publishing blocks when in the initial blockchain download.
     if (fork_point > 235866)
