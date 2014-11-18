@@ -41,6 +41,6 @@ AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
     [pkgconfigdir="$withval"], [pkgconfigdir='${libdir}/pkgconfig'])
 AC_SUBST([pkgconfigdir])
 
-AC_CONFIG_FILES([Makefile include/obelisk/Makefile src/Makefile libobelisk.pc])
+AC_CONFIG_FILES([Makefile libobelisk.pc])
 AC_OUTPUT
 
