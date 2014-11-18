@@ -156,6 +156,10 @@ bool node_impl::stop()
     std::error_code ec = ec_session.get_future().get();
     if (ec)
         log_error() << "Problem stopping session: " << ec.message();
+
+    // Safely close blockchain database.
+    chain_.stop();
+
     // Stop the threadpools.
     network_pool_.stop();
     disk_pool_.stop();
@@ -164,8 +168,6 @@ bool node_impl::stop()
     network_pool_.join();
     disk_pool_.join();
     mem_pool_.join();
-    // Safely close blockchain database.
-    chain_.stop();
     return true;
 }
 
