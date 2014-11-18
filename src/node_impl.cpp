@@ -59,7 +59,8 @@ node_impl::node_impl(config_type& config)
     network_(network_pool_),
     protocol_(network_pool_, hosts_, handshake_, network_),
     // Blockchain database service.
-    chain_(disk_pool_, config.blockchain_path),
+    chain_(disk_pool_, config.blockchain_path,
+        {config.history_db_active_height}),
     // Poll new blocks, tx memory pool and tx indexer.
     poller_(mem_pool_, chain_),
     txpool_(mem_pool_, chain_),

@@ -37,6 +37,7 @@ struct config_type
     bool listener_enabled = true;
     nodes_list nodes;
     bool log_requests = false;
+    unsigned int history_db_active_height = 0;
 };
 
 typedef std::map<std::string, std::string> config_map_type;

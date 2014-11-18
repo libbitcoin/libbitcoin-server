@@ -113,6 +113,8 @@ void load_config(config_type& config, boost::filesystem::path& config_path)
     root.lookupValue("listener_enabled", config.listener_enabled);
     load_nodes(root, config);
     root.lookupValue("log_requests", config.log_requests);
+    root.lookupValue("history_db_active_height",
+        config.history_db_active_height);
 }
 
 } // namespace obelisk
