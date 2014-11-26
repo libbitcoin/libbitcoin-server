@@ -37,16 +37,16 @@ subscribe_manager::subscribe_manager(node_impl& node)
     register_with_node(*this, node);
 }
 
+// Private class typedef so use a template function.
 template <typename AddressPrefix>
 bool deserialize_address(AddressPrefix& addr, const data_chunk& data)
 {
     auto deserial = make_deserializer(data.begin(), data.end());
     try
     {
-        uint8_t number_bits = deserial.read_byte();
-        addr.resize(number_bits);
-        data_chunk bitfield = deserial.read_data(addr.num_blocks());
-        boost::from_block_range(bitfield.begin(), bitfield.end(), addr);
+        uint8_t bitsize = deserial.read_byte();
+        data_chunk blocks = deserial.read_data(stealth_blocks_size(bitsize));
+        addr = AddressPrefix(bitsize, blocks);
     }
     catch (end_of_stream)
     {
@@ -186,7 +186,7 @@ void subscribe_manager::post_updates(const payment_address& address,
     for (subscription& sub: subs_)
     {
         const short_hash& addr = address.hash();
-        if (!stealth_match(sub.prefix, addr.data()))
+        if (!match(addr, sub.prefix))
             continue;
         outgoing_message update(
             sub.client_origin, "address.update", data);
