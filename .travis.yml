@@ -1,0 +1,29 @@
+###############################################################################
+# Copyright (c) 2011-2014 libbitcoin-server developers (see COPYING).
+#
+#         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+#
+###############################################################################
+
+language:
+    - cpp
+
+compiler:
+    - gcc
+
+before_install:
+
+    # Set package repository.
+    - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+
+    # Update the system.
+    - sudo apt-get -qq update
+
+    # Install GCC 4.8 (for C++11 support).
+    - sudo apt-get -qq install g++-4.8
+    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 50
+    
+script:
+
+    # Download and build libbitcoin-server and all dependencies.
+    - sudo ./install.sh 
