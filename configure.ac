@@ -1,46 +1,79 @@
-AC_INIT([obelisk], [0.1.1], [genjix@riseup.net])
-AC_USE_SYSTEM_EXTENSIONS
+###############################################################################
+# Copyright (c) 2011-2014 libbitcoin-server developers (see COPYING).
+#
+#         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+#
+###############################################################################
+
+# Standard declarations.
+#==============================================================================
+# Declare the required version of autoconf.
+AC_PREREQ([2.65])
+
+# Process command-line arguments and perform initialization and verification.
+AC_INIT([libbitcoin-server], [3.0.0], [eric@voskuil.org])
+
+# Do compilation tests.
 AC_LANG(C++)
+
+# Specify the temporary directory for build tools.
 AC_CONFIG_AUX_DIR([build-aux])
+
+# Specify the directory of additional local Autoconf macros.
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([-Wall -Werror])
+
+# Run macros for operation of generated Makefiles, enable non-recursive make.
+# Unless [foreign] is specified standard GNU files will be required,
+# specifically: AUTHORS, COPYING, INSTALL, NEWS, README and ChangeLog.
+AM_INIT_AUTOMAKE([subdir-objects])
+
+# Enable C and Posix extensions that may be disabled on certain platforms.
+AC_USE_SYSTEM_EXTENSIONS
+
+# Enable the archiver.
 AM_PROG_AR
+
+# Initialize libtool.
 LT_INIT
+
+# Determine C++ compiler to use.
 AC_PROG_CXX
+
+# Enable shared libraries if available, and static if they don't conflict.
 AC_PROG_LIBTOOL
+
+# Declare using the GNU C library (glibc).
 AC_GNU_SOURCE
-AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
+
+# Compute the canonical host-system type variable host, including host_os.
+AC_CANONICAL_HOST
+
+# Check for baseline language coverage in the compiler for the C++11 standard.
+AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
+
+# Enable silent rules option.
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-# Boost doesn't publish package configs but has m4 tests.
-# The current versions produce incorrect error message text.
-AX_BOOST_BASE([1.50],,
-    [AC_MSG_ERROR([Boost 1.50 or later is required but was not found.])])
-
+# Check for pkg-config.
 PKG_PROG_PKG_CONFIG
 
-PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.5.0])
-PKG_CHECK_MODULES([bitcoin_blockchain], [libbitcoin-blockchain >= 2.0.0])
-PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 2.0.0])
-PKG_CHECK_MODULES([sodium], [libsodium >= 0.6.0])
-PKG_CHECK_MODULES([zmq], [libzmq >= 4.0.0])
-PKG_CHECK_MODULES([czmq], [libczmq >= 2.2.0])
-PKG_CHECK_MODULES([czmqpp], [libczmq++ >= 0.4.1])
-PKG_CHECK_MODULES([configpp], [libconfig++ >= 1.3.2])
+# Declare environment variables that affect the build.
+#------------------------------------------------------------------------------
+AC_ARG_VAR([CC], "C compiler to use, such as gcc or clang")
+AC_ARG_VAR([CXX], "C++ compiler to use, such as g++ or clang++")
+AC_ARG_VAR([PKG_CONFIG_PATH], "Additional directories for package discovery.")
 
-# Do not add contextual build parameters in configuration.
-# http://stackoverflow.com/a/4680578
-OPTIMIZATIONS="-fvisibility=internal"
-WARNINGS="-Wall -Wextra -Wpedantic -Wno-missing-braces"
-SAFEGUARDS="-fvisibility-inlines-hidden -fstack-protector-all"
-AM_CXXFLAGS=$WARNINGS" "$SAFEGUARDS" "$OPTIMIZATIONS
-AC_SUBST([AM_CXXFLAGS])
 
-AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
-    [Path to the pkgconfig directory [[LIBDIR/pkgconfig]]]),
-    [pkgconfigdir="$withval"], [pkgconfigdir='${libdir}/pkgconfig'])
-AC_SUBST([pkgconfigdir])
+# Process options.
+#==============================================================================
 
-AC_CONFIG_FILES([Makefile libobelisk.pc])
+# Check dependencies.
+#==============================================================================
+
+# Set flags.
+#==============================================================================
+
+# Process outputs into templates.
+#==============================================================================
+AC_CONFIG_FILES([Makefile libbitcoin-server.pc ])
 AC_OUTPUT
-
