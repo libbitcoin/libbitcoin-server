@@ -26,4 +26,4 @@ before_install:
 script:
 
     # Download and build libbitcoin-server and all dependencies.
-    - sudo ./install.sh 
+    - sudo ./install.sh CXXFLAGS='-Os -s' --disable-shared --enable-static --build-gmp --build-boost

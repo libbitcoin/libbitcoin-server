@@ -66,12 +66,122 @@ AC_ARG_VAR([PKG_CONFIG_PATH], "Additional directories for package discovery.")
 
 # Process options.
 #==============================================================================
+# Implement --with-pkgconfigdir and output ${pkgconfigdir}.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING(--with-pkgconfigdir option)
+AC_ARG_WITH([pkgconfigdir],
+    AS_HELP_STRING([--with-pkgconfigdir=PATH],
+        [Path to pkgconfig directory. @<:@default=${libdir}/pkgconfig@:>@]),
+    [pkgconfigdir=$withval],
+    [pkgconfigdir=${libdir}/pkgconfig])
+AC_MSG_RESULT([$pkgconfigdir])
+AC_SUBST([pkgconfigdir])
+
+# Implement --with-tests and declare WITH_TESTS.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING(--with-tests option)
+AC_ARG_WITH([tests],
+    AS_HELP_STRING([--with-tests],
+        [Compile with unit tests. @<:@default=yes@:>@]),
+    [with_tests=$withval],
+    [with_tests=yes])
+AC_MSG_RESULT([$with_tests])
+AM_CONDITIONAL([WITH_TESTS], [test x$with_tests != xno])
+
+# Implement --enable-debug option and define DEBUG.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING(--enable-debug option)
+AC_ARG_ENABLE([debug],
+    AS_HELP_STRING([--enable-debug],
+        [Compile with debug assertions. @<:@default=no@:>@]),
+    [enable_debug=$enableval],
+    [enable_debug=no])
+AC_MSG_RESULT([$enable_debug])
+AS_IF([test x$enable_debug != xno], AC_DEFINE([DEBUG]))
+
+# Implement --enable-testnet option and define ENABLE_TESTNET.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING(--enable-testnet option)
+AC_ARG_ENABLE([testnet],
+    AS_HELP_STRING([--enable-testnet],
+        [Compile for testnet (deprecated). @<:@default=no@:>@]),
+    [enable_testnet=$enableval],
+    [enable_testnet=no])
+AC_MSG_RESULT([$enable_testnet])
+AS_IF([test x$enable_testnet != xno], AC_DEFINE([ENABLE_TESTNET]))
+
+# Inherit --enable-shared option and define BOOST_TEST_DYN_LINK.
+#------------------------------------------------------------------------------
+AS_IF([test x$enable_shared != xno], AC_DEFINE([BOOST_TEST_DYN_LINK]))
+
 
 # Check dependencies.
 #==============================================================================
+# Require Boost of at least version 1.49.0 if on linux.
+#------------------------------------------------------------------------------
+AS_CASE([${host_os}], [*linux*],
+    [AX_BOOST_BASE([1.49.0], [], [AC_MSG_ERROR(
+        [Boost 1.49.0 or later is required but was not found.])])])
+
+# Require Boost of at least version 1.54.0 if on darwin.
+#------------------------------------------------------------------------------
+AS_CASE([${host_os}], [*darwin*],
+    [AX_BOOST_BASE([1.54.0], [], [AC_MSG_ERROR(
+        [Boost 1.54.0 or later is required but was not found.])])])
+
+AS_IF([test x$with_tests = xyes], [AX_BOOST_UNIT_TEST_FRAMEWORK])
+
+# Require bitcoin-protocol of at least version 2.0.0 and output ${bitcoin_protocol_CFLAGS} and ${bitcoin_protocol_LIBS}.
+#------------------------------------------------------------------------------
+PKG_CHECK_MODULES([bitcoin_protocol], [libbitcoin-protocol >= 2.0.0])
+
 
 # Set flags.
 #==============================================================================
+# Warn on all stuff.
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-Wall],
+    [CXXFLAGS="$CXXFLAGS -Wall"])
+
+# Warn on extra stuff.
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-Wextra],
+    [CXXFLAGS="$CXXFLAGS -Wextra"])
+
+# Be really annoying.
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-Wpedantic],
+    [CXXFLAGS="$CXXFLAGS -Wpedantic"],
+    [AX_CHECK_COMPILE_FLAG([-pedantic],
+        [CXXFLAGS="$CXXFLAGS -pedantic"])])
+
+# Conform to style.
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-Wno-missing-braces],
+    [CXXFLAGS="$CXXFLAGS -Wno-missing-braces"])
+
+# Clean up Boost 1.49 headers (gcc).
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-Wno-unused-local-typedefs],
+    [CXXFLAGS="$CXXFLAGS -Wno-unused-local-typedefs"])
+
+# Clean up protobuf headers.
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-Wno-unused-parameter],
+    [CXXFLAGS="$CXXFLAGS -Wno-unused-parameter"])
+
+# Protect stack.
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-fstack-protector],
+    [AX_CHECK_LINK_FLAG([-fstack-protector],
+        [CXXFLAGS="$CXXFLAGS -fstack-protector"])])
+
+# Protect stack comprehensively.
+#------------------------------------------------------------------------------
+AX_CHECK_COMPILE_FLAG([-fstack-protector-all],
+    [AX_CHECK_LINK_FLAG([-fstack-protector-all],
+        [CXXFLAGS="$CXXFLAGS -fstack-protector-all"])])
+
 
 # Process outputs into templates.
 #==============================================================================
