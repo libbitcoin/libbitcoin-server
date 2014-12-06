@@ -143,9 +143,9 @@ if [[ $PREFIX ]]; then
         with_boost="--with-boost=$PREFIX"
     fi
     
-    # Set public prefix_flags variable (because GMP has no pkg-config).
+    # Set public gmp_flags variable (because GMP has no pkg-config).
     if [[ $BUILD_GMP == yes ]]; then
-        prefix_flags="CPPFLAGS=-I$PREFIX/include LDFLAGS=-L$PREFIX/lib"
+        gmp_flags="CPPFLAGS=-I$PREFIX/include LDFLAGS=-L$PREFIX/lib"
     fi
     
     # Set public prefix variable (to tell Boost where to build).
@@ -157,7 +157,7 @@ fi
 echo "Published dynamic options:"
 echo "  boost_link: $boost_link"
 echo "  prefix: $prefix"
-echo "  prefix_flags: $prefix_flags"
+echo "  gmp_flags: $gmp_flags"
 echo "  with_boost: $with_boost"
 echo "  with_pkgconfigdir: $with_pkgconfigdir"
 
@@ -212,7 +212,7 @@ SECP256K1_OPTIONS=\
 "--enable-benchmark=no "\
 "--enable-tests=no "\
 "--enable-endomorphism=no "\
-"${prefix_flags} "
+"${gmp_flags} "
 
 # Define protobuf options.
 #------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ CZMQPP_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_OPTIONS=\
 "--without-tests "\
-"${prefix_flags} "\
+"${gmp_flags} "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
@@ -253,12 +253,14 @@ BITCOIN_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_PROTOCOL_OPTIONS=\
 "--without-tests "\
+"${gmp_flags} "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
 # Define bitcoin-server options.
 #------------------------------------------------------------------------------
 BITCOIN_SERVER_OPTIONS=\
+"${gmp_flags} "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
