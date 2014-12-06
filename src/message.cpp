@@ -27,7 +27,7 @@ bool incoming_message::recv(czmqpp::socket& socket)
     const data_chunk& raw_id = *it;
     if (raw_id.size() != 4)
         return false;
-    id_ = from_little_endian<uint32_t>(raw_id.begin());
+    id_ = from_little_endian_unsafe<uint32_t>(raw_id.begin());
     ++it;
     // [ DATA ]
     data_ = *it;
