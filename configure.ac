@@ -85,16 +85,16 @@ AC_ARG_WITH([tests],
 AC_MSG_RESULT([$with_tests])
 AM_CONDITIONAL([WITH_TESTS], [test x$with_tests != xno])
 
-# Implement --enable-debug option and define DEBUG.
+# Implement --enable-ndebug option and define NDEBUG.
 #------------------------------------------------------------------------------
-AC_MSG_CHECKING(--enable-debug option)
-AC_ARG_ENABLE([debug],
-    AS_HELP_STRING([--enable-debug],
-        [Compile with debug assertions. @<:@default=no@:>@]),
-    [enable_debug=$enableval],
-    [enable_debug=no])
-AC_MSG_RESULT([$enable_debug])
-AS_IF([test x$enable_debug != xno], AC_DEFINE([DEBUG]))
+AC_MSG_CHECKING(--enable-ndebug option)
+AC_ARG_ENABLE([ndebug],
+    AS_HELP_STRING([--enable-ndebug],
+        [Compile without debug assertions. @<:@default=yes@:>@]),
+    [enable_ndebug=$enableval],
+    [enable_ndebug=yes])
+AC_MSG_RESULT([$enable_ndebug])
+AS_IF([test x$enable_ndebug != xno], AC_DEFINE([NDEBUG]))
 
 # Implement --enable-testnet option and define ENABLE_TESTNET.
 #------------------------------------------------------------------------------
@@ -205,19 +205,17 @@ AS_CASE([${CC}], [*],
         [AX_CHECK_LINK_FLAG([-fstack-protector-all],
             [CXXFLAGS="$CXXFLAGS -fstack-protector-all"])])])
 
-# Hide inlines from external libs (disabled pending review).
+# Hide internal functions from external libs.
 #------------------------------------------------------------------------------
-AS_CASE([${CC}], [*disabled*],
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-fvisibility-hidden],
+        [CXXFLAGS="$CXXFLAGS -fvisibility-hidden"])])
+
+# Hide inlines from external libs.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
     [AX_CHECK_COMPILE_FLAG([-fvisibility-inlines-hidden],
         [CXXFLAGS="$CXXFLAGS -fvisibility-inlines-hidden"])])
-
-# Set visibility to internal or hidden (disabled pending review).
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*disabled*],
-    [AX_CHECK_COMPILE_FLAG([-fvisibility=internal],
-        [CXXFLAGS="$CXXFLAGS -fvisibility=internal"],
-        [AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],
-            [CXXFLAGS="$CXXFLAGS -fvisibility=hidden"])])])
 
 
 # Process outputs into templates.
