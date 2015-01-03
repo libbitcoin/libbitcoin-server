@@ -56,7 +56,7 @@ void transaction_pool_fetch_transaction(node_impl& node,
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
     log_debug(LOG_REQUEST) << "transaction_pool.fetch_transaction("
-        << tx_hash << ")";
+        << encode_hash(tx_hash) << ")";
     node.transaction_pool().fetch(tx_hash,
         std::bind(transaction_fetched, _1, _2, request, queue_send));
 }

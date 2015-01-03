@@ -234,7 +234,7 @@ void node_impl::recv_transaction(const std::error_code& ec,
         const std::error_code& ec)
     {
         log_debug() << "Confirm transaction: " << ec.message()
-            << " " << hash_transaction(tx);
+            << " " << encode_hash(hash_transaction(tx));
         // Always try to deindex tx.
         // The error could be error::forced_removal from txpool.
         indexer_.deindex(tx, handle_deindex);
@@ -256,7 +256,7 @@ void node_impl::handle_mempool_store(
     {
         log_warning()
             << "Failed to store transaction in mempool "
-            << hash_transaction(tx) << ": " << ec.message();
+            << encode_hash(hash_transaction(tx)) << ": " << ec.message();
         return;
     }
     auto handle_index = [](const std::error_code& ec)
@@ -265,7 +265,7 @@ void node_impl::handle_mempool_store(
             log_error() << "Index error: " << ec.message();
     };
     indexer_.index(tx, handle_index);
-    log_info() << "Accepted transaction: " << hash_transaction(tx);
+    log_info() << "Accepted transaction: " << encode_hash(hash_transaction(tx));
     for (auto notify: notify_txs_)
         notify(tx);
 }

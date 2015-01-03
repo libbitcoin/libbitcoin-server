@@ -33,7 +33,7 @@ void blockchain_fetch_transaction(node_impl& node,
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
     log_debug(LOG_REQUEST) << "blockchain.fetch_transaction("
-        << tx_hash << ")";
+        << encode_hash(tx_hash) << ")";
     node.blockchain().fetch_transaction(tx_hash,
         std::bind(transaction_fetched, _1, _2, request, queue_send));
 }
@@ -308,7 +308,7 @@ void blockchain_fetch_stealth(node_impl& node,
     auto deserial = make_deserializer(data.begin(), data.end());
     // number_bits
     uint8_t bitsize = deserial.read_byte();
-    if (data.size() != 1 + stealth_blocks_size(bitsize) + 4)
+    if (data.size() != 1 + binary_type::blocks_size(bitsize) + 4)
     {
         log_error(LOG_WORKER)
             << "Incorrect data size (" << data.size()
@@ -316,8 +316,8 @@ void blockchain_fetch_stealth(node_impl& node,
         return;
     }
     // actual bitfield data
-    data_chunk blocks = deserial.read_data(stealth_blocks_size(bitsize));
-    stealth_prefix prefix(bitsize, blocks);
+    data_chunk blocks = deserial.read_data(binary_type::blocks_size(bitsize));
+    binary_type prefix(bitsize, blocks);
     // from_height
     size_t from_height = deserial.read_4_bytes();
     node.blockchain().fetch_stealth(prefix,

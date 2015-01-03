@@ -45,7 +45,8 @@ bool deserialize_address(AddressPrefix& addr, const data_chunk& data)
     try
     {
         uint8_t bitsize = deserial.read_byte();
-        data_chunk blocks = deserial.read_data(stealth_blocks_size(bitsize));
+        data_chunk blocks = deserial.read_data(
+            binary_type::blocks_size(bitsize));
         addr = AddressPrefix(bitsize, blocks);
     }
     catch (end_of_stream)
@@ -185,8 +186,8 @@ void subscribe_manager::post_updates(const payment_address& address,
     // Send the result to everyone interested.
     for (subscription& sub: subs_)
     {
-        const short_hash& addr = address.hash();
-        if (!match(addr, sub.prefix))
+        binary_type match(sub.prefix.size(), address.hash());
+        if (match != sub.prefix)
             continue;
         outgoing_message update(
             sub.client_origin, "address.update", data);
@@ -205,7 +206,7 @@ void subscribe_manager::sweep_expired()
         if (sub.expiry_time < now)
         {
             log_debug(LOG_SUBSCRIBER) << "Deleting expired subscription: "
-                << sub.prefix << " from " << sub.client_origin;
+                << sub.prefix << " from " << encode_base16(sub.client_origin);
             it = subs_.erase(it);
         }
         else

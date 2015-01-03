@@ -128,8 +128,8 @@ void request_worker::poll()
         if (it != handlers_.end())
         {
             if (log_requests_)
-                log_debug(LOG_REQUEST)
-                    << request.command() << " from " << request.origin();
+                log_debug(LOG_REQUEST) << request.command()
+                    << " from " << encode_base16(request.origin());
             it->second(request,
                 std::bind(&send_worker::queue_send, &sender_, _1));
         }
@@ -137,7 +137,7 @@ void request_worker::poll()
         {
             log_warning(LOG_WORKER)
                 << "Unhandled request: " << request.command()
-                << " from " << request.origin();
+                << " from " << encode_base16(request.origin());
         }
     }
     else if (which == wakeup_socket_)

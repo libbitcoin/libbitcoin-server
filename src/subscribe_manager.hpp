@@ -23,7 +23,7 @@ public:
         const bc::transaction_type& tx);
 
 private:
-    typedef bc::stealth_prefix address_prefix;
+    typedef bc::binary_type address_prefix;
 
     struct subscription
     {
