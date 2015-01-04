@@ -74,17 +74,6 @@ AC_ARG_WITH([pkgconfigdir],
 AC_MSG_RESULT([$pkgconfigdir])
 AC_SUBST([pkgconfigdir])
 
-# Implement --with-tests and declare WITH_TESTS.
-#------------------------------------------------------------------------------
-AC_MSG_CHECKING(--with-tests option)
-AC_ARG_WITH([tests],
-    AS_HELP_STRING([--with-tests],
-        [Compile with unit tests. @<:@default=yes@:>@]),
-    [with_tests=$withval],
-    [with_tests=yes])
-AC_MSG_RESULT([$with_tests])
-AM_CONDITIONAL([WITH_TESTS], [test x$with_tests != xno])
-
 # Implement --enable-ndebug option and define NDEBUG.
 #------------------------------------------------------------------------------
 AC_MSG_CHECKING(--enable-ndebug option)
@@ -125,8 +114,6 @@ AS_CASE([${CC}], [*gcc*],
 AS_CASE([${CC}], [*clang*],
     [AX_BOOST_BASE([1.54.0], [], [AC_MSG_ERROR(
         [Boost 1.54.0 or later is required but was not found.])])])
-
-AS_IF([test x$with_tests = xyes], [AX_BOOST_UNIT_TEST_FRAMEWORK])
 
 # Require config++ of at least version 1.3.2 and output ${config___CFLAGS} and ${config___LIBS}.
 #------------------------------------------------------------------------------
