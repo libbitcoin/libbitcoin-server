@@ -1,5 +1,7 @@
 doc_DATA = README INSTALL COPYING
 
+pkgconfig_DATA = libbitcoin-server.pc
+
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = subdir-objects
 
@@ -21,21 +23,17 @@ obelisk_SOURCES = \
     src/service/transaction_pool.cpp
 
 obelisk_CPPFLAGS = \
-    ${bitcoin_CFLAGS} \
-    ${bitcoin_blockchain_CFLAGS} \
+    ${config___CFLAGS} \
+    ${sodium_CFLAGS} \
+    ${czmq___CFLAGS} \
     ${bitcoin_node_CFLAGS} \
-    ${sodium_LIBS} \
-    ${czmqpp_LIBS} \
-    ${configpp_LIBS} \
     -DSYSCONFDIR=\"${sysconfdir}\"
 
 obelisk_LDADD = \
-    ${bitcoin_LIBS} \
-    ${bitcoin_blockchain_LIBS} \
-    ${bitcoin_node_LIBS} \
+    ${config___LIBS} \
     ${sodium_LIBS} \
-    ${czmqpp_LIBS} \
-    ${configpp_LIBS}
+    ${czmq___LIBS} \
+    ${bitcoin_node_LIBS}
 
 confdir=${sysconfdir}/obelisk
 conf_DATA = worker.cfg
