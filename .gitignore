@@ -16,6 +16,8 @@ libobelisk.pc
 /libtool
 .dirstamp
 
-/src/obbalancer
-/src/obworker
+/bin/
+/obj/
+
+/src/bitcoin_server
 
