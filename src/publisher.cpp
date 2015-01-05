@@ -75,7 +75,7 @@ void publisher::send_blk(uint32_t height, const block_type& blk)
     BITCOIN_ASSERT(raw_height.size() == 4);
     // Serialize the 80 byte header.
     data_chunk raw_blk_header(bc::satoshi_raw_size(blk.header));
-    auto it = satoshi_save(blk.header, raw_blk_header.begin());
+    DEBUG_ONLY(auto it =) satoshi_save(blk.header, raw_blk_header.begin());
     BITCOIN_ASSERT(it == raw_blk_header.end());
     BITCOIN_ASSERT(raw_blk_header.size() == 80);
     // Construct the message.
@@ -100,7 +100,7 @@ void publisher::send_blk(uint32_t height, const block_type& blk)
 void publisher::send_tx(const transaction_type& tx)
 {
     data_chunk raw_tx(bc::satoshi_raw_size(tx));
-    auto it = satoshi_save(tx, raw_tx.begin());
+    DEBUG_ONLY(auto it =) satoshi_save(tx, raw_tx.begin());
     BITCOIN_ASSERT(it == raw_tx.end());
     czmqpp::message message;
     message.append(raw_tx);
