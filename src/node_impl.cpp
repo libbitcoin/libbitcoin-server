@@ -268,8 +268,8 @@ void node_impl::recv_transaction(const std::error_code& ec,
 }
 
 void node_impl::handle_mempool_store(
-    const std::error_code& ec, const index_list& unconfirmed,
-    const transaction_type& tx, network::channel_ptr node)
+    const std::error_code& ec, const index_list& /* unconfirmed */,
+    const transaction_type& tx, network::channel_ptr /* node */)
 {
     if (ec)
     {
@@ -289,10 +289,10 @@ void node_impl::handle_mempool_store(
         notify(tx);
 }
 
-void node_impl::reorganize(const std::error_code& ec,
+void node_impl::reorganize(const std::error_code& /* ec */,
     size_t fork_point,
     const blockchain::block_list& new_blocks,
-    const blockchain::block_list& replaced_blocks)
+    const blockchain::block_list& /* replaced_blocks */)
 {
     // Don't bother publishing blocks when in the initial blockchain download.
     if (fork_point > 235866)

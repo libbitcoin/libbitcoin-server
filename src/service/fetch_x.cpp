@@ -99,7 +99,7 @@ void transaction_fetched(const std::error_code& ec,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    auto it = satoshi_save(tx, serial.iterator());
+    DEBUG_ONLY(auto it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(it == result.end());
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction() finished. Sending response.";
