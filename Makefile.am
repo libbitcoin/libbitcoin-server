@@ -1,13 +1,22 @@
+#
+# documentation
+#
 doc_DATA = README INSTALL COPYING
 
+#
+# pkg-config
+#
 pkgconfig_DATA = libbitcoin-server.pc
 
+# look for macros in the m4 subdirectory
 ACLOCAL_AMFLAGS = -I m4
-AUTOMAKE_OPTIONS = subdir-objects
 
-bin_PROGRAMS = obelisk
+#
+# console application
+#
+bin_PROGRAMS = bitcoin_server
 
-obelisk_SOURCES = \
+bitcoin_server_SOURCES = \
     src/message.cpp \
     src/config.cpp \
     src/echo.cpp \
@@ -22,19 +31,23 @@ obelisk_SOURCES = \
     src/service/protocol.cpp \
     src/service/transaction_pool.cpp
 
-obelisk_CPPFLAGS = \
+bitcoin_server_CPPFLAGS = \
+    -I${srcdir}/include \
     ${config___CFLAGS} \
     ${sodium_CFLAGS} \
     ${czmq___CFLAGS} \
-    ${bitcoin_node_CFLAGS} \
-    -DSYSCONFDIR=\"${sysconfdir}\"
+    ${bitcoin_node_CFLAGS}
 
-obelisk_LDADD = \
+bitcoin_server_LDADD = \
     ${config___LIBS} \
     ${sodium_LIBS} \
     ${czmq___LIBS} \
     ${bitcoin_node_LIBS}
 
-confdir=${sysconfdir}/obelisk
-conf_DATA = worker.cfg
-
+#
+# configuration file
+# TODO: incorporate defaults and default to relative path.
+#
+confdir=${sysconfdir}/libbitcoin
+conf_DATA = server.cfg
+bitcoin_server_CPPFLAGS += -DSYSCONFDIR=\"${sysconfdir}\"
