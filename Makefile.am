@@ -14,6 +14,7 @@ obelisk_SOURCES = \
     src/node_impl.cpp \
     src/publisher.cpp \
     src/subscribe_manager.cpp \
+    src/service/compat.cpp \
     src/service/fullnode.cpp \
     src/service/fetch_x.cpp \
     src/service/blockchain.cpp \

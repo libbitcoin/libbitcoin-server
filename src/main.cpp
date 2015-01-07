@@ -10,6 +10,7 @@
 #include "service/fullnode.hpp"
 #include "service/protocol.hpp"
 #include "service/transaction_pool.hpp"
+#include "service/compat.hpp"
 #include "subscribe_manager.hpp"
 #include "worker.hpp"
 
@@ -65,7 +66,7 @@ int main(int argc, char** argv)
         std::bind(&subscribe_manager::subscribe, &addr_sub, _1, _2));
     worker.attach("address.renew",
         std::bind(&subscribe_manager::renew, &addr_sub, _1, _2));
-    attach("address.fetch_history", fullnode_fetch_history);
+    attach("address.fetch_history2", fullnode_fetch_history);
     attach("blockchain.fetch_history", blockchain_fetch_history);
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
@@ -81,6 +82,8 @@ int main(int argc, char** argv)
     attach("transaction_pool.validate", transaction_pool_validate);
     attach("transaction_pool.fetch_transaction",
         transaction_pool_fetch_transaction);
+    // Obsolete command for backwards compatibility.
+    attach("address.fetch_history", COMPAT_fetch_history);
     // Start the node last so that all subscriptions to new blocks
     // don't miss anything.
     if (!node.start(config))
