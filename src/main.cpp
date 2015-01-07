@@ -1,9 +1,28 @@
+/*
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ *
+ * This file is part of libbitcoin-server.
+ *
+ * libbitcoin-server is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License with
+ * additional permissions to the one published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version. For more information see LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <signal.h>
 #include <string>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include "message.hpp"
 #include "echo.hpp"
+#include "message.hpp"
 #include "node_impl.hpp"
 #include "publisher.hpp"
 #include "service/blockchain.hpp"
@@ -14,7 +33,7 @@
 #include "subscribe_manager.hpp"
 #include "worker.hpp"
 
-using namespace obelisk;
+using namespace server;
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -31,7 +50,7 @@ int main(int argc, char** argv)
 {
     config_type config;
     path config_path = argc < 2 ?
-        path(system_config_directory()) / "obelisk" / "worker.cfg" :
+        path(system_config_directory()) / "libbitcoin" / "server.cfg" :
         path(argv[1]);
 
     load_config(config, config_path);

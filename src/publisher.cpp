@@ -1,9 +1,28 @@
+/*
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ *
+ * This file is part of libbitcoin-server.
+ *
+ * libbitcoin-server is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License with
+ * additional permissions to the one published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version. For more information see LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "echo.hpp"
 #include "publisher.hpp"
 
 #define LOG_PUBLISHER LOG_WORKER
 
-namespace obelisk {
+namespace server {
 
 using namespace bc;
 using std::placeholders::_1;
@@ -56,7 +75,7 @@ void publisher::send_blk(uint32_t height, const block_type& blk)
     BITCOIN_ASSERT(raw_height.size() == 4);
     // Serialize the 80 byte header.
     data_chunk raw_blk_header(bc::satoshi_raw_size(blk.header));
-    auto it = satoshi_save(blk.header, raw_blk_header.begin());
+    DEBUG_ONLY(auto it =) satoshi_save(blk.header, raw_blk_header.begin());
     BITCOIN_ASSERT(it == raw_blk_header.end());
     BITCOIN_ASSERT(raw_blk_header.size() == 80);
     // Construct the message.
@@ -81,7 +100,7 @@ void publisher::send_blk(uint32_t height, const block_type& blk)
 void publisher::send_tx(const transaction_type& tx)
 {
     data_chunk raw_tx(bc::satoshi_raw_size(tx));
-    auto it = satoshi_save(tx, raw_tx.begin());
+    DEBUG_ONLY(auto it =) satoshi_save(tx, raw_tx.begin());
     BITCOIN_ASSERT(it == raw_tx.end());
     czmqpp::message message;
     message.append(raw_tx);
@@ -92,5 +111,5 @@ void publisher::send_tx(const transaction_type& tx)
     }
 }
 
-} // namespace obelisk
+} // namespace server
 

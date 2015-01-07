@@ -1,8 +1,27 @@
+/*
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ *
+ * This file is part of libbitcoin-server.
+ *
+ * libbitcoin-server is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License with
+ * additional permissions to the one published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version. For more information see LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <bitcoin/bitcoin.hpp>
 #include "echo.hpp"
 #include "worker.hpp"
 
-namespace obelisk {
+namespace server {
 
 using namespace bc;
 using std::placeholders::_1;
@@ -25,7 +44,7 @@ void send_worker::queue_send(const outgoing_message& message)
 {
     czmqpp::socket socket(context_, ZMQ_PUSH);
     BITCOIN_ASSERT(socket.self());
-    int rc = socket.connect("inproc://trigger-send");
+    DEBUG_ONLY(int rc =) socket.connect("inproc://trigger-send");
     BITCOIN_ASSERT(rc == 0);
     message.send(socket);
     socket.destroy(context_);
@@ -41,7 +60,7 @@ request_worker::request_worker()
     BITCOIN_ASSERT(socket_.self());
     BITCOIN_ASSERT(wakeup_socket_.self());
     BITCOIN_ASSERT(heartbeat_socket_.self());
-    int rc = wakeup_socket_.bind("inproc://trigger-send");
+    DEBUG_ONLY(int rc =) wakeup_socket_.bind("inproc://trigger-send");
     BITCOIN_ASSERT(rc != -1);
 }
 bool request_worker::start(config_type& config)
@@ -167,5 +186,5 @@ void request_worker::publish_heartbeat()
     ++counter;
 }
 
-} // namespace obelisk
+} // namespace server
 

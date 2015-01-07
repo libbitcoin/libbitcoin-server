@@ -1,9 +1,28 @@
+/*
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ *
+ * This file is part of libbitcoin-server.
+ *
+ * libbitcoin-server is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License with
+ * additional permissions to the one published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version. For more information see LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "service/util.hpp"
 #include "subscribe_manager.hpp"
 
 #define LOG_SUBSCRIBER "subscriber"
 
-namespace obelisk {
+namespace server {
 
 using namespace bc;
 using std::placeholders::_1;
@@ -181,7 +200,7 @@ void subscribe_manager::post_updates(const payment_address& address,
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
     // Now write the tx part.
-    auto rawtx_end_it = satoshi_save(tx, serial.iterator());
+    DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(rawtx_end_it == data.end());
     // Send the result to everyone interested.
     for (subscription& sub: subs_)
@@ -214,5 +233,5 @@ void subscribe_manager::sweep_expired()
     }
 }
 
-} // namespace obelisk
+} // namespace server
 

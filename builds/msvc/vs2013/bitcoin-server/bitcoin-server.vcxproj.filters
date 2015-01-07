@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{86b385b3-059d-41a9-8455-6e217c481c69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\service">
+      <UniqueIdentifier>{4897c614-3d98-47d0-a4f3-b7e2b5304397}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\service\util.hpp">
+      <Filter>src\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\blockchain.hpp">
+      <Filter>src\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\fetch_x.hpp">
+      <Filter>src\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\fullnode.hpp">
+      <Filter>src\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\protocol.hpp">
+      <Filter>src\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\transaction_pool.hpp">
+      <Filter>src\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\config.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\echo.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\message.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\node_impl.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\publisher.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\subscribe_manager.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\service\blockchain.cpp">
+      <Filter>src\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\fetch_x.cpp">
+      <Filter>src\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\fullnode.cpp">
+      <Filter>src\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\protocol.cpp">
+      <Filter>src\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\service\transaction_pool.cpp">
+      <Filter>src\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\config.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\echo.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\node_impl.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\publisher.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\subscribe_manager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\worker.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

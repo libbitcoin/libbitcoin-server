@@ -1,8 +1,27 @@
+/*
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ *
+ * This file is part of libbitcoin-server.
+ *
+ * libbitcoin-server is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License with
+ * additional permissions to the one published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version. For more information see LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "../echo.hpp"
 #include "fetch_x.hpp"
 #include "util.hpp"
 
-namespace obelisk {
+namespace server {
 
 using namespace bc;
 using namespace bc::chain;
@@ -80,7 +99,7 @@ void transaction_fetched(const std::error_code& ec,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    auto it = satoshi_save(tx, serial.iterator());
+    DEBUG_ONLY(auto it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(it == result.end());
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction() finished. Sending response.";
@@ -88,5 +107,5 @@ void transaction_fetched(const std::error_code& ec,
     queue_send(response);
 }
 
-} // namespace obelisk
+} // namespace server
 
