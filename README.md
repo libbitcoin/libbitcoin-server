@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/libbitcoin/libbitcoin-node.svg?branch=master)](https://travis-ci.org/libbitcoin/libbitcoin-server)
 
-# Libbitcoin Node
+# Libbitcoin Server
 
 *Bitcoin full node and query server*
 
