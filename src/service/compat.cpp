@@ -3,7 +3,7 @@
 #include "fetch_x.hpp"
 #include "compat.hpp"
 
-namespace obelisk {
+namespace server {
 
 using namespace bc;
 using namespace bc::chain;
@@ -133,6 +133,6 @@ void COMPAT_send_history_result(
     queue_send(response);
 }
 
-} // namespace obelisk
+} // namespace server
 
 
