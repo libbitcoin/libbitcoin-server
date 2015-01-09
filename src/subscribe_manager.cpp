@@ -56,13 +56,22 @@ subscribe_manager::subscribe_manager(node_impl& node)
     register_with_node(*this, node);
 }
 
+subscribe_type read_subscribe_type(uint8_t type_byte)
+{
+    if (type_byte == 0)
+        return subscribe_type::address;
+    return subscribe_type::stealth;
+}
+
 // Private class typedef so use a template function.
 template <typename AddressPrefix>
-bool deserialize_address(AddressPrefix& addr, const data_chunk& data)
+bool deserialize_address(AddressPrefix& addr, subscribe_type& type,
+    const data_chunk& data)
 {
     auto deserial = make_deserializer(data.begin(), data.end());
     try
     {
+        type = read_subscribe_type(deserial.read_byte());
         uint8_t bitsize = deserial.read_byte();
         data_chunk blocks = deserial.read_data(
             binary_type::blocks_size(bitsize));
@@ -87,7 +96,8 @@ std::error_code subscribe_manager::add_subscription(
     const incoming_message& request, queue_send_callback queue_send)
 {
     address_prefix addr_key;
-    if (!deserialize_address(addr_key, request.data()))
+    subscribe_type type;
+    if (!deserialize_address(addr_key, type, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
         return error::bad_stream;
@@ -99,7 +109,7 @@ std::error_code subscribe_manager::add_subscription(
     if (subs_.size() >= subscribe_limit_)
         return error::pool_filled;
     subs_.emplace_back(subscription{
-        addr_key, expire_time, request.origin(), queue_send});
+        addr_key, expire_time, request.origin(), queue_send, type});
     return std::error_code();
 }
 void subscribe_manager::do_subscribe(
@@ -124,7 +134,8 @@ void subscribe_manager::do_renew(
     const incoming_message& request, queue_send_callback queue_send)
 {
     address_prefix addr_key;
-    if (!deserialize_address(addr_key, request.data()))
+    subscribe_type type;
+    if (!deserialize_address(addr_key, type, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
         return;
@@ -133,8 +144,10 @@ void subscribe_manager::do_renew(
     // Find entry and update expiry_time.
     for (subscription& sub: subs_)
     {
-        // Find matching prefix subscription.
+        // Find matching subscription.
         if (sub.prefix != addr_key)
+            continue;
+        if (sub.type != type)
             continue;
         // Only update subscriptions which were created by
         // the same client as this request originated from.
@@ -152,29 +165,39 @@ void subscribe_manager::do_renew(
 }
 
 void subscribe_manager::submit(
-    size_t height, const bc::hash_digest& block_hash,
-    const bc::transaction_type& tx)
+    size_t height, const hash_digest& block_hash,
+    const transaction_type& tx)
 {
     strand_.queue(
         &subscribe_manager::do_submit, this, height, block_hash, tx);
 }
 void subscribe_manager::do_submit(
-    size_t height, const bc::hash_digest& block_hash,
-    const bc::transaction_type& tx)
+    size_t height, const hash_digest& block_hash,
+    const transaction_type& tx)
 {
     for (const transaction_input_type& input: tx.inputs)
     {
         payment_address addr;
-        if (!extract(addr, input.script))
+        if (extract(addr, input.script))
+        {
+            post_updates(addr, height, block_hash, tx);
             continue;
-        post_updates(addr, height, block_hash, tx);
+        }
     }
     for (const transaction_output_type& output: tx.outputs)
     {
         payment_address addr;
-        if (!extract(addr, output.script))
+        if (extract(addr, output.script))
+        {
+            post_updates(addr, height, block_hash, tx);
             continue;
-        post_updates(addr, height, block_hash, tx);
+        }
+        if (output.script.type() == payment_type::stealth_info)
+        {
+            binary_type prefix = calculate_stealth_prefix(output.script);
+            post_stealth_updates(prefix, height, block_hash, tx);
+            continue;
+        }
     }
     // Periodicially sweep old expired entries.
     // Use the block 10 minute window as a periodic trigger.
@@ -183,8 +206,8 @@ void subscribe_manager::do_submit(
 }
 
 void subscribe_manager::post_updates(const payment_address& address,
-    size_t height, const bc::hash_digest& block_hash,
-    const bc::transaction_type& tx)
+    size_t height, const hash_digest& block_hash,
+    const transaction_type& tx)
 {
     // [ addr,version ] (1 byte)
     // [ addr.hash ] (20 bytes)
@@ -205,11 +228,46 @@ void subscribe_manager::post_updates(const payment_address& address,
     // Send the result to everyone interested.
     for (subscription& sub: subs_)
     {
+        // Only interested in address subscriptions.
+        if (sub.type != subscribe_type::address)
+            continue;
         binary_type match(sub.prefix.size(), address.hash());
         if (match != sub.prefix)
             continue;
         outgoing_message update(
             sub.client_origin, "address.update", data);
+        sub.queue_send(update);
+    }
+}
+
+void subscribe_manager::post_stealth_updates(const binary_type& prefix,
+    size_t height, const hash_digest& block_hash,
+    const transaction_type& tx)
+{
+    // [ bitfield ] (4 bytes)
+    // [ height ] (4 bytes)
+    // [ block_hash ] (32 bytes)
+    // [ tx ]
+    constexpr size_t info_size = 4 + 4 + hash_size;
+    data_chunk data(info_size + satoshi_raw_size(tx));
+    auto serial = make_serializer(data.begin());
+    serial.write_data(prefix.blocks());
+    serial.write_4_bytes(height);
+    serial.write_hash(block_hash);
+    BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
+    // Now write the tx part.
+    auto rawtx_end_it = satoshi_save(tx, serial.iterator());
+    BITCOIN_ASSERT(rawtx_end_it == data.end());
+    // Send the result to everyone interested.
+    for (subscription& sub: subs_)
+    {
+        if (sub.type != subscribe_type::stealth)
+            continue;
+        binary_type match(sub.prefix.size(), prefix.blocks());
+        if (match != sub.prefix)
+            continue;
+        outgoing_message update(
+            sub.client_origin, "address.stealth_update", data);
         sub.queue_send(update);
     }
 }
