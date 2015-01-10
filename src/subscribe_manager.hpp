@@ -29,6 +29,12 @@
 
 namespace server {
 
+enum class subscribe_type
+{
+    address = 0,
+    stealth = 1
+};
+
 class subscribe_manager
 {
 public:
@@ -50,6 +56,7 @@ private:
         boost::posix_time::ptime expiry_time;
         bc::data_chunk client_origin;
         queue_send_callback queue_send;
+        subscribe_type type;
     };
 
     typedef std::vector<subscription> subscription_list;
@@ -65,6 +72,9 @@ private:
         size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
     void post_updates(const bc::payment_address& address,
+        size_t height, const bc::hash_digest& block_hash,
+        const bc::transaction_type& tx);
+    void post_stealth_updates(const bc::binary_type& prefix,
         size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
 
