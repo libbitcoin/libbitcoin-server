@@ -71,6 +71,7 @@
     <ClInclude Include="..\..\..\..\src\node_impl.hpp" />
     <ClInclude Include="..\..\..\..\src\publisher.hpp" />
     <ClInclude Include="..\..\..\..\src\service\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\src\service\compat.hpp" />
     <ClInclude Include="..\..\..\..\src\service\fetch_x.hpp" />
     <ClInclude Include="..\..\..\..\src\service\fullnode.hpp" />
     <ClInclude Include="..\..\..\..\src\service\protocol.hpp" />
@@ -90,6 +91,7 @@
     <ClCompile Include="..\..\..\..\src\node_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\publisher.cpp" />
     <ClCompile Include="..\..\..\..\src\service\blockchain.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\compat.cpp" />
     <ClCompile Include="..\..\..\..\src\service\fetch_x.cpp" />
     <ClCompile Include="..\..\..\..\src\service\fullnode.cpp" />
     <ClCompile Include="..\..\..\..\src\service\protocol.cpp" />

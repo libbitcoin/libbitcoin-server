@@ -256,7 +256,7 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
     // Now write the tx part.
-    auto rawtx_end_it = satoshi_save(tx, serial.iterator());
+    DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(rawtx_end_it == data.end());
     // Send the result to everyone interested.
     for (subscription& sub: subs_)
