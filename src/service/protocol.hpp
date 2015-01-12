@@ -29,6 +29,9 @@ class node_impl;
 void protocol_broadcast_transaction(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send);
 
+void protocol_total_connections(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send);
+
 } // namespace server
 
 #endif

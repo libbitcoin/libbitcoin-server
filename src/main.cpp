@@ -98,6 +98,7 @@ int main(int argc, char** argv)
     attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
     attach("blockchain.fetch_stealth", blockchain_fetch_stealth);
     attach("protocol.broadcast_transaction", protocol_broadcast_transaction);
+    attach("protocol.total_connections", protocol_total_connections);
     attach("transaction_pool.validate", transaction_pool_validate);
     attach("transaction_pool.fetch_transaction",
         transaction_pool_fetch_transaction);
