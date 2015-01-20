@@ -11,7 +11,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: libbitcoin-server
-Description: Bitcoin Server Implementation
+Description: Bitcoin Full Node and Query Server
 URL: https://github.com/libbitcoin/libbitcoin-server
 Version: @PACKAGE_VERSION@
 
