@@ -127,6 +127,7 @@ void load_config(config_type& config, boost::filesystem::path& config_path)
     root.lookupValue("certificate", config.certificate);
     root.lookupValue("client-allowed-certs", config.client_allowed_certs);
     load_whitelist(root, config);
+    root.lookupValue("txpool_capacity", config.txpool_capacity);
     root.lookupValue("name", config.name);
     root.lookupValue("outgoing-connections", config.outgoing_connections);
     root.lookupValue("listener_enabled", config.listener_enabled);

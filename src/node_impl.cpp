@@ -123,6 +123,7 @@ bool node_impl::start(config_type& config)
     chain_.subscribe_reorganize(
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
     // Start transaction pool
+    txpool_.set_capacity(config.txpool_capacity);
     txpool_.start();
     // Outgoing connections setting in config file before we
     // start p2p network subsystem.
