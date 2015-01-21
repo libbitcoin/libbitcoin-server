@@ -8,7 +8,6 @@
 # Script to build and install libbitcoin-server.
 #
 # Script options:
-# --build-gmp              Builds GMP library.
 # --build-boost            Builds Boost libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --prefix=<absolute-path> Library install location (defaults to /usr/local).
@@ -43,9 +42,6 @@ BOOST_ARCHIVE_CLANG="boost_1_54_0.tar.bz2"
 
 # GMP archives.
 #------------------------------------------------------------------------------
-GMP_URL="https://ftp.gnu.org/gnu/gmp/gmp-6.0.0a.tar.bz2"
-GMP_ARCHIVE="gmp-6.0.0a.tar.bz2"
-
 
 # Initialize the build environment.
 #==============================================================================
@@ -208,21 +204,6 @@ BOOST_OPTIONS_CLANG=\
 "${prefix} "\
 "${boost_link} "
 
-# Define gmp options.
-#------------------------------------------------------------------------------
-GMP_OPTIONS=\
-"CPPFLAGS=-w "
-
-# Define secp256k1 options.
-#------------------------------------------------------------------------------
-SECP256K1_OPTIONS=\
-"--with-bignum=gmp "\
-"--with-field=gmp "\
-"--enable-benchmark=no "\
-"--enable-tests=no "\
-"--enable-endomorphism=no "\
-"${gmp_flags} "
-
 # Define sodium options.
 #------------------------------------------------------------------------------
 SODIUM_OPTIONS=\
@@ -245,11 +226,16 @@ CZMQ_OPTIONS=\
 CZMQPP_OPTIONS=\
 "${with_pkgconfigdir} "
 
+# Define secp256k1 options.
+#------------------------------------------------------------------------------
+SECP256K1_OPTIONS=\
+"--enable-tests=no "\
+"--with-bignum=no "
+
 # Define bitcoin options.
 #------------------------------------------------------------------------------
 BITCOIN_OPTIONS=\
 "--without-tests "\
-"${gmp_flags} "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
@@ -257,7 +243,6 @@ BITCOIN_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_BLOCKCHAIN_OPTIONS=\
 "--without-tests "\
-"${gmp_flags} "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
@@ -265,14 +250,12 @@ BITCOIN_BLOCKCHAIN_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_NODE_OPTIONS=\
 "--without-tests "\
-"${gmp_flags} "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
 # Define bitcoin-server options.
 #------------------------------------------------------------------------------
 BITCOIN_SERVER_OPTIONS=\
-"${gmp_flags} "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
@@ -515,16 +498,15 @@ build_from_travis()
 build_all()
 {
     build_from_tarball_boost $BOOST_URL $BOOST_ARCHIVE boost $PARALLEL $BOOST_OPTIONS
-    build_from_tarball_gmp $GMP_URL $GMP_ARCHIVE gmp $PARALLEL "$@" $GMP_OPTIONS
-    build_from_github libbitcoin secp256k1 master $PARALLEL "$@" $SECP256K1_OPTIONS
     build_from_github jedisct1 libsodium master $PARALLEL "$@" $SODIUM_OPTIONS
     build_from_github zeromq libzmq master $PARALLEL "$@" $ZMQ_OPTIONS
     build_from_github zeromq czmq master $PARALLEL "$@" $CZMQ_OPTIONS
     build_from_github zeromq czmqpp master $PARALLEL "$@" $CZMQPP_OPTIONS
-    build_from_github libbitcoin libbitcoin master $PARALLEL "$@" $BITCOIN_OPTIONS
-    build_from_github libbitcoin libbitcoin-blockchain master $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
-    build_from_github libbitcoin libbitcoin-node master $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
-    build_from_travis libbitcoin libbitcoin-server master $PARALLEL "$@" $BITCOIN_SERVER_OPTIONS
+    build_from_github libbitcoin secp256k1 version2 $PARALLEL "$@" $SECP256K1_OPTIONS
+    build_from_github libbitcoin libbitcoin version2 $PARALLEL "$@" $BITCOIN_OPTIONS
+    build_from_github libbitcoin libbitcoin-blockchain version2 $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
+    build_from_github libbitcoin libbitcoin-node version2 $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
+    build_from_travis libbitcoin libbitcoin-server version2 $PARALLEL "$@" $BITCOIN_SERVER_OPTIONS
 }
 
 
