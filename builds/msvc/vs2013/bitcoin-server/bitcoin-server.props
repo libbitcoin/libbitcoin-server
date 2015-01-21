@@ -17,9 +17,6 @@
       <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DebugOrRelease)' == 'Release'">BITCOIN_DISABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link Condition="$(Configuration.IndexOf('Debug')) != -1">
-      <AdditionalOptions>/OPT:NOLBR /IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
-    </Link>
   </ItemDefinitionGroup>
 
   <!-- Dependencies -->
@@ -33,7 +30,6 @@
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
     <Linkage-libconfig>dynamic</Linkage-libconfig>
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-mpir>static</Linkage-mpir>
     <Linkage-czmqpp>dynamic</Linkage-czmqpp>
     <Linkage-czmq>dynamic</Linkage-czmq>
     <Linkage-libzmq>dynamic</Linkage-libzmq>
@@ -45,7 +41,6 @@
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-libconfig>static</Linkage-libconfig>
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-mpir>static</Linkage-mpir>
     <Linkage-czmqpp>static</Linkage-czmqpp>
     <Linkage-czmq>ltcg</Linkage-czmq>
     <Linkage-libzmq>static</Linkage-libzmq>
@@ -57,7 +52,6 @@
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-libconfig>static</Linkage-libconfig>
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-mpir>static</Linkage-mpir>
     <Linkage-czmqpp>static</Linkage-czmqpp>
     <Linkage-czmq>static</Linkage-czmq>
     <Linkage-libzmq>static</Linkage-libzmq>
@@ -72,7 +66,6 @@
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
     <Message Text="Linkage-libconfig  : $(Linkage-libconfig)" Importance="high"/>
     <Message Text="Linkage-secp256k1  : $(Linkage-secp256k1)" Importance="high"/>
-    <Message Text="Linkage-mpir       : $(Linkage-mpir)" Importance="high"/>
     <Message Text="Linkage-czmqpp     : $(Linkage-czmqpp)" Importance="high"/>
     <Message Text="Linkage-czmq       : $(Linkage-czmq)" Importance="high"/>
     <Message Text="Linkage-libzmq     : $(Linkage-libzmq)" Importance="high"/>
