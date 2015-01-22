@@ -241,7 +241,7 @@ void node_impl::recv_transaction(const std::error_code& ec,
 {
     if (ec)
     {
-        log_error() << "recv_transaction: " << ec.message();
+        log_warning() << "recv_transaction: " << ec.message();
         return;
     }
     auto handle_deindex = [](const std::error_code& ec)
