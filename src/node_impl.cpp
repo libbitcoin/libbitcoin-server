@@ -117,7 +117,7 @@ bool node_impl::start(config_type& config)
     // Start blockchain.
     if (!chain_.start())
     {
-        log_error() << "Couldn't start blockchain.";
+        log_error(LOG_NODE) << "Couldn't start blockchain.";
         return false;
     }
     chain_.subscribe_reorganize(
@@ -135,7 +135,8 @@ bool node_impl::start(config_type& config)
         protocol_.disable_listener();
     for (const auto node: config.nodes)
     {
-        log_info() << "Adding node: " << node.hostname << " " << node.port;
+        log_info(LOG_NODE) << "Adding node: "
+            << node.hostname << " " << node.port;
         protocol_.maintain_connection(node.hostname, node.port);
     }
     start_session();
@@ -154,8 +155,8 @@ void node_impl::start_session()
 void node_impl::wait_and_retry_start(const std::error_code& ec)
 {
     BITCOIN_ASSERT(ec);
-    log_error() << "Unable to start session: " << ec.message();
-    log_error() << "Retrying in "
+    log_error(LOG_NODE) << "Unable to start session: " << ec.message();
+    log_error(LOG_NODE) << "Retrying in "
         << retry_start_duration.seconds() << " seconds.";
     retry_start_timer_.expires_from_now(retry_start_duration);
     retry_start_timer_.async_wait(
@@ -175,7 +176,7 @@ bool node_impl::stop()
     // Query the error_code and wait for startup completion.
     std::error_code ec = ec_session.get_future().get();
     if (ec)
-        log_error() << "Problem stopping session: " << ec.message();
+        log_error(LOG_NODE) << "Problem stopping session: " << ec.message();
 
     // Safely close blockchain database.
     chain_.stop();
@@ -225,7 +226,7 @@ void node_impl::monitor_tx(const std::error_code& ec, network::channel_ptr node)
 {
     if (ec)
     {
-        log_warning() << "Couldn't start connection: " << ec.message();
+        log_warning(LOG_NODE) << "Couldn't start connection: " << ec.message();
         return;
     }
     // Subscribe to transaction messages from this node.
@@ -241,19 +242,19 @@ void node_impl::recv_transaction(const std::error_code& ec,
 {
     if (ec)
     {
-        log_warning() << "recv_transaction: " << ec.message();
+        log_warning(LOG_NODE) << "recv_transaction: " << ec.message();
         return;
     }
     auto handle_deindex = [](const std::error_code& ec)
     {
         if (ec)
-            log_error() << "Deindex error: " << ec.message();
+            log_error(LOG_NODE) << "Deindex error: " << ec.message();
     };
     // Called when the transaction becomes confirmed in a block.
     auto handle_confirm = [this, tx, handle_deindex](
         const std::error_code& ec)
     {
-        log_debug() << "Confirm transaction: " << ec.message()
+        log_debug(LOG_NODE) << "Confirm transaction: " << ec.message()
             << " " << encode_hash(hash_transaction(tx));
         // Always try to deindex tx.
         // The error could be error::forced_removal from txpool.
@@ -274,18 +275,18 @@ void node_impl::handle_mempool_store(
 {
     if (ec)
     {
-        log_warning()
-            << "Failed to store transaction in mempool "
+        log_warning(LOG_NODE) << "Failed to store transaction in mempool "
             << encode_hash(hash_transaction(tx)) << ": " << ec.message();
         return;
     }
     auto handle_index = [](const std::error_code& ec)
     {
         if (ec)
-            log_error() << "Index error: " << ec.message();
+            log_error(LOG_NODE) << "Index error: " << ec.message();
     };
     indexer_.index(tx, handle_index);
-    log_info() << "Accepted transaction: " << encode_hash(hash_transaction(tx));
+    log_info(LOG_NODE) << "Accepted transaction: "
+        << encode_hash(hash_transaction(tx));
     for (auto notify: notify_txs_)
         notify(tx);
 }
