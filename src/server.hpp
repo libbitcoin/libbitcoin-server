@@ -17,14 +17,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <iostream>
-#include <bitcoin/bitcoin.hpp>
-#include "server.hpp"
+#ifndef LIBBITCOIN_SERVER_SERVER_HPP
+#define LIBBITCOIN_SERVER_SERVER_HPP
 
-// Server entry point.
-int main(int argc, char* argv[])
+#include <iostream>
+
+namespace libbitcoin {
+namespace server {
+
+/**
+ * Console return codes, positive values are domain-specific.
+ */
+enum console_result : int
 {
-    // I/O injection.
-    return bc::server::run(argc, const_cast<const char**>(argv),
-        std::cin, std::cout, std::cerr);
-}
+    failure = -1,
+    okay = 0,
+    not_started = 1
+};
+
+/**
+ * Run the server.
+ */
+console_result run(int argc, const char* argv[], std::istream&,
+    std::ostream& output, std::ostream& error);
+
+} // namespace server
+} // namespace libbitcoin
+
+#endif

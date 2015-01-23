@@ -21,6 +21,8 @@ bitcoin_server_SOURCES = \
     src/config.cpp \
     src/echo.cpp \
     src/main.cpp \
+    src/metadata.cpp \
+    src/server.cpp \
     src/worker.cpp \
     src/node_impl.cpp \
     src/publisher.cpp \

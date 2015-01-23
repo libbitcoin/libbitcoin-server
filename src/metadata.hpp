@@ -17,14 +17,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <iostream>
-#include <bitcoin/bitcoin.hpp>
-#include "server.hpp"
+#ifndef LIBBITCOIN_SERVER_METADATA_HPP
+#define LIBBITCOIN_SERVER_METADATA_HPP
 
-// Server entry point.
-int main(int argc, char* argv[])
+#include <boost/program_options.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+class metadata_type
 {
-    // I/O injection.
-    return bc::server::run(argc, const_cast<const char**>(argv),
-        std::cin, std::cout, std::cerr);
-}
+public:
+    const boost::program_options::options_description load_settings();
+    const boost::program_options::options_description load_environment();
+    const boost::program_options::options_description load_options();
+    const boost::program_options::positional_options_description 
+        load_arguments();
+};
+
+} // namespace server
+} // namespace libbitcoin
+
+#endif
