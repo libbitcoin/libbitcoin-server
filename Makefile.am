@@ -51,4 +51,4 @@ bitcoin_server_LDADD = \
 #
 confdir=${sysconfdir}/libbitcoin
 conf_DATA = server.cfg
-bitcoin_server_CPPFLAGS += -DSYSCONFDIR=\"${sysconfdir}\"
+
