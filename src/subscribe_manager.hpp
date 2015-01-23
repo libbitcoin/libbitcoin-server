@@ -27,6 +27,7 @@
 #include "message.hpp"
 #include "service/util.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 enum class subscribe_type
@@ -86,6 +87,6 @@ private:
 };
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
-

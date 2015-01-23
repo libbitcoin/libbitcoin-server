@@ -22,6 +22,7 @@
 
 #include "util.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 class node_impl;
@@ -33,6 +34,7 @@ void protocol_total_connections(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
 

@@ -30,6 +30,7 @@
 #include "message.hpp"
 #include "service/util.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 /**
@@ -93,6 +94,7 @@ private:
 };
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
 

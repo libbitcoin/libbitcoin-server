@@ -22,9 +22,9 @@
 #include "fetch_x.hpp"
 #include "compat.hpp"
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using namespace bc::chain;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -153,5 +153,6 @@ void COMPAT_send_history_result(
 }
 
 } // namespace server
+} // namespace libbitcoin
 
 

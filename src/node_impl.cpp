@@ -24,9 +24,9 @@
 #include "echo.hpp"
 #include "node_impl.hpp"
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using namespace bc::chain;
 using namespace bc::node;
 using namespace boost::posix_time;
@@ -310,4 +310,4 @@ void node_impl::reorganize(const std::error_code& /* ec */,
 }
 
 } // namespace server
-
+} // namespace libbitcoin

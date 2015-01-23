@@ -21,16 +21,17 @@
 #include "echo.hpp"
 #include "worker.hpp"
 
+namespace libbitcoin {
 namespace server {
-
-using namespace bc;
-using std::placeholders::_1;
+    
 namespace posix_time = boost::posix_time;
 using posix_time::milliseconds;
 using posix_time::seconds;
 using posix_time::microsec_clock;
+using std::placeholders::_1;
 
 const posix_time::time_duration heartbeat_interval = milliseconds(4000);
+
 // Milliseconds
 constexpr long poll_sleep_interval = 1000;
 
@@ -187,4 +188,4 @@ void request_worker::publish_heartbeat()
 }
 
 } // namespace server
-
+} // namespace libbitcoin

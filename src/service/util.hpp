@@ -24,6 +24,7 @@
 #include <system_error>
 #include "../message.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 typedef std::function<void (const outgoing_message&)> queue_send_callback;
@@ -36,6 +37,7 @@ void write_error_code(Serializer& serial, const std::error_code& ec)
 }
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
 

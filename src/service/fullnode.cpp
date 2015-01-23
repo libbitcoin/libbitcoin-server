@@ -22,9 +22,9 @@
 #include "fetch_x.hpp"
 #include "fullnode.hpp"
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -45,4 +45,5 @@ void fullnode_fetch_history(node_impl& node,
 }
 
 } // namespace server
+} // namespace libbitcoin
 

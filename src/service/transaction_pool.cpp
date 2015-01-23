@@ -22,9 +22,9 @@
 #include "fetch_x.hpp"
 #include "transaction_pool.hpp"
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -81,4 +81,6 @@ void transaction_pool_fetch_transaction(node_impl& node,
 }
 
 } // namespace server
+} // namespace libbitcoin
+
 

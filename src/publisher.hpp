@@ -25,6 +25,7 @@
 #include "config.hpp"
 #include "node_impl.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 class publisher
@@ -47,6 +48,6 @@ private:
 };
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
-

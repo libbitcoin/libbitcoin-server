@@ -26,6 +26,7 @@
 #define LOG_REQUEST "request"
 #define LOG_NODE    "node"
 
+namespace libbitcoin {
 namespace server {
 
 class stdout_wrapper
@@ -49,6 +50,6 @@ private:
 stdout_wrapper echo();
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
-

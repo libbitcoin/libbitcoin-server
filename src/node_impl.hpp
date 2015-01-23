@@ -23,6 +23,7 @@
 #include <bitcoin/node.hpp>
 #include "config.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 class node_impl
@@ -96,6 +97,7 @@ private:
 };
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
 

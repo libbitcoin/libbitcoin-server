@@ -23,6 +23,7 @@
 #include "../node_impl.hpp"
 #include "util.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 // fetch_history stuff
@@ -45,6 +46,7 @@ void transaction_fetched(const std::error_code& ec,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
 

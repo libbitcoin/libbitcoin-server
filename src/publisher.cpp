@@ -22,9 +22,9 @@
 
 #define LOG_PUBLISHER LOG_WORKER
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -112,4 +112,4 @@ void publisher::send_tx(const transaction_type& tx)
 }
 
 } // namespace server
-
+} // namespace libbitcoin

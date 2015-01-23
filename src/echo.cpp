@@ -20,6 +20,7 @@
 #include <iostream>
 #include "echo.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 stdout_wrapper::stdout_wrapper()
@@ -40,4 +41,4 @@ stdout_wrapper echo()
 }
 
 } // namespace server
-
+} // namespace libbitcoin
