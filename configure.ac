@@ -85,20 +85,27 @@ AC_ARG_ENABLE([ndebug],
 AC_MSG_RESULT([$enable_ndebug])
 AS_IF([test x$enable_ndebug != xno], AC_DEFINE([NDEBUG]))
 
-# Implement --enable-testnet option and define ENABLE_TESTNET.
-#------------------------------------------------------------------------------
-AC_MSG_CHECKING(--enable-testnet option)
-AC_ARG_ENABLE([testnet],
-    AS_HELP_STRING([--enable-testnet],
-        [Compile for testnet (deprecated). @<:@default=no@:>@]),
-    [enable_testnet=$enableval],
-    [enable_testnet=no])
-AC_MSG_RESULT([$enable_testnet])
-AS_IF([test x$enable_testnet != xno], AC_DEFINE([ENABLE_TESTNET]))
-
 # Inherit --enable-shared option and define BOOST_TEST_DYN_LINK.
 #------------------------------------------------------------------------------
 AS_IF([test x$enable_shared != xno], AC_DEFINE([BOOST_TEST_DYN_LINK]))
+
+
+# Set unconditional preprocessor defines.
+#==============================================================================
+# Unconditionally define the preprocessor symbol BOOST_NO_EXCEPTIONS.
+#------------------------------------------------------------------------------
+# Capture exceptional conditions in callback function.
+AC_DEFINE([BOOST_NO_EXCEPTIONS])
+
+# Unconditionally define the preprocessor symbol BOOST_EXCEPTION_DISABLE.
+#------------------------------------------------------------------------------
+# Disable boost exception augmentation.
+AC_DEFINE([BOOST_EXCEPTION_DISABLE])
+
+# Unconditionally define the preprocessor symbol SYSCONFDIR.
+#------------------------------------------------------------------------------
+# Set the value of SYSCONFDIR for source usage.
+AC_DEFINE([SYSCONFDIR], ["${sysconfdir}"])
 
 
 # Check dependencies.
@@ -178,6 +185,24 @@ AS_CASE([${CC}], [*clang*],
 AS_CASE([${CC}], [*gcc*],
     [AX_CHECK_COMPILE_FLAG([-Wno-unused-local-typedefs],
         [CXXFLAGS="$CXXFLAGS -Wno-unused-local-typedefs"])])
+
+# Clean up boost 1.49 headers, static with no exceptions. Enabled in gcc only.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*gcc*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-maybe-uninitialized],
+        [CXXFLAGS="$CXXFLAGS -Wno-maybe-uninitialized"])])
+
+# Clean up boost 1.54 headers, static with no exceptions. Enabled in clang only.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*clang*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-sometimes-uninitialized],
+        [CXXFLAGS="$CXXFLAGS -Wno-sometimes-uninitialized"])])
+
+# Clean up boost property_tree headers, with no exceptions.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-return-type],
+        [CXXFLAGS="$CXXFLAGS -Wno-return-type"])])
 
 # Protect stack.
 #------------------------------------------------------------------------------
