@@ -112,10 +112,6 @@ AS_CASE([${CC}], [*clang*],
     [AX_BOOST_BASE([1.54.0], [], [AC_MSG_ERROR(
         [Boost 1.54.0 or later is required but was not found.])])])
 
-# Require config++ of at least version 1.3.2 and output ${config___CFLAGS} and ${config___LIBS}.
-#------------------------------------------------------------------------------
-PKG_CHECK_MODULES([config__], [libconfig++ >= 1.3.2])
-
 # Require sodium of at least version 1.0.0 and output ${sodium_CFLAGS} and ${sodium_LIBS}.
 #------------------------------------------------------------------------------
 # The chained zmq dependency doesn't set a minimum version for sodium.
