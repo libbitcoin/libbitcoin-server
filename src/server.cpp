@@ -119,9 +119,9 @@ static console_result init_chain(path& directory, std::ostream& output,
     if (!create_directories(directory, code))
     {
         if (code.value() == 0)
-            output << format(BS_INITCHAIN_DIR_EXISTS) % directory;
+            error << format(BS_INITCHAIN_DIR_EXISTS) % directory;
         else
-            output << format(BS_INITCHAIN_DIR_FAIL) % directory % code.message();
+            error << format(BS_INITCHAIN_DIR_FAIL) % directory % code.message();
 
         return console_result::failure;
     }
@@ -154,7 +154,7 @@ static console_result verify_chain(path& directory, std::ostream& output,
         if (code.value() == 2)
             return init_chain(directory, output, error);
 
-        output << format(BS_INITCHAIN_DIR_TEST) % directory % code.message();
+        error << format(BS_INITCHAIN_DIR_TEST) % directory % code.message();
         return console_result::failure;
     }
 
@@ -265,7 +265,7 @@ static console_result run(settings_type& config, std::ostream& output,
 
     if (!full_node.stop())
     {
-        output << BS_NODE_STOP_FAIL;
+        error << BS_NODE_STOP_FAIL;
         return console_result::failure;
     }
 
