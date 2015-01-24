@@ -22,7 +22,7 @@
 
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include "config.hpp"
+#include "settings.hpp"
 #include "node_impl.hpp"
 
 namespace libbitcoin {
@@ -32,7 +32,7 @@ class publisher
 {
 public:
     publisher(node_impl& node);
-    bool start(config_type& config);
+    bool start(settings_type& config);
     bool stop();
 
 private:

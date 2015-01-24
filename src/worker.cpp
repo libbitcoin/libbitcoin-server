@@ -64,14 +64,14 @@ request_worker::request_worker()
     DEBUG_ONLY(int rc =) wakeup_socket_.bind("inproc://trigger-send");
     BITCOIN_ASSERT(rc != -1);
 }
-bool request_worker::start(config_type& config)
+bool request_worker::start(settings_type& config)
 {
     // Load config values.
     log_requests_ = config.log_requests;
     if (log_requests_)
         auth_.set_verbose(true);
-    if (!config.whitelist.empty())
-        whitelist(config.whitelist);
+    if (!config.clients.empty())
+        whitelist(config.clients);
     if (config.certificate.empty())
         socket_.set_zap_domain("global");
     else
@@ -88,27 +88,31 @@ void request_worker::stop()
 {
 }
 
-void request_worker::whitelist(config_type::ipaddress_list& addrs)
+void request_worker::whitelist(settings_type::tokens& addrs)
 {
-    for (const std::string& ip_address: addrs)
-        auth_.allow(ip_address);
+    for (const auto& ip_address: addrs)
+        ///////////////////////////////////////////////////////////////////////
+        // TODO: move into settings load using a deserializable complex type.
+        for (const auto addr: bc::config::split(ip_address))
+            auth_.allow(addr);
+        ///////////////////////////////////////////////////////////////////////
 }
-void request_worker::enable_crypto(config_type& config)
+void request_worker::enable_crypto(settings_type& config)
 {
-    if (config.client_allowed_certs == "ALLOW_ALL_CERTS")
+    if (config.client_certs_path.empty())
         auth_.configure_curve("*", CURVE_ALLOW_ANY);
     else
-        auth_.configure_curve("*", config.client_allowed_certs);
+        auth_.configure_curve("*", config.client_certs_path.generic_string());
     cert_.reset(czmqpp::load_cert(config.certificate));
     cert_.apply(socket_);
     socket_.set_curve_server(1);
 }
-void request_worker::create_new_socket(config_type& config)
+void request_worker::create_new_socket(settings_type& config)
 {
     log_debug(LOG_WORKER) << "Listening: " << config.service;
     // Set the socket identity name.
-    if (!config.name.empty())
-        socket_.set_identity(config.name.c_str());
+    if (!config.unique_name.empty())
+        socket_.set_identity(config.unique_name.c_str());
     // Connect...
     socket_.bind(config.service);
     // Configure socket to not wait at close time

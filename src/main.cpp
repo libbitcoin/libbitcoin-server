@@ -25,6 +25,6 @@
 int main(int argc, char* argv[])
 {
     // I/O injection.
-    return bc::server::run(argc, const_cast<const char**>(argv),
+    return bc::server::dispatch(argc, const_cast<const char**>(argv),
         std::cin, std::cout, std::cerr);
 }

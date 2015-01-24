@@ -68,7 +68,7 @@
     <ClInclude Include="..\..\..\..\src\config.hpp" />
     <ClInclude Include="..\..\..\..\src\echo.hpp" />
     <ClInclude Include="..\..\..\..\src\message.hpp" />
-    <ClInclude Include="..\..\..\..\src\metadata.hpp" />
+    <ClInclude Include="..\..\..\..\src\settings.hpp" />
     <ClInclude Include="..\..\..\..\src\node_impl.hpp" />
     <ClInclude Include="..\..\..\..\src\publisher.hpp" />
     <ClInclude Include="..\..\..\..\src\server.hpp" />
@@ -90,7 +90,7 @@
     <ClCompile Include="..\..\..\..\src\echo.cpp" />
     <ClCompile Include="..\..\..\..\src\main.cpp" />
     <ClCompile Include="..\..\..\..\src\message.cpp" />
-    <ClCompile Include="..\..\..\..\src\metadata.cpp" />
+    <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\node_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\publisher.cpp" />
     <ClCompile Include="..\..\..\..\src\server.cpp" />

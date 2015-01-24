@@ -21,7 +21,7 @@
 #define LIBBITCOIN_SERVER_NODE_IMPL_HPP
 
 #include <bitcoin/node.hpp>
-#include "config.hpp"
+#include "settings.hpp"
 
 namespace libbitcoin {
 namespace server {
@@ -34,8 +34,8 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    node_impl(config_type& config);
-    bool start(config_type& config);
+    node_impl(settings_type& config);
+    bool start(settings_type& config);
     // Should only be called from the main thread.
     // It's an error to join() a thread from inside it.
     bool stop();

@@ -17,12 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "node_impl.hpp"
+
 #include <future>
 #include <iostream>
 #include <boost/date_time.hpp>
 #include <boost/lexical_cast.hpp>
 #include "echo.hpp"
-#include "node_impl.hpp"
+#include "settings.hpp"
 
 namespace libbitcoin {
 namespace server {
@@ -68,7 +70,7 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
     file << output;
 }
 
-node_impl::node_impl(config_type& config)
+node_impl::node_impl(settings_type& config)
     // Threadpools and the number of threads they spawn.
     // 6 threads spawned in total.
   : network_pool_(1), disk_pool_(6), mem_pool_(1),
@@ -78,8 +80,8 @@ node_impl::node_impl(config_type& config)
     network_(network_pool_),
     protocol_(network_pool_, hosts_, handshake_, network_),
     // Blockchain database service.
-    chain_(disk_pool_, config.blockchain_path,
-        {config.history_db_active_height}),
+    chain_(disk_pool_, config.blockchain_path.generic_string(),
+        {config.history_height}),
     // Poll new blocks, tx memory pool and tx indexer.
     poller_(mem_pool_, chain_),
     txpool_(mem_pool_, chain_),
@@ -91,11 +93,11 @@ node_impl::node_impl(config_type& config)
 {
 }
 
-bool node_impl::start(config_type& config)
+bool node_impl::start(settings_type& config)
 {
     auto file_mode = std::ofstream::out | std::ofstream::app;
-    outfile_.open(config.output_file, file_mode);
-    errfile_.open(config.error_file, file_mode);
+    outfile_.open(config.output_file.generic_string(), file_mode);
+    errfile_.open(config.error_file.generic_string(), file_mode);
     log_debug().set_output_function(
         std::bind(log_to_file, std::ref(outfile_),
             _1, _2, _3, config.log_requests));
@@ -123,21 +125,39 @@ bool node_impl::start(config_type& config)
     chain_.subscribe_reorganize(
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
     // Start transaction pool
-    txpool_.set_capacity(config.txpool_capacity);
+    txpool_.set_capacity(config.tx_pool_capacity);
     txpool_.start();
     // Outgoing connections setting in config file before we
     // start p2p network subsystem.
     int outgoing_connections = boost::lexical_cast<int>(
-        config.outgoing_connections);
+        config.out_connections);
     protocol_.set_max_outbound(outgoing_connections);
-    protocol_.set_hosts_filename(config.hosts_file);
+    protocol_.set_hosts_filename(config.hosts_file.generic_string());
     if (!config.listener_enabled)
         protocol_.disable_listener();
-    for (const auto node: config.nodes)
+    for (const auto& peer: config.peers)
     {
-        log_info(LOG_NODE) << "Adding node: "
-            << node.hostname << " " << node.port;
-        protocol_.maintain_connection(node.hostname, node.port);
+        ///////////////////////////////////////////////////////////////////////
+        // TODO: move into settings load using a deserializable complex type.
+        // Cast exception will be handled by program options after above move.
+        for (const auto node: bc::config::split(peer))
+        {
+            const auto parts = bc::config::split(node, ":");
+            if (parts.size() != 2)
+            {
+                log_warning(LOG_NODE) << "Invalid node: " << node;
+                continue;
+            }
+
+            settings_type::endpoint_type endpoint;
+            endpoint.host = parts[0];
+            endpoint.port = boost::lexical_cast<uint16_t>(parts[1]);
+            ///////////////////////////////////////////////////////////////////////
+
+            log_info(LOG_NODE) << "Adding node: " 
+                << endpoint.host << " " << endpoint.port;
+            protocol_.maintain_connection(endpoint.host, endpoint.port);
+        }
     }
     start_session();
     return true;
@@ -296,6 +316,7 @@ void node_impl::reorganize(const std::error_code& /* ec */,
     const blockchain::block_list& new_blocks,
     const blockchain::block_list& /* replaced_blocks */)
 {
+    // magic number (height) - how does this apply to testnet?
     // Don't bother publishing blocks when in the initial blockchain download.
     if (fork_point > 235866)
         for (size_t i = 0; i < new_blocks.size(); ++i)

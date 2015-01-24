@@ -38,7 +38,7 @@ enum console_result : int
 /**
  * Run the server.
  */
-console_result run(int argc, const char* argv[], std::istream&,
+console_result dispatch(int argc, const char* argv[], std::istream&,
     std::ostream& output, std::ostream& error);
 
 } // namespace server

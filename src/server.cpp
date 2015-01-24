@@ -36,27 +36,130 @@
 #include "service/compat.hpp"
 #include "subscribe_manager.hpp"
 #include "config.hpp"
+#include "settings.hpp"
 #include "worker.hpp"
 
 // Localizable messages.
-#define BS_SERVER_STARTING      "Press CTRL-C to stop server.\n"
-#define BS_SERVER_STARTED       "Server started.\n"
-#define BS_SERVER_STOPPING      "Server stopping... Please wait.\n"
-#define BS_SERVER_STOPPED       "Server stopped cleanly.\n"
-#define BS_NODE_START_FAIL      "Node failed to start.\n"
-#define BS_NODE_STOP_FAIL       "Node failed to stop.\n"
-#define BS_PUBLISHER_START_FAIL "Publisher failed to start: %1%\n"
-#define BS_PUBLISHER_STOP_FAIL  "Publisher failed to stop.\n"
-#define BS_USING_CONFIG_FILE    "Using config file: %1%\n"
-#define BS_INVALID_PARAMETER    "Error: %1%\n"
+#define BS_SETTINGS_MESSAGE \
+    "These configuration settings are currently in effect."
+#define BS_INFORMATION_MESSAGE \
+    "Runs a full bitcoin node in the global peer-to-peer network."
+#define BS_INITIALIZING_CHAIN \
+    "Please wait while the %1% directory is initialized.\n"
+#define BS_INITCHAIN_DIR_FAIL \
+    "Failed to create directory %1% with error, '%2%'.\n"
+#define BS_INITCHAIN_DIR_EXISTS \
+    "Failed because the directory %1% already exists.\n"
+#define BS_INITCHAIN_DIR_TEST \
+    "Failed to test directory %1% with error, '%2%'.\n"
+#define BS_SERVER_STARTING \
+    "Press CTRL-C to stop server.\n"
+#define BS_SERVER_STARTED \
+    "Server started.\n"
+#define BS_SERVER_STOPPING \
+    "Server stopping... Please wait.\n"
+#define BS_SERVER_STOPPED \
+    "Server stopped cleanly.\n"
+#define BS_NODE_START_FAIL \
+    "Node failed to start.\n"
+#define BS_NODE_STOP_FAIL \
+    "Node failed to stop.\n"
+#define BS_PUBLISHER_START_FAIL \
+    "Publisher failed to start: %1%\n"
+#define BS_PUBLISHER_STOP_FAIL \
+    "Publisher failed to stop.\n"
+#define BS_USING_CONFIG_FILE \
+    "Using config file: %1%\n"
+#define BS_INVALID_PARAMETER \
+    "Error: %1%\n"
 
 namespace libbitcoin {
 namespace server {
 
-using boost::format;
-using boost::filesystem::path;
 using std::placeholders::_1;
 using std::placeholders::_2;
+using boost::format;
+using namespace boost::system;
+using namespace boost::filesystem;
+
+static void display_invalid_parameter(std::ostream& stream,
+    const std::string& message)
+{
+    // English-only hack to patch missing arg name in boost exception message.
+    std::string clean_message(message);
+    boost::replace_all(clean_message, "for option is invalid", "is invalid");
+    stream << format(BS_INVALID_PARAMETER) % clean_message;
+}
+
+static void show_help(config_type& metadata, std::ostream& output)
+{
+    // TODO: create a more general construction.
+    bc::config::printer help("bitcoin_server", "", "", BS_INFORMATION_MESSAGE,
+        metadata.load_arguments(), metadata.load_options());
+    help.initialize();
+    help.print(output);
+}
+
+static void show_settings(config_type& metadata, std::ostream& output)
+{
+    // TODO: create a more general construction and settings formatted output.
+    bc::config::printer help("bitcoin_server", "", "", BS_SETTINGS_MESSAGE,
+        metadata.load_arguments(), metadata.load_settings());
+    help.initialize();
+    help.print(output);
+}
+
+static console_result init_chain(path& directory, std::ostream& output,
+    std::ostream& error)
+{
+    // Create the directory as a convenience for the user, and then use it
+    // as sentinel to guard against inadvertent re-initialization.
+
+    error_code code;
+    if (!create_directories(directory, code))
+    {
+        if (code.value() == 0)
+            output << format(BS_INITCHAIN_DIR_EXISTS) % directory;
+        else
+            output << format(BS_INITCHAIN_DIR_FAIL) % directory % code.message();
+
+        return console_result::failure;
+    }
+
+    output << format(BS_INITIALIZING_CHAIN) % directory;
+
+    using namespace bc::chain;
+    const auto& prefix = directory.generic_string();
+    initialize_blockchain(prefix);
+
+    // Add genesis block.
+    db_paths file_paths(prefix);
+    db_interface interface(file_paths, { 0 });
+    interface.start();
+
+    // This is affected by the ENABLE_TESTNET switch.
+    interface.push(genesis_block());
+
+    return console_result::okay;
+}
+
+static console_result verify_chain(path& directory, std::ostream& output,
+    std::ostream& error)
+{
+    // Use missing directory as a sentinel indicating lack of initialization.
+
+    error_code code;
+    if (!exists(directory, code))
+    {
+        if (code.value() == 2)
+            return init_chain(directory, output, error);
+
+        output << format(BS_INITCHAIN_DIR_TEST) % directory % code.message();
+        return console_result::failure;
+    }
+
+    return console_result::okay;
+}
 
 // Static handler for catching termination signals.
 static bool stopped = false;
@@ -108,9 +211,14 @@ static void attach_api(request_worker& worker, node_impl& node,
 }
 
 // Run the server.
-static console_result run(config_type config, std::ostream& output,
+static console_result run(settings_type& config, std::ostream& output,
     std::ostream& error)
 {
+    // Ensure the blockchain directory is initialized (at least exists).
+    auto result = verify_chain(config.blockchain_path, output, error);
+    if (result != console_result::okay)
+        return result;
+
     output << BS_SERVER_STARTING;
 
     request_worker worker;
@@ -165,37 +273,33 @@ static console_result run(config_type config, std::ostream& output,
     return console_result::okay;
 }
 
-void display_invalid_parameter(std::ostream& stream,
-    const std::string& message)
-{
-    // English-only hack to patch missing arg name in boost exception message.
-    std::string clean_message(message);
-    boost::replace_all(clean_message, "for option is invalid", "is invalid");
-
-    stream << format(BS_INVALID_PARAMETER) % clean_message;
-}
-
 // Load argument, environment and config and then run the server.
-console_result run(int argc, const char* argv[], std::istream&, 
+console_result dispatch(int argc, const char* argv[], std::istream&, 
     std::ostream& output, std::ostream& error)
 {
-    config_type config;
     std::string message;
-    auto config_path = path(bc::config::system_config_directory())
-        / "libbitcoin" / "server.cfg";
-
-    if (!load_config(config, message, config_path, argc, argv))
+    config_type metadata;
+    if (!load_config(metadata, message, argc, argv))
     {
         display_invalid_parameter(error, message);
         return console_result::failure;
     }
 
-    if (!config_path.empty())
-        output << format(BS_USING_CONFIG_FILE) % config_path;
+    if (!metadata.settings.config.empty())
+        output << format(BS_USING_CONFIG_FILE) % metadata.settings.config;
 
-    return run(config, output, error);
+    auto settings = metadata.settings;
+    if (settings.help)
+        show_help(metadata, output);
+    else if (settings.settings)
+        show_settings(metadata, output);
+    else if (settings.initchain)
+        return init_chain(settings.blockchain_path, output, error);
+    else
+        return run(settings, output, error);
+
+    return console_result::okay;
 }
 
 } // namespace server
 } // namespace libbitcoin
-

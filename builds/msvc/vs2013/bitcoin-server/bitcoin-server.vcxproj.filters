@@ -60,10 +60,10 @@
     <ClInclude Include="..\..\..\..\src\worker.hpp">
       <Filter>src\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\metadata.hpp">
+    <ClInclude Include="..\..\..\..\src\server.hpp">
       <Filter>src\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\server.hpp">
+    <ClInclude Include="..\..\..\..\src\settings.hpp">
       <Filter>src\include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -110,10 +110,10 @@
     <ClCompile Include="..\..\..\..\src\service\compat.cpp">
       <Filter>src\service</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\metadata.cpp">
+    <ClCompile Include="..\..\..\..\src\server.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\server.cpp">
+    <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -29,43 +29,10 @@
 namespace libbitcoin {
 namespace server {
 
-struct node_config_type
-{
-    std::string hostname;
-    uint16_t port;
-};
+class config_type;
 
-struct config_type
-{
-    typedef std::vector<std::string> ipaddress_list;
-    typedef std::vector<node_config_type> nodes_list;
-
-    bool log_requests;
-    bool listener_enabled;
-    bool publisher_enabled;
-
-    uint32_t txpool_capacity;
-    uint32_t outgoing_connections;
-    uint32_t history_db_active_height;
-
-    std::string name;
-    std::string service;
-    std::string heartbeat;
-    std::string hosts_file;
-    std::string error_file;
-    std::string output_file;
-    std::string blockchain_path;
-    std::string tx_publish;
-    std::string block_publish;
-    std::string certificate;
-    std::string client_allowed_certs;
-
-    nodes_list nodes;
-    ipaddress_list whitelist;
-};
-
-bool load_config(config_type& config, std::string& message, 
-    boost::filesystem::path& config_path, int argc, const char* argv[]);
+bool load_config(config_type& metadata, std::string& message, int argc,
+    const char* argv[]);
 
 } // namespace server
 } // namespace libbitcoin

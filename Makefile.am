@@ -21,8 +21,8 @@ bitcoin_server_SOURCES = \
     src/config.cpp \
     src/echo.cpp \
     src/main.cpp \
-    src/metadata.cpp \
     src/server.cpp \
+    src/settings.cpp \
     src/worker.cpp \
     src/node_impl.cpp \
     src/publisher.cpp \
@@ -48,6 +48,8 @@ bitcoin_server_LDADD = \
 #
 # configuration file
 #
+# TODO: coordinate this subdirectory and file name with the
+# source code so they stay in sync.
 confdir=${sysconfdir}/libbitcoin
 conf_DATA = server.cfg
 

@@ -21,15 +21,11 @@
 
 #include <iostream>
 #include <string>
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include "metadata.hpp"
-
-// Not localizable.
-#define BS_HELP_VARIABLE "help"
-#define BS_CONFIG_VARIABLE "config"
-#define BS_ENVIRONMENT_VARIABLE_PREFIX "BS"
+#include "settings.hpp"
 
 namespace libbitcoin {
 namespace server {
@@ -38,129 +34,91 @@ using boost::format;
 using boost::filesystem::path;
 using namespace boost::program_options;
 
-path get_config_option(variables_map& variables)
+static path get_config_option(variables_map& variables)
 {
-    // Read config from the map so we don't require an early notify call.
-    const auto& config = variables[BS_CONFIG_VARIABLE];
+    // read config from the map so we don't require an early notify
+    const auto& config = variables[BS_CONFIGURATION_VARIABLE];
 
-    // prevent exception in the case where the config variable is not set.
+    // prevent exception in the case where the config variable is not set
     if (config.empty())
         return path();
 
     return config.as<path>();
 }
 
-bool get_help_option(variables_map& variables)
+static void load_command_variables(variables_map& variables,
+    config_type& metadata, int argc, const char* argv[]) throw()
 {
-    // Read help from the map so we don't require an early notify call.
-    const auto& help = variables[BS_HELP_VARIABLE];
-
-    // Prevent exception in the case where the help variable is not set.
-    if (help.empty())
-        return false;
-
-    return help.as<bool>();
-}
-
-void load_command_variables(variables_map& variables, metadata_type& metadata,
-    int argc, const char* argv[]) throw()
-{
-    // load metadata
-    const auto& options = metadata.load_options();
-    const auto& arguments = metadata.load_arguments();
-
-    // parse inputs
+    const auto options = metadata.load_options();
+    const auto arguments = metadata.load_arguments();
     auto command_parser = command_line_parser(argc, argv).options(options)
         .positional(arguments);
-
-    // map parsed inputs into variables map
     store(command_parser.run(), variables);
 }
 
 // Not unit testable (without creating actual config files).
-void load_configuration_variables(path& config_path, variables_map& variables, 
-    metadata_type& metadata) throw(reading_file)
+static bool load_configuration_variables(variables_map& variables,
+    config_type& metadata) throw(reading_file)
 {
-    // load metadata
-    const auto& config_settings = metadata.load_settings();
-
-    // override the default config path if specified on the command line
-    const auto config_path_arg = get_config_option(variables);
-    if (!config_path_arg.empty())
-        config_path = config_path_arg;
-
-    if (config_path.empty())
+    const auto config_path = get_config_option(variables);
+    if (!config_path.empty())
     {
-        // loading from an empty stream causes the defaults to populate
-        std::stringstream stream;
-
-        // parse inputs
-        const auto configuration = parse_config_file(stream, config_settings);
-
-        // map parsed inputs into variables map
-        store(configuration, variables);
-    }
-    else
-    {
-        // return an empty path if the file does not load
         const auto& path = config_path.generic_string();
         std::ifstream file(path);
-        if (!file.good())
+        if (file.good())
         {
-            config_path.clear();
-            return;
+            const auto config_settings = metadata.load_settings();
+            const auto config = parse_config_file(file, config_settings);
+            store(config, variables);
+            return true;
         }
-
-        // parse inputs
-        const auto configuration = parse_config_file(file, config_settings);
-
-        // map parsed inputs into variables map
-        store(configuration, variables);
     }
+
+    // loading from an empty stream causes the defaults to populate
+    std::stringstream stream;
+    const auto config_settings = metadata.load_settings();
+    const auto config = parse_config_file(stream, config_settings);
+    store(config, variables);
+    return false;
 }
 
-void load_environment_variables(variables_map& variables, 
-    metadata_type& metadata) throw()
+static void load_environment_variables(variables_map& variables, 
+    config_type& metadata) throw()
 {
-    // load metadata
     const auto& environment_variables = metadata.load_environment();
-
-    // parse inputs
     const auto environment = parse_environment(environment_variables,
         BS_ENVIRONMENT_VARIABLE_PREFIX);
-
-    // map parsed inputs into variables map
     store(environment, variables);
 }
 
-bool load_config(config_type& config, std::string& message, path& config_path,
-    int argc, const char* argv[])
+bool load_config(config_type& metadata, std::string& message, int argc, 
+    const char* argv[])
 {
     try
     {
-        metadata_type metadata;
         variables_map variables;
         load_command_variables(variables, metadata, argc, argv);
 
-        // Don't load rest if help is specified.
-        if (!get_help_option(variables))
-        {
-            // Must store before configuration in order to specify the path.
-            load_environment_variables(variables, metadata);
+        // Must store before configuration in order to use config path.
+        load_environment_variables(variables, metadata);
 
-            // Is lowest priority, which will cause confusion if there is
-            // composition between them, which therefore should be avoided.
-            // Returns config_path or empty if not found/used.
-            load_configuration_variables(config_path, variables, metadata);
+        // Returns true if the settings were loaded from a file.
+        bool loaded_file = load_configuration_variables(variables, metadata);
 
-            // Send notifications and update bound variables.
-            notify(variables);
-        }
+        // Update bound variables in metadata.settings.
+        notify(variables);
+
+        // Clear the config file path if it wasn't used.
+        if (!loaded_file)
+            metadata.settings.config.clear();
     }
     catch (const boost::program_options::error& e)
     {
-        // BUGBUG: the error message is obtained directly form boost, which
-        // circumvents our localization model.
+        // This assumes boost exceptions are not disabled. Doing so doesn't
+        // actually prevent program_options from throwing, so we avoid the 
+        // complexity of handling that configuration here.
+
+        // This is obtained from boost, which circumvents our localization.
         message = e.what();
         return false;
     }
