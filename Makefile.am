@@ -21,6 +21,8 @@ bitcoin_server_SOURCES = \
     src/config.cpp \
     src/echo.cpp \
     src/main.cpp \
+    src/server.cpp \
+    src/settings.cpp \
     src/worker.cpp \
     src/node_impl.cpp \
     src/publisher.cpp \
@@ -34,21 +36,20 @@ bitcoin_server_SOURCES = \
 
 bitcoin_server_CPPFLAGS = \
     -I${srcdir}/include \
-    ${config___CFLAGS} \
     ${sodium_CFLAGS} \
     ${czmq___CFLAGS} \
     ${bitcoin_node_CFLAGS}
 
 bitcoin_server_LDADD = \
-    ${config___LIBS} \
     ${sodium_LIBS} \
     ${czmq___LIBS} \
     ${bitcoin_node_LIBS}
 
 #
 # configuration file
-# TODO: incorporate defaults and default to relative path.
 #
+# TODO: coordinate this subdirectory and file name with the
+# source code so they stay in sync.
 confdir=${sysconfdir}/libbitcoin
 conf_DATA = server.cfg
 

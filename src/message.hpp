@@ -23,6 +23,7 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 
+namespace libbitcoin {
 namespace server {
 
 class incoming_message
@@ -64,6 +65,6 @@ private:
 };
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
-

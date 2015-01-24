@@ -26,10 +26,11 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <czmq++/czmqpp.hpp>
-#include "config.hpp"
 #include "message.hpp"
+#include "settings.hpp"
 #include "service/util.hpp"
 
+namespace libbitcoin {
 namespace server {
 
 /**
@@ -58,7 +59,7 @@ public:
         const incoming_message&, queue_send_callback)> command_handler;
 
     request_worker();
-    bool start(config_type& config);
+    bool start(settings_type& config);
     void stop();
     void attach(const std::string& command, command_handler handler);
     void update();
@@ -66,9 +67,9 @@ public:
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist(config_type::ipaddress_list& addrs);
-    void enable_crypto(config_type& config);
-    void create_new_socket(config_type& config);
+    void whitelist(settings_type::tokens& addrs);
+    void enable_crypto(settings_type& config);
+    void create_new_socket(settings_type& config);
     void poll();
     void publish_heartbeat();
 
@@ -93,6 +94,7 @@ private:
 };
 
 } // namespace server
+} // namespace libbitcoin
 
 #endif
 

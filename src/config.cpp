@@ -17,125 +17,120 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <iostream>
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <libconfig.h++>
 #include "config.hpp"
-#include "echo.hpp"
 
+#include <iostream>
+#include <string>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
+#include <bitcoin/bitcoin.hpp>
+#include "settings.hpp"
+
+namespace libbitcoin {
 namespace server {
 
-void load_nodes(const libconfig::Setting& root, config_type& config)
+using boost::format;
+using boost::filesystem::path;
+using namespace boost::program_options;
+
+static path get_config_option(variables_map& variables)
 {
-    try
+    // read config from the map so we don't require an early notify
+    const auto& config = variables[BS_CONFIGURATION_VARIABLE];
+
+    // prevent exception in the case where the config variable is not set
+    if (config.empty())
+        return path();
+
+    return config.as<path>();
+}
+
+static void load_command_variables(variables_map& variables,
+    config_type& metadata, int argc, const char* argv[]) throw()
+{
+    const auto options = metadata.load_options();
+    const auto arguments = metadata.load_arguments();
+    auto command_parser = command_line_parser(argc, argv).options(options)
+        .positional(arguments);
+    store(command_parser.run(), variables);
+}
+
+// Not unit testable (without creating actual config files).
+static bool load_configuration_variables(variables_map& variables,
+    config_type& metadata) throw(reading_file)
+{
+    const auto config_path = get_config_option(variables);
+    if (!config_path.empty())
     {
-        const libconfig::Setting& setting = root["nodes"];
-        for (int i = 0; i < setting.getLength(); ++i)
+        const auto& path = config_path.generic_string();
+        std::ifstream file(path);
+        if (file.good())
         {
-            const libconfig::Setting& node_setting = setting[i];
-            node_config_object node;
-            node.hostname = (const char*)node_setting[0];
-            node.port = (unsigned int)node_setting[1];
-            config.nodes.push_back(node);
+            const auto config_settings = metadata.load_settings();
+            const auto config = parse_config_file(file, config_settings);
+            store(config, variables);
+            return true;
         }
     }
-    catch (const libconfig::SettingTypeException)
-    {
-        std::cerr << "Incorrectly formed nodes setting in config." << std::endl;
-    }
-    catch (const libconfig::SettingNotFoundException&) {}
+
+    // loading from an empty stream causes the defaults to populate
+    std::stringstream stream;
+    const auto config_settings = metadata.load_settings();
+    const auto config = parse_config_file(stream, config_settings);
+    store(config, variables);
+    return false;
 }
 
-void load_whitelist(const libconfig::Setting& root, config_type& config)
+static void load_environment_variables(variables_map& variables, 
+    config_type& metadata) throw()
+{
+    const auto& environment_variables = metadata.load_environment();
+    const auto environment = parse_environment(environment_variables,
+        BS_ENVIRONMENT_VARIABLE_PREFIX);
+    store(environment, variables);
+}
+
+bool load_config(config_type& metadata, std::string& message, int argc, 
+    const char* argv[])
 {
     try
     {
-        const libconfig::Setting& setting = root["whitelist"];
-        for (int i = 0; i < setting.getLength(); ++i)
-        {
-            std::string address = (const char*)setting[i];
-            config.whitelist.push_back(address);
-        }
+        variables_map variables;
+        load_command_variables(variables, metadata, argc, argv);
+
+        // Must store before configuration in order to use config path.
+        load_environment_variables(variables, metadata);
+
+        // Returns true if the settings were loaded from a file.
+        bool loaded_file = load_configuration_variables(variables, metadata);
+
+        // Update bound variables in metadata.settings.
+        notify(variables);
+
+        // Clear the config file path if it wasn't used.
+        if (!loaded_file)
+            metadata.settings.config.clear();
     }
-    catch (const libconfig::SettingTypeException)
+    catch (const boost::program_options::error& e)
     {
-        std::cerr << "Incorrectly formed whitelist setting in config."
-            << std::endl;
+        // This assumes boost exceptions are not disabled. Doing so doesn't
+        // actually prevent program_options from throwing, so we avoid the 
+        // complexity of handling that configuration here.
+
+        // This is obtained from boost, which circumvents our localization.
+        message = e.what();
+        return false;
     }
-    catch (const libconfig::SettingNotFoundException&) {}
-}
-
-#ifdef _WIN32
-#include <shlobj.h>
-#include <windows.h>
-std::string system_config_directory()
-{
-    // Use explicitly wide char functions and compile for unicode.
-    char app_data_path[MAX_PATH];
-    auto result = SHGetFolderPathA(NULL, CSIDL_COMMON_APPDATA, NULL,
-        SHGFP_TYPE_CURRENT, app_data_path);
-    if (SUCCEEDED(result))
-        return std::string(app_data_path);
-
-    return "";
-}
-#else
-std::string system_config_directory()
-{
-    return std::string(SYSCONFDIR);
-}
-#endif
-
-void set_config_path(libconfig::Config& configuration, 
-    const boost::filesystem::path& config_path)
-{
-    // Ignore error if unable to read config file.
-    try
+    catch (...)
     {
-        // libconfig is ANSI/MBCS on Windows - no Unicode support.
-        // This translates the path from Unicode to a "generic" path in
-        // ANSI/MBCS, which can result in failures.
-        configuration.readFile(config_path.generic_string().c_str());
+        message = "...";
+        return false;
     }
-    catch (const libconfig::FileIOException&) {}
-    catch (const libconfig::ParseException&) {}
-}
 
-void load_config(config_type& config, boost::filesystem::path& config_path)
-{
-    // Load values from config file.
-    echo() << "Using config file: " << config_path;
-
-    libconfig::Config configuration;
-    set_config_path(configuration, config_path);
-
-    // Read off values.
-    // libconfig is ANSI/MBCS on Windows - no Unicode support.
-    // This reads ANSI/MBCS values from XML. If they are UTF-8 (and above the
-    // ASCII band) the values will be misinterpreted upon use.
-    const libconfig::Setting& root = configuration.getRoot();
-    root.lookupValue("output-file", config.output_file);
-    root.lookupValue("error-file", config.error_file);
-    root.lookupValue("blockchain-path", config.blockchain_path);
-    root.lookupValue("hosts-file", config.hosts_file);
-    root.lookupValue("service", config.service);
-    root.lookupValue("heartbeat", config.heartbeat);
-    root.lookupValue("publisher_enabled", config.publisher_enabled);
-    root.lookupValue("block-publish", config.block_publish);
-    root.lookupValue("tx-publish", config.tx_publish);
-    root.lookupValue("certificate", config.certificate);
-    root.lookupValue("client-allowed-certs", config.client_allowed_certs);
-    load_whitelist(root, config);
-    root.lookupValue("txpool_capacity", config.txpool_capacity);
-    root.lookupValue("name", config.name);
-    root.lookupValue("outgoing-connections", config.outgoing_connections);
-    root.lookupValue("listener_enabled", config.listener_enabled);
-    load_nodes(root, config);
-    root.lookupValue("log_requests", config.log_requests);
-    root.lookupValue("history_db_active_height",
-        config.history_db_active_height);
+    return true;
 }
 
 } // namespace server
+} // namespace libbitcoin
 

@@ -17,22 +17,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CONFIG_HPP
-#define LIBBITCOIN_SERVER_CONFIG_HPP
+#ifndef LIBBITCOIN_SERVER_SERVER_HPP
+#define LIBBITCOIN_SERVER_SERVER_HPP
 
-#include <cstdint>
-#include <string>
-#include <vector>
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
+#include <iostream>
 
 namespace libbitcoin {
 namespace server {
 
-class config_type;
+/**
+ * Console return codes, positive values are domain-specific.
+ */
+enum console_result : int
+{
+    failure = -1,
+    okay = 0,
+    not_started = 1
+};
 
-bool load_config(config_type& metadata, std::string& message, int argc,
-    const char* argv[]);
+/**
+ * Run the server.
+ */
+console_result dispatch(int argc, const char* argv[], std::istream&,
+    std::ostream& output, std::ostream& error);
 
 } // namespace server
 } // namespace libbitcoin

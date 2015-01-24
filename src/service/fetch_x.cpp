@@ -21,9 +21,9 @@
 #include "fetch_x.hpp"
 #include "util.hpp"
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using namespace bc::chain;
 
 // fetch_history stuff
@@ -108,4 +108,5 @@ void transaction_fetched(const std::error_code& ec,
 }
 
 } // namespace server
+} // namespace libbitcoin
 

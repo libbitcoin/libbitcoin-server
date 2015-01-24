@@ -22,9 +22,9 @@
 
 #define LOG_SUBSCRIBER "subscriber"
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
 namespace posix_time = boost::posix_time;
@@ -292,4 +292,5 @@ void subscribe_manager::sweep_expired()
 }
 
 } // namespace server
+} // namespace libbitcoin
 

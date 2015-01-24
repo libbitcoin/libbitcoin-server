@@ -23,9 +23,9 @@
 #include "fetch_x.hpp"
 #include "util.hpp"
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using namespace bc::chain;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -365,4 +365,5 @@ void stealth_fetched(
 }
 
 } // namespace server
+} // namespace libbitcoin
 

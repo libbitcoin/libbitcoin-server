@@ -22,9 +22,9 @@
 
 #define LOG_PUBLISHER LOG_WORKER
 
+namespace libbitcoin {
 namespace server {
 
-using namespace bc;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -43,7 +43,7 @@ bool publisher::setup_socket(
     return socket.bind(connection) != -1;
 }
 
-bool publisher::start(config_type& config)
+bool publisher::start(settings_type& config)
 {
     node_.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
@@ -112,4 +112,4 @@ void publisher::send_tx(const transaction_type& tx)
 }
 
 } // namespace server
-
+} // namespace libbitcoin

@@ -10,49 +10,61 @@
     <Filter Include="src\service">
       <UniqueIdentifier>{4897c614-3d98-47d0-a4f3-b7e2b5304397}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\service\include">
+      <UniqueIdentifier>{26458c7a-620f-4f95-9663-9db846de6167}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\include">
+      <UniqueIdentifier>{39b29c2e-85af-40e3-9217-2163efbc768e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\src\service\util.hpp">
-      <Filter>src\service</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\blockchain.hpp">
-      <Filter>src\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\fetch_x.hpp">
-      <Filter>src\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\fullnode.hpp">
-      <Filter>src\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\protocol.hpp">
-      <Filter>src\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\transaction_pool.hpp">
-      <Filter>src\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\worker.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\config.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\echo.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\message.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\node_impl.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\publisher.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\subscribe_manager.hpp">
-      <Filter>src</Filter>
+      <Filter>src\service\include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\service\compat.hpp">
-      <Filter>src\service</Filter>
+      <Filter>src\service\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\fetch_x.hpp">
+      <Filter>src\service\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\fullnode.hpp">
+      <Filter>src\service\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\protocol.hpp">
+      <Filter>src\service\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\transaction_pool.hpp">
+      <Filter>src\service\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\service\util.hpp">
+      <Filter>src\service\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\config.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\echo.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\message.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\node_impl.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\publisher.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\subscribe_manager.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\worker.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\server.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\settings.hpp">
+      <Filter>src\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -97,6 +109,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\compat.cpp">
       <Filter>src\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\settings.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

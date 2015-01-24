@@ -20,9 +20,8 @@
 #include <random>
 #include "message.hpp"
 
+namespace libbitcoin {
 namespace server {
-
-using namespace bc;
 
 bool incoming_message::recv(czmqpp::socket& socket)
 {
@@ -120,4 +119,4 @@ uint32_t outgoing_message::id() const
 }
 
 } // namespace server
-
+} // namespace libbitcoin
