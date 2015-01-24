@@ -63,6 +63,18 @@ AC_ARG_VAR([PKG_CONFIG_PATH], "Additional directories for package discovery.")
 
 # Process options.
 #==============================================================================
+# Implement --with-bash-completion-dir and output ${bash_completion_dir} and declare BASH_COMPLETION_DIR.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING(--with-bash-completion-dir option)
+AC_ARG_WITH([bash-completion-dir],
+    AS_HELP_STRING([--with-bash-completion-dir[=PATH]],
+        [Install bash completion support, optionally specifying the directory. This option may require elevated permissions. @<:@default=no@:>@]),
+    [bash_completion_dir=$withval],
+    [bash_completion_dir=no])
+AC_MSG_RESULT([$bash_completion_dir])
+AC_SUBST([bash_completion_dir])
+AM_CONDITIONAL([BASH_COMPLETION_DIR], [test x$bash_completion_dir != xno])
+
 # Implement --with-pkgconfigdir and output ${pkgconfigdir}.
 #------------------------------------------------------------------------------
 AC_MSG_CHECKING(--with-pkgconfigdir option)
@@ -111,6 +123,13 @@ AS_CASE([${CC}], [*gcc*],
 AS_CASE([${CC}], [*clang*],
     [AX_BOOST_BASE([1.54.0], [], [AC_MSG_ERROR(
         [Boost 1.54.0 or later is required but was not found.])])])
+
+# Require bash-completion of at least version 2.0.0 and output ${bash_completion_CFLAGS} and ${bash_completion_LIBS}.
+#------------------------------------------------------------------------------
+AS_IF([test x$bash_completion_dir = xyes],
+    [PKG_CHECK_MODULES([bash_completion], [bash-completion >= 2.0.0],
+    [bash_completion_dir="`pkg-config --variable=completionsdir bash-completion`"],
+    [bash_completion_dir="${datadir}/bash-completion/completions"])])
 
 # Require sodium of at least version 1.0.0 and output ${sodium_CFLAGS} and ${sodium_LIBS}.
 #------------------------------------------------------------------------------
