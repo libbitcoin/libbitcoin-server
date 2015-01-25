@@ -70,8 +70,7 @@ const options_description config_type::load_options()
     description.add_options()
     (
         BS_CONFIGURATION_VARIABLE,
-        value<boost::filesystem::path>(&settings.config)
-            ->default_value(default_config_path()),
+        value<path>(&settings.config)->default_value(default_config_path()),
         "The path to the configuration settings file."
     )
     (
@@ -106,7 +105,7 @@ const options_description config_type::load_environment()
     description.add_options()
     (
         BS_CONFIGURATION_VARIABLE,
-        value<boost::filesystem::path>(),
+        value<path>(),
         "The path to the configuration settings file."
     );
 
@@ -117,16 +116,6 @@ const options_description config_type::load_settings()
 {
     options_description description("settings");
     description.add_options()
-    (
-        "identity.client",
-        value<settings_type::tokens>(&settings.clients),
-        "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
-    )
-    (
-        "identity.peer",
-        value<settings_type::tokens>(&settings.peers),
-        "Node by host:port to augment peer discovery, multiple entries allowed."
-    )
     (
         "logging.log_requests",
         value<bool>(&settings.log_requests)->default_value(false),
@@ -158,34 +147,34 @@ const options_description config_type::load_settings()
         "Set the minimum height of the history database, defaults to 0."
     )
     (
+        "identity.certificate",
+        value<std::string>(&settings.certificate),
+        "Set the server's public certificate, not set by default."
+    )
+    (
         "identity.unique_name",
-        value<std::string>(&settings.unique_name),
+        value<endpoint_type>(&settings.unique_name),
         "Set the server name, must be unique if specified."
     )
     (
         "endpoints.service",
-        value<std::string>(&settings.service)->default_value("tcp://*:9091"),
+        value<endpoint_type>(&settings.service)->default_value({ "tcp://*:9091" }),
         "Set the query service endpoint, defaults to 'tcp://*:9091'."
     )
     (
         "endpoints.heartbeat",
-        value<std::string>(&settings.heartbeat)->default_value("tcp://*:9092"),
+        value<endpoint_type>(&settings.heartbeat)->default_value({ "tcp://*:9092" }),
         "Set the heartbeat endpoint, defaults to 'tcp://*:9092'."
     )
     (
         "endpoints.block_publish",
-        value<std::string>(&settings.block_publish)->default_value("tcp://*:9093"),
+        value<endpoint_type>(&settings.block_publish)->default_value({ "tcp://*:9093" }),
         "Set the block publishing service endpoint, defaults to 'tcp://*:9093'."
     )
     (
         "endpoints.tx_publish",
-        value<std::string>(&settings.tx_publish)->default_value("tcp://*:9094"),
+        value<endpoint_type>(&settings.tx_publish)->default_value({ "tcp://*:9094" }),
         "Set the transaction publishing service endpoint, defaults to 'tcp://*:9094'."
-    )
-    (
-        "identity.certificate",
-        value<std::string>(&settings.certificate),
-        "Set the server's public certificate, not set by default."
     )
     (
         "identity.hosts_file",
@@ -211,6 +200,16 @@ const options_description config_type::load_settings()
         "identity.client_certs_path",
         value<path>(&settings.client_certs_path),
         "Set the client certificates directory, allows anonymous clients if not set."
+    )
+    (
+        "identity.peer",
+        value<std::vector<endpoint_type>>(&settings.peers),
+        "Node by host:port to augment peer discovery, multiple entries allowed."
+    )
+    (
+        "identity.client",
+        value<std::vector<endpoint_type>>(&settings.clients),
+        "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     );
 
     return description;

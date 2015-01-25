@@ -20,8 +20,12 @@
 #ifndef LIBBITCOIN_SERVER_SETTINGS_HPP
 #define LIBBITCOIN_SERVER_SETTINGS_HPP
 
+#include <cstdint>
+#include <string>
+#include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include "endpoint.hpp"
 
 // Not localizable.
 #define BS_CONFIGURATION_VARIABLE "CONFIGURATION"
@@ -32,14 +36,6 @@ namespace server {
 
 struct settings_type
 {
-    struct endpoint_type
-    {
-        std::string host;
-        uint16_t port;
-    };
-
-    typedef std::vector<std::string> tokens;
-
     // options
     bool help;
     bool initchain;
@@ -49,25 +45,25 @@ struct settings_type
     boost::filesystem::path config;
 
     // settings
-    tokens peers;
-    tokens clients;
     bool log_requests;
     bool listener_enabled;
     bool publisher_enabled;
     uint32_t tx_pool_capacity;
     uint32_t out_connections;
     uint32_t history_height;
-    std::string unique_name;
-    std::string service;
-    std::string heartbeat;
-    std::string tx_publish;
-    std::string block_publish;
     std::string certificate;
+    endpoint_type unique_name;
+    endpoint_type service;
+    endpoint_type heartbeat;
+    endpoint_type tx_publish;
+    endpoint_type block_publish;
     boost::filesystem::path hosts_file;
     boost::filesystem::path error_file;
     boost::filesystem::path output_file;
     boost::filesystem::path blockchain_path;
     boost::filesystem::path client_certs_path;
+    std::vector<endpoint_type> peers;
+    std::vector<endpoint_type> clients;
 };
 
 class config_type

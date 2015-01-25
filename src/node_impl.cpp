@@ -135,26 +135,12 @@ bool node_impl::start(settings_type& config)
     protocol_.set_hosts_filename(config.hosts_file.generic_string());
     if (!config.listener_enabled)
         protocol_.disable_listener();
-    for (const auto& node: config.peers)
+    for (const auto& endpoint: config.peers)
     {
-        ///////////////////////////////////////////////////////////////////////
-        // TODO: move into settings load using a deserializable complex type.
-        // Cast exception will be handled by program options after above move.
-        const auto parts = bc::config::split(node, ":");
-        if (parts.size() != 2)
-        {
-            log_warning(LOG_NODE) << "Invalid node: " << node;
-            continue;
-        }
-
-        settings_type::endpoint_type endpoint;
-        endpoint.host = parts[0];
-        endpoint.port = boost::lexical_cast<uint16_t>(parts[1]);
-        ///////////////////////////////////////////////////////////////////////
-
         log_info(LOG_NODE) << "Adding node: " 
-            << endpoint.host << " " << endpoint.port;
-        protocol_.maintain_connection(endpoint.host, endpoint.port);
+            << endpoint.get_host() << " " << endpoint.get_port();
+        protocol_.maintain_connection(endpoint.get_host(),
+            endpoint.get_port());
     }
     start_session();
     return true;

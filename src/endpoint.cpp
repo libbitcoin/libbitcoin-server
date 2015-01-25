@@ -20,14 +20,109 @@
 #include "endpoint.hpp"
 
 #include <iostream>
+#include <regex>
 #include <string>
-#include <vector>
 #include <boost/program_options.hpp>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
+    
+using namespace boost;
+using namespace boost::algorithm;
+using namespace boost::program_options;
+
+endpoint_type::endpoint_type()
+    : port_(0)
+{
+}
+
+endpoint_type::endpoint_type(const std::string& value)
+    : port_(0)
+{
+    std::stringstream(value) >> *this;
+}
+
+endpoint_type::endpoint_type(const endpoint_type& other)
+    : scheme_(other.get_scheme()), host_(other.get_host()),
+    port_(other.get_port())
+{
+}
+
+const std::string& endpoint_type::get_scheme() const
+{
+    return scheme_;
+}
+
+const std::string& endpoint_type::get_host() const
+{
+    return host_;
+}
+
+uint16_t endpoint_type::get_port() const
+{
+    return port_;
+}
+
+endpoint_type::operator const std::string() const
+{
+    std::stringstream value;
+    value << *this;
+    return value.str();
+}
+
+std::istream& operator>>(std::istream& input, endpoint_type& argument) 
+    throw(invalid_option_value)
+{
+    std::string value;
+    input >> value;
+
+    // When matched will always generate 6 tokens, we want 2, 3 and 5.
+    const std::regex regular(
+        "((tcp|udp):\\/\\/)?([0-9a-z\\.\\*-]+)(:([0-9]{1,5}))?");
+
+    try 
+    {
+        std::sregex_iterator it(value.begin(), value.end(), regular), end;
+
+        // No match?
+        if (it == end)
+            BOOST_THROW_EXCEPTION(invalid_option_value(value));
+
+        std::smatch match = *it;
+
+        // Extract the three tokens of interest.
+        argument.scheme_ = match[2];
+        argument.host_ = match[3];
+        const std::string number(match[5]);
+
+        if (!number.empty())
+            argument.port_ = boost::lexical_cast<uint16_t>(number);
+    }
+    catch (const boost::exception&)
+    {
+        BOOST_THROW_EXCEPTION(invalid_option_value(value));
+    }
+    catch (const std::exception&)
+    {
+        BOOST_THROW_EXCEPTION(invalid_option_value(value));
+    }
+
+    return input;
+}
+
+std::ostream& operator<<(std::ostream& output, const endpoint_type& argument)
+{
+    if (!argument.scheme_.empty())
+        output << argument.scheme_ << ":\\";
+
+    output << argument.host_;
+
+    if (argument.port_ != 0)
+        output << ":" << argument.port_;
+
+    return output;
+}
 
 } // namespace server
 } // namespace libbitcoin
-
