@@ -152,7 +152,7 @@ bool node_impl::start(settings_type& config)
             settings_type::endpoint_type endpoint;
             endpoint.host = parts[0];
             endpoint.port = boost::lexical_cast<uint16_t>(parts[1]);
-            ///////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////
 
             log_info(LOG_NODE) << "Adding node: " 
                 << endpoint.host << " " << endpoint.port;

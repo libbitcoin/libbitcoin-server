@@ -41,7 +41,7 @@ namespace server {
 using boost::filesystem::path;
 using namespace boost::program_options;
 
-std::string system_config_directory()
+static std::string system_config_directory()
 {
 #ifdef _MSC_VER
     char path[MAX_PATH];
@@ -61,11 +61,7 @@ static path default_config_path()
 {
     // This subdirectory and file name must stay in sync with the path
     // for the sample distributed via the build.
-    auto value = path(system_config_directory())
-        / "libbitcoin" / "server.cfg";
-
-    std::cout << "SYSCONFDIR : " << value << std::endl;
-    return value;
+    return path(system_config_directory()) / "libbitcoin" / "server.cfg";
 }
 
 const options_description config_type::load_options()
