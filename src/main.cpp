@@ -21,7 +21,9 @@
 #include <bitcoin/bitcoin.hpp>
 #include "server.hpp"
 
-// Server entry point.
+/**
+ * Server entry point.
+ */
 int main(int argc, char* argv[])
 {
     // I/O injection.

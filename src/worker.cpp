@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include "echo.hpp"
 #include "worker.hpp"
@@ -88,14 +89,10 @@ void request_worker::stop()
 {
 }
 
-void request_worker::whitelist(settings_type::tokens& addrs)
+void request_worker::whitelist(std::vector<endpoint_type>& addrs)
 {
     for (const auto& ip_address: addrs)
-        ///////////////////////////////////////////////////////////////////////
-        // TODO: move into settings load using a deserializable complex type.
-        for (const auto addr: bc::config::split(ip_address))
-            auth_.allow(addr);
-        ///////////////////////////////////////////////////////////////////////
+        auth_.allow(ip_address);
 }
 void request_worker::enable_crypto(settings_type& config)
 {
@@ -111,8 +108,8 @@ void request_worker::create_new_socket(settings_type& config)
 {
     log_debug(LOG_WORKER) << "Listening: " << config.service;
     // Set the socket identity name.
-    if (!config.unique_name.empty())
-        socket_.set_identity(config.unique_name.c_str());
+    if (!config.unique_name.get_host().empty())
+        socket_.set_identity(config.unique_name.get_host());
     // Connect...
     socket_.bind(config.service);
     // Configure socket to not wait at close time

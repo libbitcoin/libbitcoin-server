@@ -122,9 +122,14 @@ bool load_config(config_type& metadata, std::string& message, int argc,
         message = e.what();
         return false;
     }
-    catch (...)
+    catch (const boost::exception&)
     {
-        message = "...";
+        message = "boost::exception";
+        return false;
+    }
+    catch (const std::exception& e)
+    {
+        message = e.what();
         return false;
     }
 

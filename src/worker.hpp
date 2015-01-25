@@ -24,6 +24,7 @@
 #include <mutex>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <czmq++/czmqpp.hpp>
 #include "message.hpp"
@@ -67,7 +68,7 @@ public:
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist(settings_type::tokens& addrs);
+    void whitelist(std::vector<endpoint_type>& addrs);
     void enable_crypto(settings_type& config);
     void create_new_socket(settings_type& config);
     void poll();

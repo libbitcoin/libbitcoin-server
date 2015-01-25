@@ -36,7 +36,7 @@ enum console_result : int
 };
 
 /**
- * Run the server.
+ * Dispatch from the command line.
  */
 console_result dispatch(int argc, const char* argv[], std::istream&,
     std::ostream& output, std::ostream& error);

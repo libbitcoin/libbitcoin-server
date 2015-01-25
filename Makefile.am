@@ -30,6 +30,7 @@ bitcoin_server_SOURCES = \
     src/message.cpp \
     src/config.cpp \
     src/echo.cpp \
+    src/endpoint.cpp \
     src/main.cpp \
     src/server.cpp \
     src/settings.cpp \

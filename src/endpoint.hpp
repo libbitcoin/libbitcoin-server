@@ -17,26 +17,41 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CONFIG_HPP
-#define LIBBITCOIN_SERVER_CONFIG_HPP
+#ifndef LIBBITCOIN_SERVER_ENDPOINT_HPP
+#define LIBBITCOIN_SERVER_ENDPOINT_HPP
 
 #include <cstdint>
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class config_type;
+class endpoint_type
+{
+public:
+    endpoint_type();
+    endpoint_type(const std::string& value);
+    endpoint_type(const endpoint_type& other);
 
-/**
- * Lod configurable vlaues from environment variables, settings file, and
- * command line positional and non-positional options.
- */
-bool load_config(config_type& metadata, std::string& message, int argc,
-    const char* argv[]);
+    const std::string& get_scheme() const;
+    const std::string& get_host() const;
+    uint16_t get_port() const;
+    operator const std::string() const;
+
+    friend std::istream& operator>>(std::istream& input,
+        endpoint_type& argument);
+    friend std::ostream& operator<<(std::ostream& output,
+        const endpoint_type& argument);
+
+private:
+    std::string scheme_;
+    std::string host_;
+    uint16_t port_;
+};
 
 } // namespace server
 } // namespace libbitcoin
