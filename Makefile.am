@@ -48,7 +48,8 @@ bitcoin_server_CPPFLAGS = \
     -I${srcdir}/include \
     ${sodium_CFLAGS} \
     ${czmq___CFLAGS} \
-    ${bitcoin_node_CFLAGS}
+    ${bitcoin_node_CFLAGS} \
+    -DSYSCONFDIR=\"${sysconfdir}\"
 
 bitcoin_server_LDADD = \
     ${sodium_LIBS} \
@@ -61,6 +62,6 @@ bitcoin_server_LDADD = \
 # TODO: coordinate this dir and file name with source code to keep in sync.
 # Note that in a prefix install this file is placed relative to the prefix but
 # execution of the server will default to reading in the system-wide directory.
-confdir=${sysconfdir}/libbitcoin
+confdir="${sysconfdir}/libbitcoin"
 conf_DATA = data/server.cfg
 
