@@ -23,6 +23,7 @@
 #include <regex>
 #include <string>
 #include <boost/program_options.hpp>
+#include <boost/regex.hpp>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
@@ -71,25 +72,25 @@ endpoint_type::operator const std::string() const
     return value.str();
 }
 
-std::istream& operator>>(std::istream& input, endpoint_type& argument) 
-    throw(invalid_option_value)
+std::istream& operator>>(std::istream& input, endpoint_type& argument)
 {
     std::string value;
     input >> value;
 
+    // std::regex requires gcc 4.9, so we are using boost::regex for now.
     // When matched will always generate 6 tokens, we want 2, 3 and 5.
-    const std::regex regular(
+    const boost::regex regular(
         "((tcp|udp):\\/\\/)?([0-9a-z\\.\\*-]+)(:([0-9]{1,5}))?");
 
     try 
     {
-        std::sregex_iterator it(value.begin(), value.end(), regular), end;
+        boost::sregex_iterator it(value.begin(), value.end(), regular), end;
 
         // No match?
         if (it == end)
             BOOST_THROW_EXCEPTION(invalid_option_value(value));
 
-        std::smatch match = *it;
+        boost::smatch match = *it;
 
         // Extract the three tokens of interest.
         argument.scheme_ = match[2];

@@ -34,7 +34,7 @@ class endpoint_type
 {
 public:
     endpoint_type();
-    endpoint_type(const std::string& value) throw();
+    endpoint_type(const std::string& value);
     endpoint_type(const endpoint_type& other);
 
     const std::string& get_scheme() const;
@@ -43,8 +43,7 @@ public:
     operator const std::string() const;
 
     friend std::istream& operator>>(std::istream& input,
-        endpoint_type& argument) 
-        throw(boost::program_options::invalid_option_value);
+        endpoint_type& argument);
     friend std::ostream& operator<<(std::ostream& output,
         const endpoint_type& argument);
 
