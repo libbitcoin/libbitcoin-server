@@ -118,14 +118,14 @@ const options_description config_type::load_settings()
     options_description description("settings");
     description.add_options()
     (
-        "identity.clients",
+        "identity.client",
         value<settings_type::tokens>(&settings.clients),
-        "List allowed client IP addresses, space delimited, empty and all allowed by default."
+        "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     )
     (
-        "identity.peers",
+        "identity.peer",
         value<settings_type::tokens>(&settings.peers),
-        "List nodes by host:port to augment peer discovery, space delimited, empty by default."
+        "Node by host:port to augment peer discovery, multiple entries allowed."
     )
     (
         "logging.log_requests",

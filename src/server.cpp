@@ -281,21 +281,21 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
     std::ostream& output, std::ostream& error)
 {
     std::string message;
-    config_type metadata;
-    if (!load_config(metadata, message, argc, argv))
+    config_type configuration;
+    if (!load_config(configuration, message, argc, argv))
     {
         display_invalid_parameter(error, message);
         return console_result::failure;
     }
 
-    if (!metadata.settings.config.empty())
-        output << format(BS_USING_CONFIG_FILE) % metadata.settings.config;
+    if (!configuration.settings.config.empty())
+        output << format(BS_USING_CONFIG_FILE) % configuration.settings.config;
 
-    auto settings = metadata.settings;
+    auto settings = configuration.settings;
     if (settings.help)
-        show_help(metadata, output);
+        show_help(configuration, output);
     else if (settings.settings)
-        show_settings(metadata, output);
+        show_settings(configuration, output);
     else if (settings.initchain)
         return init_chain(settings.blockchain_path, output, error);
     else
