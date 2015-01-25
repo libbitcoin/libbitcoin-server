@@ -44,8 +44,10 @@
     "These configuration settings are currently in effect."
 #define BS_INFORMATION_MESSAGE \
     "Runs a full bitcoin node in the global peer-to-peer network."
+#define BS_UNINITIALIZED_CHAIN \
+    "The %1% directory is not initialized.\n"
 #define BS_INITIALIZING_CHAIN \
-    "Please wait while the %1% directory is initialized.\n"
+    "Please wait while initializing %1% directory...\n"
 #define BS_INITCHAIN_DIR_FAIL \
     "Failed to create directory %1% with error, '%2%'.\n"
 #define BS_INITCHAIN_DIR_EXISTS \
@@ -57,7 +59,7 @@
 #define BS_SERVER_STARTED \
     "Server started.\n"
 #define BS_SERVER_STOPPING \
-    "Server stopping... Please wait.\n"
+    "Please wait while server is stopping...\n"
 #define BS_SERVER_STOPPED \
     "Server stopped cleanly.\n"
 #define BS_NODE_START_FAIL \
@@ -143,8 +145,7 @@ static console_result init_chain(path& directory, std::ostream& output,
     return console_result::okay;
 }
 
-static console_result verify_chain(path& directory, std::ostream& output,
-    std::ostream& error)
+static console_result verify_chain(path& directory, std::ostream& error)
 {
     // Use missing directory as a sentinel indicating lack of initialization.
 
@@ -152,9 +153,11 @@ static console_result verify_chain(path& directory, std::ostream& output,
     if (!exists(directory, code))
     {
         if (code.value() == 2)
-            return init_chain(directory, output, error);
+            error << format(BS_UNINITIALIZED_CHAIN) % directory;
+        else
+            error << format(BS_INITCHAIN_DIR_TEST) % directory %
+                code.message();
 
-        error << format(BS_INITCHAIN_DIR_TEST) % directory % code.message();
         return console_result::failure;
     }
 
@@ -215,7 +218,7 @@ static console_result run(settings_type& config, std::ostream& output,
     std::ostream& error)
 {
     // Ensure the blockchain directory is initialized (at least exists).
-    auto result = verify_chain(config.blockchain_path, output, error);
+    auto result = verify_chain(config.blockchain_path, error);
     if (result != console_result::okay)
         return result;
 
