@@ -158,9 +158,9 @@ const options_description config_type::load_settings()
         "Set the minimum height of the history database, defaults to 0."
     )
     (
-        "general.unique_name",
+        "identity.unique_name",
         value<std::string>(&settings.unique_name),
-        "Set the server name, must be unique [among?] if specified."
+        "Set the server name, must be unique if specified."
     )
     (
         "endpoints.service",
