@@ -39,6 +39,8 @@
 #include "settings.hpp"
 #include "worker.hpp"
 
+#define BS_APPLICATION_NAME "bitcoin_server"
+
 // Localizable messages.
 #define BS_SETTINGS_MESSAGE \
     "These configuration settings are currently in effect."
@@ -48,7 +50,7 @@
     "The %1% directory is not initialized.\n"
 #define BS_INITIALIZING_CHAIN \
     "Please wait while initializing %1% directory...\n"
-#define BS_INITCHAIN_DIR_FAIL \
+#define BS_INITCHAIN_DIR_NEW \
     "Failed to create directory %1% with error, '%2%'.\n"
 #define BS_INITCHAIN_DIR_EXISTS \
     "Failed because the directory %1% already exists.\n"
@@ -81,6 +83,7 @@ namespace server {
 using std::placeholders::_1;
 using std::placeholders::_2;
 using boost::format;
+using namespace bc::config;
 using namespace boost::system;
 using namespace boost::filesystem;
 
@@ -95,20 +98,20 @@ static void display_invalid_parameter(std::ostream& stream,
 
 static void show_help(config_type& metadata, std::ostream& output)
 {
-    // TODO: create a more general construction.
-    bc::config::printer help("bitcoin_server", "", "", BS_INFORMATION_MESSAGE,
-        metadata.load_arguments(), metadata.load_options());
+    printer help(metadata.load_options(), metadata.load_arguments(),
+        BS_APPLICATION_NAME, BS_INFORMATION_MESSAGE);
     help.initialize();
     help.print(output);
 }
 
 static void show_settings(config_type& metadata, std::ostream& output)
 {
-    // TODO: create a more general construction and settings formatted output.
-    bc::config::printer help("bitcoin_server", "", "", BS_SETTINGS_MESSAGE,
-        metadata.load_arguments(), metadata.load_settings());
-    help.initialize();
-    help.print(output);
+    printer settings(metadata.load_settings(), metadata.load_arguments(),
+        BS_APPLICATION_NAME, BS_SETTINGS_MESSAGE);
+    settings.initialize();
+
+    // TODO: create settings formatted output.
+    settings.print(output);
 }
 
 static console_result init_chain(path& directory, std::ostream& output,
@@ -123,7 +126,7 @@ static console_result init_chain(path& directory, std::ostream& output,
         if (code.value() == 0)
             error << format(BS_INITCHAIN_DIR_EXISTS) % directory;
         else
-            error << format(BS_INITCHAIN_DIR_FAIL) % directory % code.message();
+            error << format(BS_INITCHAIN_DIR_NEW) % directory % code.message();
 
         return console_result::failure;
     }

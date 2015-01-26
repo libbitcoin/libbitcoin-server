@@ -177,9 +177,9 @@ const options_description config_type::load_settings()
         "Set the transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
-        "identity.hosts_file",
+        "general.hosts_file",
         value<path>(&settings.hosts_file)->default_value("hosts"),
-        "Set the path to the alternate seeds file, defaults to 'hosts'."
+        "Set the peer cache file path, defaults to 'hosts'."
     )
     (
         "logging.error_file",
@@ -202,14 +202,14 @@ const options_description config_type::load_settings()
         "Set the client certificates directory, allows anonymous clients if not set."
     )
     (
-        "identity.peer",
-        value<std::vector<endpoint_type>>(&settings.peers),
-        "Node by host:port to augment peer discovery, multiple entries allowed."
-    )
-    (
         "identity.client",
         value<std::vector<endpoint_type>>(&settings.clients),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
+    )
+    (
+        "identity.peer",
+        value<std::vector<endpoint_type>>(&settings.peers),
+        "Node to augment peer discovery, formatted as host:port, multiple entries allowed."
     );
 
     return description;
