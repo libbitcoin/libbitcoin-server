@@ -61,7 +61,6 @@ install:
     - if [[ $LINUX && $GCC   && $STATIC  ]]; then sudo apt-get -qq install bash-completion; fi
 
     # Download and install packages for osx/clang/dynamic.
-    - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then brew install boost1.54; fi
     - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then brew install bash-completion; fi
 
     # Download and install packages for linux/clang/dynamic.
