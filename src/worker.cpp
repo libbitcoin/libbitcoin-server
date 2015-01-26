@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include <cstdint>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include "echo.hpp"
@@ -34,7 +35,7 @@ using std::placeholders::_1;
 const posix_time::time_duration heartbeat_interval = milliseconds(4000);
 
 // Milliseconds
-constexpr long poll_sleep_interval = 1000;
+constexpr uint32_t poll_sleep_interval = 1000;
 
 auto now = []() { return microsec_clock::universal_time(); };
 
