@@ -58,10 +58,14 @@ void protocol_broadcast_transaction(node_impl& node,
 void protocol_total_connections(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
+    BITCOIN_ASSERT(node.protocol().total_connections() <= max_uint32);
+    auto total_connections32 = static_cast<uint32_t>(
+        node.protocol().total_connections());
+
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, std::error_code());
-    serial.write_4_bytes(node.protocol().total_connections());
+    serial.write_4_bytes(total_connections32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST)
         << "protocol.total_connections() finished. Sending response.";
