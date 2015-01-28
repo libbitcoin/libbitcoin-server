@@ -88,7 +88,9 @@ std::istream& operator>>(std::istream& input, endpoint_type& argument)
 
         // No match?
         if (it == end)
+        {
             BOOST_THROW_EXCEPTION(invalid_option_value(value));
+        }
 
         boost::smatch match = *it;
 

@@ -1,5 +1,3 @@
-
-
 #
 # documentation
 #
@@ -14,8 +12,8 @@ pkgconfig_DATA = libbitcoin-server.pc
 # bash completion
 #
 if BASH_COMPLETION_DIR
-bashcompletiondir = ${bash_completion_dir}
-dist_bashcompletion_DATA = data/bitcoin_server
+    bashcompletiondir = ${bash_completion_dir}
+    dist_bashcompletion_DATA = data/bitcoin_server
 endif
 
 # look for macros in the m4 subdirectory

@@ -43,7 +43,7 @@
 
 // Localizable messages.
 #define BS_SETTINGS_MESSAGE \
-    "These configuration settings are currently in effect."
+    "These are the configuration settings that can be set."
 #define BS_INFORMATION_MESSAGE \
     "Runs a full bitcoin node in the global peer-to-peer network."
 #define BS_UNINITIALIZED_CHAIN \
@@ -101,17 +101,15 @@ static void show_help(config_type& metadata, std::ostream& output)
     printer help(metadata.load_options(), metadata.load_arguments(),
         BS_APPLICATION_NAME, BS_INFORMATION_MESSAGE);
     help.initialize();
-    help.print(output);
+    help.commandline(output);
 }
 
 static void show_settings(config_type& metadata, std::ostream& output)
 {
-    printer settings(metadata.load_settings(), metadata.load_arguments(),
-        BS_APPLICATION_NAME, BS_SETTINGS_MESSAGE);
+    printer settings(metadata.load_settings(), BS_APPLICATION_NAME,
+        BS_SETTINGS_MESSAGE);
     settings.initialize();
-
-    // TODO: create settings formatted output.
-    settings.print(output);
+    settings.settings(output);
 }
 
 static console_result init_chain(path& directory, std::ostream& output,
