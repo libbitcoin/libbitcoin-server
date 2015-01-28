@@ -44,11 +44,11 @@ using namespace boost::program_options;
 static std::string system_config_directory()
 {
 #ifdef _MSC_VER
-    char path[MAX_PATH];
+    char directory[MAX_PATH];
     const auto result = SHGetFolderPathA(NULL, CSIDL_COMMON_APPDATA, NULL,
-        SHGFP_TYPE_CURRENT, path);
+        SHGFP_TYPE_CURRENT, directory);
     if (SUCCEEDED(result))
-        return path;
+        return directory;
     return "";
 #else
     // This symbol must be defined at compile for this project.
@@ -104,8 +104,10 @@ const options_description config_type::load_environment()
     options_description description("environment");
     description.add_options()
     (
+        /* This composes with the command line options. */
         BS_CONFIGURATION_VARIABLE,
-        value<path>(),
+        value<path>()
+            ->composing()->default_value(default_config_path()),
         "The path to the configuration settings file."
     );
 

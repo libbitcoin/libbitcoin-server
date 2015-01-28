@@ -21,9 +21,9 @@
 
 #include <iostream>
 #include <string>
-#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/throw_exception.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include "settings.hpp"
 
@@ -31,8 +31,9 @@ namespace libbitcoin {
 namespace server {
 
 using boost::format;
-using boost::filesystem::path;
+using namespace boost::filesystem;
 using namespace boost::program_options;
+using namespace boost::system;
 
 static path get_config_option(variables_map& variables)
 {
@@ -60,23 +61,27 @@ static void load_command_variables(variables_map& variables,
 static bool load_configuration_variables(variables_map& variables,
     config_type& metadata) throw(reading_file)
 {
+    const auto config_settings = metadata.load_settings();
     const auto config_path = get_config_option(variables);
-    if (!config_path.empty())
+
+    // If the existence test errors out we pretend there's no file :/.
+    error_code code;
+    if (!config_path.empty() && exists(config_path, code))
     {
         const auto& path = config_path.generic_string();
         std::ifstream file(path);
-        if (file.good())
+        if (!file.good())
         {
-            const auto config_settings = metadata.load_settings();
-            const auto config = parse_config_file(file, config_settings);
-            store(config, variables);
-            return true;
+            BOOST_THROW_EXCEPTION(reading_file(path.c_str()));
         }
+
+        const auto config = parse_config_file(file, config_settings);
+        store(config, variables);
+        return true;
     }
 
     // loading from an empty stream causes the defaults to populate
     std::stringstream stream;
-    const auto config_settings = metadata.load_settings();
     const auto config = parse_config_file(stream, config_settings);
     store(config, variables);
     return false;
@@ -138,4 +143,3 @@ bool load_config(config_type& metadata, std::string& message, int argc,
 
 } // namespace server
 } // namespace libbitcoin
-
