@@ -57,13 +57,16 @@ void send_history_result(
     write_error_code(serial, ec);
     for (const history_row& row: history)
     {
+        BITCOIN_ASSERT(row.height <= max_uint32);
+        auto row_height32 = static_cast<uint32_t>(row.height);
+
         if (row.id == point_ident::output)
             serial.write_byte(0);
         else // if (row.id == point_ident::spend)
             serial.write_byte(1);
         serial.write_hash(row.point.hash);
         serial.write_4_bytes(row.point.index);
-        serial.write_4_bytes(row.height);
+        serial.write_4_bytes(row_height32);
         serial.write_8_bytes(row.value);
     }
     BITCOIN_ASSERT(serial.iterator() == result.end());

@@ -75,10 +75,13 @@ void blockchain_fetch_last_height(node_impl& node,
 void last_height_fetched(const std::error_code& ec, size_t last_height,
     const incoming_message& request, queue_send_callback queue_send)
 {
+    BITCOIN_ASSERT(last_height <= bc::max_uint32);
+    auto last_height32 = static_cast<uint32_t>(last_height);
+
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
-    serial.write_4_bytes(last_height);
+    serial.write_4_bytes(last_height32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_last_height() finished. Sending response.";
@@ -231,13 +234,18 @@ void transaction_index_fetched(const std::error_code& ec,
     size_t block_height, size_t index,
     const incoming_message& request, queue_send_callback queue_send)
 {
+    BITCOIN_ASSERT(index <= max_uint32);
+    auto index32 = static_cast<uint32_t>(index);
+    BITCOIN_ASSERT(block_height <= max_uint32);
+    auto block_height32 = static_cast<uint32_t>(block_height);
+
     // error_code (4), block_height (4), index (4)
     data_chunk result(12);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    serial.write_4_bytes(block_height);
-    serial.write_4_bytes(index);
+    serial.write_4_bytes(block_height32);
+    serial.write_4_bytes(index32);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction_index() finished. Sending response.";
     outgoing_message response(request, result);
@@ -299,12 +307,15 @@ void blockchain_fetch_block_height(node_impl& node,
 void block_height_fetched(const std::error_code& ec, size_t block_height,
     const incoming_message& request, queue_send_callback queue_send)
 {
+    BITCOIN_ASSERT(block_height <= max_uint32);
+    auto block_height32 = static_cast<uint32_t>(block_height);
+
     // error_code (4), height (4)
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    serial.write_4_bytes(block_height);
+    serial.write_4_bytes(block_height32);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_block_height() finished. Sending response.";
     outgoing_message response(request, result);

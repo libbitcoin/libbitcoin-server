@@ -58,8 +58,13 @@ void transaction_validated(
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    for (uint32_t unconfirm_index: unconfirmed)
-        serial.write_4_bytes(unconfirm_index);
+    for (auto unconfirmed_index: unconfirmed)
+    {
+        BITCOIN_ASSERT(unconfirmed_index <= max_uint32);
+        auto unconfirmed_index32 = static_cast<uint32_t>(unconfirmed_index);
+
+        serial.write_4_bytes(unconfirmed_index32);
+    }
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST)
         << "transaction_pool.validate() finished. Sending response: "
