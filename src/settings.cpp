@@ -70,11 +70,11 @@ const options_description config_type::load_options()
     description.add_options()
     (
         BS_CONFIGURATION_VARIABLE,
-        value<path>(&settings.config)->default_value(default_config_path()),
+        value<path>(&settings.configuration),
         "The path to the configuration settings file."
     )
     (
-        "help,h",
+        BS_HELP_VARIABLE ",h",
         value<bool>(&settings.help)->default_value(false)->zero_tokens(),
         "Get list of options for this command."
     )
@@ -84,7 +84,7 @@ const options_description config_type::load_options()
         "Initialize database in the configured directory."
     )
     (
-        "settings,s",
+        BS_SETTINGS_VARIABLE ",s",
         value<bool>(&settings.settings)->default_value(false)->zero_tokens(),
         "Display the loaded configuration settings."
     );
@@ -104,10 +104,12 @@ const options_description config_type::load_environment()
     options_description description("environment");
     description.add_options()
     (
-        /* This composes with the command line options. */
+        // For some reason po requires this to be a lower case name.
+        // The case must match the other declarations for it to compose.
+        // This composes with the cmdline options and inits to system path.
         BS_CONFIGURATION_VARIABLE,
-        value<path>()
-            ->composing()->default_value(default_config_path()),
+        value<path>(&settings.configuration)->composing()
+            ->default_value(default_config_path()),
         "The path to the configuration settings file."
     );
 
@@ -205,12 +207,12 @@ const options_description config_type::load_settings()
     )
     (
         "identity.client",
-        value<std::vector<endpoint_type>>(&settings.clients),
+        value<std::vector<endpoint_type>>(&settings.clients)->multitoken(),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     )
     (
         "identity.peer",
-        value<std::vector<endpoint_type>>(&settings.peers),
+        value<std::vector<endpoint_type>>(&settings.peers)->multitoken(),
         "Node to augment peer discovery, formatted as host:port, multiple entries allowed."
     );
 

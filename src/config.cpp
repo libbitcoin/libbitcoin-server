@@ -47,6 +47,18 @@ static path get_config_option(variables_map& variables)
     return config.as<path>();
 }
 
+bool get_option(variables_map& variables, const std::string& name)
+{
+    // Read settings from the map so we don't require an early notify call.
+    const auto& variable = variables[name];
+
+    // prevent exception in the case where the settings variable is not set.
+    if (variable.empty())
+        return false;
+
+    return variable.as<bool>();
+}
+
 static void load_command_variables(variables_map& variables,
     config_type& metadata, int argc, const char* argv[]) throw()
 {
@@ -101,21 +113,26 @@ bool load_config(config_type& metadata, std::string& message, int argc,
 {
     try
     {
+        bool file = false;
         variables_map variables;
         load_command_variables(variables, metadata, argc, argv);
-
-        // Must store before configuration in order to use config path.
         load_environment_variables(variables, metadata);
 
-        // Returns true if the settings were loaded from a file.
-        bool loaded_file = load_configuration_variables(variables, metadata);
+        // Don't load rest if settings is specified, as the user may
+        // have messed up the settings file. Also no need for others if help.
+        if (!get_option(variables, BS_SETTINGS_VARIABLE) && 
+            !get_option(variables, BS_HELP_VARIABLE))
+        {
+            // Returns true if the settings were loaded from a file.
+            file = load_configuration_variables(variables, metadata);
+        }
 
         // Update bound variables in metadata.settings.
         notify(variables);
 
         // Clear the config file path if it wasn't used.
-        if (!loaded_file)
-            metadata.settings.config.clear();
+        if (!file)
+            metadata.settings.configuration.clear();
     }
     catch (const boost::program_options::error& e)
     {
