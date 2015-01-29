@@ -28,8 +28,14 @@
 #include "endpoint.hpp"
 
 // Not localizable.
-#define BS_CONFIGURATION_VARIABLE "CONFIGURATION"
-#define BS_ENVIRONMENT_VARIABLE_PREFIX "BS"
+#define BS_HELP_VARIABLE "help"
+#define BS_SETTINGS_VARIABLE "settings"
+
+// This must be lower case but the env var part can be any case.
+#define BS_CONFIGURATION_VARIABLE "configuration"
+
+// This must match the case of the env var.
+#define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
 
 namespace libbitcoin {
 namespace server {
@@ -42,7 +48,7 @@ struct settings_type
     bool settings;
 
     // options + environment vars
-    boost::filesystem::path config;
+    boost::filesystem::path configuration;
 
     // settings
     bool log_requests;

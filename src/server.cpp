@@ -289,8 +289,9 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
         return console_result::failure;
     }
 
-    if (!configuration.settings.config.empty())
-        output << format(BS_USING_CONFIG_FILE) % configuration.settings.config;
+    if (!configuration.settings.configuration.empty())
+        output << format(BS_USING_CONFIG_FILE) % 
+            configuration.settings.configuration;
 
     auto settings = configuration.settings;
     if (settings.help)
