@@ -81,7 +81,9 @@
     <ClInclude Include="..\..\..\..\src\service\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\src\service\util.hpp" />
     <ClInclude Include="..\..\..\..\src\subscribe_manager.hpp" />
+    <ClInclude Include="..\..\..\..\src\version.hpp" />
     <ClInclude Include="..\..\..\..\src\worker.hpp" />
+    <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -104,6 +106,9 @@
     <ClCompile Include="..\..\..\..\src\service\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\subscribe_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\worker.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

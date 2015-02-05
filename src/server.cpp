@@ -37,6 +37,7 @@
 #include "subscribe_manager.hpp"
 #include "config.hpp"
 #include "settings.hpp"
+#include "version.hpp"
 #include "worker.hpp"
 
 #define BS_APPLICATION_NAME "bitcoin_server"
@@ -82,9 +83,6 @@
     "libbitcoin-node:       %2%\n" \
     "libbitcoin-blockchain: %3%\n" \
     "libbitcoin [%5%]:  %4%\n"
-
-// TODO: generate the version value from libbitcoin-build.
-#define LIBBITCOIN_SERVER_VERSION "2.0.0"
 
 namespace libbitcoin {
 namespace server {

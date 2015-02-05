@@ -69,6 +69,10 @@
     <ClInclude Include="..\..\..\..\src\endpoint.hpp">
       <Filter>src\include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\version.hpp">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\service\blockchain.cpp">
@@ -122,5 +126,8 @@
     <ClCompile Include="..\..\..\..\src\endpoint.cpp">
       <Filter>src</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resource.rc" />
   </ItemGroup>
 </Project>
