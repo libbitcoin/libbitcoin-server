@@ -35,7 +35,7 @@ using namespace boost::filesystem;
 using namespace boost::program_options;
 using namespace boost::system;
 
-path get_config_option(variables_map& variables)
+static path get_config_option(variables_map& variables)
 {
     // read config from the map so we don't require an early notify
     const auto& config = variables[BS_CONFIGURATION_VARIABLE];
@@ -47,7 +47,7 @@ path get_config_option(variables_map& variables)
     return config.as<path>();
 }
 
-bool get_option(variables_map& variables, const std::string& name)
+static bool get_option(variables_map& variables, const std::string& name)
 {
     // Read settings from the map so we don't require an early notify call.
     const auto& variable = variables[name];
@@ -59,7 +59,7 @@ bool get_option(variables_map& variables, const std::string& name)
     return variable.as<bool>();
 }
 
-void load_command_variables(variables_map& variables,
+static void load_command_variables(variables_map& variables,
     config_type& metadata, int argc, const char* argv[])
 {
     const auto options = metadata.load_options();
@@ -69,8 +69,7 @@ void load_command_variables(variables_map& variables,
     store(command_parser.run(), variables);
 }
 
-// Not unit testable (without creating actual config files).
-bool load_configuration_variables(variables_map& variables,
+static bool load_configuration_variables(variables_map& variables,
     config_type& metadata)
 {
     const auto config_settings = metadata.load_settings();
@@ -99,7 +98,7 @@ bool load_configuration_variables(variables_map& variables,
     return false;
 }
 
-void load_environment_variables(variables_map& variables, 
+static void load_environment_variables(variables_map& variables,
     config_type& metadata)
 {
     const auto& environment_variables = metadata.load_environment();
@@ -108,7 +107,7 @@ void load_environment_variables(variables_map& variables,
     store(environment, variables);
 }
 
-bool load_config(config_type& metadata, std::string& message, int argc, 
+bool load_config(config_type& metadata, std::string& message, int argc,
     const char* argv[])
 {
     try
