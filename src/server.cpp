@@ -24,7 +24,7 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/node.hpp>
 #include "echo.hpp"
 #include "message.hpp"
 #include "node_impl.hpp"
@@ -77,7 +77,11 @@
 #define BS_INVALID_PARAMETER \
     "Error: %1%\n"
 #define BS_VERSION_MESSAGE \
-    "testnet: %1%\nlibbitcoin: %2%\nlibbitcoin-server: %3%\n"
+    "\nVersion Information:\n\n" \
+    "libbitcoin-server:     %1%\n" \
+    "libbitcoin-node:       %2%\n" \
+    "libbitcoin-blockchain: %3%\n" \
+    "libbitcoin [%5%]:  %4%\n"
 
 // TODO: generate the version value from libbitcoin-build.
 #define LIBBITCOIN_SERVER_VERSION "2.0.0"
@@ -119,13 +123,16 @@ static void show_settings(config_type& metadata, std::ostream& stream)
 
 static void show_version(std::ostream& stream)
 {
+// The testnet switch is deprecated, so don't worry about loc.
 #ifdef ENABLE_TESTNET
-    const auto testnet = "true";
+    const auto coinnet = "testnet";
 #else
-    const auto testnet = "false";
+    const auto coinnet = "mainnet";
 #endif
-    stream << format(BS_VERSION_MESSAGE) % testnet % LIBBITCOIN_VERSION % 
-        LIBBITCOIN_SERVER_VERSION;
+
+    stream << format(BS_VERSION_MESSAGE) % LIBBITCOIN_SERVER_VERSION %
+        LIBBITCOIN_NODE_VERSION % LIBBITCOIN_BLOCKCHAIN_VERSION %
+        LIBBITCOIN_VERSION % coinnet;
 }
 
 static console_result init_chain(path& directory, std::ostream& output,
