@@ -87,6 +87,11 @@ const options_description config_type::load_options()
         BS_SETTINGS_VARIABLE ",s",
         value<bool>(&settings.settings)->default_value(false)->zero_tokens(),
         "Display the loaded configuration settings."
+    )
+    (
+        "version,v",
+        value<bool>(&settings.version)->default_value(false)->zero_tokens(),
+        "Get version information."
     );
 
     return description;

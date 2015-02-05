@@ -76,6 +76,11 @@
     "Using config file: %1%\n"
 #define BS_INVALID_PARAMETER \
     "Error: %1%\n"
+#define BS_VERSION_MESSAGE \
+    "testnet: %1%\nlibbitcoin: %2%\nlibbitcoin-server: %3%\n"
+
+// TODO: generate the version value from libbitcoin-build.
+#define LIBBITCOIN_SERVER_VERSION "2.0.0"
 
 namespace libbitcoin {
 namespace server {
@@ -96,20 +101,31 @@ static void display_invalid_parameter(std::ostream& stream,
     stream << format(BS_INVALID_PARAMETER) % clean_message;
 }
 
-static void show_help(config_type& metadata, std::ostream& output)
+static void show_help(config_type& metadata, std::ostream& stream)
 {
     printer help(metadata.load_options(), metadata.load_arguments(),
         BS_APPLICATION_NAME, BS_INFORMATION_MESSAGE);
     help.initialize();
-    help.commandline(output);
+    help.commandline(stream);
 }
 
-static void show_settings(config_type& metadata, std::ostream& output)
+static void show_settings(config_type& metadata, std::ostream& stream)
 {
     printer settings(metadata.load_settings(), BS_APPLICATION_NAME,
         BS_SETTINGS_MESSAGE);
     settings.initialize();
-    settings.settings(output);
+    settings.settings(stream);
+}
+
+static void show_version(std::ostream& stream)
+{
+#ifdef ENABLE_TESTNET
+    const auto testnet = "true";
+#else
+    const auto testnet = "false";
+#endif
+    stream << format(BS_VERSION_MESSAGE) % testnet % LIBBITCOIN_VERSION % 
+        LIBBITCOIN_SERVER_VERSION;
 }
 
 static console_result init_chain(path& directory, std::ostream& output,
@@ -298,6 +314,8 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
         show_help(configuration, output);
     else if (settings.settings)
         show_settings(configuration, output);
+    else if (settings.version)
+        show_version(output);
     else if (settings.initchain)
         return init_chain(settings.blockchain_path, output, error);
     else

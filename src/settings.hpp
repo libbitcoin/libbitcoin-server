@@ -46,6 +46,7 @@ struct settings_type
     bool help;
     bool initchain;
     bool settings;
+    bool version;
 
     // options + environment vars
     boost::filesystem::path configuration;
