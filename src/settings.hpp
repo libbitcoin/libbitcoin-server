@@ -30,6 +30,7 @@
 // Not localizable.
 #define BS_HELP_VARIABLE "help"
 #define BS_SETTINGS_VARIABLE "settings"
+#define BS_VERSION_VARIABLE "version"
 
 // This must be lower case but the env var part can be any case.
 #define BS_CONFIGURATION_VARIABLE "configuration"

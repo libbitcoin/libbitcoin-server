@@ -64,6 +64,7 @@ static path default_config_path()
     return path(system_config_directory()) / "libbitcoin" / "server.cfg";
 }
 
+// TODO: localize descriptions.
 const options_description config_type::load_options()
 {
     options_description description("options");
@@ -89,7 +90,7 @@ const options_description config_type::load_options()
         "Display the loaded configuration settings."
     )
     (
-        "version,v",
+        BS_VERSION_VARIABLE ",v",
         value<bool>(&settings.version)->default_value(false)->zero_tokens(),
         "Get version information."
     );
@@ -104,6 +105,7 @@ const positional_options_description config_type::load_arguments()
         .add(BS_CONFIGURATION_VARIABLE, 1);
 }
 
+// TODO: localize descriptions.
 const options_description config_type::load_environment()
 {
     options_description description("environment");
@@ -121,6 +123,7 @@ const options_description config_type::load_environment()
     return description;
 }
 
+// TODO: localize descriptions.
 const options_description config_type::load_settings()
 {
     options_description description("settings");

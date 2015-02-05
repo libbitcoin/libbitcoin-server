@@ -35,7 +35,7 @@ using namespace boost::filesystem;
 using namespace boost::program_options;
 using namespace boost::system;
 
-static path get_config_option(variables_map& variables)
+path get_config_option(variables_map& variables)
 {
     // read config from the map so we don't require an early notify
     const auto& config = variables[BS_CONFIGURATION_VARIABLE];
@@ -59,8 +59,8 @@ bool get_option(variables_map& variables, const std::string& name)
     return variable.as<bool>();
 }
 
-static void load_command_variables(variables_map& variables,
-    config_type& metadata, int argc, const char* argv[]) throw()
+void load_command_variables(variables_map& variables,
+    config_type& metadata, int argc, const char* argv[])
 {
     const auto options = metadata.load_options();
     const auto arguments = metadata.load_arguments();
@@ -70,8 +70,8 @@ static void load_command_variables(variables_map& variables,
 }
 
 // Not unit testable (without creating actual config files).
-static bool load_configuration_variables(variables_map& variables,
-    config_type& metadata) throw(reading_file)
+bool load_configuration_variables(variables_map& variables,
+    config_type& metadata)
 {
     const auto config_settings = metadata.load_settings();
     const auto config_path = get_config_option(variables);
@@ -92,15 +92,15 @@ static bool load_configuration_variables(variables_map& variables,
         return true;
     }
 
-    // loading from an empty stream causes the defaults to populate
+    // Loading from an empty stream causes the defaults to populate.
     std::stringstream stream;
     const auto config = parse_config_file(stream, config_settings);
     store(config, variables);
     return false;
 }
 
-static void load_environment_variables(variables_map& variables, 
-    config_type& metadata) throw()
+void load_environment_variables(variables_map& variables, 
+    config_type& metadata)
 {
     const auto& environment_variables = metadata.load_environment();
     const auto environment = parse_environment(environment_variables,
@@ -118,9 +118,9 @@ bool load_config(config_type& metadata, std::string& message, int argc,
         load_command_variables(variables, metadata, argc, argv);
         load_environment_variables(variables, metadata);
 
-        // Don't load rest if settings is specified, as the user may
-        // have messed up the settings file. Also no need for others if help.
-        if (!get_option(variables, BS_SETTINGS_VARIABLE) && 
+        // Don't load the rest if any of these options are specified.
+        if (!get_option(variables, BS_VERSION_VARIABLE) && 
+            !get_option(variables, BS_SETTINGS_VARIABLE) &&
             !get_option(variables, BS_HELP_VARIABLE))
         {
             // Returns true if the settings were loaded from a file.
@@ -136,21 +136,7 @@ bool load_config(config_type& metadata, std::string& message, int argc,
     }
     catch (const boost::program_options::error& e)
     {
-        // This assumes boost exceptions are not disabled. Doing so doesn't
-        // actually prevent program_options from throwing, so we avoid the 
-        // complexity of handling that configuration here.
-
         // This is obtained from boost, which circumvents our localization.
-        message = e.what();
-        return false;
-    }
-    catch (const boost::exception&)
-    {
-        message = "boost::exception";
-        return false;
-    }
-    catch (const std::exception& e)
-    {
         message = e.what();
         return false;
     }
