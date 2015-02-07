@@ -38,7 +38,7 @@ using namespace boost::system;
 static path get_config_option(variables_map& variables)
 {
     // read config from the map so we don't require an early notify
-    const auto& config = variables[BS_CONFIGURATION_VARIABLE];
+    const auto& config = variables[BS_CONFIG_VARIABLE];
 
     // prevent exception in the case where the config variable is not set
     if (config.empty())

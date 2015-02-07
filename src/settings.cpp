@@ -70,7 +70,7 @@ const options_description config_type::load_options()
     options_description description("options");
     description.add_options()
     (
-        BS_CONFIGURATION_VARIABLE,
+        BS_CONFIG_VARIABLE,
         value<path>(&settings.configuration),
         "The path to the configuration settings file."
     )
@@ -102,7 +102,7 @@ const positional_options_description config_type::load_arguments()
 {
     positional_options_description description;
     return description
-        .add(BS_CONFIGURATION_VARIABLE, 1);
+        .add(BS_CONFIG_VARIABLE, 1);
 }
 
 // TODO: localize descriptions.
@@ -114,7 +114,7 @@ const options_description config_type::load_environment()
         // For some reason po requires this to be a lower case name.
         // The case must match the other declarations for it to compose.
         // This composes with the cmdline options and inits to system path.
-        BS_CONFIGURATION_VARIABLE,
+        BS_CONFIG_VARIABLE,
         value<path>(&settings.configuration)->composing()
             ->default_value(default_config_path()),
         "The path to the configuration settings file."

@@ -33,7 +33,7 @@
 #define BS_VERSION_VARIABLE "version"
 
 // This must be lower case but the env var part can be any case.
-#define BS_CONFIGURATION_VARIABLE "configuration"
+#define BS_CONFIG_VARIABLE "config"
 
 // This must match the case of the env var.
 #define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
