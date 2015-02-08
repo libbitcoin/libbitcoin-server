@@ -21,8 +21,8 @@
 #define LIBBITCOIN_SERVER_ENDPOINT_HPP
 
 #include <cstdint>
+#include <iostream>
 #include <string>
-#include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/bitcoin.hpp>

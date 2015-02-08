@@ -96,7 +96,7 @@ node_impl::node_impl(settings_type& config)
 bool node_impl::start(settings_type& config)
 {
     auto file_mode = std::ofstream::out | std::ofstream::app;
-    outfile_.open(config.output_file.generic_string(), file_mode);
+    outfile_.open(config.debug_file.generic_string(), file_mode);
     errfile_.open(config.error_file.generic_string(), file_mode);
     log_debug().set_output_function(
         std::bind(log_to_file, std::ref(outfile_),

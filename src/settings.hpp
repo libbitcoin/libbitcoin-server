@@ -59,16 +59,16 @@ struct settings_type
     uint32_t tx_pool_capacity;
     uint32_t out_connections;
     uint32_t history_height;
-    std::string certificate;
     endpoint_type unique_name;
     endpoint_type service;
     endpoint_type heartbeat;
     endpoint_type tx_publish;
     endpoint_type block_publish;
     boost::filesystem::path hosts_file;
+    boost::filesystem::path debug_file;
     boost::filesystem::path error_file;
-    boost::filesystem::path output_file;
     boost::filesystem::path blockchain_path;
+    boost::filesystem::path certificate_file;
     boost::filesystem::path client_certs_path;
     std::vector<endpoint_type> clients;
     std::vector<endpoint_type> peers;

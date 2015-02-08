@@ -146,72 +146,72 @@ const options_description config_type::load_settings()
     (
         "general.tx_pool_capacity",
         value<uint32_t>(&settings.tx_pool_capacity)->default_value(2000),
-        "Set the maximum number of transactions in the pool, defaults to 2000."
+        "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
         "general.out_connections",
         value<uint32_t>(&settings.out_connections)->default_value(8),
-        "Set the maximum number of outgoing P2P network connections, defaults to 8."
+        "The maximum number of outgoing P2P network connections, defaults to 8."
     )
     (
         "general.history_height",
         value<uint32_t>(&settings.history_height)->default_value(0),
-        "Set the minimum height of the history database, defaults to 0."
-    )
-    (
-        "identity.certificate",
-        value<std::string>(&settings.certificate),
-        "Set the server's public certificate, not set by default."
+        "The minimum height of the history database, defaults to 0."
     )
     (
         "identity.unique_name",
         value<endpoint_type>(&settings.unique_name),
-        "Set the server name, must be unique if specified."
+        "The server name, must be unique if specified."
     )
     (
         "endpoints.service",
         value<endpoint_type>(&settings.service)->default_value({ "tcp://*:9091" }),
-        "Set the query service endpoint, defaults to 'tcp://*:9091'."
+        "The query service endpoint, defaults to 'tcp://*:9091'."
     )
     (
         "endpoints.heartbeat",
         value<endpoint_type>(&settings.heartbeat)->default_value({ "tcp://*:9092" }),
-        "Set the heartbeat endpoint, defaults to 'tcp://*:9092'."
+        "The heartbeat endpoint, defaults to 'tcp://*:9092'."
     )
     (
         "endpoints.block_publish",
         value<endpoint_type>(&settings.block_publish)->default_value({ "tcp://*:9093" }),
-        "Set the block publishing service endpoint, defaults to 'tcp://*:9093'."
+        "The block publishing service endpoint, defaults to 'tcp://*:9093'."
     )
     (
         "endpoints.tx_publish",
         value<endpoint_type>(&settings.tx_publish)->default_value({ "tcp://*:9094" }),
-        "Set the transaction publishing service endpoint, defaults to 'tcp://*:9094'."
+        "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
         "general.hosts_file",
         value<path>(&settings.hosts_file)->default_value("hosts"),
-        "Set the peer cache file path, defaults to 'hosts'."
+        "The peer cache file path, defaults to 'hosts'."
+    )
+    (
+        "logging.output_file",
+        value<path>(&settings.debug_file)->default_value("debug.log"),
+        "The debug log file path, defaults to 'debug.log'."
     )
     (
         "logging.error_file",
         value<path>(&settings.error_file)->default_value("error.log"),
-        "Set the errors log file path, defaults to 'error.log'."
-    )
-    (
-        "logging.output_file",
-        value<path>(&settings.output_file)->default_value("debug.log"),
-        "Set the debug log file path, defaults to 'debug.log'."
+        "The error log file path, defaults to 'error.log'."
     )
     (
         "general.blockchain_path",
         value<path>(&settings.blockchain_path)->default_value("blockchain"),
-        "Set the blockchain directory, defaults to 'blockchain'."
+        "The blockchain directory, defaults to 'blockchain'."
+    )
+    (
+        "identity.certificate",
+        value<path>(&settings.certificate_file),
+        "The path to the server's certificate, not used by default."
     )
     (
         "identity.client_certs_path",
         value<path>(&settings.client_certs_path),
-        "Set the client certificates directory, allows anonymous clients if not set."
+        "The client certificates directory, allows anonymous clients if not set."
     )
     (
         "identity.client",

@@ -19,6 +19,7 @@
  */
 #include "endpoint.hpp"
 
+#include <cstdint>
 #include <iostream>
 #include <regex>
 #include <string>

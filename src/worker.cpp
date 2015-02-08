@@ -74,7 +74,7 @@ bool request_worker::start(settings_type& config)
         auth_.set_verbose(true);
     if (!config.clients.empty())
         whitelist(config.clients);
-    if (config.certificate.empty())
+    if (config.certificate_file.empty())
         socket_.set_zap_domain("global");
     else
         enable_crypto(config);
@@ -101,7 +101,7 @@ void request_worker::enable_crypto(settings_type& config)
         auth_.configure_curve("*", CURVE_ALLOW_ANY);
     else
         auth_.configure_curve("*", config.client_certs_path.generic_string());
-    cert_.reset(czmqpp::load_cert(config.certificate));
+    cert_.reset(czmqpp::load_cert(config.certificate_file.generic_string()));
     cert_.apply(socket_);
     socket_.set_curve_server(1);
 }
