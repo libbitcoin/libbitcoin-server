@@ -32,6 +32,13 @@ using posix_time::seconds;
 using posix_time::microsec_clock;
 using std::placeholders::_1;
 
+constexpr int zmq_true = 1;
+constexpr int zmq_false = 0;
+constexpr int zmq_curve_enabled = zmq_true;
+constexpr int zmq_socket_no_linger = zmq_false;
+DEBUG_ONLY(constexpr int zmq_success = 0;)
+DEBUG_ONLY(constexpr int zmq_fail = -1;)
+
 const posix_time::time_duration heartbeat_interval = milliseconds(4000);
 
 // Milliseconds
@@ -48,7 +55,7 @@ void send_worker::queue_send(const outgoing_message& message)
     czmqpp::socket socket(context_, ZMQ_PUSH);
     BITCOIN_ASSERT(socket.self());
     DEBUG_ONLY(int rc =) socket.connect("inproc://trigger-send");
-    BITCOIN_ASSERT(rc == 0);
+    BITCOIN_ASSERT(rc == zmq_success);
     message.send(socket);
     socket.destroy(context_);
 }
@@ -64,7 +71,7 @@ request_worker::request_worker()
     BITCOIN_ASSERT(wakeup_socket_.self());
     BITCOIN_ASSERT(heartbeat_socket_.self());
     DEBUG_ONLY(int rc =) wakeup_socket_.bind("inproc://trigger-send");
-    BITCOIN_ASSERT(rc != -1);
+    BITCOIN_ASSERT(rc != zmq_fail);
 }
 bool request_worker::start(settings_type& config)
 {
@@ -103,7 +110,8 @@ void request_worker::enable_crypto(settings_type& config)
         auth_.configure_curve("*", config.client_certs_path.generic_string());
     cert_.reset(czmqpp::load_cert(config.certificate_file.generic_string()));
     cert_.apply(socket_);
-    socket_.set_curve_server(1);
+
+    socket_.set_curve_server(zmq_curve_enabled);
 }
 void request_worker::create_new_socket(settings_type& config)
 {
@@ -113,8 +121,7 @@ void request_worker::create_new_socket(settings_type& config)
         socket_.set_identity(config.unique_name.get_host());
     // Connect...
     socket_.bind(config.service);
-    // Configure socket to not wait at close time
-    socket_.set_linger(0);
+    socket_.set_linger(zmq_socket_no_linger);
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
 }

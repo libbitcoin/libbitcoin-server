@@ -43,7 +43,7 @@ bool incoming_message::recv(czmqpp::socket& socket)
     ++it;
     // [ ID ]
     const data_chunk& raw_id = *it;
-    if (raw_id.size() != 4)
+    if (raw_id.size() != sizeof(uint32_t))
         return false;
     id_ = from_little_endian_unsafe<uint32_t>(raw_id.begin());
     ++it;
@@ -105,7 +105,7 @@ void outgoing_message::send(czmqpp::socket& socket) const
     append_str(message, command_);
     // [ ID ]
     data_chunk raw_id = to_data_chunk(to_little_endian(id_));
-    BITCOIN_ASSERT(raw_id.size() == 4);
+    BITCOIN_ASSERT(raw_id.size() == sizeof(id_));
     message.append(raw_id);
     // [ DATA ]
     message.append(data_);

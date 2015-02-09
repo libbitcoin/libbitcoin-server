@@ -72,7 +72,7 @@ void publisher::send_blk(uint32_t height, const block_type& blk)
 {
     // Serialize the height.
     data_chunk raw_height = to_data_chunk(to_little_endian(height));
-    BITCOIN_ASSERT(raw_height.size() == 4);
+    BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
     // Serialize the 80 byte header.
     data_chunk raw_blk_header(bc::satoshi_raw_size(blk.header));
     DEBUG_ONLY(auto it =) satoshi_save(blk.header, raw_blk_header.begin());

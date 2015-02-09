@@ -117,7 +117,7 @@ void subscribe_manager::do_subscribe(
 {
     std::error_code ec = add_subscription(request, queue_send);
     // Send response.
-    data_chunk result(4);
+    data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     outgoing_message response(request, result);
@@ -157,7 +157,7 @@ void subscribe_manager::do_renew(
         sub.expiry_time = now + sub_expiry;
     }
     // Send response.
-    data_chunk result(4);
+    data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
     write_error_code(serial, std::error_code());
     outgoing_message response(request, result);
@@ -254,7 +254,8 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     // [ height ] (4 bytes)
     // [ block_hash ] (32 bytes)
     // [ tx ]
-    constexpr size_t info_size = 4 + 4 + hash_size;
+    constexpr size_t info_size = 
+        sizeof(uint32_t) + sizeof(uint32_t) + hash_size;
     data_chunk data(info_size + satoshi_raw_size(tx));
     auto serial = make_serializer(data.begin());
     serial.write_data(prefix.blocks());
