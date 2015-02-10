@@ -104,13 +104,13 @@ void request_worker::whitelist(std::vector<endpoint_type>& addrs)
 }
 void request_worker::enable_crypto(settings_type& config)
 {
-    if (config.client_certs_path.empty())
-        auth_.configure_curve("*", CURVE_ALLOW_ANY);
-    else
-        auth_.configure_curve("*", config.client_certs_path.generic_string());
-    cert_.reset(czmqpp::load_cert(config.certificate_file.generic_string()));
+    std::string client_certs(CURVE_ALLOW_ANY);
+    if (!config.client_certificates_path.empty())
+        client_certs = config.client_certificates_path.generic_string();
+    auto cert = czmqpp::load_cert(config.certificate_file.generic_string());
+    auth_.configure_curve("*", client_certs);
+    cert_.reset(cert);
     cert_.apply(socket_);
-
     socket_.set_curve_server(zmq_curve_enabled);
 }
 void request_worker::create_new_socket(settings_type& config)

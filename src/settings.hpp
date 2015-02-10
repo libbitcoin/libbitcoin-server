@@ -69,7 +69,7 @@ struct settings_type
     boost::filesystem::path error_file;
     boost::filesystem::path blockchain_path;
     boost::filesystem::path certificate_file;
-    boost::filesystem::path client_certs_path;
+    boost::filesystem::path client_certificates_path;
     std::vector<endpoint_type> clients;
     std::vector<endpoint_type> peers;
 };

@@ -206,12 +206,12 @@ const options_description config_type::load_settings()
     (
         "identity.certificate",
         value<path>(&settings.certificate_file),
-        "The path to the server's certificate, not used by default."
+        "The path to the server's ZPL-encoded private certificate file."
     )
     (
         "identity.client_certs_path",
-        value<path>(&settings.client_certs_path),
-        "The client certificates directory, allows anonymous clients if not set."
+        value<path>(&settings.client_certificates_path),
+        "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
     )
     (
         "identity.client",
