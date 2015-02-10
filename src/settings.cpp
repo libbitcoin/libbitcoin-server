@@ -189,7 +189,7 @@ const options_description config_type::load_settings()
         "The peer cache file path, defaults to 'hosts'."
     )
     (
-        "logging.output_file",
+        "logging.debug_file",
         value<path>(&settings.debug_file)->default_value("debug.log"),
         "The debug log file path, defaults to 'debug.log'."
     )
