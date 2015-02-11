@@ -206,7 +206,7 @@ const options_description config_type::load_settings()
     (
         "identity.certificate",
         value<path>(&settings.certificate_file),
-        "The path to the server's ZPL-encoded private certificate file."
+        "The path to the ZPL-encoded server private certificate file."
     )
     (
         "identity.client_certs_path",
