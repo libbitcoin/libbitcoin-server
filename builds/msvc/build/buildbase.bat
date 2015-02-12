@@ -11,16 +11,6 @@ IF NOT EXIST %environment% GOTO no_tools
 
 ECHO Building: %solution%
 
-CALL %environment% x86 > nul
-ECHO Platform=x86
-
-ECHO Configuration=StaticDebug
-msbuild /m /v:n /p:Configuration=StaticDebug /p:Platform=Win32 %solution% > %log%
-IF errorlevel 1 GOTO error
-ECHO Configuration=StaticRelease
-msbuild /m /v:n /p:Configuration=StaticRelease /p:Platform=Win32 %solution% >> %log%
-IF errorlevel 1 GOTO error
-
 CALL %environment% x86_amd64 > nul
 ECHO Platform=x64
 
