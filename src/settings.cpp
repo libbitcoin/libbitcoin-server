@@ -199,19 +199,19 @@ const options_description config_type::load_settings()
         "The error log file path, defaults to 'error.log'."
     )
     (
-        "general.blockchain_path",
-        value<path>(&settings.blockchain_path)->default_value("blockchain"),
-        "The blockchain directory, defaults to 'blockchain'."
-    )
-    (
-        "identity.certificate",
-        value<path>(&settings.certificate_file),
+        "identity.cert_file",
+        value<path>(&settings.cert_file),
         "The path to the ZPL-encoded server private certificate file."
     )
     (
         "identity.client_certs_path",
-        value<path>(&settings.client_certificates_path),
+        value<path>(&settings.client_certs_path),
         "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
+    )
+    (
+        "general.blockchain_path",
+        value<path>(&settings.blockchain_path)->default_value("blockchain"),
+        "The blockchain directory, defaults to 'blockchain'."
     )
     (
         "identity.client",

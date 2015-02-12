@@ -81,7 +81,7 @@ bool request_worker::start(settings_type& config)
         auth_.set_verbose(true);
     if (!config.clients.empty())
         whitelist(config.clients);
-    if (config.certificate_file.empty())
+    if (config.cert_file.empty())
         socket_.set_zap_domain("global");
     else
         enable_crypto(config);
@@ -105,9 +105,9 @@ void request_worker::whitelist(std::vector<endpoint_type>& addrs)
 void request_worker::enable_crypto(settings_type& config)
 {
     std::string client_certs(CURVE_ALLOW_ANY);
-    if (!config.client_certificates_path.empty())
-        client_certs = config.client_certificates_path.generic_string();
-    auto cert = czmqpp::load_cert(config.certificate_file.generic_string());
+    if (!config.client_certs_path.empty())
+        client_certs = config.client_certs_path.generic_string();
+    auto cert = czmqpp::load_cert(config.cert_file.generic_string());
     auth_.configure_curve("*", client_certs);
     cert_.reset(cert);
     cert_.apply(socket_);
