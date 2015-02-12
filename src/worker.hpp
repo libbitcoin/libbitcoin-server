@@ -77,7 +77,6 @@ private:
     czmqpp::context context_;
     // Main socket.
     czmqpp::socket socket_;
-    czmqpp::certificate cert_;
     czmqpp::authenticator auth_;
     // Socket to trigger wakeup for send.
     czmqpp::socket wakeup_socket_;

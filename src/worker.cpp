@@ -19,6 +19,7 @@
  */
 #include <cstdint>
 #include <vector>
+#include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include "echo.hpp"
 #include "worker.hpp"
@@ -107,10 +108,9 @@ void request_worker::enable_crypto(settings_type& config)
     std::string client_certs(CURVE_ALLOW_ANY);
     if (!config.client_certs_path.empty())
         client_certs = config.client_certs_path.generic_string();
-    auto cert = czmqpp::load_cert(config.cert_file.generic_string());
     auth_.configure_curve("*", client_certs);
-    cert_.reset(cert);
-    cert_.apply(socket_);
+    czmqpp::certificate cert(config.cert_file.generic_string());
+    cert.apply(socket_);
     socket_.set_curve_server(zmq_curve_enabled);
 }
 void request_worker::create_new_socket(settings_type& config)
