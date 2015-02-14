@@ -148,7 +148,7 @@ bool node_impl::start(settings_type& config)
 void node_impl::start_session()
 {
     // Start session
-    auto session_started = [this](const std::error_code& ec)
+    const auto session_started = [this](const std::error_code& ec)
     {
         if (ec)
             wait_and_retry_start(ec);
@@ -170,14 +170,13 @@ bool node_impl::stop()
 {
     // Stop session
     std::promise<std::error_code> ec_session;
-    auto session_stopped =
-        [&](const std::error_code& ec)
+    const auto session_stopped = [&ec_session](const std::error_code& ec)
     {
         ec_session.set_value(ec);
     };
     session_.stop(session_stopped);
     // Query the error_code and wait for startup completion.
-    std::error_code ec = ec_session.get_future().get();
+    const auto ec = ec_session.get_future().get();
     if (ec)
         log_error(LOG_NODE) << "Problem stopping session: " << ec.message();
 
@@ -248,13 +247,13 @@ void node_impl::recv_transaction(const std::error_code& ec,
         log_warning(LOG_NODE) << "recv_transaction: " << ec.message();
         return;
     }
-    auto handle_deindex = [](const std::error_code& ec)
+    const auto handle_deindex = [](const std::error_code& ec)
     {
         if (ec)
             log_error(LOG_NODE) << "Deindex error: " << ec.message();
     };
     // Called when the transaction becomes confirmed in a block.
-    auto handle_confirm = [this, tx, handle_deindex](
+    const auto handle_confirm = [this, tx, handle_deindex](
         const std::error_code& ec)
     {
         log_debug(LOG_NODE) << "Confirm transaction: " << ec.message()
@@ -282,7 +281,7 @@ void node_impl::handle_mempool_store(
             << encode_hash(hash_transaction(tx)) << ": " << ec.message();
         return;
     }
-    auto handle_index = [](const std::error_code& ec)
+    const auto handle_index = [](const std::error_code& ec)
     {
         if (ec)
             log_error(LOG_NODE) << "Index error: " << ec.message();
@@ -290,7 +289,7 @@ void node_impl::handle_mempool_store(
     indexer_.index(tx, handle_index);
     log_info(LOG_NODE) << "Accepted transaction: "
         << encode_hash(hash_transaction(tx));
-    for (auto notify: notify_txs_)
+    for (const auto notify: notify_txs_)
         notify(tx);
 }
 
@@ -306,7 +305,7 @@ void node_impl::reorganize(const std::error_code& /* ec */,
         {
             size_t height = fork_point + i + 1;
             const block_type& blk = *new_blocks[i];
-            for (auto notify: notify_blocks_)
+            for (const auto notify: notify_blocks_)
                 notify(height, blk);
         }
     chain_.subscribe_reorganize(

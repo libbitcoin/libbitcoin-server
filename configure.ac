@@ -128,9 +128,9 @@ AS_IF([test x$bash_completion_dir = xyes],
 # The chained zmq dependency doesn't set a minimum version for sodium.
 PKG_CHECK_MODULES([sodium], [libsodium >= 1.0.0])
 
-# Require czmq++ of at least version 0.4.1 and output ${czmq___CFLAGS} and ${czmq___LIBS}.
+# Require czmq++ of at least version 1.1.0 and output ${czmq___CFLAGS} and ${czmq___LIBS}.
 #------------------------------------------------------------------------------
-PKG_CHECK_MODULES([czmq__], [libczmq++ >= 0.4.1])
+PKG_CHECK_MODULES([czmq__], [libczmq++ >= 1.1.0])
 
 # Require bitcoin-node of at least version 2.0.0 and output ${bitcoin_node_CFLAGS} and ${bitcoin_node_LIBS}.
 #------------------------------------------------------------------------------
