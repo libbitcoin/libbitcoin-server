@@ -6,7 +6,7 @@
 
 [Documentation](https://github.com/libbitcoin/libbitcoin-server/wiki) is available on the wiki.
 
-[Downloads](https://github.com/libbitcoin/libbitcoin-server/wiki/Download) are available for Linux, Macintosh and Windows.
+[Downloads](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-Libbitcoin-Server) are available for Linux, Macintosh and Windows.
 
 **License Overview**
 
