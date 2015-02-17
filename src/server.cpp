@@ -48,41 +48,41 @@
 #define BS_INFORMATION_MESSAGE \
     "Runs a full bitcoin node in the global peer-to-peer network."
 #define BS_UNINITIALIZED_CHAIN \
-    "The %1% directory is not initialized.\n"
+    "The %1% directory is not initialized."
 #define BS_INITIALIZING_CHAIN \
-    "Please wait while initializing %1% directory...\n"
+    "Please wait while initializing %1% directory..."
 #define BS_INITCHAIN_DIR_NEW \
-    "Failed to create directory %1% with error, '%2%'.\n"
+    "Failed to create directory %1% with error, '%2%'."
 #define BS_INITCHAIN_DIR_EXISTS \
-    "Failed because the directory %1% already exists.\n"
+    "Failed because the directory %1% already exists."
 #define BS_INITCHAIN_DIR_TEST \
-    "Failed to test directory %1% with error, '%2%'.\n"
+    "Failed to test directory %1% with error, '%2%'."
 #define BS_SERVER_STARTING \
-    "Press CTRL-C to stop server.\n"
+    "Press CTRL-C to stop server."
 #define BS_SERVER_STARTED \
-    "Server started.\n"
+    "Server started."
 #define BS_SERVER_STOPPING \
-    "Please wait while server is stopping...\n"
+    "Please wait while server is stopping..."
 #define BS_SERVER_STOPPED \
-    "Server stopped cleanly.\n"
+    "Server stopped cleanly."
 #define BS_NODE_START_FAIL \
-    "Node failed to start.\n"
+    "Node failed to start."
 #define BS_NODE_STOP_FAIL \
-    "Node failed to stop.\n"
+    "Node failed to stop."
 #define BS_PUBLISHER_START_FAIL \
-    "Publisher failed to start: %1%\n"
+    "Publisher failed to start: %1%"
 #define BS_PUBLISHER_STOP_FAIL \
-    "Publisher failed to stop.\n"
+    "Publisher failed to stop."
 #define BS_USING_CONFIG_FILE \
-    "Using config file: %1%\n"
+    "Using config file: %1%"
 #define BS_INVALID_PARAMETER \
-    "Error: %1%\n"
+    "Error: %1%"
 #define BS_VERSION_MESSAGE \
     "\nVersion Information:\n\n" \
     "libbitcoin-server:     %1%\n" \
     "libbitcoin-node:       %2%\n" \
     "libbitcoin-blockchain: %3%\n" \
-    "libbitcoin [%5%]:  %4%\n"
+    "libbitcoin [%5%]:  %4%"
 
 namespace libbitcoin {
 namespace server {
@@ -100,7 +100,7 @@ static void display_invalid_parameter(std::ostream& stream,
     // English-only hack to patch missing arg name in boost exception message.
     std::string clean_message(message);
     boost::replace_all(clean_message, "for option is invalid", "is invalid");
-    stream << format(BS_INVALID_PARAMETER) % clean_message;
+    stream << format(BS_INVALID_PARAMETER) % clean_message << std::endl;
 }
 
 static void show_help(config_type& metadata, std::ostream& stream)
@@ -130,7 +130,7 @@ static void show_version(std::ostream& stream)
 
     stream << format(BS_VERSION_MESSAGE) % LIBBITCOIN_SERVER_VERSION %
         LIBBITCOIN_NODE_VERSION % LIBBITCOIN_BLOCKCHAIN_VERSION %
-        LIBBITCOIN_VERSION % coinnet;
+        LIBBITCOIN_VERSION % coinnet << std::endl;
 }
 
 static console_result init_chain(path& directory, std::ostream& output,
@@ -143,14 +143,15 @@ static console_result init_chain(path& directory, std::ostream& output,
     if (!create_directories(directory, code))
     {
         if (code.value() == 0)
-            error << format(BS_INITCHAIN_DIR_EXISTS) % directory;
+            error << format(BS_INITCHAIN_DIR_EXISTS) % directory << std::endl;
         else
-            error << format(BS_INITCHAIN_DIR_NEW) % directory % code.message();
+            error << format(BS_INITCHAIN_DIR_NEW) % directory % code.message()
+                << std::endl;
 
         return console_result::failure;
     }
 
-    output << format(BS_INITIALIZING_CHAIN) % directory;
+    output << format(BS_INITIALIZING_CHAIN) % directory << std::endl;
 
     using namespace bc::chain;
     const auto& prefix = directory.generic_string();
@@ -175,10 +176,10 @@ static console_result verify_chain(path& directory, std::ostream& error)
     if (!exists(directory, code))
     {
         if (code.value() == 2)
-            error << format(BS_UNINITIALIZED_CHAIN) % directory;
+            error << format(BS_UNINITIALIZED_CHAIN) % directory << std::endl;
         else
             error << format(BS_INITCHAIN_DIR_TEST) % directory %
-                code.message();
+                code.message() << std::endl;
 
         return console_result::failure;
     }
@@ -190,7 +191,7 @@ static console_result verify_chain(path& directory, std::ostream& error)
 static bool stopped = false;
 static void interrupt_handler(int)
 {
-    echo() << BS_SERVER_STOPPING;
+    std::cout << BS_SERVER_STOPPING << std::endl;
     stopped = true;
 }
 
@@ -244,7 +245,7 @@ static console_result run(settings_type& config, std::ostream& output,
     if (result != console_result::okay)
         return result;
 
-    output << BS_SERVER_STARTING;
+    output << BS_SERVER_STARTING << std::endl;
 
     request_worker worker;
     worker.start(config);
@@ -255,7 +256,7 @@ static console_result run(settings_type& config, std::ostream& output,
         if (!publish.start(config))
         {
             error << format(BS_PUBLISHER_START_FAIL) %
-                zmq_strerror(zmq_errno());
+                zmq_strerror(zmq_errno()) << std::endl;
             return console_result::not_started;
         }
 
@@ -265,11 +266,11 @@ static console_result run(settings_type& config, std::ostream& output,
     // Start the node last so subscriptions to new blocks don't miss anything.
     if (!full_node.start(config))
     {
-        error << BS_NODE_START_FAIL;
+        error << BS_NODE_START_FAIL << std::endl;
         return console_result::not_started;
     }
 
-    output << BS_SERVER_STARTED;
+    output << BS_SERVER_STARTED << std::endl;
 
     // Catch C signals for stopping the program.
     signal(SIGABRT, interrupt_handler);
@@ -286,15 +287,15 @@ static console_result run(settings_type& config, std::ostream& output,
 
     if (config.publisher_enabled)
         if (!publish.stop())
-            error << BS_PUBLISHER_STOP_FAIL;
+            error << BS_PUBLISHER_STOP_FAIL << std::endl;
 
     if (!full_node.stop())
     {
-        error << BS_NODE_STOP_FAIL;
+        error << BS_NODE_STOP_FAIL << std::endl;
         return console_result::failure;
     }
 
-    output << BS_SERVER_STOPPED;
+    output << BS_SERVER_STOPPED << std::endl;
     return console_result::okay;
 }
 
@@ -312,7 +313,7 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
 
     if (!configuration.settings.configuration.empty())
         output << format(BS_USING_CONFIG_FILE) % 
-            configuration.settings.configuration;
+            configuration.settings.configuration << std::endl;
 
     auto settings = configuration.settings;
     if (settings.help)
