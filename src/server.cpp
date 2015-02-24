@@ -257,6 +257,11 @@ static console_result run(settings_type& config, std::ostream& output,
         {
             error << format(BS_PUBLISHER_START_FAIL) %
                 zmq_strerror(zmq_errno()) << std::endl;
+
+            // This is a bit wacky, since the node hasn't been started yet, but
+            // there is threadpool cleanup code in here.
+            full_node.stop();
+
             return console_result::not_started;
         }
 
@@ -267,6 +272,11 @@ static console_result run(settings_type& config, std::ostream& output,
     if (!full_node.start(config))
     {
         error << BS_NODE_START_FAIL << std::endl;
+
+        // This is a bit wacky, since the node hasn't been started yet, but
+        // there is threadpool cleanup code in here.
+        full_node.stop();
+
         return console_result::not_started;
     }
 
