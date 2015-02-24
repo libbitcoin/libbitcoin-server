@@ -118,7 +118,7 @@ std::istream& operator>>(std::istream& input, endpoint_type& argument)
 std::ostream& operator<<(std::ostream& output, const endpoint_type& argument)
 {
     if (!argument.scheme_.empty())
-        output << argument.scheme_ << ":\\";
+        output << argument.scheme_ << "://";
 
     output << argument.host_;
 
