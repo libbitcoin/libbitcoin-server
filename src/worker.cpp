@@ -54,7 +54,7 @@ send_worker::send_worker(czmqpp::context& context)
 void send_worker::queue_send(const outgoing_message& message)
 {
     czmqpp::socket socket(context_, ZMQ_PUSH);
-    BITCOIN_ASSERT(socket.self());
+    BITCOIN_ASSERT(socket.self() != nullptr);
     DEBUG_ONLY(int rc =) socket.connect("inproc://trigger-send");
     BITCOIN_ASSERT(rc == zmq_success);
     message.send(socket);
@@ -68,9 +68,9 @@ request_worker::request_worker()
     heartbeat_socket_(context_, ZMQ_PUB),
     sender_(context_)
 {
-    BITCOIN_ASSERT(socket_.self());
-    BITCOIN_ASSERT(wakeup_socket_.self());
-    BITCOIN_ASSERT(heartbeat_socket_.self());
+    BITCOIN_ASSERT(socket_.self() != nullptr);
+    BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
+    BITCOIN_ASSERT(heartbeat_socket_.self() != nullptr);
     DEBUG_ONLY(int rc =) wakeup_socket_.bind("inproc://trigger-send");
     BITCOIN_ASSERT(rc != zmq_fail);
 }
@@ -141,10 +141,12 @@ void request_worker::poll()
 {
     // Poll for network updates.
     czmqpp::poller poller(socket_, wakeup_socket_);
-    BITCOIN_ASSERT(poller.self());
+    BITCOIN_ASSERT(poller.self() != nullptr);
     czmqpp::socket which = poller.wait(poll_sleep_interval);
 
-    BITCOIN_ASSERT(socket_.self() && wakeup_socket_.self());
+    BITCOIN_ASSERT(socket_.self() != nullptr &&
+        wakeup_socket_.self() != nullptr);
+
     if (which == socket_)
     {
         // Get message
