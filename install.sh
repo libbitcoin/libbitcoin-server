@@ -244,6 +244,7 @@ BITCOIN_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_BLOCKCHAIN_OPTIONS=\
 "--without-tests "\
+"--without-tools "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
@@ -251,6 +252,7 @@ BITCOIN_BLOCKCHAIN_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_NODE_OPTIONS=\
 "--without-tests "\
+"--without-console "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
