@@ -1,67 +1,69 @@
+###############################################################################
+#  Copyright (c) 2014-2015 libbitcoin-server developers (see COPYING).
 #
-# documentation
+#         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
-doc_DATA = README INSTALL COPYING
+###############################################################################
 
-#
-# pkg-config
-#
-pkgconfig_DATA = libbitcoin-server.pc
-
+# Standard declarations.
+#==============================================================================
 # look for macros in the m4 subdirectory
 ACLOCAL_AMFLAGS = -I m4
 
-#
-# console application
-#
-#if WITH_CONSOLE
 
-# bash completion
-if BASH_COMPLETION_DIR
-    bashcompletiondir = ${bash_completion_dir}
-    dist_bashcompletion_DATA = data/bitcoin_server
-endif
+# Automake products.
+#==============================================================================
+# files => ${pkgconfigdir}
+#------------------------------------------------------------------------------
+pkgconfig_DATA = \
+    libbitcoin-server.pc
 
-# configuration file
-#
-# TODO: coordinate this dir and file name with source code to keep in sync.
-# Note that in a prefix install this file is placed relative to the prefix but
-# execution of the server will default to reading in the system-wide directory.
-confdir="${sysconfdir}/libbitcoin"
-conf_DATA = data/server.cfg
+# files => ${docdir}
+#------------------------------------------------------------------------------
+doc_DATA = \
+    AUTHORS \
+    COPYING \
+    ChangeLog \
+    INSTALL \
+    NEWS \
+    README
 
-bin_PROGRAMS = \
-    bitcoin_server
-
-bitcoin_server_CPPFLAGS = \
-    -I${srcdir}/include \
-    ${sodium_CFLAGS} \
-    ${czmq___CFLAGS} \
-    ${bitcoin_node_CFLAGS} \
-    -DSYSCONFDIR=\"${sysconfdir}\"
-
-bitcoin_server_LDADD = \
-    ${sodium_LIBS} \
-    ${czmq___LIBS} \
-    ${bitcoin_node_LIBS}
-
-bitcoin_server_SOURCES = \
-    src/message.cpp \
+# src/bitcoin_server => ${bindir}
+#------------------------------------------------------------------------------
+bin_PROGRAMS = src/bitcoin_server
+src_bitcoin_server_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
+src_bitcoin_server_LDADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
+src_bitcoin_server_SOURCES = \
     src/config.cpp \
     src/echo.cpp \
     src/endpoint.cpp \
     src/main.cpp \
-    src/server.cpp \
-    src/settings.cpp \
-    src/worker.cpp \
+    src/message.cpp \
     src/node_impl.cpp \
     src/publisher.cpp \
+    src/server.cpp \
+    src/settings.cpp \
     src/subscribe_manager.cpp \
-    src/service/compat.cpp \
-    src/service/fullnode.cpp \
-    src/service/fetch_x.cpp \
+    src/worker.cpp \
     src/service/blockchain.cpp \
+    src/service/compat.cpp \
+    src/service/fetch_x.cpp \
+    src/service/fullnode.cpp \
     src/service/protocol.cpp \
     src/service/transaction_pool.cpp
 
-#endif
+# files => ${bash_completiondir}
+#------------------------------------------------------------------------------
+if BASH_COMPLETIONDIR
+
+dist_bash_completion_DATA = \
+    data/bitcoin_server
+
+endif BASH_COMPLETIONDIR
+
+# files => ${sysconfdir}/libbitcoin
+#------------------------------------------------------------------------------
+sysconf_libbitcoindir = ${sysconfdir}/libbitcoin
+sysconf_libbitcoin_DATA = \
+    data/server.cfg
+
