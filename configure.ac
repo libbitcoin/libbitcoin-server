@@ -27,7 +27,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # specifically: AUTHORS, COPYING, INSTALL, NEWS, README and ChangeLog.
 AM_INIT_AUTOMAKE([subdir-objects])
 
-# Enable C and Posix extensions that may be disabled on certain platforms.
+# Enable C and POSIX extensions that may be disabled on certain platforms.
 AC_USE_SYSTEM_EXTENSIONS
 
 # Enable the archiver.
@@ -57,104 +57,139 @@ AC_ARG_VAR([CC], "C compiler to use, such as gcc or clang")
 AC_ARG_VAR([CXX], "C++ compiler to use, such as g++ or clang++")
 AC_ARG_VAR([PKG_CONFIG_PATH], "Additional directories for package discovery.")
 
+# Check for baseline language coverage in the compiler for the C++11 standard.
+#------------------------------------------------------------------------------
+AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
+
 
 # Process options.
 #==============================================================================
-# Implement --with-bash-completion-dir and output ${bash_completion_dir} and declare BASH_COMPLETION_DIR.
+# Implement --with-bash-completiondir and output ${bash_completiondir} and declare BASH_COMPLETIONDIR.
 #------------------------------------------------------------------------------
-AC_MSG_CHECKING(--with-bash-completion-dir option)
-AC_ARG_WITH([bash-completion-dir],
-    AS_HELP_STRING([--with-bash-completion-dir[=PATH]],
+AC_MSG_CHECKING([--with-bash-completiondir option])
+AC_ARG_WITH([bash-completiondir],
+    AS_HELP_STRING([--with-bash-completiondir[=DIR]],
         [Install bash completion support, optionally specifying the directory. This option may require elevated permissions. @<:@default=no@:>@]),
-    [bash_completion_dir=$withval],
-    [bash_completion_dir=no])
-AC_MSG_RESULT([$bash_completion_dir])
-AC_SUBST([bash_completion_dir])
-AM_CONDITIONAL([BASH_COMPLETION_DIR], [test x$bash_completion_dir != xno])
+    [bash_completiondir=$withval],
+    [bash_completiondir=no])
+AC_MSG_RESULT([$bash_completiondir])
+AC_SUBST([bash_completiondir])
+AM_CONDITIONAL([BASH_COMPLETIONDIR], [test x$bash_completiondir != xno])
 
 # Implement --with-pkgconfigdir and output ${pkgconfigdir}.
 #------------------------------------------------------------------------------
-AC_MSG_CHECKING(--with-pkgconfigdir option)
+AC_MSG_CHECKING([--with-pkgconfigdir option])
 AC_ARG_WITH([pkgconfigdir],
-    AS_HELP_STRING([--with-pkgconfigdir=PATH],
+    AS_HELP_STRING([--with-pkgconfigdir=DIR],
         [Path to pkgconfig directory. @<:@default=${libdir}/pkgconfig@:>@]),
     [pkgconfigdir=$withval],
     [pkgconfigdir=${libdir}/pkgconfig])
 AC_MSG_RESULT([$pkgconfigdir])
 AC_SUBST([pkgconfigdir])
 
-# Implement --enable-ndebug option and define NDEBUG.
+# Implement --enable-ndebug and define NDEBUG.
 #------------------------------------------------------------------------------
-AC_MSG_CHECKING(--enable-ndebug option)
+AC_MSG_CHECKING([--enable-ndebug option])
 AC_ARG_ENABLE([ndebug],
     AS_HELP_STRING([--enable-ndebug],
         [Compile without debug assertions. @<:@default=yes@:>@]),
     [enable_ndebug=$enableval],
     [enable_ndebug=yes])
 AC_MSG_RESULT([$enable_ndebug])
-AS_IF([test x$enable_ndebug != xno], AC_DEFINE([NDEBUG]))
+AS_CASE([${enable_ndebug}], [yes], AC_DEFINE([NDEBUG]))
 
-# Inherit --enable-shared option and define BOOST_TEST_DYN_LINK.
+# Inherit --enable-shared and define BOOST_TEST_DYN_LINK.
 #------------------------------------------------------------------------------
-AS_IF([test x$enable_shared != xno], AC_DEFINE([BOOST_TEST_DYN_LINK]))
+AS_CASE([${enable_shared}], [yes], AC_DEFINE([BOOST_TEST_DYN_LINK]))
 
 
 # Check dependencies.
 #==============================================================================
-# Require Boost of at least version 1.49.0 if in gcc.
+# Require Boost of at least version 1.50.0 if in gcc and output ${boost_CPPFLAGS/LDFLAGS}.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*gcc*],
-    [AX_BOOST_BASE([1.49.0], [], [AC_MSG_ERROR(
-        [Boost 1.49.0 or later is required but was not found.])])])
+    [AX_BOOST_BASE([1.50.0],
+        [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
+         AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
+         AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
+         AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
+        [AC_MSG_ERROR([Boost 1.50.0 or later is required but was not found.])])])
 
-# Require Boost of at least version 1.54.0 if in clang.
+# Require Boost of at least version 1.54.0 if in clang and output ${boost_CPPFLAGS/LDFLAGS}.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*clang*],
-    [AX_BOOST_BASE([1.54.0], [], [AC_MSG_ERROR(
-        [Boost 1.54.0 or later is required but was not found.])])])
+    [AX_BOOST_BASE([1.54.0],
+        [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
+         AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
+         AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
+         AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
+        [AC_MSG_ERROR([Boost 1.54.0 or later is required but was not found.])])])
 
-# Require bash-completion of at least version 2.0.0 and output ${bash_completion_CFLAGS} and ${bash_completion_LIBS}.
+# Require bash-completion of at least version 2.0.0 and output ${bash_completion_CFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
-AS_IF([test x$bash_completion_dir = xyes],
+AS_CASE([${bash_completiondir}], [yes],
     [PKG_CHECK_MODULES([bash_completion], [bash-completion >= 2.0.0],
-    [bash_completion_dir="`pkg-config --variable=completionsdir bash-completion`"],
-    [bash_completion_dir="${datadir}/bash-completion/completions"])])
+        [bash_completiondir="`pkg-config --variable=completionsdir bash-completion`"],
+        [bash_completiondir="${datadir}/bash-completion/completions"])
+     AC_SUBST([bash_completion_PKG], ['bash-completion >= 2.0.0'])
+     AC_SUBST([bash_completion_CPPFLAGS], [${bash_completion_CFLAGS}])
+     AC_MSG_NOTICE([bash_completion_CPPFLAGS : ${bash_completion_CPPFLAGS}])
+     AC_MSG_NOTICE([bash_completion_LIBS : ${bash_completion_LIBS}])],
+    [AC_SUBST([bash_completion_PKG], [])])
 
-# Require sodium of at least version 1.0.0 and output ${sodium_CFLAGS} and ${sodium_LIBS}.
+# Require sodium of at least version 1.0.0 and output ${sodium_CFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 # The chained zmq dependency doesn't set a minimum version for sodium.
 PKG_CHECK_MODULES([sodium], [libsodium >= 1.0.0])
+AC_SUBST([sodium_PKG], ['libsodium >= 1.0.0'])
+AC_SUBST([sodium_CPPFLAGS], [${sodium_CFLAGS}])
+AC_MSG_NOTICE([sodium_CPPFLAGS : ${sodium_CPPFLAGS}])
+AC_MSG_NOTICE([sodium_LIBS : ${sodium_LIBS}])
 
-# Require czmq++ of at least version 1.1.0 and output ${czmq___CFLAGS} and ${czmq___LIBS}.
+# Require czmq++ of at least version 1.1.0 and output ${czmq___CFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([czmq__], [libczmq++ >= 1.1.0])
+AC_SUBST([czmq___PKG], ['libczmq++ >= 1.1.0'])
+AC_SUBST([czmq___CPPFLAGS], [${czmq___CFLAGS}])
+AC_MSG_NOTICE([czmq___CPPFLAGS : ${czmq___CPPFLAGS}])
+AC_MSG_NOTICE([czmq___LIBS : ${czmq___LIBS}])
 
-# Require bitcoin-node of at least version 2.0.0 and output ${bitcoin_node_CFLAGS} and ${bitcoin_node_LIBS}.
+# Require bitcoin-node of at least version 2.0.0 and output ${bitcoin_node_CFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 2.0.0])
+AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 2.0.0'])
+AC_SUBST([bitcoin_node_CPPFLAGS], [${bitcoin_node_CFLAGS}])
+AC_MSG_NOTICE([bitcoin_node_CPPFLAGS : ${bitcoin_node_CPPFLAGS}])
+AC_MSG_NOTICE([bitcoin_node_LIBS : ${bitcoin_node_LIBS}])
 
 
 # Set flags.
 #==============================================================================
+# Require c++11 for all c++ products.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-std=c++11],
+        [CXXFLAGS="$CXXFLAGS -std=c++11"])])
+
 # Warn on all stuff.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
     [AX_CHECK_COMPILE_FLAG([-Wall],
-        [CXXFLAGS="$CXXFLAGS -Wall"])])
+        [CFLAGS="$CFLAGS -Wall"])])
 
 # Warn on extra stuff.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
     [AX_CHECK_COMPILE_FLAG([-Wextra],
-        [CXXFLAGS="$CXXFLAGS -Wextra"])])
+        [CFLAGS="$CFLAGS -Wextra"])])
 
 # Be really annoying.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
     [AX_CHECK_COMPILE_FLAG([-Wpedantic],
-        [CXXFLAGS="$CXXFLAGS -Wpedantic"],
+        [CFLAGS="$CFLAGS -Wpedantic"],
         [AX_CHECK_COMPILE_FLAG([-pedantic],
-            [CXXFLAGS="$CXXFLAGS -pedantic"])])])
+            [CFLAGS="$CFLAGS -pedantic"])])])
 
 # Conform to style.
 #------------------------------------------------------------------------------
@@ -180,37 +215,17 @@ AS_CASE([${CC}], [*gcc*],
     [AX_CHECK_COMPILE_FLAG([-Wno-unused-local-typedefs],
         [CXXFLAGS="$CXXFLAGS -Wno-unused-local-typedefs"])])
 
-# Clean up boost 1.49 headers, static with no exceptions. Enabled in gcc only.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*gcc*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-maybe-uninitialized],
-        [CXXFLAGS="$CXXFLAGS -Wno-maybe-uninitialized"])])
-
-# Clean up boost 1.54 headers, static with no exceptions. Enabled in clang only.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*clang*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-sometimes-uninitialized],
-        [CXXFLAGS="$CXXFLAGS -Wno-sometimes-uninitialized"])])
-
-# Clean up boost property_tree headers, with no exceptions.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-return-type],
-        [CXXFLAGS="$CXXFLAGS -Wno-return-type"])])
-
 # Protect stack.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-fstack-protector],
-        [AX_CHECK_LINK_FLAG([-fstack-protector],
-            [CXXFLAGS="$CXXFLAGS -fstack-protector"])])])
+    [AX_CHECK_LINK_FLAG([-fstack-protector],
+        [LDFLAGS="$LDFLAGS -fstack-protector"])])
 
 # Protect stack comprehensively.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-fstack-protector-all],
-        [AX_CHECK_LINK_FLAG([-fstack-protector-all],
-            [CXXFLAGS="$CXXFLAGS -fstack-protector-all"])])])
+    [AX_CHECK_LINK_FLAG([-fstack-protector-all],
+        [LDFLAGS="$LDFLAGS -fstack-protector-all"])])
 
 # Hide internal functions from external libs. Enabled in gcc only.
 #------------------------------------------------------------------------------
