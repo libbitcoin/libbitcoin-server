@@ -125,7 +125,7 @@ AS_CASE([${CC}], [*clang*],
          AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
         [AC_MSG_ERROR([Boost 1.54.0 or later is required but was not found.])])])
 
-# Require bash-completion of at least version 2.0.0 and output ${bash_completion_CFLAGS/LIBS/PKG}.
+# Require bash-completion of at least version 2.0.0 and output ${bash_completion_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 AS_CASE([${bash_completiondir}], [yes],
     [PKG_CHECK_MODULES([bash_completion], [bash-completion >= 2.0.0],
@@ -137,7 +137,7 @@ AS_CASE([${bash_completiondir}], [yes],
      AC_MSG_NOTICE([bash_completion_LIBS : ${bash_completion_LIBS}])],
     [AC_SUBST([bash_completion_PKG], [])])
 
-# Require sodium of at least version 1.0.0 and output ${sodium_CFLAGS/LIBS/PKG}.
+# Require sodium of at least version 1.0.0 and output ${sodium_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 # The chained zmq dependency doesn't set a minimum version for sodium.
 PKG_CHECK_MODULES([sodium], [libsodium >= 1.0.0])
@@ -146,7 +146,7 @@ AC_SUBST([sodium_CPPFLAGS], [${sodium_CFLAGS}])
 AC_MSG_NOTICE([sodium_CPPFLAGS : ${sodium_CPPFLAGS}])
 AC_MSG_NOTICE([sodium_LIBS : ${sodium_LIBS}])
 
-# Require czmq++ of at least version 1.1.0 and output ${czmq___CFLAGS/LIBS/PKG}.
+# Require czmq++ of at least version 1.1.0 and output ${czmq___CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([czmq__], [libczmq++ >= 1.1.0])
 AC_SUBST([czmq___PKG], ['libczmq++ >= 1.1.0'])
@@ -154,7 +154,7 @@ AC_SUBST([czmq___CPPFLAGS], [${czmq___CFLAGS}])
 AC_MSG_NOTICE([czmq___CPPFLAGS : ${czmq___CPPFLAGS}])
 AC_MSG_NOTICE([czmq___LIBS : ${czmq___LIBS}])
 
-# Require bitcoin-node of at least version 2.0.0 and output ${bitcoin_node_CFLAGS/LIBS/PKG}.
+# Require bitcoin-node of at least version 2.0.0 and output ${bitcoin_node_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 2.0.0])
 AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 2.0.0'])

@@ -35,22 +35,41 @@ src_bitcoin_server_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\"
 src_bitcoin_server_LDADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 src_bitcoin_server_SOURCES = \
     src/config.cpp \
+    src/config.hpp \
     src/echo.cpp \
+    src/echo.hpp \
     src/endpoint.cpp \
+    src/endpoint.hpp \
     src/main.cpp \
     src/message.cpp \
+    src/message.hpp \
     src/node_impl.cpp \
+    src/node_impl.hpp \
     src/publisher.cpp \
+    src/publisher.hpp \
     src/server.cpp \
+    src/server.hpp \
     src/settings.cpp \
+    src/settings.hpp \
     src/subscribe_manager.cpp \
+    src/subscribe_manager.hpp \
+    src/version.hpp \
+    src/worker-output.sh \
     src/worker.cpp \
+    src/worker.hpp \
     src/service/blockchain.cpp \
+    src/service/blockchain.hpp \
     src/service/compat.cpp \
+    src/service/compat.hpp \
     src/service/fetch_x.cpp \
+    src/service/fetch_x.hpp \
     src/service/fullnode.cpp \
+    src/service/fullnode.hpp \
     src/service/protocol.cpp \
-    src/service/transaction_pool.cpp
+    src/service/protocol.hpp \
+    src/service/transaction_pool.cpp \
+    src/service/transaction_pool.hpp \
+    src/service/util.hpp
 
 # files => ${bash_completiondir}
 #------------------------------------------------------------------------------
