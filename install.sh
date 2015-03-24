@@ -237,6 +237,7 @@ BITCOIN_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_CONSENSUS_OPTIONS=\
 "--without-tests "\
+"${with_boost} "\
 "${with_pkgconfigdir} "
 
 # Define bitcoin-blockchain options.
