@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="clr-namespace:Microsoft.Build.Framework.XamlTypes;assembly=Microsoft.Build.Framework">
+  <Rule Name="libbitcoin-consensus-options-uiextension" PageTemplate="tool" DisplayName="Bitcoin Consensus Options" SwitchPrefix="/" Order="1">
+    <Rule.Categories>
+      <Category Name="secp256k1" DisplayName="secp256k1" />
+    </Rule.Categories>
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" ItemType="" />
+    </Rule.DataSource>
+    <EnumProperty Name="Option-secp256k1" DisplayName="Use secp256k1" Description="Use secp256k1 in place of OpenSSL" Category="secp256k1">
+      <EnumValue Name="" DisplayName="No" />
+      <EnumValue Name="true" DisplayName="Yes" />
+    </EnumProperty>
+  </Rule>
+  <Rule Name="libbitcoin-consensus-linkage-uiextension" PageTemplate="tool" DisplayName="Local Dependencies" SwitchPrefix="/" Order="1">
+    <Rule.Categories>
+      <Category Name="libbitcoin-consensus" DisplayName="libbitcoin-consensus" />
+    </Rule.Categories>
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" ItemType="" />
+    </Rule.DataSource>
+    <EnumProperty Name="Linkage-libbitcoin-consensus" DisplayName="Linkage" Description="How libbitcoin-consensus will be linked into the output of this project" Category="libbitcoin-consensus">
+      <EnumValue Name="none" DisplayName="Not linked" />
+      <EnumValue Name="dynamic" DisplayName="Dynamic (DLL)" />
+      <EnumValue Name="static" DisplayName="Static (LIB)" />
+      <EnumValue Name="ltcg" DisplayName="Static using link time compile generation (LTCG)" />
+    </EnumProperty>
+  </Rule>
+</ProjectSchemaDefinitions>
