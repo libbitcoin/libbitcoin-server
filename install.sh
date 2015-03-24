@@ -84,10 +84,7 @@ for OPTION in "$@"; do
     case $OPTION in
         (--prefix=*) PREFIX="${OPTION#*=}";;
         (--build-dir=*) BUILD_DIR="${OPTION#*=}";;
-
-        (--build-gmp) BUILD_GMP="yes";;
         (--build-boost) BUILD_BOOST="yes";;
-        
         (--disable-shared) DISABLE_SHARED="yes";;
         (--disable-static) DISABLE_STATIC="yes";;
     esac
@@ -98,7 +95,7 @@ echo "Prefix directory: $PREFIX"
 # Purge our custom options so they don't go to configure.
 #------------------------------------------------------------------------------
 CONFIGURE_OPTIONS=( "$@" )
-CUSTOM_OPTIONS=( "--build-dir=$BUILD_DIR" "--build-boost" "--build-gmp" )
+CUSTOM_OPTIONS=( "--build-dir=$BUILD_DIR" "--build-boost" )
 for CUSTOM_OPTION in "${CUSTOM_OPTIONS[@]}"; do
     CONFIGURE_OPTIONS=( "${CONFIGURE_OPTIONS[@]/$CUSTOM_OPTION}" )
 done
@@ -144,12 +141,7 @@ if [[ $PREFIX ]]; then
     if [[ $BUILD_BOOST == yes ]]; then
         with_boost="--with-boost=$PREFIX"
     fi
-    
-    # Set public gmp_flags variable (because GMP has no pkg-config).
-    if [[ $BUILD_GMP == yes ]]; then
-        gmp_flags="CPPFLAGS=-I$PREFIX/include LDFLAGS=-L$PREFIX/lib"
-    fi
-    
+
     # Set public prefix variable (to tell Boost where to build).
     prefix="--prefix=$PREFIX"
 fi
@@ -160,7 +152,6 @@ echo "Published dynamic options:"
 echo "  boost_link: $boost_link"
 echo "  boost_stdlib: $boost_stdlib"
 echo "  prefix: $prefix"
-echo "  gmp_flags: $gmp_flags"
 echo "  with_boost: $with_boost"
 echo "  with_pkgconfigdir: $with_pkgconfigdir"
 
@@ -240,6 +231,12 @@ SECP256K1_OPTIONS=\
 BITCOIN_OPTIONS=\
 "--without-tests "\
 "${with_boost} "\
+"${with_pkgconfigdir} "
+
+# Define bitcoin-consensus options.
+#------------------------------------------------------------------------------
+BITCOIN_CONSENSUS_OPTIONS=\
+"--without-tests "\
 "${with_pkgconfigdir} "
 
 # Define bitcoin-blockchain options.
@@ -406,41 +403,6 @@ build_from_tarball_boost()
     pop_directory
 }
 
-build_from_tarball_gmp()
-{
-    local URL=$1
-    local ARCHIVE=$2
-    local REPO=$3
-    local JOBS=$4
-    shift 4
-
-    if [[ $BUILD_GMP != yes ]]; then
-        display_message "GMP build not enabled"
-        return
-    fi
-
-    display_message "Download $ARCHIVE"
-    
-    create_directory $REPO
-    push_directory $REPO
-    
-    # Extract the source locally.
-    wget --output-document $ARCHIVE $URL
-    tar --extract --file $ARCHIVE --bzip2 --strip-components=1
-
-    # Build the local sources.
-    # GMP does not provide autogen.sh or package config.
-    configure_options "$@"
-
-    # GMP does not honor noise reduction.
-    echo "Making all..."
-    make_jobs $JOBS >/dev/null
-    echo "Installing all..."
-    make install >/dev/null
-
-    pop_directory
-}
-
 build_from_github()
 {
     local ACCOUNT=$1
@@ -509,6 +471,7 @@ build_all()
     build_from_github zeromq czmqpp master $PARALLEL "$@" $CZMQPP_OPTIONS
     build_from_github libbitcoin secp256k1 version2 $PARALLEL "$@" $SECP256K1_OPTIONS
     build_from_github libbitcoin libbitcoin master $PARALLEL "$@" $BITCOIN_OPTIONS
+    build_from_github libbitcoin libbitcoin-consensus master $PARALLEL "$@" $BITCOIN_CONSENSUS_OPTIONS
     build_from_github libbitcoin libbitcoin-blockchain master $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
     build_from_github libbitcoin libbitcoin-node master $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
     build_from_travis libbitcoin libbitcoin-server version2 $PARALLEL "$@" $BITCOIN_SERVER_OPTIONS
