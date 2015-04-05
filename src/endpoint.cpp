@@ -23,6 +23,7 @@
 #include <iostream>
 #include <regex>
 #include <string>
+#include <boost/regex.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -31,7 +32,6 @@ namespace libbitcoin {
 namespace server {
     
 using namespace boost;
-using namespace boost::algorithm;
 using namespace boost::program_options;
 
 endpoint_type::endpoint_type()
