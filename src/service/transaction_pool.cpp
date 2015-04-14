@@ -30,21 +30,22 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 void transaction_validated(
-    const std::error_code& ec, const index_list& unconfirmed,
+    const std::error_code& ec, const chain::index_list& unconfirmed,
     const incoming_message& request, queue_send_callback queue_send);
 
 void transaction_pool_validate(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
-    transaction_type tx;
+    chain::transaction tx;
+
     try
     {
-        satoshi_load(raw_tx.begin(), raw_tx.end(), tx);
+        tx = chain::transaction(raw_tx);
     }
     catch (const end_of_stream&)
     {
-        transaction_validated(error::bad_stream, index_list(), request,
+        transaction_validated(error::bad_stream, chain::index_list(), request,
             queue_send);
         return;
     }
@@ -54,7 +55,7 @@ void transaction_pool_validate(server_node& node,
 }
 
 void transaction_validated(const std::error_code& ec,
-    const index_list& unconfirmed, const incoming_message& request,
+    const chain::index_list& unconfirmed, const incoming_message& request,
     queue_send_callback queue_send)
 {
     data_chunk result(4 + unconfirmed.size() * 4);
@@ -82,6 +83,7 @@ void transaction_pool_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     hash_digest tx_hash;
+
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
 
@@ -95,5 +97,3 @@ void transaction_pool_fetch_transaction(server_node& node,
 
 } // namespace server
 } // namespace libbitcoin
-
-

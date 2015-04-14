@@ -30,13 +30,13 @@ void protocol_broadcast_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
-    transaction_type tx;
+    chain::transaction tx;
     data_chunk result(4);
     auto serial = make_serializer(result.begin());
 
     try
     {
-        satoshi_load(raw_tx.begin(), raw_tx.end(), tx);
+        tx = chain::transaction(raw_tx);
     }
     catch (end_of_stream)
     {

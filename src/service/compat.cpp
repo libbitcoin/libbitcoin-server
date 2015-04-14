@@ -26,7 +26,8 @@
 namespace libbitcoin {
 namespace server {
 
-using namespace bc::chain;
+using namespace bc::blockchain;
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -47,7 +48,7 @@ void COMPAT_send_history_result(const std::error_code& ec,
 void COMPAT_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    payment_address address;
+    wallet::payment_address address;
     uint32_t from_height;
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
@@ -63,7 +64,7 @@ void COMPAT_fetch_history(server_node& node,
 
     constexpr size_t history_from_height = 0;
     fetch_history(node.blockchain(), node.transaction_indexer(),
-        payment_address(address_version, address_hash),
+        wallet::payment_address(address_version, address_hash),
         std::bind(COMPAT_send_history_result,
             _1, _2, request, queue_send, from_height),
         history_from_height);
@@ -76,6 +77,7 @@ void COMPAT_send_history_result(const std::error_code& ec,
     // Create matched pairs.
     // First handle outputs.
     row_pair_list all_pairs;
+
     for (const auto& row: history)
     {
         if (row.id == point_ident::output)
@@ -94,6 +96,7 @@ void COMPAT_send_history_result(const std::error_code& ec,
         if (row.id == point_ident::spend)
         {
             DEBUG_ONLY(bool found = false);
+
             for (auto& pair: all_pairs)
             {
                 if (pair.checksum == row.previous_checksum)
@@ -143,6 +146,7 @@ void COMPAT_send_history_result(const std::error_code& ec,
         serial.write_4_bytes(pair.output->point.index);
         serial.write_4_bytes(output_height32);
         serial.write_8_bytes(pair.output->value);
+
         if (pair.spend)
         {
             BITCOIN_ASSERT(pair.spend->height <= max_uint32);
@@ -176,5 +180,3 @@ void COMPAT_send_history_result(const std::error_code& ec,
 
 } // namespace server
 } // namespace libbitcoin
-
-
