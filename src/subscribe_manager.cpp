@@ -36,16 +36,19 @@ const posix_time::time_duration sub_expiry = minutes(10);
 
 void register_with_node(subscribe_manager& manager, server_node& node)
 {
-    auto recv_blk = [&manager](size_t height, const block_type& blk)
+    auto recv_blk = [&manager](size_t height, const chain::block& blk)
     {
-        const hash_digest blk_hash = hash_block_header(blk.header);
-        for (const transaction_type& tx: blk.transactions)
+        const hash_digest blk_hash = blk.header.hash();
+
+        for (const chain::transaction& tx : blk.transactions)
             manager.submit(height, blk_hash, tx);
     };
-    auto recv_tx = [&manager](const transaction_type& tx)
+
+    auto recv_tx = [&manager](const chain::transaction& tx)
     {
         manager.submit(0, null_hash, tx);
     };
+
     node.subscribe_blocks(recv_blk);
     node.subscribe_transactions(recv_tx);
 }
@@ -168,48 +171,54 @@ void subscribe_manager::do_renew(
 
 void subscribe_manager::submit(
     size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     strand_.queue(
         &subscribe_manager::do_submit, this, height, block_hash, tx);
 }
+
 void subscribe_manager::do_submit(
     size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
-    for (const transaction_input_type& input: tx.inputs)
+    for (const chain::transaction_input& input : tx.inputs)
     {
-        payment_address addr;
+        wallet::payment_address addr;
+
         if (extract(addr, input.script))
         {
             post_updates(addr, height, block_hash, tx);
             continue;
         }
     }
-    for (const transaction_output_type& output: tx.outputs)
+
+    for (const chain::transaction_output& output : tx.outputs)
     {
-        payment_address addr;
+        wallet::payment_address addr;
+
         if (extract(addr, output.script))
         {
             post_updates(addr, height, block_hash, tx);
             continue;
         }
-        if (output.script.type() == payment_type::stealth_info)
+
+        if (output.script.type() == chain::payment_type::stealth_info)
         {
             binary_type prefix = calculate_stealth_prefix(output.script);
             post_stealth_updates(prefix, height, block_hash, tx);
             continue;
         }
     }
+
     // Periodicially sweep old expired entries.
     // Use the block 10 minute window as a periodic trigger.
     if (height)
         sweep_expired();
 }
 
-void subscribe_manager::post_updates(const payment_address& address,
+void subscribe_manager::post_updates(const wallet::payment_address& address,
     size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
     auto height32 = static_cast<uint32_t>(height);
@@ -220,34 +229,41 @@ void subscribe_manager::post_updates(const payment_address& address,
     // [ block_hash ] (32 bytes)
     // [ tx ]
     constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
-    data_chunk data(info_size + satoshi_raw_size(tx));
+    data_chunk data(info_size + tx.satoshi_size());
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
     serial.write_short_hash(address.hash());
     serial.write_4_bytes(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
+
     // Now write the tx part.
-    DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
-    BITCOIN_ASSERT(rawtx_end_it == data.end());
+    data_chunk tx_data = tx;
+    serial.write_data(tx_data);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
+
     // Send the result to everyone interested.
-    for (subscription& sub: subs_)
+    for (subscription& sub : subs_)
     {
         // Only interested in address subscriptions.
         if (sub.type != subscribe_type::address)
             continue;
+
         binary_type match(sub.prefix.size(), address.hash());
+
         if (match != sub.prefix)
             continue;
+
         outgoing_message update(
             sub.client_origin, "address.update", data);
+
         sub.queue_send(update);
     }
 }
 
 void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
     auto height32 = static_cast<uint32_t>(height);
@@ -258,25 +274,32 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     // [ tx ]
     constexpr size_t info_size = 
         sizeof(uint32_t) + sizeof(uint32_t) + hash_size;
-    data_chunk data(info_size + satoshi_raw_size(tx));
+    data_chunk data(info_size + tx.satoshi_size());
     auto serial = make_serializer(data.begin());
     serial.write_data(prefix.blocks());
     serial.write_4_bytes(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
+
     // Now write the tx part.
-    DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
-    BITCOIN_ASSERT(rawtx_end_it == data.end());
+    data_chunk tx_data = tx;
+    serial.write_data(tx_data);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
+
     // Send the result to everyone interested.
-    for (subscription& sub: subs_)
+    for (subscription& sub : subs_)
     {
         if (sub.type != subscribe_type::stealth)
             continue;
+
         binary_type match(sub.prefix.size(), prefix.blocks());
+
         if (match != sub.prefix)
             continue;
+
         outgoing_message update(
             sub.client_origin, "address.stealth_update", data);
+
         sub.queue_send(update);
     }
 }
@@ -285,9 +308,11 @@ void subscribe_manager::sweep_expired()
 {
     // Delete entries that have expired.
     const posix_time::ptime now = second_clock::universal_time();
+
     for (auto it = subs_.begin(); it != subs_.end(); )
     {
         const subscription& sub = *it;
+
         // Already expired? If so, then erase.
         if (sub.expiry_time < now)
         {
@@ -302,4 +327,3 @@ void subscribe_manager::sweep_expired()
 
 } // namespace server
 } // namespace libbitcoin
-

@@ -32,16 +32,21 @@ namespace server {
 class BCS_API publisher
 {
 public:
+
     publisher(server_node& node);
+
     bool start(settings_type& config);
+
     bool stop();
 
 private:
+
     bool setup_socket(
         const std::string& connection, czmqpp::socket& socket);
 
-    void send_blk(uint32_t height, const bc::block_type& blk);
-    void send_tx(const bc::transaction_type& tx);
+    void send_blk(uint32_t height, const chain::block& blk);
+
+    void send_tx(const chain::transaction& tx);
 
     server_node& node_;
     czmqpp::context context_;

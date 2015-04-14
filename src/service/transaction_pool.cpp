@@ -30,35 +30,40 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 void transaction_validated(
-    const std::error_code& ec, const index_list& unconfirmed,
+    const std::error_code& ec, const chain::index_list& unconfirmed,
     const incoming_message& request, queue_send_callback queue_send);
+
 void transaction_pool_validate(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
-    transaction_type tx;
+    chain::transaction tx;
+
     try
     {
-        satoshi_load(raw_tx.begin(), raw_tx.end(), tx);
+        tx = chain::transaction(raw_tx);
     }
     catch (end_of_stream)
     {
         // error
-        transaction_validated(error::bad_stream, index_list(),
+        transaction_validated(error::bad_stream, chain::index_list(),
             request, queue_send);
         return;
     }
+
     node.transaction_pool().validate(tx,
         std::bind(transaction_validated, _1, _2, request, queue_send));
 }
-void transaction_validated(
-    const std::error_code& ec, const index_list& unconfirmed,
-    const incoming_message& request, queue_send_callback queue_send)
+
+void transaction_validated(const std::error_code& ec,
+    const chain::index_list& unconfirmed, const incoming_message& request,
+    queue_send_callback queue_send)
 {
     data_chunk result(4 + unconfirmed.size() * 4);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+
     for (auto unconfirmed_index: unconfirmed)
     {
         BITCOIN_ASSERT(unconfirmed_index <= max_uint32);
@@ -66,6 +71,7 @@ void transaction_validated(
 
         serial.write_4_bytes(unconfirmed_index32);
     }
+
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST)
         << "transaction_pool.validate() finished. Sending response: "
@@ -78,15 +84,16 @@ void transaction_pool_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     hash_digest tx_hash;
+
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
+
     log_debug(LOG_REQUEST) << "transaction_pool.fetch_transaction("
         << encode_hash(tx_hash) << ")";
+
     node.transaction_pool().fetch(tx_hash,
         std::bind(transaction_fetched, _1, _2, request, queue_send));
 }
 
 } // namespace server
 } // namespace libbitcoin
-
-
