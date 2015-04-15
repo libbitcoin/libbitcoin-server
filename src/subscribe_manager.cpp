@@ -220,7 +220,9 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
 
         if (output.script.type() == chain::payment_type::stealth_info)
         {
-            binary_type prefix = calculate_stealth_prefix(output.script);
+            binary_type prefix = wallet::calculate_stealth_prefix(
+                output.script);
+
             post_stealth_updates(prefix, height, block_hash, tx);
             continue;
         }
