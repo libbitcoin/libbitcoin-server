@@ -39,6 +39,9 @@ using std::placeholders::_4;
 
 const time_duration retry_start_duration = seconds(30);
 
+constexpr std::ofstream::openmode log_open_mode = 
+    std::ofstream::out | std::ofstream::app;
+
 static std::string make_log_string(log_level level,
     const std::string& domain, const std::string& body, bool log_requests)
 {
@@ -71,16 +74,18 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
 }
 
 node_impl::node_impl(settings_type& config)
+  : outfile_(config.debug_file.string(), log_open_mode), 
+    errfile_(config.error_file.string(), log_open_mode),
     // Threadpools and the number of threads they spawn.
     // 6 threads spawned in total.
-  : network_pool_(1), disk_pool_(6), mem_pool_(1),
+    network_pool_(1), disk_pool_(6), mem_pool_(1),
     // Networking related services.
     hosts_(network_pool_),
     handshake_(network_pool_),
     network_(network_pool_),
     protocol_(network_pool_, hosts_, handshake_, network_),
     // Blockchain database service.
-    chain_(disk_pool_, config.blockchain_path.generic_string(),
+    chain_(disk_pool_, config.blockchain_path.string(),
         {config.history_height}),
     // Poll new blocks, tx memory pool and tx indexer.
     poller_(mem_pool_, chain_),
@@ -95,27 +100,26 @@ node_impl::node_impl(settings_type& config)
 
 bool node_impl::start(settings_type& config)
 {
-    auto file_mode = std::ofstream::out | std::ofstream::app;
-    outfile_.open(config.debug_file.generic_string(), file_mode);
-    errfile_.open(config.error_file.generic_string(), file_mode);
     log_debug().set_output_function(
         std::bind(log_to_file, std::ref(outfile_),
             _1, _2, _3, config.log_requests));
     log_info().set_output_function(
-        std::bind(log_to_both, std::ref(std::cout), std::ref(outfile_),
+        std::bind(log_to_both, std::ref(bc::cout), std::ref(outfile_),
             _1, _2, _3, config.log_requests));
     log_warning().set_output_function(
         std::bind(log_to_file, std::ref(errfile_),
             _1, _2, _3, config.log_requests));
     log_error().set_output_function(
-        std::bind(log_to_both, std::ref(std::cerr), std::ref(errfile_),
+        std::bind(log_to_both, std::ref(bc::cerr), std::ref(errfile_),
             _1, _2, _3, config.log_requests));
     log_fatal().set_output_function(
-        std::bind(log_to_both, std::ref(std::cerr), std::ref(errfile_),
+        std::bind(log_to_both, std::ref(bc::cerr), std::ref(errfile_),
             _1, _2, _3, config.log_requests));
+
     // Subscribe to new connections.
     protocol_.subscribe_channel(
         std::bind(&node_impl::monitor_tx, this, _1, _2));
+
     // Start blockchain.
     if (!chain_.start())
     {
@@ -124,17 +128,20 @@ bool node_impl::start(settings_type& config)
     }
     chain_.subscribe_reorganize(
         std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
+
     // Start transaction pool
     txpool_.set_capacity(config.tx_pool_capacity);
     txpool_.start();
+
     // Outgoing connections setting in config file before we
     // start p2p network subsystem.
     int outgoing_connections = boost::lexical_cast<int>(
         config.out_connections);
     protocol_.set_max_outbound(outgoing_connections);
-    protocol_.set_hosts_filename(config.hosts_file.generic_string());
+    protocol_.set_hosts_filename(config.hosts_file.string());
     if (!config.listener_enabled)
         protocol_.disable_listener();
+
     for (const auto& endpoint: config.peers)
     {
         log_info(LOG_NODE) << "Adding node: " 
@@ -142,6 +149,7 @@ bool node_impl::start(settings_type& config)
         protocol_.maintain_connection(endpoint.get_host(),
             endpoint.get_port());
     }
+
     start_session();
     return true;
 }

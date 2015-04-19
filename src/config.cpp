@@ -19,7 +19,6 @@
  */
 #include "config.hpp"
 
-#include <iostream>
 #include <string>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -79,11 +78,10 @@ static bool load_configuration_variables(variables_map& variables,
     error_code code;
     if (!config_path.empty() && exists(config_path, code))
     {
-        const auto& path = config_path.generic_string();
-        std::ifstream file(path);
+        bc::ifstream file(config_path.string());
         if (!file.good())
         {
-            BOOST_THROW_EXCEPTION(reading_file(path.c_str()));
+            BOOST_THROW_EXCEPTION(reading_file(config_path.string().c_str()));
         }
 
         const auto config = parse_config_file(file, config_settings);

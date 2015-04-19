@@ -17,8 +17,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <iostream>
 #include "echo.hpp"
+
+#include <iostream>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -32,7 +34,7 @@ stdout_wrapper::stdout_wrapper(stdout_wrapper&& other)
 }
 stdout_wrapper::~stdout_wrapper()
 {
-    std::cout << stream_.str() << std::endl;
+    bc::cout << stream_.str() << std::endl;
 }
 
 stdout_wrapper echo()

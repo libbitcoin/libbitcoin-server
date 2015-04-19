@@ -107,9 +107,9 @@ void request_worker::enable_crypto(settings_type& config)
 {
     std::string client_certs(CURVE_ALLOW_ANY);
     if (!config.client_certs_path.empty())
-        client_certs = config.client_certs_path.generic_string();
+        client_certs = config.client_certs_path.string();
     auth_.configure_curve("*", client_certs);
-    czmqpp::certificate cert(config.cert_file.generic_string());
+    czmqpp::certificate cert(config.cert_file.string());
     cert.apply(socket_);
     socket_.set_curve_server(zmq_curve_enabled);
 }
