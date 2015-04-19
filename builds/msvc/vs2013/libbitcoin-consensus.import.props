@@ -17,7 +17,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-consensus\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Option-secp256k1)' == 'true'">USE_SECP256K1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-consensus)' == 'static' Or '$(Linkage-libbitcoin-consensus)' == 'ltcg'">BCX_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-consensus)' == 'static' Or '$(Linkage-libbitcoin-consensus)' == 'ltcg'">BCK_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <!-- $(PlatformToolset) is hard wired to v120 to allow for linkage by PlatformToolset=CTP_Nov2013 callers. -->
