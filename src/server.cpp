@@ -154,7 +154,7 @@ static console_result init_chain(path& directory, std::ostream& output,
     output << format(BS_INITIALIZING_CHAIN) % directory << std::endl;
 
     using namespace bc::chain;
-    const auto& prefix = directory.generic_string();
+    const auto& prefix = directory.string();
     initialize_blockchain(prefix);
 
     // Add genesis block.
@@ -191,7 +191,7 @@ static console_result verify_chain(path& directory, std::ostream& error)
 static bool stopped = false;
 static void interrupt_handler(int)
 {
-    std::cout << BS_SERVER_STOPPING << std::endl;
+    bc::cout << BS_SERVER_STOPPING << std::endl;
     stopped = true;
 }
 

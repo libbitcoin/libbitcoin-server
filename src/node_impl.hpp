@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_NODE_IMPL_HPP
 #define LIBBITCOIN_SERVER_NODE_IMPL_HPP
 
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/node.hpp>
 #include "settings.hpp"
 
@@ -76,7 +77,7 @@ private:
         const bc::chain::blockchain::block_list& new_blocks,
         const bc::chain::blockchain::block_list& replaced_blocks);
 
-    std::ofstream outfile_, errfile_;
+    bc::ofstream outfile_, errfile_;
     // Threadpools
     bc::threadpool network_pool_, disk_pool_, mem_pool_;
     // Services
