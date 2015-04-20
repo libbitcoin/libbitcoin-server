@@ -300,9 +300,7 @@ void blockchain_fetch_spend(server_node& node,
     }
 
     auto deserial = make_deserializer(data.begin(), data.end());
-    chain::output_point outpoint;
-    outpoint.hash = deserial.read_hash();
-    outpoint.index = deserial.read_4_bytes();
+    chain::output_point outpoint(deserial);
     node.blockchain().fetch_spend(outpoint,
         std::bind(spend_fetched, _1, _2, request, queue_send));
 }
@@ -312,12 +310,12 @@ void spend_fetched(const std::error_code& ec,
     queue_send_callback queue_send)
 {
     // error_code (4), hash (32), index (4)
-    data_chunk result(40);
+    data_chunk result(4 + inpoint.satoshi_size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    serial.write_hash(inpoint.hash);
-    serial.write_4_bytes(inpoint.index);
+    data_chunk raw_inpoint = inpoint;
+    serial.write_data(raw_inpoint);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_spend() finished. Sending response.";
     outgoing_message response(request, result);
