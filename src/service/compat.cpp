@@ -142,8 +142,8 @@ void COMPAT_send_history_result(const std::error_code& ec,
 
         DEBUG_ONLY(auto start_pos = serial.iterator());
         BITCOIN_ASSERT(pair.output != nullptr);
-        serial.write_hash(pair.output->point.hash);
-        serial.write_4_bytes(pair.output->point.index);
+        data_chunk raw_point = pair.output->point;
+        serial.write_data(raw_point);
         serial.write_4_bytes(output_height32);
         serial.write_8_bytes(pair.output->value);
 
@@ -153,8 +153,8 @@ void COMPAT_send_history_result(const std::error_code& ec,
             const auto spend_height32 = 
                 static_cast<uint32_t>(pair.spend->height);
 
-            serial.write_hash(pair.spend->point.hash);
-            serial.write_4_bytes(pair.spend->point.index);
+            data_chunk raw_point = pair.spend->point;
+            serial.write_data(raw_point);
             serial.write_4_bytes(spend_height32);
         }
         else

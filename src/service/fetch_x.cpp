@@ -69,8 +69,8 @@ void send_history_result(const std::error_code& ec,
         else // if (row.id == point_ident::spend)
             serial.write_byte(1);
 
-        serial.write_hash(row.point.hash);
-        serial.write_4_bytes(row.point.index);
+        data_chunk raw_point = row.point;
+        serial.write_data(raw_point);
         serial.write_4_bytes(row_height32);
         serial.write_8_bytes(row.value);
     }
