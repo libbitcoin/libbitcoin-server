@@ -4,7 +4,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <ProjectGuid>{F45B7D90-90BC-41EF-9AD1-9B29256A09FE}</ProjectGuid>
-    <ProjectName>bitcoin-server</ProjectName>
+    <ProjectName>bs</ProjectName>
     <NuGetPackageImportStamp>d5ab076e</NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">

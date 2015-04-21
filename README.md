@@ -79,7 +79,7 @@ Finally install Libbitcoin Server:
 ```sh
 $ sudo ./install.sh
 ```
-Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bitcoin_server`.
+Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
 
 ### Macintosh
 
@@ -126,7 +126,7 @@ Finally install Libbitcoin Server:
 ```sh
 $ ./install.sh
 ```
-Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bitcoin_server`.
+Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
 
 #### Using MacPorts
 
@@ -149,7 +149,7 @@ Finally install Libbitcoin Server:
 ```sh
 $ ./install.sh
 ```
-Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bitcoin_server`.
+Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
 
 ### Configuration Options
 
@@ -160,7 +160,7 @@ Building for minimum size and with debug symbols stripped:
 $ sudo ./install.sh CXXFLAGS="-Os -s"
 ```
 
-> The `-s` option is not supported by the Clang compiler. Instead use the command `$ strip bitcoin_server` after the build.
+> The `-s` option is not supported by the Clang compiler. Instead use the command `$ strip bs` after the build.
 
 Building with NDEBUG (no debug assertions) defined:
 ```sh

@@ -40,7 +40,7 @@
 #include "version.hpp"
 #include "worker.hpp"
 
-#define BS_APPLICATION_NAME "bitcoin_server"
+#define BS_APPLICATION_NAME "bs"
 
 // Localizable messages.
 #define BS_SETTINGS_MESSAGE \

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bitcoin-server", "bitcoin-server\bitcoin-server.vcxproj", "{F45B7D90-90BC-41EF-9AD1-9B29256A09FE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs", "bs\bs.vcxproj", "{F45B7D90-90BC-41EF-9AD1-9B29256A09FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
