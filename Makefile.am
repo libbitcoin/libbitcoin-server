@@ -29,12 +29,12 @@ doc_DATA = \
     NEWS \
     README
 
-# src/bitcoin_server => ${bindir}
+# src/bs => ${bindir}
 #------------------------------------------------------------------------------
-bin_PROGRAMS = src/bitcoin_server
-src_bitcoin_server_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
-src_bitcoin_server_LDADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
-src_bitcoin_server_SOURCES = \
+bin_PROGRAMS = src/bs
+src_bs_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
+src_bs_LDADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
+src_bs_SOURCES = \
     src/config.cpp \
     src/config.hpp \
     src/echo.cpp \
@@ -77,7 +77,7 @@ src_bitcoin_server_SOURCES = \
 if BASH_COMPLETIONDIR
 
 dist_bash_completion_DATA = \
-    data/bitcoin_server
+    data/bs
 
 endif BASH_COMPLETIONDIR
 
@@ -85,5 +85,5 @@ endif BASH_COMPLETIONDIR
 #------------------------------------------------------------------------------
 sysconf_libbitcoindir = ${sysconfdir}/libbitcoin
 sysconf_libbitcoin_DATA = \
-    data/server.cfg
+    data/bs.cfg
 
