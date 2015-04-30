@@ -32,8 +32,8 @@ BUILD_DIR="build-libbitcoin-server"
 
 # Boost archive for gcc.
 #------------------------------------------------------------------------------
-BOOST_URL_GCC="http://sourceforge.net/projects/boost/files/boost/1.50.0/boost_1_50_0.tar.bz2/download"
-BOOST_ARCHIVE_GCC="boost_1_50_0.tar.bz2"
+BOOST_URL_GCC="http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.bz2/download"
+BOOST_ARCHIVE_GCC="boost_1_55_0.tar.bz2"
 BOOST_STANDARD_GCC=\
 "threading=multi "\
 "variant=release "\
@@ -270,14 +270,16 @@ circumvent_boost_icu_detection()
     # Boost ICU discovery fails when using prefix, can't fix with -sICU_LINK,
     # so we rewrite the two 'has_icu_test.cpp' files to always return success.
     
-    local SUCCESS="int main() { return 0; }"
-    local REGEX_TEST="libs/regex/build/has_icu_test.cpp"
-    local LOCALE_TEST="libs/locale/build/has_icu_test.cpp"
-    
-    echo $SUCCESS > $REGEX_TEST
-    echo $SUCCESS > $LOCALE_TEST
-    
-    echo "hack: ICU detection modified, will always indicate found."
+    if [[ $BUILD_ICU ]]; then
+        local SUCCESS="int main() { return 0; }"
+        local REGEX_TEST="libs/regex/build/has_icu_test.cpp"
+        local LOCALE_TEST="libs/locale/build/has_icu_test.cpp"
+        
+        echo $SUCCESS > $REGEX_TEST
+        echo $SUCCESS > $LOCALE_TEST
+        
+        echo "hack: ICU detection modified, will always indicate found."
+    fi
 }
 
 configure_options()
