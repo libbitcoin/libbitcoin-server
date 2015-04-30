@@ -13,7 +13,7 @@
 
   <!-- Linkage -->
   
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Linkage-libbitcoin-consensus)' != 'none'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-consensus\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Option-secp256k1)' == 'true'">USE_SECP256K1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -47,7 +47,7 @@
 
   <!-- Messages -->
   
-  <Target Name="libbitcoin-consensus-option-info" BeforeTargets="PrepareForBuild">
+  <Target Name="libbitcoin-consensus-option-info" BeforeTargets="PrepareForBuild" Condition="'$(Linkage-libbitcoin-consensus)' != 'none'">
     <Message Text="Option-secp256k1  : $(Option-secp256k1)" Importance="high"/>
   </Target>  
   
