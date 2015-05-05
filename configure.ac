@@ -209,6 +209,12 @@ AS_CASE([${CC}], [*clang*],
     [AX_CHECK_COMPILE_FLAG([-Wno-deprecated-register],
         [CXXFLAGS="$CXXFLAGS -Wno-deprecated-register"])])
 
+# Clean up boost 1.55 headers. Enabled in gcc only.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*gcc*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-deprecated-declarations],
+        [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"])])
+
 # Protect stack.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
