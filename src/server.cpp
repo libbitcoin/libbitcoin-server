@@ -191,6 +191,7 @@ static console_result verify_chain(path& directory, std::ostream& error)
 static bool stopped = false;
 static void interrupt_handler(int)
 {
+    // BUGBUG: this message is not making it to the console on Windows.
     bc::cout << BS_SERVER_STOPPING << std::endl;
     stopped = true;
 }
