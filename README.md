@@ -6,7 +6,7 @@
 
 [Documentation](https://github.com/libbitcoin/libbitcoin-server/wiki) is available on the wiki.
 
-[Downloads](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-Libbitcoin-Server) are available for Linux, Macintosh and Windows.
+[Downloads](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS) are available for Linux, Macintosh and Windows.
 
 **License Overview**
 
@@ -26,7 +26,7 @@ The API is backward compatible with its predecessor [Obelisk](https://github.com
 
 ## Installation
 
-Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download).
+Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS).
 
 On Linux and Macintosh Libbitcoin Server is built using Autotools as follows.
 ```sh
