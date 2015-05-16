@@ -74,10 +74,10 @@ script:
 
     # Download and build libbitcoin-server and all dependencies.
     - if [[ $OSX   && $CLANG && $STATIC  ]]; then ./install.sh --without-consensus --with-secp256k1 --without-openssl --enable-testnet --disable-shared --build-boost --prefix=$TRAVIS_BUILD_DIR/my-prefix; fi
-    - if [[ $LINUX && $CLANG && $STATIC  ]]; then ./install.sh --with-secp256k1 --without-openssl --disable-shared --build-boost --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os -stdlib=libstdc++' CXXFLAGS='-Os -stdlib=libstdc++'; fi
+    - if [[ $LINUX && $CLANG && $STATIC  ]]; then ./install.sh --with-secp256k1 --without-openssl --disable-shared --build-boost --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os' LDLIBS='-lstdc++' CXXFLAGS='-Os -stdlib=libstdc++'; fi
     - if [[ $LINUX && $GCC   && $STATIC  ]]; then ./install.sh --disable-ndebug --disable-shared --build-boost --build-dir=my-build --prefix=$TRAVIS_BUILD_DIR/my-prefix --with-bash-completiondir CFLAGS='-Os -s -static' CXXFLAGS='-Os -s -static'; fi
     - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then ./install.sh --with-secp256k1 --without-openssl --with-bash-completiondir; fi
-    - if [[ $LINUX && $CLANG && $DYNAMIC ]]; then sudo CXX=$CXX CC=$CC ./install.sh --disable-ndebug --disable-static CFLAGS='-Os -stdlib=libstdc++' CXXFLAGS='-Os -stdlib=libstdc++'; fi
+    - if [[ $LINUX && $CLANG && $DYNAMIC ]]; then sudo CXX=$CXX CC=$CC ./install.sh --disable-ndebug --disable-static CFLAGS='-Os' LDLIBS='-lstdc++' CXXFLAGS='-Os -stdlib=libstdc++'; fi
     - if [[ $LINUX && $GCC   && $DYNAMIC ]]; then sudo CXX=$CXX CC=$CC ./install.sh --without-consensus --disable-static --build-boost --with-bash-completiondir CFLAGS='-Os -s' CXXFLAGS='-Os -s'; fi
 
 after_success:
