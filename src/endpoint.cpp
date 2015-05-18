@@ -40,7 +40,7 @@ endpoint_type::endpoint_type()
 }
 
 endpoint_type::endpoint_type(const std::string& value)
-    : port_(0)
+    : endpoint_type()
 {
     std::stringstream(value) >> *this;
 }
