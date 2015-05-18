@@ -23,7 +23,7 @@
 #include <iostream>
 #include <boost/date_time.hpp>
 #include <boost/lexical_cast.hpp>
-#include "echo.hpp"
+#include "config.hpp"
 #include "settings.hpp"
 
 namespace libbitcoin {

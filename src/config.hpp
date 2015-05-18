@@ -29,6 +29,10 @@
 namespace libbitcoin {
 namespace server {
 
+#define LOG_WORKER  "worker"
+#define LOG_REQUEST "request"
+#define LOG_NODE    "node"
+
 class config_type;
 
 /**

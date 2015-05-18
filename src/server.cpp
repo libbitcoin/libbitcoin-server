@@ -25,7 +25,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include "echo.hpp"
+#include "config.hpp"
 #include "message.hpp"
 #include "node_impl.hpp"
 #include "publisher.hpp"

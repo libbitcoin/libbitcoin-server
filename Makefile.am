@@ -37,8 +37,6 @@ src_bs_LDADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 src_bs_SOURCES = \
     src/config.cpp \
     src/config.hpp \
-    src/echo.cpp \
-    src/echo.hpp \
     src/endpoint.cpp \
     src/endpoint.hpp \
     src/main.cpp \

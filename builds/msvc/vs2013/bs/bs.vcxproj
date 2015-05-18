@@ -66,7 +66,6 @@
   </ImportGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\config.hpp" />
-    <ClInclude Include="..\..\..\..\src\echo.hpp" />
     <ClInclude Include="..\..\..\..\src\endpoint.hpp" />
     <ClInclude Include="..\..\..\..\src\message.hpp" />
     <ClInclude Include="..\..\..\..\src\settings.hpp" />
@@ -90,7 +89,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\config.cpp" />
-    <ClCompile Include="..\..\..\..\src\echo.cpp" />
     <ClCompile Include="..\..\..\..\src\endpoint.cpp" />
     <ClCompile Include="..\..\..\..\src\main.cpp" />
     <ClCompile Include="..\..\..\..\src\message.cpp" />
