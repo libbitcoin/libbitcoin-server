@@ -77,8 +77,9 @@ node_impl::node_impl(settings_type& config)
   : outfile_(config.debug_file.string(), log_open_mode), 
     errfile_(config.error_file.string(), log_open_mode),
     // Threadpools and the number of threads they spawn.
-    // 6 threads spawned in total.
-    network_pool_(1), disk_pool_(6), mem_pool_(1),
+    network_pool_(8, thread_priority::normal),
+    disk_pool_(9, thread_priority::low),
+    mem_pool_(2, thread_priority::low),
     // Networking related services.
     hosts_(network_pool_),
     handshake_(network_pool_),

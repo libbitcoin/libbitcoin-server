@@ -40,6 +40,7 @@ int bc::main(int argc, char* argv[])
         throw std::exception("Could not set STDERR to utf8 mode.");
 #endif
 
+    bc::set_thread_priority(bc::thread_priority::high);
     return bc::server::dispatch(argc, const_cast<const char**>(argv),
         bc::cin, bc::cout, bc::cerr);
 }
