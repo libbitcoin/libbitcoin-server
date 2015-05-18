@@ -65,6 +65,8 @@
     "Please wait while server is stopping..."
 #define BS_SERVER_STOPPED \
     "Server stopped cleanly."
+#define BS_SERVER_UNMAPPING \
+    "Please wait while files are unmapped..."
 #define BS_NODE_START_FAIL \
     "Node failed to start."
 #define BS_NODE_STOP_FAIL \
@@ -307,6 +309,7 @@ static console_result run(settings_type& config, std::ostream& output,
     }
 
     output << BS_SERVER_STOPPED << std::endl;
+    output << BS_SERVER_UNMAPPING << std::endl;
     return console_result::okay;
 }
 
