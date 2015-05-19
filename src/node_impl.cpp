@@ -23,7 +23,7 @@
 #include <iostream>
 #include <boost/date_time.hpp>
 #include <boost/lexical_cast.hpp>
-#include "echo.hpp"
+#include "config.hpp"
 #include "settings.hpp"
 
 namespace libbitcoin {
@@ -76,9 +76,10 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
 node_impl::node_impl(settings_type& config)
   : outfile_(config.debug_file.string(), log_open_mode), 
     errfile_(config.error_file.string(), log_open_mode),
-    // Threadpools and the number of threads they spawn.
-    // 6 threads spawned in total.
-    network_pool_(1), disk_pool_(6), mem_pool_(1),
+    // Threadpools, the number of threads they spawn and priorities.
+    network_pool_(1, thread_priority::normal),
+    disk_pool_(6, thread_priority::low),
+    mem_pool_(1, thread_priority::low),
     // Networking related services.
     hosts_(network_pool_),
     handshake_(network_pool_),

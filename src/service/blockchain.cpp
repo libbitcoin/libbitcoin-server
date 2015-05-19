@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../echo.hpp"
-#include "../node_impl.hpp"
 #include "blockchain.hpp"
+
+#include "../config.hpp"
+#include "../node_impl.hpp"
 #include "fetch_x.hpp"
 #include "util.hpp"
 
