@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "settings.hpp"
+#include <bitcoin/server/settings.hpp>
 
 #include <iostream>
 #include <string>
@@ -28,11 +28,11 @@
 
 // Define after boost asio, see stackoverflow.com/a/9750437/1172329.
 #ifdef _MSC_VER
-#include <shlobj.h>
-#include <windows.h>
+    #include <shlobj.h>
+    #include <windows.h>
 #else
-#include <pwd.h>
-#include <unistd.h>
+    #include <pwd.h>
+    #include <unistd.h>
 #endif
 
 namespace libbitcoin {

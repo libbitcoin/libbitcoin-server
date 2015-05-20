@@ -17,11 +17,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "compat.hpp"
+#include <bitcoin/server/service/compat.hpp>
 
-#include "../config.hpp"
-#include "../node_impl.hpp"
-#include "fetch_x.hpp"
+#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/service/fetch_x.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -35,7 +35,7 @@ struct row_pair
     const history_row* output = nullptr;
     uint64_t checksum;
     const history_row* spend = nullptr;
-    size_t max_height = 0;
+    uint64_t max_height = 0;
 };
 
 typedef std::vector<row_pair> row_pair_list;
@@ -43,7 +43,7 @@ typedef std::vector<row_pair> row_pair_list;
 void COMPAT_send_history_result(
     const std::error_code& ec, const history_list& history,
     const incoming_message& request, queue_send_callback queue_send,
-    const size_t from_height);
+    const uint64_t from_height);
 
 void COMPAT_fetch_history(node_impl& node,
     const incoming_message& request, queue_send_callback queue_send)
@@ -68,7 +68,7 @@ void COMPAT_fetch_history(node_impl& node,
 void COMPAT_send_history_result(
     const std::error_code& ec, const history_list& history,
     const incoming_message& request, queue_send_callback queue_send,
-    const size_t from_height)
+    const uint64_t from_height)
 {
     // Create matched pairs.
     // First handle outputs.

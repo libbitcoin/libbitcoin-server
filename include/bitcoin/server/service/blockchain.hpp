@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 #define LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 
-#include "util.hpp"
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {

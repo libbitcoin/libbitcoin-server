@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "service/util.hpp"
-#include "subscribe_manager.hpp"
+#include <bitcoin/server/subscribe_manager.hpp>
+
+#include <bitcoin/server/service/util.hpp>
 
 #define LOG_SUBSCRIBER "subscriber"
 

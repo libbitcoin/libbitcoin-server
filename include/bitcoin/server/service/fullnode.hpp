@@ -17,24 +17,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_UTIL_HPP
-#define LIBBITCOIN_SERVER_UTIL_HPP
+#ifndef LIBBITCOIN_SERVER_FULLNODE_HPP
+#define LIBBITCOIN_SERVER_FULLNODE_HPP
 
-#include <functional>
-#include <system_error>
-#include "../message.hpp"
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-typedef std::function<void (const outgoing_message&)> queue_send_callback;
+class node_impl;
 
-template <typename Serializer>
-void write_error_code(Serializer& serial, const std::error_code& ec)
-{
-    uint32_t val = ec.value();
-    serial.write_4_bytes(val);
-}
+void fullnode_fetch_history(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server
 } // namespace libbitcoin

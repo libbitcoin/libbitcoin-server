@@ -23,9 +23,9 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include "node_impl.hpp"
-#include "message.hpp"
-#include "service/util.hpp"
+#include <bitcoin/server/message.hpp>
+#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {

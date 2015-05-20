@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "server.hpp"
+#include <bitcoin/server/dispatch.hpp>
 
 #include <csignal>
 #include <iostream>
@@ -25,20 +25,19 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include "config.hpp"
-#include "message.hpp"
-#include "node_impl.hpp"
-#include "publisher.hpp"
-#include "service/blockchain.hpp"
-#include "service/fullnode.hpp"
-#include "service/protocol.hpp"
-#include "service/transaction_pool.hpp"
-#include "service/compat.hpp"
-#include "subscribe_manager.hpp"
-#include "config.hpp"
-#include "settings.hpp"
-#include "version.hpp"
-#include "worker.hpp"
+#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/message.hpp>
+#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/publisher.hpp>
+#include <bitcoin/server/subscribe_manager.hpp>
+#include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/version.hpp>
+#include <bitcoin/server/worker.hpp>
+#include <bitcoin/server/service/blockchain.hpp>
+#include <bitcoin/server/service/fullnode.hpp>
+#include <bitcoin/server/service/protocol.hpp>
+#include <bitcoin/server/service/transaction_pool.hpp>
+#include <bitcoin/server/service/compat.hpp>
 
 #define BS_APPLICATION_NAME "bs"
 

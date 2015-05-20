@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "publisher.hpp"
+#include <bitcoin/server/publisher.hpp>
 
-#include "config.hpp"
+#include <bitcoin/server/config.hpp>
 
 #define LOG_PUBLISHER LOG_WORKER
 

@@ -20,9 +20,8 @@
 #ifndef LIBBITCOIN_SERVER_NODE_IMPL_HPP
 #define LIBBITCOIN_SERVER_NODE_IMPL_HPP
 
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/node.hpp>
-#include "settings.hpp"
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

@@ -17,13 +17,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "worker.hpp"
+#include <bitcoin/server/worker.hpp>
 
 #include <cstdint>
 #include <vector>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include "config.hpp"
+#include <bitcoin/server/config.hpp>
 
 namespace libbitcoin {
 namespace server {

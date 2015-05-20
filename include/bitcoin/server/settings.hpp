@@ -25,7 +25,7 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include "endpoint.hpp"
+#include <bitcoin/server/endpoint.hpp>
 
 // Not localizable.
 #define BS_HELP_VARIABLE "help"

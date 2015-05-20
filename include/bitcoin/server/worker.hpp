@@ -27,9 +27,9 @@
 #include <vector>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <czmq++/czmqpp.hpp>
-#include "message.hpp"
-#include "settings.hpp"
-#include "service/util.hpp"
+#include <bitcoin/server/message.hpp>
+#include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {

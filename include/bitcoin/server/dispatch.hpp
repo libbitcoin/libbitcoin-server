@@ -17,21 +17,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_FULLNODE_HPP
-#define LIBBITCOIN_SERVER_FULLNODE_HPP
+#ifndef LIBBITCOIN_SERVER_DISPATCH_HPP
+#define LIBBITCOIN_SERVER_DISPATCH_HPP
 
-#include "util.hpp"
+#include <iostream>
 
 namespace libbitcoin {
 namespace server {
 
-class node_impl;
+/**
+ * Console return codes, positive values are domain-specific.
+ */
+enum console_result : int
+{
+    failure = -1,
+    okay = 0,
+    not_started = 1
+};
 
-void fullnode_fetch_history(node_impl& node,
-    const incoming_message& request, queue_send_callback queue_send);
+/**
+ * Dispatch from the command line.
+ */
+console_result dispatch(int argc, const char* argv[], std::istream&,
+    std::ostream& output, std::ostream& error);
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
-

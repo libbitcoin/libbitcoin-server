@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -17,22 +17,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/bitcoin.hpp>
-#include "server.hpp"
+#ifndef LIBBITCOIN_SERVER_COMPAT_HPP
+#define LIBBITCOIN_SERVER_COMPAT_HPP
 
-BC_USE_LIBBITCOIN_MAIN
+#include <bitcoin/server/service/util.hpp>
 
-/**
- * Invoke this program with the raw arguments provided on the command line.
- * All console input and output streams for the application originate here.
- * @param argc  The number of elements in the argv array.
- * @param argv  The array of arguments, including the process.
- * @return      The numeric result to return via console exit.
- */
-int bc::main(int argc, char* argv[])
-{
-    bc::set_utf8_stdio();
-    bc::set_thread_priority(bc::thread_priority::high);
-    return bc::server::dispatch(argc, const_cast<const char**>(argv),
-        bc::cin, bc::cout, bc::cerr);
-}
+namespace libbitcoin {
+namespace server {
+
+class node_impl;
+
+void COMPAT_fetch_history(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send);
+
+} // namespace server
+} // namespace libbitcoin
+
+#endif
+

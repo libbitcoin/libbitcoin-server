@@ -17,37 +17,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PUBLISHER_HPP
-#define LIBBITCOIN_SERVER_PUBLISHER_HPP
+#ifndef LIBBITCOIN_SERVER_PROTOCOL_HPP
+#define LIBBITCOIN_SERVER_PROTOCOL_HPP
 
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
-#include "settings.hpp"
-#include "node_impl.hpp"
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class publisher
-{
-public:
-    publisher(node_impl& node);
-    bool start(settings_type& config);
-    bool stop();
+class node_impl;
 
-private:
-    bool setup_socket(
-        const std::string& connection, czmqpp::socket& socket);
+void protocol_broadcast_transaction(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send);
 
-    void send_blk(uint32_t height, const bc::block_type& blk);
-    void send_tx(const bc::transaction_type& tx);
-
-    node_impl& node_;
-    czmqpp::context context_;
-    czmqpp::socket socket_block_, socket_tx_;
-};
+void protocol_total_connections(node_impl& node,
+    const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
+
