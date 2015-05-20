@@ -5,17 +5,14 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
-      <UniqueIdentifier>{86b385b3-059d-41a9-8455-6e217c481c69}</UniqueIdentifier>
+      <UniqueIdentifier>{52e94ab2-6b1f-4a8f-a63b-85e120cb2e69}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\resource.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\resource.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\console\main.cpp">
+    <ClCompile Include="..\..\..\..\test\server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

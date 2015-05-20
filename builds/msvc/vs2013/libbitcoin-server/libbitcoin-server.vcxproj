@@ -1,62 +1,65 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
-    <ProjectGuid>{F45B7D90-90BC-41EF-9AD1-9B29256A09FE}</ProjectGuid>
-    <ProjectName>bs</ProjectName>
+    <ProjectGuid>{73CE0AC2-ECB2-4E8D-A136-17840C0371A0}</ProjectGuid>
+    <ProjectName>libbitcoin-server</ProjectName>
     <NuGetPackageImportStamp>d5ab076e</NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="DebugDEXE|Win32">
-      <Configuration>DebugDEXE</Configuration>
+    <ProjectConfiguration Include="DebugDLL|Win32">
+      <Configuration>DebugDLL</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseDEXE|Win32">
-      <Configuration>ReleaseDEXE</Configuration>
+    <ProjectConfiguration Include="ReleaseDLL|Win32">
+      <Configuration>ReleaseDLL</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugDEXE|x64">
-      <Configuration>DebugDEXE</Configuration>
+    <ProjectConfiguration Include="DebugDLL|x64">
+      <Configuration>DebugDLL</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseDEXE|x64">
-      <Configuration>ReleaseDEXE</Configuration>
+    <ProjectConfiguration Include="ReleaseDLL|x64">
+      <Configuration>ReleaseDLL</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugLEXE|Win32">
-      <Configuration>DebugLEXE</Configuration>
+    <ProjectConfiguration Include="DebugLTCG|Win32">
+      <Configuration>DebugLTCG</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseLEXE|Win32">
-      <Configuration>ReleaseLEXE</Configuration>
+    <ProjectConfiguration Include="ReleaseLTCG|Win32">
+      <Configuration>ReleaseLTCG</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugLEXE|x64">
-      <Configuration>DebugLEXE</Configuration>
+    <ProjectConfiguration Include="DebugLTCG|x64">
+      <Configuration>DebugLTCG</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseLEXE|x64">
-      <Configuration>ReleaseLEXE</Configuration>
+    <ProjectConfiguration Include="ReleaseLTCG|x64">
+      <Configuration>ReleaseLTCG</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugSEXE|Win32">
-      <Configuration>DebugSEXE</Configuration>
+    <ProjectConfiguration Include="DebugLIB|Win32">
+      <Configuration>DebugLIB</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseSEXE|Win32">
-      <Configuration>ReleaseSEXE</Configuration>
+    <ProjectConfiguration Include="ReleaseLIB|Win32">
+      <Configuration>ReleaseLIB</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugSEXE|x64">
-      <Configuration>DebugSEXE</Configuration>
+    <ProjectConfiguration Include="DebugLIB|x64">
+      <Configuration>DebugLIB</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseSEXE|x64">
-      <Configuration>ReleaseSEXE</Configuration>
+    <ProjectConfiguration Include="ReleaseLIB|x64">
+      <Configuration>ReleaseLIB</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType Condition="$(Configuration.IndexOf('DLL')) == -1">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="$(Configuration.IndexOf('DLL')) != -1">DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="PropertySheets">
@@ -65,12 +68,45 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoint.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\node_impl.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\publisher.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\compat.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fetch_x.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fullnode.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\protocol.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\util.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\subscribe_manager.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\worker.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <ClCompile Include="..\..\..\..\src\config.cpp" />
+    <ClCompile Include="..\..\..\..\src\endpoint.cpp" />
+    <ClCompile Include="..\..\..\..\src\message.cpp" />
+    <ClCompile Include="..\..\..\..\src\settings.cpp" />
+    <ClCompile Include="..\..\..\..\src\node_impl.cpp" />
+    <ClCompile Include="..\..\..\..\src\publisher.cpp" />
+    <ClCompile Include="..\..\..\..\src\dispatch.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\blockchain.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\compat.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\fetch_x.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\fullnode.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\protocol.cpp" />
+    <ClCompile Include="..\..\..\..\src\service\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\subscribe_manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\worker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resource.rc" />
@@ -110,12 +146,4 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets'))" />
   </Target>
-  <ItemGroup>
-    <ProjectReference Include="..\libbitcoin-server\libbitcoin-server.vcxproj">
-      <Project>{73CE0AC2-ECB2-4E8D-A136-17840C0371A0}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\console\main.cpp" />
-  </ItemGroup>
 </Project>

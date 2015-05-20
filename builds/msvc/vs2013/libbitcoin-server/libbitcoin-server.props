@@ -2,10 +2,16 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>Bitcoin Server Settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>Libbitcoin Server Common Settings</_PropertySheetDisplayName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
+  
+  <!-- User Interface -->
+  
+  <ItemGroup Label="BuildOptionsExtension">
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(ProjectName).xml" />
+  </ItemGroup>
 
   <!-- Configuration -->
 
@@ -15,11 +21,9 @@
       <DisableSpecificWarnings>4290;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <!-- Suppress warnings from missing OpenSSL PDBs. -->
-    <Link Condition="'$(DebugOrRelease)' == 'debug'">
-      <AdditionalOptions>/OPT:NOLBR /IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
-    </Link>
   </ItemDefinitionGroup>
 
   <!-- Dependencies -->
@@ -86,7 +90,7 @@
     <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
     <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
     <Message Text="Linkage-_node      : $(Linkage-libbitcoin-node)" Importance="high"/>
-    <Message Text="Linkage-_server      : $(Linkage-libbitcoin-server)" Importance="high"/>
+    <Message Text="Linkage-_server    : $(Linkage-libbitcoin-server)" Importance="high"/>
   </Target>
 
 </Project>
