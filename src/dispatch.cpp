@@ -134,7 +134,7 @@ static void show_version(std::ostream& stream)
         LIBBITCOIN_VERSION % coinnet << std::endl;
 }
 
-static console_result init_chain(path& directory, std::ostream& output,
+static console_result init_chain(const path& directory, std::ostream& output,
     std::ostream& error)
 {
     // Create the directory as a convenience for the user, and then use it
@@ -169,7 +169,7 @@ static console_result init_chain(path& directory, std::ostream& output,
     return console_result::okay;
 }
 
-static console_result verify_chain(path& directory, std::ostream& error)
+static console_result verify_chain(const path& directory, std::ostream& error)
 {
     // Use missing directory as a sentinel indicating lack of initialization.
 
@@ -192,7 +192,6 @@ static console_result verify_chain(path& directory, std::ostream& error)
 static bool stopped = false;
 static void interrupt_handler(int)
 {
-    // BUGBUG: this message is not making it to the console on Windows.
     bc::cout << BS_SERVER_STOPPING << std::endl;
     stopped = true;
 }
