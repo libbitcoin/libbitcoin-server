@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -27,17 +27,17 @@
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/config.hpp>
 #include <bitcoin/server/message.hpp>
-#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/publisher.hpp>
 #include <bitcoin/server/subscribe_manager.hpp>
 #include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/version.hpp>
 #include <bitcoin/server/worker.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/blockchain.hpp>
-#include <bitcoin/server/service/fullnode.hpp>
+#include <bitcoin/server/service/compat.hpp>
 #include <bitcoin/server/service/protocol.hpp>
 #include <bitcoin/server/service/transaction_pool.hpp>
-#include <bitcoin/server/service/compat.hpp>
 
 #define BS_APPLICATION_NAME "bs"
 
@@ -197,10 +197,10 @@ static void interrupt_handler(int)
 }
 
 // Attach client-server API.
-static void attach_api(request_worker& worker, node_impl& node,
+static void attach_api(request_worker& worker, server_node& node,
     subscribe_manager& subscriber)
 {
-    typedef std::function<void(node_impl&, const incoming_message&,
+    typedef std::function<void(server_node&, const incoming_message&,
         queue_send_callback)> basic_command_handler;
     auto attach = [&worker, &node](
         const std::string& command, basic_command_handler handler)
@@ -215,7 +215,7 @@ static void attach_api(request_worker& worker, node_impl& node,
         std::bind(&subscribe_manager::renew, &subscriber, _1, _2));
 
     // Non-subscription API.
-    attach("address.fetch_history2", fullnode_fetch_history);
+    attach("address.fetch_history2", server_node::fullnode_fetch_history);
     attach("blockchain.fetch_history", blockchain_fetch_history);
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
@@ -250,7 +250,7 @@ static console_result run(settings_type& config, std::ostream& output,
 
     request_worker worker;
     worker.start(config);
-    node_impl full_node(config);
+    server_node full_node(config);
     publisher publish(full_node);
 
     if (config.publisher_enabled)

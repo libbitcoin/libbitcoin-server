@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -20,7 +20,7 @@
 #include <bitcoin/server/service/compat.hpp>
 
 #include <bitcoin/server/config.hpp>
-#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 
 namespace libbitcoin {
@@ -45,7 +45,7 @@ void COMPAT_send_history_result(
     const incoming_message& request, queue_send_callback queue_send,
     const uint64_t from_height);
 
-void COMPAT_fetch_history(node_impl& node,
+void COMPAT_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     payment_address payaddr;

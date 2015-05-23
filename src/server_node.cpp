@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -17,13 +17,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/server_node.hpp>
 
 #include <future>
 #include <iostream>
 #include <boost/date_time.hpp>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/server/config.hpp>
+#include <bitcoin/server/message.hpp>
+#include <bitcoin/server/service/fetch_x.hpp>
+#include <bitcoin/server/service/util.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -32,94 +36,51 @@ namespace server {
 using namespace bc::chain;
 using namespace bc::node;
 using namespace boost::posix_time;
+using boost::format;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
 const time_duration retry_start_duration = seconds(30);
+constexpr auto append = std::ofstream::out | std::ofstream::app;
 
-constexpr std::ofstream::openmode log_open_mode = 
-    std::ofstream::out | std::ofstream::app;
+server_node::server_node(settings_type& config)
+  : outfile_(config.debug_file.string(), append), 
+    errfile_(config.error_file.string(), append),
 
-static std::string make_log_string(log_level level,
-    const std::string& domain, const std::string& body, bool log_requests)
-{
-    if (body.empty())
-        return "";
-    if (!log_requests && domain == LOG_REQUEST)
-        return "";
-    std::ostringstream output;
-    output << microsec_clock::local_time().time_of_day() << " ";
-    output << level_repr(level);
-    if (!domain.empty())
-        output << " [" << domain << "]";
-    output << ": " << body;
-    output << std::endl;
-    return output.str();
-}
-
-void log_to_file(std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body, bool log_requests)
-{
-    file << make_log_string(level, domain, body, log_requests);
-}
-void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
-    const std::string& domain, const std::string& body, bool log_requests)
-{
-    std::string output;
-    output = make_log_string(level, domain, body, log_requests);
-    device << output;
-    file << output;
-}
-
-node_impl::node_impl(settings_type& config)
-  : outfile_(config.debug_file.string(), log_open_mode), 
-    errfile_(config.error_file.string(), log_open_mode),
     // Threadpools, the number of threads they spawn and priorities.
     network_pool_(1, thread_priority::normal),
     disk_pool_(6, thread_priority::low),
     mem_pool_(1, thread_priority::low),
+
     // Networking related services.
-    hosts_(network_pool_),
+    hosts_(network_pool_, config.hosts_file.string(), 1000),
     handshake_(network_pool_),
     network_(network_pool_),
-    protocol_(network_pool_, hosts_, handshake_, network_),
+    protocol_(network_pool_, hosts_, handshake_, network_, 
+        config.out_connections),
+
     // Blockchain database service.
     chain_(disk_pool_, config.blockchain_path.string(),
-        {config.history_height}),
+        { config.history_height }, 20),
+
     // Poll new blocks, tx memory pool and tx indexer.
     poller_(mem_pool_, chain_),
-    txpool_(mem_pool_, chain_),
+    txpool_(mem_pool_, chain_, config.tx_pool_capacity),
     indexer_(mem_pool_),
-    // Session manager service. Convenience wrapper.
-    session_(mem_pool_, {
-        handshake_, protocol_, chain_, poller_, txpool_}),
+
+    // Session manager service.
+    session_(mem_pool_, handshake_, protocol_, chain_, poller_, txpool_),
     retry_start_timer_(mem_pool_.service())
 {
 }
 
-bool node_impl::start(settings_type& config)
+bool server_node::start(settings_type& config)
 {
-    log_debug().set_output_function(
-        std::bind(log_to_file, std::ref(outfile_),
-            _1, _2, _3, config.log_requests));
-    log_info().set_output_function(
-        std::bind(log_to_both, std::ref(bc::cout), std::ref(outfile_),
-            _1, _2, _3, config.log_requests));
-    log_warning().set_output_function(
-        std::bind(log_to_file, std::ref(errfile_),
-            _1, _2, _3, config.log_requests));
-    log_error().set_output_function(
-        std::bind(log_to_both, std::ref(bc::cerr), std::ref(errfile_),
-            _1, _2, _3, config.log_requests));
-    log_fatal().set_output_function(
-        std::bind(log_to_both, std::ref(bc::cerr), std::ref(errfile_),
-            _1, _2, _3, config.log_requests));
-
-    // Subscribe to new connections.
-    protocol_.subscribe_channel(
-        std::bind(&node_impl::monitor_tx, this, _1, _2));
+    // Set up logging for node background threads (add to config).
+    const auto skip_log = if_else(config.log_requests, "", LOG_REQUEST);
+    initialize_logging(outfile_, errfile_, bc::cout, bc::cerr, skip_log);
 
     // Start blockchain.
     if (!chain_.start())
@@ -127,34 +88,31 @@ bool node_impl::start(settings_type& config)
         log_error(LOG_NODE) << "Couldn't start blockchain.";
         return false;
     }
+
     chain_.subscribe_reorganize(
-        std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
+        std::bind(&server_node::reorganize, this, _1, _2, _3, _4));
 
     // Start transaction pool
-    txpool_.set_capacity(config.tx_pool_capacity);
     txpool_.start();
 
     // Outgoing connections setting in config file before we
     // start p2p network subsystem.
-    int outgoing_connections = boost::lexical_cast<int>(
-        config.out_connections);
-    protocol_.set_max_outbound(outgoing_connections);
     protocol_.set_hosts_filename(config.hosts_file.string());
     if (!config.listener_enabled)
         protocol_.disable_listener();
 
     for (const auto& endpoint: config.peers)
     {
-        log_info(LOG_NODE) << "Adding node: " 
-            << endpoint.get_host() << " " << endpoint.get_port();
-        protocol_.maintain_connection(endpoint.get_host(),
-            endpoint.get_port());
+        const auto host = endpoint.get_host();
+        const auto port = endpoint.get_port();
+        log_info(LOG_NODE) << "Adding node: " << host << " " << port;
+        protocol_.maintain_connection(host, port);
     }
 
     start_session();
     return true;
 }
-void node_impl::start_session()
+void server_node::start_session()
 {
     // Start session
     const auto session_started = [this](const std::error_code& ec)
@@ -164,7 +122,7 @@ void node_impl::start_session()
     };
     session_.start(session_started);
 }
-void node_impl::wait_and_retry_start(const std::error_code& ec)
+void server_node::wait_and_retry_start(const std::error_code& ec)
 {
     BITCOIN_ASSERT(ec);
     log_error(LOG_NODE) << "Unable to start session: " << ec.message();
@@ -172,10 +130,10 @@ void node_impl::wait_and_retry_start(const std::error_code& ec)
         << retry_start_duration.seconds() << " seconds.";
     retry_start_timer_.expires_from_now(retry_start_duration);
     retry_start_timer_.async_wait(
-        std::bind(&node_impl::start_session, this));
+        std::bind(&server_node::start_session, this));
 }
 
-bool node_impl::stop()
+bool server_node::stop()
 {
     // Stop session
     std::promise<std::error_code> ec_session;
@@ -203,37 +161,37 @@ bool node_impl::stop()
     return true;
 }
 
-void node_impl::subscribe_blocks(block_notify_callback notify_block)
+void server_node::subscribe_blocks(block_notify_callback notify_block)
 {
     notify_blocks_.push_back(notify_block);
 }
-void node_impl::subscribe_transactions(transaction_notify_callback notify_tx)
+void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
 {
     notify_txs_.push_back(notify_tx);
 }
 
-blockchain& node_impl::blockchain()
+blockchain& server_node::blockchain()
 {
     return chain_;
 }
-transaction_pool& node_impl::transaction_pool()
+transaction_pool& server_node::transaction_pool()
 {
     return txpool_;
 }
-transaction_indexer& node_impl::transaction_indexer()
+transaction_indexer& server_node::transaction_indexer()
 {
     return indexer_;
 }
-network::protocol& node_impl::protocol()
+network::protocol& server_node::protocol()
 {
     return protocol_;
 }
-threadpool& node_impl::memory_related_threadpool()
+threadpool& server_node::memory_related_threadpool()
 {
     return mem_pool_;
 }
 
-void node_impl::monitor_tx(const std::error_code& ec, network::channel_ptr node)
+void server_node::monitor_tx(const std::error_code& ec, network::channel_ptr node)
 {
     if (ec)
     {
@@ -242,13 +200,13 @@ void node_impl::monitor_tx(const std::error_code& ec, network::channel_ptr node)
     }
     // Subscribe to transaction messages from this node.
     node->subscribe_transaction(
-        std::bind(&node_impl::recv_transaction, this, _1, _2, node));
+        std::bind(&server_node::recv_transaction, this, _1, _2, node));
     // Stay subscribed to new connections.
     protocol_.subscribe_channel(
-        std::bind(&node_impl::monitor_tx, this, _1, _2));
+        std::bind(&server_node::monitor_tx, this, _1, _2));
 }
 
-void node_impl::recv_transaction(const std::error_code& ec,
+void server_node::recv_transaction(const std::error_code& ec,
     const transaction_type& tx, network::channel_ptr node)
 {
     if (ec)
@@ -274,13 +232,13 @@ void node_impl::recv_transaction(const std::error_code& ec,
     // Validate the transaction from the network.
     // Attempt to store in the transaction pool and check the result.
     txpool_.store(tx, handle_confirm,
-        std::bind(&node_impl::handle_mempool_store, this, _1, _2, tx, node));
+        std::bind(&server_node::handle_mempool_store, this, _1, _2, tx, node));
     // Resubscribe to transaction messages from this node.
     node->subscribe_transaction(
-        std::bind(&node_impl::recv_transaction, this, _1, _2, node));
+        std::bind(&server_node::recv_transaction, this, _1, _2, node));
 }
 
-void node_impl::handle_mempool_store(
+void server_node::handle_mempool_store(
     const std::error_code& ec, const index_list& /* unconfirmed */,
     const transaction_type& tx, network::channel_ptr /* node */)
 {
@@ -302,7 +260,7 @@ void node_impl::handle_mempool_store(
         notify(tx);
 }
 
-void node_impl::reorganize(const std::error_code& /* ec */,
+void server_node::reorganize(const std::error_code& /* ec */,
     size_t fork_point,
     const blockchain::block_list& new_blocks,
     const blockchain::block_list& /* replaced_blocks */)
@@ -318,8 +276,23 @@ void node_impl::reorganize(const std::error_code& /* ec */,
                 notify(height, blk);
         }
     chain_.subscribe_reorganize(
-        std::bind(&node_impl::reorganize, this, _1, _2, _3, _4));
+        std::bind(&server_node::reorganize, this, _1, _2, _3, _4));
 }
+
+// TODO: use existing libbitcoin-node implementation.
+void server_node::fullnode_fetch_history(server_node& node,
+    const incoming_message& request, queue_send_callback queue_send)
+{
+    uint32_t from_height;
+    payment_address payaddr;
+    if (!unwrap_fetch_history_args(payaddr, from_height, request))
+        return;
+
+    fetch_history(node.blockchain(), node.transaction_indexer(), payaddr,
+        std::bind(send_history_result, _1, _2, request, queue_send),
+        from_height);
+}
+
 
 } // namespace server
 } // namespace libbitcoin

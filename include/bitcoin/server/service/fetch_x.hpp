@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_FETCH_X_HPP
 #define LIBBITCOIN_SERVER_FETCH_X_HPP
 
-#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {

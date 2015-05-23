@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -34,7 +34,7 @@ using posix_time::second_clock;
 
 const posix_time::time_duration sub_expiry = minutes(10);
 
-void register_with_node(subscribe_manager& manager, node_impl& node)
+void register_with_node(subscribe_manager& manager, server_node& node)
 {
     auto recv_blk = [&manager](size_t height, const block_type& blk)
     {
@@ -50,7 +50,7 @@ void register_with_node(subscribe_manager& manager, node_impl& node)
     node.subscribe_transactions(recv_tx);
 }
 
-subscribe_manager::subscribe_manager(node_impl& node)
+subscribe_manager::subscribe_manager(server_node& node)
   : strand_(node.memory_related_threadpool())
 {
     // subscribe to blocks and txs -> submit

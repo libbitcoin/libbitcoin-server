@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -24,7 +24,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/message.hpp>
-#include <bitcoin/server/node_impl.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
@@ -39,7 +39,7 @@ enum class subscribe_type
 class subscribe_manager
 {
 public:
-    subscribe_manager(node_impl& node);
+    subscribe_manager(server_node& node);
     void subscribe(
         const incoming_message& request, queue_send_callback queue_send);
     void renew(

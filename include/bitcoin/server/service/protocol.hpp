@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -20,17 +20,18 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOL_HPP
 #define LIBBITCOIN_SERVER_PROTOCOL_HPP
 
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class node_impl;
+class server_node;
 
-void protocol_broadcast_transaction(node_impl& node,
+void protocol_broadcast_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void protocol_total_connections(node_impl& node,
+void protocol_total_connections(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server

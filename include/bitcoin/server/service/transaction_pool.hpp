@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -20,17 +20,18 @@
 #ifndef LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 #define LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class node_impl;
+class server_node;
 
-void transaction_pool_validate(node_impl& node,
+void transaction_pool_validate(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void transaction_pool_fetch_transaction(node_impl& node,
+void transaction_pool_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server

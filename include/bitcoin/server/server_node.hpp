@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -21,12 +21,15 @@
 #define LIBBITCOIN_SERVER_NODE_IMPL_HPP
 
 #include <bitcoin/node.hpp>
+#include <bitcoin/server/message.hpp>
+#include <bitcoin/server/service/util.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class node_impl
+class server_node
+  /* : full_node */
 {
 public:
     typedef std::function<void (size_t, const bc::block_type&)>
@@ -34,8 +37,9 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    node_impl(settings_type& config);
+    server_node(settings_type& config);
     bool start(settings_type& config);
+
     // Should only be called from the main thread.
     // It's an error to join() a thread from inside it.
     bool stop();
@@ -52,6 +56,10 @@ public:
     // Threadpool for memory related operations.
     bc::threadpool& memory_related_threadpool();
 
+    // TODO: use existing libbitcoin-node implementation.
+    static void fullnode_fetch_history(server_node& node, 
+        const incoming_message& request, queue_send_callback queue_send);
+
 private:
     typedef std::vector<block_notify_callback> block_notify_list;
     typedef std::vector<transaction_notify_callback> transaction_notify_list;
@@ -67,12 +75,11 @@ private:
     void recv_transaction(const std::error_code& ec,
         const bc::transaction_type& tx, bc::network::channel_ptr node);
     // Result of store operation in transaction pool.
-    void handle_mempool_store(
-        const std::error_code& ec, const bc::index_list& unconfirmed,
-        const bc::transaction_type& tx, bc::network::channel_ptr node);
+    void handle_mempool_store(const std::error_code& ec,
+        const bc::index_list& unconfirmed, const bc::transaction_type& tx,
+        bc::network::channel_ptr node);
 
-    void reorganize(const std::error_code& ec,
-        size_t fork_point,
+    void reorganize(const std::error_code& ec, size_t fork_point,
         const bc::chain::blockchain::block_list& new_blocks,
         const bc::chain::blockchain::block_list& replaced_blocks);
 
@@ -98,6 +105,7 @@ private:
 
 } // namespace server
 } // namespace libbitcoin
+
 
 #endif
 

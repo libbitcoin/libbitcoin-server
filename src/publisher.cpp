@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -29,7 +29,7 @@ namespace server {
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-publisher::publisher(node_impl& node)
+publisher::publisher(server_node& node)
   : node_(node),
     socket_block_(context_, ZMQ_PUB),
     socket_tx_(context_, ZMQ_PUB)

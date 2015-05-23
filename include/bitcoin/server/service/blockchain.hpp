@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -25,33 +25,33 @@
 namespace libbitcoin {
 namespace server {
 
-class node_impl;
+class server_node;
 
-void blockchain_fetch_history(node_impl& node,
+void blockchain_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_transaction(node_impl& node,
+void blockchain_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_last_height(node_impl& node,
+void blockchain_fetch_last_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_block_header(node_impl& node,
+void blockchain_fetch_block_header(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_block_transaction_hashes(node_impl& node,
+void blockchain_fetch_block_transaction_hashes(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_transaction_index(node_impl& node,
+void blockchain_fetch_transaction_index(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_spend(node_impl& node,
+void blockchain_fetch_spend(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_block_height(node_impl& node,
+void blockchain_fetch_block_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_stealth(node_impl& node,
+void blockchain_fetch_stealth(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server

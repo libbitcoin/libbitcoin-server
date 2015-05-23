@@ -43,9 +43,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\node_impl.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\publisher.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
@@ -70,13 +67,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fetch_x.hpp">
       <Filter>include\bitcoin\server\service</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fullnode.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
   </ItemGroup>
@@ -85,9 +82,6 @@
       <Filter>src\service</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\fetch_x.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\fullnode.cpp">
       <Filter>src\service</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\service\protocol.cpp">
@@ -100,9 +94,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\message.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\node_impl.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\publisher.cpp">
@@ -124,6 +115,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\dispatch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

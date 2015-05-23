@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -31,7 +31,6 @@ namespace server {
 
 #define LOG_WORKER  "worker"
 #define LOG_REQUEST "request"
-#define LOG_NODE    "node"
 
 class config_type;
 

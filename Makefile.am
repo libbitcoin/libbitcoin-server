@@ -39,15 +39,14 @@ src_libbitcoin_server_la_SOURCES = \
     src/dispatch.cpp \
     src/endpoint.cpp \
     src/message.cpp \
-    src/node_impl.cpp \
     src/publisher.cpp \
+    src/server_node.cpp \
     src/settings.cpp \
     src/subscribe_manager.cpp \
     src/worker.cpp \
     src/service/blockchain.cpp \
     src/service/compat.cpp \
     src/service/fetch_x.cpp \
-    src/service/fullnode.cpp \
     src/service/protocol.cpp \
     src/service/transaction_pool.cpp
 
@@ -92,8 +91,8 @@ include_bitcoin_server_HEADERS = \
     include/bitcoin/server/dispatch.hpp \
     include/bitcoin/server/endpoint.hpp \
     include/bitcoin/server/message.hpp \
-    include/bitcoin/server/node_impl.hpp \
     include/bitcoin/server/publisher.hpp \
+    include/bitcoin/server/server_node.hpp \
     include/bitcoin/server/settings.hpp \
     include/bitcoin/server/subscribe_manager.hpp \
     include/bitcoin/server/version.hpp \
@@ -104,7 +103,6 @@ include_bitcoin_server_service_HEADERS = \
     include/bitcoin/server/service/blockchain.hpp \
     include/bitcoin/server/service/compat.hpp \
     include/bitcoin/server/service/fetch_x.hpp \
-    include/bitcoin/server/service/fullnode.hpp \
     include/bitcoin/server/service/protocol.hpp \
     include/bitcoin/server/service/transaction_pool.hpp \
     include/bitcoin/server/service/util.hpp
