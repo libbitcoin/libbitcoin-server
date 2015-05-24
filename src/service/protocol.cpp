@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -17,16 +17,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "protocol.hpp"
+#include <bitcoin/server/service/protocol.hpp>
 
-#include "../config.hpp"
-#include "../node_impl.hpp"
-#include "util.hpp"
+#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-void protocol_broadcast_transaction(node_impl& node,
+void protocol_broadcast_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
@@ -56,7 +56,7 @@ void protocol_broadcast_transaction(node_impl& node,
     queue_send(response);
 }
 
-void protocol_total_connections(node_impl& node,
+void protocol_total_connections(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     BITCOIN_ASSERT(node.protocol().total_connections() <= max_uint32);

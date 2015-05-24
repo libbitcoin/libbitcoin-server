@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>Bitcoin Server Settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>Libbitcoin Server Test Common Settings</_PropertySheetDisplayName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
@@ -11,19 +11,21 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4290;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(DefaultLinkage)' == 'dynamic'">BOOST_TEST_DYN_LINK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <!-- Suppress warnings from missing OpenSSL PDBs. -->
     <Link Condition="'$(DebugOrRelease)' == 'debug'">
       <AdditionalOptions>/OPT:NOLBR /IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent Condition="'$(DebugOrRelease)' == 'release'">
+      <Command>"$(TargetPath)" --run_test=* --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
-  <!-- Dependencies -->
-
+  <!-- Extensions -->
+  
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)libbitcoin.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-consensus.import.props" />
@@ -33,12 +35,7 @@
   </ImportGroup>
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
-    <Linkage-libsodium>dynamic</Linkage-libsodium>
-    <Linkage-libzmq>dynamic</Linkage-libzmq>
-    <Linkage-czmq>dynamic</Linkage-czmq>
-    <Linkage-czmqpp>dynamic</Linkage-czmqpp>
     <Linkage-openssl>dynamic</Linkage-openssl>
-    <Linkage-secp256k1>dynamic</Linkage-secp256k1>
     <Linkage-secp256k1>dynamic</Linkage-secp256k1>
     <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
@@ -47,10 +44,6 @@
     <Linkage-libbitcoin-server>dynamic</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
-    <Linkage-libsodium>ltcg</Linkage-libsodium>
-    <Linkage-libzmq>ltcg</Linkage-libzmq>
-    <Linkage-czmq>ltcg</Linkage-czmq>
-    <Linkage-czmqpp>ltcg</Linkage-czmqpp>
     <Linkage-openssl>static</Linkage-openssl>
     <Linkage-secp256k1>ltcg</Linkage-secp256k1>
     <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
@@ -60,10 +53,6 @@
     <Linkage-libbitcoin-server>ltcg</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
-    <Linkage-libsodium>static</Linkage-libsodium>
-    <Linkage-libzmq>static</Linkage-libzmq>
-    <Linkage-czmq>static</Linkage-czmq>
-    <Linkage-czmqpp>static</Linkage-czmqpp>
     <Linkage-openssl>static</Linkage-openssl>
     <Linkage-secp256k1>static</Linkage-secp256k1>
     <Linkage-libbitcoin>static</Linkage-libbitcoin>
@@ -74,20 +63,18 @@
   </PropertyGroup>
 
   <!-- Messages -->
-
+  
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
-    <Message Text="Linkage-libsodium  : $(Linkage-libsodium)" Importance="high"/>
-    <Message Text="Linkage-libzmq     : $(Linkage-libzmq)" Importance="high"/>
-    <Message Text="Linkage-czmq       : $(Linkage-czmq)" Importance="high"/>
-    <Message Text="Linkage-czmqpp     : $(Linkage-czmqpp)" Importance="high"/>
-    <Message Text="Linkage-openssl    : $(Linkage-openssl)" Importance="high"/>
-    <Message Text="Linkage-secp256k1  : $(Linkage-secp256k1)" Importance="high"/>
-    <Message Text="Linkage-libbitcoin : $(Linkage-libbitcoin)" Importance="high"/>
-    <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
-    <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
-    <Message Text="Linkage-_node      : $(Linkage-libbitcoin-node)" Importance="high"/>
-    <Message Text="Linkage-_server      : $(Linkage-libbitcoin-server)" Importance="high"/>
+    <Message Text="Linkage-openssl     : $(Linkage-openssl)" Importance="high"/>
+    <Message Text="Linkage-secp256k1   : $(Linkage-secp256k1)" Importance="high"/>
+    <Message Text="Linkage-libbitcoin  : $(Linkage-libbitcoin)" Importance="high"/>
+    <Message Text="Linkage-_consensus  : $(Linkage-libbitcoin-consensus)" Importance="high"/>
+    <Message Text="Linkage-_blockchain : $(Linkage-libbitcoin-blockchain)" Importance="high"/>
+    <Message Text="Linkage-_node       : $(Linkage-libbitcoin-node)" Importance="high"/>
+    <Message Text="Linkage-server      : $(Linkage-libbitcoin-server)" Importance="high"/>
   </Target>
 
 </Project>
+
+
 

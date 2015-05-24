@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -17,11 +17,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "transaction_pool.hpp"
+#include <bitcoin/server/service/transaction_pool.hpp>
 
-#include "../config.hpp"
-#include "../node_impl.hpp"
-#include "fetch_x.hpp"
+#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/service/fetch_x.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -32,7 +32,7 @@ using std::placeholders::_2;
 void transaction_validated(
     const std::error_code& ec, const index_list& unconfirmed,
     const incoming_message& request, queue_send_callback queue_send);
-void transaction_pool_validate(node_impl& node,
+void transaction_pool_validate(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
@@ -74,7 +74,7 @@ void transaction_validated(
     queue_send(response);
 }
 
-void transaction_pool_fetch_transaction(node_impl& node,
+void transaction_pool_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     hash_digest tx_hash;
