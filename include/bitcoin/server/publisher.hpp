@@ -22,8 +22,8 @@
 
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

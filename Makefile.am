@@ -35,15 +35,15 @@ lib_LTLIBRARIES = src/libbitcoin-server.la
 src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
 src_libbitcoin_server_la_LIBADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 src_libbitcoin_server_la_SOURCES = \
-    src/config.cpp \
     src/dispatch.cpp \
-    src/endpoint.cpp \
     src/message.cpp \
     src/publisher.cpp \
     src/server_node.cpp \
-    src/settings.cpp \
     src/subscribe_manager.cpp \
     src/worker.cpp \
+    src/config/config.cpp \
+    src/config/endpoint.cpp \
+    src/config/settings.cpp \
     src/service/blockchain.cpp \
     src/service/compat.cpp \
     src/service/fetch_x.cpp \
@@ -86,17 +86,20 @@ include_bitcoin_HEADERS = \
 
 include_bitcoin_serverdir = ${includedir}/bitcoin/server
 include_bitcoin_server_HEADERS = \
-    include/bitcoin/server/config.hpp \
     include/bitcoin/server/define.hpp \
     include/bitcoin/server/dispatch.hpp \
-    include/bitcoin/server/endpoint.hpp \
     include/bitcoin/server/message.hpp \
     include/bitcoin/server/publisher.hpp \
     include/bitcoin/server/server_node.hpp \
-    include/bitcoin/server/settings.hpp \
     include/bitcoin/server/subscribe_manager.hpp \
     include/bitcoin/server/version.hpp \
     include/bitcoin/server/worker.hpp
+
+include_bitcoin_server_configdir = ${includedir}/bitcoin/server/config
+include_bitcoin_server_config_HEADERS = \
+    include/bitcoin/server/config/config.hpp \
+    include/bitcoin/server/config/endpoint.hpp \
+    include/bitcoin/server/config/settings.hpp
 
 include_bitcoin_server_servicedir = ${includedir}/bitcoin/server/service
 include_bitcoin_server_service_HEADERS = \

@@ -23,7 +23,7 @@
 #include <vector>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/config/config.hpp>
 
 namespace libbitcoin {
 namespace server {

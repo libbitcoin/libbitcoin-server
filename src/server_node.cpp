@@ -24,11 +24,11 @@
 #include <boost/date_time.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 #include <bitcoin/server/service/util.hpp>
-#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

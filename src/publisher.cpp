@@ -19,7 +19,7 @@
  */
 #include <bitcoin/server/publisher.hpp>
 
-#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/config/config.hpp>
 
 #define LOG_PUBLISHER LOG_WORKER
 

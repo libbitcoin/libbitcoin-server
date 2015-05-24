@@ -19,7 +19,7 @@
  */
 #include <bitcoin/server/service/fetch_x.hpp>
 
-#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {

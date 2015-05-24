@@ -17,14 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/config/config.hpp>
 
 #include <string>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/throw_exception.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/config/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

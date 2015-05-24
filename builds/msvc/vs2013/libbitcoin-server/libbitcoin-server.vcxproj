@@ -71,9 +71,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\config.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\endpoint.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoint.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\publisher.hpp" />
@@ -84,17 +85,16 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\util.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\subscribe_manager.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\worker.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\config.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoint.cpp" />
+    <ClCompile Include="..\..\..\..\src\config\config.cpp" />
+    <ClCompile Include="..\..\..\..\src\config\endpoint.cpp" />
+    <ClCompile Include="..\..\..\..\src\config\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\message.cpp" />
-    <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\publisher.cpp" />
     <ClCompile Include="..\..\..\..\src\dispatch.cpp" />

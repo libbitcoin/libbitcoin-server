@@ -19,7 +19,7 @@
  */
 #include <bitcoin/server/service/transaction_pool.hpp>
 
-#include <bitcoin/server/config.hpp>
+#include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 
