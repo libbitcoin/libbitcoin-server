@@ -22,11 +22,12 @@
 
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class incoming_message
+class BCS_API incoming_message
 {
 public:
     bool recv(czmqpp::socket& socket);
@@ -42,7 +43,7 @@ private:
     bc::data_chunk data_;
 };
 
-class outgoing_message
+class BCS_API outgoing_message
 {
 public:
     // Empty dest = unspecified destination.

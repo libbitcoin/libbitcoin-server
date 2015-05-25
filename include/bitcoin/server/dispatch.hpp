@@ -21,6 +21,7 @@
 #define LIBBITCOIN_SERVER_DISPATCH_HPP
 
 #include <iostream>
+#include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -38,7 +39,7 @@ enum console_result : int
 /**
  * Dispatch from the command line.
  */
-console_result dispatch(int argc, const char* argv[], std::istream&,
+console_result BCS_API dispatch(int argc, const char* argv[], std::istream&,
     std::ostream& output, std::ostream& error);
 
 } // namespace server

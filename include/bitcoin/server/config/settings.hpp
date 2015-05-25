@@ -26,6 +26,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/server/config/endpoint.hpp>
+#include <bitcoin/server/define.hpp>
 
 // Not localizable.
 #define BS_HELP_VARIABLE "help"
@@ -41,7 +42,7 @@
 namespace libbitcoin {
 namespace server {
 
-struct settings_type
+struct BCS_API settings_type
 {
     // options
     bool help;
@@ -74,7 +75,7 @@ struct settings_type
     std::vector<endpoint_type> peers;
 };
 
-class config_type
+class BCS_API config_type
 {
 public:
     const boost::program_options::options_description load_settings();

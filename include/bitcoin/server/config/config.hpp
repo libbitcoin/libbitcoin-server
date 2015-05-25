@@ -25,6 +25,7 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -38,7 +39,7 @@ class config_type;
  * Lod configurable vlaues from environment variables, settings file, and
  * command line positional and non-positional options.
  */
-bool load_config(config_type& metadata, std::string& message, int argc,
+bool BCS_API load_config(config_type& metadata, std::string& message, int argc,
     const char* argv[]);
 
 } // namespace server

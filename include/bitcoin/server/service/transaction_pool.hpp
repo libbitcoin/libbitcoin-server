@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 #define LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
@@ -28,10 +29,10 @@ namespace server {
 
 class server_node;
 
-void transaction_pool_validate(server_node& node,
+void BCS_API transaction_pool_validate(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void transaction_pool_fetch_transaction(server_node& node,
+void BCS_API transaction_pool_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server

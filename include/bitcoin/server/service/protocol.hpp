@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOL_HPP
 #define LIBBITCOIN_SERVER_PROTOCOL_HPP
 
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
@@ -28,10 +29,10 @@ namespace server {
 
 class server_node;
 
-void protocol_broadcast_transaction(server_node& node,
+void BCS_API protocol_broadcast_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void protocol_total_connections(server_node& node,
+void BCS_API protocol_total_connections(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server
