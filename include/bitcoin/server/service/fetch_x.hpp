@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_FETCH_X_HPP
 #define LIBBITCOIN_SERVER_FETCH_X_HPP
 
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
@@ -28,20 +29,20 @@ namespace server {
 
 // fetch_history stuff
 
-bool unwrap_fetch_history_args(
+bool BCS_API unwrap_fetch_history_args(
     bc::payment_address& payaddr, uint32_t& from_height,
     const incoming_message& request);
 
-void send_history_result(
+void BCS_API send_history_result(
     const std::error_code& ec, const bc::chain::history_list& history,
     const incoming_message& request, queue_send_callback queue_send);
 
 // fetch_transaction stuff
 
-bool unwrap_fetch_transaction_args(
+bool BCS_API unwrap_fetch_transaction_args(
     bc::hash_digest& tx_hash, const incoming_message& request);
 
-void transaction_fetched(const std::error_code& ec,
+void BCS_API transaction_fetched(const std::error_code& ec,
     const bc::transaction_type& tx,
     const incoming_message& request, queue_send_callback queue_send);
 

@@ -27,6 +27,7 @@
 #include <vector>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <czmq++/czmqpp.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/util.hpp>
@@ -43,7 +44,7 @@ namespace server {
  * and then the send_worker is notified. The worker wakes up and pushes
  * all pending requests to the socket.
  */
-class send_worker
+class BCS_API send_worker
 {
 public:
     send_worker(czmqpp::context& context);
@@ -53,7 +54,7 @@ private:
     czmqpp::context& context_;
 };
 
-class request_worker
+class BCS_API request_worker
 {
 public:
     typedef std::function<void(

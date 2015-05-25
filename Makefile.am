@@ -57,9 +57,10 @@ if WITH_TESTS
 TESTS = libbitcoin_server_test_runner.sh
 
 check_PROGRAMS = test/libbitcoin_server_test
-test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS}
-test_libbitcoin_server_test_LDADD = ${bitcoin_node_LIBS} ${boost_unit_test_framework_LIBS}
+test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
+test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 test_libbitcoin_server_test_SOURCES = \
+    test/endpoint.cpp \
     test/main.cpp \
     test/server.cpp \
     test/stress.sh

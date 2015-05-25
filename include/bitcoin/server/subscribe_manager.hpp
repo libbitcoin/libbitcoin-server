@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
@@ -36,7 +37,7 @@ enum class subscribe_type
     stealth = 1
 };
 
-class subscribe_manager
+class BCS_API subscribe_manager
 {
 public:
     subscribe_manager(server_node& node);
@@ -82,7 +83,7 @@ private:
     void sweep_expired();
 
     bc::async_strand strand_;
-    size_t subscribe_limit_ = 100000000;
+    size_t subscribe_limit_;
     subscription_list subs_;
 };
 

@@ -23,12 +23,13 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class publisher
+class BCS_API publisher
 {
 public:
     publisher(server_node& node);

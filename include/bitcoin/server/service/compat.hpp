@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_COMPAT_HPP
 #define LIBBITCOIN_SERVER_COMPAT_HPP
 
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
@@ -28,7 +29,7 @@ namespace server {
 
 class server_node;
 
-void COMPAT_fetch_history(server_node& node,
+void BCS_API COMPAT_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
 } // namespace server

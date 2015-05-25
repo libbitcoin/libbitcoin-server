@@ -25,7 +25,6 @@
 #include <string>
 #include <boost/regex.hpp>
 #include <boost/program_options.hpp>
-#include <boost/regex.hpp>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {

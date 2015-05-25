@@ -22,13 +22,14 @@
 
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class server_node
+class BCS_API server_node
   /* : full_node */
 {
 public:

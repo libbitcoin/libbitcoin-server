@@ -25,12 +25,13 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class endpoint_type
+class BCS_API endpoint_type
 {
 public:
     endpoint_type();

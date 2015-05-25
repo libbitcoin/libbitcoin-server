@@ -22,6 +22,7 @@
 
 #include <functional>
 #include <system_error>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message.hpp>
 
 namespace libbitcoin {
