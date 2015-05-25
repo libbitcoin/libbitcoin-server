@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/libbitcoin/libbitcoin-server.svg?branch=master)](https://travis-ci.org/libbitcoin/libbitcoin-server)
 
+[![Coverage Status](https://coveralls.io/repos/libbitcoin/libbitcoin-server/badge.svg)](https://coveralls.io/r/libbitcoin/libbitcoin-server)
+
 # Libbitcoin Server
 
 *Bitcoin full node and query server*
