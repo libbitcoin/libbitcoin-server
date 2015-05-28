@@ -24,6 +24,7 @@
 #include <boost/date_time.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/message.hpp>
@@ -56,10 +57,11 @@ server_node::server_node(settings_type& config)
 
     // Networking related services.
     hosts_(network_pool_, config.hosts_file.string(), 1000),
-    handshake_(network_pool_),
+    handshake_(network_pool_, bc::protocol_port),
     network_(network_pool_),
     protocol_(network_pool_, hosts_, handshake_, network_, 
-        config.out_connections),
+        network::protocol::default_seeds, bc::protocol_port,
+        true, config.out_connections),
 
     // Blockchain database service.
     chain_(disk_pool_, config.blockchain_path.string(),
