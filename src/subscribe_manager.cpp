@@ -219,10 +219,10 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
             continue;
         }
 
-        if (output.script().type() == chain::payment_type::stealth_info)
+        if (output.script.type() == chain::payment_type::stealth_info)
         {
             binary_type prefix = wallet::calculate_stealth_prefix(
-                output.script());
+                output.script);
 
             post_stealth_updates(prefix, height, block_hash, tx);
             continue;
@@ -257,7 +257,7 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
     // Now write the tx part.
-    data_chunk tx_data = tx;
+    data_chunk tx_data = tx.to_data();
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 
@@ -301,7 +301,7 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
     // Now write the tx part.
-    data_chunk tx_data = tx;
+    data_chunk tx_data = tx.to_data();
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 

@@ -80,7 +80,7 @@ void publisher::send_block(uint32_t height, const chain::block& block)
     BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
 
     // Serialize the 80 byte header.
-    data_chunk raw_block_header = block.header;
+    data_chunk raw_block_header = block.header.to_data();
     BITCOIN_ASSERT(raw_block_header.size() == 80);
 
     // Construct the message.
@@ -106,7 +106,7 @@ void publisher::send_block(uint32_t height, const chain::block& block)
 
 void publisher::send_tx(const chain::transaction& tx)
 {
-    data_chunk raw_tx = tx;
+    data_chunk raw_tx = tx.to_data();
     czmqpp::message message;
     message.append(raw_tx);
 

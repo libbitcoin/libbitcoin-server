@@ -22,7 +22,7 @@
 #include <bitcoin/server.hpp>
 
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 using namespace bc::network;
 using namespace bc::node;
 using namespace bc::server;
