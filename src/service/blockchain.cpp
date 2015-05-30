@@ -19,6 +19,7 @@
  */
 #include <bitcoin/server/service/blockchain.hpp>
 
+#include <boost/iostreams/stream.hpp>
 #include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
@@ -158,7 +159,7 @@ void block_header_fetched(const std::error_code& ec,
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
 
-    data_chunk blk_data = blk;
+    data_chunk blk_data = blk.to_data();
     serial.write_data(blk_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
@@ -299,8 +300,13 @@ void blockchain_fetch_spend(server_node& node,
         return;
     }
 
-    auto deserial = make_deserializer(data.begin(), data.end());
-    chain::output_point outpoint(deserial);
+    boost::iostreams::stream<byte_source<data_chunk>> istream(data);
+    istream.exceptions(
+        boost::iostreams::stream<byte_source<data_chunk>>::failbit);
+
+    chain::output_point outpoint;
+    outpoint.from_data(istream);
+
     node.blockchain().fetch_spend(outpoint,
         std::bind(spend_fetched, _1, _2, request, queue_send));
 }
@@ -314,7 +320,7 @@ void spend_fetched(const std::error_code& ec,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    data_chunk raw_inpoint = inpoint;
+    data_chunk raw_inpoint = inpoint.to_data();
     serial.write_data(raw_inpoint);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_spend() finished. Sending response.";

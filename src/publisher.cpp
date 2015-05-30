@@ -76,7 +76,7 @@ void publisher::send_blk(uint32_t height, const chain::block& blk)
     BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
 
     // Serialize the 80 byte header.
-    data_chunk raw_blk_header = blk.header();
+    data_chunk raw_blk_header = blk.header.to_data();
     BITCOIN_ASSERT(raw_blk_header.size() == 80);
 
     // Construct the message.
@@ -89,7 +89,7 @@ void publisher::send_blk(uint32_t height, const chain::block& blk)
 
     // Clients should be buffering their unconfirmed txs
     // and only be requesting those they don't have.
-    for (const chain::transaction& tx : blk.transactions())
+    for (const auto& tx : blk.transactions)
         append_hash(message, tx.hash());
 
     // Finished. Send message.
@@ -102,7 +102,7 @@ void publisher::send_blk(uint32_t height, const chain::block& blk)
 
 void publisher::send_tx(const chain::transaction& tx)
 {
-    data_chunk raw_tx = tx;
+    data_chunk raw_tx = tx.to_data();
     czmqpp::message message;
     message.append(raw_tx);
 

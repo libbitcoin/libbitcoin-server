@@ -34,7 +34,7 @@ bool BCS_API unwrap_fetch_history_args(
     const incoming_message& request);
 
 void BCS_API send_history_result(
-    const std::error_code& ec, const bc::chain::history_list& history,
+    const std::error_code& ec, const bc::blockchain::history_list& history,
     const incoming_message& request, queue_send_callback queue_send);
 
 // fetch_transaction stuff

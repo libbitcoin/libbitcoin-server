@@ -130,7 +130,8 @@ void server_node::fullnode_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     uint32_t from_height;
-    payment_address address;
+    wallet::payment_address address;
+
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
 

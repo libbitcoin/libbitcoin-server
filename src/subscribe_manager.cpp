@@ -38,9 +38,9 @@ void register_with_node(subscribe_manager& manager, server_node& node)
 {
     auto recv_blk = [&manager](size_t height, const chain::block& blk)
     {
-        const hash_digest blk_hash = blk.header().hash();
+        const hash_digest blk_hash = blk.header.hash();
 
-        for (const chain::transaction& tx : blk.transactions())
+        for (const auto& tx : blk.transactions)
             manager.submit(height, blk_hash, tx);
     };
 
@@ -181,31 +181,31 @@ void subscribe_manager::do_submit(
     size_t height, const hash_digest& block_hash,
     const chain::transaction& tx)
 {
-    for (const chain::transaction_input& input : tx.inputs())
+    for (const auto& input : tx.inputs)
     {
         wallet::payment_address addr;
 
-        if (extract(addr, input.script()))
+        if (extract(addr, input.script))
         {
             post_updates(addr, height, block_hash, tx);
             continue;
         }
     }
 
-    for (const chain::transaction_output& output : tx.outputs())
+    for (const auto& output : tx.outputs)
     {
         wallet::payment_address addr;
 
-        if (extract(addr, output.script()))
+        if (extract(addr, output.script))
         {
             post_updates(addr, height, block_hash, tx);
             continue;
         }
 
-        if (output.script().type() == chain::payment_type::stealth_info)
+        if (output.script.type() == chain::payment_type::stealth_info)
         {
             binary_type prefix = wallet::calculate_stealth_prefix(
-                output.script());
+                output.script);
 
             post_stealth_updates(prefix, height, block_hash, tx);
             continue;
@@ -240,7 +240,7 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
     // Now write the tx part.
-    data_chunk tx_data = tx;
+    data_chunk tx_data = tx.to_data();
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 
@@ -284,7 +284,7 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
     // Now write the tx part.
-    data_chunk tx_data = tx;
+    data_chunk tx_data = tx.to_data();
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 

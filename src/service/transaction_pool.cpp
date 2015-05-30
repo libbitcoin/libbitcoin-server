@@ -39,11 +39,7 @@ void transaction_pool_validate(server_node& node,
     const data_chunk& raw_tx = request.data();
     chain::transaction tx;
 
-    try
-    {
-        tx = chain::transaction(raw_tx);
-    }
-    catch (end_of_stream)
+    if (!tx.from_data(raw_tx))
     {
         // error
         transaction_validated(error::bad_stream, chain::index_list(),

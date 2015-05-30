@@ -69,7 +69,7 @@ void send_history_result(const std::error_code& ec,
         else // if (row.id == point_ident::spend)
             serial.write_byte(1);
 
-        data_chunk raw_point = row.point;
+        data_chunk raw_point = row.point.to_data();
         serial.write_data(raw_point);
         serial.write_4_bytes(row_height32);
         serial.write_8_bytes(row.value);
@@ -112,7 +112,7 @@ void transaction_fetched(const std::error_code& ec,
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
 
-    data_chunk tx_data = tx;
+    data_chunk tx_data = tx.to_data();
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 

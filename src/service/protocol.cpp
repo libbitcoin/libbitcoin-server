@@ -34,11 +34,7 @@ void protocol_broadcast_transaction(server_node& node,
     data_chunk result(4);
     auto serial = make_serializer(result.begin());
 
-    try
-    {
-        tx = chain::transaction(raw_tx);
-    }
-    catch (end_of_stream)
+    if (!tx.from_data(raw_tx))
     {
         // error
         write_error_code(serial, error::bad_stream);
