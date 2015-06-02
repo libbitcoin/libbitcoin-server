@@ -93,7 +93,7 @@ void last_height_fetched(const std::error_code& ec, size_t last_height,
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
-    serial.write_4_bytes(last_height32);
+    serial.write_4_bytes_little_endian(last_height32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_last_height() finished. Sending response.";
@@ -145,7 +145,7 @@ void fetch_block_header_by_height(server_node& node,
     const data_chunk& data = request.data();
     BITCOIN_ASSERT(data.size() == 4);
     auto deserial = make_deserializer(data.begin(), data.end());
-    size_t height = deserial.read_4_bytes();
+    size_t height = deserial.read_4_bytes_little_endian();
     node.blockchain().fetch_block_header(height,
         std::bind(block_header_fetched, _1, _2, request, queue_send));
 }
@@ -276,8 +276,8 @@ void transaction_index_fetched(const std::error_code& ec,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    serial.write_4_bytes(block_height32);
-    serial.write_4_bytes(index32);
+    serial.write_4_bytes_little_endian(block_height32);
+    serial.write_4_bytes_little_endian(index32);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction_index() finished. Sending response.";
     const outgoing_message response(request, result);
@@ -360,7 +360,7 @@ void block_height_fetched(const std::error_code& ec, size_t block_height,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    serial.write_4_bytes(block_height32);
+    serial.write_4_bytes_little_endian(block_height32);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_block_height() finished. Sending response.";
     const outgoing_message response(request, result);
@@ -401,7 +401,8 @@ void blockchain_fetch_stealth(server_node& node,
     const binary_type prefix(bitsize, blocks);
 
     // from_height
-    const size_t from_height = deserial.read_4_bytes();
+    const size_t from_height = deserial.read_4_bytes_little_endian();
+
     node.blockchain().fetch_stealth(prefix,
         std::bind(stealth_fetched, _1, _2, request, queue_send), from_height);
 }

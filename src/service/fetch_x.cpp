@@ -44,7 +44,7 @@ bool unwrap_fetch_history_args(wallet::payment_address& address,
     auto deserial = make_deserializer(data.begin(), data.end());
     uint8_t version_byte = deserial.read_byte();
     short_hash hash = deserial.read_short_hash();
-    from_height = deserial.read_4_bytes();
+    from_height = deserial.read_4_bytes_little_endian();
     BITCOIN_ASSERT(deserial.iterator() == data.end());
     address.set(version_byte, hash);
     return true;
@@ -71,8 +71,8 @@ void send_history_result(const std::error_code& ec,
 
         data_chunk raw_point = row.point.to_data();
         serial.write_data(raw_point);
-        serial.write_4_bytes(row_height32);
-        serial.write_8_bytes(row.value);
+        serial.write_4_bytes_little_endian(row_height32);
+        serial.write_8_bytes_little_endian(row.value);
     }
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
