@@ -235,7 +235,7 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
     serial.write_short_hash(address.hash());
-    serial.write_4_bytes(height32);
+    serial.write_4_bytes_little_endian(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
@@ -279,7 +279,7 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     data_chunk data(info_size + tx.satoshi_size());
     auto serial = make_serializer(data.begin());
     serial.write_data(prefix.blocks());
-    serial.write_4_bytes(height32);
+    serial.write_4_bytes_little_endian(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 

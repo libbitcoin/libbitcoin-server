@@ -65,7 +65,7 @@ void transaction_validated(const std::error_code& ec,
         BITCOIN_ASSERT(unconfirmed_index <= max_uint32);
         auto unconfirmed_index32 = static_cast<uint32_t>(unconfirmed_index);
 
-        serial.write_4_bytes(unconfirmed_index32);
+        serial.write_4_bytes_little_endian(unconfirmed_index32);
     }
 
     BITCOIN_ASSERT(serial.iterator() == result.end());

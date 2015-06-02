@@ -140,8 +140,8 @@ void COMPAT_send_history_result(
         BITCOIN_ASSERT(pair.output != nullptr);
         data_chunk raw_point = pair.output->point.to_data();
         serial.write_data(raw_point);
-        serial.write_4_bytes(output_height32);
-        serial.write_8_bytes(pair.output->value);
+        serial.write_4_bytes_little_endian(output_height32);
+        serial.write_8_bytes_little_endian(pair.output->value);
 
         if (pair.spend)
         {
@@ -150,14 +150,14 @@ void COMPAT_send_history_result(
 
             data_chunk raw_point = pair.spend->point.to_data();
             serial.write_data(raw_point);
-            serial.write_4_bytes(spend_height32);
+            serial.write_4_bytes_little_endian(spend_height32);
         }
         else
         {
             constexpr uint32_t no_value = bc::max_uint32;
             serial.write_hash(null_hash);
-            serial.write_4_bytes(no_value);
-            serial.write_4_bytes(no_value);
+            serial.write_4_bytes_little_endian(no_value);
+            serial.write_4_bytes_little_endian(no_value);
         }
 
         BITCOIN_ASSERT(serial.iterator() == start_pos + row_size);
