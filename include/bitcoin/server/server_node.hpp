@@ -51,7 +51,7 @@ public:
     // Access to underlying services.
     bc::chain::blockchain& blockchain();
     bc::chain::transaction_pool& transaction_pool();
-    bc::node::transaction_indexer& transaction_indexer();
+    bc::node::indexer& transaction_indexer();
     bc::network::protocol& protocol();
 
     // Threadpool for memory related operations.
@@ -71,10 +71,12 @@ private:
     // New connection has been started.
     // Subscribe to new transaction messages from the network.
     void monitor_tx(const std::error_code& ec, bc::network::channel_ptr node);
+
     // New transaction message from the network.
     // Attempt to validate it by storing it in the transaction pool.
     void recv_transaction(const std::error_code& ec,
         const bc::transaction_type& tx, bc::network::channel_ptr node);
+
     // Result of store operation in transaction pool.
     void handle_mempool_store(const std::error_code& ec,
         const bc::index_list& unconfirmed, const bc::transaction_type& tx,
@@ -85,8 +87,10 @@ private:
         const bc::chain::blockchain::block_list& replaced_blocks);
 
     bc::ofstream outfile_, errfile_;
+
     // Threadpools
     bc::threadpool network_pool_, disk_pool_, mem_pool_;
+
     // Services
     bc::network::hosts hosts_;
     bc::network::handshake handshake_;
@@ -95,7 +99,7 @@ private:
     bc::chain::blockchain_impl chain_;
     bc::node::poller poller_;
     bc::chain::transaction_pool txpool_;
-    bc::node::transaction_indexer indexer_;
+    bc::node::indexer indexer_;
     bc::node::session session_;
 
     block_notify_list notify_blocks_;

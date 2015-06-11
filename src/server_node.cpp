@@ -61,7 +61,7 @@ server_node::server_node(settings_type& config)
     network_(network_pool_),
     protocol_(network_pool_, hosts_, handshake_, network_, 
         network::protocol::default_seeds, bc::protocol_port,
-        true, config.out_connections),
+        config.out_connections),
 
     // Blockchain database service.
     chain_(disk_pool_, config.blockchain_path.string(),
@@ -84,6 +84,11 @@ bool server_node::start(settings_type& config)
     const auto skip_log = if_else(config.log_requests, "", LOG_REQUEST);
     initialize_logging(outfile_, errfile_, bc::cout, bc::cerr, skip_log);
 
+    // Subscribe to new connections.
+    protocol_.subscribe_channel(
+        std::bind(&server_node::monitor_tx,
+            this, _1, _2));
+
     // Start blockchain.
     if (!chain_.start())
     {
@@ -92,7 +97,8 @@ bool server_node::start(settings_type& config)
     }
 
     chain_.subscribe_reorganize(
-        std::bind(&server_node::reorganize, this, _1, _2, _3, _4));
+        std::bind(&server_node::reorganize,
+            this, _1, _2, _3, _4));
 
     // Start transaction pool
     txpool_.start();
@@ -144,6 +150,7 @@ bool server_node::stop()
         ec_session.set_value(ec);
     };
     session_.stop(session_stopped);
+
     // Query the error_code and wait for startup completion.
     const auto ec = ec_session.get_future().get();
     if (ec)
@@ -156,6 +163,7 @@ bool server_node::stop()
     network_pool_.stop();
     disk_pool_.stop();
     mem_pool_.stop();
+
     // Join threadpools. Wait for them to finish.
     network_pool_.join();
     disk_pool_.join();
@@ -200,12 +208,16 @@ void server_node::monitor_tx(const std::error_code& ec, network::channel_ptr nod
         log_warning(LOG_NODE) << "Couldn't start connection: " << ec.message();
         return;
     }
+
     // Subscribe to transaction messages from this node.
     node->subscribe_transaction(
-        std::bind(&server_node::recv_transaction, this, _1, _2, node));
+        std::bind(&server_node::recv_transaction,
+            this, _1, _2, node));
+
     // Stay subscribed to new connections.
     protocol_.subscribe_channel(
-        std::bind(&server_node::monitor_tx, this, _1, _2));
+        std::bind(&server_node::monitor_tx,
+            this, _1, _2));
 }
 
 void server_node::recv_transaction(const std::error_code& ec,
@@ -221,23 +233,29 @@ void server_node::recv_transaction(const std::error_code& ec,
         if (ec)
             log_error(LOG_NODE) << "Deindex error: " << ec.message();
     };
+
     // Called when the transaction becomes confirmed in a block.
     const auto handle_confirm = [this, tx, handle_deindex](
         const std::error_code& ec)
     {
         log_debug(LOG_NODE) << "Confirm transaction: " << ec.message()
             << " " << encode_hash(hash_transaction(tx));
+
         // Always try to deindex tx.
         // The error could be error::forced_removal from txpool.
         indexer_.deindex(tx, handle_deindex);
     };
+
     // Validate the transaction from the network.
     // Attempt to store in the transaction pool and check the result.
     txpool_.store(tx, handle_confirm,
-        std::bind(&server_node::handle_mempool_store, this, _1, _2, tx, node));
+        std::bind(&server_node::handle_mempool_store,
+            this, _1, _2, tx, node));
+
     // Resubscribe to transaction messages from this node.
     node->subscribe_transaction(
-        std::bind(&server_node::recv_transaction, this, _1, _2, node));
+        std::bind(&server_node::recv_transaction,
+            this, _1, _2, node));
 }
 
 void server_node::handle_mempool_store(
@@ -250,6 +268,7 @@ void server_node::handle_mempool_store(
             << encode_hash(hash_transaction(tx)) << ": " << ec.message();
         return;
     }
+
     const auto handle_index = [](const std::error_code& ec)
     {
         if (ec)
@@ -262,6 +281,7 @@ void server_node::handle_mempool_store(
         notify(tx);
 }
 
+// Conflicts with libbitcoin-node session implementation.
 void server_node::reorganize(const std::error_code& /* ec */,
     size_t fork_point,
     const blockchain::block_list& new_blocks,
@@ -277,11 +297,12 @@ void server_node::reorganize(const std::error_code& /* ec */,
             for (const auto notify: notify_blocks_)
                 notify(height, blk);
         }
+
     chain_.subscribe_reorganize(
-        std::bind(&server_node::reorganize, this, _1, _2, _3, _4));
+        std::bind(&server_node::reorganize,
+            this, _1, _2, _3, _4));
 }
 
-// TODO: use existing libbitcoin-node implementation.
 void server_node::fullnode_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
@@ -290,9 +311,11 @@ void server_node::fullnode_fetch_history(server_node& node,
     if (!unwrap_fetch_history_args(payaddr, from_height, request))
         return;
 
+    const auto handler = std::bind(send_history_result,
+        _1, _2, request, queue_send);
+
     fetch_history(node.blockchain(), node.transaction_indexer(), payaddr,
-        std::bind(send_history_result, _1, _2, request, queue_send),
-        from_height);
+        handler, from_height);
 }
 
 
