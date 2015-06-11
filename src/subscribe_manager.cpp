@@ -50,8 +50,9 @@ void register_with_node(subscribe_manager& manager, server_node& node)
     node.subscribe_transactions(recv_tx);
 }
 
+// TODO: move limit to constructor and server config.
 subscribe_manager::subscribe_manager(server_node& node)
-  : strand_(node.memory_related_threadpool()), subscribe_limit_(100000000)
+  : strand_(node.threadpool()), subscribe_limit_(100000000)
 {
     // subscribe to blocks and txs -> submit
     register_with_node(*this, node);
