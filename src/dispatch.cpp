@@ -137,6 +137,7 @@ static void show_version(std::ostream& stream)
 static console_result init_chain(const path& directory, std::ostream& output,
     std::ostream& error)
 {
+    // TODO: see github.com/bitcoin/bitcoin/issues/432
     // Create the directory as a convenience for the user, and then use it
     // as sentinel to guard against inadvertent re-initialization.
 
