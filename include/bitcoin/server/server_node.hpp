@@ -52,7 +52,7 @@ protected:
     virtual void new_unconfirm_valid_tx(const std::error_code& ec,
         const index_list& unconfirmed, const transaction_type& tx);
 
-    virtual void server_node::broadcast_new_blocks(const std::error_code& ec,
+    virtual void broadcast_new_blocks(const std::error_code& ec,
         uint32_t fork_point, const chain::blockchain::block_list& new_blocks,
         const chain::blockchain::block_list& replaced_blocks);
 

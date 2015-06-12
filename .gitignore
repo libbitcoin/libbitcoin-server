@@ -8,6 +8,8 @@ Makefile
 Makefile.in
 libobelisk.pc
 
+/.cproject
+/.project
 /aclocal.m4
 /autom4te.cache
 /build-aux
