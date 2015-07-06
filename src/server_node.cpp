@@ -106,8 +106,8 @@ void server_node::new_unconfirm_valid_tx(const std::error_code& ec,
 
 void server_node::broadcast_new_blocks(const std::error_code& ec,
     uint32_t fork_point,
-    const blockchain::blockchain::block_list& new_blocks,
-    const blockchain::blockchain::block_list& replaced_blocks)
+    const bc::blockchain::blockchain::block_list& new_blocks,
+    const bc::blockchain::blockchain::block_list& replaced_blocks)
 {
     broadcast_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
 
