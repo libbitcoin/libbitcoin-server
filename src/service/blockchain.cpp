@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -17,11 +17,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../echo.hpp"
-#include "../node_impl.hpp"
-#include "blockchain.hpp"
-#include "fetch_x.hpp"
-#include "util.hpp"
+#include <bitcoin/server/service/blockchain.hpp>
+
+#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/service/fetch_x.hpp>
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -31,7 +32,7 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 
-void blockchain_fetch_history(node_impl& node,
+void blockchain_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     payment_address payaddr;
@@ -45,7 +46,7 @@ void blockchain_fetch_history(node_impl& node,
             _1, _2, request, queue_send), from_height);
 }
 
-void blockchain_fetch_transaction(node_impl& node,
+void blockchain_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     hash_digest tx_hash;
@@ -59,7 +60,7 @@ void blockchain_fetch_transaction(node_impl& node,
 
 void last_height_fetched(const std::error_code& ec, size_t last_height,
     const incoming_message& request, queue_send_callback queue_send);
-void blockchain_fetch_last_height(node_impl& node,
+void blockchain_fetch_last_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -89,14 +90,14 @@ void last_height_fetched(const std::error_code& ec, size_t last_height,
     queue_send(response);
 }
 
-void fetch_block_header_by_hash(node_impl& node,
+void fetch_block_header_by_hash(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
-void fetch_block_header_by_height(node_impl& node,
+void fetch_block_header_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 void block_header_fetched(const std::error_code& ec,
     const block_header_type& blk,
     const incoming_message& request, queue_send_callback queue_send);
-void blockchain_fetch_block_header(node_impl& node,
+void blockchain_fetch_block_header(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -111,7 +112,7 @@ void blockchain_fetch_block_header(node_impl& node,
         return;
     }
 }
-void fetch_block_header_by_hash(node_impl& node,
+void fetch_block_header_by_hash(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -121,7 +122,7 @@ void fetch_block_header_by_hash(node_impl& node,
     node.blockchain().fetch_block_header(blk_hash,
         std::bind(block_header_fetched, _1, _2, request, queue_send));
 }
-void fetch_block_header_by_height(node_impl& node,
+void fetch_block_header_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -147,14 +148,14 @@ void block_header_fetched(const std::error_code& ec,
     queue_send(response);
 }
 
-void fetch_block_transaction_hashes_by_hash(node_impl& node,
+void fetch_block_transaction_hashes_by_hash(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
-void fetch_block_transaction_hashes_by_height(node_impl& node,
+void fetch_block_transaction_hashes_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 void block_transaction_hashes_fetched(const std::error_code& ec,
     const hash_list& hashes,
     const incoming_message& request, queue_send_callback queue_send);
-void blockchain_fetch_block_transaction_hashes(node_impl& node,
+void blockchain_fetch_block_transaction_hashes(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -169,7 +170,7 @@ void blockchain_fetch_block_transaction_hashes(node_impl& node,
         return;
     }
 }
-void fetch_block_transaction_hashes_by_hash(node_impl& node,
+void fetch_block_transaction_hashes_by_hash(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -183,7 +184,7 @@ void fetch_block_transaction_hashes_by_hash(node_impl& node,
 // Disabled because method no longer exists in libbitcoin.
 // I'm not actually sure that it's useful when we have fetch by hash instead.
 /*
-void fetch_block_transaction_hashes_by_height(node_impl& node,
+void fetch_block_transaction_hashes_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -215,7 +216,7 @@ void block_transaction_hashes_fetched(const std::error_code& ec,
 void transaction_index_fetched(const std::error_code& ec,
     size_t block_height, size_t index,
     const incoming_message& request, queue_send_callback queue_send);
-void blockchain_fetch_transaction_index(node_impl& node,
+void blockchain_fetch_transaction_index(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -254,7 +255,7 @@ void transaction_index_fetched(const std::error_code& ec,
 
 void spend_fetched(const std::error_code& ec, const input_point& inpoint,
     const incoming_message& request, queue_send_callback queue_send);
-void blockchain_fetch_spend(node_impl& node,
+void blockchain_fetch_spend(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -289,7 +290,7 @@ void spend_fetched(const std::error_code& ec, const input_point& inpoint,
 
 void block_height_fetched(const std::error_code& ec, size_t block_height,
     const incoming_message& request, queue_send_callback queue_send);
-void blockchain_fetch_block_height(node_impl& node,
+void blockchain_fetch_block_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();
@@ -325,7 +326,7 @@ void block_height_fetched(const std::error_code& ec, size_t block_height,
 void stealth_fetched(
     const std::error_code& ec, const stealth_list& stealth_results,
     const incoming_message& request, queue_send_callback queue_send);
-void blockchain_fetch_stealth(node_impl& node,
+void blockchain_fetch_stealth(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& data = request.data();

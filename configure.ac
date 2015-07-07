@@ -11,7 +11,7 @@
 AC_PREREQ([2.65])
 
 # Process command-line arguments and perform initialization and verification.
-AC_INIT([libbitcoin-server], [2.0.0], [genjix@riseup.net])
+AC_INIT([libbitcoin-server], [2.1.0], [genjix@riseup.net])
 
 # Do compilation tests.
 AC_LANG(C++)
@@ -87,6 +87,28 @@ AC_ARG_WITH([pkgconfigdir],
 AC_MSG_RESULT([$pkgconfigdir])
 AC_SUBST([pkgconfigdir])
 
+# Implement --with-tests and declare WITH_TESTS.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING([--with-tests option])
+AC_ARG_WITH([tests],
+    AS_HELP_STRING([--with-tests],
+        [Compile with unit tests. @<:@default=yes@:>@]),
+    [with_tests=$withval],
+    [with_tests=yes])
+AC_MSG_RESULT([$with_tests])
+AM_CONDITIONAL([WITH_TESTS], [test x$with_tests != xno])
+
+# Implement --with-console and declare WITH_CONSOLE.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING([--with-console option])
+AC_ARG_WITH([console],
+    AS_HELP_STRING([--with-console],
+        [Compile console application. @<:@default=yes@:>@]),
+    [with_console=$withval],
+    [with_console=yes])
+AC_MSG_RESULT([$with_console])
+AM_CONDITIONAL([WITH_CONSOLE], [test x$with_console != xno])
+
 # Implement --enable-ndebug and define NDEBUG.
 #------------------------------------------------------------------------------
 AC_MSG_CHECKING([--enable-ndebug option])
@@ -125,6 +147,12 @@ AS_CASE([${CC}], [*clang*],
          AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
         [AC_MSG_ERROR([Boost 1.54.0 or later is required but was not found.])])])
 
+AS_CASE([${with_tests}], [yes],
+    [AX_BOOST_UNIT_TEST_FRAMEWORK
+     AC_SUBST([boost_unit_test_framework_LIBS], [${BOOST_UNIT_TEST_FRAMEWORK_LIB}])
+     AC_MSG_NOTICE([boost_unit_test_framework_LIBS : ${boost_unit_test_framework_LIBS}])],
+    [AC_SUBST([boost_unit_test_framework_LIBS], [])])
+
 # Require bash-completion of at least version 2.0.0 and output ${bash_completion_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 AS_CASE([${bash_completiondir}], [yes],
@@ -154,10 +182,10 @@ AC_SUBST([czmq___CPPFLAGS], [${czmq___CFLAGS}])
 AC_MSG_NOTICE([czmq___CPPFLAGS : ${czmq___CPPFLAGS}])
 AC_MSG_NOTICE([czmq___LIBS : ${czmq___LIBS}])
 
-# Require bitcoin-node of at least version 2.0.0 and output ${bitcoin_node_CPPFLAGS/LIBS/PKG}.
+# Require bitcoin-node of at least version 2.1.0 and output ${bitcoin_node_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
-PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 2.0.0])
-AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 2.0.0'])
+PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 2.1.0])
+AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 2.1.0'])
 AC_SUBST([bitcoin_node_CPPFLAGS], [${bitcoin_node_CFLAGS}])
 AC_MSG_NOTICE([bitcoin_node_CPPFLAGS : ${bitcoin_node_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_node_LIBS : ${bitcoin_node_LIBS}])

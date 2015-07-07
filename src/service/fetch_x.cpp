@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../echo.hpp"
-#include "fetch_x.hpp"
-#include "util.hpp"
+#include <bitcoin/server/service/fetch_x.hpp>
+
+#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {

@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>Bitcoin Server Common Settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>Bitcoin Server Settings</_PropertySheetDisplayName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
@@ -11,7 +11,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(RepoRoot)include\;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4290;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -29,6 +29,7 @@
     <Import Project="$(SolutionDir)libbitcoin-consensus.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-blockchain.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-node.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-server.import.props" />
   </ImportGroup>
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
@@ -43,6 +44,7 @@
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-blockchain>dynamic</Linkage-libbitcoin-blockchain>
     <Linkage-libbitcoin-node>dynamic</Linkage-libbitcoin-node>
+    <Linkage-libbitcoin-server>dynamic</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-libsodium>ltcg</Linkage-libsodium>
@@ -55,6 +57,7 @@
     <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-blockchain>ltcg</Linkage-libbitcoin-blockchain>
     <Linkage-libbitcoin-node>ltcg</Linkage-libbitcoin-node>
+    <Linkage-libbitcoin-server>ltcg</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-libsodium>static</Linkage-libsodium>
@@ -67,6 +70,7 @@
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-blockchain>static</Linkage-libbitcoin-blockchain>
     <Linkage-libbitcoin-node>static</Linkage-libbitcoin-node>
+    <Linkage-libbitcoin-server>static</Linkage-libbitcoin-server>
   </PropertyGroup>
 
   <!-- Messages -->
@@ -82,6 +86,7 @@
     <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
     <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
     <Message Text="Linkage-_node      : $(Linkage-libbitcoin-node)" Importance="high"/>
+    <Message Text="Linkage-_server      : $(Linkage-libbitcoin-server)" Importance="high"/>
   </Target>
 
 </Project>

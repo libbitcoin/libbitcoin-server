@@ -66,7 +66,7 @@ if [[ $TRAVIS == true ]]; then
 elif [[ $OS == Linux ]]; then
     PARALLEL=`nproc`
 elif [[ $OS == Darwin ]]; then
-    PARALLEL=2 #TODO
+    PARALLEL=`sysctl -n hw.ncpu`
 else
     echo "Unsupported system: $OS"
     exit 1
@@ -116,6 +116,25 @@ for OPTION in "$@"; do
 done
 echo "Build directory: $BUILD_DIR"
 echo "Prefix directory: $PREFIX"
+
+# Warn on configurations that imply static/prefix isolation.
+#------------------------------------------------------------------------------
+if [[ $BUILD_ICU == yes ]]; then
+    if [[ !($PREFIX)]]; then    
+        echo "Warning: --prefix recommended when building ICU."
+    fi
+    if [[ !($DISABLE_SHARED) ]]; then
+        echo "Warning: --disable-shared recommended when building ICU."
+    fi
+fi
+if [[ $BUILD_BOOST == yes ]]; then
+    if [[ !($PREFIX)]]; then    
+        echo "Warning: --prefix recommended when building boost."
+    fi
+    if [[ !($DISABLE_SHARED) ]]; then
+        echo "Warning: --disable-shared recommended when building boost."
+    fi
+fi
 
 # Purge custom options so they don't go to configure.
 #------------------------------------------------------------------------------
@@ -221,8 +240,7 @@ CZMQPP_OPTIONS=\
 # Define secp256k1 options.
 #------------------------------------------------------------------------------
 SECP256K1_OPTIONS=\
-"--disable-tests "\
-"--disable-bignum "
+"--disable-tests "
 
 # Define bitcoin options.
 #------------------------------------------------------------------------------
@@ -402,7 +420,16 @@ make_tests()
 
     # Build and run unit tests relative to the primary directory.
     # VERBOSE=1 ensures test-suite.log output sent to console (gcc).
-    make_jobs $JOBS check VERBOSE=1
+    if ! make_jobs $JOBS check VERBOSE=1; then
+        if [ -e "test-suite.log" ]; then
+            echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+            echo "cat test-suite.log"
+            echo "------------------------------"
+            cat "test-suite.log"
+            echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+        fi
+        exit 1
+    fi
 }
 
 pop_directory()

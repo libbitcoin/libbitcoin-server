@@ -1,12 +1,14 @@
 [![Build Status](https://travis-ci.org/libbitcoin/libbitcoin-server.svg?branch=master)](https://travis-ci.org/libbitcoin/libbitcoin-server)
 
+[![Coverage Status](https://coveralls.io/repos/libbitcoin/libbitcoin-server/badge.svg)](https://coveralls.io/r/libbitcoin/libbitcoin-server)
+
 # Libbitcoin Server
 
 *Bitcoin full node and query server*
 
 [Documentation](https://github.com/libbitcoin/libbitcoin-server/wiki) is available on the wiki.
 
-[Downloads](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-Libbitcoin-Server) are available for Linux, Macintosh and Windows.
+[Downloads](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS) are available for Linux, Macintosh and Windows.
 
 **License Overview**
 
@@ -26,7 +28,7 @@ The API is backward compatible with its predecessor [Obelisk](https://github.com
 
 ## Installation
 
-Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download).
+Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS).
 
 On Linux and Macintosh Libbitcoin Server is built using Autotools as follows.
 ```sh

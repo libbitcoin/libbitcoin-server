@@ -7,127 +7,16 @@
     <Filter Include="src">
       <UniqueIdentifier>{86b385b3-059d-41a9-8455-6e217c481c69}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\service">
-      <UniqueIdentifier>{4897c614-3d98-47d0-a4f3-b7e2b5304397}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\service\include">
-      <UniqueIdentifier>{26458c7a-620f-4f95-9663-9db846de6167}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\include">
-      <UniqueIdentifier>{39b29c2e-85af-40e3-9217-2163efbc768e}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\src\service\blockchain.hpp">
-      <Filter>src\service\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\compat.hpp">
-      <Filter>src\service\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\fetch_x.hpp">
-      <Filter>src\service\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\fullnode.hpp">
-      <Filter>src\service\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\protocol.hpp">
-      <Filter>src\service\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\transaction_pool.hpp">
-      <Filter>src\service\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\service\util.hpp">
-      <Filter>src\service\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\config.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\echo.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\message.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\node_impl.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\publisher.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\subscribe_manager.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\worker.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\server.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\settings.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\endpoint.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\version.hpp">
-      <Filter>src\include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\service\blockchain.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\fetch_x.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\fullnode.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\protocol.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\transaction_pool.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\config.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\echo.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\node_impl.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\publisher.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\subscribe_manager.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\worker.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\compat.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\server.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\settings.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoint.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
+    <ResourceCompile Include="..\..\resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\resource.rc" />
+    <ClCompile Include="..\..\..\..\console\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

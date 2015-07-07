@@ -29,48 +29,87 @@ doc_DATA = \
     NEWS \
     README
 
-# src/bs => ${bindir}
+# src/libbitcoin-server.la => ${libdir}
 #------------------------------------------------------------------------------
-bin_PROGRAMS = src/bs
-src_bs_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
-src_bs_LDADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
-src_bs_SOURCES = \
-    src/config.cpp \
-    src/config.hpp \
-    src/echo.cpp \
-    src/echo.hpp \
-    src/endpoint.cpp \
-    src/endpoint.hpp \
-    src/main.cpp \
+lib_LTLIBRARIES = src/libbitcoin-server.la
+src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
+src_libbitcoin_server_la_LIBADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
+src_libbitcoin_server_la_SOURCES = \
+    src/dispatch.cpp \
     src/message.cpp \
-    src/message.hpp \
-    src/node_impl.cpp \
-    src/node_impl.hpp \
     src/publisher.cpp \
-    src/publisher.hpp \
-    src/server.cpp \
-    src/server.hpp \
-    src/settings.cpp \
-    src/settings.hpp \
+    src/server_node.cpp \
     src/subscribe_manager.cpp \
-    src/subscribe_manager.hpp \
-    src/version.hpp \
-    src/worker-output.sh \
     src/worker.cpp \
-    src/worker.hpp \
+    src/config/config.cpp \
+    src/config/endpoint.cpp \
+    src/config/settings.cpp \
     src/service/blockchain.cpp \
-    src/service/blockchain.hpp \
     src/service/compat.cpp \
-    src/service/compat.hpp \
     src/service/fetch_x.cpp \
-    src/service/fetch_x.hpp \
-    src/service/fullnode.cpp \
-    src/service/fullnode.hpp \
     src/service/protocol.cpp \
-    src/service/protocol.hpp \
-    src/service/transaction_pool.cpp \
-    src/service/transaction_pool.hpp \
-    src/service/util.hpp
+    src/service/transaction_pool.cpp
+
+# local: test/libbitcoin_server_test
+#------------------------------------------------------------------------------
+if WITH_TESTS
+
+TESTS = libbitcoin_server_test_runner.sh
+
+check_PROGRAMS = test/libbitcoin_server_test
+test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
+test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
+test_libbitcoin_server_test_SOURCES = \
+    test/endpoint.cpp \
+    test/main.cpp \
+    test/server.cpp \
+    test/stress.sh
+
+endif WITH_TESTS
+
+# console/bs => ${bindir}
+#------------------------------------------------------------------------------
+if WITH_CONSOLE
+
+bin_PROGRAMS = console/bs
+console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
+console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
+console_bs_SOURCES = \
+    console/main.cpp
+
+endif WITH_CONSOLE
+
+# files => ${includedir}/bitcoin
+#------------------------------------------------------------------------------
+include_bitcoindir = ${includedir}/bitcoin
+include_bitcoin_HEADERS = \
+    include/bitcoin/server.hpp
+
+include_bitcoin_serverdir = ${includedir}/bitcoin/server
+include_bitcoin_server_HEADERS = \
+    include/bitcoin/server/define.hpp \
+    include/bitcoin/server/dispatch.hpp \
+    include/bitcoin/server/message.hpp \
+    include/bitcoin/server/publisher.hpp \
+    include/bitcoin/server/server_node.hpp \
+    include/bitcoin/server/subscribe_manager.hpp \
+    include/bitcoin/server/version.hpp \
+    include/bitcoin/server/worker.hpp
+
+include_bitcoin_server_configdir = ${includedir}/bitcoin/server/config
+include_bitcoin_server_config_HEADERS = \
+    include/bitcoin/server/config/config.hpp \
+    include/bitcoin/server/config/endpoint.hpp \
+    include/bitcoin/server/config/settings.hpp
+
+include_bitcoin_server_servicedir = ${includedir}/bitcoin/server/service
+include_bitcoin_server_service_HEADERS = \
+    include/bitcoin/server/service/blockchain.hpp \
+    include/bitcoin/server/service/compat.hpp \
+    include/bitcoin/server/service/fetch_x.hpp \
+    include/bitcoin/server/service/protocol.hpp \
+    include/bitcoin/server/service/transaction_pool.hpp \
+    include/bitcoin/server/service/util.hpp
 
 # files => ${bash_completiondir}
 #------------------------------------------------------------------------------
@@ -86,4 +125,14 @@ endif BASH_COMPLETIONDIR
 sysconf_libbitcoindir = ${sysconfdir}/libbitcoin
 sysconf_libbitcoin_DATA = \
     data/bs.cfg
+
+
+# Custom make targets.
+#==============================================================================
+# make target: console
+#------------------------------------------------------------------------------
+target_console = \
+    console/bs
+
+console: ${target_console}
 
