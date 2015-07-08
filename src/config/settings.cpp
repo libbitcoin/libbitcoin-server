@@ -19,6 +19,7 @@
  */
 #include <bitcoin/server/config/settings.hpp>
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -134,28 +135,28 @@ const options_description config_type::load_settings()
         "Write service requests to the log, impacts performance, defaults to false."
     )
     (
-        "general.listener_enabled",
-        value<bool>(&settings.listener_enabled)->default_value(true),
-        "Enable the listening for incoming connections, defaults to true."
-    )
-    (
         "general.publisher_enabled",
         value<bool>(&settings.publisher_enabled)->default_value(false),
         "Enable the publisher, defaults to false."
     )
     (
+        "general.listen_port",
+        value<uint16_t>(&settings.listen_port)->default_value(BN_LISTEN_PORT),
+        "Set the port for incoming connections, set to 0 to disable listener, defaults to 8333 (18333 for testnet)."
+    )
+    (
         "general.tx_pool_capacity",
-        value<uint32_t>(&settings.tx_pool_capacity)->default_value(2000),
+        value<uint32_t>(&settings.tx_pool_capacity)->default_value(BN_P2P_TX_POOL),
         "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
         "general.out_connections",
-        value<uint32_t>(&settings.out_connections)->default_value(8),
+        value<uint32_t>(&settings.out_connections)->default_value(BN_P2P_OUTBOUND),
         "The maximum number of outgoing P2P network connections, defaults to 8."
     )
     (
         "general.history_height",
-        value<uint32_t>(&settings.history_height)->default_value(0),
+        value<uint32_t>(&settings.history_height)->default_value(BN_HISTORY_START_HEIGHT),
         "The minimum height of the history database, defaults to 0."
     )
     (
@@ -185,8 +186,8 @@ const options_description config_type::load_settings()
     )
     (
         "general.hosts_file",
-        value<path>(&settings.hosts_file)->default_value("hosts"),
-        "The peer cache file path, defaults to 'hosts'."
+        value<path>(&settings.hosts_file)->default_value(BN_HOSTS_FILENAME),
+        "The peer cache file path, defaults to 'peers'."
     )
     (
         "logging.debug_file",
@@ -210,7 +211,7 @@ const options_description config_type::load_settings()
     )
     (
         "general.blockchain_path",
-        value<path>(&settings.blockchain_path)->default_value("blockchain"),
+        value<path>(&settings.blockchain_path)->default_value(BN_DIRECTORY),
         "The blockchain directory, defaults to 'blockchain'."
     )
     (

@@ -38,32 +38,15 @@ using std::placeholders::_2;
 
 constexpr auto append = std::ofstream::out | std::ofstream::app;
 
-server_node::server_node(settings_type& config)
-  : outfile_(config.debug_file.string(), append), 
+server_node::server_node(const settings_type& config)
+  : full_node(config),
+    outfile_(config.debug_file.string(), append),
     errfile_(config.error_file.string(), append),
-    network_threads_(BN_THREADS_NETWORK, thread_priority::low),
-    database_threads_(BN_THREADS_DISK, thread_priority::low),
-    memory_threads_(BN_THREADS_MEMORY, thread_priority::low),
-    host_pool_(network_threads_, config.hosts_file, BN_P2P_HOST_POOL),
-    handshake_(network_threads_, BN_LISTEN_PORT),
-    network_(network_threads_),
-    protocol_(network_threads_, host_pool_, handshake_, network_,
-        network::protocol::default_seeds, 
-        (config.listener_enabled ? BN_LISTEN_PORT : 0),
-        config.out_connections),
-    blockchain_(database_threads_, config.blockchain_path.string(),
-        { config.history_height }, BN_P2P_ORPHAN_POOL),
-    tx_pool_(memory_threads_, blockchain_, config.tx_pool_capacity),
-    tx_indexer_(memory_threads_),
-    poller_(memory_threads_, blockchain_),
-    responder_(blockchain_, tx_pool_),
-    session_(network_threads_, handshake_, protocol_, blockchain_, poller_,
-        tx_pool_, responder_),
     retry_start_timer_(memory_threads_.service())
 {
 }
 
-bool server_node::start(settings_type& config)
+bool server_node::start(const settings_type& config)
 {
     // Set up logging for node background threads (add to config).
     const auto skip_log = if_else(config.log_requests, "", LOG_REQUEST);

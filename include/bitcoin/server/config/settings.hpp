@@ -25,6 +25,7 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/config/endpoint.hpp>
 #include <bitcoin/server/define.hpp>
 
@@ -42,8 +43,11 @@
 namespace libbitcoin {
 namespace server {
 
-struct BCS_API settings_type
+class BCS_API settings_type
+  : public node::settings
 {
+public:
+
     // options
     bool help;
     bool initchain;
@@ -55,22 +59,16 @@ struct BCS_API settings_type
 
     // settings
     bool log_requests;
-    bool listener_enabled;
     bool publisher_enabled;
-    uint32_t tx_pool_capacity;
-    uint32_t out_connections;
-    uint32_t history_height;
     endpoint_type unique_name;
     endpoint_type service;
     endpoint_type heartbeat;
     endpoint_type tx_publish;
     endpoint_type block_publish;
-    boost::filesystem::path hosts_file;
     boost::filesystem::path debug_file;
     boost::filesystem::path error_file;
     boost::filesystem::path cert_file;
     boost::filesystem::path client_certs_path;
-    boost::filesystem::path blockchain_path;
     std::vector<endpoint_type> clients;
     std::vector<endpoint_type> peers;
 };
