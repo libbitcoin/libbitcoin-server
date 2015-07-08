@@ -260,7 +260,7 @@ static console_result run(settings_type& config, std::ostream& output,
             error << format(BS_PUBLISHER_START_FAIL) %
                 zmq_strerror(zmq_errno()) << std::endl;
 
-            // This is a bit wacky, since the node hasn't been started yet, but
+            // This is a bit wacky, since the node hasn't been started, but
             // there is threadpool cleanup code in here.
             full_node.stop();
 
