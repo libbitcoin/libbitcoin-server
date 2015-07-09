@@ -72,7 +72,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\config.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\endpoint.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp" />
@@ -92,7 +91,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\config\config.cpp" />
-    <ClCompile Include="..\..\..\..\src\config\endpoint.cpp" />
     <ClCompile Include="..\..\..\..\src\config\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\message.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />

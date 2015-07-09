@@ -69,6 +69,7 @@ void server_node::subscribe_blocks(block_notify_callback notify_block)
 {
     block_sunscriptions_.push_back(notify_block);
 }
+
 void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
 {
     tx_subscriptions_.push_back(notify_tx);

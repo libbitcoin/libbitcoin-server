@@ -22,7 +22,7 @@
 #include <cstdint>
 #include <vector>
 #include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/config/config.hpp>
 
 namespace libbitcoin {
@@ -89,8 +89,8 @@ bool request_worker::start(settings_type& config)
         enable_crypto(config);
     // Start ZeroMQ sockets.
     create_new_socket(config);
-    log_debug(LOG_WORKER) << "Heartbeat: " << config.heartbeat;
-    heartbeat_socket_.bind(config.heartbeat);
+    log_debug(LOG_WORKER) << "Heartbeat: " << config.heartbeat_endpoint;
+    heartbeat_socket_.bind(config.heartbeat_endpoint);
     // Timer stuff
     heartbeat_at_ = now() + heartbeat_interval;
     return true;
@@ -99,7 +99,7 @@ void request_worker::stop()
 {
 }
 
-void request_worker::whitelist(std::vector<endpoint_type>& addrs)
+void request_worker::whitelist(std::vector<node::endpoint_type>& addrs)
 {
     for (const auto& ip_address: addrs)
         auth_.allow(ip_address);
@@ -116,12 +116,12 @@ void request_worker::enable_crypto(settings_type& config)
 }
 void request_worker::create_new_socket(settings_type& config)
 {
-    log_debug(LOG_WORKER) << "Listening: " << config.service;
+    log_debug(LOG_WORKER) << "Listening: " << config.query_endpoint;
     // Set the socket identity name.
     if (!config.unique_name.get_host().empty())
         socket_.set_identity(config.unique_name.get_host());
     // Connect...
-    socket_.bind(config.service);
+    socket_.bind(config.query_endpoint);
     socket_.set_linger(zmq_socket_no_linger);
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";

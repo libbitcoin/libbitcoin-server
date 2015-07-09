@@ -42,7 +42,6 @@ src_libbitcoin_server_la_SOURCES = \
     src/subscribe_manager.cpp \
     src/worker.cpp \
     src/config/config.cpp \
-    src/config/endpoint.cpp \
     src/config/settings.cpp \
     src/service/blockchain.cpp \
     src/service/compat.cpp \
@@ -60,7 +59,6 @@ check_PROGRAMS = test/libbitcoin_server_test
 test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
 test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 test_libbitcoin_server_test_SOURCES = \
-    test/endpoint.cpp \
     test/main.cpp \
     test/server.cpp \
     test/stress.sh
@@ -99,7 +97,6 @@ include_bitcoin_server_HEADERS = \
 include_bitcoin_server_configdir = ${includedir}/bitcoin/server/config
 include_bitcoin_server_config_HEADERS = \
     include/bitcoin/server/config/config.hpp \
-    include/bitcoin/server/config/endpoint.hpp \
     include/bitcoin/server/config/settings.hpp
 
 include_bitcoin_server_servicedir = ${includedir}/bitcoin/server/service

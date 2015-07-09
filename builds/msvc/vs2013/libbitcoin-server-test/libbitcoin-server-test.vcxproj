@@ -110,7 +110,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\endpoint.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\server.cpp" />
   </ItemGroup>

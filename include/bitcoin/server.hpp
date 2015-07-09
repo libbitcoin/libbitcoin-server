@@ -24,7 +24,6 @@
 #include <bitcoin/server/version.hpp>
 #include <bitcoin/server/worker.hpp>
 #include <bitcoin/server/config/config.hpp>
-#include <bitcoin/server/config/endpoint.hpp>
 #include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/service/blockchain.hpp>
 #include <bitcoin/server/service/compat.hpp>

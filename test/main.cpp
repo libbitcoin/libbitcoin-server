@@ -1,9 +1,9 @@
-/*
+/**
  * Copyright (c) 2011-2014 libbitcoin developers (see AUTHORS)
  *
- * This file is part of libbitcoin-node.
+ * This file is part of libbitcoin-server.
  *
- * libbitcoin-node is free software: you can redistribute it and/or
+ * libbitcoin-server is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License with
  * additional permissions to the one published by the Free Software
  * Foundation, either version 3 of the License, or (at your option)
