@@ -38,8 +38,8 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    server_node(settings_type& config);
-    bool start(settings_type& config);
+    server_node(const settings_type& config);
+    bool start(const settings_type& config);
 
     virtual void subscribe_blocks(block_notify_callback notify_block);
     virtual void subscribe_transactions(transaction_notify_callback notify_tx);
@@ -67,21 +67,6 @@ private:
     // Logs.
     bc::ofstream outfile_;
     bc::ofstream errfile_;
-
-    // Services.
-    bc::threadpool network_threads_;
-    bc::threadpool database_threads_;
-    bc::threadpool memory_threads_;
-    bc::network::hosts host_pool_;
-    bc::network::handshake handshake_;
-    bc::network::network network_;
-    bc::network::protocol protocol_;
-    bc::chain::blockchain_impl blockchain_;
-    bc::chain::transaction_pool tx_pool_;
-    bc::node::indexer tx_indexer_;
-    bc::node::poller poller_;
-    bc::node::session session_;
-    bc::node::responder responder_;
 
     // Timer.
     boost::asio::deadline_timer retry_start_timer_;

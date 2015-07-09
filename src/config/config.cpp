@@ -24,7 +24,6 @@
 #include <boost/program_options.hpp>
 #include <boost/throw_exception.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/config/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

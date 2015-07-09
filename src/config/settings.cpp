@@ -19,12 +19,14 @@
  */
 #include <bitcoin/server/config/settings.hpp>
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/node.hpp>
+#include <bitcoin/server/config/config.hpp>
 
 // Define after boost asio, see stackoverflow.com/a/9750437/1172329.
 #ifdef _MSC_VER
@@ -40,6 +42,7 @@ namespace server {
 
 using boost::filesystem::path;
 using namespace boost::program_options;
+using namespace libbitcoin::node;
 
 static std::string system_config_directory()
 {
@@ -128,75 +131,105 @@ const options_description config_type::load_settings()
 {
     options_description description("settings");
     description.add_options()
+    /* [node] */
     (
-        "logging.log_requests",
-        value<bool>(&settings.log_requests)->default_value(false),
-        "Write service requests to the log, impacts performance, defaults to false."
+        "node.database_threads",
+        value<uint16_t>(&settings.database_threads)->default_value(BN_DATABASE_THREADS),
+        "The number of threads in the database threadpool, defaults to 6."
     )
     (
-        "general.listener_enabled",
-        value<bool>(&settings.listener_enabled)->default_value(true),
-        "Enable the listening for incoming connections, defaults to true."
+        "node.network_threads",
+        value<uint16_t>(&settings.network_threads)->default_value(BN_NETWORK_THREADS),
+        "The number of threads in the network threadpool, defaults to 4."
     )
     (
-        "general.publisher_enabled",
-        value<bool>(&settings.publisher_enabled)->default_value(false),
-        "Enable the publisher, defaults to false."
+        "node.memory_threads",
+        value<uint16_t>(&settings.memory_threads)->default_value(BN_MEMORY_THREADS),
+        "The number of threads in the memory threadpool, defaults to 4."
     )
     (
-        "general.tx_pool_capacity",
-        value<uint32_t>(&settings.tx_pool_capacity)->default_value(2000),
+        "node.host_pool_capacity",
+        value<uint32_t>(&settings.host_pool_capacity)->default_value(BN_HOST_POOL_CAPACITY),
+        "The maximum number of peer hosts in the pool, defaults to 1000."
+    )
+    (
+        "node.block_pool_capacity",
+        value<uint32_t>(&settings.block_pool_capacity)->default_value(BN_BLOCK_POOL_CAPACITY),
+        "The maximum number of orphan blocks in the pool, defaults to 50."
+    )
+    (
+        "node.tx_pool_capacity",
+        value<uint32_t>(&settings.tx_pool_capacity)->default_value(BN_TX_POOL_CAPACITY),
         "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
-        "general.out_connections",
-        value<uint32_t>(&settings.out_connections)->default_value(8),
+        "node.history_height",
+        value<uint32_t>(&settings.history_height)->default_value(BN_HISTORY_START_HEIGHT),
+        "The minimum height of the history database, defaults to 0."
+    )
+    (
+        "node.checkpoint_height",
+        value<uint32_t>(&settings.checkpoint_height)->default_value(0),
+        "The height of the checkpoint hash, defaults to 0."
+    )
+    (
+        "node.checkpoint_hash",
+        value<btc256>(&settings.checkpoint_hash)->default_value(BN_CHECKPOINT_HASH),
+        "The checkpoint hash, defaults to a null hash (no checkpoint)."
+    )
+    (
+        "node.listen_port",
+        value<uint16_t>(&settings.p2p_listen_port)->default_value(BN_P2P_LISTEN_PORT),
+        "The port for incoming connections, set to 0 to disable listener, defaults to 8333 (18333 for testnet)."
+    )
+    (
+        "node.outbound_connections",
+        value<uint32_t>(&settings.p2p_outbound_connections)->default_value(BN_P2P_OUTBOUND_CONNECTIONS),
         "The maximum number of outgoing P2P network connections, defaults to 8."
     )
     (
-        "general.history_height",
-        value<uint32_t>(&settings.history_height)->default_value(0),
-        "The minimum height of the history database, defaults to 0."
+        "node.hosts_file",
+        value<path>(&settings.p2p_hosts_file)->default_value(BN_P2P_HOSTS_FILE),
+        "The peer cache file path, defaults to 'peers'."
     )
+    (
+        "node.blockchain_path",
+        value<path>(&settings.blockchain_path)->default_value(BN_BLOCKCHAIN_DIRECTORY),
+        "The blockchain directory, defaults to 'blockchain'."
+    )
+
+    /* [server] */
+    (
+        "server.query_endpoint",
+        value<endpoint_type>(&settings.query_endpoint)->default_value({ "tcp://*:9091" }),
+        "The query service endpoint, defaults to 'tcp://*:9091'."
+    )
+    (
+        "server.heartbeat_endpoint",
+        value<endpoint_type>(&settings.heartbeat_endpoint)->default_value({ "tcp://*:9092" }),
+        "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
+    )
+    (
+        "server.block_publish_endpoint",
+        value<endpoint_type>(&settings.block_publish_endpoint)->default_value({ "tcp://*:9093" }),
+        "The block publishing service endpoint, defaults to 'tcp://*:9093'."
+    )
+    (
+        "server.tx_publish_endpoint",
+        value<endpoint_type>(&settings.tx_publish_endpoint)->default_value({ "tcp://*:9094" }),
+        "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
+    )
+    (
+        "server.publisher_enabled",
+        value<bool>(&settings.publisher_enabled)->default_value(false),
+        "Enable the publisher, defaults to false."
+    )
+
+    /* [identity] */
     (
         "identity.unique_name",
         value<endpoint_type>(&settings.unique_name),
         "The server name, must be unique if specified."
-    )
-    (
-        "endpoints.service",
-        value<endpoint_type>(&settings.service)->default_value({ "tcp://*:9091" }),
-        "The query service endpoint, defaults to 'tcp://*:9091'."
-    )
-    (
-        "endpoints.heartbeat",
-        value<endpoint_type>(&settings.heartbeat)->default_value({ "tcp://*:9092" }),
-        "The heartbeat endpoint, defaults to 'tcp://*:9092'."
-    )
-    (
-        "endpoints.block_publish",
-        value<endpoint_type>(&settings.block_publish)->default_value({ "tcp://*:9093" }),
-        "The block publishing service endpoint, defaults to 'tcp://*:9093'."
-    )
-    (
-        "endpoints.tx_publish",
-        value<endpoint_type>(&settings.tx_publish)->default_value({ "tcp://*:9094" }),
-        "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
-    )
-    (
-        "general.hosts_file",
-        value<path>(&settings.hosts_file)->default_value("hosts"),
-        "The peer cache file path, defaults to 'hosts'."
-    )
-    (
-        "logging.debug_file",
-        value<path>(&settings.debug_file)->default_value("debug.log"),
-        "The debug log file path, defaults to 'debug.log'."
-    )
-    (
-        "logging.error_file",
-        value<path>(&settings.error_file)->default_value("error.log"),
-        "The error log file path, defaults to 'error.log'."
     )
     (
         "identity.cert_file",
@@ -209,11 +242,6 @@ const options_description config_type::load_settings()
         "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
     )
     (
-        "general.blockchain_path",
-        value<path>(&settings.blockchain_path)->default_value("blockchain"),
-        "The blockchain directory, defaults to 'blockchain'."
-    )
-    (
         "identity.client",
         value<std::vector<endpoint_type>>(&settings.clients)->multitoken(),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
@@ -222,6 +250,23 @@ const options_description config_type::load_settings()
         "identity.peer",
         value<std::vector<endpoint_type>>(&settings.peers)->multitoken(),
         "Node to augment peer discovery, formatted as host:port, multiple entries allowed."
+    )
+
+    /* [logging] */
+    (
+        "logging.debug_file",
+        value<path>(&settings.debug_file)->default_value("debug.log"),
+        "The debug log file path, defaults to 'debug.log'."
+    )
+    (
+        "logging.error_file",
+        value<path>(&settings.error_file)->default_value("error.log"),
+        "The error log file path, defaults to 'error.log'."
+    )
+    (
+        "logging.log_requests",
+        value<bool>(&settings.log_requests)->default_value(false),
+        "Write service requests to the log, impacts performance, defaults to false."
     );
 
     return description;

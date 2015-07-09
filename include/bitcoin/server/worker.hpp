@@ -27,6 +27,7 @@
 #include <vector>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <czmq++/czmqpp.hpp>
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/message.hpp>
@@ -69,7 +70,7 @@ public:
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist(std::vector<endpoint_type>& addrs);
+    void whitelist(std::vector<node::endpoint_type>& addrs);
     void enable_crypto(settings_type& config);
     void create_new_socket(settings_type& config);
     void poll();

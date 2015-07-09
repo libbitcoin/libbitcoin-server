@@ -73,9 +73,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\endpoint.hpp">
-      <Filter>include\bitcoin\server\config</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp">
       <Filter>include\bitcoin\server\config</Filter>
     </ClInclude>
@@ -116,9 +113,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\config\endpoint.cpp">
-      <Filter>src\config</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\config\settings.cpp">
       <Filter>src\config</Filter>

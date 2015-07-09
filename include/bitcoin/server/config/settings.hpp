@@ -25,25 +25,17 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <bitcoin/server/config/endpoint.hpp>
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-
-// Not localizable.
-#define BS_HELP_VARIABLE "help"
-#define BS_SETTINGS_VARIABLE "settings"
-#define BS_VERSION_VARIABLE "version"
-
-// This must be lower case but the env var part can be any case.
-#define BS_CONFIG_VARIABLE "config"
-
-// This must match the case of the env var.
-#define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
 
 namespace libbitcoin {
 namespace server {
 
-struct BCS_API settings_type
+class BCS_API settings_type
+  : public node::settings
 {
+public:
+
     // options
     bool help;
     bool initchain;
@@ -55,36 +47,18 @@ struct BCS_API settings_type
 
     // settings
     bool log_requests;
-    bool listener_enabled;
     bool publisher_enabled;
-    uint32_t tx_pool_capacity;
-    uint32_t out_connections;
-    uint32_t history_height;
-    endpoint_type unique_name;
-    endpoint_type service;
-    endpoint_type heartbeat;
-    endpoint_type tx_publish;
-    endpoint_type block_publish;
-    boost::filesystem::path hosts_file;
+    node::endpoint_type unique_name;
+    node::endpoint_type query_endpoint;
+    node::endpoint_type heartbeat_endpoint;
+    node::endpoint_type tx_publish_endpoint;
+    node::endpoint_type block_publish_endpoint;
     boost::filesystem::path debug_file;
     boost::filesystem::path error_file;
     boost::filesystem::path cert_file;
     boost::filesystem::path client_certs_path;
-    boost::filesystem::path blockchain_path;
-    std::vector<endpoint_type> clients;
-    std::vector<endpoint_type> peers;
-};
-
-class BCS_API config_type
-{
-public:
-    const boost::program_options::options_description load_settings();
-    const boost::program_options::options_description load_environment();
-    const boost::program_options::options_description load_options();
-    const boost::program_options::positional_options_description 
-        load_arguments();
-
-    settings_type settings;
+    std::vector<node::endpoint_type> clients;
+    std::vector<node::endpoint_type> peers;
 };
 
 } // namespace server
