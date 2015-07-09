@@ -154,12 +154,12 @@ void block_header_fetched(const std::error_code& ec,
     const chain::block_header& block, const incoming_message& request,
     queue_send_callback queue_send)
 {
-    data_chunk result(4 + block.satoshi_size());
+    data_chunk result(4 + block.satoshi_size(false));
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
 
-    data_chunk blk_data = blk.to_data();
+    data_chunk blk_data = blk.to_data(false);
     serial.write_data(blk_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
