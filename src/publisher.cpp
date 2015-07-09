@@ -76,7 +76,7 @@ void publisher::send_blk(uint32_t height, const chain::block& blk)
     BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
 
     // Serialize the 80 byte header.
-    data_chunk raw_blk_header = blk.header.to_data();
+    data_chunk raw_blk_header = blk.header.to_data(false);
     BITCOIN_ASSERT(raw_blk_header.size() == 80);
 
     // Construct the message.
