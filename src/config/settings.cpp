@@ -180,7 +180,7 @@ const options_description config_type::load_settings()
     (
         "node.listen_port",
         value<uint16_t>(&settings.p2p_listen_port)->default_value(BN_P2P_LISTEN_PORT),
-        "The port for incoming connections, set to 0 to disable listener, defaults to 8333 (18333 for testnet)."
+        "The port for incoming connections, set to 0 to disable, defaults to 8333 (18333 for testnet)."
     )
     (
         "node.outbound_connections",
