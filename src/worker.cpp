@@ -184,7 +184,7 @@ void request_worker::poll()
     if (now() > heartbeat_at_)
     {
         heartbeat_at_ = now() + heartbeat_interval;
-        log_debug(LOG_WORKER) << "Sending heartbeat";
+        log_debug(LOG_WORKER) << "Publish heartbeat";
         publish_heartbeat();
     }
 }
