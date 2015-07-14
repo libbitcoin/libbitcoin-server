@@ -178,8 +178,8 @@ const options_description config_type::load_settings()
         "The checkpoint hash, defaults to a null hash (no checkpoint)."
     )
     (
-        "node.listen_port",
-        value<uint16_t>(&settings.p2p_listen_port)->default_value(BN_P2P_LISTEN_PORT),
+        "node.inbound_port",
+        value<uint16_t>(&settings.p2p_inbound_port)->default_value(BN_P2P_INBOUND_PORT),
         "The port for incoming connections, set to 0 to disable, defaults to 8333 (18333 for testnet)."
     )
     (
