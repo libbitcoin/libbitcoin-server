@@ -109,6 +109,7 @@ void request_worker::enable_crypto(settings_type& config)
     std::string client_certs(CURVE_ALLOW_ANY);
     if (!config.client_certs_path.empty())
         client_certs = config.client_certs_path.string();
+
     auth_.configure_curve("*", client_certs);
     czmqpp::certificate cert(config.cert_file.string());
     cert.apply(socket_);
@@ -117,12 +118,15 @@ void request_worker::enable_crypto(settings_type& config)
 void request_worker::create_new_socket(settings_type& config)
 {
     log_debug(LOG_WORKER) << "Listening: " << config.query_endpoint;
+
     // Set the socket identity name.
-    if (!config.unique_name.get_host().empty())
-        socket_.set_identity(config.unique_name.get_host());
+    ////if (!config.unique_name.get_host().empty())
+    ////    socket_.set_identity(config.unique_name.get_host());
+
     // Connect...
     socket_.bind(config.query_endpoint);
     socket_.set_linger(zmq_socket_no_linger);
+
     // Tell queue we're ready for work
     log_info(LOG_WORKER) << "worker ready";
 }
@@ -156,6 +160,7 @@ void request_worker::poll()
         request.recv(socket_);
 
         auto it = handlers_.find(request.command());
+
         // Perform request if found.
         if (it != handlers_.end())
         {

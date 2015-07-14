@@ -64,10 +64,6 @@ private:
     block_notify_list block_sunscriptions_;
     transaction_notify_list tx_subscriptions_;
 
-    // Logs.
-    bc::ofstream outfile_;
-    bc::ofstream errfile_;
-
     // Timer.
     boost::asio::deadline_timer retry_start_timer_;
 };

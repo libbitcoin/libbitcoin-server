@@ -48,17 +48,14 @@ public:
     // settings
     bool log_requests;
     bool publisher_enabled;
-    node::endpoint_type unique_name;
     node::endpoint_type query_endpoint;
     node::endpoint_type heartbeat_endpoint;
     node::endpoint_type tx_publish_endpoint;
     node::endpoint_type block_publish_endpoint;
-    boost::filesystem::path debug_file;
-    boost::filesystem::path error_file;
+
     boost::filesystem::path cert_file;
     boost::filesystem::path client_certs_path;
     std::vector<node::endpoint_type> clients;
-    std::vector<node::endpoint_type> peers;
 };
 
 } // namespace server

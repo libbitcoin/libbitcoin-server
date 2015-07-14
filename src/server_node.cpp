@@ -36,33 +36,15 @@ using namespace bc::node;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-constexpr auto append = std::ofstream::out | std::ofstream::app;
-
 server_node::server_node(const settings_type& config)
   : full_node(config),
-    outfile_(config.debug_file.string(), append),
-    errfile_(config.error_file.string(), append),
     retry_start_timer_(memory_threads_.service())
 {
 }
 
 bool server_node::start(const settings_type& config)
 {
-    // Set up logging for node background threads (add to config).
-    const auto skip_log = if_else(config.log_requests, "", LOG_REQUEST);
-    initialize_logging(outfile_, errfile_, bc::cout, bc::cerr, skip_log);
-
-    // TODO: move this into node once we start handling config there.
-    for (const auto& endpoint: config.peers)
-    {
-        const auto host = endpoint.get_host();
-        const auto port = endpoint.get_port();
-        log_info(LOG_NODE)
-            << "Adding configured node [" << host << ":" << port << "]";
-        protocol_.maintain_connection(host, port);
-    }
-
-    return full_node::start();
+    return full_node::start(config);
 }
 
 void server_node::subscribe_blocks(block_notify_callback notify_block)

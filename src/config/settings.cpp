@@ -189,13 +189,18 @@ const options_description config_type::load_settings()
     )
     (
         "node.hosts_file",
-        value<path>(&settings.p2p_hosts_file)->default_value(BN_P2P_HOSTS_FILE),
-        "The peer cache file path, defaults to 'peers'."
+        value<path>(&settings.hosts_file)->default_value(BN_HOSTS_FILE),
+        "The peer hosts cache file path, defaults to 'peers'."
     )
     (
         "node.blockchain_path",
         value<path>(&settings.blockchain_path)->default_value(BN_BLOCKCHAIN_DIRECTORY),
         "The blockchain directory, defaults to 'blockchain'."
+    )
+    (
+        "node.peer",
+        value<std::vector<endpoint_type>>(&settings.peers)->multitoken(),
+        "Persistent node to augment discovered peers, formatted as host:port, multiple entries allowed."
     )
 
     /* [server] */
@@ -227,11 +232,6 @@ const options_description config_type::load_settings()
 
     /* [identity] */
     (
-        "identity.unique_name",
-        value<endpoint_type>(&settings.unique_name),
-        "The server name, must be unique if specified."
-    )
-    (
         "identity.cert_file",
         value<path>(&settings.cert_file),
         "The path to the ZPL-encoded server private certificate file."
@@ -245,11 +245,6 @@ const options_description config_type::load_settings()
         "identity.client",
         value<std::vector<endpoint_type>>(&settings.clients)->multitoken(),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
-    )
-    (
-        "identity.peer",
-        value<std::vector<endpoint_type>>(&settings.peers)->multitoken(),
-        "Node to augment peer discovery, formatted as host:port, multiple entries allowed."
     )
 
     /* [logging] */
@@ -266,7 +261,7 @@ const options_description config_type::load_settings()
     (
         "logging.log_requests",
         value<bool>(&settings.log_requests)->default_value(false),
-        "Write service requests to the log, impacts performance, defaults to false."
+        "Write service requests to the log, defaults to false."
     );
 
     return description;
