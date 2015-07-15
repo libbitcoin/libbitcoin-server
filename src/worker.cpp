@@ -52,6 +52,7 @@ send_worker::send_worker(czmqpp::context& context)
   : context_(context)
 {
 }
+
 void send_worker::queue_send(const outgoing_message& message)
 {
     czmqpp::socket socket(context_, ZMQ_PUSH);
@@ -75,26 +76,37 @@ request_worker::request_worker()
     DEBUG_ONLY(int rc =) wakeup_socket_.bind("inproc://trigger-send");
     BITCOIN_ASSERT(rc != zmq_fail);
 }
+
 bool request_worker::start(settings_type& config)
 {
-    // Load config values.
+    // Use config values.
     log_requests_ = config.log_requests;
+
+    // This exposes the log stream to non-utf8 text on Windows.
+    // TODO: fix zeromq/czmq/czmqpp to be utf8 everywhere.
+#ifndef _MSC_VER
     if (log_requests_)
         auth_.set_verbose(true);
+#endif 
+
     if (!config.clients.empty())
         whitelist(config.clients);
+
     if (config.cert_file.empty())
         socket_.set_zap_domain("global");
     else
         enable_crypto(config);
+
     // Start ZeroMQ sockets.
     create_new_socket(config);
     log_debug(LOG_WORKER) << "Heartbeat: " << config.heartbeat_endpoint;
     heartbeat_socket_.bind(config.heartbeat_endpoint);
+
     // Timer stuff
     heartbeat_at_ = now() + heartbeat_interval;
     return true;
 }
+
 void request_worker::stop()
 {
 }
@@ -104,6 +116,7 @@ void request_worker::whitelist(std::vector<node::endpoint_type>& addrs)
     for (const auto& ip_address: addrs)
         auth_.allow(ip_address);
 }
+
 void request_worker::enable_crypto(settings_type& config)
 {
     std::string client_certs(CURVE_ALLOW_ANY);
@@ -115,13 +128,15 @@ void request_worker::enable_crypto(settings_type& config)
     cert.apply(socket_);
     socket_.set_curve_server(zmq_curve_enabled);
 }
+
 void request_worker::create_new_socket(settings_type& config)
 {
     log_debug(LOG_WORKER) << "Listening: " << config.query_endpoint;
 
+    // Not sure what we would use this for, so disabled for now.
     // Set the socket identity name.
-    ////if (!config.unique_name.get_host().empty())
-    ////    socket_.set_identity(config.unique_name.get_host());
+    //if (!config.unique_name.get_host().empty())
+    //    socket_.set_identity(config.unique_name.get_host());
 
     // Connect...
     socket_.bind(config.query_endpoint);
@@ -148,33 +163,33 @@ void request_worker::poll()
     czmqpp::poller poller(socket_, wakeup_socket_);
     BITCOIN_ASSERT(poller.self() != nullptr);
     czmqpp::socket which = poller.wait(poll_sleep_interval);
-
-    BITCOIN_ASSERT(socket_.self() != nullptr &&
-        wakeup_socket_.self() != nullptr);
+    BITCOIN_ASSERT(socket_.self() != nullptr);
+    BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
 
     if (which == socket_)
     {
-        // Get message
-        // 6-part envelope + content -> request
+        // Get message: 6-part envelope + content -> request
         incoming_message request;
         request.recv(socket_);
 
+        // Perform request if handler exists.
         auto it = handlers_.find(request.command());
-
-        // Perform request if found.
         if (it != handlers_.end())
         {
             if (log_requests_)
-                log_debug(LOG_REQUEST) << request.command()
-                    << " from " << encode_base16(request.origin());
+                log_debug(LOG_REQUEST)
+                    << "API request [" << request.command() << "] from "
+                    << encode_base16(request.origin());
+
             it->second(request,
-                std::bind(&send_worker::queue_send, &sender_, _1));
+                std::bind(&send_worker::queue_send,
+                    &sender_, _1));
         }
         else
         {
             log_warning(LOG_WORKER)
-                << "Unhandled request: " << request.command()
-                << " from " << encode_base16(request.origin());
+                << "Unhandled API request [" << request.command() << "] from "
+                << encode_base16(request.origin());
         }
     }
     else if (which == wakeup_socket_)
