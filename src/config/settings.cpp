@@ -193,6 +193,11 @@ const options_description config_type::load_settings()
         "The maximum number of outgoing P2P network connections, defaults to 8."
     )
     (
+        "node.connection_timeout",
+        value<uint32_t>(&settings.p2p_connection_timeout)->default_value(BN_P2P_CONNECTION_TIMEOUT),
+        "The number of seconds to allow for a P2P connection to be established."
+    )
+    (
         "node.hosts_file",
         value<path>(&settings.hosts_file)->default_value(BN_HOSTS_FILE),
         "The peer hosts cache file path, defaults to 'hosts'."
