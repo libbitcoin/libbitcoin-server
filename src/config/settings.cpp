@@ -180,7 +180,12 @@ const options_description config_type::load_settings()
     (
         "node.inbound_port",
         value<uint16_t>(&settings.p2p_inbound_port)->default_value(BN_P2P_INBOUND_PORT),
-        "The port for incoming connections, set to 0 to disable, defaults to 8333 (18333 for testnet)."
+        "# The port for incoming connections, defaults to 8333 (18333 for testnet)."
+    )
+    (
+        "node.inbound_connections",
+        value<uint32_t>(&settings.p2p_inbound_connections)->default_value(BN_P2P_INBOUND_CONNECTIONS),
+        "The maximum number of incoming P2P network connections, defaults to 8."
     )
     (
         "node.outbound_connections",
@@ -190,7 +195,7 @@ const options_description config_type::load_settings()
     (
         "node.hosts_file",
         value<path>(&settings.hosts_file)->default_value(BN_HOSTS_FILE),
-        "The peer hosts cache file path, defaults to 'peers'."
+        "The peer hosts cache file path, defaults to 'hosts'."
     )
     (
         "node.blockchain_path",
@@ -200,7 +205,12 @@ const options_description config_type::load_settings()
     (
         "node.peer",
         value<std::vector<endpoint_type>>(&settings.peers)->multitoken(),
-        "Persistent node to augment discovered peers, formatted as host:port, multiple entries allowed."
+        "Persistent host:port to augment discovered hosts, multiple entries allowed."
+    )
+    (
+        "node.ban",
+        value<std::vector<endpoint_type>>(&settings.bans)->multitoken(),
+        "IP address to disallow as a peer, multiple entries allowed."
     )
 
     /* [server] */
