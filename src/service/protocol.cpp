@@ -50,7 +50,7 @@ void protocol_broadcast_transaction(server_node& node,
     node.protocol().broadcast(tx, ignore_send);
     // Response back to user saying everything is fine.
     write_error_code(serial, std::error_code());
-    log_debug(LOG_WORKER)
+    log_debug(LOG_SERVICE)
         << "protocol.broadcast_transaction() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);

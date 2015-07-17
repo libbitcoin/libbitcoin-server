@@ -99,7 +99,7 @@ bool request_worker::start(settings_type& config)
 
     // Start ZeroMQ sockets.
     create_new_socket(config);
-    log_debug(LOG_WORKER) << "Heartbeat: " << config.heartbeat_endpoint;
+    log_debug(LOG_SERVICE) << "Heartbeat: " << config.heartbeat_endpoint;
     heartbeat_socket_.bind(config.heartbeat_endpoint);
 
     // Timer stuff
@@ -131,7 +131,7 @@ void request_worker::enable_crypto(settings_type& config)
 
 void request_worker::create_new_socket(settings_type& config)
 {
-    log_debug(LOG_WORKER) << "Listening: " << config.query_endpoint;
+    log_debug(LOG_SERVICE) << "Listening: " << config.query_endpoint;
 
     // Not sure what we would use this for, so disabled for now.
     // Set the socket identity name.
@@ -143,7 +143,7 @@ void request_worker::create_new_socket(settings_type& config)
     socket_.set_linger(zmq_socket_no_linger);
 
     // Tell queue we're ready for work
-    log_info(LOG_WORKER) << "worker ready";
+    log_info(LOG_SERVICE) << "worker ready";
 }
 
 void request_worker::attach(
@@ -187,7 +187,7 @@ void request_worker::poll()
         }
         else
         {
-            log_warning(LOG_WORKER)
+            log_warning(LOG_SERVICE)
                 << "Unhandled API request [" << request.command() << "] from "
                 << encode_base16(request.origin());
         }
@@ -204,7 +204,7 @@ void request_worker::poll()
     if (now() > heartbeat_at_)
     {
         heartbeat_at_ = now() + heartbeat_interval;
-        log_debug(LOG_WORKER) << "Publish heartbeat";
+        log_debug(LOG_SERVICE) << "Publish heartbeat";
         publish_heartbeat();
     }
 }

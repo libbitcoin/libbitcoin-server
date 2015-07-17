@@ -21,8 +21,6 @@
 
 #include <bitcoin/server/config/config.hpp>
 
-#define LOG_PUBLISHER LOG_WORKER
-
 namespace libbitcoin {
 namespace server {
 

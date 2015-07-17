@@ -19,9 +19,8 @@
  */
 #include <bitcoin/server/subscribe_manager.hpp>
 
+#include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/service/util.hpp>
-
-#define LOG_SUBSCRIBER "subscriber"
 
 namespace libbitcoin {
 namespace server {

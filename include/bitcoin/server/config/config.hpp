@@ -32,8 +32,10 @@ namespace libbitcoin {
 namespace server {
 
 // Log names.
-#define LOG_WORKER  "worker"
 #define LOG_REQUEST "request"
+#define LOG_SERVICE "service"
+#define LOG_PUBLISHER LOG_SERVICE
+#define LOG_SUBSCRIBER "subscriber"
 
 // Not localizable.
 #define BS_HELP_VARIABLE "help"

@@ -57,7 +57,7 @@ void COMPAT_fetch_history(server_node& node,
     short_hash addr_hash = payaddr.hash();
     std::reverse(addr_hash.begin(), addr_hash.end());
     // TODO: Slows down queries!
-    //log_debug(LOG_WORKER) << "fetch_history("
+    //log_debug(LOG_SERVICE) << "fetch_history("
     //    << payaddr.encoded() << ", from_height=" << from_height << ")";
     fetch_history(node.blockchain(), node.transaction_indexer(),
         payment_address(addr_version, addr_hash),
@@ -153,7 +153,7 @@ void COMPAT_send_history_result(
     }
     BITCOIN_ASSERT(serial.iterator() == result.end());
     // TODO: Slows down queries!
-    //log_debug(LOG_WORKER)
+    //log_debug(LOG_SERVICE)
     //    << "*.fetch_history() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);

@@ -36,7 +36,7 @@ bool unwrap_fetch_history_args(
     const data_chunk& data = request.data();
     if (data.size() != 1 + short_hash_size + 4)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for .fetch_history";
         return false;
     }
@@ -72,7 +72,7 @@ void send_history_result(
     }
     BITCOIN_ASSERT(serial.iterator() == result.end());
     // TODO: Slows down queries!
-    //log_debug(LOG_WORKER)
+    //log_debug(LOG_SERVICE)
     //    << "*.fetch_history() finished. Sending response.";
     outgoing_message response(request, result);
     queue_send(response);
@@ -86,7 +86,7 @@ bool unwrap_fetch_transaction_args(
     const data_chunk& data = request.data();
     if (data.size() != 32)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for *.fetch_transaction";
         return false;
     }
