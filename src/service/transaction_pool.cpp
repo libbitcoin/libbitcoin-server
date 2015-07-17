@@ -32,6 +32,7 @@ using std::placeholders::_2;
 void transaction_validated(
     const std::error_code& ec, const index_list& unconfirmed,
     const incoming_message& request, queue_send_callback queue_send);
+
 void transaction_pool_validate(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
@@ -41,35 +42,38 @@ void transaction_pool_validate(server_node& node,
     {
         satoshi_load(raw_tx.begin(), raw_tx.end(), tx);
     }
-    catch (end_of_stream)
+    catch (const end_of_stream&)
     {
-        // error
-        transaction_validated(error::bad_stream, index_list(),
-            request, queue_send);
+        transaction_validated(error::bad_stream, index_list(), request,
+            queue_send);
         return;
     }
+
     node.transaction_pool().validate(tx,
         std::bind(transaction_validated, _1, _2, request, queue_send));
 }
-void transaction_validated(
-    const std::error_code& ec, const index_list& unconfirmed,
-    const incoming_message& request, queue_send_callback queue_send)
+
+void transaction_validated(const std::error_code& ec,
+    const index_list& unconfirmed, const incoming_message& request,
+    queue_send_callback queue_send)
 {
     data_chunk result(4 + unconfirmed.size() * 4);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    for (auto unconfirmed_index: unconfirmed)
+
+    for (const auto unconfirmed_index: unconfirmed)
     {
         BITCOIN_ASSERT(unconfirmed_index <= max_uint32);
-        auto unconfirmed_index32 = static_cast<uint32_t>(unconfirmed_index);
-
-        serial.write_4_bytes(unconfirmed_index32);
+        const auto index32 = static_cast<uint32_t>(unconfirmed_index);
+        serial.write_4_bytes(index32);
     }
+
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST)
         << "transaction_pool.validate() finished. Sending response: "
         << "ec=" << ec.message();
+
     outgoing_message response(request, result);
     queue_send(response);
 }
@@ -80,10 +84,13 @@ void transaction_pool_fetch_transaction(server_node& node,
     hash_digest tx_hash;
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
+
     log_debug(LOG_REQUEST) << "transaction_pool.fetch_transaction("
         << encode_hash(tx_hash) << ")";
+
     node.transaction_pool().fetch(tx_hash,
-        std::bind(transaction_fetched, _1, _2, request, queue_send));
+        std::bind(transaction_fetched,
+            _1, _2, request, queue_send));
 }
 
 } // namespace server

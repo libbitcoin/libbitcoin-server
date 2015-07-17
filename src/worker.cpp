@@ -41,11 +41,6 @@ constexpr int zmq_socket_no_linger = zmq_false;
 DEBUG_ONLY(constexpr int zmq_success = 0;)
 DEBUG_ONLY(constexpr int zmq_fail = -1;)
 
-const posix_time::time_duration heartbeat_interval = milliseconds(4000);
-
-// Milliseconds
-constexpr uint32_t poll_sleep_interval = 1000;
-
 auto now = []() { return microsec_clock::universal_time(); };
 
 send_worker::send_worker(czmqpp::context& context)
@@ -63,12 +58,17 @@ void send_worker::queue_send(const outgoing_message& message)
     socket.destroy(context_);
 }
 
-request_worker::request_worker()
+request_worker::request_worker(bool log_requests, 
+    uint32_t heartbeat_interval_seconds,
+    uint32_t polling_interval_milliseconds)
   : socket_(context_, ZMQ_ROUTER),
-    auth_(context_),
     wakeup_socket_(context_, ZMQ_PULL),
     heartbeat_socket_(context_, ZMQ_PUB),
-    sender_(context_)
+    authenticate_(context_),
+    sender_(context_),
+    log_requests_(log_requests),
+    heartbeat_interval_(heartbeat_interval_seconds),
+    polling_interval_milliseconds_(polling_interval_milliseconds)
 {
     BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
@@ -82,11 +82,15 @@ bool request_worker::start(settings_type& config)
     // Use config values.
     log_requests_ = config.log_requests;
 
+#ifdef _MSC_VER
+    if (log_requests_)
+        log_debug(LOG_SERVICE)
+            << "Autnetication logging disabled on Windows";
+#else
     // This exposes the log stream to non-utf8 text on Windows.
     // TODO: fix zeromq/czmq/czmqpp to be utf8 everywhere.
-#ifndef _MSC_VER
     if (log_requests_)
-        auth_.set_verbose(true);
+        authenticate_.set_verbose(true);
 #endif 
 
     if (!config.clients.empty())
@@ -99,11 +103,13 @@ bool request_worker::start(settings_type& config)
 
     // Start ZeroMQ sockets.
     create_new_socket(config);
-    log_debug(LOG_SERVICE) << "Heartbeat: " << config.heartbeat_endpoint;
+    log_debug(LOG_SERVICE)
+        << "Query service heartbeat on " << config.heartbeat_endpoint;
+
     heartbeat_socket_.bind(config.heartbeat_endpoint);
 
     // Timer stuff
-    heartbeat_at_ = now() + heartbeat_interval;
+    heartbeat_at_ = now() + heartbeat_interval_;
     return true;
 }
 
@@ -114,7 +120,7 @@ void request_worker::stop()
 void request_worker::whitelist(std::vector<node::endpoint_type>& addrs)
 {
     for (const auto& ip_address: addrs)
-        auth_.allow(ip_address);
+        authenticate_.allow(ip_address);
 }
 
 void request_worker::enable_crypto(settings_type& config)
@@ -123,7 +129,7 @@ void request_worker::enable_crypto(settings_type& config)
     if (!config.client_certs_path.empty())
         client_certs = config.client_certs_path.string();
 
-    auth_.configure_curve("*", client_certs);
+    authenticate_.configure_curve("*", client_certs);
     czmqpp::certificate cert(config.cert_file.string());
     cert.apply(socket_);
     socket_.set_curve_server(zmq_curve_enabled);
@@ -131,8 +137,6 @@ void request_worker::enable_crypto(settings_type& config)
 
 void request_worker::create_new_socket(settings_type& config)
 {
-    log_debug(LOG_SERVICE) << "Listening: " << config.query_endpoint;
-
     // Not sure what we would use this for, so disabled for now.
     // Set the socket identity name.
     //if (!config.unique_name.get_host().empty())
@@ -142,8 +146,8 @@ void request_worker::create_new_socket(settings_type& config)
     socket_.bind(config.query_endpoint);
     socket_.set_linger(zmq_socket_no_linger);
 
-    // Tell queue we're ready for work
-    log_info(LOG_SERVICE) << "worker ready";
+    log_info(LOG_SERVICE)
+        << "Query service listening on " << config.query_endpoint;
 }
 
 void request_worker::attach(
@@ -162,7 +166,7 @@ void request_worker::poll()
     // Poll for network updates.
     czmqpp::poller poller(socket_, wakeup_socket_);
     BITCOIN_ASSERT(poller.self() != nullptr);
-    czmqpp::socket which = poller.wait(poll_sleep_interval);
+    czmqpp::socket which = poller.wait(polling_interval_milliseconds_);
     BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
 
@@ -178,7 +182,7 @@ void request_worker::poll()
         {
             if (log_requests_)
                 log_debug(LOG_REQUEST)
-                    << "API request [" << request.command() << "] from "
+                    << "Service request [" << request.command() << "] from "
                     << encode_base16(request.origin());
 
             it->second(request,
@@ -188,8 +192,8 @@ void request_worker::poll()
         else
         {
             log_warning(LOG_SERVICE)
-                << "Unhandled API request [" << request.command() << "] from "
-                << encode_base16(request.origin());
+                << "Unhandled service request [" << request.command()
+                << "] from " << encode_base16(request.origin());
         }
     }
     else if (which == wakeup_socket_)
@@ -203,8 +207,8 @@ void request_worker::poll()
     // Publish heartbeat.
     if (now() > heartbeat_at_)
     {
-        heartbeat_at_ = now() + heartbeat_interval;
-        log_debug(LOG_SERVICE) << "Publish heartbeat";
+        heartbeat_at_ = now() + heartbeat_interval_;
+        log_debug(LOG_SERVICE) << "Publish service heartbeat";
         publish_heartbeat();
     }
 }
@@ -213,7 +217,7 @@ void request_worker::publish_heartbeat()
 {
     static uint32_t counter = 0;
     czmqpp::message message;
-    data_chunk raw_counter = to_data_chunk(to_little_endian(counter));
+    const auto raw_counter = to_data_chunk(to_little_endian(counter));
     message.append(raw_counter);
     message.send(heartbeat_socket_);
     ++counter;

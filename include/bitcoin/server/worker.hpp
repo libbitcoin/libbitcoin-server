@@ -21,6 +21,7 @@
 #define LIBBITCOIN_SERVER_WORKER_HPP
 
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
@@ -58,10 +59,12 @@ private:
 class BCS_API request_worker
 {
 public:
-    typedef std::function<void(
-        const incoming_message&, queue_send_callback)> command_handler;
+    typedef std::function<void(const incoming_message&, queue_send_callback)>
+        command_handler;
 
-    request_worker();
+    request_worker(bool log_requests=false,
+        uint32_t heartbeat_interval_seconds=4,
+        uint32_t polling_interval_milliseconds=1000);
     bool start(settings_type& config);
     void stop();
     void attach(const std::string& command, command_handler handler);
@@ -77,22 +80,18 @@ private:
     void publish_heartbeat();
 
     czmqpp::context context_;
-    // Main socket.
     czmqpp::socket socket_;
-    czmqpp::authenticator auth_;
-    // Socket to trigger wakeup for send.
     czmqpp::socket wakeup_socket_;
-    // We publish a heartbeat every so often so clients
-    // can know our availability.
     czmqpp::socket heartbeat_socket_;
+    czmqpp::authenticator authenticate_;
 
-    // Send out heartbeats at regular intervals
-    boost::posix_time::ptime heartbeat_at_;
-
-    command_map handlers_;
     send_worker sender_;
+    command_map handlers_;
 
-    bool log_requests_ = false;
+    bool log_requests_;
+    boost::posix_time::ptime heartbeat_at_;
+    boost::posix_time::seconds heartbeat_interval_;
+    uint32_t polling_interval_milliseconds_;
 };
 
 } // namespace server

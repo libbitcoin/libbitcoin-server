@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_SUBSCRIBE_MANAGER_HPP
 #define LIBBITCOIN_SERVER_SUBSCRIBE_MANAGER_HPP
 
+#include <cstdint>
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -40,12 +41,14 @@ enum class subscribe_type
 class BCS_API subscribe_manager
 {
 public:
-    subscribe_manager(server_node& node);
-    void subscribe(
-        const incoming_message& request, queue_send_callback queue_send);
-    void renew(
-        const incoming_message& request, queue_send_callback queue_send);
+    subscribe_manager(server_node& node,
+        uint32_t maximum_subscriptions=100000000,
+        uint32_t subscription_expiration_minutes=10);
 
+    void subscribe(const incoming_message& request,
+        queue_send_callback queue_send);
+    void renew(const incoming_message& request,
+        queue_send_callback queue_send);
     void submit(size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
 
@@ -63,15 +66,13 @@ private:
 
     typedef std::vector<subscription> subscription_list;
 
-    std::error_code add_subscription(
-        const incoming_message& request, queue_send_callback queue_send);
-    void do_subscribe(
-        const incoming_message& request, queue_send_callback queue_send);
-    void do_renew(
-        const incoming_message& request, queue_send_callback queue_send);
-
-    void do_submit(
-        size_t height, const bc::hash_digest& block_hash,
+    std::error_code add_subscription(const incoming_message& request,
+        queue_send_callback queue_send);
+    void do_subscribe(const incoming_message& request,
+        queue_send_callback queue_send);
+    void do_renew(const incoming_message& request,
+        queue_send_callback queue_send);
+    void do_submit(size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
     void post_updates(const bc::payment_address& address,
         size_t height, const bc::hash_digest& block_hash,
@@ -79,12 +80,12 @@ private:
     void post_stealth_updates(const bc::binary_type& prefix,
         size_t height, const bc::hash_digest& block_hash,
         const bc::transaction_type& tx);
-
     void sweep_expired();
 
     bc::async_strand strand_;
-    size_t subscribe_limit_;
-    subscription_list subs_;
+    uint32_t subscription_limit_;
+    boost::posix_time::minutes subscription_expiration_minutes_;
+    subscription_list subscriptions_;
 };
 
 } // namespace server

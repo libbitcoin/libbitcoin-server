@@ -28,26 +28,32 @@ bool incoming_message::recv(czmqpp::socket& socket)
 {
     czmqpp::message message;
     message.receive(socket);
-    const data_stack& parts = message.parts();
+    const auto& parts = message.parts();
     if (parts.size() != 3 && parts.size() != 4)
         return false;
+
     auto it = parts.begin();
+
     // [ DESTINATION ] (optional - ROUTER sockets strip this)
     if (parts.size() == 4)
     {
         origin_ = *it;
         ++it;
     }
+
     // [ COMMAND ]
     const data_chunk& raw_command = *it;
     command_ = std::string(raw_command.begin(), raw_command.end());
     ++it;
+
     // [ ID ]
     const data_chunk& raw_id = *it;
     if (raw_id.size() != sizeof(uint32_t))
         return false;
+
     id_ = from_little_endian_unsafe<uint32_t>(raw_id.begin());
     ++it;
+
     // [ DATA ]
     data_ = *it;
     ++it;
@@ -99,17 +105,22 @@ void append_str(czmqpp::message& message, const std::string& command)
 void outgoing_message::send(czmqpp::socket& socket) const
 {
     czmqpp::message message;
+
     // [ DESTINATION ] (optional - ROUTER sockets strip this)
     if (!dest_.empty())
         message.append(dest_);
+
     // [ COMMAND ]
     append_str(message, command_);
+
     // [ ID ]
     data_chunk raw_id = to_data_chunk(to_little_endian(id_));
     BITCOIN_ASSERT(raw_id.size() == sizeof(id_));
     message.append(raw_id);
+
     // [ DATA ]
     message.append(data_);
+
     // Send.
     message.send(socket);
 }

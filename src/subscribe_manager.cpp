@@ -19,71 +19,74 @@
  */
 #include <bitcoin/server/subscribe_manager.hpp>
 
+#include <cstdint>
 #include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-using std::placeholders::_1;
-using std::placeholders::_2;
 namespace posix_time = boost::posix_time;
-using posix_time::minutes;
 using posix_time::second_clock;
 
-const posix_time::time_duration sub_expiry = minutes(10);
-
-void register_with_node(subscribe_manager& manager, server_node& node)
+static void register_with_node(subscribe_manager& manager, server_node& node)
 {
-    auto recv_blk = [&manager](size_t height, const block_type& blk)
+    const auto receive_block = [&manager](size_t height, const block_type& block)
     {
-        const hash_digest blk_hash = hash_block_header(blk.header);
-        for (const transaction_type& tx: blk.transactions)
-            manager.submit(height, blk_hash, tx);
+        const auto block_hash = hash_block_header(block.header);
+        for (const auto& tx: block.transactions)
+            manager.submit(height, block_hash, tx);
     };
-    auto recv_tx = [&manager](const transaction_type& tx)
+
+    const auto receive_tx = [&manager](const transaction_type& tx)
     {
-        manager.submit(0, null_hash, tx);
+        constexpr size_t height = 0;
+        manager.submit(height, null_hash, tx);
     };
-    node.subscribe_blocks(recv_blk);
-    node.subscribe_transactions(recv_tx);
+
+    node.subscribe_blocks(receive_block);
+    node.subscribe_transactions(receive_tx);
 }
 
-// TODO: move limit to constructor and server config.
-subscribe_manager::subscribe_manager(server_node& node)
-  : strand_(node.threadpool()), subscribe_limit_(100000000)
+subscribe_manager::subscribe_manager(server_node& node,
+    uint32_t maximum_subscriptions, uint32_t subscription_expiration_minutes)
+  : strand_(node.threadpool()),
+    subscription_limit_(maximum_subscriptions),
+    subscription_expiration_minutes_(subscription_expiration_minutes)
 {
     // subscribe to blocks and txs -> submit
     register_with_node(*this, node);
 }
 
-subscribe_type read_subscribe_type(uint8_t type_byte)
+static subscribe_type convert_subscribe_type(uint8_t type_byte)
 {
     if (type_byte == 0)
         return subscribe_type::address;
+
     return subscribe_type::stealth;
 }
 
 // Private class typedef so use a template function.
 template <typename AddressPrefix>
-bool deserialize_address(AddressPrefix& addr, subscribe_type& type,
+bool deserialize_address(AddressPrefix& address, subscribe_type& type,
     const data_chunk& data)
 {
     auto deserial = make_deserializer(data.begin(), data.end());
     try
     {
-        type = read_subscribe_type(deserial.read_byte());
-        uint8_t bitsize = deserial.read_byte();
-        data_chunk blocks = deserial.read_data(
-            binary_type::blocks_size(bitsize));
-        addr = AddressPrefix(bitsize, blocks);
+        type = convert_subscribe_type(deserial.read_byte());
+        auto bitsize = deserial.read_byte();
+        auto blocks = deserial.read_data(binary_type::blocks_size(bitsize));
+        address = AddressPrefix(bitsize, blocks);
     }
-    catch (end_of_stream)
+    catch (const end_of_stream&)
     {
         return false;
     }
+
     if (deserial.iterator() != data.end())
         return false;
+
     return true;
 }
 
@@ -96,27 +99,39 @@ void subscribe_manager::subscribe(
 std::error_code subscribe_manager::add_subscription(
     const incoming_message& request, queue_send_callback queue_send)
 {
-    address_prefix addr_key;
     subscribe_type type;
-    if (!deserialize_address(addr_key, type, request.data()))
+    address_prefix address_key;
+    if (!deserialize_address(address_key, type, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
         return error::bad_stream;
     }
+
+    // Limit absolute number of subscriptions to prevent exhaustion attacks.
+    if (subscriptions_.size() >= subscription_limit_)
+        return error::pool_filled;
+
     // Now create subscription.
     const auto now = second_clock::universal_time();
-    const auto expire_time = now + sub_expiry;
-    // Limit absolute number of subscriptions to prevent exhaustion attacks.
-    if (subs_.size() >= subscribe_limit_)
-        return error::pool_filled;
-    subs_.emplace_back(subscription{
-        addr_key, expire_time, request.origin(), queue_send, type});
+    const auto expire_time = now + subscription_expiration_minutes_;
+    const subscription new_subscription = 
+    {
+        address_key, 
+        expire_time, 
+        request.origin(), 
+        queue_send, 
+        type
+    };
+
+    subscriptions_.emplace_back(new_subscription);
+
     return std::error_code();
 }
 void subscribe_manager::do_subscribe(
     const incoming_message& request, queue_send_callback queue_send)
 {
-    std::error_code ec = add_subscription(request, queue_send);
+    const auto ec = add_subscription(request, queue_send);
+
     // Send response.
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
@@ -134,29 +149,36 @@ void subscribe_manager::renew(
 void subscribe_manager::do_renew(
     const incoming_message& request, queue_send_callback queue_send)
 {
-    address_prefix addr_key;
     subscribe_type type;
-    if (!deserialize_address(addr_key, type, request.data()))
+    address_prefix address_key;
+    if (!deserialize_address(address_key, type, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
         return;
     }
-    const posix_time::ptime now = second_clock::universal_time();
+
+    const auto now = second_clock::universal_time();
+    const auto expire_time = now + subscription_expiration_minutes_;
+
     // Find entry and update expiry_time.
-    for (subscription& sub: subs_)
+    for (auto& subscription: subscriptions_)
     {
         // Find matching subscription.
-        if (sub.prefix != addr_key)
+        if (subscription.prefix != address_key)
             continue;
-        if (sub.type != type)
+
+        if (subscription.type != type)
             continue;
+
         // Only update subscriptions which were created by
         // the same client as this request originated from.
-        if (sub.client_origin != request.origin())
+        if (subscription.client_origin != request.origin())
             continue;
+
         // Future expiry time.
-        sub.expiry_time = now + sub_expiry;
+        subscription.expiry_time = expire_time;
     }
+
     // Send response.
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
@@ -170,29 +192,32 @@ void subscribe_manager::submit(
     const transaction_type& tx)
 {
     strand_.queue(
-        &subscribe_manager::do_submit, this, height, block_hash, tx);
+        &subscribe_manager::do_submit,
+            this, height, block_hash, tx);
 }
-void subscribe_manager::do_submit(
-    size_t height, const hash_digest& block_hash,
+
+void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
     const transaction_type& tx)
 {
-    for (const transaction_input_type& input: tx.inputs)
+    for (const auto& input: tx.inputs)
     {
-        payment_address addr;
-        if (extract(addr, input.script))
+        payment_address address;
+        if (extract(address, input.script))
         {
-            post_updates(addr, height, block_hash, tx);
+            post_updates(address, height, block_hash, tx);
             continue;
         }
     }
-    for (const transaction_output_type& output: tx.outputs)
+
+    for (const auto& output: tx.outputs)
     {
-        payment_address addr;
-        if (extract(addr, output.script))
+        payment_address address;
+        if (extract(address, output.script))
         {
-            post_updates(addr, height, block_hash, tx);
+            post_updates(address, height, block_hash, tx);
             continue;
         }
+
         if (output.script.type() == payment_type::stealth_info)
         {
             binary_type prefix = calculate_stealth_prefix(output.script);
@@ -200,6 +225,7 @@ void subscribe_manager::do_submit(
             continue;
         }
     }
+
     // Periodicially sweep old expired entries.
     // Use the block 10 minute window as a periodic trigger.
     if (height)
@@ -211,7 +237,7 @@ void subscribe_manager::post_updates(const payment_address& address,
     const transaction_type& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
-    auto height32 = static_cast<uint32_t>(height);
+    const auto height32 = static_cast<uint32_t>(height);
 
     // [ addr,version ] (1 byte)
     // [ addr.hash ] (20 bytes)
@@ -226,21 +252,26 @@ void subscribe_manager::post_updates(const payment_address& address,
     serial.write_4_bytes(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
+
     // Now write the tx part.
     DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(rawtx_end_it == data.end());
+
     // Send the result to everyone interested.
-    for (subscription& sub: subs_)
+    for (const auto& subscription: subscriptions_)
     {
         // Only interested in address subscriptions.
-        if (sub.type != subscribe_type::address)
+        if (subscription.type != subscribe_type::address)
             continue;
-        binary_type match(sub.prefix.size(), address.hash());
-        if (match != sub.prefix)
+
+        binary_type match(subscription.prefix.size(), address.hash());
+        if (match != subscription.prefix)
             continue;
-        outgoing_message update(
-            sub.client_origin, "address.update", data);
-        sub.queue_send(update);
+
+        outgoing_message update(subscription.client_origin, "address.update",
+            data);
+
+        subscription.queue_send(update);
     }
 }
 
@@ -249,7 +280,7 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     const transaction_type& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
-    auto height32 = static_cast<uint32_t>(height);
+    const auto height32 = static_cast<uint32_t>(height);
 
     // [ bitfield ] (4 bytes)
     // [ height ] (4 bytes)
@@ -263,39 +294,49 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     serial.write_4_bytes(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
+
     // Now write the tx part.
     DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(rawtx_end_it == data.end());
+
     // Send the result to everyone interested.
-    for (subscription& sub: subs_)
+    for (const auto& subscription: subscriptions_)
     {
-        if (sub.type != subscribe_type::stealth)
+        if (subscription.type != subscribe_type::stealth)
             continue;
-        binary_type match(sub.prefix.size(), prefix.blocks());
-        if (match != sub.prefix)
+
+        binary_type match(subscription.prefix.size(), prefix.blocks());
+        if (match != subscription.prefix)
             continue;
-        outgoing_message update(
-            sub.client_origin, "address.stealth_update", data);
-        sub.queue_send(update);
+
+        outgoing_message update(subscription.client_origin,
+            "address.stealth_update", data);
+
+        subscription.queue_send(update);
     }
 }
 
 void subscribe_manager::sweep_expired()
 {
+    const auto now = second_clock::universal_time();
+
     // Delete entries that have expired.
-    const posix_time::ptime now = second_clock::universal_time();
-    for (auto it = subs_.begin(); it != subs_.end(); )
+    for (auto it = subscriptions_.begin(); it != subscriptions_.end();)
     {
-        const subscription& sub = *it;
+        const auto& subscription = *it;
+
         // Already expired? If so, then erase.
-        if (sub.expiry_time < now)
+        if (subscription.expiry_time < now)
         {
-            log_debug(LOG_SUBSCRIBER) << "Deleting expired subscription: "
-                << sub.prefix << " from " << encode_base16(sub.client_origin);
-            it = subs_.erase(it);
+            log_debug(LOG_SUBSCRIBER)
+                << "Deleting expired subscription: "
+                << subscription.prefix << " from "
+                << encode_base16(subscription.client_origin);
+            it = subscriptions_.erase(it);
+            continue;
         }
-        else
-            ++it;
+
+        ++it;
     }
 }
 
