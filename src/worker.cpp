@@ -85,7 +85,7 @@ bool request_worker::start(settings_type& config)
 #ifdef _MSC_VER
     if (log_requests_)
         log_debug(LOG_SERVICE)
-            << "Autnetication logging disabled on Windows";
+            << "Authentication logging disabled on Windows";
 #else
     // This exposes the log stream to non-utf8 text on Windows.
     // TODO: fix zeromq/czmq/czmqpp to be utf8 everywhere.
