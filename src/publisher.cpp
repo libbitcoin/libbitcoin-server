@@ -54,8 +54,8 @@ bool publisher::start(settings_type& config)
         return false;
 
     log_debug(LOG_PUBLISHER) << "Publishing transactions on "
-        << config.tx_publish_endpoint;
-    if (!setup_socket(config.tx_publish_endpoint, socket_tx_))
+        << config.transaction_publish_endpoint;
+    if (!setup_socket(config.transaction_publish_endpoint, socket_tx_))
         return false;
 
     return true;

@@ -50,7 +50,7 @@ public:
     bool publisher_enabled;
     node::endpoint_type query_endpoint;
     node::endpoint_type heartbeat_endpoint;
-    node::endpoint_type tx_publish_endpoint;
+    node::endpoint_type transaction_publish_endpoint;
     node::endpoint_type block_publish_endpoint;
 
     boost::filesystem::path cert_file;

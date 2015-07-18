@@ -230,8 +230,8 @@ const options_description config_type::load_settings()
         "The block publishing service endpoint, defaults to 'tcp://*:9093'."
     )
     (
-        "server.tx_publish_endpoint",
-        value<endpoint_type>(&settings.tx_publish_endpoint)->default_value({ "tcp://*:9094" }),
+        "server.transaction_publish_endpoint",
+        value<endpoint_type>(&settings.transaction_publish_endpoint)->default_value({ "tcp://*:9094" }),
         "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
