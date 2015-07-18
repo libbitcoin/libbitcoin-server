@@ -31,6 +31,7 @@
 namespace libbitcoin {
 namespace server {
 
+// TODO: bc::server::settings->bc::node::settings->bc::system::settings
 class BCS_API settings_type
   : public node::settings
 {
