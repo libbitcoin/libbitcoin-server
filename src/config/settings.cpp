@@ -221,7 +221,7 @@ const options_description config_type::load_settings()
         "network.seed",
         value<std::vector<endpoint_type>>(&settings.network.seeds)->
             multitoken()/*->default_value(NETWORK_SEEDS)*/,
-        "A seed node for initializing the host pool, multiple entries allowed, defaults shown."
+        "A seed node for initializing the host pool, multiple entries allowed."
     )
 
     /* [blockchain] */
@@ -253,7 +253,7 @@ const options_description config_type::load_settings()
         "blockchain.checkpoint",
         value<std::vector<checkpoint_type>>(&settings.chain.checkpoints)->
             multitoken()/*->default_value(BLOCKCHAIN_CHECKPOINTS)*/,
-        "A hash:height checkpoint, multiple entries allowed, defaults shown."
+        "A hash:height checkpoint, multiple entries allowed."
     )
 
     /* [node] */
