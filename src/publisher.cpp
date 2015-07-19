@@ -49,13 +49,13 @@ bool publisher::start(settings_type& config)
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
 
     log_debug(LOG_PUBLISHER) << "Publishing blocks on "
-        << config.block_publish_endpoint;
-    if (!setup_socket(config.block_publish_endpoint, socket_block_))
+        << config.server.block_publish_endpoint;
+    if (!setup_socket(config.server.block_publish_endpoint, socket_block_))
         return false;
 
     log_debug(LOG_PUBLISHER) << "Publishing transactions on "
-        << config.transaction_publish_endpoint;
-    if (!setup_socket(config.transaction_publish_endpoint, socket_tx_))
+        << config.server.transaction_publish_endpoint;
+    if (!setup_socket(config.server.transaction_publish_endpoint, socket_tx_))
         return false;
 
     return true;

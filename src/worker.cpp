@@ -24,6 +24,7 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/settings_type.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -80,7 +81,7 @@ request_worker::request_worker(bool log_requests,
 bool request_worker::start(settings_type& config)
 {
     // Use config values.
-    log_requests_ = config.log_requests;
+    log_requests_ = config.server.log_requests;
 
 #ifdef _MSC_VER
     if (log_requests_)
@@ -93,10 +94,10 @@ bool request_worker::start(settings_type& config)
         authenticate_.set_verbose(true);
 #endif 
 
-    if (!config.clients.empty())
-        whitelist(config.clients);
+    if (!config.server.clients.empty())
+        whitelist(config.server.clients);
 
-    if (config.cert_file.empty())
+    if (config.server.certificate_file.empty())
         socket_.set_zap_domain("global");
     else
         enable_crypto(config);
@@ -104,9 +105,9 @@ bool request_worker::start(settings_type& config)
     // Start ZeroMQ sockets.
     create_new_socket(config);
     log_debug(LOG_SERVICE)
-        << "Query service heartbeat on " << config.heartbeat_endpoint;
+        << "Query service heartbeat on " << config.server.heartbeat_endpoint;
 
-    heartbeat_socket_.bind(config.heartbeat_endpoint);
+    heartbeat_socket_.bind(config.server.heartbeat_endpoint);
 
     // Timer stuff
     heartbeat_at_ = now() + heartbeat_interval_;
@@ -117,7 +118,7 @@ void request_worker::stop()
 {
 }
 
-void request_worker::whitelist(std::vector<node::endpoint_type>& addrs)
+void request_worker::whitelist(std::vector<config::endpoint_type>& addrs)
 {
     for (const auto& ip_address: addrs)
         authenticate_.allow(ip_address);
@@ -126,11 +127,11 @@ void request_worker::whitelist(std::vector<node::endpoint_type>& addrs)
 void request_worker::enable_crypto(settings_type& config)
 {
     std::string client_certs(CURVE_ALLOW_ANY);
-    if (!config.client_certs_path.empty())
-        client_certs = config.client_certs_path.string();
+    if (!config.server.client_certificates_path.empty())
+        client_certs = config.server.client_certificates_path.string();
 
     authenticate_.configure_curve("*", client_certs);
-    czmqpp::certificate cert(config.cert_file.string());
+    czmqpp::certificate cert(config.server.certificate_file.string());
     cert.apply(socket_);
     socket_.set_curve_server(zmq_curve_enabled);
 }
@@ -143,11 +144,11 @@ void request_worker::create_new_socket(settings_type& config)
     //    socket_.set_identity(config.unique_name.get_host());
 
     // Connect...
-    socket_.bind(config.query_endpoint);
+    socket_.bind(config.server.query_endpoint);
     socket_.set_linger(zmq_socket_no_linger);
 
     log_info(LOG_SERVICE)
-        << "Query service listening on " << config.query_endpoint;
+        << "Query service listening on " << config.server.query_endpoint;
 }
 
 void request_worker::attach(

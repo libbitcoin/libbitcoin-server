@@ -17,33 +17,47 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SETTINGS_HPP
-#define LIBBITCOIN_SERVER_SETTINGS_HPP
+#ifndef LIBBITCOIN_SERVER_SETTINGS_TYPE_HPP
+#define LIBBITCOIN_SERVER_SETTINGS_TYPE_HPP
 
 #include <cstdint>
-#include <vector>
 #include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/config/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-struct BCS_API settings
+// TODO: rename to configuration
+class BCS_API settings_type
+  : public node::settings_type
 {
-    config::endpoint_type query_endpoint;
-    config::endpoint_type heartbeat_endpoint;
-    config::endpoint_type block_publish_endpoint;
-    config::endpoint_type transaction_publish_endpoint;
-    bool publisher_enabled;
-    bool log_requests;
-    uint32_t polling_interval_milliseconds;
-    uint32_t heartbeat_interval_seconds;
-    uint32_t subscription_expiration_minutes;
-    uint32_t subscription_limit;
-    boost::filesystem::path certificate_file;
-    boost::filesystem::path client_certificates_path;
-    std::vector<config::endpoint_type> clients;
+public:
+    settings_type()
+    {
+    }
+
+    settings_type(const bc::server::settings& server_settings,
+        const bc::node::settings& node_settings,
+        const bc::chain::settings& chain_settings,
+        const bc::network::settings& network_settings)
+      : node::settings_type({ node_settings, chain_settings,
+            network_settings }), server(server_settings)
+    {
+    }
+
+    // options
+    bool help;
+    bool initchain;
+    bool settings;
+    bool version;
+
+    // options + environment vars
+    boost::filesystem::path configuration;
+
+    // settings
+    bc::server::settings server;
 };
 
 } // namespace server

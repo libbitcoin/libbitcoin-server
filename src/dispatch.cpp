@@ -243,7 +243,7 @@ static console_result run(settings_type& config, std::ostream& output,
     std::ostream& error)
 {
     // Ensure the blockchain directory is initialized (at least exists).
-    auto result = verify_chain(config.blockchain_path, error);
+    auto result = verify_chain(config.chain.database_path, error);
     if (result != console_result::okay)
         return result;
 
@@ -254,7 +254,7 @@ static console_result run(settings_type& config, std::ostream& output,
     server_node full_node(config);
     publisher publish(full_node);
 
-    if (config.publisher_enabled)
+    if (config.server.publisher_enabled)
         if (!publish.start(config))
         {
             error << format(BS_PUBLISHER_START_FAIL) %
@@ -297,7 +297,7 @@ static console_result run(settings_type& config, std::ostream& output,
 
     worker.stop();
 
-    if (config.publisher_enabled)
+    if (config.server.publisher_enabled)
         if (!publish.stop())
             error << BS_PUBLISHER_STOP_FAIL << std::endl;
 
@@ -326,7 +326,7 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
 
     // HACK: generalize logging.
     configuration.settings.skip_log =
-        if_else(configuration.settings.log_requests, "", LOG_REQUEST);
+        if_else(configuration.settings.server.log_requests, "", LOG_REQUEST);
 
     if (!configuration.settings.configuration.empty())
         output << format(BS_USING_CONFIG_FILE) % 
@@ -340,7 +340,7 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
     else if (settings.version)
         show_version(output);
     else if (settings.initchain)
-        return init_chain(settings.blockchain_path, output, error);
+        return init_chain(settings.chain.database_path, output, error);
     else
         return run(settings, output, error);
 

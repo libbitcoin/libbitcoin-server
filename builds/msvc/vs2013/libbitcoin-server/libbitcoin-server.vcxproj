@@ -73,6 +73,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\config.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings_type.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />

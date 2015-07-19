@@ -27,6 +27,7 @@
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/server_node.hpp>
 
 // Define after boost asio, see stackoverflow.com/a/9750437/1172329.
 #ifdef _MSC_VER
@@ -42,7 +43,7 @@ namespace server {
 
 using boost::filesystem::path;
 using namespace boost::program_options;
-using namespace libbitcoin::node;
+using namespace libbitcoin::config;
 
 static std::string system_config_directory()
 {
@@ -131,147 +132,234 @@ const options_description config_type::load_settings()
 {
     options_description description("settings");
     description.add_options()
-    /* [node] */
+    /* [network] */
     (
-        "node.database_threads",
-        value<uint16_t>(&settings.database_threads)->default_value(BN_DATABASE_THREADS),
-        "The number of threads in the database threadpool, defaults to 6."
-    )
-    (
-        "node.network_threads",
-        value<uint16_t>(&settings.network_threads)->default_value(BN_NETWORK_THREADS),
+        "network.threads",
+        value<uint32_t>(&settings.network.threads)->
+            default_value(NETWORK_THREADS),
         "The number of threads in the network threadpool, defaults to 4."
     )
     (
-        "node.memory_threads",
-        value<uint16_t>(&settings.memory_threads)->default_value(BN_MEMORY_THREADS),
-        "The number of threads in the memory threadpool, defaults to 4."
+        "network.inbound_port",
+        value<uint16_t>(&settings.network.inbound_port)->
+            default_value(NETWORK_INBOUND_PORT),
+        "The port for incoming connections, defaults to 8333 (18333 for testnet)."
     )
     (
-        "node.host_pool_capacity",
-        value<uint32_t>(&settings.host_pool_capacity)->default_value(BN_HOST_POOL_CAPACITY),
+        "network.inbound_connection_limit",
+        value<uint32_t>(&settings.network.inbound_connection_limit)->
+            default_value(NETWORK_INBOUND_CONNECTION_LIMIT),
+        "The maximum number of incoming network connections, defaults to 8."
+    )
+    (
+        "network.outbound_connections",
+        value<uint32_t>(&settings.network.outbound_connections)->
+            default_value(NETWORK_OUTBOUND_CONNECTIONS),
+        "The maximum number of outgoing network connections, defaults to 8."
+    )
+    (
+        "network.connect_timeout_seconds",
+        value<uint32_t>(&settings.network.connect_timeout_seconds)->
+            default_value(NETWORK_CONNECT_TIMEOUT_SECONDS),
+        "The time limit in seconds for connection establishment, defaults to 5."
+    )
+    (
+        "network.channel_expiration_minutes",
+        value<uint32_t>(&settings.network.channel_expiration_minutes)->
+            default_value(NETWORK_CHANNEL_EXPIRATION_MINUTES),
+        "The maximum age limit for an outbound connection, defaults to 90."
+    )
+    (
+        "network.channel_timeout_minutes",
+        value<uint32_t>(&settings.network.channel_timeout_minutes)->
+            default_value(NETWORK_CHANNEL_TIMEOUT_MINUTES),
+        "The inactivity time limit for any connection, defaults to 30."
+    )
+    (
+        "network.channel_heartbeat_minutes",
+        value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
+            default_value(NETWORK_CHANNEL_HEARTBEAT_MINUTES),
+        "The inactivity time that initiates a ping message, defaults to 15."
+    )
+    (
+        "network.channel_startup_minutes",
+        value<uint32_t>(&settings.network.channel_startup_minutes)->
+            default_value(NETWORK_CHANNEL_STARTUP_MINUTES),
+        "The inactivity time limit for initial response, defaults to 1."
+    )
+    (
+        "network.channel_revivial_minutes",
+        value<uint32_t>(&settings.network.channel_revivial_minutes)->
+            default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
+        "The time between blocks that initiates a request, defaults to 1."
+    )
+    (
+        "network.host_pool_capacity",
+        value<uint32_t>(&settings.network.host_pool_capacity)->
+            default_value(NETWORK_HOST_POOL_CAPACITY),
         "The maximum number of peer hosts in the pool, defaults to 1000."
     )
     (
-        "node.block_pool_capacity",
-        value<uint32_t>(&settings.block_pool_capacity)->default_value(BN_BLOCK_POOL_CAPACITY),
-        "The maximum number of orphan blocks in the pool, defaults to 50."
-    )
-    (
-        "node.tx_pool_capacity",
-        value<uint32_t>(&settings.tx_pool_capacity)->default_value(BN_TX_POOL_CAPACITY),
-        "The maximum number of transactions in the pool, defaults to 2000."
-    )
-    (
-        "node.history_height",
-        value<uint32_t>(&settings.history_height)->default_value(BN_HISTORY_START_HEIGHT),
-        "The minimum height of the history database, defaults to 0."
-    )
-    (
-        "node.checkpoint_height",
-        value<uint32_t>(&settings.checkpoint_height)->default_value(0),
-        "The height of the checkpoint hash, defaults to 0."
-    )
-    (
-        "node.checkpoint_hash",
-        value<btc256>(&settings.checkpoint_hash)->default_value(BN_CHECKPOINT_HASH),
-        "The checkpoint hash, defaults to a null hash (no checkpoint)."
-    )
-    (
-        "node.inbound_port",
-        value<uint16_t>(&settings.p2p_inbound_port)->default_value(BN_P2P_INBOUND_PORT),
-        "# The port for incoming connections, defaults to 8333 (18333 for testnet)."
-    )
-    (
-        "node.inbound_connections",
-        value<uint32_t>(&settings.p2p_inbound_connections)->default_value(BN_P2P_INBOUND_CONNECTIONS),
-        "The maximum number of incoming P2P network connections, defaults to 8."
-    )
-    (
-        "node.outbound_connections",
-        value<uint32_t>(&settings.p2p_outbound_connections)->default_value(BN_P2P_OUTBOUND_CONNECTIONS),
-        "The maximum number of outgoing P2P network connections, defaults to 8."
-    )
-    (
-        "node.hosts_file",
-        value<path>(&settings.hosts_file)->default_value(BN_HOSTS_FILE),
+        "network.hosts_file",
+        value<path>(&settings.network.hosts_file)->
+            default_value(NETWORK_HOSTS_FILE),
         "The peer hosts cache file path, defaults to 'hosts'."
     )
     (
-        "node.blockchain_path",
-        value<path>(&settings.blockchain_path)->default_value(BN_BLOCKCHAIN_DIRECTORY),
-        "The blockchain directory, defaults to 'blockchain'."
+        "network.debug_file",
+        value<path>(&settings.network.debug_file)->
+            default_value(NETWORK_DEBUG_FILE),
+        "The debug log file path, defaults to 'debug.log'."
+    )
+    (
+        "network.error_file",
+        value<path>(&settings.network.error_file)->
+            default_value(NETWORK_ERROR_FILE),
+        "The error log file path, defaults to 'error.log'."
+    )
+    (
+        "network.seed",
+        value<std::vector<endpoint_type>>(&settings.network.seeds)->
+            multitoken()/*->default_value(NETWORK_SEEDS)*/,
+        "A seed node for initializing the host pool, multiple entries allowed, defaults shown."
+    )
+
+    /* [blockchain] */
+    (
+        "blockchain.threads",
+        value<uint32_t>(&settings.chain.threads)->
+            default_value(BLOCKCHAIN_THREADS),
+        "The number of threads in the blockchain threadpool, defaults to 6."
+    )
+    (
+        "blockchain.block_pool_capacity",
+        value<uint32_t>(&settings.chain.block_pool_capacity)->
+            default_value(BLOCKCHAIN_BLOCK_POOL_CAPACITY),
+        "The maximum number of orphan blocks in the pool, defaults to 50."
+    )
+    (
+        "blockchain.history_start_height",
+        value<uint32_t>(&settings.chain.history_start_height)->
+            default_value(BLOCKCHAIN_HISTORY_START_HEIGHT),
+        "The history index start height, defaults to 0."
+    )
+    (
+        "blockchain.database_path",
+        value<path>(&settings.chain.database_path)->
+            default_value(BLOCKCHAIN_DATABASE_PATH),
+        "The blockchain database directory, defaults to 'blockchain'."
+    )
+    (
+        "blockchain.checkpoint",
+        value<std::vector<checkpoint_type>>(&settings.chain.checkpoints)->
+            multitoken()/*->default_value(BLOCKCHAIN_CHECKPOINTS)*/,
+        "A hash:height checkpoint, multiple entries allowed, defaults shown."
+    )
+
+    /* [node] */
+    (
+        "node.threads",
+        value<uint32_t>(&settings.node.threads)->
+            default_value(NODE_THREADS),
+        "The number of threads in the node threadpool, defaults to 4."
+    )
+    (
+        "node.transaction_pool_capacity",
+        value<uint32_t>(&settings.node.transaction_pool_capacity)->
+            default_value(NODE_TRANSACTION_POOL_CAPACITY),
+        "The number of threads in the node threadpool, defaults to 4."
     )
     (
         "node.peer",
-        value<std::vector<endpoint_type>>(&settings.peers)->multitoken(),
+        value<std::vector<endpoint_type>>(&settings.node.peers)->
+            multitoken()/*->default_value(NODE_PEERS)*/,
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
     (
         "node.ban",
-        value<std::vector<endpoint_type>>(&settings.bans)->multitoken(),
+        value<std::vector<endpoint_type>>(&settings.node.bans)->
+            multitoken()/*->default_value(NODE_BANS)*/,
         "IP address to disallow as a peer, multiple entries allowed."
     )
 
     /* [server] */
     (
         "server.query_endpoint",
-        value<endpoint_type>(&settings.query_endpoint)->default_value({ "tcp://*:9091" }),
+        value<endpoint_type>(&settings.server.query_endpoint)->
+            default_value(SERVER_QUERY_ENDPOINT),
         "The query service endpoint, defaults to 'tcp://*:9091'."
     )
     (
         "server.heartbeat_endpoint",
-        value<endpoint_type>(&settings.heartbeat_endpoint)->default_value({ "tcp://*:9092" }),
+        value<endpoint_type>(&settings.server.heartbeat_endpoint)->
+            default_value(SERVER_HEARTBEAT_ENDPOINT),
         "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
     )
     (
         "server.block_publish_endpoint",
-        value<endpoint_type>(&settings.block_publish_endpoint)->default_value({ "tcp://*:9093" }),
+        value<endpoint_type>(&settings.server.block_publish_endpoint)->
+            default_value(SERVER_BLOCK_PUBLISH_ENDPOINT),
         "The block publishing service endpoint, defaults to 'tcp://*:9093'."
     )
     (
         "server.transaction_publish_endpoint",
-        value<endpoint_type>(&settings.transaction_publish_endpoint)->default_value({ "tcp://*:9094" }),
+        value<endpoint_type>(&settings.server.transaction_publish_endpoint)->
+            default_value(SERVER_TRANSACTION_PUBLISH_ENDPOINT),
         "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
         "server.publisher_enabled",
-        value<bool>(&settings.publisher_enabled)->default_value(false),
-        "Enable the publisher, defaults to false."
+        value<bool>(&settings.server.publisher_enabled)->
+            default_value(SERVER_PUBLISHER_ENABLED),
+        "Enable the block and transaction publishing endpoints, defaults to true."
     )
-
-    /* [identity] */
     (
-        "identity.cert_file",
-        value<path>(&settings.cert_file),
+        "server.log_requests",
+        value<bool>(&settings.server.log_requests)->
+            default_value(SERVER_LOG_REQUESTS),
+        "Write service requests to the log, defaults to false."
+    )
+    (
+        "server.polling_interval_milliseconds",
+        value<uint32_t>(&settings.server.polling_interval_milliseconds)->
+            default_value(SERVER_POLLING_INTERVAL_MILLISECONDS),
+        "The query polling interval in milliseconds, defaults to 1000."
+    )
+    (
+        "server.heartbeat_interval_seconds",
+        value<uint32_t>(&settings.server.heartbeat_interval_seconds)->
+            default_value(SERVER_HEARTBEAT_INTERVAL_SECONDS),
+        "The heartbeat interval in seconds, defaults to 4."
+    )
+    (
+        "server.subscription_expiration_minutes",
+        value<uint32_t>(&settings.server.subscription_expiration_minutes)->
+            default_value(SERVER_SUBSCRIPTION_EXPIRATION_MINUTES),
+        "The subscription expiration time, defaults to 10 minutes."
+    )
+    (
+        "server.subscription_limit",
+        value<uint32_t>(&settings.server.subscription_limit)->
+            default_value(SERVER_SUBSCRIPTION_LIMIT),
+        "The maximum number of subscriptions, defaults to 100000000."
+    )
+    (
+        "server.certificate_file",
+        value<path>(&settings.server.certificate_file)->
+            default_value(SERVER_CERTIFICATE_FILE),
         "The path to the ZPL-encoded server private certificate file."
     )
     (
-        "identity.client_certs_path",
-        value<path>(&settings.client_certs_path),
+        "server.client_certificates_path",
+        value<path>(&settings.server.client_certificates_path)->
+            default_value(SERVER_CLIENT_CERTIFICATES_PATH),
         "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
     )
     (
-        "identity.client",
-        value<std::vector<endpoint_type>>(&settings.clients)->multitoken(),
+        "server.client",
+        value<std::vector<endpoint_type>>(&settings.server.clients)->
+            multitoken()/*->default_value(SERVER_CLIENTS)*/,
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
-    )
-
-    /* [logging] */
-    (
-        "logging.debug_file",
-        value<path>(&settings.debug_file)->default_value("debug.log"),
-        "The debug log file path, defaults to 'debug.log'."
-    )
-    (
-        "logging.error_file",
-        value<path>(&settings.error_file)->default_value("error.log"),
-        "The error log file path, defaults to 'error.log'."
-    )
-    (
-        "logging.log_requests",
-        value<bool>(&settings.log_requests)->default_value(false),
-        "Write service requests to the log, defaults to false."
     );
 
     return description;
