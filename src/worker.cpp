@@ -93,7 +93,7 @@ request_worker::request_worker(bool log_requests,
     }
 }
 
-bool request_worker::start(settings_type& config)
+bool request_worker::start(const settings_type& config)
 {
     // Use config values.
     log_requests_ = config.server.log_requests;
@@ -157,13 +157,13 @@ void request_worker::stop()
 {
 }
 
-void request_worker::whitelist(std::vector<config::endpoint>& addrs)
+void request_worker::whitelist(const std::vector<config::endpoint>& addresses)
 {
-    for (const auto& ip_address: addrs)
+    for (const auto& ip_address: addresses)
         authenticate_.allow(ip_address);
 }
 
-bool request_worker::enable_crypto(settings_type& config)
+bool request_worker::enable_crypto(const settings_type& config)
 {
     if (config.server.certificate_file.empty())
         return true;
@@ -184,7 +184,7 @@ bool request_worker::enable_crypto(settings_type& config)
     return false;
 }
 
-bool request_worker::create_new_socket(settings_type& config)
+bool request_worker::create_new_socket(const settings_type& config)
 {
     // Not sure what we would use this for, so disabled for now.
     // Set the socket identity name.
@@ -203,8 +203,8 @@ bool request_worker::create_new_socket(settings_type& config)
     return false;
 }
 
-void request_worker::attach(
-    const std::string& command, command_handler handler)
+void request_worker::attach(const std::string& command,
+    command_handler handler)
 {
     handlers_[command] = handler;
 }

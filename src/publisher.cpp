@@ -43,7 +43,7 @@ bool publisher::setup_socket(const std::string& connection,
     return socket.bind(connection) != -1;
 }
 
-bool publisher::start(settings_type& config)
+bool publisher::start(const settings_type& config)
 {
     node_.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));

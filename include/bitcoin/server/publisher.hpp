@@ -33,7 +33,7 @@ class BCS_API publisher
 {
 public:
     publisher(server_node& node);
-    bool start(settings_type& config);
+    bool start(const settings_type& config);
     bool stop();
 
 private:

@@ -239,7 +239,7 @@ static void attach_api(request_worker& worker, server_node& node,
 }
 
 // Run the server.
-static console_result run(settings_type& config, std::ostream& output,
+static console_result run(const settings_type& config, std::ostream& output,
     std::ostream& error)
 {
     // Ensure the blockchain directory is initialized (at least exists).

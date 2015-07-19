@@ -65,7 +65,7 @@ public:
     request_worker(bool log_requests=false,
         uint32_t heartbeat_interval_seconds=4,
         uint32_t polling_interval_milliseconds=1000);
-    bool start(settings_type& config);
+    bool start(const settings_type& config);
     void stop();
     void attach(const std::string& command, command_handler handler);
     void update();
@@ -73,9 +73,9 @@ public:
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist(std::vector<config::endpoint>& addrs);
-    bool enable_crypto(settings_type& config);
-    bool create_new_socket(settings_type& config);
+    void whitelist(const std::vector<config::endpoint>& addresses);
+    bool enable_crypto(const settings_type& config);
+    bool create_new_socket(const settings_type& config);
     void poll();
     void publish_heartbeat();
 
