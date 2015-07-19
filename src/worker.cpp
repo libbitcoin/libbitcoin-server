@@ -53,8 +53,16 @@ void send_worker::queue_send(const outgoing_message& message)
 {
     czmqpp::socket socket(context_, ZMQ_PUSH);
     BITCOIN_ASSERT(socket.self() != nullptr);
-    DEBUG_ONLY(int rc =) socket.connect("inproc://trigger-send");
-    BITCOIN_ASSERT(rc == zmq_success);
+
+    // Returns 0 if OK, -1 if the endpoint was invalid.
+    int rc = socket.connect("inproc://trigger-send");
+    if (rc == zmq_fail)
+    {
+        log_error(LOG_SERVICE)
+            << "Failed to connect to send queue.";
+        return;
+    }
+
     message.send(socket);
     socket.destroy(context_);
 }
@@ -74,8 +82,15 @@ request_worker::request_worker(bool log_requests,
     BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
     BITCOIN_ASSERT(heartbeat_socket_.self() != nullptr);
-    DEBUG_ONLY(int rc =) wakeup_socket_.bind("inproc://trigger-send");
-    BITCOIN_ASSERT(rc != zmq_fail);
+
+    // Returns 0 if OK, -1 if the endpoint was invalid.
+    int rc = wakeup_socket_.bind("inproc://trigger-send");
+    if (rc == zmq_fail)
+    {
+        log_error(LOG_SERVICE)
+            << "Failed to connect to request queue.";
+        return;
+    }
 }
 
 bool request_worker::start(settings_type& config)
@@ -86,7 +101,7 @@ bool request_worker::start(settings_type& config)
 #ifdef _MSC_VER
     if (log_requests_)
         log_debug(LOG_SERVICE)
-            << "Authentication logging disabled on Windows";
+            << "Authentication logging disabled on Windows.";
 #else
     // This exposes the log stream to non-utf8 text on Windows.
     // TODO: fix zeromq/czmq/czmqpp to be utf8 everywhere.
@@ -99,17 +114,41 @@ bool request_worker::start(settings_type& config)
 
     if (config.server.certificate_file.empty())
         socket_.set_zap_domain("global");
-    else
-        enable_crypto(config);
 
-    // Start ZeroMQ sockets.
-    create_new_socket(config);
-    log_debug(LOG_SERVICE)
-        << "Query service heartbeat on " << config.server.heartbeat_endpoint;
+    if (!enable_crypto(config))
+    {
+        log_error(LOG_SERVICE)
+            << "Invalid server certificate.";
+        return false;
+    }
 
-    heartbeat_socket_.bind(config.server.heartbeat_endpoint);
+    // This binds the query service.
+    if (!create_new_socket(config))
+    {
+        log_error(LOG_SERVICE)
+            << "Failed to bind query service on "
+            << config.server.query_endpoint;
+        return false;
+    }
 
-    // Timer stuff
+    log_info(LOG_SERVICE)
+        << "Bound query service on "
+        << config.server.query_endpoint;
+
+    // This binds the heartbeat service.
+    const auto rc = heartbeat_socket_.bind(config.server.heartbeat_endpoint);
+    if (rc == 0)
+    {
+        log_error(LOG_SERVICE)
+            << "Failed to bind heartbeat service on "
+            << config.server.heartbeat_endpoint;
+        return false;
+    }
+
+    log_info(LOG_SERVICE)
+        << "Bound heartbeat service on "
+        << config.server.query_endpoint;
+
     heartbeat_at_ = now() + heartbeat_interval_;
     return true;
 }
@@ -124,19 +163,28 @@ void request_worker::whitelist(std::vector<config::endpoint>& addrs)
         authenticate_.allow(ip_address);
 }
 
-void request_worker::enable_crypto(settings_type& config)
+bool request_worker::enable_crypto(settings_type& config)
 {
+    if (config.server.certificate_file.empty())
+        return true;
+
     std::string client_certs(CURVE_ALLOW_ANY);
     if (!config.server.client_certificates_path.empty())
         client_certs = config.server.client_certificates_path.string();
 
     authenticate_.configure_curve("*", client_certs);
     czmqpp::certificate cert(config.server.certificate_file.string());
-    cert.apply(socket_);
-    socket_.set_curve_server(zmq_curve_enabled);
+    if (cert.valid())
+    {
+        cert.apply(socket_);
+        socket_.set_curve_server(zmq_curve_enabled);
+        return true;
+    }
+
+    return false;
 }
 
-void request_worker::create_new_socket(settings_type& config)
+bool request_worker::create_new_socket(settings_type& config)
 {
     // Not sure what we would use this for, so disabled for now.
     // Set the socket identity name.
@@ -144,11 +192,15 @@ void request_worker::create_new_socket(settings_type& config)
     //    socket_.set_identity(config.unique_name.get_host());
 
     // Connect...
-    socket_.bind(config.server.query_endpoint);
-    socket_.set_linger(zmq_socket_no_linger);
+    // Returns port number if connected.
+    const auto rc = socket_.bind(config.server.query_endpoint);
+    if (rc != 0)
+    {
+        socket_.set_linger(zmq_socket_no_linger);
+        return true;
+    }
 
-    log_info(LOG_SERVICE)
-        << "Query service listening on " << config.server.query_endpoint;
+    return false;
 }
 
 void request_worker::attach(
