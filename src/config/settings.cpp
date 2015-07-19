@@ -219,7 +219,7 @@ const options_description config_type::load_settings()
     )
     (
         "network.seed",
-        value<std::vector<endpoint_type>>(&settings.network.seeds)->
+        value<std::vector<endpoint>>(&settings.network.seeds)->
             multitoken()/*->default_value(NETWORK_SEEDS)*/,
         "A seed node for initializing the host pool, multiple entries allowed."
     )
@@ -251,7 +251,7 @@ const options_description config_type::load_settings()
     )
     (
         "blockchain.checkpoint",
-        value<std::vector<checkpoint_type>>(&settings.chain.checkpoints)->
+        value<std::vector<checkpoint>>(&settings.chain.checkpoints)->
             multitoken()/*->default_value(BLOCKCHAIN_CHECKPOINTS)*/,
         "A hash:height checkpoint, multiple entries allowed."
     )
@@ -271,13 +271,13 @@ const options_description config_type::load_settings()
     )
     (
         "node.peer",
-        value<std::vector<endpoint_type>>(&settings.node.peers)->
+        value<std::vector<endpoint>>(&settings.node.peers)->
             multitoken()/*->default_value(NODE_PEERS)*/,
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
     (
         "node.ban",
-        value<std::vector<endpoint_type>>(&settings.node.bans)->
+        value<std::vector<endpoint>>(&settings.node.bans)->
             multitoken()/*->default_value(NODE_BANS)*/,
         "IP address to disallow as a peer, multiple entries allowed."
     )
@@ -285,25 +285,25 @@ const options_description config_type::load_settings()
     /* [server] */
     (
         "server.query_endpoint",
-        value<endpoint_type>(&settings.server.query_endpoint)->
+        value<endpoint>(&settings.server.query_endpoint)->
             default_value(SERVER_QUERY_ENDPOINT),
         "The query service endpoint, defaults to 'tcp://*:9091'."
     )
     (
         "server.heartbeat_endpoint",
-        value<endpoint_type>(&settings.server.heartbeat_endpoint)->
+        value<endpoint>(&settings.server.heartbeat_endpoint)->
             default_value(SERVER_HEARTBEAT_ENDPOINT),
         "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
     )
     (
         "server.block_publish_endpoint",
-        value<endpoint_type>(&settings.server.block_publish_endpoint)->
+        value<endpoint>(&settings.server.block_publish_endpoint)->
             default_value(SERVER_BLOCK_PUBLISH_ENDPOINT),
         "The block publishing service endpoint, defaults to 'tcp://*:9093'."
     )
     (
         "server.transaction_publish_endpoint",
-        value<endpoint_type>(&settings.server.transaction_publish_endpoint)->
+        value<endpoint>(&settings.server.transaction_publish_endpoint)->
             default_value(SERVER_TRANSACTION_PUBLISH_ENDPOINT),
         "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
@@ -357,7 +357,7 @@ const options_description config_type::load_settings()
     )
     (
         "server.client",
-        value<std::vector<endpoint_type>>(&settings.server.clients)->
+        value<std::vector<endpoint>>(&settings.server.clients)->
             multitoken()/*->default_value(SERVER_CLIENTS)*/,
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     );

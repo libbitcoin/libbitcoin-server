@@ -118,7 +118,7 @@ void request_worker::stop()
 {
 }
 
-void request_worker::whitelist(std::vector<config::endpoint_type>& addrs)
+void request_worker::whitelist(std::vector<config::endpoint>& addrs)
 {
     for (const auto& ip_address: addrs)
         authenticate_.allow(ip_address);

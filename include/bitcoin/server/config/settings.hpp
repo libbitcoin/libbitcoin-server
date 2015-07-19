@@ -31,10 +31,10 @@ namespace server {
 
 struct BCS_API settings
 {
-    config::endpoint_type query_endpoint;
-    config::endpoint_type heartbeat_endpoint;
-    config::endpoint_type block_publish_endpoint;
-    config::endpoint_type transaction_publish_endpoint;
+    config::endpoint query_endpoint;
+    config::endpoint heartbeat_endpoint;
+    config::endpoint block_publish_endpoint;
+    config::endpoint transaction_publish_endpoint;
     bool publisher_enabled;
     bool log_requests;
     uint32_t polling_interval_milliseconds;
@@ -43,7 +43,7 @@ struct BCS_API settings
     uint32_t subscription_limit;
     boost::filesystem::path certificate_file;
     boost::filesystem::path client_certificates_path;
-    std::vector<config::endpoint_type> clients;
+    std::vector<config::endpoint> clients;
 };
 
 } // namespace server
