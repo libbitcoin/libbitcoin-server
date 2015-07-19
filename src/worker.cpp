@@ -147,7 +147,7 @@ bool request_worker::start(const settings_type& config)
 
     log_info(LOG_SERVICE)
         << "Bound heartbeat service on "
-        << config.server.query_endpoint;
+        << config.server.heartbeat_endpoint;
 
     heartbeat_at_ = now() + heartbeat_interval_;
     return true;
