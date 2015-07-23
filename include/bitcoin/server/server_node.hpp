@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_NODE_IMPL_HPP
-#define LIBBITCOIN_SERVER_NODE_IMPL_HPP
+#ifndef LIBBITCOIN_SERVER_NODE_HPP
+#define LIBBITCOIN_SERVER_NODE_HPP
 
 #include <cstdint>
 #include <bitcoin/node.hpp>
@@ -86,7 +86,7 @@ private:
 
     // Timer.
     boost::asio::deadline_timer retry_start_timer_;
-    size_t last_checkpoint_;
+    size_t minimum_start_height_;
 };
 
 } // namespace server

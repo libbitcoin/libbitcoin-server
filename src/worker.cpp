@@ -37,10 +37,9 @@ using std::placeholders::_1;
 
 constexpr int zmq_true = 1;
 constexpr int zmq_false = 0;
+constexpr int zmq_fail = -1;
 constexpr int zmq_curve_enabled = zmq_true;
 constexpr int zmq_socket_no_linger = zmq_false;
-DEBUG_ONLY(constexpr int zmq_success = 0;)
-DEBUG_ONLY(constexpr int zmq_fail = -1;)
 
 auto now = []() { return microsec_clock::universal_time(); };
 
@@ -136,7 +135,8 @@ bool request_worker::start(const settings_type& config)
         << config.server.query_endpoint;
 
     // This binds the heartbeat service.
-    const auto rc = heartbeat_socket_.bind(config.server.heartbeat_endpoint);
+    const auto rc = heartbeat_socket_.bind(
+        config.server.heartbeat_endpoint.to_string());
     if (rc == 0)
     {
         log_error(LOG_SERVICE)
@@ -157,10 +157,10 @@ void request_worker::stop()
 {
 }
 
-void request_worker::whitelist(const std::vector<config::endpoint>& addresses)
+void request_worker::whitelist(const config::authority::list& addresses)
 {
     for (const auto& ip_address: addresses)
-        authenticate_.allow(ip_address);
+        authenticate_.allow(ip_address.to_string());
 }
 
 bool request_worker::enable_crypto(const settings_type& config)
@@ -193,7 +193,7 @@ bool request_worker::create_new_socket(const settings_type& config)
 
     // Connect...
     // Returns port number if connected.
-    const auto rc = socket_.bind(config.server.query_endpoint);
+    const auto rc = socket_.bind(config.server.query_endpoint.to_string());
     if (rc != 0)
     {
         socket_.set_linger(zmq_socket_no_linger);

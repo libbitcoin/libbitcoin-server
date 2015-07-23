@@ -21,7 +21,6 @@
 #define LIBBITCOIN_SERVER_SETTINGS_HPP
 
 #include <cstdint>
-#include <vector>
 #include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
@@ -43,7 +42,7 @@ struct BCS_API settings
     uint32_t subscription_limit;
     boost::filesystem::path certificate_file;
     boost::filesystem::path client_certificates_path;
-    std::vector<config::endpoint> clients;
+    config::authority::list clients;
 };
 
 } // namespace server

@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
-#include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
@@ -219,8 +218,8 @@ const options_description config_type::load_settings()
     )
     (
         "network.seed",
-        value<std::vector<endpoint>>(&settings.network.seeds)->
-            multitoken()/*->default_value(NETWORK_SEEDS)*/,
+        value<config::endpoint::list>(&settings.network.seeds)->
+        multitoken()/*->default_value(NETWORK_SEEDS)*/,
         "A seed node for initializing the host pool, multiple entries allowed."
     )
 
@@ -251,7 +250,7 @@ const options_description config_type::load_settings()
     )
     (
         "blockchain.checkpoint",
-        value<std::vector<checkpoint>>(&settings.chain.checkpoints)->
+        value<config::checkpoint::list>(&settings.chain.checkpoints)->
             multitoken()/*->default_value(BLOCKCHAIN_CHECKPOINTS)*/,
         "A hash:height checkpoint, multiple entries allowed."
     )
@@ -271,13 +270,13 @@ const options_description config_type::load_settings()
     )
     (
         "node.peer",
-        value<std::vector<endpoint>>(&settings.node.peers)->
+        value<config::endpoint::list>(&settings.node.peers)->
             multitoken()/*->default_value(NODE_PEERS)*/,
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
     (
         "node.ban",
-        value<std::vector<endpoint>>(&settings.node.bans)->
+        value<config::authority::list>(&settings.node.bans)->
             multitoken()/*->default_value(NODE_BANS)*/,
         "IP address to disallow as a peer, multiple entries allowed."
     )
@@ -357,7 +356,7 @@ const options_description config_type::load_settings()
     )
     (
         "server.client",
-        value<std::vector<endpoint>>(&settings.server.clients)->
+        value<config::authority::list>(&settings.server.clients)->
             multitoken()/*->default_value(SERVER_CLIENTS)*/,
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     );

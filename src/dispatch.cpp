@@ -324,10 +324,6 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
         return console_result::failure;
     }
 
-    // HACK: generalize logging.
-    configuration.settings.skip_log =
-        if_else(configuration.settings.server.log_requests, "", LOG_REQUEST);
-
     if (!configuration.settings.configuration.empty())
         output << format(BS_USING_CONFIG_FILE) % 
             configuration.settings.configuration << std::endl;

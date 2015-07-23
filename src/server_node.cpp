@@ -100,8 +100,7 @@ const settings_type server_node::defaults
 server_node::server_node(const settings_type& config)
   : full_node(config),
     retry_start_timer_(memory_threads_.service()),
-    last_checkpoint_(config.chain.checkpoints.empty() ? 0 : 
-        config.chain.checkpoints.back().get_height())
+    minimum_start_height_(config.minimum_start_height())
 {
 }
 
@@ -142,7 +141,7 @@ void server_node::broadcast_new_blocks(const std::error_code& ec,
     if (ec == bc::error::service_stopped)
         return;
 
-    if (fork_point < last_checkpoint_)
+    if (fork_point < minimum_start_height_)
         return;
 
     // Fire server protocol block subscription notifications.

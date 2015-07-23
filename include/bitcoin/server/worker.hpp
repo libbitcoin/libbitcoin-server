@@ -73,7 +73,7 @@ public:
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist(const std::vector<config::endpoint>& addresses);
+    void whitelist(const config::authority::list& addresses);
     bool enable_crypto(const settings_type& config);
     bool create_new_socket(const settings_type& config);
     void poll();

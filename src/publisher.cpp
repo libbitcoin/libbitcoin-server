@@ -50,12 +50,14 @@ bool publisher::start(const settings_type& config)
 
     log_debug(LOG_PUBLISHER) << "Publishing blocks on "
         << config.server.block_publish_endpoint;
-    if (!setup_socket(config.server.block_publish_endpoint, socket_block_))
+    if (!setup_socket(config.server.block_publish_endpoint.to_string(),
+        socket_block_))
         return false;
 
     log_debug(LOG_PUBLISHER) << "Publishing transactions on "
         << config.server.transaction_publish_endpoint;
-    if (!setup_socket(config.server.transaction_publish_endpoint, socket_tx_))
+    if (!setup_socket(config.server.transaction_publish_endpoint.to_string(),
+        socket_tx_))
         return false;
 
     return true;

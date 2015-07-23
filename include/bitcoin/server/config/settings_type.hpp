@@ -47,6 +47,13 @@ public:
     {
     }
 
+    // HACK: generalize logging.
+    virtual std::string log_to_skip() const
+    {
+        // Return LOG_REQUEST if request logging is disabled.
+        return server.log_requests ? "" : "request";
+    }
+
     // options
     bool help;
     bool initchain;
