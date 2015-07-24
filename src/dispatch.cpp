@@ -71,9 +71,13 @@
 #define BS_NODE_STOP_FAIL \
     "Node failed to stop."
 #define BS_PUBLISHER_START_FAIL \
-    "Publisher failed to start: %1%"
+    "Publisher service failed to start: %1%"
 #define BS_PUBLISHER_STOP_FAIL \
-    "Publisher failed to stop."
+    "Publisher service failed to stop."
+#define BS_WORKER_START_FAIL \
+    "Query service failed to start: %1%"
+#define BS_WORKER_STOP_FAIL \
+    "Query service failed to stop."
 #define BS_USING_CONFIG_FILE \
     "Using config file: %1%"
 #define BS_INVALID_PARAMETER \
@@ -249,11 +253,8 @@ static console_result run(const settings_type& config, std::ostream& output,
 
     output << BS_SERVER_STARTING << std::endl;
 
-    request_worker worker;
-    worker.start(config);
-    server_node full_node(config);
-    publisher publish(full_node);
-
+    server_node node(config);
+    publisher publish(node);
     if (config.server.publisher_enabled)
         if (!publish.start(config))
         {
@@ -262,23 +263,28 @@ static console_result run(const settings_type& config, std::ostream& output,
 
             // This is a bit wacky, since the node hasn't been started, but
             // there is threadpool cleanup code in here.
-            full_node.stop();
-
+            node.stop();
             return console_result::not_started;
         }
 
-    subscribe_manager subscriber(full_node);
-    attach_api(worker, full_node, subscriber);
+    request_worker worker;
+    if (config.server.queries_enabled)
+    {
+        if (!worker.start(config))
+            error << format(BS_WORKER_START_FAIL);
+
+        subscribe_manager subscriber(node);
+        attach_api(worker, node, subscriber);
+    }
 
     // Start the node last so subscriptions to new blocks don't miss anything.
-    if (!full_node.start(config))
+    if (!node.start(config))
     {
         error << BS_NODE_START_FAIL << std::endl;
 
         // This is a bit wacky, since the node hasn't been started yet, but
         // there is threadpool cleanup code in here.
-        full_node.stop();
-
+        node.stop();
         return console_result::not_started;
     }
 
@@ -294,14 +300,15 @@ static console_result run(const settings_type& config, std::ostream& output,
         worker.update();
 
     // Stop the worker, publisher and node.
-
-    worker.stop();
+    if (config.server.queries_enabled)
+        if (!worker.stop())
+            error << BS_WORKER_STOP_FAIL << std::endl;
 
     if (config.server.publisher_enabled)
         if (!publish.stop())
             error << BS_PUBLISHER_STOP_FAIL << std::endl;
 
-    if (!full_node.stop())
+    if (!node.stop())
     {
         error << BS_NODE_STOP_FAIL << std::endl;
         return console_result::failure;
