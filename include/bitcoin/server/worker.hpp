@@ -66,7 +66,7 @@ public:
         uint32_t heartbeat_interval_seconds=4,
         uint32_t polling_interval_milliseconds=1000);
     bool start(const settings_type& config);
-    void stop();
+    bool stop();
     void attach(const std::string& command, command_handler handler);
     void update();
 

@@ -153,8 +153,9 @@ bool request_worker::start(const settings_type& config)
     return true;
 }
 
-void request_worker::stop()
+bool request_worker::stop()
 {
+    return true;
 }
 
 void request_worker::whitelist(const config::authority::list& addresses)
