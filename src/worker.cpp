@@ -160,7 +160,13 @@ void request_worker::stop()
 void request_worker::whitelist(const config::authority::list& addresses)
 {
     for (const auto& ip_address: addresses)
+    {
+        log_info(LOG_SERVICE)
+            << "Whitelisted client ["
+            << ip_address << "]";
+
         authenticate_.allow(ip_address.to_string());
+    }
 }
 
 bool request_worker::enable_crypto(const settings_type& config)
