@@ -38,6 +38,7 @@ namespace server {
 #define SERVER_BLOCK_PUBLISH_ENDPOINT           {"tcp://*:9093"}
 #define SERVER_TRANSACTION_PUBLISH_ENDPOINT     {"tcp://*:9094"}
 #define SERVER_PUBLISHER_ENABLED                true
+#define SERVER_QUERIES_ENABLED                  true
 #define SERVER_LOG_REQUESTS                     false
 #define SERVER_POLLING_INTERVAL_MILLISECONDS    1000
 #define SERVER_HEARTBEAT_INTERVAL_SECONDS       4

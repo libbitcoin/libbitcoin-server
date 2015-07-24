@@ -35,6 +35,7 @@ struct BCS_API settings
     config::endpoint block_publish_endpoint;
     config::endpoint transaction_publish_endpoint;
     bool publisher_enabled;
+    bool queries_enabled;
     bool log_requests;
     uint32_t polling_interval_milliseconds;
     uint32_t heartbeat_interval_seconds;

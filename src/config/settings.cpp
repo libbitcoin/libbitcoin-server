@@ -313,6 +313,12 @@ const options_description config_type::load_settings()
         "Enable the block and transaction publishing endpoints, defaults to true."
     )
     (
+        "server.queries_enabled",
+        value<bool>(&settings.server.queries_enabled)->
+            default_value(SERVER_QUERIES_ENABLED),
+        "Enable the query and heartbeat endpoints, defaults to true."
+    )
+    (
         "server.log_requests",
         value<bool>(&settings.server.log_requests)->
             default_value(SERVER_LOG_REQUESTS),
