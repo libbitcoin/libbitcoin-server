@@ -328,7 +328,7 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
         output << format(BS_USING_CONFIG_FILE) % 
             configuration.settings.configuration << std::endl;
 
-    auto settings = configuration.settings;
+    const auto settings = configuration.settings;
     if (settings.help)
         show_help(configuration, output);
     else if (settings.settings)
