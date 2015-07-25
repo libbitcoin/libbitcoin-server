@@ -46,7 +46,7 @@ namespace server {
 #define SERVER_SUBSCRIPTION_LIMIT               100000000
 #define SERVER_CERTIFICATE_FILE                 {}
 #define SERVER_CLIENT_CERTIFICATES_PATH         {}
-#define SERVER_CLIENTS                          {}
+#define SERVER_WHITELISTS                       {}
 
 class BCS_API server_node
   : public node::full_node

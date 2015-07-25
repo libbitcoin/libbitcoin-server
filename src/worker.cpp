@@ -108,8 +108,8 @@ bool request_worker::start(const settings_type& config)
         authenticate_.set_verbose(true);
 #endif 
 
-    if (!config.server.clients.empty())
-        whitelist(config.server.clients);
+    if (!config.server.whitelists.empty())
+        whitelist(config.server.whitelists);
 
     if (config.server.certificate_file.empty())
         socket_.set_zap_domain("global");
@@ -158,14 +158,21 @@ bool request_worker::stop()
     return true;
 }
 
+static std::string format_whitelist(const config::authority& authority)
+{
+    auto formatted = authority.to_string();
+    if (authority.port() == 0)
+        formatted += ":*";
+
+    return formatted;
+}
+
 void request_worker::whitelist(const config::authority::list& addresses)
 {
     for (const auto& ip_address: addresses)
     {
         log_info(LOG_SERVICE)
-            << "Whitelisted client ["
-            << ip_address << "]";
-
+            << "Whitelisted client [" << format_whitelist(ip_address) << "]";
         authenticate_.allow(ip_address.to_string());
     }
 }

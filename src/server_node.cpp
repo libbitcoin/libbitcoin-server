@@ -55,7 +55,7 @@ const settings_type server_node::defaults
         SERVER_SUBSCRIPTION_LIMIT,
         SERVER_CERTIFICATE_FILE,
         SERVER_CLIENT_CERTIFICATES_PATH,
-        SERVER_CLIENTS
+        SERVER_WHITELISTS
     },
 
     // [node]
@@ -64,7 +64,7 @@ const settings_type server_node::defaults
         NODE_THREADS,
         NODE_TRANSACTION_POOL_CAPACITY,
         NODE_PEERS,
-        NODE_BANS
+        NODE_BLACKLISTS
     },
 
     // [blockchain]

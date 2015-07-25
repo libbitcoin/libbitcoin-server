@@ -43,7 +43,7 @@ struct BCS_API settings
     uint32_t subscription_limit;
     boost::filesystem::path certificate_file;
     boost::filesystem::path client_certificates_path;
-    config::authority::list clients;
+    config::authority::list whitelists;
 };
 
 } // namespace server
