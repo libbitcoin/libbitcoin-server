@@ -187,8 +187,8 @@ const options_description config_type::load_settings()
         "The inactivity time limit for initial response, defaults to 1."
     )
     (
-        "network.channel_revivial_minutes",
-        value<uint32_t>(&settings.network.channel_revivial_minutes)->
+        "network.channel_revival_minutes",
+        value<uint32_t>(&settings.network.channel_revival_minutes)->
             default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
         "The time between blocks that initiates a request, defaults to 1."
     )
@@ -275,9 +275,9 @@ const options_description config_type::load_settings()
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
     (
-        "node.ban",
-        value<config::authority::list>(&settings.node.bans)->
-            multitoken()/*->default_value(NODE_BANS)*/,
+        "node.blacklist",
+        value<config::authority::list>(&settings.node.blacklists)->
+            multitoken()/*->default_value(NODE_BLACKLISTS)*/,
         "IP address to disallow as a peer, multiple entries allowed."
     )
 
@@ -361,9 +361,9 @@ const options_description config_type::load_settings()
         "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
     )
     (
-        "server.client",
-        value<config::authority::list>(&settings.server.clients)->
-            multitoken()/*->default_value(SERVER_CLIENTS)*/,
+        "server.whitelist",
+        value<config::authority::list>(&settings.server.whitelists)->
+            multitoken()/*->default_value(SERVER_WHITELISTS)*/,
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     );
 
