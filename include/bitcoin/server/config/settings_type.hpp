@@ -38,12 +38,13 @@ public:
     {
     }
 
-    settings_type(const bc::server::settings& server_settings,
+    settings_type(
+        const bc::server::settings& server_settings,
         const bc::node::settings& node_settings,
         const bc::chain::settings& chain_settings,
         const bc::network::settings& network_settings)
-      : node::settings_type({ node_settings, chain_settings,
-            network_settings }), server(server_settings)
+      : node::settings_type(node_settings, chain_settings, network_settings),
+        server(server_settings)
     {
     }
 
