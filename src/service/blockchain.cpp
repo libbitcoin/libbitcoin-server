@@ -183,7 +183,7 @@ void fetch_block_transaction_hashes_by_hash(server_node& node,
 }
 // Disabled because method no longer exists in libbitcoin.
 // I'm not actually sure that it's useful when we have fetch by hash instead.
-/*
+/**
 void fetch_block_transaction_hashes_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
