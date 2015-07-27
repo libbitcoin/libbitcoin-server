@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -125,6 +125,9 @@ bool load_config(config_type& metadata, std::string& message, int argc,
 
         // Update bound variables in metadata.settings.
         notify(variables);
+
+        // A bit of a hack until classes consume settings directory.
+        metadata.settings.initialize_timeouts();
 
         // Clear the config file path if it wasn't used.
         if (!file)

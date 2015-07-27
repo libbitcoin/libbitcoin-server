@@ -17,17 +17,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_NODE_IMPL_HPP
-#define LIBBITCOIN_SERVER_NODE_IMPL_HPP
+#ifndef LIBBITCOIN_SERVER_NODE_HPP
+#define LIBBITCOIN_SERVER_NODE_HPP
 
+#include <cstdint>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/config/settings_type.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
+
+// Configuration setting defaults.
+
+// [server]
+#define SERVER_QUERY_ENDPOINT                   {"tcp://*:9091"}
+#define SERVER_HEARTBEAT_ENDPOINT               {"tcp://*:9092"}
+#define SERVER_BLOCK_PUBLISH_ENDPOINT           {"tcp://*:9093"}
+#define SERVER_TRANSACTION_PUBLISH_ENDPOINT     {"tcp://*:9094"}
+#define SERVER_PUBLISHER_ENABLED                true
+#define SERVER_QUERIES_ENABLED                  true
+#define SERVER_LOG_REQUESTS                     false
+#define SERVER_POLLING_INTERVAL_MILLISECONDS    1000
+#define SERVER_HEARTBEAT_INTERVAL_SECONDS       4
+#define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
+#define SERVER_SUBSCRIPTION_LIMIT               100000000
+#define SERVER_CERTIFICATE_FILE                 {}
+#define SERVER_CLIENT_CERTIFICATES_PATH         {}
+#define SERVER_WHITELISTS                       {}
 
 class BCS_API server_node
   : public node::full_node
@@ -38,8 +57,10 @@ public:
     typedef std::function<void (const bc::transaction_type&)>
         transaction_notify_callback;
 
-    server_node(const settings_type& config);
-    bool start(const settings_type& config);
+    static const settings_type defaults;
+
+    server_node(const settings_type& config=defaults);
+    bool start(const settings_type& config=defaults);
 
     virtual void subscribe_blocks(block_notify_callback notify_block);
     virtual void subscribe_transactions(transaction_notify_callback notify_tx);
@@ -64,12 +85,9 @@ private:
     block_notify_list block_sunscriptions_;
     transaction_notify_list tx_subscriptions_;
 
-    // Logs.
-    bc::ofstream outfile_;
-    bc::ofstream errfile_;
-
     // Timer.
     boost::asio::deadline_timer retry_start_timer_;
+    size_t minimum_start_height_;
 };
 
 } // namespace server

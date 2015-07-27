@@ -4,7 +4,7 @@
 _bitcoin_server()
 {
     local current="${COMP_WORDS[COMP_CWORD]}"
-    local options=" --help --initchain --settings -h -i -s"
+    local options=" --help --initchain --settings --version -h -i -s -v"
 
     COMPREPLY=( `compgen -W "$options" -- $current` )
 }

@@ -97,7 +97,8 @@ include_bitcoin_server_HEADERS = \
 include_bitcoin_server_configdir = ${includedir}/bitcoin/server/config
 include_bitcoin_server_config_HEADERS = \
     include/bitcoin/server/config/config.hpp \
-    include/bitcoin/server/config/settings.hpp
+    include/bitcoin/server/config/settings.hpp \
+    include/bitcoin/server/config/settings_type.hpp
 
 include_bitcoin_server_servicedir = ${includedir}/bitcoin/server/service
 include_bitcoin_server_service_HEADERS = \

@@ -32,7 +32,7 @@ BUILD_DIR="build-libbitcoin-server"
 
 # Boost archive for gcc.
 #------------------------------------------------------------------------------
-BOOST_URL_GCC="http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.bz2/download"
+BOOST_URL_GCC="http://github.com/libbitcoin/libbitcoin-build/blob/master/mirror/boost_1_55_0.tar.bz2?raw=true"
 BOOST_ARCHIVE_GCC="boost_1_55_0.tar.bz2"
 BOOST_STANDARD_GCC=\
 "threading=multi "\
@@ -42,7 +42,7 @@ BOOST_STANDARD_GCC=\
 
 # Boost archive for clang.
 #------------------------------------------------------------------------------
-BOOST_URL_CLANG="http://sourceforge.net/projects/boost/files/boost/1.54.0/boost_1_54_0.tar.bz2/download"
+BOOST_URL_CLANG="http://github.com/libbitcoin/libbitcoin-build/blob/master/mirror/boost_1_54_0.tar.bz2?raw=true"
 BOOST_ARCHIVE_CLANG="boost_1_54_0.tar.bz2"
 BOOST_STANDARD_CLANG=\
 "threading=multi "\

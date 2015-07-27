@@ -25,6 +25,7 @@
 #include <bitcoin/server/worker.hpp>
 #include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/config/settings_type.hpp>
 #include <bitcoin/server/service/blockchain.hpp>
 #include <bitcoin/server/service/compat.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>

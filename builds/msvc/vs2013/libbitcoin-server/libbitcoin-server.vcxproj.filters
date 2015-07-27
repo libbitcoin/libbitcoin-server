@@ -79,6 +79,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\config.hpp">
       <Filter>include\bitcoin\server\config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings_type.hpp">
+      <Filter>include\bitcoin\server\config</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\service\blockchain.cpp">

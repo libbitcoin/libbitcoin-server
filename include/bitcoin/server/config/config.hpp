@@ -20,20 +20,20 @@
 #ifndef LIBBITCOIN_SERVER_CONFIG_HPP
 #define LIBBITCOIN_SERVER_CONFIG_HPP
 
-#include <cstdint>
 #include <string>
-#include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/config/settings_type.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 // Log names.
-#define LOG_WORKER  "worker"
 #define LOG_REQUEST "request"
+#define LOG_SERVICE "service"
+#define LOG_PUBLISHER LOG_SERVICE
+#define LOG_SUBSCRIBER "subscriber"
 
 // Not localizable.
 #define BS_HELP_VARIABLE "help"
@@ -45,9 +45,8 @@ namespace server {
 
 // This must match the case of the env var.
 #define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
-
-class settings_type;
-
+    
+// TODO: rename to parser
 class BCS_API config_type
 {
 public:

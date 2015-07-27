@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -47,11 +47,11 @@ class BCS_API outgoing_message
 {
 public:
     // Empty dest = unspecified destination.
-    outgoing_message(
-        const bc::data_chunk& dest, const std::string& command,
+    outgoing_message(const bc::data_chunk& dest, const std::string& command,
         const bc::data_chunk& data);
-    outgoing_message(
-        const incoming_message& request, const bc::data_chunk& data);
+    outgoing_message(const incoming_message& request,
+        const bc::data_chunk& data);
+
     // Default constructor provided for containers and copying.
     outgoing_message();
 

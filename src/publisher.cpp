@@ -21,8 +21,6 @@
 
 #include <bitcoin/server/config/config.hpp>
 
-#define LOG_PUBLISHER LOG_WORKER
-
 namespace libbitcoin {
 namespace server {
 
@@ -36,26 +34,32 @@ publisher::publisher(server_node& node)
 {
 }
 
-bool publisher::setup_socket(
-    const std::string& connection, czmqpp::socket& socket)
+bool publisher::setup_socket(const std::string& connection,
+    czmqpp::socket& socket)
 {
     if (connection.empty())
         return true;
+
     return socket.bind(connection) != -1;
 }
 
-bool publisher::start(settings_type& config)
+bool publisher::start(const settings_type& config)
 {
     node_.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
-    log_debug(LOG_PUBLISHER) << "Publishing blocks: "
-        << config.block_publish_endpoint;
-    if (!setup_socket(config.block_publish_endpoint, socket_block_))
+
+    log_debug(LOG_PUBLISHER) << "Publishing blocks on "
+        << config.server.block_publish_endpoint;
+    if (!setup_socket(config.server.block_publish_endpoint.to_string(),
+        socket_block_))
         return false;
-    log_debug(LOG_PUBLISHER) << "Publishing transactions: "
-        << config.tx_publish_endpoint;
-    if (!setup_socket(config.tx_publish_endpoint, socket_tx_))
+
+    log_debug(LOG_PUBLISHER) << "Publishing transactions on "
+        << config.server.transaction_publish_endpoint;
+    if (!setup_socket(config.server.transaction_publish_endpoint.to_string(),
+        socket_tx_))
         return false;
+
     return true;
 }
 
@@ -74,11 +78,13 @@ void publisher::send_blk(uint32_t height, const block_type& blk)
     // Serialize the height.
     data_chunk raw_height = to_data_chunk(to_little_endian(height));
     BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
+
     // Serialize the 80 byte header.
     data_chunk raw_blk_header(bc::satoshi_raw_size(blk.header));
     DEBUG_ONLY(auto it =) satoshi_save(blk.header, raw_blk_header.begin());
     BITCOIN_ASSERT(it == raw_blk_header.end());
     BITCOIN_ASSERT(raw_blk_header.size() == 80);
+
     // Construct the message.
     //   height   [4 bytes]
     //   header   [80 bytes]
@@ -86,10 +92,12 @@ void publisher::send_blk(uint32_t height, const block_type& blk)
     czmqpp::message message;
     message.append(raw_height);
     message.append(raw_blk_header);
+
     // Clients should be buffering their unconfirmed txs
     // and only be requesting those they don't have.
-    for (const bc::transaction_type& tx: blk.transactions)
+    for (const auto& tx: blk.transactions)
         append_hash(message, hash_transaction(tx));
+
     // Finished. Send message.
     if (!message.send(socket_block_))
     {

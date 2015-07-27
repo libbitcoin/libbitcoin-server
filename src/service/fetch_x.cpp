@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
@@ -29,14 +29,13 @@ using namespace bc::chain;
 
 // fetch_history stuff
 
-bool unwrap_fetch_history_args(
-    payment_address& payaddr, uint32_t& from_height,
-    const incoming_message& request)
+bool unwrap_fetch_history_args(payment_address& address,
+    uint32_t& from_height, const incoming_message& request)
 {
     const data_chunk& data = request.data();
     if (data.size() != 1 + short_hash_size + 4)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for .fetch_history";
         return false;
     }
@@ -45,12 +44,13 @@ bool unwrap_fetch_history_args(
     short_hash hash = deserial.read_short_hash();
     from_height = deserial.read_4_bytes();
     BITCOIN_ASSERT(deserial.iterator() == data.end());
-    payaddr.set(version_byte, hash);
+    address.set(version_byte, hash);
     return true;
 }
-void send_history_result(
-    const std::error_code& ec, const history_list& history,
-    const incoming_message& request, queue_send_callback queue_send)
+
+void send_history_result(const std::error_code& ec, 
+    const history_list& history, const incoming_message& request,
+    queue_send_callback queue_send)
 {
     constexpr size_t row_size = 1 + 36 + 4 + 8;
     data_chunk result(4 + row_size * history.size());
@@ -70,34 +70,38 @@ void send_history_result(
         serial.write_4_bytes(row_height32);
         serial.write_8_bytes(row.value);
     }
+
     BITCOIN_ASSERT(serial.iterator() == result.end());
+
     // TODO: Slows down queries!
-    //log_debug(LOG_WORKER)
+    //log_debug(LOG_SERVICE)
     //    << "*.fetch_history() finished. Sending response.";
+
     outgoing_message response(request, result);
     queue_send(response);
 }
 
 // fetch_transaction stuff
 
-bool unwrap_fetch_transaction_args(
-    hash_digest& tx_hash, const incoming_message& request)
+bool unwrap_fetch_transaction_args(hash_digest& tx_hash,
+    const incoming_message& request)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     if (data.size() != 32)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for *.fetch_transaction";
         return false;
     }
+
     auto deserial = make_deserializer(data.begin(), data.end());
     tx_hash = deserial.read_hash();
     return true;
 }
 
 void transaction_fetched(const std::error_code& ec,
-    const transaction_type& tx,
-    const incoming_message& request, queue_send_callback queue_send)
+    const transaction_type& tx, const incoming_message& request,
+    queue_send_callback queue_send)
 {
     data_chunk result(4 + satoshi_raw_size(tx));
     auto serial = make_serializer(result.begin());
@@ -105,8 +109,10 @@ void transaction_fetched(const std::error_code& ec,
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
     DEBUG_ONLY(auto it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(it == result.end());
+
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction() finished. Sending response.";
+
     outgoing_message response(request, result);
     queue_send(response);
 }

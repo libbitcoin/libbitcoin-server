@@ -66,7 +66,7 @@ void blockchain_fetch_last_height(server_node& node,
     const data_chunk& data = request.data();
     if (!data.empty())
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for blockchain.fetch_last_height";
         return;
     }
@@ -107,7 +107,7 @@ void blockchain_fetch_block_header(server_node& node,
         fetch_block_header_by_height(node, request, queue_send);
     else
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for blockchain.fetch_block_header";
         return;
     }
@@ -165,7 +165,7 @@ void blockchain_fetch_block_transaction_hashes(server_node& node,
     //    fetch_block_transaction_hashes_by_height(node, request, queue_send);
     else
     {
-        log_error(LOG_WORKER) << "Incorrect data size for "
+        log_error(LOG_SERVICE) << "Incorrect data size for "
             "blockchain.fetch_block_transaction_hashes_by_height";
         return;
     }
@@ -183,7 +183,7 @@ void fetch_block_transaction_hashes_by_hash(server_node& node,
 }
 // Disabled because method no longer exists in libbitcoin.
 // I'm not actually sure that it's useful when we have fetch by hash instead.
-/*
+/**
 void fetch_block_transaction_hashes_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
@@ -222,7 +222,7 @@ void blockchain_fetch_transaction_index(server_node& node,
     const data_chunk& data = request.data();
     if (data.size() != 32)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for blockchain.fetch_transaction_index";
         return;
     }
@@ -261,7 +261,7 @@ void blockchain_fetch_spend(server_node& node,
     const data_chunk& data = request.data();
     if (data.size() != 36)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for blockchain.fetch_spend";
         return;
     }
@@ -296,7 +296,7 @@ void blockchain_fetch_block_height(server_node& node,
     const data_chunk& data = request.data();
     if (data.size() != 32)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size for blockchain.fetch_block_height";
         return;
     }
@@ -332,7 +332,7 @@ void blockchain_fetch_stealth(server_node& node,
     const data_chunk& data = request.data();
     if (data.empty())
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size (empty) for blockchain.fetch_stealth";
         return;
     }
@@ -341,7 +341,7 @@ void blockchain_fetch_stealth(server_node& node,
     uint8_t bitsize = deserial.read_byte();
     if (data.size() != 1 + binary_type::blocks_size(bitsize) + 4)
     {
-        log_error(LOG_WORKER)
+        log_error(LOG_SERVICE)
             << "Incorrect data size (" << data.size()
 	    << ") for blockchain.fetch_stealth";
         return;

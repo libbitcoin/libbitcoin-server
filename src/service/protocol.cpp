@@ -33,6 +33,7 @@ void protocol_broadcast_transaction(server_node& node,
     transaction_type tx;
     data_chunk result(4);
     auto serial = make_serializer(result.begin());
+
     try
     {
         satoshi_load(raw_tx.begin(), raw_tx.end(), tx);
@@ -45,13 +46,18 @@ void protocol_broadcast_transaction(server_node& node,
         queue_send(response);
         return;
     }
+
     auto ignore_send = [](const std::error_code&, size_t) {};
+
     // Send and hope for the best!
     node.protocol().broadcast(tx, ignore_send);
+
     // Response back to user saying everything is fine.
     write_error_code(serial, std::error_code());
-    log_debug(LOG_WORKER)
+
+    log_debug(LOG_SERVICE)
         << "protocol.broadcast_transaction() finished. Sending response.";
+
     outgoing_message response(request, result);
     queue_send(response);
 }
@@ -60,16 +66,17 @@ void protocol_total_connections(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     BITCOIN_ASSERT(node.protocol().total_connections() <= max_uint32);
-    auto total_connections32 = static_cast<uint32_t>(
+    const auto total_connections32 = static_cast<uint32_t>(
         node.protocol().total_connections());
-
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, std::error_code());
     serial.write_4_bytes(total_connections32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
+
     log_debug(LOG_REQUEST)
         << "protocol.total_connections() finished. Sending response.";
+
     outgoing_message response(request, result);
     queue_send(response);
 }

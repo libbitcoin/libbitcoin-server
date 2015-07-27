@@ -21,9 +21,10 @@
 
 #include <future>
 #include <iostream>
-#include <bitcoin/bitcoin.hpp>
+#include <boost/filesystem.hpp>
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/config/config.hpp>
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/config/settings_type.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 #include <bitcoin/server/service/util.hpp>
@@ -36,33 +37,77 @@ using namespace bc::node;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-constexpr auto append = std::ofstream::out | std::ofstream::app;
+const settings_type server_node::defaults
+{
+    // [server]
+    bc::server::settings
+    {
+        SERVER_QUERY_ENDPOINT,
+        SERVER_HEARTBEAT_ENDPOINT,
+        SERVER_BLOCK_PUBLISH_ENDPOINT,
+        SERVER_TRANSACTION_PUBLISH_ENDPOINT,
+        SERVER_PUBLISHER_ENABLED,
+        SERVER_QUERIES_ENABLED,
+        SERVER_LOG_REQUESTS,
+        SERVER_POLLING_INTERVAL_MILLISECONDS,
+        SERVER_HEARTBEAT_INTERVAL_SECONDS,
+        SERVER_SUBSCRIPTION_EXPIRATION_MINUTES,
+        SERVER_SUBSCRIPTION_LIMIT,
+        SERVER_CERTIFICATE_FILE,
+        SERVER_CLIENT_CERTIFICATES_PATH,
+        SERVER_WHITELISTS
+    },
+
+    // [node]
+    bc::node::settings
+    {
+        NODE_THREADS,
+        NODE_TRANSACTION_POOL_CAPACITY,
+        NODE_PEERS,
+        NODE_BLACKLISTS
+    },
+
+    // [blockchain]
+    bc::chain::settings
+    {
+        BLOCKCHAIN_THREADS,
+        BLOCKCHAIN_BLOCK_POOL_CAPACITY,
+        BLOCKCHAIN_HISTORY_START_HEIGHT,
+        BLOCKCHAIN_DATABASE_PATH,
+        BLOCKCHAIN_CHECKPOINTS
+    },
+
+    // [network]
+    bc::network::settings
+    {
+        NETWORK_THREADS,
+        NETWORK_INBOUND_PORT,
+        NETWORK_INBOUND_CONNECTION_LIMIT,
+        NETWORK_OUTBOUND_CONNECTIONS,
+        NETWORK_CONNECT_TIMEOUT_SECONDS,
+        NETWORK_CHANNEL_EXPIRATION_MINUTES,
+        NETWORK_CHANNEL_TIMEOUT_MINUTES,
+        NETWORK_CHANNEL_HEARTBEAT_MINUTES,
+        NETWORK_CHANNEL_STARTUP_MINUTES,
+        NETWORK_CHANNEL_REVIVAL_MINUTES,
+        NETWORK_HOST_POOL_CAPACITY,
+        NETWORK_HOSTS_FILE,
+        NETWORK_DEBUG_FILE,
+        NETWORK_ERROR_FILE,
+        NETWORK_SEEDS
+    }
+};
 
 server_node::server_node(const settings_type& config)
   : full_node(config),
-    outfile_(config.debug_file.string(), append),
-    errfile_(config.error_file.string(), append),
-    retry_start_timer_(memory_threads_.service())
+    retry_start_timer_(memory_threads_.service()),
+    minimum_start_height_(config.minimum_start_height())
 {
 }
 
 bool server_node::start(const settings_type& config)
 {
-    // Set up logging for node background threads (add to config).
-    const auto skip_log = if_else(config.log_requests, "", LOG_REQUEST);
-    initialize_logging(outfile_, errfile_, bc::cout, bc::cerr, skip_log);
-
-    // TODO: move this into node once we start handling config there.
-    for (const auto& endpoint: config.peers)
-    {
-        const auto host = endpoint.get_host();
-        const auto port = endpoint.get_port();
-        log_info(LOG_NODE)
-            << "Adding configured node [" << host << ":" << port << "]";
-        protocol_.maintain_connection(host, port);
-    }
-
-    return full_node::start();
+    return full_node::start(config);
 }
 
 void server_node::subscribe_blocks(block_notify_callback notify_block)
@@ -97,7 +142,7 @@ void server_node::broadcast_new_blocks(const std::error_code& ec,
     if (ec == bc::error::service_stopped)
         return;
 
-    if (fork_point < BN_CHECKPOINT_HEIGHT)
+    if (fork_point < minimum_start_height_)
         return;
 
     // Fire server protocol block subscription notifications.
