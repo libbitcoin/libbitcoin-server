@@ -219,7 +219,7 @@ const options_description config_type::load_settings()
     (
         "network.seed",
         value<config::endpoint::list>(&settings.network.seeds)->
-        multitoken()/*->default_value(NETWORK_SEEDS)*/,
+        multitoken()->default_value(NETWORK_SEEDS),
         "A seed node for initializing the host pool, multiple entries allowed."
     )
 
@@ -251,7 +251,7 @@ const options_description config_type::load_settings()
     (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&settings.chain.checkpoints)->
-            multitoken()/*->default_value(BLOCKCHAIN_CHECKPOINTS)*/,
+            multitoken()->default_value(BLOCKCHAIN_CHECKPOINTS),
         "A hash:height checkpoint, multiple entries allowed."
     )
 
@@ -271,13 +271,13 @@ const options_description config_type::load_settings()
     (
         "node.peer",
         value<config::endpoint::list>(&settings.node.peers)->
-            multitoken()/*->default_value(NODE_PEERS)*/,
+            multitoken()->default_value(NODE_PEERS),
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
     (
         "node.blacklist",
         value<config::authority::list>(&settings.node.blacklists)->
-            multitoken()/*->default_value(NODE_BLACKLISTS)*/,
+            multitoken()->default_value(NODE_BLACKLISTS),
         "IP address to disallow as a peer, multiple entries allowed."
     )
 
@@ -363,7 +363,7 @@ const options_description config_type::load_settings()
     (
         "server.whitelist",
         value<config::authority::list>(&settings.server.whitelists)->
-            multitoken()/*->default_value(SERVER_WHITELISTS)*/,
+            multitoken()->default_value(SERVER_WHITELISTS),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     );
 
