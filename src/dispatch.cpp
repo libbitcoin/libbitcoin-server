@@ -165,11 +165,11 @@ static console_result init_chain(const path& directory, std::ostream& output,
 
     // Add genesis block.
     db_paths file_paths(prefix);
-    db_interface interface(file_paths, { 0 });
-    interface.start();
+    db_interface database(file_paths, { 0 });
+    database.start();
 
     // This is affected by the ENABLE_TESTNET switch.
-    interface.push(genesis_block());
+    database.push(genesis_block());
 
     return console_result::okay;
 }
