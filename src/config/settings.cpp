@@ -181,10 +181,10 @@ const options_description config_type::load_settings()
         "The inactivity time that initiates a ping message, defaults to 15."
     )
     (
-        "network.channel_startup_minutes",
-        value<uint32_t>(&settings.network.channel_startup_minutes)->
-            default_value(NETWORK_CHANNEL_STARTUP_MINUTES),
-        "The inactivity time limit for initial response, defaults to 1."
+        "network.channel_handshake_minutes",
+        value<uint32_t>(&settings.network.channel_handshake_minutes)->
+            default_value(NETWORK_CHANNEL_HANDSHAKE_MINUTES),
+        "The time limit to complete the connection handshake, defaults to 1."
     )
     (
         "network.channel_revival_minutes",
