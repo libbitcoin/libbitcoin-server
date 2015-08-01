@@ -94,6 +94,7 @@ const settings_type server_node::defaults
         NETWORK_HOSTS_FILE,
         NETWORK_DEBUG_FILE,
         NETWORK_ERROR_FILE,
+        NETWORK_SELF,
         NETWORK_SEEDS
     }
 };
