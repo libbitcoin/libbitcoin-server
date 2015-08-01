@@ -217,6 +217,12 @@ const options_description config_type::load_settings()
         "The error log file path, defaults to 'error.log'."
     )
     (
+        "network.self",
+        value<config::authority>(&settings.network.self)->
+        multitoken()->default_value(NETWORK_SELF),
+        "The advertised public address of this node, defaults to none."
+    )
+    (
         "network.seed",
         value<config::endpoint::list>(&settings.network.seeds)->
         multitoken()->default_value(NETWORK_SEEDS),
