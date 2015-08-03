@@ -61,7 +61,7 @@
 #define BS_SERVER_STARTED \
     "Server started."
 #define BS_SERVER_STOPPING \
-    "Please wait while server is stopping..."
+    "Please wait while server is stopping (code: %1%)..."
 #define BS_SERVER_STOPPED \
     "Server stopped cleanly."
 #define BS_SERVER_UNMAPPING \
@@ -195,9 +195,9 @@ static console_result verify_chain(const path& directory, std::ostream& error)
 
 // Static handler for catching termination signals.
 static bool stopped = false;
-static void interrupt_handler(int)
+static void interrupt_handler(int code)
 {
-    bc::cout << BS_SERVER_STOPPING << std::endl;
+    bc::cout << format(BS_SERVER_STOPPING) % code << std::endl;
     stopped = true;
 }
 
