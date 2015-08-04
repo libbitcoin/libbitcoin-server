@@ -199,6 +199,12 @@ const options_description config_type::load_settings()
         "The maximum number of peer hosts in the pool, defaults to 1000."
     )
     (
+        "network.relay_transactions",
+        value<bool>(&settings.network.relay_transactions)->
+            default_value(NETWORK_RELAY_TRANSACTIONS),
+        "Relay transactions to and from peers, defaults to true."
+    )
+    (
         "network.hosts_file",
         value<path>(&settings.network.hosts_file)->
             default_value(NETWORK_HOSTS_FILE),
