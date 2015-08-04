@@ -160,25 +160,7 @@ const options_description config_type::load_settings()
         "network.connect_timeout_seconds",
         value<uint32_t>(&settings.network.connect_timeout_seconds)->
             default_value(NETWORK_CONNECT_TIMEOUT_SECONDS),
-        "The time limit in seconds for connection establishment, defaults to 5."
-    )
-    (
-        "network.channel_expiration_minutes",
-        value<uint32_t>(&settings.network.channel_expiration_minutes)->
-            default_value(NETWORK_CHANNEL_EXPIRATION_MINUTES),
-        "The maximum age limit for an outbound connection, defaults to 90."
-    )
-    (
-        "network.channel_timeout_minutes",
-        value<uint32_t>(&settings.network.channel_timeout_minutes)->
-            default_value(NETWORK_CHANNEL_TIMEOUT_MINUTES),
-        "The inactivity time limit for any connection, defaults to 30."
-    )
-    (
-        "network.channel_heartbeat_minutes",
-        value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
-            default_value(NETWORK_CHANNEL_HEARTBEAT_MINUTES),
-        "The inactivity time that initiates a ping message, defaults to 15."
+        "The time limit for connection establishment, defaults to 5."
     )
     (
         "network.channel_handshake_minutes",
@@ -190,7 +172,25 @@ const options_description config_type::load_settings()
         "network.channel_revival_minutes",
         value<uint32_t>(&settings.network.channel_revival_minutes)->
             default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
-        "The time between blocks that initiates a request, defaults to 1."
+        "The time between blocks that initiates a request, defaults to 2."
+    )
+    (
+        "network.channel_heartbeat_minutes",
+        value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
+            default_value(NETWORK_CHANNEL_HEARTBEAT_MINUTES),
+        "The inactivity time that initiates a ping message, defaults to 15."
+    )
+    (
+        "network.channel_inactivity_minutes",
+        value<uint32_t>(&settings.network.channel_inactivity_minutes)->
+            default_value(NETWORK_CHANNEL_INACTIVITY_MINUTES),
+        "The inactivity time limit for any connection, defaults to 30."
+    )
+    (
+        "network.channel_expiration_minutes",
+        value<uint32_t>(&settings.network.channel_expiration_minutes)->
+            default_value(NETWORK_CHANNEL_EXPIRATION_MINUTES),
+        "The maximum age limit for an outbound connection, defaults to 90."
     )
     (
         "network.host_pool_capacity",
