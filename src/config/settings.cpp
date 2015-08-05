@@ -178,7 +178,7 @@ const options_description config_type::load_settings()
         "network.channel_heartbeat_minutes",
         value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
             default_value(NETWORK_CHANNEL_HEARTBEAT_MINUTES),
-        "The inactivity time that initiates a ping message, defaults to 15."
+        "The time between ping messages, defaults to 5."
     )
     (
         "network.channel_inactivity_minutes",
