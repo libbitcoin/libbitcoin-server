@@ -160,7 +160,31 @@ const options_description config_type::load_settings()
         "network.connect_timeout_seconds",
         value<uint32_t>(&settings.network.connect_timeout_seconds)->
             default_value(NETWORK_CONNECT_TIMEOUT_SECONDS),
-        "The time limit in seconds for connection establishment, defaults to 5."
+        "The time limit for connection establishment, defaults to 5."
+    )
+    (
+        "network.channel_handshake_minutes",
+        value<uint32_t>(&settings.network.channel_handshake_minutes)->
+            default_value(NETWORK_CHANNEL_HANDSHAKE_MINUTES),
+        "The time limit to complete the connection handshake, defaults to 1."
+    )
+    (
+        "network.channel_revival_minutes",
+        value<uint32_t>(&settings.network.channel_revival_minutes)->
+            default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
+        "The time between blocks that initiates a request, defaults to 2."
+    )
+    (
+        "network.channel_heartbeat_minutes",
+        value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
+            default_value(NETWORK_CHANNEL_HEARTBEAT_MINUTES),
+        "The time between ping messages, defaults to 5."
+    )
+    (
+        "network.channel_inactivity_minutes",
+        value<uint32_t>(&settings.network.channel_inactivity_minutes)->
+            default_value(NETWORK_CHANNEL_INACTIVITY_MINUTES),
+        "The inactivity time limit for any connection, defaults to 30."
     )
     (
         "network.channel_expiration_minutes",
@@ -169,34 +193,16 @@ const options_description config_type::load_settings()
         "The maximum age limit for an outbound connection, defaults to 90."
     )
     (
-        "network.channel_timeout_minutes",
-        value<uint32_t>(&settings.network.channel_timeout_minutes)->
-            default_value(NETWORK_CHANNEL_TIMEOUT_MINUTES),
-        "The inactivity time limit for any connection, defaults to 30."
-    )
-    (
-        "network.channel_heartbeat_minutes",
-        value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
-            default_value(NETWORK_CHANNEL_HEARTBEAT_MINUTES),
-        "The inactivity time that initiates a ping message, defaults to 15."
-    )
-    (
-        "network.channel_startup_minutes",
-        value<uint32_t>(&settings.network.channel_startup_minutes)->
-            default_value(NETWORK_CHANNEL_STARTUP_MINUTES),
-        "The inactivity time limit for initial response, defaults to 1."
-    )
-    (
-        "network.channel_revival_minutes",
-        value<uint32_t>(&settings.network.channel_revival_minutes)->
-            default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
-        "The time between blocks that initiates a request, defaults to 1."
-    )
-    (
         "network.host_pool_capacity",
         value<uint32_t>(&settings.network.host_pool_capacity)->
             default_value(NETWORK_HOST_POOL_CAPACITY),
         "The maximum number of peer hosts in the pool, defaults to 1000."
+    )
+    (
+        "network.relay_transactions",
+        value<bool>(&settings.network.relay_transactions)->
+            default_value(NETWORK_RELAY_TRANSACTIONS),
+        "Relay transactions to and from peers, defaults to true."
     )
     (
         "network.hosts_file",
