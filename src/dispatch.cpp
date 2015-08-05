@@ -247,7 +247,7 @@ static console_result run(const settings_type& config, std::ostream& output,
     std::ostream& error)
 {
     // Ensure the blockchain directory is initialized (at least exists).
-    auto result = verify_chain(config.chain.database_path, error);
+    const auto result = verify_chain(config.chain.database_path, error);
     if (result != console_result::okay)
         return result;
 
