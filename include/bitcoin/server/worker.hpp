@@ -63,7 +63,7 @@ public:
         command_handler;
 
     request_worker(bool log_requests=false,
-        uint32_t heartbeat_interval_seconds=4,
+        uint32_t heartbeat_interval_seconds=5,
         uint32_t polling_interval_milliseconds=1000);
     bool start(const settings_type& config);
     bool stop();

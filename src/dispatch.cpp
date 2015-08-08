@@ -57,9 +57,9 @@
 #define BS_INITCHAIN_DIR_TEST \
     "Failed to test directory %1% with error, '%2%'."
 #define BS_SERVER_STARTING \
-    "Press CTRL-C to stop server."
+    "Please wait while server is starting."
 #define BS_SERVER_STARTED \
-    "Server started."
+    "Server started, press CTRL-C to stop."
 #define BS_SERVER_STOPPING \
     "Please wait while server is stopping (code: %1%)..."
 #define BS_SERVER_STOPPED \

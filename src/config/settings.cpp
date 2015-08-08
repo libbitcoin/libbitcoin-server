@@ -202,7 +202,7 @@ const options_description config_type::load_settings()
         "network.relay_transactions",
         value<bool>(&settings.network.relay_transactions)->
             default_value(NETWORK_RELAY_TRANSACTIONS),
-        "Relay transactions to and from peers, defaults to true."
+        "Request that peers relay transactions, defaults to true."
     )
     (
         "network.hosts_file",
@@ -346,7 +346,7 @@ const options_description config_type::load_settings()
         "server.heartbeat_interval_seconds",
         value<uint32_t>(&settings.server.heartbeat_interval_seconds)->
             default_value(SERVER_HEARTBEAT_INTERVAL_SECONDS),
-        "The heartbeat interval in seconds, defaults to 4."
+        "The heartbeat interval in seconds, defaults to 5."
     )
     (
         "server.subscription_expiration_minutes",

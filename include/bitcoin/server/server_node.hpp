@@ -41,7 +41,7 @@ namespace server {
 #define SERVER_QUERIES_ENABLED                  true
 #define SERVER_LOG_REQUESTS                     false
 #define SERVER_POLLING_INTERVAL_MILLISECONDS    1000
-#define SERVER_HEARTBEAT_INTERVAL_SECONDS       4
+#define SERVER_HEARTBEAT_INTERVAL_SECONDS       5
 #define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
 #define SERVER_SUBSCRIPTION_LIMIT               100000000
 #define SERVER_CERTIFICATE_FILE                 {}
