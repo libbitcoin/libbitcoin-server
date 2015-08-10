@@ -94,7 +94,8 @@ void subscribe_manager::subscribe(
     const incoming_message& request, queue_send_callback queue_send)
 {
     strand_.queue(
-        &subscribe_manager::do_subscribe, this, request, queue_send);
+        &subscribe_manager::do_subscribe,
+            this, request, queue_send);
 }
 std::error_code subscribe_manager::add_subscription(
     const incoming_message& request, queue_send_callback queue_send)

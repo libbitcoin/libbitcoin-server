@@ -57,9 +57,9 @@
 #define BS_INITCHAIN_DIR_TEST \
     "Failed to test directory %1% with error, '%2%'."
 #define BS_SERVER_STARTING \
-    "Press CTRL-C to stop server."
+    "Please wait while server is starting."
 #define BS_SERVER_STARTED \
-    "Server started."
+    "Server started, press CTRL-C to stop."
 #define BS_SERVER_STOPPING \
     "Please wait while server is stopping (code: %1%)..."
 #define BS_SERVER_STOPPED \
@@ -247,14 +247,14 @@ static console_result run(const settings_type& config, std::ostream& output,
     std::ostream& error)
 {
     // Ensure the blockchain directory is initialized (at least exists).
-    auto result = verify_chain(config.chain.database_path, error);
+    const auto result = verify_chain(config.chain.database_path, error);
     if (result != console_result::okay)
         return result;
 
     output << BS_SERVER_STARTING << std::endl;
 
-    server_node node(config);
-    publisher publish(node);
+    server_node full_node(config);
+    publisher publish(full_node);
     if (config.server.publisher_enabled)
         if (!publish.start(config))
         {
@@ -263,7 +263,7 @@ static console_result run(const settings_type& config, std::ostream& output,
 
             // This is a bit wacky, since the node hasn't been started, but
             // there is threadpool cleanup code in here.
-            node.stop();
+            full_node.stop();
             return console_result::not_started;
         }
 
@@ -273,18 +273,18 @@ static console_result run(const settings_type& config, std::ostream& output,
         if (!worker.start(config))
             error << format(BS_WORKER_START_FAIL);
 
-        subscribe_manager subscriber(node);
-        attach_api(worker, node, subscriber);
+        subscribe_manager subscriber(full_node);
+        attach_api(worker, full_node, subscriber);
     }
 
     // Start the node last so subscriptions to new blocks don't miss anything.
-    if (!node.start(config))
+    if (!full_node.start(config))
     {
         error << BS_NODE_START_FAIL << std::endl;
 
         // This is a bit wacky, since the node hasn't been started yet, but
         // there is threadpool cleanup code in here.
-        node.stop();
+        full_node.stop();
         return console_result::not_started;
     }
 
@@ -308,7 +308,7 @@ static console_result run(const settings_type& config, std::ostream& output,
         if (!publish.stop())
             error << BS_PUBLISHER_STOP_FAIL << std::endl;
 
-    if (!node.stop())
+    if (!full_node.stop())
     {
         error << BS_NODE_STOP_FAIL << std::endl;
         return console_result::failure;
