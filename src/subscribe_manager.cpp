@@ -50,7 +50,7 @@ static void register_with_node(subscribe_manager& manager, server_node& node)
 
 subscribe_manager::subscribe_manager(server_node& node,
     uint32_t maximum_subscriptions, uint32_t subscription_expiration_minutes)
-  : strand_(node.threadpool()),
+  : strand_(node.pool()),
     subscription_limit_(maximum_subscriptions),
     subscription_expiration_minutes_(subscription_expiration_minutes)
 {

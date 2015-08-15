@@ -31,26 +31,26 @@ class BCS_API incoming_message
 {
 public:
     bool recv(czmqpp::socket& socket);
-    const bc::data_chunk origin() const;
+    const data_chunk origin() const;
     const std::string& command() const;
     uint32_t id() const;
-    const bc::data_chunk& data() const;
+    const data_chunk& data() const;
 
 private:
-    bc::data_chunk origin_;
+    data_chunk origin_;
     std::string command_;
     uint32_t id_;
-    bc::data_chunk data_;
+    data_chunk data_;
 };
 
 class BCS_API outgoing_message
 {
 public:
     // Empty dest = unspecified destination.
-    outgoing_message(const bc::data_chunk& dest, const std::string& command,
-        const bc::data_chunk& data);
+    outgoing_message(const data_chunk& dest, const std::string& command,
+        const data_chunk& data);
     outgoing_message(const incoming_message& request,
-        const bc::data_chunk& data);
+        const data_chunk& data);
 
     // Default constructor provided for containers and copying.
     outgoing_message();
@@ -59,10 +59,10 @@ public:
     uint32_t id() const;
 
 private:
-    bc::data_chunk dest_;
+    data_chunk dest_;
     std::string command_;
     uint32_t id_;
-    bc::data_chunk data_;
+    data_chunk data_;
 };
 
 } // namespace server
