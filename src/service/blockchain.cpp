@@ -63,7 +63,7 @@ void last_height_fetched(const std::error_code& ec, size_t last_height,
 void blockchain_fetch_last_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     if (!data.empty())
     {
         log_error(LOG_SERVICE)
@@ -86,7 +86,7 @@ void last_height_fetched(const std::error_code& ec, size_t last_height,
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_last_height() finished. Sending response.";
-    outgoing_message response(request, result);
+    const outgoing_message response(request, result);
     queue_send(response);
 }
 
@@ -95,12 +95,12 @@ void fetch_block_header_by_hash(server_node& node,
 void fetch_block_header_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 void block_header_fetched(const std::error_code& ec,
-    const block_header_type& blk,
+    const block_header_type& block,
     const incoming_message& request, queue_send_callback queue_send);
 void blockchain_fetch_block_header(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     if (data.size() == 32)
         fetch_block_header_by_hash(node, request, queue_send);
     else if (data.size() == 4)
@@ -115,11 +115,11 @@ void blockchain_fetch_block_header(server_node& node,
 void fetch_block_header_by_hash(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     BITCOIN_ASSERT(data.size() == 32);
     auto deserial = make_deserializer(data.begin(), data.end());
-    const hash_digest blk_hash = deserial.read_hash();
-    node.blockchain().fetch_block_header(blk_hash,
+    const auto block_hash = deserial.read_hash();
+    node.blockchain().fetch_block_header(block_hash,
         std::bind(block_header_fetched, _1, _2, request, queue_send));
 }
 void fetch_block_header_by_height(server_node& node,
@@ -133,18 +133,18 @@ void fetch_block_header_by_height(server_node& node,
         std::bind(block_header_fetched, _1, _2, request, queue_send));
 }
 void block_header_fetched(const std::error_code& ec,
-    const block_header_type& blk,
-    const incoming_message& request, queue_send_callback queue_send)
+    const block_header_type& block, const incoming_message& request,
+    queue_send_callback queue_send)
 {
-    data_chunk result(4 + satoshi_raw_size(blk));
+    data_chunk result(4 + satoshi_raw_size(block));
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    DEBUG_ONLY(auto it =) satoshi_save(blk, serial.iterator());
+    DEBUG_ONLY(auto it =) satoshi_save(block, serial.iterator());
     BITCOIN_ASSERT(it == result.end());
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_block_header() finished. Sending response.";
-    outgoing_message response(request, result);
+    const outgoing_message response(request, result);
     queue_send(response);
 }
 
@@ -158,7 +158,7 @@ void block_transaction_hashes_fetched(const std::error_code& ec,
 void blockchain_fetch_block_transaction_hashes(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     if (data.size() == 32)
         fetch_block_transaction_hashes_by_hash(node, request, queue_send);
     //else if (data.size() == 4)
@@ -173,11 +173,11 @@ void blockchain_fetch_block_transaction_hashes(server_node& node,
 void fetch_block_transaction_hashes_by_hash(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     BITCOIN_ASSERT(data.size() == 32);
     auto deserial = make_deserializer(data.begin(), data.end());
-    const hash_digest blk_hash = deserial.read_hash();
-    node.blockchain().fetch_block_transaction_hashes(blk_hash,
+    const auto block_hash = deserial.read_hash();
+    node.blockchain().fetch_block_transaction_hashes(block_hash,
         std::bind(block_transaction_hashes_fetched,
             _1, _2, request, queue_send));
 }
@@ -187,10 +187,10 @@ void fetch_block_transaction_hashes_by_hash(server_node& node,
 void fetch_block_transaction_hashes_by_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     BITCOIN_ASSERT(data.size() == 4);
     auto deserial = make_deserializer(data.begin(), data.end());
-    size_t height = deserial.read_4_bytes();
+    const size_t height = deserial.read_4_bytes();
     node.blockchain().fetch_block_transaction_hashes(height,
         std::bind(block_transaction_hashes_fetched,
             _1, _2, request, queue_send));
@@ -204,12 +204,12 @@ void block_transaction_hashes_fetched(const std::error_code& ec,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    for (const hash_digest& tx_hash: hashes)
+    for (const auto& tx_hash: hashes)
         serial.write_hash(tx_hash);
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log_debug(LOG_REQUEST) << "blockchain.fetch_block_transaction_hashes()"
        " finished. Sending response.";
-    outgoing_message response(request, result);
+    const outgoing_message response(request, result);
     queue_send(response);
 }
 
@@ -227,7 +227,7 @@ void blockchain_fetch_transaction_index(server_node& node,
         return;
     }
     auto deserial = make_deserializer(data.begin(), data.end());
-    const hash_digest tx_hash = deserial.read_hash();
+    const auto tx_hash = deserial.read_hash();
     node.blockchain().fetch_transaction_index(tx_hash,
         std::bind(transaction_index_fetched, _1, _2, _3, request, queue_send));
 }
@@ -249,7 +249,7 @@ void transaction_index_fetched(const std::error_code& ec,
     serial.write_4_bytes(index32);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_transaction_index() finished. Sending response.";
-    outgoing_message response(request, result);
+    const outgoing_message response(request, result);
     queue_send(response);
 }
 
@@ -258,7 +258,7 @@ void spend_fetched(const std::error_code& ec, const input_point& inpoint,
 void blockchain_fetch_spend(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     if (data.size() != 36)
     {
         log_error(LOG_SERVICE)
@@ -284,7 +284,7 @@ void spend_fetched(const std::error_code& ec, const input_point& inpoint,
     serial.write_4_bytes(inpoint.index);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_spend() finished. Sending response.";
-    outgoing_message response(request, result);
+    const outgoing_message response(request, result);
     queue_send(response);
 }
 
@@ -293,7 +293,7 @@ void block_height_fetched(const std::error_code& ec, size_t block_height,
 void blockchain_fetch_block_height(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     if (data.size() != 32)
     {
         log_error(LOG_SERVICE)
@@ -301,8 +301,8 @@ void blockchain_fetch_block_height(server_node& node,
         return;
     }
     auto deserial = make_deserializer(data.begin(), data.end());
-    const hash_digest blk_hash = deserial.read_hash();
-    node.blockchain().fetch_block_height(blk_hash,
+    const auto block_hash = deserial.read_hash();
+    node.blockchain().fetch_block_height(block_hash,
         std::bind(block_height_fetched, _1, _2, request, queue_send));
 }
 void block_height_fetched(const std::error_code& ec, size_t block_height,
@@ -319,17 +319,17 @@ void block_height_fetched(const std::error_code& ec, size_t block_height,
     serial.write_4_bytes(block_height32);
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_block_height() finished. Sending response.";
-    outgoing_message response(request, result);
+    const outgoing_message response(request, result);
     queue_send(response);
 }
 
-void stealth_fetched(
-    const std::error_code& ec, const stealth_list& stealth_results,
-    const incoming_message& request, queue_send_callback queue_send);
+void stealth_fetched(const std::error_code& ec,
+    const stealth_list& stealth_results, const incoming_message& request,
+    queue_send_callback queue_send);
 void blockchain_fetch_stealth(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    const data_chunk& data = request.data();
+    const auto& data = request.data();
     if (data.empty())
     {
         log_error(LOG_SERVICE)
@@ -338,7 +338,7 @@ void blockchain_fetch_stealth(server_node& node,
     }
     auto deserial = make_deserializer(data.begin(), data.end());
     // number_bits
-    uint8_t bitsize = deserial.read_byte();
+    const auto bitsize = deserial.read_byte();
     if (data.size() != 1 + binary_type::blocks_size(bitsize) + 4)
     {
         log_error(LOG_SERVICE)
@@ -347,10 +347,10 @@ void blockchain_fetch_stealth(server_node& node,
         return;
     }
     // actual bitfield data
-    data_chunk blocks = deserial.read_data(binary_type::blocks_size(bitsize));
-    binary_type prefix(bitsize, blocks);
+    const auto blocks = deserial.read_data(binary_type::blocks_size(bitsize));
+    const binary_type prefix(bitsize, blocks);
     // from_height
-    size_t from_height = deserial.read_4_bytes();
+    const size_t from_height = deserial.read_4_bytes();
     node.blockchain().fetch_stealth(prefix,
         std::bind(stealth_fetched, _1, _2, request, queue_send), from_height);
 }
@@ -364,7 +364,7 @@ void stealth_fetched(
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    for (const stealth_row& row: stealth_results)
+    for (const auto& row : stealth_results)
     {
         serial.write_hash(row.ephemkey);
         serial.write_short_hash(row.address);
@@ -372,7 +372,7 @@ void stealth_fetched(
     }
     log_debug(LOG_REQUEST)
         << "blockchain.fetch_stealth() finished. Sending response.";
-    outgoing_message response(request, result);
+    const outgoing_message response(request, result);
     queue_send(response);
 }
 

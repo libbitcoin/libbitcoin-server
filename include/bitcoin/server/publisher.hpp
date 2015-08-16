@@ -38,7 +38,7 @@ public:
 
 private:
     bool setup_socket(const std::string& connection, czmqpp::socket& socket);
-    void send_blk(uint32_t height, const block_type& block);
+    void send_block(uint32_t height, const block_type& block);
     void send_tx(const transaction_type& tx);
 
     server_node& node_;

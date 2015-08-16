@@ -45,7 +45,7 @@ bool publisher::setup_socket(const std::string& connection,
 
 bool publisher::start(const settings_type& config)
 {
-    node_.subscribe_blocks(std::bind(&publisher::send_blk, this, _1, _2));
+    node_.subscribe_blocks(std::bind(&publisher::send_block, this, _1, _2));
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
 
     log_debug(LOG_PUBLISHER) << "Publishing blocks on "
@@ -73,7 +73,7 @@ void append_hash(czmqpp::message& message, const hash_digest& hash)
     message.append(data_chunk(hash.begin(), hash.end()));
 }
 
-void publisher::send_blk(uint32_t height, const block_type& block)
+void publisher::send_block(uint32_t height, const block_type& block)
 {
     // Serialize the height.
     data_chunk raw_height = to_data_chunk(to_little_endian(height));
@@ -82,8 +82,8 @@ void publisher::send_blk(uint32_t height, const block_type& block)
     // Serialize the 80 byte header.
     data_chunk raw_block_header(bc::satoshi_raw_size(block.header));
     DEBUG_ONLY(auto it =) satoshi_save(block.header, raw_block_header.begin());
-    BITCOIN_ASSERT(it == raw_blk_header.end());
-    BITCOIN_ASSERT(raw_blk_header.size() == 80);
+    BITCOIN_ASSERT(it == raw_block_header.end());
+    BITCOIN_ASSERT(raw_block_header.size() == 80);
 
     // Construct the message.
     //   height   [4 bytes]
