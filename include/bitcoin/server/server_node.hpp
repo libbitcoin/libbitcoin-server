@@ -52,9 +52,9 @@ class BCS_API server_node
   : public node::full_node
 {
 public:
-    typedef std::function<void (size_t, const bc::block_type&)>
+    typedef std::function<void (size_t, const block_type&)>
         block_notify_callback;
-    typedef std::function<void (const bc::transaction_type&)>
+    typedef std::function<void (const transaction_type&)>
         transaction_notify_callback;
 
     static const settings_type defaults;

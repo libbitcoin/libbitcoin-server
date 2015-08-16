@@ -163,10 +163,10 @@ const options_description config_type::load_settings()
         "The time limit for connection establishment, defaults to 5."
     )
     (
-        "network.channel_handshake_minutes",
-        value<uint32_t>(&settings.network.channel_handshake_minutes)->
-            default_value(NETWORK_CHANNEL_HANDSHAKE_MINUTES),
-        "The time limit to complete the connection handshake, defaults to 1."
+        "network.channel_handshake_seconds",
+        value<uint32_t>(&settings.network.channel_handshake_seconds)->
+            default_value(NETWORK_CHANNEL_HANDSHAKE_SECONDS),
+        "The time limit to complete the connection handshake, defaults to 30."
     )
     (
         "network.channel_revival_minutes",

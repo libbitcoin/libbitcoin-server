@@ -49,17 +49,17 @@ public:
         queue_send_callback queue_send);
     void renew(const incoming_message& request,
         queue_send_callback queue_send);
-    void submit(size_t height, const bc::hash_digest& block_hash,
-        const bc::transaction_type& tx);
+    void submit(size_t height, const hash_digest& block_hash,
+        const transaction_type& tx);
 
 private:
-    typedef bc::binary_type address_prefix;
+    typedef binary_type address_prefix;
 
     struct subscription
     {
         address_prefix prefix;
         boost::posix_time::ptime expiry_time;
-        bc::data_chunk client_origin;
+        data_chunk client_origin;
         queue_send_callback queue_send;
         subscribe_type type;
     };
@@ -72,17 +72,16 @@ private:
         queue_send_callback queue_send);
     void do_renew(const incoming_message& request,
         queue_send_callback queue_send);
-    void do_submit(size_t height, const bc::hash_digest& block_hash,
-        const bc::transaction_type& tx);
-    void post_updates(const bc::payment_address& address,
-        size_t height, const bc::hash_digest& block_hash,
-        const bc::transaction_type& tx);
-    void post_stealth_updates(const bc::binary_type& prefix,
-        size_t height, const bc::hash_digest& block_hash,
-        const bc::transaction_type& tx);
+    void do_submit(size_t height, const hash_digest& block_hash,
+        const transaction_type& tx);
+    void post_updates(const payment_address& address,
+        size_t height, const hash_digest& block_hash,
+        const transaction_type& tx);
+    void post_stealth_updates(const binary_type& prefix, size_t height,
+        const hash_digest& block_hash, const transaction_type& tx);
     void sweep_expired();
 
-    bc::async_strand strand_;
+    sequencer strand_;
     uint32_t subscription_limit_;
     boost::posix_time::minutes subscription_expiration_minutes_;
     subscription_list subscriptions_;

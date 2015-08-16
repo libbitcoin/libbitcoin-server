@@ -50,7 +50,7 @@ static void register_with_node(subscribe_manager& manager, server_node& node)
 
 subscribe_manager::subscribe_manager(server_node& node,
     uint32_t maximum_subscriptions, uint32_t subscription_expiration_minutes)
-  : strand_(node.threadpool()),
+  : strand_(node.pool()),
     subscription_limit_(maximum_subscriptions),
     subscription_expiration_minutes_(subscription_expiration_minutes)
 {
@@ -60,10 +60,7 @@ subscribe_manager::subscribe_manager(server_node& node,
 
 static subscribe_type convert_subscribe_type(uint8_t type_byte)
 {
-    if (type_byte == 0)
-        return subscribe_type::address;
-
-    return subscribe_type::stealth;
+    return type_byte == 0 ? subscribe_type::address : subscribe_type::stealth;
 }
 
 // Private class typedef so use a template function.
@@ -90,8 +87,8 @@ bool deserialize_address(AddressPrefix& address, subscribe_type& type,
     return true;
 }
 
-void subscribe_manager::subscribe(
-    const incoming_message& request, queue_send_callback queue_send)
+void subscribe_manager::subscribe(const incoming_message& request,
+    queue_send_callback queue_send)
 {
     strand_.queue(
         &subscribe_manager::do_subscribe,
@@ -128,8 +125,8 @@ std::error_code subscribe_manager::add_subscription(
 
     return std::error_code();
 }
-void subscribe_manager::do_subscribe(
-    const incoming_message& request, queue_send_callback queue_send)
+void subscribe_manager::do_subscribe(const incoming_message& request,
+    queue_send_callback queue_send)
 {
     const auto ec = add_subscription(request, queue_send);
 
@@ -141,14 +138,14 @@ void subscribe_manager::do_subscribe(
     queue_send(response);
 }
 
-void subscribe_manager::renew(
-    const incoming_message& request, queue_send_callback queue_send)
+void subscribe_manager::renew(const incoming_message& request,
+    queue_send_callback queue_send)
 {
     strand_.randomly_queue(
         &subscribe_manager::do_renew, this, request, queue_send);
 }
-void subscribe_manager::do_renew(
-    const incoming_message& request, queue_send_callback queue_send)
+void subscribe_manager::do_renew(const incoming_message& request,
+    queue_send_callback queue_send)
 {
     subscribe_type type;
     address_prefix address_key;
