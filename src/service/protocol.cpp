@@ -19,6 +19,7 @@
  */
 #include <bitcoin/server/service/protocol.hpp>
 
+#include <bitcoin/server.hpp>
 #include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
@@ -43,7 +44,9 @@ void protocol_broadcast_transaction(server_node& node,
         return;
     }
 
-    auto ignore_send = [](const std::error_code&, size_t) {};
+    auto ignore_send = [](const std::error_code&, network::channel_ptr node)
+    {
+    };
 
     // Send and hope for the best!
     node.protocol().broadcast(tx, ignore_send);
@@ -61,9 +64,9 @@ void protocol_broadcast_transaction(server_node& node,
 void protocol_total_connections(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    BITCOIN_ASSERT(node.protocol().total_connections() <= max_uint32);
+    BITCOIN_ASSERT(node.protocol().connection_count() <= max_uint32);
     const auto total_connections32 = static_cast<uint32_t>(
-        node.protocol().total_connections());
+        node.protocol().connection_count());
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, std::error_code());
