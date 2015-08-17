@@ -51,7 +51,7 @@ static void register_with_node(subscribe_manager& manager, server_node& node)
 
 subscribe_manager::subscribe_manager(server_node& node,
     uint32_t maximum_subscriptions, uint32_t subscription_expiration_minutes)
-  : strand_(node.pool()),
+  : sequence_(node.pool()),
     subscription_limit_(maximum_subscriptions),
     subscription_expiration_minutes_(subscription_expiration_minutes)
 {
@@ -91,7 +91,7 @@ bool deserialize_address(AddressPrefix& address, subscribe_type& type,
 void subscribe_manager::subscribe(const incoming_message& request,
     queue_send_callback queue_send)
 {
-    strand_.queue(
+    sequence_.queue(
         &subscribe_manager::do_subscribe,
             this, request, queue_send);
 }
@@ -142,7 +142,7 @@ void subscribe_manager::do_subscribe(const incoming_message& request,
 void subscribe_manager::renew(const incoming_message& request,
     queue_send_callback queue_send)
 {
-    strand_.randomly_queue(
+    sequence_.randomly_queue(
         &subscribe_manager::do_renew, this, request, queue_send);
 }
 void subscribe_manager::do_renew(const incoming_message& request,
@@ -190,7 +190,7 @@ void subscribe_manager::submit(
     size_t height, const hash_digest& block_hash,
     const chain::transaction& tx)
 {
-    strand_.queue(
+    sequence_.queue(
         &subscribe_manager::do_submit,
             this, height, block_hash, tx);
 }

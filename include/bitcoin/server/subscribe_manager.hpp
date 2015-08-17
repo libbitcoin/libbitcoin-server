@@ -91,7 +91,7 @@ private:
 
     void sweep_expired();
 
-    sequencer strand_;
+    sequencer sequence_;
     uint32_t subscription_limit_;
     boost::posix_time::minutes subscription_expiration_minutes_;
     subscription_list subscriptions_;
