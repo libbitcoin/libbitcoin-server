@@ -159,7 +159,7 @@ void block_header_fetched(const std::error_code& ec,
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
 
-    data_chunk blk_data = blk.to_data(false);
+    data_chunk blk_data = block.to_data(false);
     serial.write_data(blk_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
