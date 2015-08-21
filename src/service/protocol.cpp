@@ -30,15 +30,11 @@ void protocol_broadcast_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     const data_chunk& raw_tx = request.data();
-    transaction_type tx;
+    chain::transaction tx;
     data_chunk result(4);
     auto serial = make_serializer(result.begin());
 
-    try
-    {
-        satoshi_load(raw_tx.begin(), raw_tx.end(), tx);
-    }
-    catch (end_of_stream)
+    if (!tx.from_data(raw_tx))
     {
         // error
         write_error_code(serial, error::bad_stream);
@@ -71,7 +67,7 @@ void protocol_total_connections(server_node& node,
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, std::error_code());
-    serial.write_4_bytes(total_connections32);
+    serial.write_4_bytes_little_endian(total_connections32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
     log_debug(LOG_REQUEST)

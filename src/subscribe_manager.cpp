@@ -31,14 +31,15 @@ using posix_time::second_clock;
 
 static void register_with_node(subscribe_manager& manager, server_node& node)
 {
-    const auto receive_block = [&manager](size_t height, const block_type& block)
+    const auto receive_block = [&manager](size_t height, const chain::block& block)
     {
-        const auto block_hash = hash_block_header(block.header);
+        const auto block_hash = block.header.hash();
+
         for (const auto& tx: block.transactions)
             manager.submit(height, block_hash, tx);
     };
 
-    const auto receive_tx = [&manager](const transaction_type& tx)
+    const auto receive_tx = [&manager](const chain::transaction& tx)
     {
         constexpr size_t height = 0;
         manager.submit(height, null_hash, tx);
@@ -187,7 +188,7 @@ void subscribe_manager::do_renew(const incoming_message& request,
 
 void subscribe_manager::submit(
     size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     strand_.queue(
         &subscribe_manager::do_submit,
@@ -195,11 +196,12 @@ void subscribe_manager::submit(
 }
 
 void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     for (const auto& input: tx.inputs)
     {
-        payment_address address;
+        wallet::payment_address address;
+
         if (extract(address, input.script))
         {
             post_updates(address, height, block_hash, tx);
@@ -209,16 +211,19 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
 
     for (const auto& output: tx.outputs)
     {
-        payment_address address;
+        wallet::payment_address address;
+
         if (extract(address, output.script))
         {
             post_updates(address, height, block_hash, tx);
             continue;
         }
 
-        if (output.script.type() == payment_type::stealth_info)
+        if (output.script.type() == chain::payment_type::stealth_info)
         {
-            binary_type prefix = calculate_stealth_prefix(output.script);
+            binary_type prefix = wallet::calculate_stealth_prefix(
+                output.script);
+
             post_stealth_updates(prefix, height, block_hash, tx);
             continue;
         }
@@ -230,9 +235,9 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
         sweep_expired();
 }
 
-void subscribe_manager::post_updates(const payment_address& address,
+void subscribe_manager::post_updates(const wallet::payment_address& address,
     size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
     const auto height32 = static_cast<uint32_t>(height);
@@ -243,17 +248,18 @@ void subscribe_manager::post_updates(const payment_address& address,
     // [ block_hash ] (32 bytes)
     // [ tx ]
     constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
-    data_chunk data(info_size + satoshi_raw_size(tx));
+    data_chunk data(info_size + tx.satoshi_size());
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
     serial.write_short_hash(address.hash());
-    serial.write_4_bytes(height32);
+    serial.write_4_bytes_little_endian(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
     // Now write the tx part.
-    DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
-    BITCOIN_ASSERT(rawtx_end_it == data.end());
+    data_chunk tx_data = tx.to_data();
+    serial.write_data(tx_data);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
 
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
@@ -263,6 +269,7 @@ void subscribe_manager::post_updates(const payment_address& address,
             continue;
 
         binary_type match(subscription.prefix.size(), address.hash());
+
         if (match != subscription.prefix)
             continue;
 
@@ -275,7 +282,7 @@ void subscribe_manager::post_updates(const payment_address& address,
 
 void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     size_t height, const hash_digest& block_hash,
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
     const auto height32 = static_cast<uint32_t>(height);
@@ -286,16 +293,17 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     // [ tx ]
     constexpr size_t info_size = 
         sizeof(uint32_t) + sizeof(uint32_t) + hash_size;
-    data_chunk data(info_size + satoshi_raw_size(tx));
+    data_chunk data(info_size + tx.satoshi_size());
     auto serial = make_serializer(data.begin());
     serial.write_data(prefix.blocks());
-    serial.write_4_bytes(height32);
+    serial.write_4_bytes_little_endian(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
     // Now write the tx part.
-    DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
-    BITCOIN_ASSERT(rawtx_end_it == data.end());
+    data_chunk tx_data = tx.to_data();
+    serial.write_data(tx_data);
+    BITCOIN_ASSERT(serial.iterator() == data.end());
 
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
@@ -304,6 +312,7 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
             continue;
 
         binary_type match(subscription.prefix.size(), prefix.blocks());
+
         if (match != subscription.prefix)
             continue;
 
@@ -340,4 +349,3 @@ void subscribe_manager::sweep_expired()
 
 } // namespace server
 } // namespace libbitcoin
-

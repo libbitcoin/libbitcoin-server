@@ -34,7 +34,7 @@ template <typename Serializer>
 void write_error_code(Serializer& serial, const std::error_code& ec)
 {
     uint32_t val = ec.value();
-    serial.write_4_bytes(val);
+    serial.write_4_bytes_little_endian(val);
 }
 
 } // namespace server

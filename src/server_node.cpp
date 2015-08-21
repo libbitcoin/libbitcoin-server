@@ -32,7 +32,7 @@
 namespace libbitcoin {
 namespace server {
 
-using namespace bc::chain;
+using namespace bc::blockchain;
 using namespace bc::node;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -123,7 +123,7 @@ void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
 }
 
 void server_node::new_unconfirm_valid_tx(const std::error_code& ec,
-    const index_list& unconfirmed, const transaction_type& tx)
+    const chain::index_list& unconfirmed, const chain::transaction& tx)
 {
     full_node::new_unconfirm_valid_tx(ec, unconfirmed, tx);
 
@@ -136,8 +136,9 @@ void server_node::new_unconfirm_valid_tx(const std::error_code& ec,
 }
 
 void server_node::broadcast_new_blocks(const std::error_code& ec,
-    uint32_t fork_point, const blockchain::block_list& new_blocks,
-    const blockchain::block_list& replaced_blocks)
+    uint32_t fork_point,
+    const bc::blockchain::blockchain::block_list& new_blocks,
+    const bc::blockchain::blockchain::block_list& replaced_blocks)
 {
     broadcast_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
 
@@ -160,7 +161,8 @@ void server_node::fullnode_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     uint32_t from_height;
-    payment_address address;
+    wallet::payment_address address;
+
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
 

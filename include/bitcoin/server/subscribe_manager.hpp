@@ -41,18 +41,22 @@ enum class subscribe_type
 class BCS_API subscribe_manager
 {
 public:
+
     subscribe_manager(server_node& node,
         uint32_t maximum_subscriptions=100000000,
         uint32_t subscription_expiration_minutes=10);
 
     void subscribe(const incoming_message& request,
         queue_send_callback queue_send);
+
     void renew(const incoming_message& request,
         queue_send_callback queue_send);
+
     void submit(size_t height, const hash_digest& block_hash,
-        const transaction_type& tx);
+        const chain::transaction& tx);
 
 private:
+
     typedef binary_type address_prefix;
 
     struct subscription
@@ -68,17 +72,23 @@ private:
 
     std::error_code add_subscription(const incoming_message& request,
         queue_send_callback queue_send);
+
     void do_subscribe(const incoming_message& request,
         queue_send_callback queue_send);
+
     void do_renew(const incoming_message& request,
         queue_send_callback queue_send);
+
     void do_submit(size_t height, const hash_digest& block_hash,
-        const transaction_type& tx);
-    void post_updates(const payment_address& address,
+        const chain::transaction& tx);
+
+    void post_updates(const wallet::payment_address& address,
         size_t height, const hash_digest& block_hash,
-        const transaction_type& tx);
+        const chain::transaction& tx);
+
     void post_stealth_updates(const binary_type& prefix, size_t height,
-        const hash_digest& block_hash, const transaction_type& tx);
+        const hash_digest& block_hash, const chain::transaction& tx);
+
     void sweep_expired();
 
     sequencer strand_;

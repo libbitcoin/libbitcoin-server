@@ -159,17 +159,16 @@ static console_result init_chain(const path& directory, std::ostream& output,
 
     output << format(BS_INITIALIZING_CHAIN) % directory << std::endl;
 
-    using namespace bc::chain;
     const auto& prefix = directory.string();
-    initialize_blockchain(prefix);
+    blockchain::initialize_blockchain(prefix);
 
     // Add genesis block.
-    db_paths file_paths(prefix);
-    db_interface database(file_paths, { 0 });
+    blockchain::db_paths file_paths(prefix);
+    blockchain::db_interface database(file_paths, { 0 });
     database.start();
 
     // This is affected by the ENABLE_TESTNET switch.
-    database.push(genesis_block());
+    database.push(blockchain::genesis_block());
 
     return console_result::okay;
 }
