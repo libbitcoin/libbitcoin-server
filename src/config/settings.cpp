@@ -193,6 +193,12 @@ const options_description config_type::load_settings()
         "The maximum age limit for an outbound connection, defaults to 90."
     )
     (
+        "network.channel_germination_seconds",
+        value<uint32_t>(&settings.network.channel_germination_seconds)->
+            default_value(NETWORK_CHANNEL_GERMINATION_SECONDS),
+        "The maximum time limit for obtaining seed addresses, defaults to 30."
+    )
+    (
         "network.host_pool_capacity",
         value<uint32_t>(&settings.network.host_pool_capacity)->
             default_value(NETWORK_HOST_POOL_CAPACITY),

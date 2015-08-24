@@ -44,7 +44,8 @@ void protocol_broadcast_transaction(server_node& node,
         return;
     }
 
-    auto ignore_send = [](const std::error_code&, network::channel_ptr node)
+    const auto ignore_send = [](const std::error_code&,
+        network::channel::ptr node)
     {
     };
 

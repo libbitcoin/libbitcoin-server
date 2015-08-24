@@ -418,7 +418,7 @@ void stealth_fetched(
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
 
-    for (const auto& row : stealth_results)
+    for (const auto& row: stealth_results)
     {
         serial.write_hash(row.ephemkey);
         serial.write_short_hash(row.address);
