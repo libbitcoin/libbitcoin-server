@@ -67,7 +67,7 @@ private:
 
     typedef std::vector<subscription> subscription_list;
 
-    std::error_code add_subscription(const incoming_message& request,
+    code add_subscription(const incoming_message& request,
         queue_send_callback queue_send);
     void do_subscribe(const incoming_message& request,
         queue_send_callback queue_send);

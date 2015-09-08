@@ -31,7 +31,7 @@ namespace server {
 typedef std::function<void (const outgoing_message&)> queue_send_callback;
 
 template <typename Serializer>
-void write_error_code(Serializer& serial, const std::error_code& ec)
+void write_error_code(Serializer& serial, const code& ec)
 {
     uint32_t val = ec.value();
     serial.write_4_bytes_little_endian(val);

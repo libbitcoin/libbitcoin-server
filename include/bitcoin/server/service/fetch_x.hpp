@@ -33,7 +33,7 @@ bool BCS_API unwrap_fetch_history_args(
     bc::wallet::payment_address& address, uint32_t& from_height,
     const incoming_message& request);
 
-void BCS_API send_history_result(const std::error_code& ec,
+void BCS_API send_history_result(const code& ec,
     const bc::blockchain::history_list& history,
     const incoming_message& request, queue_send_callback queue_send);
 
@@ -42,7 +42,7 @@ void BCS_API send_history_result(const std::error_code& ec,
 bool BCS_API unwrap_fetch_transaction_args(bc::hash_digest& tx_hash,
     const incoming_message& request);
 
-void BCS_API transaction_fetched(const std::error_code& ec,
+void BCS_API transaction_fetched(const code& ec,
     const bc::chain::transaction& tx, const incoming_message& request,
     queue_send_callback queue_send);
 

@@ -91,11 +91,11 @@ bool deserialize_address(AddressPrefix& address, subscribe_type& type,
 void subscribe_manager::subscribe(const incoming_message& request,
     queue_send_callback queue_send)
 {
-    dispatch_.queue(
+    dispatch_.ordered(
         &subscribe_manager::do_subscribe,
             this, request, queue_send);
 }
-std::error_code subscribe_manager::add_subscription(
+code subscribe_manager::add_subscription(
     const incoming_message& request, queue_send_callback queue_send)
 {
     subscribe_type type;
@@ -124,7 +124,7 @@ std::error_code subscribe_manager::add_subscription(
 
     subscriptions_.emplace_back(new_subscription);
 
-    return std::error_code();
+    return code();
 }
 void subscribe_manager::do_subscribe(const incoming_message& request,
     queue_send_callback queue_send)
@@ -142,8 +142,9 @@ void subscribe_manager::do_subscribe(const incoming_message& request,
 void subscribe_manager::renew(const incoming_message& request,
     queue_send_callback queue_send)
 {
-    dispatch_.randomly_queue(
-        &subscribe_manager::do_renew, this, request, queue_send);
+    dispatch_.unordered(
+        &subscribe_manager::do_renew,
+            this, request, queue_send);
 }
 void subscribe_manager::do_renew(const incoming_message& request,
     queue_send_callback queue_send)
@@ -181,7 +182,7 @@ void subscribe_manager::do_renew(const incoming_message& request,
     // Send response.
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, std::error_code());
+    write_error_code(serial, code());
     outgoing_message response(request, result);
     queue_send(response);
 }
@@ -190,7 +191,7 @@ void subscribe_manager::submit(
     size_t height, const hash_digest& block_hash,
     const chain::transaction& tx)
 {
-    dispatch_.queue(
+    dispatch_.ordered(
         &subscribe_manager::do_submit,
             this, height, block_hash, tx);
 }
@@ -248,7 +249,7 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
     // [ block_hash ] (32 bytes)
     // [ tx ]
     constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
-    data_chunk data(info_size + tx.satoshi_size());
+    data_chunk data(info_size + tx.serialized_size());
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
     serial.write_short_hash(address.hash());
@@ -291,9 +292,9 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
     // [ height ] (4 bytes)
     // [ block_hash ] (32 bytes)
     // [ tx ]
-    constexpr size_t info_size = 
-        sizeof(uint32_t) + sizeof(uint32_t) + hash_size;
-    data_chunk data(info_size + tx.satoshi_size());
+    constexpr size_t info_size = sizeof(uint32_t) + sizeof(uint32_t)
+        + hash_size;
+    data_chunk data(info_size + tx.serialized_size());
     auto serial = make_serializer(data.begin());
     serial.write_data(prefix.blocks());
     serial.write_4_bytes_little_endian(height32);

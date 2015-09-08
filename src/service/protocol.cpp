@@ -44,7 +44,7 @@ void protocol_broadcast_transaction(server_node& node,
         return;
     }
 
-    const auto ignore_send = [](const std::error_code&,
+    const auto ignore_send = [](const code&,
         network::channel::ptr node)
     {
     };
@@ -53,7 +53,7 @@ void protocol_broadcast_transaction(server_node& node,
     node.protocol().broadcast(tx, ignore_send);
 
     // Response back to user saying everything is fine.
-    write_error_code(serial, std::error_code());
+    write_error_code(serial, code());
 
     log_debug(LOG_SERVICE)
         << "protocol.broadcast_transaction() finished. Sending response.";
@@ -70,7 +70,7 @@ void protocol_total_connections(server_node& node,
         node.protocol().connection_count());
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, std::error_code());
+    write_error_code(serial, code());
     serial.write_4_bytes_little_endian(total_connections32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
