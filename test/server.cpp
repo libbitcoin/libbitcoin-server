@@ -65,7 +65,6 @@ BOOST_FIXTURE_TEST_SUITE(server_tests, low_thread_priority_fixture)
 
 BOOST_AUTO_TEST_CASE(server_test)
 {
-    BOOST_REQUIRE(true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
