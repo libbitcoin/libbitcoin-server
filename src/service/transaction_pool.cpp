@@ -29,8 +29,8 @@ namespace server {
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-void transaction_validated(
-    const std::error_code& ec, const chain::index_list& unconfirmed,
+void transaction_validated(const code& ec,
+    const chain::index_list& unconfirmed,
     const incoming_message& request, queue_send_callback queue_send);
 
 void transaction_pool_validate(server_node& node,
@@ -50,7 +50,7 @@ void transaction_pool_validate(server_node& node,
         std::bind(transaction_validated, _1, _2, request, queue_send));
 }
 
-void transaction_validated(const std::error_code& ec,
+void transaction_validated(const code& ec,
     const chain::index_list& unconfirmed, const incoming_message& request,
     queue_send_callback queue_send)
 {

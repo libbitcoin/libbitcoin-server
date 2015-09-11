@@ -48,15 +48,12 @@ public:
 
     void subscribe(const incoming_message& request,
         queue_send_callback queue_send);
-
     void renew(const incoming_message& request,
         queue_send_callback queue_send);
-
     void submit(size_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
 
 private:
-
     typedef binary_type address_prefix;
 
     struct subscription
@@ -70,28 +67,22 @@ private:
 
     typedef std::vector<subscription> subscription_list;
 
-    std::error_code add_subscription(const incoming_message& request,
+    code add_subscription(const incoming_message& request,
         queue_send_callback queue_send);
-
     void do_subscribe(const incoming_message& request,
         queue_send_callback queue_send);
-
     void do_renew(const incoming_message& request,
         queue_send_callback queue_send);
-
     void do_submit(size_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
-
     void post_updates(const wallet::payment_address& address,
         size_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
-
     void post_stealth_updates(const binary_type& prefix, size_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
-
     void sweep_expired();
 
-    sequencer strand_;
+    dispatcher dispatch_;
     uint32_t subscription_limit_;
     boost::posix_time::minutes subscription_expiration_minutes_;
     subscription_list subscriptions_;

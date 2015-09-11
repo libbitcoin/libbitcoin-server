@@ -90,6 +90,7 @@ const settings_type server_node::defaults
         NETWORK_CHANNEL_HEARTBEAT_MINUTES,
         NETWORK_CHANNEL_INACTIVITY_MINUTES,
         NETWORK_CHANNEL_EXPIRATION_MINUTES,
+        NETWORK_CHANNEL_GERMINATION_SECONDS,
         NETWORK_HOST_POOL_CAPACITY,
         NETWORK_RELAY_TRANSACTIONS,
         NETWORK_HOSTS_FILE,
@@ -122,7 +123,7 @@ void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
     tx_subscriptions_.push_back(notify_tx);
 }
 
-void server_node::new_unconfirm_valid_tx(const std::error_code& ec,
+void server_node::new_unconfirm_valid_tx(const code& ec,
     const chain::index_list& unconfirmed, const chain::transaction& tx)
 {
     full_node::new_unconfirm_valid_tx(ec, unconfirmed, tx);
@@ -135,8 +136,7 @@ void server_node::new_unconfirm_valid_tx(const std::error_code& ec,
         notify(tx);
 }
 
-void server_node::broadcast_new_blocks(const std::error_code& ec,
-    uint32_t fork_point,
+void server_node::broadcast_new_blocks(const code& ec, uint32_t fork_point,
     const bc::blockchain::blockchain::block_list& new_blocks,
     const bc::blockchain::blockchain::block_list& replaced_blocks)
 {

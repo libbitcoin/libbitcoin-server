@@ -50,7 +50,7 @@ bool unwrap_fetch_history_args(wallet::payment_address& address,
     return true;
 }
 
-void send_history_result(const std::error_code& ec,
+void send_history_result(const code& ec,
     const history_list& history, const incoming_message& request,
     queue_send_callback queue_send)
 {
@@ -104,11 +104,11 @@ bool unwrap_fetch_transaction_args(hash_digest& tx_hash,
     return true;
 }
 
-void transaction_fetched(const std::error_code& ec,
+void transaction_fetched(const code& ec,
     const chain::transaction& tx, const incoming_message& request,
     queue_send_callback queue_send)
 {
-    data_chunk result(4 + tx.satoshi_size());
+    data_chunk result(4 + tx.serialized_size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);

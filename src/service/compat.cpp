@@ -41,7 +41,7 @@ struct row_pair
 
 typedef std::vector<row_pair> row_pair_list;
 
-void COMPAT_send_history_result(const std::error_code& ec,
+void COMPAT_send_history_result(const code& ec,
     const history_list& history, const incoming_message& request,
     queue_send_callback queue_send, const uint64_t from_height);
 
@@ -70,7 +70,7 @@ void COMPAT_fetch_history(server_node& node,
         history_from_height);
 }
 
-void COMPAT_send_history_result(const std::error_code& ec,
+void COMPAT_send_history_result(const code& ec,
     const history_list& history, const incoming_message& request, 
     queue_send_callback queue_send, const uint64_t from_height)
 {

@@ -60,6 +60,7 @@ public:
     static const settings_type defaults;
 
     server_node(const settings_type& config=defaults);
+
     bool start(const settings_type& config=defaults);
 
     virtual void subscribe_blocks(block_notify_callback notify_block);
@@ -70,18 +71,14 @@ public:
 
 protected:
     // Result of store operation in transaction pool.
-    virtual void new_unconfirm_valid_tx(const std::error_code& ec,
+    virtual void new_unconfirm_valid_tx(const code& ec,
         const chain::index_list& unconfirmed, const chain::transaction& tx);
-
-    virtual void broadcast_new_blocks(const std::error_code& ec,
-        uint32_t fork_point,
-        const blockchain::blockchain::block_list& new_blocks,
-        const blockchain::blockchain::block_list& replaced_blocks);
+    virtual void broadcast_new_blocks(const code& ec, uint32_t fork_point,
+        const bc::blockchain::blockchain::block_list& new_blocks,
+        const bc::blockchain::blockchain::block_list& replaced_blocks);
 
 private:
-
     typedef std::vector<block_notify_callback> block_notify_list;
-
     typedef std::vector<transaction_notify_callback> transaction_notify_list;
 
     // Subscriptions for server API.
