@@ -284,7 +284,7 @@ void request_worker::publish_heartbeat()
 {
     static uint32_t counter = 0;
     czmqpp::message message;
-    const auto raw_counter = to_data_chunk(to_little_endian(counter));
+    const auto raw_counter = to_chunk(to_little_endian(counter));
     message.append(raw_counter);
     message.send(heartbeat_socket_);
     ++counter;

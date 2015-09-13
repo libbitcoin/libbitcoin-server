@@ -76,7 +76,7 @@ void append_hash(czmqpp::message& message, const hash_digest& hash)
 void publisher::send_block(uint32_t height, const chain::block& block)
 {
     // Serialize the height.
-    data_chunk raw_height = to_data_chunk(to_little_endian(height));
+    data_chunk raw_height = to_chunk(to_little_endian(height));
     BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
 
     // Serialize the 80 byte header.
