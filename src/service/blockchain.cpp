@@ -36,16 +36,16 @@ using std::placeholders::_3;
 void blockchain_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    wallet::payment_address payaddr;
+    wallet::payment_address address;
     uint32_t from_height;
 
-    if (!unwrap_fetch_history_args(payaddr, from_height, request))
+    if (!unwrap_fetch_history_args(address, from_height, request))
         return;
 
     log_debug(LOG_REQUEST) << "blockchain.fetch_history("
-        << payaddr.to_string() << ", from_height=" << from_height << ")";
+        << address.encoded() << ", from_height=" << from_height << ")";
 
-    node.blockchain().fetch_history(payaddr,
+    node.blockchain().fetch_history(address,
         std::bind(send_history_result,
             _1, _2, request, queue_send), from_height);
 }

@@ -201,33 +201,19 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
 {
     for (const auto& input: tx.inputs)
     {
-        wallet::payment_address address;
-
-        if (extract(address, input.script))
-        {
+        const auto address = wallet::payment_address::extract(input.script);
+        if (address)
             post_updates(address, height, block_hash, tx);
-            continue;
-        }
     }
 
+    binary_type prefix;
     for (const auto& output: tx.outputs)
     {
-        wallet::payment_address address;
-
-        if (extract(address, output.script))
-        {
+        const auto address = wallet::payment_address::extract(output.script);
+        if (address)
             post_updates(address, height, block_hash, tx);
-            continue;
-        }
-
-        if (output.script.type() == chain::payment_type::stealth_info)
-        {
-            binary_type prefix = wallet::calculate_stealth_prefix(
-                output.script);
-
+        else if (to_stealth_prefix(prefix, output.script))
             post_stealth_updates(prefix, height, block_hash, tx);
-            continue;
-        }
     }
 
     // Periodicially sweep old expired entries.
