@@ -48,14 +48,15 @@ void COMPAT_send_history_result(const code& ec,
 void COMPAT_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    wallet::payment_address address;
     uint32_t from_height;
-    if (!unwrap_fetch_history_args(address, from_height, request))
+    wallet::payment_address address_in;
+    if (!unwrap_fetch_history_args(address_in, from_height, request))
         return;
 
     // Reverse short_hash.
-    auto address_version = address.version();
-    auto address_hash = address.hash();
+    // This is an idiosyncracy of the Obelisk protocol, preserved for compat.
+    auto address_version = address_in.version();
+    auto address_hash = address_in.hash();
     std::reverse(address_hash.begin(), address_hash.end());
 
     // TODO: Slows down queries!
@@ -63,8 +64,9 @@ void COMPAT_fetch_history(server_node& node,
     //    << address.encoded() << ", from_height=" << from_height << ")";
 
     constexpr size_t history_from_height = 0;
-    fetch_history(node.blockchain(), node.transaction_indexer(),
-        wallet::payment_address(address_version, address_hash),
+    wallet::payment_address address_out(address_hash, address_version);
+
+    fetch_history(node.blockchain(), node.transaction_indexer(), address_out,
         std::bind(COMPAT_send_history_result,
             _1, _2, request, queue_send, from_height),
         history_from_height);

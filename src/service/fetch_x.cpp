@@ -46,7 +46,8 @@ bool unwrap_fetch_history_args(wallet::payment_address& address,
     short_hash hash = deserial.read_short_hash();
     from_height = deserial.read_4_bytes_little_endian();
     BITCOIN_ASSERT(deserial.iterator() == data.end());
-    address.set(version_byte, hash);
+
+    address = wallet::payment_address(hash, version_byte);
     return true;
 }
 
