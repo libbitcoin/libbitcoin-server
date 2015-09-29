@@ -141,8 +141,8 @@ const options_description config_type::load_settings()
     (
         "network.inbound_port",
         value<uint16_t>(&settings.network.inbound_port)->
-            default_value(NETWORK_INBOUND_PORT),
-        "The port for incoming connections, defaults to 8333 (18333 for testnet)."
+            default_value(NETWORK_INBOUND_PORT_MAINNET),
+        "The port for incoming connections, defaults to 8333."
     )
     (
         "network.inbound_connection_limit",
@@ -237,7 +237,7 @@ const options_description config_type::load_settings()
     (
         "network.seed",
         value<config::endpoint::list>(&settings.network.seeds)->
-        multitoken()->default_value(NETWORK_SEEDS),
+        multitoken()->default_value(NETWORK_SEEDS_MAINNET),
         "A seed node for initializing the host pool, multiple entries allowed."
     )
 
@@ -269,7 +269,7 @@ const options_description config_type::load_settings()
     (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&settings.chain.checkpoints)->
-            multitoken()->default_value(BLOCKCHAIN_CHECKPOINTS),
+            multitoken()->default_value(BLOCKCHAIN_CHECKPOINTS_MAINNET),
         "A hash:height checkpoint, multiple entries allowed."
     )
 
