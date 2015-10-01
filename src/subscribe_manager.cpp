@@ -82,10 +82,7 @@ bool deserialize_address(AddressPrefix& address, subscribe_type& type,
         return false;
     }
 
-    if (deserial.iterator() != data.end())
-        return false;
-
-    return true;
+    return deserial.iterator() == data.end();
 }
 
 void subscribe_manager::subscribe(const incoming_message& request,
@@ -99,7 +96,7 @@ code subscribe_manager::add_subscription(
     const incoming_message& request, queue_send_callback queue_send)
 {
     subscribe_type type;
-    address_prefix address_key;
+    binary_type address_key;
     if (!deserialize_address(address_key, type, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
@@ -149,9 +146,9 @@ void subscribe_manager::renew(const incoming_message& request,
 void subscribe_manager::do_renew(const incoming_message& request,
     queue_send_callback queue_send)
 {
+    binary_type filter;
     subscribe_type type;
-    address_prefix address_key;
-    if (!deserialize_address(address_key, type, request.data()))
+    if (!deserialize_address(filter, type, request.data()))
     {
         log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
         return;
@@ -163,16 +160,16 @@ void subscribe_manager::do_renew(const incoming_message& request,
     // Find entry and update expiry_time.
     for (auto& subscription: subscriptions_)
     {
-        // Find matching subscription.
-        if (subscription.prefix != address_key)
-            continue;
-
         if (subscription.type != type)
             continue;
 
         // Only update subscriptions which were created by
         // the same client as this request originated from.
         if (subscription.client_origin != request.origin())
+            continue;
+
+        // Find matching subscription.
+        if (!subscription.prefix.is_prefix_of(filter))
             continue;
 
         // Future expiry time.
@@ -187,8 +184,7 @@ void subscribe_manager::do_renew(const incoming_message& request,
     queue_send(response);
 }
 
-void subscribe_manager::submit(
-    size_t height, const hash_digest& block_hash,
+void subscribe_manager::submit(size_t height, const hash_digest& block_hash,
     const chain::transaction& tx)
 {
     dispatch_.ordered(
@@ -206,7 +202,7 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
             post_updates(address, height, block_hash, tx);
     }
 
-    binary_type prefix;
+    uint32_t prefix;
     for (const auto& output: tx.outputs)
     {
         const auto address = wallet::payment_address::extract(output.script);
@@ -229,12 +225,13 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
     BITCOIN_ASSERT(height <= max_uint32);
     const auto height32 = static_cast<uint32_t>(height);
 
-    // [ addr,version ] (1 byte)
-    // [ addr.hash ] (20 bytes)
-    // [ height ] (4 bytes)
-    // [ block_hash ] (32 bytes)
+    // [ address.version:1 ]
+    // [ address.hash:20 ]
+    // [ height:4 ]
+    // [ block_hash:32 ]
     // [ tx ]
-    constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
+    static constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
+
     data_chunk data(info_size + tx.serialized_size());
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
@@ -251,13 +248,10 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
     {
-        // Only interested in address subscriptions.
         if (subscription.type != subscribe_type::address)
             continue;
 
-        binary_type match(subscription.prefix.size(), address.hash());
-
-        if (match != subscription.prefix)
+        if (!subscription.prefix.is_prefix_of(address.hash()))
             continue;
 
         outgoing_message update(subscription.client_origin, "address.update",
@@ -267,22 +261,21 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
     }
 }
 
-void subscribe_manager::post_stealth_updates(const binary_type& prefix,
-    size_t height, const hash_digest& block_hash,
-    const chain::transaction& tx)
+void subscribe_manager::post_stealth_updates(uint32_t prefix, size_t height, 
+    const hash_digest& block_hash, const chain::transaction& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
     const auto height32 = static_cast<uint32_t>(height);
 
-    // [ bitfield ] (4 bytes)
-    // [ height ] (4 bytes)
-    // [ block_hash ] (32 bytes)
+    // [ prefix:4 ]
+    // [ height:4 ] 
+    // [ block_hash:32 ]
     // [ tx ]
-    constexpr size_t info_size = sizeof(uint32_t) + sizeof(uint32_t)
-        + hash_size;
+    static constexpr size_t info_size = 2 * sizeof(uint32_t) + hash_size;
+
     data_chunk data(info_size + tx.serialized_size());
     auto serial = make_serializer(data.begin());
-    serial.write_data(prefix.blocks());
+    serial.write_4_bytes_little_endian(prefix);
     serial.write_4_bytes_little_endian(height32);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
@@ -298,9 +291,7 @@ void subscribe_manager::post_stealth_updates(const binary_type& prefix,
         if (subscription.type != subscribe_type::stealth)
             continue;
 
-        binary_type match(subscription.prefix.size(), prefix.blocks());
-
-        if (match != subscription.prefix)
+            if (!subscription.prefix.is_prefix_of(prefix))
             continue;
 
         outgoing_message update(subscription.client_origin,
