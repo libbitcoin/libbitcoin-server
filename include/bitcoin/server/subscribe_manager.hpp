@@ -54,11 +54,9 @@ public:
         const chain::transaction& tx);
 
 private:
-    typedef binary_type address_prefix;
-
     struct subscription
     {
-        address_prefix prefix;
+        binary_type prefix;
         boost::posix_time::ptime expiry_time;
         data_chunk client_origin;
         queue_send_callback queue_send;
@@ -78,7 +76,7 @@ private:
     void post_updates(const wallet::payment_address& address,
         size_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
-    void post_stealth_updates(const binary_type& prefix, size_t height,
+    void post_stealth_updates(uint32_t prefix, size_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
     void sweep_expired();
 

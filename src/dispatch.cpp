@@ -87,7 +87,7 @@
     "libbitcoin-server:     %1%\n" \
     "libbitcoin-node:       %2%\n" \
     "libbitcoin-blockchain: %3%\n" \
-    "libbitcoin [%5%]:  %4%"
+    "libbitcoin:            %4%"
 
 namespace libbitcoin {
 namespace server {
@@ -126,16 +126,9 @@ static void show_settings(config_type& metadata, std::ostream& stream)
 
 static void show_version(std::ostream& stream)
 {
-// The testnet switch is deprecated, so don't worry about loc.
-#ifdef ENABLE_TESTNET
-    const auto coinnet = "testnet";
-#else
-    const auto coinnet = "mainnet";
-#endif
-
     stream << format(BS_VERSION_MESSAGE) % LIBBITCOIN_SERVER_VERSION %
         LIBBITCOIN_NODE_VERSION % LIBBITCOIN_BLOCKCHAIN_VERSION %
-        LIBBITCOIN_VERSION % coinnet << std::endl;
+        LIBBITCOIN_VERSION << std::endl;
 }
 
 static console_result init_chain(const path& directory, std::ostream& output,
@@ -162,13 +155,11 @@ static console_result init_chain(const path& directory, std::ostream& output,
     const auto& prefix = directory.string();
     blockchain::initialize_blockchain(prefix);
 
-    // Add genesis block.
-    blockchain::db_paths file_paths(prefix);
-    blockchain::db_interface database(file_paths, { 0 });
-    database.start();
-
-    // This is affected by the ENABLE_TESTNET switch.
-    database.push(blockchain::genesis_block());
+    ////// Add genesis block.
+    ////blockchain::db_paths file_paths(prefix);
+    ////blockchain::db_interface database(file_paths, { 0 });
+    ////database.start();
+    ////database.push(blockchain::genesis_block());
 
     return console_result::okay;
 }

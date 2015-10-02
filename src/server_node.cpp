@@ -73,15 +73,17 @@ const settings_type server_node::defaults
         BLOCKCHAIN_THREADS,
         BLOCKCHAIN_BLOCK_POOL_CAPACITY,
         BLOCKCHAIN_HISTORY_START_HEIGHT,
+        BLOCKCHAIN_TESTNET_RULES_MAINNET,
         BLOCKCHAIN_DATABASE_PATH,
-        BLOCKCHAIN_CHECKPOINTS
+        BLOCKCHAIN_CHECKPOINTS_MAINNET
     },
 
     // [network]
     bc::network::settings
     {
         NETWORK_THREADS,
-        NETWORK_INBOUND_PORT,
+        NETWORK_IDENTIFIER_MAINNET,
+        NETWORK_INBOUND_PORT_MAINNET,
         NETWORK_INBOUND_CONNECTION_LIMIT,
         NETWORK_OUTBOUND_CONNECTIONS,
         NETWORK_CONNECT_TIMEOUT_SECONDS,
@@ -97,7 +99,7 @@ const settings_type server_node::defaults
         NETWORK_DEBUG_FILE,
         NETWORK_ERROR_FILE,
         NETWORK_SELF,
-        NETWORK_SEEDS
+        NETWORK_SEEDS_MAINNET
     }
 };
 
