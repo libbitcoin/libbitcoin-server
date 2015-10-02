@@ -139,6 +139,12 @@ const options_description config_type::load_settings()
         "The number of threads in the network threadpool, defaults to 4."
     )
     (
+        "network.identifier",
+        value<uint32_t>(&settings.network.identifier)->
+            default_value(NETWORK_IDENTIFIER_MAINNET),
+        "The magic number for message headers, defaults to 3652501241."
+    )
+    (
         "network.inbound_port",
         value<uint16_t>(&settings.network.inbound_port)->
             default_value(NETWORK_INBOUND_PORT_MAINNET),
@@ -172,7 +178,7 @@ const options_description config_type::load_settings()
         "network.channel_revival_minutes",
         value<uint32_t>(&settings.network.channel_revival_minutes)->
             default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
-        "The time between blocks that initiates a request, defaults to 2."
+        "The time between blocks that initiates a request, defaults to 5."
     )
     (
         "network.channel_heartbeat_minutes",
@@ -214,7 +220,7 @@ const options_description config_type::load_settings()
         "network.hosts_file",
         value<path>(&settings.network.hosts_file)->
             default_value(NETWORK_HOSTS_FILE),
-        "The peer hosts cache file path, defaults to 'hosts'."
+        "The peer hosts cache file path, defaults to 'hosts.cache'."
     )
     (
         "network.debug_file",
@@ -259,6 +265,12 @@ const options_description config_type::load_settings()
         value<uint32_t>(&settings.chain.history_start_height)->
             default_value(BLOCKCHAIN_HISTORY_START_HEIGHT),
         "The history index start height, defaults to 0."
+    )
+    (
+        "blockchain.use_testnet_rules",
+        value<bool>(&settings.chain.use_testnet_rules)->
+            default_value(BLOCKCHAIN_TESTNET_RULES_MAINNET),
+        "Use testnet rules for determination of work required, defaults to false."
     )
     (
         "blockchain.database_path",
