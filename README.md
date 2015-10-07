@@ -72,6 +72,10 @@ Next install the [Boost](http://www.boost.org) (minimum 1.55.0 for GCC or 1.54.0
 ```sh
 $ sudo apt-get install libboost-all-dev
 ```
+If you intend to use libbbitcoin-consensus (this is the default), you will also need libcrypto:
+```sh
+$ sudo apt-get install libssl-dev
+```
 Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version2/install.sh) and enable execution:
 ```sh
 $ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version2/install.sh
