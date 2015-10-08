@@ -138,9 +138,9 @@ void server_node::new_unconfirm_valid_tx(const code& ec,
         notify(tx);
 }
 
-void server_node::broadcast_new_blocks(const code& ec, uint32_t fork_point,
-    const bc::blockchain::blockchain::block_list& new_blocks,
-    const bc::blockchain::blockchain::block_list& replaced_blocks)
+void server_node::broadcast_new_blocks(const code& ec, uint64_t fork_point,
+    const blockchain::block_chain::list& new_blocks,
+    const blockchain::block_chain::list& replaced_blocks)
 {
     broadcast_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
 

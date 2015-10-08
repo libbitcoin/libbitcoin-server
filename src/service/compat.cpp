@@ -33,16 +33,16 @@ using std::placeholders::_2;
 
 struct row_pair
 {
-    const history_row* output = nullptr;
+    const block_chain::history_row* output = nullptr;
     uint64_t checksum;
-    const history_row* spend = nullptr;
+    const block_chain::history_row* spend = nullptr;
     uint64_t max_height = 0;
 };
 
 typedef std::vector<row_pair> row_pair_list;
 
 void COMPAT_send_history_result(const code& ec,
-    const history_list& history, const incoming_message& request,
+    const block_chain::history& history, const incoming_message& request,
     queue_send_callback queue_send, const uint64_t from_height);
 
 void COMPAT_fetch_history(server_node& node,
@@ -73,7 +73,7 @@ void COMPAT_fetch_history(server_node& node,
 }
 
 void COMPAT_send_history_result(const code& ec,
-    const history_list& history, const incoming_message& request, 
+    const block_chain::history& history, const incoming_message& request,
     queue_send_callback queue_send, const uint64_t from_height)
 {
     // Create matched pairs.
@@ -82,11 +82,11 @@ void COMPAT_send_history_result(const code& ec,
 
     for (const auto& row: history)
     {
-        if (row.id == point_ident::output)
+        if (row.kind == block_chain::point_kind::output)
         {
             row_pair pair;
             pair.output = &row;
-            pair.checksum = spend_checksum(row.point);
+            pair.checksum = block_chain::spend_checksum(row.point);
             pair.max_height = row.height;
             all_pairs.push_back(pair);
         }
@@ -95,7 +95,7 @@ void COMPAT_send_history_result(const code& ec,
     // Now sort out spends.
     for (const auto& row: history)
     {
-        if (row.id == point_ident::spend)
+        if (row.kind == block_chain::point_kind::spend)
         {
             DEBUG_ONLY(bool found = false);
 

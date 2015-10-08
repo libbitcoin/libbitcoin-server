@@ -73,9 +73,9 @@ protected:
     // Result of store operation in transaction pool.
     virtual void new_unconfirm_valid_tx(const code& ec,
         const chain::index_list& unconfirmed, const chain::transaction& tx);
-    virtual void broadcast_new_blocks(const code& ec, uint32_t fork_point,
-        const bc::blockchain::blockchain::block_list& new_blocks,
-        const bc::blockchain::blockchain::block_list& replaced_blocks);
+    virtual void broadcast_new_blocks(const code& ec, uint64_t fork_point,
+        const blockchain::block_chain::list& new_blocks,
+        const blockchain::block_chain::list& replaced_blocks);
 
 private:
     typedef std::vector<block_notify_callback> block_notify_list;

@@ -52,7 +52,7 @@ bool unwrap_fetch_history_args(wallet::payment_address& address,
 }
 
 void send_history_result(const code& ec,
-    const history_list& history, const incoming_message& request,
+    const block_chain::history& history, const incoming_message& request,
     queue_send_callback queue_send)
 {
     constexpr size_t row_size = 1 + 36 + 4 + 8;
@@ -60,14 +60,14 @@ void send_history_result(const code& ec,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
 
-    for (const history_row& row: history)
+    for (const block_chain::history_row& row : history)
     {
         BITCOIN_ASSERT(row.height <= max_uint32);
         auto row_height32 = static_cast<uint32_t>(row.height);
 
-        if (row.id == point_ident::output)
+        if (row.kind == block_chain::point_kind::output)
             serial.write_byte(0);
-        else // if (row.id == point_ident::spend)
+        else // if (row.kind == point_kind::spend)
             serial.write_byte(1);
 
         data_chunk raw_point = row.point.to_data();

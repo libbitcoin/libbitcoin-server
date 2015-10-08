@@ -95,6 +95,7 @@ namespace server {
 using std::placeholders::_1;
 using std::placeholders::_2;
 using boost::format;
+using namespace bc::blockchain;
 using namespace bc::config;
 using namespace boost::system;
 using namespace boost::filesystem;
@@ -153,13 +154,13 @@ static console_result init_chain(const path& directory, std::ostream& output,
     output << format(BS_INITIALIZING_CHAIN) % directory << std::endl;
 
     const auto& prefix = directory.string();
-    blockchain::initialize_blockchain(prefix);
+    database::initialize(prefix);
 
     ////// Add genesis block.
-    ////blockchain::db_paths file_paths(prefix);
-    ////blockchain::db_interface database(file_paths, { 0 });
-    ////database.start();
-    ////database.push(blockchain::genesis_block());
+    ////database::store file_paths(prefix);
+    ////database interface(file_paths, { 0 });
+    ////interface.start();
+    ////interface.push(blockchain::genesis_block());
 
     return console_result::okay;
 }

@@ -363,8 +363,8 @@ void block_height_fetched(const code& ec, size_t block_height,
 }
 
 void stealth_fetched(const code& ec,
-    const stealth_list& stealth_results, const incoming_message& request,
-    queue_send_callback queue_send);
+    const block_chain::stealth& stealth_results,
+    const incoming_message& request, queue_send_callback queue_send);
 
 void blockchain_fetch_stealth(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
@@ -403,11 +403,11 @@ void blockchain_fetch_stealth(server_node& node,
 }
 
 void stealth_fetched(
-    const code& ec, const stealth_list& stealth_results,
+    const code& ec, const block_chain::stealth& stealth_results,
     const incoming_message& request, queue_send_callback queue_send)
 {
     // [ ephemkey:32 ][ address:20 ][ tx_hash:32 ]
-    constexpr size_t row_size = 32 + 20 + 32;
+    static constexpr size_t row_size = 32 + 20 + 32;
     data_chunk result(4 + row_size * stealth_results.size());
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
