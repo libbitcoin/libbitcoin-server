@@ -49,11 +49,11 @@ static void initchain(const char prefix[])
 {
     uninitchain(prefix);
     boost::filesystem::create_directories(prefix);
-    initialize_blockchain(prefix);
+    database::initialize(prefix);
 
     ////const size_t history_height = 0;
-    ////db_paths paths(prefix);
-    ////db_interface interface(paths, { history_height });
+    ////database::store paths(prefix);
+    ////database interface(paths, history_height);
 
     ////const auto genesis = genesis_block();
     ////interface.start();
