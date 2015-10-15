@@ -57,8 +57,9 @@ public:
 
     // options
     bool help;
-    bool initchain;
+    bool mainnet;
     bool settings;
+    bool testnet;
     bool version;
 
     // options + environment vars
