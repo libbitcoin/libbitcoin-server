@@ -40,8 +40,8 @@ void BCS_API blockchain_fetch_last_height(server_node& node,
 void BCS_API blockchain_fetch_block_header(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);
 
-void BCS_API blockchain_fetch_block_transaction_hashes(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+////void BCS_API blockchain_fetch_block_transaction_hashes(server_node& node,
+////    const incoming_message& request, queue_send_callback queue_send);
 
 void BCS_API blockchain_fetch_transaction_index(server_node& node,
     const incoming_message& request, queue_send_callback queue_send);

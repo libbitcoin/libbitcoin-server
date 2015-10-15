@@ -164,43 +164,43 @@ void block_header_fetched(const code& ec, const chain::header& block,
     queue_send(response);
 }
 
-void fetch_block_transaction_hashes_by_hash(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+////void fetch_block_transaction_hashes_by_hash(server_node& node,
+////    const incoming_message& request, queue_send_callback queue_send);
 
-void fetch_block_transaction_hashes_by_height(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+////void fetch_block_transaction_hashes_by_height(server_node& node,
+////    const incoming_message& request, queue_send_callback queue_send);
 
-void block_transaction_hashes_fetched(const code& ec,
-    const hash_list& hashes,
-    const incoming_message& request, queue_send_callback queue_send);
+////void block_transaction_hashes_fetched(const code& ec,
+////    const hash_list& hashes,
+////    const incoming_message& request, queue_send_callback queue_send);
 
-void blockchain_fetch_block_transaction_hashes(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send)
-{
-    const auto& data = request.data();
-    if (data.size() == 32)
-        fetch_block_transaction_hashes_by_hash(node, request, queue_send);
-    //else if (data.size() == 4)
-    //    fetch_block_transaction_hashes_by_height(node, request, queue_send);
-    else
-    {
-        log_error(LOG_SERVICE) << "Incorrect data size for "
-            "blockchain.fetch_block_transaction_hashes_by_height";
-        return;
-    }
-}
+////void blockchain_fetch_block_transaction_hashes(server_node& node,
+////    const incoming_message& request, queue_send_callback queue_send)
+////{
+////    const auto& data = request.data();
+////    if (data.size() == 32)
+////        fetch_block_transaction_hashes_by_hash(node, request, queue_send);
+////    //else if (data.size() == 4)
+////    //    fetch_block_transaction_hashes_by_height(node, request, queue_send);
+////    else
+////    {
+////        log_error(LOG_SERVICE) << "Incorrect data size for "
+////            "blockchain.fetch_block_transaction_hashes_by_height";
+////        return;
+////    }
+////}
 
-void fetch_block_transaction_hashes_by_hash(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send)
-{
-    const auto& data = request.data();
-    BITCOIN_ASSERT(data.size() == 32);
-    auto deserial = make_deserializer(data.begin(), data.end());
-    const auto block_hash = deserial.read_hash();
-    node.blockchain().fetch_block_transaction_hashes(block_hash,
-        std::bind(block_transaction_hashes_fetched,
-            _1, _2, request, queue_send));
-}
+////void fetch_block_transaction_hashes_by_hash(server_node& node,
+////    const incoming_message& request, queue_send_callback queue_send)
+////{
+////    const auto& data = request.data();
+////    BITCOIN_ASSERT(data.size() == 32);
+////    auto deserial = make_deserializer(data.begin(), data.end());
+////    const auto block_hash = deserial.read_hash();
+////    node.blockchain().fetch_block_transaction_hashes(block_hash,
+////        std::bind(block_transaction_hashes_fetched,
+////            _1, _2, request, queue_send));
+////}
 
 // Disabled because method no longer exists in libbitcoin.
 // I'm not actually sure that it's useful when we have fetch by hash instead.
@@ -218,22 +218,22 @@ void fetch_block_transaction_hashes_by_height(server_node& node,
 }
 */
 
-void block_transaction_hashes_fetched(const code& ec,
-    const hash_list& hashes,
-    const incoming_message& request, queue_send_callback queue_send)
-{
-    data_chunk result(4 + hash_size * hashes.size());
-    auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
-    for (const auto& tx_hash: hashes)
-        serial.write_hash(tx_hash);
-    BITCOIN_ASSERT(serial.iterator() == result.end());
-    log_debug(LOG_REQUEST) << "blockchain.fetch_block_transaction_hashes()"
-       " finished. Sending response.";
-    const outgoing_message response(request, result);
-    queue_send(response);
-}
+////void block_transaction_hashes_fetched(const code& ec,
+////    const hash_list& hashes,
+////    const incoming_message& request, queue_send_callback queue_send)
+////{
+////    data_chunk result(4 + hash_size * hashes.size());
+////    auto serial = make_serializer(result.begin());
+////    write_error_code(serial, ec);
+////    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+////    for (const auto& tx_hash: hashes)
+////        serial.write_hash(tx_hash);
+////    BITCOIN_ASSERT(serial.iterator() == result.end());
+////    log_debug(LOG_REQUEST) << "blockchain.fetch_block_transaction_hashes()"
+////       " finished. Sending response.";
+////    const outgoing_message response(request, result);
+////    queue_send(response);
+////}
 
 void transaction_index_fetched(const code& ec,
     size_t block_height, size_t index,
