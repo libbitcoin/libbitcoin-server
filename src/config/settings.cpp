@@ -83,14 +83,19 @@ const options_description config_type::load_options()
         "Get list of options for this command."
     )
     (
-        "initchain,i",
-        value<bool>(&settings.initchain)->default_value(false)->zero_tokens(),
-        "Initialize database in the configured directory."
+        "mainnet,m",
+        value<bool>(&settings.mainnet)->default_value(false)->zero_tokens(),
+        "Initialize mainnet in the configured directory."
     )
     (
         BS_SETTINGS_VARIABLE ",s",
         value<bool>(&settings.settings)->default_value(false)->zero_tokens(),
         "Display the loaded configuration settings."
+    )
+    (
+        "testnet,t",
+        value<bool>(&settings.testnet)->default_value(false)->zero_tokens(),
+        "Initialize testnet in the configured directory."
     )
     (
         BS_VERSION_VARIABLE ",v",

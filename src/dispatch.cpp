@@ -132,8 +132,8 @@ static void show_version(std::ostream& stream)
         LIBBITCOIN_VERSION << std::endl;
 }
 
-static console_result init_chain(const path& directory, std::ostream& output,
-    std::ostream& error)
+static console_result init_chain(const path& directory, bool testnet,
+    std::ostream& output, std::ostream& error)
 {
     // TODO: see github.com/bitcoin/bitcoin/issues/432
     // Create the directory as a convenience for the user, and then use it
@@ -153,16 +153,12 @@ static console_result init_chain(const path& directory, std::ostream& output,
 
     output << format(BS_INITIALIZING_CHAIN) % directory << std::endl;
 
-    const auto& prefix = directory.string();
-    database::initialize(prefix);
+    const auto prefix = directory.string();
+    auto genesis = testnet ? testnet_genesis_block() :
+        mainnet_genesis_block();
 
-    ////// Add genesis block.
-    ////database::store file_paths(prefix);
-    ////database interface(file_paths, { 0 });
-    ////interface.start();
-    ////interface.push(blockchain::genesis_block());
-
-    return console_result::okay;
+    return database::initialize(prefix, genesis) ?
+        console_result::okay : console_result::failure;
 }
 
 static console_result verify_chain(const path& directory, std::ostream& error)
@@ -333,8 +329,10 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
         show_settings(configuration, output);
     else if (settings.version)
         show_version(output);
-    else if (settings.initchain)
-        return init_chain(settings.chain.database_path, output, error);
+    else if (settings.mainnet)
+        return init_chain(settings.chain.database_path, false, output, error);
+    else if (settings.testnet)
+        return init_chain(settings.chain.database_path, true, output, error);
     else
         return run(settings, output, error);
 
