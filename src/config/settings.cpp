@@ -301,7 +301,7 @@ const options_description config_type::load_settings()
         "node.transaction_pool_capacity",
         value<uint32_t>(&settings.node.transaction_pool_capacity)->
             default_value(NODE_TRANSACTION_POOL_CAPACITY),
-        "The number of threads in the node threadpool, defaults to 4."
+        "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
         "node.peer",
