@@ -79,28 +79,7 @@ const settings_type server_node::defaults
     },
 
     // [network]
-    bc::network::settings
-    {
-        NETWORK_THREADS,
-        NETWORK_IDENTIFIER_MAINNET,
-        NETWORK_INBOUND_PORT_MAINNET,
-        NETWORK_INBOUND_CONNECTION_LIMIT,
-        NETWORK_OUTBOUND_CONNECTIONS,
-        NETWORK_CONNECT_TIMEOUT_SECONDS,
-        NETWORK_CHANNEL_HANDSHAKE_SECONDS,
-        NETWORK_CHANNEL_REVIVAL_MINUTES,
-        NETWORK_CHANNEL_HEARTBEAT_MINUTES,
-        NETWORK_CHANNEL_INACTIVITY_MINUTES,
-        NETWORK_CHANNEL_EXPIRATION_MINUTES,
-        NETWORK_CHANNEL_GERMINATION_SECONDS,
-        NETWORK_HOST_POOL_CAPACITY,
-        NETWORK_RELAY_TRANSACTIONS,
-        NETWORK_HOSTS_FILE,
-        NETWORK_DEBUG_FILE,
-        NETWORK_ERROR_FILE,
-        NETWORK_SELF,
-        NETWORK_SEEDS_MAINNET
-    }
+    bc::network::p2p::mainnet
 };
 
 server_node::server_node(const settings_type& config)

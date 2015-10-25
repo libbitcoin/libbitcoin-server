@@ -50,7 +50,7 @@ void protocol_broadcast_transaction(server_node& node,
     };
 
     // Send and hope for the best!
-    node.protocol().broadcast(tx, ignore_send);
+    node.network().broadcast(tx, ignore_send);
 
     // Response back to user saying everything is fine.
     write_error_code(serial, code());
@@ -65,9 +65,10 @@ void protocol_broadcast_transaction(server_node& node,
 void protocol_total_connections(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    BITCOIN_ASSERT(node.protocol().connection_count() <= max_uint32);
-    const auto total_connections32 = static_cast<uint32_t>(
-        node.protocol().connection_count());
+    //// TODO:
+    ////BITCOIN_ASSERT(node.protocol().connection_count() <= max_uint32);
+    const auto total_connections32 = static_cast<uint32_t>(0);
+
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, code());

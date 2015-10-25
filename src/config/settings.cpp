@@ -42,7 +42,8 @@ namespace server {
 
 using boost::filesystem::path;
 using namespace boost::program_options;
-using namespace libbitcoin::config;
+using namespace bc::config;
+using namespace bc::network;
 
 static std::string system_config_directory()
 {
@@ -140,115 +141,115 @@ const options_description config_type::load_settings()
     (
         "network.threads",
         value<uint32_t>(&settings.network.threads)->
-            default_value(NETWORK_THREADS),
+            default_value(p2p::mainnet.threads),
         "The number of threads in the network threadpool, defaults to 4."
     )
     (
         "network.identifier",
         value<uint32_t>(&settings.network.identifier)->
-            default_value(NETWORK_IDENTIFIER_MAINNET),
+        default_value(p2p::mainnet.identifier),
         "The magic number for message headers, defaults to 3652501241."
     )
     (
         "network.inbound_port",
         value<uint16_t>(&settings.network.inbound_port)->
-            default_value(NETWORK_INBOUND_PORT_MAINNET),
+            default_value(p2p::mainnet.inbound_port),
         "The port for incoming connections, defaults to 8333."
     )
     (
         "network.inbound_connection_limit",
         value<uint32_t>(&settings.network.inbound_connection_limit)->
-            default_value(NETWORK_INBOUND_CONNECTION_LIMIT),
+            default_value(p2p::mainnet.inbound_connection_limit),
         "The maximum number of incoming network connections, defaults to 8."
     )
     (
         "network.outbound_connections",
         value<uint32_t>(&settings.network.outbound_connections)->
-            default_value(NETWORK_OUTBOUND_CONNECTIONS),
+            default_value(p2p::mainnet.outbound_connections),
         "The maximum number of outgoing network connections, defaults to 8."
     )
     (
         "network.connect_timeout_seconds",
         value<uint32_t>(&settings.network.connect_timeout_seconds)->
-            default_value(NETWORK_CONNECT_TIMEOUT_SECONDS),
+            default_value(p2p::mainnet.connect_timeout_seconds),
         "The time limit for connection establishment, defaults to 5."
     )
     (
         "network.channel_handshake_seconds",
         value<uint32_t>(&settings.network.channel_handshake_seconds)->
-            default_value(NETWORK_CHANNEL_HANDSHAKE_SECONDS),
+            default_value(p2p::mainnet.channel_handshake_seconds),
         "The time limit to complete the connection handshake, defaults to 30."
     )
     (
         "network.channel_revival_minutes",
         value<uint32_t>(&settings.network.channel_revival_minutes)->
-            default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
+            default_value(p2p::mainnet.channel_revival_minutes),
         "The time between blocks that initiates a request, defaults to 5."
     )
     (
         "network.channel_heartbeat_minutes",
         value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
-            default_value(NETWORK_CHANNEL_HEARTBEAT_MINUTES),
+            default_value(p2p::mainnet.channel_heartbeat_minutes),
         "The time between ping messages, defaults to 5."
     )
     (
         "network.channel_inactivity_minutes",
         value<uint32_t>(&settings.network.channel_inactivity_minutes)->
-            default_value(NETWORK_CHANNEL_INACTIVITY_MINUTES),
+            default_value(p2p::mainnet.channel_inactivity_minutes),
         "The inactivity time limit for any connection, defaults to 30."
     )
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&settings.network.channel_expiration_minutes)->
-            default_value(NETWORK_CHANNEL_EXPIRATION_MINUTES),
+            default_value(p2p::mainnet.channel_expiration_minutes),
         "The maximum age limit for an outbound connection, defaults to 90."
     )
     (
         "network.channel_germination_seconds",
         value<uint32_t>(&settings.network.channel_germination_seconds)->
-            default_value(NETWORK_CHANNEL_GERMINATION_SECONDS),
+            default_value(p2p::mainnet.channel_germination_seconds),
         "The maximum time limit for obtaining seed addresses, defaults to 30."
     )
     (
         "network.host_pool_capacity",
         value<uint32_t>(&settings.network.host_pool_capacity)->
-            default_value(NETWORK_HOST_POOL_CAPACITY),
+            default_value(p2p::mainnet.host_pool_capacity),
         "The maximum number of peer hosts in the pool, defaults to 1000."
     )
     (
         "network.relay_transactions",
         value<bool>(&settings.network.relay_transactions)->
-            default_value(NETWORK_RELAY_TRANSACTIONS),
+            default_value(p2p::mainnet.relay_transactions),
         "Request that peers relay transactions, defaults to true."
     )
     (
         "network.hosts_file",
         value<path>(&settings.network.hosts_file)->
-            default_value(NETWORK_HOSTS_FILE),
+            default_value(p2p::mainnet.hosts_file),
         "The peer hosts cache file path, defaults to 'hosts.cache'."
     )
     (
         "network.debug_file",
         value<path>(&settings.network.debug_file)->
-            default_value(NETWORK_DEBUG_FILE),
+            default_value(p2p::mainnet.debug_file),
         "The debug log file path, defaults to 'debug.log'."
     )
     (
         "network.error_file",
         value<path>(&settings.network.error_file)->
-            default_value(NETWORK_ERROR_FILE),
+            default_value(p2p::mainnet.error_file),
         "The error log file path, defaults to 'error.log'."
     )
     (
         "network.self",
         value<config::authority>(&settings.network.self)->
-        multitoken()->default_value(NETWORK_SELF),
+            multitoken()->default_value(p2p::mainnet.self),
         "The advertised public address of this node, defaults to none."
     )
     (
         "network.seed",
         value<config::endpoint::list>(&settings.network.seeds)->
-        multitoken()->default_value(NETWORK_SEEDS_MAINNET),
+            multitoken()->default_value(p2p::mainnet.seeds),
         "A seed node for initializing the host pool, multiple entries allowed."
     )
 
