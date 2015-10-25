@@ -169,6 +169,12 @@ const options_description config_type::load_settings()
         "The maximum number of outgoing network connections, defaults to 8."
     )
     (
+        "network.connect_attempts",
+        value<uint16_t>(&settings.network.connect_attempts)->
+            default_value(p2p::mainnet.connect_attempts),
+        "The number of times to attempt contacting a node, defaults to 0 (forever)."
+    )
+    (
         "network.connect_timeout_seconds",
         value<uint32_t>(&settings.network.connect_timeout_seconds)->
             default_value(p2p::mainnet.connect_timeout_seconds),
@@ -245,6 +251,12 @@ const options_description config_type::load_settings()
         value<config::authority>(&settings.network.self)->
             multitoken()->default_value(p2p::mainnet.self),
         "The advertised public address of this node, defaults to none."
+    )
+    (
+        "network.blacklist",
+        value<config::authority::list>(&settings.network.blacklists)->
+            multitoken()->default_value(p2p::mainnet.blacklists),
+        "IP address to disallow as a peer, multiple entries allowed."
     )
     (
         "network.seed",
