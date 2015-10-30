@@ -36,7 +36,7 @@ bool unwrap_fetch_history_args(wallet::payment_address& address,
 
     if (data.size() != 1 + short_hash_size + 4)
     {
-        log_error(LOG_SERVICE)
+        log::error(LOG_SERVICE)
             << "Incorrect data size for .fetch_history";
         return false;
     }
@@ -79,7 +79,7 @@ void send_history_result(const code& ec,
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
     // TODO: Slows down queries!
-    //log_debug(LOG_SERVICE)
+    //log::debug(LOG_SERVICE)
     //    << "*.fetch_history() finished. Sending response.";
 
     outgoing_message response(request, result);
@@ -95,7 +95,7 @@ bool unwrap_fetch_transaction_args(hash_digest& tx_hash,
 
     if (data.size() != 32)
     {
-        log_error(LOG_SERVICE)
+        log::error(LOG_SERVICE)
             << "Incorrect data size for *.fetch_transaction";
         return false;
     }
@@ -118,7 +118,7 @@ void transaction_fetched(const code& ec,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    log_debug(LOG_REQUEST)
+    log::debug(LOG_REQUEST)
         << "blockchain.fetch_transaction() finished. Sending response.";
 
     outgoing_message response(request, result);

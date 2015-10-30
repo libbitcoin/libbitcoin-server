@@ -60,7 +60,7 @@ void COMPAT_fetch_history(server_node& node,
     std::reverse(address_hash.begin(), address_hash.end());
 
     // TODO: Slows down queries!
-    //log_debug(LOG_SERVICE) << "fetch_history("
+    //log::debug(LOG_SERVICE) << "fetch_history("
     //    << address.encoded() << ", from_height=" << from_height << ")";
 
     constexpr size_t history_from_height = 0;
@@ -173,7 +173,7 @@ void COMPAT_send_history_result(const code& ec,
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
     // TODO: Slows down queries!
-    //log_debug(LOG_SERVICE)
+    //log::debug(LOG_SERVICE)
     //    << "*.fetch_history() finished. Sending response.";
 
     outgoing_message response(request, result);

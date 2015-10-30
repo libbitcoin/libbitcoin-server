@@ -57,7 +57,7 @@ void send_worker::queue_send(const outgoing_message& message)
     int rc = socket.connect("inproc://trigger-send");
     if (rc == zmq_fail)
     {
-        log_error(LOG_SERVICE)
+        log::error(LOG_SERVICE)
             << "Failed to connect to send queue.";
         return;
     }
@@ -86,7 +86,7 @@ request_worker::request_worker(bool log_requests,
     int rc = wakeup_socket_.bind("inproc://trigger-send");
     if (rc == zmq_fail)
     {
-        log_error(LOG_SERVICE)
+        log::error(LOG_SERVICE)
             << "Failed to connect to request queue.";
         return;
     }
@@ -99,7 +99,7 @@ bool request_worker::start(const settings_type& config)
 
 #ifdef _MSC_VER
     if (log_requests_)
-        log_debug(LOG_SERVICE)
+        log::debug(LOG_SERVICE)
             << "Authentication logging disabled on Windows.";
 #else
     // This exposes the log stream to non-utf8 text on Windows.
@@ -116,7 +116,7 @@ bool request_worker::start(const settings_type& config)
 
     if (!enable_crypto(config))
     {
-        log_error(LOG_SERVICE)
+        log::error(LOG_SERVICE)
             << "Invalid server certificate.";
         return false;
     }
@@ -124,13 +124,13 @@ bool request_worker::start(const settings_type& config)
     // This binds the query service.
     if (!create_new_socket(config))
     {
-        log_error(LOG_SERVICE)
+        log::error(LOG_SERVICE)
             << "Failed to bind query service on "
             << config.server.query_endpoint;
         return false;
     }
 
-    log_info(LOG_SERVICE)
+    log::info(LOG_SERVICE)
         << "Bound query service on "
         << config.server.query_endpoint;
 
@@ -139,13 +139,13 @@ bool request_worker::start(const settings_type& config)
         config.server.heartbeat_endpoint.to_string());
     if (rc == 0)
     {
-        log_error(LOG_SERVICE)
+        log::error(LOG_SERVICE)
             << "Failed to bind heartbeat service on "
             << config.server.heartbeat_endpoint;
         return false;
     }
 
-    log_info(LOG_SERVICE)
+    log::info(LOG_SERVICE)
         << "Bound heartbeat service on "
         << config.server.heartbeat_endpoint;
 
@@ -171,7 +171,7 @@ void request_worker::whitelist(const config::authority::list& addresses)
 {
     for (const auto& ip_address: addresses)
     {
-        log_info(LOG_SERVICE)
+        log::info(LOG_SERVICE)
             << "Whitelisted client [" << format_whitelist(ip_address) << "]";
         authenticate_.allow(ip_address.to_string());
     }
@@ -248,7 +248,7 @@ void request_worker::poll()
         if (it != handlers_.end())
         {
             if (log_requests_)
-                log_debug(LOG_REQUEST)
+                log::debug(LOG_REQUEST)
                     << "Service request [" << request.command() << "] from "
                     << encode_base16(request.origin());
 
@@ -258,7 +258,7 @@ void request_worker::poll()
         }
         else
         {
-            log_warning(LOG_SERVICE)
+            log::warning(LOG_SERVICE)
                 << "Unhandled service request [" << request.command()
                 << "] from " << encode_base16(request.origin());
         }
@@ -275,7 +275,7 @@ void request_worker::poll()
     if (now() > heartbeat_at_)
     {
         heartbeat_at_ = now() + heartbeat_interval_;
-        log_debug(LOG_SERVICE) << "Publish service heartbeat";
+        log::debug(LOG_SERVICE) << "Publish service heartbeat";
         publish_heartbeat();
     }
 }

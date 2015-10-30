@@ -99,7 +99,7 @@ code subscribe_manager::add_subscription(
     binary_type address_key;
     if (!deserialize_address(address_key, type, request.data()))
     {
-        log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
+        log::warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
         return error::bad_stream;
     }
 
@@ -150,7 +150,7 @@ void subscribe_manager::do_renew(const incoming_message& request,
     subscribe_type type;
     if (!deserialize_address(filter, type, request.data()))
     {
-        log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
+        log::warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
         return;
     }
 
@@ -313,7 +313,7 @@ void subscribe_manager::sweep_expired()
         // Already expired? If so, then erase.
         if (subscription.expiry_time < now)
         {
-            log_debug(LOG_SUBSCRIBER)
+            log::debug(LOG_SUBSCRIBER)
                 << "Deleting expired subscription: "
                 << subscription.prefix << " from "
                 << encode_base16(subscription.client_origin);

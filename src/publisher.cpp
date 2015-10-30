@@ -48,13 +48,13 @@ bool publisher::start(const settings_type& config)
     node_.subscribe_blocks(std::bind(&publisher::send_block, this, _1, _2));
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
 
-    log_debug(LOG_PUBLISHER) << "Publishing blocks on "
+    log::debug(LOG_PUBLISHER) << "Publishing blocks on "
         << config.server.block_publish_endpoint;
     if (!setup_socket(config.server.block_publish_endpoint.to_string(),
         socket_block_))
         return false;
 
-    log_debug(LOG_PUBLISHER) << "Publishing transactions on "
+    log::debug(LOG_PUBLISHER) << "Publishing transactions on "
         << config.server.transaction_publish_endpoint;
     if (!setup_socket(config.server.transaction_publish_endpoint.to_string(),
         socket_tx_))
@@ -99,7 +99,7 @@ void publisher::send_block(uint32_t height, const chain::block& block)
     // Finished. Send message.
     if (!message.send(socket_block_))
     {
-        log_warning(LOG_PUBLISHER) << "Problem publishing block data.";
+        log::warning(LOG_PUBLISHER) << "Problem publishing block data.";
         return;
     }
 }
@@ -112,7 +112,7 @@ void publisher::send_tx(const chain::transaction& tx)
 
     if (!message.send(socket_tx_))
     {
-        log_warning(LOG_PUBLISHER) << "Problem publishing tx data.";
+        log::warning(LOG_PUBLISHER) << "Problem publishing tx data.";
         return;
     }
 }
