@@ -44,13 +44,11 @@ void protocol_broadcast_transaction(server_node& node,
         return;
     }
 
-    const auto ignore_send = [](const code&,
-        network::channel::ptr node)
-    {
-    };
+    const auto ignore_complete = [](const code&) {};
+    const auto ignore_send = [](const code&, network::channel::ptr) {};
 
     // Send and hope for the best!
-    node.network().broadcast(tx, ignore_send);
+    node.network().broadcast(tx, ignore_send, ignore_complete);
 
     // Response back to user saying everything is fine.
     write_error_code(serial, code());
