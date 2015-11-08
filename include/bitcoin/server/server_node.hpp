@@ -31,24 +31,6 @@
 namespace libbitcoin {
 namespace server {
 
-// Configuration setting defaults.
-
-// [server]
-#define SERVER_QUERY_ENDPOINT                   {"tcp://*:9091"}
-#define SERVER_HEARTBEAT_ENDPOINT               {"tcp://*:9092"}
-#define SERVER_BLOCK_PUBLISH_ENDPOINT           {"tcp://*:9093"}
-#define SERVER_TRANSACTION_PUBLISH_ENDPOINT     {"tcp://*:9094"}
-#define SERVER_PUBLISHER_ENABLED                true
-#define SERVER_QUERIES_ENABLED                  true
-#define SERVER_LOG_REQUESTS                     false
-#define SERVER_POLLING_INTERVAL_SECONDS         1
-#define SERVER_HEARTBEAT_INTERVAL_SECONDS       5
-#define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
-#define SERVER_SUBSCRIPTION_LIMIT               100000000
-#define SERVER_CERTIFICATE_FILE                 {}
-#define SERVER_CLIENT_CERTIFICATES_PATH         {}
-#define SERVER_WHITELISTS                       {}
-
 class BCS_API server_node
   : public node::full_node
 {

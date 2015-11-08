@@ -37,7 +37,7 @@ using namespace bc::node;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-// Be wary of static initialization ordering here.
+/// default settings (mainnet)
 const configuration server_node::defaults = configuration
 {
     // [server]
@@ -80,7 +80,30 @@ const configuration server_node::defaults = configuration
     },
 
     // [network]
-    bc::network::p2p::mainnet
+    network::settings
+    {
+        NETWORK_THREADS,
+        NETWORK_IDENTIFIER_MAINNET,
+        NETWORK_INBOUND_PORT_MAINNET,
+        NETWORK_INBOUND_CONNECTION_LIMIT,
+        NETWORK_OUTBOUND_CONNECTIONS,
+        NETWORK_CONNECT_ATTEMPTS,
+        NETWORK_CONNECT_TIMEOUT_SECONDS,
+        NETWORK_CHANNEL_HANDSHAKE_SECONDS,
+        NETWORK_CHANNEL_REVIVAL_MINUTES,
+        NETWORK_CHANNEL_HEARTBEAT_MINUTES,
+        NETWORK_CHANNEL_INACTIVITY_MINUTES,
+        NETWORK_CHANNEL_EXPIRATION_MINUTES,
+        NETWORK_CHANNEL_GERMINATION_SECONDS,
+        NETWORK_HOST_POOL_CAPACITY,
+        NETWORK_RELAY_TRANSACTIONS,
+        NETWORK_HOSTS_FILE,
+        NETWORK_DEBUG_FILE,
+        NETWORK_ERROR_FILE,
+        NETWORK_SELF,
+        NETWORK_BLACKLISTS,
+        NETWORK_SEEDS_MAINNET
+    }
 };
 
 server_node::server_node(const configuration& config)
