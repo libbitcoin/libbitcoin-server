@@ -43,6 +43,8 @@ private:
     data_chunk data_;
 };
 
+// TODO: split into class per file.
+
 class BCS_API outgoing_message
 {
 public:

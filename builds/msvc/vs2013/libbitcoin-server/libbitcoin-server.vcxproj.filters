@@ -76,11 +76,14 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp">
       <Filter>include\bitcoin\server\config</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\config.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\configuration.hpp">
       <Filter>include\bitcoin\server\config</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings_type.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\parser.hpp">
       <Filter>include\bitcoin\server\config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp">
+      <Filter>include\bitcoin</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -120,7 +123,7 @@
     <ClCompile Include="..\..\..\..\src\config\settings.cpp">
       <Filter>src\config</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\config\config.cpp">
+    <ClCompile Include="..\..\..\..\src\config\parser.cpp">
       <Filter>src\config</Filter>
     </ClCompile>
   </ItemGroup>

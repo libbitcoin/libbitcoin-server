@@ -41,7 +41,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/server_node.cpp \
     src/subscribe_manager.cpp \
     src/worker.cpp \
-    src/config/config.cpp \
+    src/config/parser.cpp \
     src/config/settings.cpp \
     src/service/blockchain.cpp \
     src/service/compat.cpp \
@@ -96,9 +96,9 @@ include_bitcoin_server_HEADERS = \
 
 include_bitcoin_server_configdir = ${includedir}/bitcoin/server/config
 include_bitcoin_server_config_HEADERS = \
-    include/bitcoin/server/config/config.hpp \
-    include/bitcoin/server/config/settings.hpp \
-    include/bitcoin/server/config/settings_type.hpp
+    include/bitcoin/server/config/configuration.hpp \
+    include/bitcoin/server/config/parser.hpp \
+    include/bitcoin/server/config/settings.hpp
 
 include_bitcoin_server_servicedir = ${includedir}/bitcoin/server/service
 include_bitcoin_server_service_HEADERS = \

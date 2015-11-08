@@ -26,10 +26,10 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time.hpp>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/settings_type.hpp>
+#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/util.hpp>
@@ -56,26 +56,27 @@ private:
     czmqpp::context& context_;
 };
 
+// TODO: split into class per file.
+
 class BCS_API request_worker
 {
 public:
     typedef std::function<void(const incoming_message&, queue_send_callback)>
         command_handler;
 
-    request_worker(bool log_requests=false,
-        uint32_t heartbeat_interval_seconds=5,
-        uint32_t polling_interval_milliseconds=1000);
-    bool start(const settings_type& config);
+    request_worker(const settings& settings);
+
+    bool start();
     bool stop();
-    void attach(const std::string& command, command_handler handler);
     void update();
+    void attach(const std::string& command, command_handler handler);
 
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist(const config::authority::list& addresses);
-    bool enable_crypto(const settings_type& config);
-    bool create_new_socket(const settings_type& config);
+    void whitelist();
+    bool enable_crypto();
+    bool create_new_socket();
     void poll();
     void publish_heartbeat();
 
@@ -87,11 +88,8 @@ private:
 
     send_worker sender_;
     command_map handlers_;
-
-    bool log_requests_;
-    boost::posix_time::ptime heartbeat_at_;
-    boost::posix_time::seconds heartbeat_interval_;
-    uint32_t polling_interval_milliseconds_;
+    boost::posix_time::ptime deadline_;
+    const settings& settings_;
 };
 
 } // namespace server

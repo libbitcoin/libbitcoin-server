@@ -71,9 +71,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\config.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings_type.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
@@ -91,7 +92,7 @@
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\config\config.cpp" />
+    <ClCompile Include="..\..\..\..\src\config\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\config\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\message.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />

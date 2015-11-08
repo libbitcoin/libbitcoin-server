@@ -20,7 +20,7 @@
 #include <bitcoin/server/service/protocol.hpp>
 
 #include <bitcoin/server.hpp>
-#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 

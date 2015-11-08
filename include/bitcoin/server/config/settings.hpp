@@ -37,13 +37,30 @@ struct BCS_API settings
     bool publisher_enabled;
     bool queries_enabled;
     bool log_requests;
-    uint32_t polling_interval_milliseconds;
+    uint32_t polling_interval_seconds;
     uint32_t heartbeat_interval_seconds;
     uint32_t subscription_expiration_minutes;
     uint32_t subscription_limit;
     boost::filesystem::path certificate_file;
     boost::filesystem::path client_certificates_path;
     config::authority::list whitelists;
+
+    asio::duration polling_interval() const
+    {
+        // This should eventually be returned to milliseconds.
+        // It was changed to seconds as a quick hack, since ms is harder.
+        return asio::duration(0, 0, polling_interval_seconds);
+    }
+
+    asio::duration heartbeat_interval() const
+    {
+        return asio::duration(0, 0, heartbeat_interval_seconds);
+    }
+
+    asio::duration subscription_expiration() const
+    {
+        return asio::duration(0, subscription_expiration_minutes, 0);
+    }
 };
 
 } // namespace server

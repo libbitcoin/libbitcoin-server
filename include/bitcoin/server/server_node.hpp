@@ -22,7 +22,8 @@
 
 #include <cstdint>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/settings_type.hpp>
+#include <bitcoin/server/config/configuration.hpp>
+#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/util.hpp>
@@ -40,7 +41,7 @@ namespace server {
 #define SERVER_PUBLISHER_ENABLED                true
 #define SERVER_QUERIES_ENABLED                  true
 #define SERVER_LOG_REQUESTS                     false
-#define SERVER_POLLING_INTERVAL_MILLISECONDS    1000
+#define SERVER_POLLING_INTERVAL_SECONDS         1
 #define SERVER_HEARTBEAT_INTERVAL_SECONDS       5
 #define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
 #define SERVER_SUBSCRIPTION_LIMIT               100000000
@@ -57,11 +58,11 @@ public:
     typedef std::function<void (const chain::transaction&)>
         transaction_notify_callback;
 
-    static const settings_type defaults;
+    static const configuration defaults;
 
-    server_node(const settings_type& config=defaults);
+    server_node(const configuration& config=defaults);
 
-    bool start(const settings_type& config=defaults);
+    void start(result_handler handler);
 
     virtual void subscribe_blocks(block_notify_callback notify_block);
     virtual void subscribe_transactions(transaction_notify_callback notify_tx);
@@ -70,12 +71,13 @@ public:
         const incoming_message& request, queue_send_callback queue_send);
 
 protected:
-    // Result of store operation in transaction pool.
-    virtual void new_unconfirm_valid_tx(const code& ec,
-        const chain::index_list& unconfirmed, const chain::transaction& tx);
-    virtual void broadcast_new_blocks(const code& ec, uint64_t fork_point,
+    void handle_tx_validated(const code& ec,
+        const chain::transaction& tx, const hash_digest& hash,
+        const chain::index_list& unconfirmed) override;
+
+    void handle_new_blocks(const code& ec, uint64_t fork_point,
         const blockchain::block_chain::list& new_blocks,
-        const blockchain::block_chain::list& replaced_blocks);
+        const blockchain::block_chain::list& replaced_blocks) override;
 
 private:
     typedef std::vector<block_notify_callback> block_notify_list;
@@ -85,9 +87,9 @@ private:
     block_notify_list block_sunscriptions_;
     transaction_notify_list tx_subscriptions_;
 
-    // Timer.
-    boost::asio::deadline_timer retry_start_timer_;
     size_t minimum_start_height_;
+    boost::asio::deadline_timer retry_start_timer_;
+    const configuration configuration_;
 };
 
 } // namespace server

@@ -23,21 +23,22 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/config.hpp>
-#include <bitcoin/server/config/settings_type.hpp>
+#include <bitcoin/server/config/configuration.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
-
+    
 using namespace bc::blockchain;
+using namespace bc::chain;
 using namespace bc::node;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-const settings_type server_node::defaults
+// Be wary of static initialization ordering here.
+const configuration server_node::defaults = configuration
 {
     // [server]
     bc::server::settings
@@ -49,7 +50,7 @@ const settings_type server_node::defaults
         SERVER_PUBLISHER_ENABLED,
         SERVER_QUERIES_ENABLED,
         SERVER_LOG_REQUESTS,
-        SERVER_POLLING_INTERVAL_MILLISECONDS,
+        SERVER_POLLING_INTERVAL_SECONDS,
         SERVER_HEARTBEAT_INTERVAL_SECONDS,
         SERVER_SUBSCRIPTION_EXPIRATION_MINUTES,
         SERVER_SUBSCRIPTION_LIMIT,
@@ -68,7 +69,7 @@ const settings_type server_node::defaults
     },
 
     // [blockchain]
-    bc::chain::settings
+    bc::blockchain::settings
     {
         BLOCKCHAIN_THREADS,
         BLOCKCHAIN_BLOCK_POOL_CAPACITY,
@@ -82,16 +83,17 @@ const settings_type server_node::defaults
     bc::network::p2p::mainnet
 };
 
-server_node::server_node(const settings_type& config)
+server_node::server_node(const configuration& config)
   : full_node(config),
+    configuration_(config),
     retry_start_timer_(memory_threads_.service()),
     minimum_start_height_(config.minimum_start_height())
 {
 }
 
-bool server_node::start(const settings_type& config)
+void server_node::start(result_handler handler)
 {
-    return full_node::start(config);
+    full_node::start(handler);
 }
 
 void server_node::subscribe_blocks(block_notify_callback notify_block)
@@ -104,10 +106,10 @@ void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
     tx_subscriptions_.push_back(notify_tx);
 }
 
-void server_node::new_unconfirm_valid_tx(const code& ec,
-    const chain::index_list& unconfirmed, const chain::transaction& tx)
+void server_node::handle_tx_validated(const code& ec, const transaction& tx,
+    const hash_digest& hash, const index_list& unconfirmed)
 {
-    full_node::new_unconfirm_valid_tx(ec, unconfirmed, tx);
+    full_node::handle_tx_validated(ec, tx, hash, unconfirmed);
 
     if (ec == bc::error::service_stopped)
         return;
@@ -117,11 +119,11 @@ void server_node::new_unconfirm_valid_tx(const code& ec,
         notify(tx);
 }
 
-void server_node::broadcast_new_blocks(const code& ec, uint64_t fork_point,
-    const blockchain::block_chain::list& new_blocks,
-    const blockchain::block_chain::list& replaced_blocks)
+void server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
+    const block_chain::list& new_blocks,
+    const block_chain::list& replaced_blocks)
 {
-    broadcast_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
+    handle_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
 
     if (ec == bc::error::service_stopped)
         return;

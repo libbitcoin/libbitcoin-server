@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/parser.hpp>
 
 #include <string>
 #include <boost/filesystem.hpp>
@@ -57,8 +57,8 @@ static bool get_option(variables_map& variables, const std::string& name)
     return variable.as<bool>();
 }
 
-static void load_command_variables(variables_map& variables,
-    config_type& metadata, int argc, const char* argv[])
+static void load_command_variables(variables_map& variables, parser& metadata,
+    int argc, const char* argv[])
 {
     const auto options = metadata.load_options();
     const auto arguments = metadata.load_arguments();
@@ -68,7 +68,7 @@ static void load_command_variables(variables_map& variables,
 }
 
 static bool load_configuration_variables(variables_map& variables,
-    config_type& metadata)
+    parser& metadata)
 {
     const auto config_settings = metadata.load_settings();
     const auto config_path = get_config_option(variables);
@@ -96,7 +96,7 @@ static bool load_configuration_variables(variables_map& variables,
 }
 
 static void load_environment_variables(variables_map& variables,
-    config_type& metadata)
+    parser& metadata)
 {
     const auto& environment_variables = metadata.load_environment();
     const auto environment = parse_environment(environment_variables,
@@ -104,12 +104,12 @@ static void load_environment_variables(variables_map& variables,
     store(environment, variables);
 }
 
-bool load_config(config_type& metadata, std::string& message, int argc,
+bool parser::parse(parser& metadata, std::string& message, int argc,
     const char* argv[])
 {
     try
     {
-        bool file = false;
+        auto file = false;
         variables_map variables;
         load_command_variables(variables, metadata, argc, argv);
         load_environment_variables(variables, metadata);
@@ -128,7 +128,7 @@ bool load_config(config_type& metadata, std::string& message, int argc,
 
         // Clear the config file path if it wasn't used.
         if (!file)
-            metadata.settings.configuration.clear();
+            metadata.settings.file.clear();
     }
     catch (const boost::program_options::error& e)
     {

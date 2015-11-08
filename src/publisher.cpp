@@ -19,16 +19,19 @@
  */
 #include <bitcoin/server/publisher.hpp>
 
-#include <bitcoin/server/config/config.hpp>
+#include <string>
+#include <bitcoin/server/config/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
+constexpr int zmq_fail = -1;
 
-publisher::publisher(server_node& node)
+publisher::publisher(server_node& node, const settings& settings)
   : node_(node),
+    settings_(settings),
     socket_block_(context_, ZMQ_PUB),
     socket_tx_(context_, ZMQ_PUB)
 {
@@ -37,26 +40,23 @@ publisher::publisher(server_node& node)
 bool publisher::setup_socket(const std::string& connection,
     czmqpp::socket& socket)
 {
-    if (connection.empty())
-        return true;
-
-    return socket.bind(connection) != -1;
+    return connection.empty() || socket.bind(connection) != zmq_fail;
 }
 
-bool publisher::start(const settings_type& config)
+bool publisher::start()
 {
     node_.subscribe_blocks(std::bind(&publisher::send_block, this, _1, _2));
     node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
 
     log::debug(LOG_PUBLISHER) << "Publishing blocks on "
-        << config.server.block_publish_endpoint;
-    if (!setup_socket(config.server.block_publish_endpoint.to_string(),
+        << settings_.block_publish_endpoint;
+    if (!setup_socket(settings_.block_publish_endpoint.to_string(),
         socket_block_))
         return false;
 
     log::debug(LOG_PUBLISHER) << "Publishing transactions on "
-        << config.server.transaction_publish_endpoint;
-    if (!setup_socket(config.server.transaction_publish_endpoint.to_string(),
+        << settings_.transaction_publish_endpoint;
+    if (!setup_socket(settings_.transaction_publish_endpoint.to_string(),
         socket_tx_))
         return false;
 
@@ -68,7 +68,7 @@ bool publisher::stop()
     return true;
 }
 
-void append_hash(czmqpp::message& message, const hash_digest& hash)
+static void append_hash(czmqpp::message& message, const hash_digest& hash)
 {
     message.append(data_chunk(hash.begin(), hash.end()));
 }

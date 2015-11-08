@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -42,9 +43,7 @@ class BCS_API subscribe_manager
 {
 public:
 
-    subscribe_manager(server_node& node,
-        uint32_t maximum_subscriptions=100000000,
-        uint32_t subscription_expiration_minutes=10);
+    subscribe_manager(server_node& node, const settings& settings);
 
     void subscribe(const incoming_message& request,
         queue_send_callback queue_send);
@@ -81,9 +80,8 @@ private:
     void sweep_expired();
 
     dispatcher dispatch_;
-    uint32_t subscription_limit_;
-    boost::posix_time::minutes subscription_expiration_minutes_;
     subscription_list subscriptions_;
+    const settings& settings_;
 };
 
 } // namespace server

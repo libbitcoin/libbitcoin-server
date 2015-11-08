@@ -25,7 +25,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/parser.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 // Define after boost asio, see stackoverflow.com/a/9750437/1172329.
@@ -69,13 +69,13 @@ static path default_config_path()
 }
 
 // TODO: localize descriptions.
-const options_description config_type::load_options()
+const options_description parser::load_options()
 {
     options_description description("options");
     description.add_options()
     (
         BS_CONFIG_VARIABLE,
-        value<path>(&settings.configuration),
+        value<path>(&settings.file),
         "The path to the configuration settings file."
     )
     (
@@ -107,7 +107,7 @@ const options_description config_type::load_options()
     return description;
 }
 
-const positional_options_description config_type::load_arguments()
+const positional_options_description parser::load_arguments()
 {
     positional_options_description description;
     return description
@@ -115,7 +115,7 @@ const positional_options_description config_type::load_arguments()
 }
 
 // TODO: localize descriptions.
-const options_description config_type::load_environment()
+const options_description parser::load_environment()
 {
     options_description description("environment");
     description.add_options()
@@ -124,7 +124,7 @@ const options_description config_type::load_environment()
         // The case must match the other declarations for it to compose.
         // This composes with the cmdline options and inits to system path.
         BS_CONFIG_VARIABLE,
-        value<path>(&settings.configuration)->composing()
+        value<path>(&settings.file)->composing()
             ->default_value(default_config_path()),
         "The path to the configuration settings file."
     );
@@ -133,7 +133,7 @@ const options_description config_type::load_environment()
 }
 
 // TODO: localize descriptions.
-const options_description config_type::load_settings()
+const options_description parser::load_settings()
 {
     options_description description("settings");
     description.add_options()
@@ -373,10 +373,10 @@ const options_description config_type::load_settings()
         "Write service requests to the log, defaults to false."
     )
     (
-        "server.polling_interval_milliseconds",
-        value<uint32_t>(&settings.server.polling_interval_milliseconds)->
-            default_value(SERVER_POLLING_INTERVAL_MILLISECONDS),
-        "The query polling interval in milliseconds, defaults to 1000."
+        "server.polling_interval_seconds",
+        value<uint32_t>(&settings.server.polling_interval_seconds)->
+            default_value(SERVER_POLLING_INTERVAL_SECONDS),
+        "The query polling interval in seconds, defaults to 1."
     )
     (
         "server.heartbeat_interval_seconds",

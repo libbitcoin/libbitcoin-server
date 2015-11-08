@@ -20,15 +20,15 @@
 #include <bitcoin/server/service/blockchain.hpp>
 
 #include <boost/iostreams/stream.hpp>
-#include <bitcoin/server/config/config.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
-
+    
 using namespace bc::blockchain;
+using namespace bc::wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
@@ -36,8 +36,8 @@ using std::placeholders::_3;
 void blockchain_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    wallet::payment_address address;
     uint32_t from_height;
+    payment_address address;
 
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
@@ -73,7 +73,7 @@ void blockchain_fetch_last_height(server_node& node,
 {
     const auto& data = request.data();
 
-    if (!data.empty())
+    if (!request.data().empty())
     {
         log::error(LOG_SERVICE)
             << "Incorrect data size for blockchain.fetch_last_height";

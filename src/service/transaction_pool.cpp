@@ -19,40 +19,22 @@
  */
 #include <bitcoin/server/service/transaction_pool.hpp>
 
-#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 
 namespace libbitcoin {
 namespace server {
-
+    
+using namespace chain;
 using std::placeholders::_1;
 using std::placeholders::_2;
+using std::placeholders::_3;
+using std::placeholders::_4;
 
-void transaction_validated(const code& ec,
-    const chain::index_list& unconfirmed,
-    const incoming_message& request, queue_send_callback queue_send);
-
-void transaction_pool_validate(server_node& node,
+static void transaction_validated(const code& ec, const transaction& tx,
+    const hash_digest& tx_hash, const index_list& unconfirmed,
     const incoming_message& request, queue_send_callback queue_send)
-{
-    const data_chunk& raw_tx = request.data();
-    chain::transaction tx;
-
-    if (!tx.from_data(raw_tx))
-    {
-        transaction_validated(error::bad_stream, chain::index_list(), request,
-            queue_send);
-        return;
-    }
-
-    node.transaction_pool().validate(tx,
-        std::bind(transaction_validated, _1, _2, request, queue_send));
-}
-
-void transaction_validated(const code& ec,
-    const chain::index_list& unconfirmed, const incoming_message& request,
-    queue_send_callback queue_send)
 {
     data_chunk result(4 + unconfirmed.size() * 4);
     auto serial = make_serializer(result.begin());
@@ -68,18 +50,30 @@ void transaction_validated(const code& ec,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log::debug(LOG_REQUEST)
-        << "transaction_pool.validate() finished. Sending response: "
-        << "ec=" << ec.message();
+        << "transaction_pool.validate() finished. Sending response: ec="
+        << ec.message();
 
     outgoing_message response(request, result);
     queue_send(response);
+}
+
+void transaction_pool_validate(server_node& node,
+    const incoming_message& request, queue_send_callback queue_send)
+{
+    transaction tx;
+    if (tx.from_data(request.data()))
+        node.transaction_pool().validate(tx,
+            std::bind(transaction_validated,
+                _1, _2, _3, _4, request, queue_send));
+    else
+        transaction_validated(error::bad_stream, transaction(), hash_digest(),
+            index_list(), request, queue_send);
 }
 
 void transaction_pool_fetch_transaction(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     hash_digest tx_hash;
-
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
 
