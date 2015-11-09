@@ -56,7 +56,8 @@ static void register_with_node(subscribe_manager& manager, server_node& node)
     node.subscribe_transactions(receive_tx);
 }
 
-subscribe_manager::subscribe_manager(server_node& node, const settings& settings)
+subscribe_manager::subscribe_manager(server_node& node,
+    const settings& settings)
   : dispatch_(node.pool()), settings_(settings)
 {
     // subscribe to blocks and txs -> submit
