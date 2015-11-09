@@ -95,7 +95,7 @@ server_node::server_node(const configuration& config)
   : full_node(config),
     configuration_(config),
     retry_start_timer_(memory_threads_.service()),
-    minimum_start_height_(config.minimum_start_height())
+    last_checkpoint_height_(config.last_checkpoint_height())
 {
 }
 
@@ -131,7 +131,7 @@ void server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
     if (ec == bc::error::service_stopped)
         return;
 
-    if (fork_point < minimum_start_height_)
+    if (fork_point < last_checkpoint_height_)
         return;
 
     // Fire server protocol block subscription notifications.

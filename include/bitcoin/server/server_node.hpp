@@ -67,7 +67,7 @@ private:
     block_notify_list block_sunscriptions_;
     transaction_notify_list tx_subscriptions_;
 
-    size_t minimum_start_height_;
+    size_t last_checkpoint_height_;
     asio::timer retry_start_timer_;
     const configuration configuration_;
 };
