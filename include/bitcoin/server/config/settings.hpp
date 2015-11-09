@@ -29,10 +29,10 @@ namespace libbitcoin {
 namespace server {
     
 /// default settings
-#define SERVER_QUERY_ENDPOINT                   {"tcp://*:9091"}
-#define SERVER_HEARTBEAT_ENDPOINT               {"tcp://*:9092"}
-#define SERVER_BLOCK_PUBLISH_ENDPOINT           {"tcp://*:9093"}
-#define SERVER_TRANSACTION_PUBLISH_ENDPOINT     {"tcp://*:9094"}
+#define SERVER_QUERY_ENDPOINT                   config::endpoint{"tcp://*:9091"}
+#define SERVER_HEARTBEAT_ENDPOINT               config::endpoint{"tcp://*:9092"}
+#define SERVER_BLOCK_PUBLISH_ENDPOINT           config::endpoint{"tcp://*:9093"}
+#define SERVER_TRANSACTION_PUBLISH_ENDPOINT     config::endpoint{"tcp://*:9094"}
 #define SERVER_PUBLISHER_ENABLED                true
 #define SERVER_QUERIES_ENABLED                  true
 #define SERVER_LOG_REQUESTS                     false
@@ -40,9 +40,9 @@ namespace server {
 #define SERVER_HEARTBEAT_INTERVAL_SECONDS       5
 #define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
 #define SERVER_SUBSCRIPTION_LIMIT               100000000
-#define SERVER_CERTIFICATE_FILE                 {}
-#define SERVER_CLIENT_CERTIFICATES_PATH         {}
-#define SERVER_WHITELISTS                       {}
+#define SERVER_CERTIFICATE_FILE                 boost::filesystem::path()
+#define SERVER_CLIENT_CERTIFICATES_PATH         boost::filesystem::path()
+#define SERVER_WHITELISTS                       config::authority::list()
 
 struct BCS_API settings
 {

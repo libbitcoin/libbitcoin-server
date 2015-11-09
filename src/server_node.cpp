@@ -44,7 +44,6 @@ static const configuration default_configuration()
     defaults.node.threads = NODE_THREADS;
     defaults.node.transaction_pool_capacity = NODE_TRANSACTION_POOL_CAPACITY;
     defaults.node.peers = NODE_PEERS;
-    defaults.node.blacklists = NODE_BLACKLISTS;
     defaults.chain.threads = BLOCKCHAIN_THREADS;
     defaults.chain.block_pool_capacity = BLOCKCHAIN_BLOCK_POOL_CAPACITY;
     defaults.chain.history_start_height = BLOCKCHAIN_HISTORY_START_HEIGHT;

@@ -322,12 +322,6 @@ const options_description parser::load_settings()
             multitoken()->default_value(NODE_PEERS),
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
-    (
-        "node.blacklist",
-        value<config::authority::list>(&settings.node.blacklists)->
-            multitoken()->default_value(NODE_BLACKLISTS),
-        "IP address to disallow as a peer, multiple entries allowed."
-    )
 
     /* [server] */
     (
