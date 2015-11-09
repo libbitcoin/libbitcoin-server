@@ -20,6 +20,7 @@
 #include <bitcoin/server/dispatch.hpp>
 
 #include <csignal>
+#include <future>
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
@@ -58,22 +59,22 @@
     "Failed to test directory %1% with error, '%2%'."
 #define BS_SERVER_STARTING \
     "Please wait while server is starting."
+#define BS_SERVER_START_FAIL \
+    "Server failed to start with error, %1%."
 #define BS_SERVER_STARTED \
     "Server started, press CTRL-C to stop."
 #define BS_SERVER_STOPPING \
     "Please wait while server is stopping (code: %1%)..."
 #define BS_SERVER_UNMAPPING \
     "Please wait while files are unmapped..."
-#define BS_NODE_START_FAIL \
-    "Node failed to start."
-#define BS_NODE_STOP_FAIL \
-    "Node failed to stop."
+#define BS_SERVER_STOP_FAIL \
+    "Server stopped with error, %1%."
 #define BS_PUBLISHER_START_FAIL \
     "Publisher service failed to start: %1%"
 #define BS_PUBLISHER_STOP_FAIL \
     "Publisher service failed to stop."
 #define BS_WORKER_START_FAIL \
-    "Query service failed to start: %1%"
+    "Query service failed to start."
 #define BS_WORKER_STOP_FAIL \
     "Query service failed to stop."
 #define BS_USING_CONFIG_FILE \
@@ -242,29 +243,42 @@ static console_result run(const configuration& config, std::ostream& output,
     server_node server(config);
     publisher publish(server, config.server);
     if (config.server.publisher_enabled)
+    {
         if (!publish.start())
         {
             error << format(BS_PUBLISHER_START_FAIL) %
                 zmq_strerror(zmq_errno()) << std::endl;
-
-            // This is a bit wacky, since the node hasn't been started, but
-            // there is threadpool cleanup code in here.
-            server.stop([](const code&){});
             return console_result::not_started;
         }
+    }
 
     request_worker worker(config.server);
+    subscribe_manager subscriber(server, config.server);
     if (config.server.queries_enabled)
     {
         if (!worker.start())
-            error << format(BS_WORKER_START_FAIL);
+        {
+            error << BS_WORKER_START_FAIL << std::endl;
+            return console_result::not_started;
+        }
 
-        subscribe_manager subscriber(server, config.server);
         attach_api(worker, server, subscriber);
     }
 
-    // Start the node last so subscriptions to new blocks don't miss anything.
-    server.start([](const code&){});
+    std::promise<code> start_promise;
+    const auto handle_start = [&start_promise](const code& ec)
+    {
+        start_promise.set_value(ec);
+    };
+
+    server.start(handle_start);
+    auto ec = start_promise.get_future().get();
+
+    if (ec)
+    {
+        error << format(BS_SERVER_START_FAIL) % ec.message() << std::endl;
+        return console_result::not_started;
+    }
 
     output << BS_SERVER_STARTED << std::endl;
 
@@ -286,10 +300,20 @@ static console_result run(const configuration& config, std::ostream& output,
         if (!publish.stop())
             error << BS_PUBLISHER_STOP_FAIL << std::endl;
 
-    server.stop([](const code&){});
+    std::promise<code> stop_promise;
+    const auto handle_stop = [&stop_promise](const code& ec)
+    {
+        stop_promise.set_value(ec);
+    };
+
+    server.stop(handle_stop);
+    ec = stop_promise.get_future().get();
+
+    if (ec)
+        error << format(BS_SERVER_STOP_FAIL) % ec.message() << std::endl;
 
     output << BS_SERVER_UNMAPPING << std::endl;
-    return console_result::okay;
+    return ec ? console_result::failure : console_result::okay;
 }
 
 // Load argument, environment and config and then run the server.
