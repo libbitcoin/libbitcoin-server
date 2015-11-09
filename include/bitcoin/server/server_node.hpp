@@ -44,8 +44,6 @@ public:
 
     server_node(const configuration& config=defaults);
 
-    void start(result_handler handler);
-
     virtual void subscribe_blocks(block_notify_callback notify_block);
     virtual void subscribe_transactions(transaction_notify_callback notify_tx);
 
@@ -70,7 +68,7 @@ private:
     transaction_notify_list tx_subscriptions_;
 
     size_t minimum_start_height_;
-    boost::asio::deadline_timer retry_start_timer_;
+    asio::timer retry_start_timer_;
     const configuration configuration_;
 };
 
