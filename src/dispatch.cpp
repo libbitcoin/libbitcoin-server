@@ -215,7 +215,7 @@ static void attach_api(request_worker& worker, server_node& node,
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
-    ////attach("blockchain.fetch_block_transaction_hashes",  blockchain_fetch_block_transaction_hashes);
+    ////attach("blockchain.fetch_block_transaction_hashes", blockchain_fetch_block_transaction_hashes);
     attach("blockchain.fetch_transaction_index", blockchain_fetch_transaction_index);
     attach("blockchain.fetch_spend", blockchain_fetch_spend);
     attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
@@ -241,6 +241,22 @@ static console_result run(const configuration& config, std::ostream& output,
     output << BS_SERVER_STARTING << std::endl;
 
     server_node server(config);
+    std::promise<code> start_promise;
+    const auto handle_start = [&start_promise](const code& ec)
+    {
+        start_promise.set_value(ec);
+    };
+
+    // Logging initialized here.
+    server.start(handle_start);
+    auto ec = start_promise.get_future().get();
+
+    if (ec)
+    {
+        error << format(BS_SERVER_START_FAIL) % ec.message() << std::endl;
+        return console_result::not_started;
+    }
+
     publisher publish(server, config.server);
     if (config.server.publisher_enabled)
     {
@@ -263,21 +279,6 @@ static console_result run(const configuration& config, std::ostream& output,
         }
 
         attach_api(worker, server, subscriber);
-    }
-
-    std::promise<code> start_promise;
-    const auto handle_start = [&start_promise](const code& ec)
-    {
-        start_promise.set_value(ec);
-    };
-
-    server.start(handle_start);
-    auto ec = start_promise.get_future().get();
-
-    if (ec)
-    {
-        error << format(BS_SERVER_START_FAIL) % ec.message() << std::endl;
-        return console_result::not_started;
     }
 
     output << BS_SERVER_STARTED << std::endl;
