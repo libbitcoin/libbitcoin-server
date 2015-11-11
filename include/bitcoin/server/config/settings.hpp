@@ -27,6 +27,22 @@
 
 namespace libbitcoin {
 namespace server {
+    
+/// default settings
+#define SERVER_QUERY_ENDPOINT                   config::endpoint{"tcp://*:9091"}
+#define SERVER_HEARTBEAT_ENDPOINT               config::endpoint{"tcp://*:9092"}
+#define SERVER_BLOCK_PUBLISH_ENDPOINT           config::endpoint{"tcp://*:9093"}
+#define SERVER_TRANSACTION_PUBLISH_ENDPOINT     config::endpoint{"tcp://*:9094"}
+#define SERVER_PUBLISHER_ENABLED                true
+#define SERVER_QUERIES_ENABLED                  true
+#define SERVER_LOG_REQUESTS                     false
+#define SERVER_POLLING_INTERVAL_SECONDS         1
+#define SERVER_HEARTBEAT_INTERVAL_SECONDS       5
+#define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
+#define SERVER_SUBSCRIPTION_LIMIT               100000000
+#define SERVER_CERTIFICATE_FILE                 boost::filesystem::path()
+#define SERVER_CLIENT_CERTIFICATES_PATH         boost::filesystem::path()
+#define SERVER_WHITELISTS                       config::authority::list()
 
 struct BCS_API settings
 {
@@ -37,13 +53,30 @@ struct BCS_API settings
     bool publisher_enabled;
     bool queries_enabled;
     bool log_requests;
-    uint32_t polling_interval_milliseconds;
+    uint32_t polling_interval_seconds;
     uint32_t heartbeat_interval_seconds;
     uint32_t subscription_expiration_minutes;
     uint32_t subscription_limit;
     boost::filesystem::path certificate_file;
     boost::filesystem::path client_certificates_path;
     config::authority::list whitelists;
+
+    asio::duration polling_interval() const
+    {
+        // This should eventually be returned to milliseconds.
+        // It was changed to seconds as a quick hack, since ms is harder.
+        return asio::duration(0, 0, polling_interval_seconds);
+    }
+
+    asio::duration heartbeat_interval() const
+    {
+        return asio::duration(0, 0, heartbeat_interval_seconds);
+    }
+
+    asio::duration subscription_expiration() const
+    {
+        return asio::duration(0, subscription_expiration_minutes, 0);
+    }
 };
 
 } // namespace server

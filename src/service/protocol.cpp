@@ -20,7 +20,7 @@
 #include <bitcoin/server/service/protocol.hpp>
 
 #include <bitcoin/server.hpp>
-#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
 
@@ -44,18 +44,16 @@ void protocol_broadcast_transaction(server_node& node,
         return;
     }
 
-    const auto ignore_send = [](const code&,
-        network::channel::ptr node)
-    {
-    };
+    const auto ignore_complete = [](const code&) {};
+    const auto ignore_send = [](const code&, network::channel::ptr) {};
 
     // Send and hope for the best!
-    node.protocol().broadcast(tx, ignore_send);
+    node.network().broadcast(tx, ignore_send, ignore_complete);
 
     // Response back to user saying everything is fine.
     write_error_code(serial, code());
 
-    log_debug(LOG_SERVICE)
+    log::debug(LOG_SERVICE)
         << "protocol.broadcast_transaction() finished. Sending response.";
 
     outgoing_message response(request, result);
@@ -65,16 +63,17 @@ void protocol_broadcast_transaction(server_node& node,
 void protocol_total_connections(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
-    BITCOIN_ASSERT(node.protocol().connection_count() <= max_uint32);
-    const auto total_connections32 = static_cast<uint32_t>(
-        node.protocol().connection_count());
+    //// TODO:
+    ////BITCOIN_ASSERT(node.protocol().connection_count() <= max_uint32);
+    const auto total_connections32 = static_cast<uint32_t>(0);
+
     data_chunk result(8);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, code());
     serial.write_4_bytes_little_endian(total_connections32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    log_debug(LOG_REQUEST)
+    log::debug(LOG_REQUEST)
         << "protocol.total_connections() finished. Sending response.";
 
     outgoing_message response(request, result);

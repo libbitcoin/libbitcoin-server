@@ -23,96 +23,79 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/config.hpp>
-#include <bitcoin/server/config/settings_type.hpp>
+#include <bitcoin/server/config/configuration.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
-
+    
 using namespace bc::blockchain;
+using namespace bc::chain;
 using namespace bc::node;
+using namespace bc::wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-const settings_type server_node::defaults
+static const configuration default_configuration()
 {
-    // [server]
-    bc::server::settings
-    {
-        SERVER_QUERY_ENDPOINT,
-        SERVER_HEARTBEAT_ENDPOINT,
-        SERVER_BLOCK_PUBLISH_ENDPOINT,
-        SERVER_TRANSACTION_PUBLISH_ENDPOINT,
-        SERVER_PUBLISHER_ENABLED,
-        SERVER_QUERIES_ENABLED,
-        SERVER_LOG_REQUESTS,
-        SERVER_POLLING_INTERVAL_MILLISECONDS,
-        SERVER_HEARTBEAT_INTERVAL_SECONDS,
-        SERVER_SUBSCRIPTION_EXPIRATION_MINUTES,
-        SERVER_SUBSCRIPTION_LIMIT,
-        SERVER_CERTIFICATE_FILE,
-        SERVER_CLIENT_CERTIFICATES_PATH,
-        SERVER_WHITELISTS
-    },
-
-    // [node]
-    bc::node::settings
-    {
-        NODE_THREADS,
-        NODE_TRANSACTION_POOL_CAPACITY,
-        NODE_PEERS,
-        NODE_BLACKLISTS
-    },
-
-    // [blockchain]
-    bc::chain::settings
-    {
-        BLOCKCHAIN_THREADS,
-        BLOCKCHAIN_BLOCK_POOL_CAPACITY,
-        BLOCKCHAIN_HISTORY_START_HEIGHT,
-        BLOCKCHAIN_TESTNET_RULES_MAINNET,
-        BLOCKCHAIN_DATABASE_PATH,
-        BLOCKCHAIN_CHECKPOINTS_MAINNET
-    },
-
-    // [network]
-    bc::network::settings
-    {
-        NETWORK_THREADS,
-        NETWORK_IDENTIFIER_MAINNET,
-        NETWORK_INBOUND_PORT_MAINNET,
-        NETWORK_INBOUND_CONNECTION_LIMIT,
-        NETWORK_OUTBOUND_CONNECTIONS,
-        NETWORK_CONNECT_TIMEOUT_SECONDS,
-        NETWORK_CHANNEL_HANDSHAKE_SECONDS,
-        NETWORK_CHANNEL_REVIVAL_MINUTES,
-        NETWORK_CHANNEL_HEARTBEAT_MINUTES,
-        NETWORK_CHANNEL_INACTIVITY_MINUTES,
-        NETWORK_CHANNEL_EXPIRATION_MINUTES,
-        NETWORK_CHANNEL_GERMINATION_SECONDS,
-        NETWORK_HOST_POOL_CAPACITY,
-        NETWORK_RELAY_TRANSACTIONS,
-        NETWORK_HOSTS_FILE,
-        NETWORK_DEBUG_FILE,
-        NETWORK_ERROR_FILE,
-        NETWORK_SELF,
-        NETWORK_SEEDS_MAINNET
-    }
+    configuration defaults;
+    defaults.node.threads = NODE_THREADS;
+    defaults.node.transaction_pool_capacity = NODE_TRANSACTION_POOL_CAPACITY;
+    defaults.node.peers = NODE_PEERS;
+    defaults.chain.threads = BLOCKCHAIN_THREADS;
+    defaults.chain.block_pool_capacity = BLOCKCHAIN_BLOCK_POOL_CAPACITY;
+    defaults.chain.history_start_height = BLOCKCHAIN_HISTORY_START_HEIGHT;
+    defaults.chain.use_testnet_rules = BLOCKCHAIN_TESTNET_RULES_MAINNET;
+    defaults.chain.database_path = BLOCKCHAIN_DATABASE_PATH;
+    defaults.chain.checkpoints = BLOCKCHAIN_CHECKPOINTS_MAINNET;
+    defaults.network.threads = NETWORK_THREADS;
+    defaults.network.identifier = NETWORK_IDENTIFIER_MAINNET;
+    defaults.network.inbound_port = NETWORK_INBOUND_PORT_MAINNET;
+    defaults.network.inbound_connection_limit = NETWORK_INBOUND_CONNECTION_LIMIT;
+    defaults.network.outbound_connections = NETWORK_OUTBOUND_CONNECTIONS;
+    defaults.network.connect_attempts = NETWORK_CONNECT_ATTEMPTS;
+    defaults.network.connect_timeout_seconds = NETWORK_CONNECT_TIMEOUT_SECONDS;
+    defaults.network.channel_handshake_seconds = NETWORK_CHANNEL_HANDSHAKE_SECONDS;
+    defaults.network.channel_revival_minutes = NETWORK_CHANNEL_REVIVAL_MINUTES;
+    defaults.network.channel_heartbeat_minutes = NETWORK_CHANNEL_HEARTBEAT_MINUTES;
+    defaults.network.channel_inactivity_minutes = NETWORK_CHANNEL_INACTIVITY_MINUTES;
+    defaults.network.channel_expiration_minutes = NETWORK_CHANNEL_EXPIRATION_MINUTES;
+    defaults.network.channel_germination_seconds = NETWORK_CHANNEL_GERMINATION_SECONDS;
+    defaults.network.host_pool_capacity = NETWORK_HOST_POOL_CAPACITY;
+    defaults.network.relay_transactions = NETWORK_RELAY_TRANSACTIONS;
+    defaults.network.hosts_file = NETWORK_HOSTS_FILE;
+    defaults.network.debug_file = NETWORK_DEBUG_FILE;
+    defaults.network.error_file = NETWORK_ERROR_FILE;
+    defaults.network.self = NETWORK_SELF;
+    defaults.network.blacklists = NETWORK_BLACKLISTS;
+    defaults.network.seeds = NETWORK_SEEDS_MAINNET;
+    defaults.server.query_endpoint = SERVER_QUERY_ENDPOINT;
+    defaults.server.heartbeat_endpoint = SERVER_HEARTBEAT_ENDPOINT;
+    defaults.server.block_publish_endpoint = SERVER_BLOCK_PUBLISH_ENDPOINT;
+    defaults.server.transaction_publish_endpoint = SERVER_TRANSACTION_PUBLISH_ENDPOINT;
+    defaults.server.publisher_enabled = SERVER_PUBLISHER_ENABLED;
+    defaults.server.queries_enabled = SERVER_QUERIES_ENABLED;
+    defaults.server.log_requests = SERVER_LOG_REQUESTS;
+    defaults.server.polling_interval_seconds = SERVER_POLLING_INTERVAL_SECONDS;
+    defaults.server.heartbeat_interval_seconds = SERVER_HEARTBEAT_INTERVAL_SECONDS;
+    defaults.server.subscription_expiration_minutes = SERVER_SUBSCRIPTION_EXPIRATION_MINUTES;
+    defaults.server.subscription_limit = SERVER_SUBSCRIPTION_LIMIT;
+    defaults.server.certificate_file = SERVER_CERTIFICATE_FILE;
+    defaults.server.client_certificates_path = SERVER_CLIENT_CERTIFICATES_PATH;
+    defaults.server.whitelists = SERVER_WHITELISTS;
+    return defaults;
 };
 
-server_node::server_node(const settings_type& config)
-  : full_node(config),
-    retry_start_timer_(memory_threads_.service()),
-    minimum_start_height_(config.minimum_start_height())
-{
-}
+const configuration server_node::defaults = default_configuration();
 
-bool server_node::start(const settings_type& config)
+server_node::server_node(const configuration& config)
+  : full_node(config),
+    configuration_(config),
+    retry_start_timer_(memory_threads_.service()),
+    last_checkpoint_height_(config.last_checkpoint_height())
 {
-    return full_node::start(config);
 }
 
 void server_node::subscribe_blocks(block_notify_callback notify_block)
@@ -125,10 +108,10 @@ void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
     tx_subscriptions_.push_back(notify_tx);
 }
 
-void server_node::new_unconfirm_valid_tx(const code& ec,
-    const chain::index_list& unconfirmed, const chain::transaction& tx)
+void server_node::handle_tx_validated(const code& ec, const transaction& tx,
+    const hash_digest& hash, const index_list& unconfirmed)
 {
-    full_node::new_unconfirm_valid_tx(ec, unconfirmed, tx);
+    full_node::handle_tx_validated(ec, tx, hash, unconfirmed);
 
     if (ec == bc::error::service_stopped)
         return;
@@ -138,16 +121,16 @@ void server_node::new_unconfirm_valid_tx(const code& ec,
         notify(tx);
 }
 
-void server_node::broadcast_new_blocks(const code& ec, uint64_t fork_point,
-    const blockchain::block_chain::list& new_blocks,
-    const blockchain::block_chain::list& replaced_blocks)
+void server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
+    const block_chain::list& new_blocks,
+    const block_chain::list& replaced_blocks)
 {
-    broadcast_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
+    handle_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
 
     if (ec == bc::error::service_stopped)
         return;
 
-    if (fork_point < minimum_start_height_)
+    if (fork_point < last_checkpoint_height_)
         return;
 
     // Fire server protocol block subscription notifications.
@@ -163,7 +146,7 @@ void server_node::fullnode_fetch_history(server_node& node,
     const incoming_message& request, queue_send_callback queue_send)
 {
     uint32_t from_height;
-    wallet::payment_address address;
+    payment_address address;
 
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;

@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_PUBLISHER_HPP
 #define LIBBITCOIN_SERVER_PUBLISHER_HPP
 
+#include <string>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/config/settings.hpp>
@@ -32,20 +33,21 @@ namespace server {
 class BCS_API publisher
 {
 public:
-    publisher(server_node& node);
+    publisher(server_node& node, const settings& settings);
 
-    bool start(const settings_type& config);
+    bool start();
     bool stop();
 
 private:
-    bool setup_socket(const std::string& connection, czmqpp::socket& socket);
-    void send_block(uint32_t height, const chain::block& block);
     void send_tx(const chain::transaction& tx);
+    void send_block(uint32_t height, const chain::block& block);
+    bool setup_socket(const std::string& connection, czmqpp::socket& socket);
 
     server_node& node_;
     czmqpp::context context_;
     czmqpp::socket socket_block_;
     czmqpp::socket socket_tx_;
+    const settings& settings_;
 };
 
 } // namespace server

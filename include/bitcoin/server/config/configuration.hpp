@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SETTINGS_TYPE_HPP
-#define LIBBITCOIN_SERVER_SETTINGS_TYPE_HPP
+#ifndef LIBBITCOIN_SERVER_CONFIGURATION_HPP
+#define LIBBITCOIN_SERVER_CONFIGURATION_HPP
 
 #include <cstdint>
 #include <boost/filesystem.hpp>
@@ -29,30 +29,39 @@
 namespace libbitcoin {
 namespace server {
 
-// TODO: rename to configuration
-class BCS_API settings_type
-  : public node::settings_type
+// Log names.
+#define LOG_REQUEST "request"
+#define LOG_SERVICE "service"
+#define LOG_PUBLISHER LOG_SERVICE
+#define LOG_SUBSCRIBER "subscriber"
+
+// Not localizable.
+#define BS_HELP_VARIABLE "help"
+#define BS_SETTINGS_VARIABLE "settings"
+#define BS_VERSION_VARIABLE "version"
+
+// This must be lower case but the env var part can be any case.
+#define BS_CONFIG_VARIABLE "config"
+
+// This must match the case of the env var.
+#define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
+
+class BCS_API configuration
+  : public node::configuration
 {
 public:
-    settings_type()
+    configuration()
     {
     }
 
-    settings_type(
-        const bc::server::settings& server_settings,
-        const bc::node::settings& node_settings,
-        const bc::chain::settings& chain_settings,
-        const bc::network::settings& network_settings)
-      : node::settings_type(node_settings, chain_settings, network_settings),
+    configuration(
+        const server::settings& server_settings,
+        const node::settings& node_settings,
+        const blockchain::settings& chain_settings,
+        const network::settings& network_settings)
+      : node::configuration(node_settings, chain_settings, network_settings),
         server(server_settings)
     {
-    }
-
-    // HACK: generalize logging.
-    virtual std::string log_to_skip() const
-    {
-        // Return LOG_REQUEST if request logging is disabled.
-        return server.log_requests ? "" : "request";
     }
 
     // options
@@ -63,10 +72,10 @@ public:
     bool version;
 
     // options + environment vars
-    boost::filesystem::path configuration;
+    boost::filesystem::path file;
 
     // settings
-    bc::server::settings server;
+    server::settings server;
 };
 
 } // namespace server

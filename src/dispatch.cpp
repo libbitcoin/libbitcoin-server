@@ -20,12 +20,13 @@
 #include <bitcoin/server/dispatch.hpp>
 
 #include <csignal>
+#include <future>
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/config.hpp>
+#include <bitcoin/server/config/parser.hpp>
 #include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/message.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -58,24 +59,22 @@
     "Failed to test directory %1% with error, '%2%'."
 #define BS_SERVER_STARTING \
     "Please wait while server is starting."
+#define BS_SERVER_START_FAIL \
+    "Server failed to start with error, %1%."
 #define BS_SERVER_STARTED \
     "Server started, press CTRL-C to stop."
 #define BS_SERVER_STOPPING \
     "Please wait while server is stopping (code: %1%)..."
-#define BS_SERVER_STOPPED \
-    "Server stopped cleanly."
 #define BS_SERVER_UNMAPPING \
     "Please wait while files are unmapped..."
-#define BS_NODE_START_FAIL \
-    "Node failed to start."
-#define BS_NODE_STOP_FAIL \
-    "Node failed to stop."
+#define BS_SERVER_STOP_FAIL \
+    "Server stopped with error, %1%."
 #define BS_PUBLISHER_START_FAIL \
     "Publisher service failed to start: %1%"
 #define BS_PUBLISHER_STOP_FAIL \
     "Publisher service failed to stop."
 #define BS_WORKER_START_FAIL \
-    "Query service failed to start: %1%"
+    "Query service failed to start."
 #define BS_WORKER_STOP_FAIL \
     "Query service failed to stop."
 #define BS_USING_CONFIG_FILE \
@@ -109,7 +108,7 @@ static void display_invalid_parameter(std::ostream& stream,
     stream << format(BS_INVALID_PARAMETER) % clean_message << std::endl;
 }
 
-static void show_help(config_type& metadata, std::ostream& stream)
+static void show_help(parser& metadata, std::ostream& stream)
 {
     printer help(metadata.load_options(), metadata.load_arguments(),
         BS_APPLICATION_NAME, BS_INFORMATION_MESSAGE);
@@ -117,12 +116,12 @@ static void show_help(config_type& metadata, std::ostream& stream)
     help.commandline(stream);
 }
 
-static void show_settings(config_type& metadata, std::ostream& stream)
+static void show_settings(parser& metadata, std::ostream& stream)
 {
-    printer settings(metadata.load_settings(), BS_APPLICATION_NAME,
+    printer print(metadata.load_settings(), BS_APPLICATION_NAME,
         BS_SETTINGS_MESSAGE);
-    settings.initialize();
-    settings.settings(stream);
+    print.initialize();
+    print.settings(stream);
 }
 
 static void show_version(std::ostream& stream)
@@ -194,17 +193,21 @@ static void attach_api(request_worker& worker, server_node& node,
 {
     typedef std::function<void(server_node&, const incoming_message&,
         queue_send_callback)> basic_command_handler;
-    auto attach = [&worker, &node](
-        const std::string& command, basic_command_handler handler)
+
+    auto attach = [&worker, &node](const std::string& command,
+        basic_command_handler handler)
     {
         worker.attach(command, std::bind(handler, std::ref(node), _1, _2));
     };
 
     // Subscriptions.
     worker.attach("address.subscribe", 
-        std::bind(&subscribe_manager::subscribe, &subscriber, _1, _2));
+        std::bind(&subscribe_manager::subscribe,
+            &subscriber, _1, _2));
+
     worker.attach("address.renew", 
-        std::bind(&subscribe_manager::renew, &subscriber, _1, _2));
+        std::bind(&subscribe_manager::renew,
+            &subscriber, _1, _2));
 
     // Non-subscription API.
     attach("address.fetch_history2", server_node::fullnode_fetch_history);
@@ -212,25 +215,22 @@ static void attach_api(request_worker& worker, server_node& node,
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
-    ////attach("blockchain.fetch_block_transaction_hashes", 
-    ////    blockchain_fetch_block_transaction_hashes);
-    attach("blockchain.fetch_transaction_index",
-        blockchain_fetch_transaction_index);
+    ////attach("blockchain.fetch_block_transaction_hashes", blockchain_fetch_block_transaction_hashes);
+    attach("blockchain.fetch_transaction_index", blockchain_fetch_transaction_index);
     attach("blockchain.fetch_spend", blockchain_fetch_spend);
     attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
     attach("blockchain.fetch_stealth", blockchain_fetch_stealth);
     attach("protocol.broadcast_transaction", protocol_broadcast_transaction);
     attach("protocol.total_connections", protocol_total_connections);
     attach("transaction_pool.validate", transaction_pool_validate);
-    attach("transaction_pool.fetch_transaction", 
-        transaction_pool_fetch_transaction);
+    attach("transaction_pool.fetch_transaction", transaction_pool_fetch_transaction);
 
     // Deprecated command, for backward compatibility.
     attach("address.fetch_history", COMPAT_fetch_history);
 }
 
 // Run the server.
-static console_result run(const settings_type& config, std::ostream& output,
+static console_result run(const configuration& config, std::ostream& output,
     std::ostream& error)
 {
     // Ensure the blockchain directory is initialized (at least exists).
@@ -240,39 +240,45 @@ static console_result run(const settings_type& config, std::ostream& output,
 
     output << BS_SERVER_STARTING << std::endl;
 
-    server_node full_node(config);
-    publisher publish(full_node);
+    server_node server(config);
+    std::promise<code> start_promise;
+    const auto handle_start = [&start_promise](const code& ec)
+    {
+        start_promise.set_value(ec);
+    };
+
+    // Logging initialized here.
+    server.start(handle_start);
+    auto ec = start_promise.get_future().get();
+
+    if (ec)
+    {
+        error << format(BS_SERVER_START_FAIL) % ec.message() << std::endl;
+        return console_result::not_started;
+    }
+
+    publisher publish(server, config.server);
     if (config.server.publisher_enabled)
-        if (!publish.start(config))
+    {
+        if (!publish.start())
         {
             error << format(BS_PUBLISHER_START_FAIL) %
                 zmq_strerror(zmq_errno()) << std::endl;
+            return console_result::not_started;
+        }
+    }
 
-            // This is a bit wacky, since the node hasn't been started, but
-            // there is threadpool cleanup code in here.
-            full_node.stop();
+    request_worker worker(config.server);
+    subscribe_manager subscriber(server, config.server);
+    if (config.server.queries_enabled)
+    {
+        if (!worker.start())
+        {
+            error << BS_WORKER_START_FAIL << std::endl;
             return console_result::not_started;
         }
 
-    request_worker worker;
-    if (config.server.queries_enabled)
-    {
-        if (!worker.start(config))
-            error << format(BS_WORKER_START_FAIL);
-
-        subscribe_manager subscriber(full_node);
-        attach_api(worker, full_node, subscriber);
-    }
-
-    // Start the node last so subscriptions to new blocks don't miss anything.
-    if (!full_node.start(config))
-    {
-        error << BS_NODE_START_FAIL << std::endl;
-
-        // This is a bit wacky, since the node hasn't been started yet, but
-        // there is threadpool cleanup code in here.
-        full_node.stop();
-        return console_result::not_started;
+        attach_api(worker, server, subscriber);
     }
 
     output << BS_SERVER_STARTED << std::endl;
@@ -295,38 +301,43 @@ static console_result run(const settings_type& config, std::ostream& output,
         if (!publish.stop())
             error << BS_PUBLISHER_STOP_FAIL << std::endl;
 
-    if (!full_node.stop())
+    std::promise<code> stop_promise;
+    const auto handle_stop = [&stop_promise](const code& ec)
     {
-        error << BS_NODE_STOP_FAIL << std::endl;
-        return console_result::failure;
-    }
+        stop_promise.set_value(ec);
+    };
 
-    output << BS_SERVER_STOPPED << std::endl;
+    server.stop(handle_stop);
+    ec = stop_promise.get_future().get();
+
+    if (ec)
+        error << format(BS_SERVER_STOP_FAIL) % ec.message() << std::endl;
+
     output << BS_SERVER_UNMAPPING << std::endl;
-    return console_result::okay;
+    return ec ? console_result::failure : console_result::okay;
 }
 
 // Load argument, environment and config and then run the server.
 console_result dispatch(int argc, const char* argv[], std::istream&, 
     std::ostream& output, std::ostream& error)
 {
+    parser parsed;
     std::string message;
-    config_type configuration;
-    if (!load_config(configuration, message, argc, argv))
+
+    if (!parser::parse(parsed, message, argc, argv))
     {
         display_invalid_parameter(error, message);
         return console_result::failure;
     }
 
-    if (!configuration.settings.configuration.empty())
-        output << format(BS_USING_CONFIG_FILE) % 
-            configuration.settings.configuration << std::endl;
+    const auto settings = parsed.settings;
+    if (!settings.file.empty())
+        output << format(BS_USING_CONFIG_FILE) % settings.file << std::endl;
 
-    const auto settings = configuration.settings;
     if (settings.help)
-        show_help(configuration, output);
+        show_help(parsed, output);
     else if (settings.settings)
-        show_settings(configuration, output);
+        show_settings(parsed, output);
     else if (settings.version)
         show_version(output);
     else if (settings.mainnet)

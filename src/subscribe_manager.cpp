@@ -20,18 +20,25 @@
 #include <bitcoin/server/subscribe_manager.hpp>
 
 #include <cstdint>
-#include <bitcoin/server/config/config.hpp>
+#include <boost/date_time.hpp>
+#include <bitcoin/server/config/configuration.hpp>
+#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-namespace posix_time = boost::posix_time;
-using posix_time::second_clock;
+using namespace bc::chain;
+using namespace bc::wallet;
+
+const auto now = []()
+{
+    return boost::posix_time::second_clock::universal_time();
+};
 
 static void register_with_node(subscribe_manager& manager, server_node& node)
 {
-    const auto receive_block = [&manager](size_t height, const chain::block& block)
+    const auto receive_block = [&manager](size_t height, const block& block)
     {
         const auto block_hash = block.header.hash();
 
@@ -39,7 +46,7 @@ static void register_with_node(subscribe_manager& manager, server_node& node)
             manager.submit(height, block_hash, tx);
     };
 
-    const auto receive_tx = [&manager](const chain::transaction& tx)
+    const auto receive_tx = [&manager](const transaction& tx)
     {
         constexpr size_t height = 0;
         manager.submit(height, null_hash, tx);
@@ -50,10 +57,8 @@ static void register_with_node(subscribe_manager& manager, server_node& node)
 }
 
 subscribe_manager::subscribe_manager(server_node& node,
-    uint32_t maximum_subscriptions, uint32_t subscription_expiration_minutes)
-  : dispatch_(node.pool()),
-    subscription_limit_(maximum_subscriptions),
-    subscription_expiration_minutes_(subscription_expiration_minutes)
+    const settings& settings)
+  : dispatch_(node.pool()), settings_(settings)
 {
     // subscribe to blocks and txs -> submit
     register_with_node(*this, node);
@@ -99,17 +104,17 @@ code subscribe_manager::add_subscription(
     binary_type address_key;
     if (!deserialize_address(address_key, type, request.data()))
     {
-        log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe data.";
+        log::warning(LOG_SUBSCRIBER)
+            << "Incorrect format for subscribe data.";
         return error::bad_stream;
     }
 
     // Limit absolute number of subscriptions to prevent exhaustion attacks.
-    if (subscriptions_.size() >= subscription_limit_)
+    if (subscriptions_.size() >= settings_.subscription_limit)
         return error::pool_filled;
 
     // Now create subscription.
-    const auto now = second_clock::universal_time();
-    const auto expire_time = now + subscription_expiration_minutes_;
+    const auto expire_time = now() + settings_.subscription_expiration();
     const subscription new_subscription = 
     {
         address_key, 
@@ -150,12 +155,12 @@ void subscribe_manager::do_renew(const incoming_message& request,
     subscribe_type type;
     if (!deserialize_address(filter, type, request.data()))
     {
-        log_warning(LOG_SUBSCRIBER) << "Incorrect format for subscribe renew.";
+        log::warning(LOG_SUBSCRIBER)
+            << "Incorrect format for subscribe renew.";
         return;
     }
 
-    const auto now = second_clock::universal_time();
-    const auto expire_time = now + subscription_expiration_minutes_;
+    const auto expire_time = now() + settings_.subscription_expiration();
 
     // Find entry and update expiry_time.
     for (auto& subscription: subscriptions_)
@@ -185,7 +190,7 @@ void subscribe_manager::do_renew(const incoming_message& request,
 }
 
 void subscribe_manager::submit(size_t height, const hash_digest& block_hash,
-    const chain::transaction& tx)
+    const transaction& tx)
 {
     dispatch_.ordered(
         &subscribe_manager::do_submit,
@@ -193,11 +198,11 @@ void subscribe_manager::submit(size_t height, const hash_digest& block_hash,
 }
 
 void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
-    const chain::transaction& tx)
+    const transaction& tx)
 {
     for (const auto& input: tx.inputs)
     {
-        const auto address = wallet::payment_address::extract(input.script);
+        const auto address = payment_address::extract(input.script);
         if (address)
             post_updates(address, height, block_hash, tx);
     }
@@ -205,7 +210,7 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
     uint32_t prefix;
     for (const auto& output: tx.outputs)
     {
-        const auto address = wallet::payment_address::extract(output.script);
+        const auto address = payment_address::extract(output.script);
         if (address)
             post_updates(address, height, block_hash, tx);
         else if (to_stealth_prefix(prefix, output.script))
@@ -218,9 +223,8 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
         sweep_expired();
 }
 
-void subscribe_manager::post_updates(const wallet::payment_address& address,
-    size_t height, const hash_digest& block_hash,
-    const chain::transaction& tx)
+void subscribe_manager::post_updates(const payment_address& address,
+    size_t height, const hash_digest& block_hash, const transaction& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
     const auto height32 = static_cast<uint32_t>(height);
@@ -262,7 +266,7 @@ void subscribe_manager::post_updates(const wallet::payment_address& address,
 }
 
 void subscribe_manager::post_stealth_updates(uint32_t prefix, size_t height, 
-    const hash_digest& block_hash, const chain::transaction& tx)
+    const hash_digest& block_hash, const transaction& tx)
 {
     BITCOIN_ASSERT(height <= max_uint32);
     const auto height32 = static_cast<uint32_t>(height);
@@ -303,7 +307,7 @@ void subscribe_manager::post_stealth_updates(uint32_t prefix, size_t height,
 
 void subscribe_manager::sweep_expired()
 {
-    const auto now = second_clock::universal_time();
+    const auto fixed_time = now();
 
     // Delete entries that have expired.
     for (auto it = subscriptions_.begin(); it != subscriptions_.end();)
@@ -311,12 +315,12 @@ void subscribe_manager::sweep_expired()
         const auto& subscription = *it;
 
         // Already expired? If so, then erase.
-        if (subscription.expiry_time < now)
+        if (subscription.expiry_time < fixed_time)
         {
-            log_debug(LOG_SUBSCRIBER)
-                << "Deleting expired subscription: "
-                << subscription.prefix << " from "
-                << encode_base16(subscription.client_origin);
+            log::debug(LOG_SUBSCRIBER)
+                << "Deleting expired subscription: " << subscription.prefix
+                << " from " << encode_base16(subscription.client_origin);
+
             it = subscriptions_.erase(it);
             continue;
         }
