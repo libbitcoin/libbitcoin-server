@@ -94,10 +94,14 @@ namespace server {
 using std::placeholders::_1;
 using std::placeholders::_2;
 using boost::format;
-using namespace bc::blockchain;
-using namespace bc::config;
 using namespace boost::system;
 using namespace boost::filesystem;
+using namespace bc::blockchain;
+using namespace bc::config;
+using namespace bc::network;
+using namespace bc::node;
+
+constexpr auto append = std::ofstream::out | std::ofstream::app;
 
 static void display_invalid_parameter(std::ostream& stream,
     const std::string& message)
@@ -240,7 +244,19 @@ static console_result run(const configuration& config, std::ostream& output,
 
     output << BS_SERVER_STARTING << std::endl;
 
-    server_node server(config);
+    // These must be libbitcoin streams.
+    bc::ofstream debug_file(config.network.debug_file.string(), append);
+    bc::ofstream error_file(config.network.error_file.string(), append);
+    initialize_logging(debug_file, error_file, bc::cout, bc::cerr);
+
+    static const auto startup = "================= startup ==================";
+    log::debug(LOG_NODE) << startup;
+    log::info(LOG_NODE) << startup;
+    log::warning(LOG_NODE) << startup;
+    log::error(LOG_NODE) << startup;
+    log::fatal(LOG_NODE) << startup;
+
+    p2p_node server(config);
     std::promise<code> start_promise;
     const auto handle_start = [&start_promise](const code& ec)
     {
@@ -257,29 +273,39 @@ static console_result run(const configuration& config, std::ostream& output,
         return console_result::not_started;
     }
 
-    publisher publish(server, config.server);
-    if (config.server.publisher_enabled)
+    std::promise<code>run_promise;
+    const auto handle_run = [&run_promise](const code ec)
     {
-        if (!publish.start())
-        {
-            error << format(BS_PUBLISHER_START_FAIL) %
-                zmq_strerror(zmq_errno()) << std::endl;
-            return console_result::not_started;
-        }
-    }
+        run_promise.set_value(ec);
+    };
 
-    request_worker worker(config.server);
-    subscribe_manager subscriber(server, config.server);
-    if (config.server.queries_enabled)
-    {
-        if (!worker.start())
-        {
-            error << BS_WORKER_START_FAIL << std::endl;
-            return console_result::not_started;
-        }
+    // Start the long-running sessions.
+    server.run(handle_run);
+    ec = run_promise.get_future().get();
 
-        attach_api(worker, server, subscriber);
-    }
+    ////publisher publish(server, config.server);
+    ////if (config.server.publisher_enabled)
+    ////{
+    ////    if (!publish.start())
+    ////    {
+    ////        error << format(BS_PUBLISHER_START_FAIL) %
+    ////            zmq_strerror(zmq_errno()) << std::endl;
+    ////        return console_result::not_started;
+    ////    }
+    ////}
+
+    ////request_worker worker(config.server);
+    ////subscribe_manager subscriber(server, config.server);
+    ////if (config.server.queries_enabled)
+    ////{
+    ////    if (!worker.start())
+    ////    {
+    ////        error << BS_WORKER_START_FAIL << std::endl;
+    ////        return console_result::not_started;
+    ////    }
+
+    ////    attach_api(worker, server, subscriber);
+    ////}
 
     output << BS_SERVER_STARTED << std::endl;
 
@@ -288,18 +314,18 @@ static console_result run(const configuration& config, std::ostream& output,
     signal(SIGTERM, interrupt_handler);
     signal(SIGINT, interrupt_handler);
 
-    // Main loop.
-    while (!stopped)
-        worker.update();
+    ////// Main loop.
+    ////while (!stopped)
+    ////    worker.update();
 
-    // Stop the worker, publisher and node.
-    if (config.server.queries_enabled)
-        if (!worker.stop())
-            error << BS_WORKER_STOP_FAIL << std::endl;
+    ////// Stop the worker, publisher and node.
+    ////if (config.server.queries_enabled)
+    ////    if (!worker.stop())
+    ////        error << BS_WORKER_STOP_FAIL << std::endl;
 
-    if (config.server.publisher_enabled)
-        if (!publish.stop())
-            error << BS_PUBLISHER_STOP_FAIL << std::endl;
+    ////if (config.server.publisher_enabled)
+    ////    if (!publish.stop())
+    ////        error << BS_PUBLISHER_STOP_FAIL << std::endl;
 
     std::promise<code> stop_promise;
     const auto handle_stop = [&stop_promise](const code& ec)
