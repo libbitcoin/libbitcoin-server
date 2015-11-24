@@ -157,22 +157,22 @@ const options_description parser::load_settings()
         "The port for incoming connections, defaults to 8333."
     )
     (
-        "network.inbound_connection_limit",
-        value<uint32_t>(&settings.network.inbound_connection_limit)->
-            default_value(p2p::mainnet.inbound_connection_limit),
-        "The maximum number of incoming network connections, defaults to 8."
+        "network.connection_limit",
+        value<uint32_t>(&settings.network.connection_limit)->
+        default_value(p2p::mainnet.connection_limit),
+        "The target number of total network connections, defaults to 16."
     )
     (
         "network.outbound_connections",
         value<uint32_t>(&settings.network.outbound_connections)->
             default_value(p2p::mainnet.outbound_connections),
-        "The maximum number of outgoing network connections, defaults to 8."
+        "The target number of outgoing network connections, defaults to 8."
     )
     (
-        "network.connect_attempts",
-        value<uint16_t>(&settings.network.connect_attempts)->
-            default_value(p2p::mainnet.connect_attempts),
-        "The number of times to attempt contacting a node, defaults to 0 (forever)."
+        "network.manual_retry_limit",
+        value<uint32_t>(&settings.network.manual_retry_limit)->
+            default_value(p2p::mainnet.manual_retry_limit),
+        "The retry limit for manual connection establishment, defaults to 0 (forever)."
     )
     (
         "network.connect_timeout_seconds",
