@@ -5,7 +5,7 @@
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <ProjectGuid>{F45B7D90-90BC-41EF-9AD1-9B29256A09FE}</ProjectGuid>
     <ProjectName>bs</ProjectName>
-    <NuGetPackageImportStamp>d5ab076e</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>1ef951ad</NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugDEXE|Win32">
@@ -89,8 +89,7 @@
     <Import Project="..\..\..\..\..\..\nuget\czmqpp_vc120.1.1.0.0\build\native\czmqpp_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\czmqpp_vc120.1.1.0.0\build\native\czmqpp_vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\libsodium_vc120.1.0.0.0\build\native\libsodium_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\libsodium_vc120.1.0.0.0\build\native\libsodium_vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\libzmq_vc120.4.2.0.0\build\native\libzmq_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\libzmq_vc120.4.2.0.0\build\native\libzmq_vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -107,8 +106,7 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\libzmq_vc120.4.2.0.0\build\native\libzmq_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\libzmq_vc120.4.2.0.0\build\native\libzmq_vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\czmq_vc120.3.0.1.0\build\native\czmq_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\czmq_vc120.3.0.1.0\build\native\czmq_vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\czmqpp_vc120.1.1.0.0\build\native\czmqpp_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\czmqpp_vc120.1.1.0.0\build\native\czmqpp_vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets'))" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\libbitcoin-server\libbitcoin-server.vcxproj">
