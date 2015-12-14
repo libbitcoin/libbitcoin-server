@@ -37,7 +37,6 @@
   </ImportGroup>
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
-    <Linkage-openssl>dynamic</Linkage-openssl>
     <Linkage-secp256k1>dynamic</Linkage-secp256k1>
     <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
@@ -46,7 +45,6 @@
     <Linkage-libbitcoin-server>dynamic</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
-    <Linkage-openssl>static</Linkage-openssl>
     <Linkage-secp256k1>ltcg</Linkage-secp256k1>
     <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
@@ -55,7 +53,6 @@
     <Linkage-libbitcoin-server>ltcg</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
-    <Linkage-openssl>static</Linkage-openssl>
     <Linkage-secp256k1>static</Linkage-secp256k1>
     <Linkage-libbitcoin>static</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
@@ -67,7 +64,6 @@
   <!-- Messages -->
   
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
-    <Message Text="Linkage-openssl     : $(Linkage-openssl)" Importance="high"/>
     <Message Text="Linkage-secp256k1   : $(Linkage-secp256k1)" Importance="high"/>
     <Message Text="Linkage-libbitcoin  : $(Linkage-libbitcoin)" Importance="high"/>
     <Message Text="Linkage-_consensus  : $(Linkage-libbitcoin-consensus)" Importance="high"/>

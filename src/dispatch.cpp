@@ -267,13 +267,15 @@ static console_result run(const settings_type& config, std::ostream& output,
             return console_result::not_started;
         }
 
+    // By the current design this must be kept in scope until end of run.
+    subscribe_manager subscriber(full_node);
+
     request_worker worker;
     if (config.server.queries_enabled)
     {
         if (!worker.start(config))
             error << format(BS_WORKER_START_FAIL);
 
-        subscribe_manager subscriber(full_node);
         attach_api(worker, full_node, subscriber);
     }
 

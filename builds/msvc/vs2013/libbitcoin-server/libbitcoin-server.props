@@ -41,8 +41,6 @@
     <Linkage-libzmq>dynamic</Linkage-libzmq>
     <Linkage-czmq>dynamic</Linkage-czmq>
     <Linkage-czmqpp>dynamic</Linkage-czmqpp>
-    <Linkage-openssl>dynamic</Linkage-openssl>
-    <Linkage-secp256k1>dynamic</Linkage-secp256k1>
     <Linkage-secp256k1>dynamic</Linkage-secp256k1>
     <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
@@ -55,7 +53,6 @@
     <Linkage-libzmq>ltcg</Linkage-libzmq>
     <Linkage-czmq>ltcg</Linkage-czmq>
     <Linkage-czmqpp>ltcg</Linkage-czmqpp>
-    <Linkage-openssl>static</Linkage-openssl>
     <Linkage-secp256k1>ltcg</Linkage-secp256k1>
     <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
@@ -68,7 +65,6 @@
     <Linkage-libzmq>static</Linkage-libzmq>
     <Linkage-czmq>static</Linkage-czmq>
     <Linkage-czmqpp>static</Linkage-czmqpp>
-    <Linkage-openssl>static</Linkage-openssl>
     <Linkage-secp256k1>static</Linkage-secp256k1>
     <Linkage-libbitcoin>static</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
@@ -84,7 +80,6 @@
     <Message Text="Linkage-libzmq     : $(Linkage-libzmq)" Importance="high"/>
     <Message Text="Linkage-czmq       : $(Linkage-czmq)" Importance="high"/>
     <Message Text="Linkage-czmqpp     : $(Linkage-czmqpp)" Importance="high"/>
-    <Message Text="Linkage-openssl    : $(Linkage-openssl)" Importance="high"/>
     <Message Text="Linkage-secp256k1  : $(Linkage-secp256k1)" Importance="high"/>
     <Message Text="Linkage-libbitcoin : $(Linkage-libbitcoin)" Importance="high"/>
     <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
