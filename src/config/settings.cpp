@@ -281,6 +281,12 @@ const options_description config_type::load_settings()
         "The number of threads in the node threadpool, defaults to 4."
     )
     (
+        "node.transaction_pool_consistency",
+        value<bool>(&settings.node.transaction_pool_consistency)->
+            default_value(NODE_TRANSACTION_POOL_CONSISTENCY),
+        "Enforce consistency between the pool and the blockchain, defaults to false."
+    )
+    (
         "node.peer",
         value<config::endpoint::list>(&settings.node.peers)->
             multitoken()->default_value(NODE_PEERS),
