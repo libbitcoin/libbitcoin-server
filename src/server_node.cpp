@@ -63,6 +63,7 @@ const settings_type server_node::defaults
     {
         NODE_THREADS,
         NODE_TRANSACTION_POOL_CAPACITY,
+        NODE_TRANSACTION_POOL_CONSISTENCY,
         NODE_PEERS,
         NODE_BLACKLISTS
     },
