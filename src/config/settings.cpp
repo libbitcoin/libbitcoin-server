@@ -148,13 +148,13 @@ const options_description config_type::load_settings()
         "network.inbound_connection_limit",
         value<uint32_t>(&settings.network.inbound_connection_limit)->
             default_value(NETWORK_INBOUND_CONNECTION_LIMIT),
-        "The maximum number of incoming network connections, defaults to 8."
+        "The maximum number of incoming network connections, defaults to 0."
     )
     (
         "network.outbound_connections",
         value<uint32_t>(&settings.network.outbound_connections)->
             default_value(NETWORK_OUTBOUND_CONNECTIONS),
-        "The maximum number of outgoing network connections, defaults to 8."
+        "The maximum number of outgoing network connections, defaults to 2."
     )
     (
         "network.connect_timeout_seconds",
@@ -166,13 +166,13 @@ const options_description config_type::load_settings()
         "network.channel_handshake_seconds",
         value<uint32_t>(&settings.network.channel_handshake_seconds)->
             default_value(NETWORK_CHANNEL_HANDSHAKE_SECONDS),
-        "The time limit to complete the connection handshake, defaults to 30."
+        "The time limit to complete the connection handshake, defaults to 15."
     )
     (
-        "network.channel_revival_minutes",
-        value<uint32_t>(&settings.network.channel_revival_minutes)->
-            default_value(NETWORK_CHANNEL_REVIVAL_MINUTES),
-        "The time between blocks that initiates a request, defaults to 2."
+        "network.channel_poll_seconds",
+        value<uint32_t>(&settings.network.channel_poll_seconds)->
+            default_value(NETWORK_CHANNEL_POLL_SECONDS),
+        "The time between blocks that initiates a request, defaults to 1."
     )
     (
         "network.channel_heartbeat_minutes",
@@ -184,13 +184,13 @@ const options_description config_type::load_settings()
         "network.channel_inactivity_minutes",
         value<uint32_t>(&settings.network.channel_inactivity_minutes)->
             default_value(NETWORK_CHANNEL_INACTIVITY_MINUTES),
-        "The inactivity time limit for any connection, defaults to 30."
+        "The inactivity time limit for any connection, defaults to 10."
     )
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&settings.network.channel_expiration_minutes)->
             default_value(NETWORK_CHANNEL_EXPIRATION_MINUTES),
-        "The maximum age limit for an outbound connection, defaults to 90."
+        "The maximum age limit for an outbound connection, defaults to 1440."
     )
     (
         "network.host_pool_capacity",
@@ -202,7 +202,7 @@ const options_description config_type::load_settings()
         "network.relay_transactions",
         value<bool>(&settings.network.relay_transactions)->
             default_value(NETWORK_RELAY_TRANSACTIONS),
-        "Request that peers relay transactions, defaults to true."
+        "Request that peers relay transactions, defaults to false."
     )
     (
         "network.hosts_file",
@@ -246,7 +246,7 @@ const options_description config_type::load_settings()
         "blockchain.block_pool_capacity",
         value<uint32_t>(&settings.chain.block_pool_capacity)->
             default_value(BLOCKCHAIN_BLOCK_POOL_CAPACITY),
-        "The maximum number of orphan blocks in the pool, defaults to 50."
+        "The maximum number of orphan blocks in the pool, defaults to 1."
     )
     (
         "blockchain.history_start_height",
