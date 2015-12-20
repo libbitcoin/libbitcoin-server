@@ -275,6 +275,12 @@ const options_description config_type::load_settings()
         "The number of threads in the node threadpool, defaults to 4."
     )
     (
+        "node.minimum_bytes_per_minute",
+        value<uint32_t>(&settings.node.minimum_bytes_per_minute)->
+            default_value(NODE_MINIMUM_BYTES_PER_MINUTE),
+        "The minimum block bytes per minute during initial block download, defaults to 1000000."
+    )
+    (
         "node.transaction_pool_capacity",
         value<uint32_t>(&settings.node.transaction_pool_capacity)->
             default_value(NODE_TRANSACTION_POOL_CAPACITY),
