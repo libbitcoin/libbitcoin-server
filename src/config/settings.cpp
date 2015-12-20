@@ -154,7 +154,7 @@ const options_description config_type::load_settings()
         "network.outbound_connections",
         value<uint32_t>(&settings.network.outbound_connections)->
             default_value(NETWORK_OUTBOUND_CONNECTIONS),
-        "The maximum number of outgoing network connections, defaults to 2."
+        "The maximum number of outgoing network connections, defaults to 1."
     )
     (
         "network.connect_timeout_seconds",
