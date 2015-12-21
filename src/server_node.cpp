@@ -62,6 +62,7 @@ const settings_type server_node::defaults
     bc::node::settings
     {
         NODE_THREADS,
+        NODE_MINIMUM_BYTES_PER_MINUTE,
         NODE_TRANSACTION_POOL_CAPACITY,
         NODE_TRANSACTION_POOL_CONSISTENCY,
         NODE_PEERS,
