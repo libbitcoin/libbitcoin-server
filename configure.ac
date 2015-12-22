@@ -184,10 +184,10 @@ AC_SUBST([czmq___CPPFLAGS], [${czmq___CFLAGS}])
 AC_MSG_NOTICE([czmq___CPPFLAGS : ${czmq___CPPFLAGS}])
 AC_MSG_NOTICE([czmq___LIBS : ${czmq___LIBS}])
 
-# Require bitcoin-node of at least version 2.2.0 and output ${bitcoin_node_CPPFLAGS/LIBS/PKG}.
+# Require bitcoin-node of at least version 3.0.0 and output ${bitcoin_node_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
-PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 2.2.0])
-AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 2.2.0'])
+PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 3.0.0])
+AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 3.0.0'])
 AC_SUBST([bitcoin_node_CPPFLAGS], [${bitcoin_node_CFLAGS}])
 AC_MSG_NOTICE([bitcoin_node_CPPFLAGS : ${bitcoin_node_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_node_LIBS : ${bitcoin_node_LIBS}])
