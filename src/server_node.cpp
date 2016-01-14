@@ -58,7 +58,7 @@ static const configuration default_configuration()
     defaults.network.manual_retry_limit = NETWORK_MANUAL_RETRY_LIMIT;
     defaults.network.connect_timeout_seconds = NETWORK_CONNECT_TIMEOUT_SECONDS;
     defaults.network.channel_handshake_seconds = NETWORK_CHANNEL_HANDSHAKE_SECONDS;
-    defaults.network.channel_revival_minutes = NETWORK_CHANNEL_REVIVAL_MINUTES;
+    defaults.network.channel_poll_seconds = NETWORK_CHANNEL_POLL_SECONDS;
     defaults.network.channel_heartbeat_minutes = NETWORK_CHANNEL_HEARTBEAT_MINUTES;
     defaults.network.channel_inactivity_minutes = NETWORK_CHANNEL_INACTIVITY_MINUTES;
     defaults.network.channel_expiration_minutes = NETWORK_CHANNEL_EXPIRATION_MINUTES;
@@ -121,17 +121,18 @@ void server_node::handle_tx_validated(const code& ec, const transaction& tx,
         notify(tx);
 }
 
-void server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
+bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
     const block_chain::list& new_blocks,
     const block_chain::list& replaced_blocks)
 {
-    handle_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
+    const auto result = full_node::handle_new_blocks(ec, fork_point,
+        new_blocks, replaced_blocks);
 
     if (ec == bc::error::service_stopped)
-        return;
+        return false;
 
     if (fork_point < last_checkpoint_height_)
-        return;
+        return false;
 
     // Fire server protocol block subscription notifications.
     for (auto new_block: new_blocks)
@@ -140,6 +141,8 @@ void server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
         for (const auto notify: block_sunscriptions_)
             notify(height, *new_block);
     }
+
+    return result;
 }
 
 void server_node::fullnode_fetch_history(server_node& node,

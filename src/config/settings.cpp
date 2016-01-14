@@ -187,10 +187,10 @@ const options_description parser::load_settings()
         "The time limit to complete the connection handshake, defaults to 30."
     )
     (
-        "network.channel_revival_minutes",
-        value<uint32_t>(&settings.network.channel_revival_minutes)->
-            default_value(p2p::mainnet.channel_revival_minutes),
-        "The time between blocks that initiates a request, defaults to 5."
+        "network.channel_poll_seconds",
+        value<uint32_t>(&settings.network.channel_poll_seconds)->
+            default_value(p2p::mainnet.channel_poll_seconds),
+        "The polling interval for initial block download, defaults to 1."
     )
     (
         "network.channel_heartbeat_minutes",
