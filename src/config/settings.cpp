@@ -175,6 +175,12 @@ const options_description parser::load_settings()
         "The retry limit for manual connection establishment, defaults to 0 (forever)."
     )
     (
+        "network.connect_batch_size",
+        value<uint32_t>(&settings.network.connect_batch_size)->
+            default_value(p2p::mainnet.connect_batch_size),
+        "The number of concurrent attempts to estalish one connection, defaults to 5."
+    )
+    (
         "network.connect_timeout_seconds",
         value<uint32_t>(&settings.network.connect_timeout_seconds)->
             default_value(p2p::mainnet.connect_timeout_seconds),
