@@ -237,7 +237,7 @@ void subscribe_manager::post_updates(const payment_address& address,
     BITCOIN_ASSERT(height <= max_uint32);
     const auto height32 = static_cast<uint32_t>(height);
 
-    // [ addr,version ] (1 byte)
+    // [ addr.version ] (1 byte)
     // [ addr.hash ] (20 bytes)
     // [ height ] (4 bytes)
     // [ block_hash ] (32 bytes)
