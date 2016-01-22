@@ -268,7 +268,8 @@ static console_result run(const settings_type& config, std::ostream& output,
         }
 
     // By the current design this must be kept in scope until end of run.
-    subscribe_manager subscriber(full_node);
+    subscribe_manager subscriber(full_node, config.server.subscription_limit,
+        config.server.subscription_expiration_minutes);
 
     request_worker worker;
     if (config.server.queries_enabled)
