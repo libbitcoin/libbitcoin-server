@@ -273,6 +273,7 @@ void subscribe_manager::post(const payment_address& address, size_t height,
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
     DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(rawtx_end_it == data.end());
+    auto matched = false;
 
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
@@ -284,14 +285,16 @@ void subscribe_manager::post(const payment_address& address, size_t height,
         if (match != subscription.prefix)
             continue;
 
-        log_info(LOG_SERVICE)
-            << "Subscribed address: " << address.encoded() << " found in tx ["
-            << encode_hash(hash_transaction(tx)) << "]";
-
+        matched = true;
         const auto& origin = subscription.client_origin;
         outgoing_message update(origin, "address.update", data);
         subscription.queue_send(update);
     }
+
+    if (matched)
+        log_debug(LOG_SERVICE)
+            << "Subscribed address: " << address.encoded() << " found in tx ["
+            << encode_hash(hash_transaction(tx)) << "]";
 }
 
 void subscribe_manager::post(const binary_type& prefix, size_t height,
@@ -316,6 +319,7 @@ void subscribe_manager::post(const binary_type& prefix, size_t height,
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
     DEBUG_ONLY(auto rawtx_end_it =) satoshi_save(tx, serial.iterator());
     BITCOIN_ASSERT(rawtx_end_it == data.end());
+    auto matched = false;
 
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
@@ -327,14 +331,16 @@ void subscribe_manager::post(const binary_type& prefix, size_t height,
         if (match != subscription.prefix)
             continue;
 
-        log_info(LOG_SERVICE)
-            << "Subscribed stealth prefix found in tx ["
-            << encode_hash(hash_transaction(tx)) << "]";
-
+        matched = true;
         const auto& origin = subscription.client_origin;
         outgoing_message update(origin, "address.stealth_update", data);
         subscription.queue_send(update);
     }
+
+    if (matched)
+        log_debug(LOG_SERVICE)
+            << "Subscribed stealth prefix found in tx ["
+            << encode_hash(hash_transaction(tx)) << "]";
 }
 
 void subscribe_manager::sweep_expired()
