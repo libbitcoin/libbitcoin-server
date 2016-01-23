@@ -271,7 +271,10 @@ static console_result run(const settings_type& config, std::ostream& output,
     subscribe_manager subscriber(full_node, config.server.subscription_limit,
         config.server.subscription_expiration_minutes);
 
-    request_worker worker;
+    request_worker worker(config.server.log_requests,
+        config.server.heartbeat_interval_seconds,
+        config.server.polling_interval_milliseconds);
+
     if (config.server.queries_enabled)
     {
         if (!worker.start(config))
