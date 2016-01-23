@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <unordered_map>
+#include <vector>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
@@ -41,7 +42,7 @@ enum class subscribe_type
 class BCS_API subscribe_manager
 {
 public:
-    subscribe_manager(server_node& node,
+    subscribe_manager(server_node& server,
         uint32_t maximum_subscriptions=100000000,
         uint32_t subscription_expiration_minutes=10);
 
@@ -74,11 +75,16 @@ private:
         queue_send_callback queue_send);
     void do_submit(size_t height, const hash_digest& block_hash,
         const transaction_type& tx);
-    void post_updates(const payment_address& address,
-        size_t height, const hash_digest& block_hash,
-        const transaction_type& tx);
-    void post_stealth_updates(const binary_type& prefix, size_t height,
+
+    void post(const std::vector<payment_address>& addresses, size_t height,
         const hash_digest& block_hash, const transaction_type& tx);
+    void post(const std::vector<binary_type>& prefixes, size_t height,
+        const hash_digest& block_hash, const transaction_type& tx);
+    void post(const payment_address& address, size_t height,
+        const hash_digest& block_hash, const transaction_type& tx);
+    void post(const binary_type& prefix, size_t height,
+        const hash_digest& block_hash, const transaction_type& tx);
+
     void sweep_expired();
 
     sequencer strand_;

@@ -36,6 +36,8 @@ using namespace bc::chain;
 using namespace bc::node;
 using std::placeholders::_1;
 using std::placeholders::_2;
+using std::placeholders::_3;
+using std::placeholders::_4;
 
 const settings_type server_node::defaults
 {
@@ -111,7 +113,20 @@ server_node::server_node(const settings_type& config)
 
 bool server_node::start(const settings_type& config)
 {
-    return full_node::start(config);
+    if (!full_node::start(config))
+        return false;
+
+    // Subscribe to reorganizations.
+    blockchain_.subscribe_reorganize(
+        std::bind(&server_node::handle_reorg,
+            this, _1, _2, _3, _4));
+
+    // Subscribe to mempool acceptances.
+    tx_pool_.subscribe_transaction(
+        std::bind(&server_node::handle_tx,
+            this, _1, _2, _3));
+
+    return true;
 }
 
 void server_node::subscribe_blocks(block_notify_callback notify_block)
@@ -124,38 +139,51 @@ void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
     tx_subscriptions_.push_back(notify_tx);
 }
 
-void server_node::new_unconfirm_valid_tx(const std::error_code& ec,
+bool server_node::handle_tx(const std::error_code& ec,
     const index_list& unconfirmed, const transaction_type& tx)
 {
-    full_node::new_unconfirm_valid_tx(ec, unconfirmed, tx);
-
     if (ec == bc::error::service_stopped)
-        return;
+        return false;
+
+    if (ec)
+    {
+        log_error(LOG_SERVICE)
+            << "Failure handling tx: " << ec.message();
+        return false;
+    }
 
     // Fire server protocol tx subscription notifications.
     for (const auto notify: tx_subscriptions_)
         notify(tx);
+
+    return true;
 }
 
-void server_node::broadcast_new_blocks(const std::error_code& ec,
-    uint32_t fork_point, const blockchain::block_list& new_blocks,
-    const blockchain::block_list& replaced_blocks)
+bool server_node::handle_reorg(const std::error_code& ec, uint64_t fork_point,
+    const blockchain::block_list& new_blocks, const blockchain::block_list&)
 {
-    broadcast_new_blocks(ec, fork_point, new_blocks, replaced_blocks);
-
     if (ec == bc::error::service_stopped)
-        return;
+        return false;
 
     if (fork_point < minimum_start_height_)
-        return;
+        return false;
+
+    if (ec)
+    {
+        log_error(LOG_SERVICE)
+            << "Failure handling reorg: " << ec.message();
+        return false;
+    }
+
+    BITCOIN_ASSERT(fork_point < max_size_t - new_blocks.size());
+    auto height = static_cast<size_t>(fork_point);
 
     // Fire server protocol block subscription notifications.
     for (auto new_block: new_blocks)
-    {
-        const size_t height = ++fork_point;
         for (const auto notify: block_sunscriptions_)
-            notify(height, *new_block);
-    }
+            notify(++height, *new_block);
+
+    return true;
 }
 
 void server_node::fullnode_fetch_history(server_node& node,
