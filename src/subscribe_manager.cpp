@@ -31,7 +31,7 @@ namespace server {
 namespace posix_time = boost::posix_time;
 using posix_time::second_clock;
 
-static void register_with_node(subscribe_manager& manager, server_node& node)
+static void register_with_node(subscribe_manager& manager, server_node& server)
 {
     const auto receive_block = [&manager](size_t height, const block_type& block)
     {
@@ -46,18 +46,18 @@ static void register_with_node(subscribe_manager& manager, server_node& node)
         manager.submit(height, null_hash, tx);
     };
 
-    node.subscribe_blocks(receive_block);
-    node.subscribe_transactions(receive_tx);
+    server.subscribe_blocks(receive_block);
+    server.subscribe_transactions(receive_tx);
 }
 
-subscribe_manager::subscribe_manager(server_node& node,
+subscribe_manager::subscribe_manager(server_node& server,
     uint32_t maximum_subscriptions, uint32_t subscription_expiration_minutes)
-  : strand_(node.pool()),
+  : strand_(server.pool()),
     subscription_limit_(maximum_subscriptions),
     subscription_expiration_minutes_(subscription_expiration_minutes)
 {
     // subscribe to blocks and txs -> submit
-    register_with_node(*this, node);
+    register_with_node(*this, server);
 }
 
 static subscribe_type convert_subscribe_type(uint8_t type_byte)

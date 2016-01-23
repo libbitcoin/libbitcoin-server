@@ -42,7 +42,7 @@ enum class subscribe_type
 class BCS_API subscribe_manager
 {
 public:
-    subscribe_manager(server_node& node,
+    subscribe_manager(server_node& server,
         uint32_t maximum_subscriptions=100000000,
         uint32_t subscription_expiration_minutes=10);
 
