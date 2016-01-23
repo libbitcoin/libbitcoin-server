@@ -83,10 +83,7 @@ bool deserialize_address(AddressPrefix& address, subscribe_type& type,
         return false;
     }
 
-    if (deserial.iterator() != data.end())
-        return false;
-
-    return true;
+    return deserial.iterator() == data.end();
 }
 
 void subscribe_manager::subscribe(const incoming_message& request,
