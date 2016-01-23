@@ -113,7 +113,8 @@ server_node::server_node(const settings_type& config)
 
 bool server_node::start(const settings_type& config)
 {
-    return full_node::start(config);
+    if (!full_node::start(config))
+        return false;
 
     // Subscribe to reorganizations.
     blockchain_.subscribe_reorganize(
@@ -124,6 +125,8 @@ bool server_node::start(const settings_type& config)
     tx_pool_.subscribe_transaction(
         std::bind(&server_node::handle_tx,
             this, _1, _2, _3));
+
+    return true;
 }
 
 void server_node::subscribe_blocks(block_notify_callback notify_block)
