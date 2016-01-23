@@ -144,7 +144,8 @@ void subscribe_manager::renew(const incoming_message& request,
     queue_send_callback queue_send)
 {
     strand_.randomly_queue(
-        &subscribe_manager::do_renew, this, request, queue_send);
+        &subscribe_manager::do_renew,
+            this, request, queue_send);
 }
 void subscribe_manager::do_renew(const incoming_message& request,
     queue_send_callback queue_send)
@@ -187,10 +188,12 @@ void subscribe_manager::do_renew(const incoming_message& request,
     queue_send(response);
 }
 
-void subscribe_manager::submit(
-    size_t height, const hash_digest& block_hash,
+void subscribe_manager::submit(size_t height, const hash_digest& block_hash,
     const transaction_type& tx)
 {
+    if (subscriptions_.empty())
+        return;
+
     strand_.queue(
         &subscribe_manager::do_submit,
             this, height, block_hash, tx);
@@ -344,15 +347,13 @@ void subscribe_manager::sweep_expired()
     // Delete entries that have expired.
     for (auto it = subscriptions_.begin(); it != subscriptions_.end();)
     {
-        const auto& subscription = *it;
-
         // Already expired? If so, then erase.
-        if (subscription.expiry_time < now)
+        if (it->expiry_time < now)
         {
             log_debug(LOG_SUBSCRIBER)
-                << "Deleting expired subscription: "
-                << subscription.prefix << " from "
-                << encode_base16(subscription.client_origin);
+                << "Deleting expired subscription: " << it->prefix << " from "
+                << encode_base16(it->client_origin);
+
             it = subscriptions_.erase(it);
             continue;
         }
