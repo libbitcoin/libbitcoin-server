@@ -238,7 +238,7 @@ void subscribe_manager::post(const std::vector<payment_address>& addresses,
     size_t height, const hash_digest& block_hash, const transaction_type& tx)
 {
     for (const auto& address: addresses)
-        post(addresses, height, block_hash, tx);
+        post(address, height, block_hash, tx);
 }
 
 void subscribe_manager::post(const std::vector<binary_type>& prefixes,
