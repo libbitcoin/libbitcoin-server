@@ -28,9 +28,9 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/incoming_message.hpp>
-#include <bitcoin/server/outgoing_message.hpp>
-#include <bitcoin/server/send_worker.hpp>
+#include <bitcoin/server/messaging/incoming_message.hpp>
+#include <bitcoin/server/messaging/outgoing_message.hpp>
+#include <bitcoin/server/messaging/send_worker.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {

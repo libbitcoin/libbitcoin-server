@@ -17,12 +17,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/service/transaction_pool.hpp>
+#include <bitcoin/server/queries/transaction_pool.hpp>
 
 #include <cstdint>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/service/fetch_x.hpp>
+#include <bitcoin/server/queries/fetch_x.hpp>
 
 namespace libbitcoin {
 namespace server {

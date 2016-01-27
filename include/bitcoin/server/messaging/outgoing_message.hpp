@@ -17,49 +17,44 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/send_worker.hpp>
+#ifndef LIBBITCOIN_SERVER_OUTGOING_MESSAGE
+#define LIBBITCOIN_SERVER_OUTGOING_MESSAGE
 
 #include <cstdint>
-#include <vector>
-#include <boost/date_time.hpp>
+#include <string>
 #include <czmq++/czmqpp.hpp>
-#include <bitcoin/node.hpp>
-#include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/incoming_message.hpp>
-#include <bitcoin/server/outgoing_message.hpp>
-#include <bitcoin/server/request_worker.hpp>
-#include <bitcoin/server/settings.hpp>
+#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/messaging/incoming_message.hpp>
 
 namespace libbitcoin {
 namespace server {
-    
-using std::placeholders::_1;
 
-static constexpr int zmq_fail = -1;
-
-send_worker::send_worker(czmqpp::context& context)
-  : context_(context)
+class BCS_API outgoing_message
 {
-}
+public:
+    // Empty dest = unspecified destination.
+    outgoing_message(const data_chunk& destination, const std::string& command,
+        const data_chunk& data);
 
-void send_worker::queue(const outgoing_message& message)
-{
-    czmqpp::socket socket(context_, ZMQ_PUSH);
-    BITCOIN_ASSERT(socket.self() != nullptr);
+    outgoing_message(const incoming_message& request, const data_chunk& data);
 
-    // Returns 0 if OK, -1 if the endpoint was invalid.
-    const auto rc = socket.connect("inproc://trigger-send");
+    // Default constructor provided for containers and copying.
+    outgoing_message();
 
-    if (rc == zmq_fail)
-    {
-        log::error(LOG_SERVICE)
-            << "Failed to connect to send queue.";
-        return;
-    }
+    void send(czmqpp::socket& socket) const;
+    uint32_t id() const;
 
-    message.send(socket);
-    socket.destroy(context_);
-}
+private:
+    data_chunk destination_;
+    std::string command_;
+    uint32_t id_;
+    data_chunk data_;
+};
+
+typedef std::function<void(const outgoing_message&)> send_handler;
 
 } // namespace server
 } // namespace libbitcoin
+
+#endif

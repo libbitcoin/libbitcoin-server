@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/request_worker.hpp>
+#include <bitcoin/server/messaging/request_worker.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -25,8 +25,8 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/incoming_message.hpp>
-#include <bitcoin/server/outgoing_message.hpp>
+#include <bitcoin/server/messaging/incoming_message.hpp>
+#include <bitcoin/server/messaging/outgoing_message.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {

@@ -21,8 +21,8 @@
 #define LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/incoming_message.hpp>
-#include <bitcoin/server/outgoing_message.hpp>
+#include <bitcoin/server/messaging/incoming_message.hpp>
+#include <bitcoin/server/messaging/outgoing_message.hpp>
 
 namespace libbitcoin {
 namespace server {

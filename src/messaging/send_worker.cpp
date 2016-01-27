@@ -17,44 +17,49 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_OUTGOING_MESSAGE
-#define LIBBITCOIN_SERVER_OUTGOING_MESSAGE
+#include <bitcoin/server/messaging/send_worker.hpp>
 
 #include <cstdint>
-#include <string>
+#include <vector>
+#include <boost/date_time.hpp>
 #include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/define.hpp>
-#include <bitcoin/server/incoming_message.hpp>
+#include <bitcoin/node.hpp>
+#include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/messaging/incoming_message.hpp>
+#include <bitcoin/server/messaging/outgoing_message.hpp>
+#include <bitcoin/server/messaging/request_worker.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
+    
+using std::placeholders::_1;
 
-class BCS_API outgoing_message
+static constexpr int zmq_fail = -1;
+
+send_worker::send_worker(czmqpp::context& context)
+  : context_(context)
 {
-public:
-    // Empty dest = unspecified destination.
-    outgoing_message(const data_chunk& destination, const std::string& command,
-        const data_chunk& data);
+}
 
-    outgoing_message(const incoming_message& request, const data_chunk& data);
+void send_worker::queue(const outgoing_message& message)
+{
+    czmqpp::socket socket(context_, ZMQ_PUSH);
+    BITCOIN_ASSERT(socket.self() != nullptr);
 
-    // Default constructor provided for containers and copying.
-    outgoing_message();
+    // Returns 0 if OK, -1 if the endpoint was invalid.
+    const auto rc = socket.connect("inproc://trigger-send");
 
-    void send(czmqpp::socket& socket) const;
-    uint32_t id() const;
+    if (rc == zmq_fail)
+    {
+        log::error(LOG_SERVICE)
+            << "Failed to connect to send queue.";
+        return;
+    }
 
-private:
-    data_chunk destination_;
-    std::string command_;
-    uint32_t id_;
-    data_chunk data_;
-};
-
-typedef std::function<void(const outgoing_message&)> send_handler;
+    message.send(socket);
+    socket.destroy(context_);
+}
 
 } // namespace server
 } // namespace libbitcoin
-
-#endif

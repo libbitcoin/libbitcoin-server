@@ -25,7 +25,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/incoming_message.hpp>
+#include <bitcoin/server/messaging/incoming_message.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 
