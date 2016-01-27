@@ -17,73 +17,47 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/worker.hpp>
+#include <bitcoin/server/request_worker.hpp>
 
 #include <cstdint>
 #include <vector>
 #include <boost/date_time.hpp>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/configuration.hpp>
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/incoming_message.hpp>
+#include <bitcoin/server/outgoing_message.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
     
 using std::placeholders::_1;
 
-constexpr int zmq_true = 1;
-constexpr int zmq_false = 0;
-constexpr int zmq_fail = -1;
-constexpr int zmq_curve_enabled = zmq_true;
-constexpr int zmq_socket_no_linger = zmq_false;
+// TODO: should we be testing zmq_fail in each bind call?
+static constexpr int zmq_true = 1;
+static constexpr int zmq_false = 0;
+static constexpr int zmq_fail = -1;
+static constexpr int zmq_curve_enabled = zmq_true;
+static constexpr int zmq_socket_no_linger = zmq_false;
 
 const auto now = []()
 {
     return boost::posix_time::second_clock::universal_time();
 };
 
-send_worker::send_worker(czmqpp::context& context)
-  : context_(context)
-{
-}
-
-void send_worker::queue_send(const outgoing_message& message)
-{
-    czmqpp::socket socket(context_, ZMQ_PUSH);
-    BITCOIN_ASSERT(socket.self() != nullptr);
-
-    // Returns 0 if OK, -1 if the endpoint was invalid.
-    int rc = socket.connect("inproc://trigger-send");
-    if (rc == zmq_fail)
-    {
-        log::error(LOG_SERVICE)
-            << "Failed to connect to send queue.";
-        return;
-    }
-
-    message.send(socket);
-    socket.destroy(context_);
-}
-
 request_worker::request_worker(const settings& settings)
-  : socket_(context_, ZMQ_ROUTER),
+  : counter_(0),
+    sender_(context_),
+    settings_(settings),
+    socket_(context_, ZMQ_ROUTER),
     wakeup_socket_(context_, ZMQ_PULL),
     heartbeat_socket_(context_, ZMQ_PUB),
-    authenticate_(context_),
-    sender_(context_),
-    settings_(settings)
+    authenticate_(context_)
 {
     BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
     BITCOIN_ASSERT(heartbeat_socket_.self() != nullptr);
-
-    // Returns 0 if OK, -1 if the endpoint was invalid.
-    int rc = wakeup_socket_.bind("inproc://trigger-send");
-
-    if (rc == zmq_fail)
-        log::error(LOG_SERVICE)
-            << "Failed to connect to request queue.";
 }
 
 bool request_worker::start()
@@ -112,40 +86,47 @@ bool request_worker::start()
         return false;
     }
 
-    // This binds the query service.
-    if (!create_new_socket())
+    // This binds the request queue.
+    // Returns 0 if OK, -1 if the endpoint was invalid.
+    auto rc = wakeup_socket_.bind("inproc://trigger-send");
+
+    if (rc == zmq_fail)
     {
         log::error(LOG_SERVICE)
-            << "Failed to bind query service on "
-            << settings_.query_endpoint;
+            << "Failed to connect to request queue.";
         return false;
     }
 
+    // This binds the query service.
+    auto endpoint = settings_.query_endpoint.to_string();
+    rc = socket_.bind(endpoint);
+
+    if (rc == zmq_false)
+    {
+        log::error(LOG_SERVICE)
+            << "Failed to bind query service on " << endpoint;
+        return false;
+    }
+
+    socket_.set_linger(zmq_socket_no_linger);
     log::info(LOG_SERVICE)
-        << "Bound query service on "
-        << settings_.query_endpoint;
+        << "Bound query service on " << endpoint;
 
     // This binds the heartbeat service.
-    const auto rc = heartbeat_socket_.bind(
-        settings_.heartbeat_endpoint.to_string());
-    if (rc == 0)
+    endpoint = settings_.heartbeat_endpoint.to_string();
+    rc = heartbeat_socket_.bind(endpoint);
+
+    if (rc == zmq_false)
     {
         log::error(LOG_SERVICE)
-            << "Failed to bind heartbeat service on "
-            << settings_.heartbeat_endpoint;
+            << "Failed to bind heartbeat service on " << endpoint;
         return false;
     }
 
-    log::info(LOG_SERVICE)
-        << "Bound heartbeat service on "
-        << settings_.heartbeat_endpoint;
-
     deadline_ = now() + settings_.heartbeat_interval();
-    return true;
-}
+    log::info(LOG_SERVICE)
+        << "Bound heartbeat service on " << endpoint;
 
-bool request_worker::stop()
-{
     return true;
 }
 
@@ -160,7 +141,7 @@ static std::string format_whitelist(const config::authority& authority)
 
 void request_worker::whitelist()
 {
-    for (const auto& ip_address : settings_.whitelists)
+    for (const auto& ip_address: settings_.whitelists)
     {
         log::info(LOG_SERVICE)
             << "Whitelisted client [" << format_whitelist(ip_address) << "]";
@@ -168,6 +149,7 @@ void request_worker::whitelist()
     }
 }
 
+// Returns false if server certificate exists and is invalid.
 bool request_worker::enable_crypto()
 {
     if (settings_.certificate_file.empty())
@@ -179,6 +161,7 @@ bool request_worker::enable_crypto()
 
     authenticate_.configure_curve("*", client_certs);
     czmqpp::certificate cert(settings_.certificate_file.string());
+
     if (cert.valid())
     {
         cert.apply(socket_);
@@ -189,31 +172,10 @@ bool request_worker::enable_crypto()
     return false;
 }
 
-bool request_worker::create_new_socket()
-{
-    // Not sure what we would use this for, so disabled for now.
-    // Set the socket identity name.
-    // socket_.set_identity(...);
-
-    // Connect...
-    const auto rc = socket_.bind(settings_.query_endpoint.to_string());
-    const auto connected = rc != 0;
-
-    if (connected)
-        socket_.set_linger(zmq_socket_no_linger);
-
-    return connected;
-}
-
 void request_worker::attach(const std::string& command,
     command_handler handler)
 {
     handlers_[command] = handler;
-}
-
-void request_worker::update()
-{
-    poll();
 }
 
 void request_worker::poll()
@@ -226,7 +188,14 @@ void request_worker::poll()
     BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
 
-    if (which == socket_)
+    if (which == wakeup_socket_)
+    {
+        // Send queued message.
+        czmqpp::message message;
+        message.receive(wakeup_socket_);
+        message.send(socket_);
+    }
+    else if (which == socket_)
     {
         // Get message: 6-part envelope + content -> request
         incoming_message request;
@@ -242,7 +211,7 @@ void request_worker::poll()
                     << encode_base16(request.origin());
 
             it->second(request,
-                std::bind(&send_worker::queue_send,
+                std::bind(&send_worker::queue,
                     &sender_, _1));
         }
         else
@@ -251,13 +220,6 @@ void request_worker::poll()
                 << "Unhandled service request [" << request.command()
                 << "] from " << encode_base16(request.origin());
         }
-    }
-    else if (which == wakeup_socket_)
-    {
-        // Send queued message.
-        czmqpp::message message;
-        message.receive(wakeup_socket_);
-        message.send(socket_);
     }
 
     // Publish heartbeat.
@@ -271,12 +233,11 @@ void request_worker::poll()
 
 void request_worker::publish_heartbeat()
 {
-    static uint32_t counter = 0;
     czmqpp::message message;
-    const auto raw_counter = to_chunk(to_little_endian(counter));
+    const auto raw_counter = to_chunk(to_little_endian(counter_));
     message.append(raw_counter);
     message.send(heartbeat_socket_);
-    ++counter;
+    ++counter_;
 }
 
 } // namespace server

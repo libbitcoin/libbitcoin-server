@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/settings.hpp>
 
 #include <cstdint>
 #include <iostream>
@@ -25,7 +25,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/parser.hpp>
+#include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 // Define after boost asio, see stackoverflow.com/a/9750437/1172329.
@@ -51,9 +51,7 @@ static std::string system_config_directory()
     char directory[MAX_PATH];
     const auto result = SHGetFolderPathA(NULL, CSIDL_COMMON_APPDATA, NULL,
         SHGFP_TYPE_CURRENT, directory);
-    if (SUCCEEDED(result))
-        return directory;
-    return "";
+    return SUCCEEDED(result) ? directory : "";
 #else
     // This symbol must be defined at compile for this project.
     // Therefore do not move this definition into libbitcoin.
@@ -331,46 +329,10 @@ const options_description parser::load_settings()
 
     /* [server] */
     (
-        "server.query_endpoint",
-        value<endpoint>(&settings.server.query_endpoint)->
-            default_value(SERVER_QUERY_ENDPOINT),
-        "The query service endpoint, defaults to 'tcp://*:9091'."
-    )
-    (
-        "server.heartbeat_endpoint",
-        value<endpoint>(&settings.server.heartbeat_endpoint)->
-            default_value(SERVER_HEARTBEAT_ENDPOINT),
-        "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
-    )
-    (
-        "server.block_publish_endpoint",
-        value<endpoint>(&settings.server.block_publish_endpoint)->
-            default_value(SERVER_BLOCK_PUBLISH_ENDPOINT),
-        "The block publishing service endpoint, defaults to 'tcp://*:9093'."
-    )
-    (
-        "server.transaction_publish_endpoint",
-        value<endpoint>(&settings.server.transaction_publish_endpoint)->
-            default_value(SERVER_TRANSACTION_PUBLISH_ENDPOINT),
-        "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
-    )
-    (
-        "server.publisher_enabled",
-        value<bool>(&settings.server.publisher_enabled)->
-            default_value(SERVER_PUBLISHER_ENABLED),
-        "Enable the block and transaction publishing endpoints, defaults to true."
-    )
-    (
-        "server.queries_enabled",
-        value<bool>(&settings.server.queries_enabled)->
-            default_value(SERVER_QUERIES_ENABLED),
-        "Enable the query and heartbeat endpoints, defaults to true."
-    )
-    (
-        "server.log_requests",
-        value<bool>(&settings.server.log_requests)->
-            default_value(SERVER_LOG_REQUESTS),
-        "Write service requests to the log, defaults to false."
+        "server.threads",
+        value<uint32_t>(&settings.network.threads)->
+            default_value(SERVER_THREADS),
+        "The number of threads in the server threadpool, defaults to 2."
     )
     (
         "server.polling_interval_seconds",
@@ -397,6 +359,54 @@ const options_description parser::load_settings()
         "The maximum number of subscriptions, defaults to 100000000."
     )
     (
+        "server.publisher_enabled",
+        value<bool>(&settings.server.publisher_enabled)->
+            default_value(SERVER_PUBLISHER_ENABLED),
+        "Enable the block and transaction publishing endpoints, defaults to true."
+    )
+    (
+        "server.queries_enabled",
+        value<bool>(&settings.server.queries_enabled)->
+            default_value(SERVER_QUERIES_ENABLED),
+        "Enable the query and heartbeat endpoints, defaults to true."
+    )
+    (
+        "server.subscriptions_enabled",
+        value<bool>(&settings.server.subscriptions_enabled)->
+            default_value(SERVER_SUBSCRIPTIONS_ENABLED),
+        "Enable subscriptions, defaults to true."
+    )
+    (
+        "server.log_requests",
+        value<bool>(&settings.server.log_requests)->
+            default_value(SERVER_LOG_REQUESTS),
+        "Write service requests to the log, defaults to false."
+    )
+    (
+        "server.query_endpoint",
+        value<endpoint>(&settings.server.query_endpoint)->
+            default_value(SERVER_QUERY_ENDPOINT),
+        "The query service endpoint, defaults to 'tcp://*:9091'."
+    )
+    (
+        "server.heartbeat_endpoint",
+        value<endpoint>(&settings.server.heartbeat_endpoint)->
+            default_value(SERVER_HEARTBEAT_ENDPOINT),
+        "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
+    )
+    (
+        "server.block_publish_endpoint",
+        value<endpoint>(&settings.server.block_publish_endpoint)->
+            default_value(SERVER_BLOCK_PUBLISH_ENDPOINT),
+        "The block publishing service endpoint, defaults to 'tcp://*:9093'."
+    )
+    (
+        "server.transaction_publish_endpoint",
+        value<endpoint>(&settings.server.transaction_publish_endpoint)->
+            default_value(SERVER_TRANSACTION_PUBLISH_ENDPOINT),
+        "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
+    )
+    (
         "server.certificate_file",
         value<path>(&settings.server.certificate_file)->
             default_value(SERVER_CERTIFICATE_FILE),
@@ -420,4 +430,3 @@ const options_description parser::load_settings()
 
 } // namespace server
 } // namespace libbitcoin
-

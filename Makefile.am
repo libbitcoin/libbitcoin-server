@@ -36,15 +36,16 @@ src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconf
 src_libbitcoin_server_la_LIBADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 src_libbitcoin_server_la_SOURCES = \
     src/dispatch.cpp \
-    src/message.cpp \
+    src/incoming_message.cpp \
+    src/outgoing_message.cpp \
+    src/parser.cpp \
     src/publisher.cpp \
+    src/request_worker.cpp \
+    src/send_worker.cpp \
     src/server_node.cpp \
+    src/settings.cpp \
     src/subscribe_manager.cpp \
-    src/worker.cpp \
-    src/config/parser.cpp \
-    src/config/settings.cpp \
     src/service/blockchain.cpp \
-    src/service/compat.cpp \
     src/service/fetch_x.cpp \
     src/service/protocol.cpp \
     src/service/transaction_pool.cpp
@@ -85,25 +86,23 @@ include_bitcoin_HEADERS = \
 
 include_bitcoin_serverdir = ${includedir}/bitcoin/server
 include_bitcoin_server_HEADERS = \
+    include/bitcoin/server/configuration.hpp \
     include/bitcoin/server/define.hpp \
     include/bitcoin/server/dispatch.hpp \
-    include/bitcoin/server/message.hpp \
+    include/bitcoin/server/incoming_message.hpp \
+    include/bitcoin/server/outgoing_message.hpp \
+    include/bitcoin/server/parser.hpp \
     include/bitcoin/server/publisher.hpp \
+    include/bitcoin/server/request_worker.hpp \
+    include/bitcoin/server/send_worker.hpp \
     include/bitcoin/server/server_node.hpp \
+    include/bitcoin/server/settings.hpp \
     include/bitcoin/server/subscribe_manager.hpp \
-    include/bitcoin/server/version.hpp \
-    include/bitcoin/server/worker.hpp
-
-include_bitcoin_server_configdir = ${includedir}/bitcoin/server/config
-include_bitcoin_server_config_HEADERS = \
-    include/bitcoin/server/config/configuration.hpp \
-    include/bitcoin/server/config/parser.hpp \
-    include/bitcoin/server/config/settings.hpp
+    include/bitcoin/server/version.hpp
 
 include_bitcoin_server_servicedir = ${includedir}/bitcoin/server/service
 include_bitcoin_server_service_HEADERS = \
     include/bitcoin/server/service/blockchain.hpp \
-    include/bitcoin/server/service/compat.hpp \
     include/bitcoin/server/service/fetch_x.hpp \
     include/bitcoin/server/service/protocol.hpp \
     include/bitcoin/server/service/transaction_pool.hpp \

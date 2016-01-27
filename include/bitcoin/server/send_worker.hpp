@@ -17,22 +17,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WORKER_HPP
-#define LIBBITCOIN_SERVER_WORKER_HPP
+#ifndef LIBBITCOIN_SERVER_SEND_WORKER_HPP
+#define LIBBITCOIN_SERVER_SEND_WORKER_HPP
 
-#include <condition_variable>
-#include <cstdint>
-#include <mutex>
-#include <thread>
-#include <unordered_map>
-#include <vector>
-#include <boost/date_time.hpp>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message.hpp>
-#include <bitcoin/server/service/util.hpp>
+#include <bitcoin/server/outgoing_message.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -50,50 +41,13 @@ class BCS_API send_worker
 {
 public:
     send_worker(czmqpp::context& context);
-    void queue_send(const outgoing_message& message);
+    void queue(const outgoing_message& message);
 
 private:
     czmqpp::context& context_;
-};
-
-// TODO: split into class per file.
-
-class BCS_API request_worker
-{
-public:
-    typedef std::function<void(const incoming_message&, queue_send_callback)>
-        command_handler;
-
-    request_worker(const settings& settings);
-
-    bool start();
-    bool stop();
-    void update();
-    void attach(const std::string& command, command_handler handler);
-
-private:
-    typedef std::unordered_map<std::string, command_handler> command_map;
-
-    void whitelist();
-    bool enable_crypto();
-    bool create_new_socket();
-    void poll();
-    void publish_heartbeat();
-
-    czmqpp::context context_;
-    czmqpp::socket socket_;
-    czmqpp::socket wakeup_socket_;
-    czmqpp::socket heartbeat_socket_;
-    czmqpp::authenticator authenticate_;
-
-    send_worker sender_;
-    command_map handlers_;
-    boost::posix_time::ptime deadline_;
-    const settings& settings_;
 };
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
-

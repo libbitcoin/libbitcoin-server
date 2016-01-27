@@ -17,42 +17,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_MESSAGE
-#define LIBBITCOIN_SERVER_MESSAGE
+#ifndef LIBBITCOIN_SERVER_OUTGOING_MESSAGE
+#define LIBBITCOIN_SERVER_OUTGOING_MESSAGE
 
+#include <cstdint>
+#include <string>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/incoming_message.hpp>
 
 namespace libbitcoin {
 namespace server {
-
-class BCS_API incoming_message
-{
-public:
-    bool recv(czmqpp::socket& socket);
-    const data_chunk origin() const;
-    const std::string& command() const;
-    uint32_t id() const;
-    const data_chunk& data() const;
-
-private:
-    data_chunk origin_;
-    std::string command_;
-    uint32_t id_;
-    data_chunk data_;
-};
-
-// TODO: split into class per file.
 
 class BCS_API outgoing_message
 {
 public:
     // Empty dest = unspecified destination.
-    outgoing_message(const data_chunk& dest, const std::string& command,
+    outgoing_message(const data_chunk& destination, const std::string& command,
         const data_chunk& data);
-    outgoing_message(const incoming_message& request,
-        const data_chunk& data);
+
+    outgoing_message(const incoming_message& request, const data_chunk& data);
 
     // Default constructor provided for containers and copying.
     outgoing_message();
@@ -61,11 +46,13 @@ public:
     uint32_t id() const;
 
 private:
-    data_chunk dest_;
+    data_chunk destination_;
     std::string command_;
     uint32_t id_;
     data_chunk data_;
 };
+
+typedef std::function<void(const outgoing_message&)> send_handler;
 
 } // namespace server
 } // namespace libbitcoin

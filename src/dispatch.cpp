@@ -26,19 +26,19 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/config/parser.hpp>
-#include <bitcoin/server/config/settings.hpp>
-#include <bitcoin/server/message.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/incoming_message.hpp>
+#include <bitcoin/server/outgoing_message.hpp>
+#include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/publisher.hpp>
+#include <bitcoin/server/request_worker.hpp>
+#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/subscribe_manager.hpp>
-#include <bitcoin/server/version.hpp>
-#include <bitcoin/server/worker.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/blockchain.hpp>
-#include <bitcoin/server/service/compat.hpp>
 #include <bitcoin/server/service/protocol.hpp>
 #include <bitcoin/server/service/transaction_pool.hpp>
+#include <bitcoin/server/version.hpp>
 
 #define BS_APPLICATION_NAME "bs"
 
@@ -191,35 +191,43 @@ static void interrupt_handler(int code)
     stopped = true;
 }
 
-// Attach client-server API.
-static void attach_api(request_worker& worker, server_node& node,
+static void attach_subscription_api(request_worker& worker,
     subscribe_manager& subscriber)
 {
+    ////typedef std::function<void(const incoming_message&, send_handler)>
+    ////    command_handler;
+
+    ////auto subscribe = [&worker, &subscriber](const std::string& command,
+    ////    command_handler handler)
+    ////{
+    ////    worker.attach(command,
+    ////        std::bind(handler,
+    ////            &subscriber, _1, _2));
+    ////};
+
+    ////subscribe("address.renew", &subscribe_manager::renew);
+    ////subscribe("address.subscribe", &subscribe_manager::subscribe);
+}
+
+static void attach_query_api(request_worker& worker, server_node& node)
+{
     typedef std::function<void(server_node&, const incoming_message&,
-        queue_send_callback)> basic_command_handler;
+        send_handler)> command_handler;
 
     auto attach = [&worker, &node](const std::string& command,
-        basic_command_handler handler)
+        command_handler handler)
     {
-        worker.attach(command, std::bind(handler, std::ref(node), _1, _2));
+        worker.attach(command,
+            std::bind(handler,
+                std::ref(node), _1, _2));
     };
 
-    // Subscriptions.
-    worker.attach("address.subscribe", 
-        std::bind(&subscribe_manager::subscribe,
-            &subscriber, _1, _2));
-
-    worker.attach("address.renew", 
-        std::bind(&subscribe_manager::renew,
-            &subscriber, _1, _2));
-
-    // Non-subscription API.
-    attach("address.fetch_history2", server_node::fullnode_fetch_history);
+    attach("address.fetch_history2", address_fetch_history2);
     attach("blockchain.fetch_history", blockchain_fetch_history);
     attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
     attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
     attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
-    ////attach("blockchain.fetch_block_transaction_hashes", blockchain_fetch_block_transaction_hashes);
+    attach("blockchain.fetch_block_transaction_hashes", blockchain_fetch_block_transaction_hashes);
     attach("blockchain.fetch_transaction_index", blockchain_fetch_transaction_index);
     attach("blockchain.fetch_spend", blockchain_fetch_spend);
     attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
@@ -228,25 +236,22 @@ static void attach_api(request_worker& worker, server_node& node,
     attach("protocol.total_connections", protocol_total_connections);
     attach("transaction_pool.validate", transaction_pool_validate);
     attach("transaction_pool.fetch_transaction", transaction_pool_fetch_transaction);
-
-    // Deprecated command, for backward compatibility.
-    attach("address.fetch_history", COMPAT_fetch_history);
 }
 
 // Run the server.
-static console_result run(const configuration& config, std::ostream& output,
-    std::ostream& error)
+static console_result run(const configuration& configuration,
+    std::ostream& output, std::ostream& error)
 {
     // Ensure the blockchain directory is initialized (at least exists).
-    const auto result = verify_chain(config.chain.database_path, error);
+    const auto result = verify_chain(configuration.chain.database_path, error);
     if (result != console_result::okay)
         return result;
 
     output << BS_SERVER_STARTING << std::endl;
 
     // These must be libbitcoin streams.
-    bc::ofstream debug_file(config.network.debug_file.string(), append);
-    bc::ofstream error_file(config.network.error_file.string(), append);
+    bc::ofstream debug_file(configuration.network.debug_file.string(), append);
+    bc::ofstream error_file(configuration.network.error_file.string(), append);
     initialize_logging(debug_file, error_file, bc::cout, bc::cerr);
 
     static const auto startup = "================= startup ==================";
@@ -256,7 +261,7 @@ static console_result run(const configuration& config, std::ostream& output,
     log::error(LOG_NODE) << startup;
     log::fatal(LOG_NODE) << startup;
 
-    p2p_node server(config);
+    server_node server(configuration);
     std::promise<code> start_promise;
     const auto handle_start = [&start_promise](const code& ec)
     {
@@ -264,7 +269,7 @@ static console_result run(const configuration& config, std::ostream& output,
     };
 
     // Logging initialized here.
-    server.start(handle_start);
+    server.start(configuration.server);
     auto ec = start_promise.get_future().get();
 
     if (ec)
@@ -283,29 +288,28 @@ static console_result run(const configuration& config, std::ostream& output,
     server.run(handle_run);
     ec = run_promise.get_future().get();
 
-    ////publisher publish(server, config.server);
-    ////if (config.server.publisher_enabled)
-    ////{
-    ////    if (!publish.start())
-    ////    {
-    ////        error << format(BS_PUBLISHER_START_FAIL) %
-    ////            zmq_strerror(zmq_errno()) << std::endl;
-    ////        return console_result::not_started;
-    ////    }
-    ////}
+    publisher publish(server, configuration.server);
+    if (configuration.server.publisher_enabled && !publish.start())
+    {
+        error << format(BS_PUBLISHER_START_FAIL) %
+            zmq_strerror(zmq_errno()) << std::endl;
+        return console_result::not_started;
+    }
 
-    ////request_worker worker(config.server);
-    ////subscribe_manager subscriber(server, config.server);
-    ////if (config.server.queries_enabled)
-    ////{
-    ////    if (!worker.start())
-    ////    {
-    ////        error << BS_WORKER_START_FAIL << std::endl;
-    ////        return console_result::not_started;
-    ////    }
+    request_worker worker(configuration.server);
+    if ((configuration.server.queries_enabled ||
+        configuration.server.subscriptions_enabled) && !worker.start())
+    {
+        error << BS_WORKER_START_FAIL << std::endl;
+        return console_result::not_started;
+    }
 
-    ////    attach_api(worker, server, subscriber);
-    ////}
+    if (configuration.server.queries_enabled)
+        attach_query_api(worker, server);
+
+    subscribe_manager subscriber(server, configuration.server);
+    if (configuration.server.subscriptions_enabled)
+        attach_subscription_api(worker, subscriber);
 
     output << BS_SERVER_STARTED << std::endl;
 
@@ -314,18 +318,9 @@ static console_result run(const configuration& config, std::ostream& output,
     signal(SIGTERM, interrupt_handler);
     signal(SIGINT, interrupt_handler);
 
-    ////// Main loop.
-    ////while (!stopped)
-    ////    worker.update();
-
-    ////// Stop the worker, publisher and node.
-    ////if (config.server.queries_enabled)
-    ////    if (!worker.stop())
-    ////        error << BS_WORKER_STOP_FAIL << std::endl;
-
-    ////if (config.server.publisher_enabled)
-    ////    if (!publish.stop())
-    ////        error << BS_PUBLISHER_STOP_FAIL << std::endl;
+    // Main loop.
+    while (!stopped)
+        worker.poll();
 
     std::promise<code> stop_promise;
     const auto handle_stop = [&stop_promise](const code& ec)

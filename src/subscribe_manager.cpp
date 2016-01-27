@@ -21,9 +21,9 @@
 
 #include <cstdint>
 #include <boost/date_time.hpp>
-#include <bitcoin/server/config/configuration.hpp>
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/service/util.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -31,129 +31,73 @@ namespace server {
 using namespace bc::chain;
 using namespace bc::wallet;
 
+#define NAME "subscribe_manager"
+
 const auto now = []()
 {
     return boost::posix_time::second_clock::universal_time();
 };
 
-static void register_with_node(subscribe_manager& manager, server_node& node)
+subscribe_manager::subscribe_manager(server_node& node,
+    const settings& settings)
+  : pool_(settings.threads),
+    dispatch_(pool_, NAME),
+    settings_(settings)
 {
-    const auto receive_block = [&manager](size_t height, const block& block)
+    const auto receive_block = [this](uint32_t height, const block& block)
     {
-        const auto block_hash = block.header.hash();
-
+        const auto hash = block.header.hash();
         for (const auto& tx: block.transactions)
-            manager.submit(height, block_hash, tx);
+            scan(height, hash, tx);
     };
 
-    const auto receive_tx = [&manager](const transaction& tx)
+    const auto receive_tx = [this](const transaction& tx)
     {
-        constexpr size_t height = 0;
-        manager.submit(height, null_hash, tx);
+        scan(0, null_hash, tx);
     };
 
+    // Subscribe against the node's tx and block publishers.
+    // This allows the subscription manager to capture transactions from both
+    // contexts and search them for payment addresses that match subscriptions.
     node.subscribe_blocks(receive_block);
     node.subscribe_transactions(receive_tx);
 }
 
-subscribe_manager::subscribe_manager(server_node& node,
-    const settings& settings)
-  : dispatch_(node.pool(), "subscribe_manager"),
-    settings_(settings)
-{
-    // subscribe to blocks and txs -> submit
-    register_with_node(*this, node);
-}
-
-static subscribe_type convert_subscribe_type(uint8_t type_byte)
-{
-    return type_byte == 0 ? subscribe_type::address : subscribe_type::stealth;
-}
-
-// Private class typedef so use a template function.
-template <typename AddressPrefix>
-bool deserialize_address(AddressPrefix& address, subscribe_type& type,
-    const data_chunk& data)
-{
-    auto deserial = make_deserializer(data.begin(), data.end());
-    try
-    {
-        type = convert_subscribe_type(deserial.read_byte());
-        auto bitsize = deserial.read_byte();
-        auto blocks = deserial.read_data(binary_type::blocks_size(bitsize));
-        address = AddressPrefix(bitsize, blocks);
-    }
-    catch (const end_of_stream&)
-    {
-        return false;
-    }
-
-    return deserial.iterator() == data.end();
-}
-
 void subscribe_manager::subscribe(const incoming_message& request,
-    queue_send_callback queue_send)
+    send_handler handler)
 {
     dispatch_.ordered(
         &subscribe_manager::do_subscribe,
-            this, request, queue_send);
+            this, request, handler);
 }
-code subscribe_manager::add_subscription(
-    const incoming_message& request, queue_send_callback queue_send)
-{
-    subscribe_type type;
-    binary_type address_key;
-    if (!deserialize_address(address_key, type, request.data()))
-    {
-        log::warning(LOG_SUBSCRIBER)
-            << "Incorrect format for subscribe data.";
-        return error::bad_stream;
-    }
 
-    // Limit absolute number of subscriptions to prevent exhaustion attacks.
-    if (subscriptions_.size() >= settings_.subscription_limit)
-        return error::pool_filled;
-
-    // Now create subscription.
-    const auto expire_time = now() + settings_.subscription_expiration();
-    const subscription new_subscription = 
-    {
-        address_key, 
-        expire_time, 
-        request.origin(), 
-        queue_send, 
-        type
-    };
-
-    subscriptions_.emplace_back(new_subscription);
-
-    return code();
-}
 void subscribe_manager::do_subscribe(const incoming_message& request,
-    queue_send_callback queue_send)
+    send_handler handler)
 {
-    const auto ec = add_subscription(request, queue_send);
+    const auto ec = add(request, handler);
 
     // Send response.
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     outgoing_message response(request, result);
-    queue_send(response);
+    handler(response);
 }
 
 void subscribe_manager::renew(const incoming_message& request,
-    queue_send_callback queue_send)
+    send_handler handler)
 {
     dispatch_.unordered(
         &subscribe_manager::do_renew,
-            this, request, queue_send);
+            this, request, handler);
 }
+
 void subscribe_manager::do_renew(const incoming_message& request,
-    queue_send_callback queue_send)
+    send_handler handler)
 {
-    binary_type filter;
+    binary filter;
     subscribe_type type;
+
     if (!deserialize_address(filter, type, request.data()))
     {
         log::warning(LOG_SUBSCRIBER)
@@ -187,23 +131,24 @@ void subscribe_manager::do_renew(const incoming_message& request,
     auto serial = make_serializer(result.begin());
     write_error_code(serial, code());
     outgoing_message response(request, result);
-    queue_send(response);
+    handler(response);
 }
 
-void subscribe_manager::submit(size_t height, const hash_digest& block_hash,
+void subscribe_manager::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
 {
     dispatch_.ordered(
-        &subscribe_manager::do_submit,
+        &subscribe_manager::do_scan,
             this, height, block_hash, tx);
 }
 
-void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
-    const transaction& tx)
+void subscribe_manager::do_scan(uint32_t height,
+    const hash_digest& block_hash, const transaction& tx)
 {
     for (const auto& input: tx.inputs)
     {
         const auto address = payment_address::extract(input.script);
+
         if (address)
             post_updates(address, height, block_hash, tx);
     }
@@ -212,6 +157,7 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
     for (const auto& output: tx.outputs)
     {
         const auto address = payment_address::extract(output.script);
+
         if (address)
             post_updates(address, height, block_hash, tx);
         else if (to_stealth_prefix(prefix, output.script))
@@ -220,28 +166,26 @@ void subscribe_manager::do_submit(size_t height, const hash_digest& block_hash,
 
     // Periodicially sweep old expired entries.
     // Use the block 10 minute window as a periodic trigger.
-    if (height)
-        sweep_expired();
+    if (height > 0)
+        sweep();
 }
 
 void subscribe_manager::post_updates(const payment_address& address,
-    size_t height, const hash_digest& block_hash, const transaction& tx)
+    uint32_t height, const hash_digest& block_hash, const transaction& tx)
 {
-    BITCOIN_ASSERT(height <= max_uint32);
-    const auto height32 = static_cast<uint32_t>(height);
-
     // [ address.version:1 ]
     // [ address.hash:20 ]
     // [ height:4 ]
     // [ block_hash:32 ]
     // [ tx ]
-    static constexpr size_t info_size = 1 + short_hash_size + 4 + hash_size;
-
+    static constexpr size_t info_size = sizeof(uint8_t) + short_hash_size +
+        sizeof(uint32_t) + hash_size;
+    
     data_chunk data(info_size + tx.serialized_size());
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
     serial.write_short_hash(address.hash());
-    serial.write_4_bytes_little_endian(height32);
+    serial.write_4_bytes_little_endian(height);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
@@ -262,31 +206,29 @@ void subscribe_manager::post_updates(const payment_address& address,
         outgoing_message update(subscription.client_origin, "address.update",
             data);
 
-        subscription.queue_send(update);
+        subscription.handler(update);
     }
 }
 
-void subscribe_manager::post_stealth_updates(uint32_t prefix, size_t height, 
+void subscribe_manager::post_stealth_updates(uint32_t prefix, uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
-    BITCOIN_ASSERT(height <= max_uint32);
-    const auto height32 = static_cast<uint32_t>(height);
-
     // [ prefix:4 ]
     // [ height:4 ] 
     // [ block_hash:32 ]
     // [ tx ]
-    static constexpr size_t info_size = 2 * sizeof(uint32_t) + hash_size;
+    static constexpr size_t info_size = sizeof(uint32_t) + sizeof(uint32_t) +
+        hash_size;
 
     data_chunk data(info_size + tx.serialized_size());
     auto serial = make_serializer(data.begin());
     serial.write_4_bytes_little_endian(prefix);
-    serial.write_4_bytes_little_endian(height32);
+    serial.write_4_bytes_little_endian(height);
     serial.write_hash(block_hash);
     BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
 
     // Now write the tx part.
-    data_chunk tx_data = tx.to_data();
+    auto tx_data = tx.to_data();
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 
@@ -302,11 +244,43 @@ void subscribe_manager::post_stealth_updates(uint32_t prefix, size_t height,
         outgoing_message update(subscription.client_origin,
             "address.stealth_update", data);
 
-        subscription.queue_send(update);
+        subscription.handler(update);
     }
 }
 
-void subscribe_manager::sweep_expired()
+code subscribe_manager::add(const incoming_message& request,
+    send_handler handler)
+{
+    binary address_key;
+    subscribe_type type;
+
+    if (!deserialize_address(address_key, type, request.data()))
+    {
+        log::warning(LOG_SUBSCRIBER)
+            << "Incorrect format for subscribe data.";
+        return error::bad_stream;
+    }
+
+    // Limit absolute number of subscriptions to prevent exhaustion attacks.
+    if (subscriptions_.size() >= settings_.subscription_limit)
+        return error::pool_filled;
+
+    // Now create subscription.
+    const auto expire_time = now() + settings_.subscription_expiration();
+    const subscription new_subscription =
+    {
+        address_key,
+        expire_time,
+        request.origin(),
+        handler,
+        type
+    };
+
+    subscriptions_.emplace_back(new_subscription);
+    return error::success;
+}
+
+void subscribe_manager::sweep()
 {
     const auto fixed_time = now();
 

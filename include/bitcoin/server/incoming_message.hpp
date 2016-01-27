@@ -17,23 +17,35 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_COMPAT_HPP
-#define LIBBITCOIN_SERVER_COMPAT_HPP
+#ifndef LIBBITCOIN_SERVER_INCOMING_MESSAGE
+#define LIBBITCOIN_SERVER_INCOMING_MESSAGE
 
+#include <cstdint>
+#include <string>
+#include <czmq++/czmqpp.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class server_node;
+class BCS_API incoming_message
+{
+public:
+    bool recv(czmqpp::socket& socket);
+    const data_chunk origin() const;
+    const std::string& command() const;
+    uint32_t id() const;
+    const data_chunk& data() const;
 
-void BCS_API COMPAT_fetch_history(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+private:
+    data_chunk origin_;
+    std::string command_;
+    uint32_t id_;
+    data_chunk data_;
+};
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
-

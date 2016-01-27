@@ -20,68 +20,90 @@
 #include <bitcoin/server/publisher.hpp>
 
 #include <string>
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
-constexpr int zmq_fail = -1;
+
+static constexpr int zmq_fail = -1;
+static constexpr size_t header_size = 80;
 
 publisher::publisher(server_node& node, const settings& settings)
   : node_(node),
     settings_(settings),
-    socket_block_(context_, ZMQ_PUB),
-    socket_tx_(context_, ZMQ_PUB)
+    socket_tx_(context_, ZMQ_PUB),
+    socket_block_(context_, ZMQ_PUB)
 {
-}
-
-bool publisher::setup_socket(const std::string& connection,
-    czmqpp::socket& socket)
-{
-    return connection.empty() || socket.bind(connection) != zmq_fail;
 }
 
 bool publisher::start()
 {
-    node_.subscribe_blocks(std::bind(&publisher::send_block, this, _1, _2));
-    node_.subscribe_transactions(std::bind(&publisher::send_tx, this, _1));
+    // These are not libbitcoin re/subscribers.
+    node_.subscribe_transactions(
+        std::bind(&publisher::send_tx,
+            this, _1));
 
-    log::debug(LOG_PUBLISHER) << "Publishing blocks on "
-        << settings_.block_publish_endpoint;
-    if (!setup_socket(settings_.block_publish_endpoint.to_string(),
-        socket_block_))
-        return false;
+    node_.subscribe_blocks(
+        std::bind(&publisher::send_block,
+            this, _1, _2));
 
-    log::debug(LOG_PUBLISHER) << "Publishing transactions on "
-        << settings_.transaction_publish_endpoint;
-    if (!setup_socket(settings_.transaction_publish_endpoint.to_string(),
-        socket_tx_))
-        return false;
+    auto block_endpoint = settings_.block_publish_endpoint.to_string();
+    if (!block_endpoint.empty())
+    {
+        if (socket_block_.bind(block_endpoint) == zmq_fail)
+        {
+            log::error(LOG_PUBLISHER)
+                << "Failed to start block publisher on "
+                << settings_.block_publish_endpoint;
+            return false;
+        }
+
+        log::debug(LOG_PUBLISHER)
+            << "Publishing blocks on "
+            << settings_.block_publish_endpoint;
+    }
+
+    auto tx_endpoint = settings_.transaction_publish_endpoint.to_string();
+    if (!tx_endpoint.empty())
+    {
+        if (socket_tx_.bind(tx_endpoint) == zmq_fail)
+        {
+            log::error(LOG_PUBLISHER)
+                << "Failed to start transaction publisher on "
+                << settings_.block_publish_endpoint;
+            return false;
+        }
+
+        log::debug(LOG_PUBLISHER)
+            << "Publishing transactions on "
+            << settings_.transaction_publish_endpoint;
+    }
 
     return true;
 }
 
-bool publisher::stop()
+void publisher::send_tx(const chain::transaction& tx)
 {
-    return true;
-}
+    czmqpp::message message;
+    message.append(tx.to_data());
 
-static void append_hash(czmqpp::message& message, const hash_digest& hash)
-{
-    message.append(data_chunk(hash.begin(), hash.end()));
+    if (!message.send(socket_tx_))
+        log::warning(LOG_PUBLISHER)
+        << "Problem publishing tx data.";
 }
 
 void publisher::send_block(uint32_t height, const chain::block& block)
 {
-    // Serialize the height.
-    data_chunk raw_height = to_chunk(to_little_endian(height));
+    // Serialize the block height.
+    const auto raw_height = to_chunk(to_little_endian(height));
     BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
 
-    // Serialize the 80 byte header.
-    data_chunk raw_block_header = block.header.to_data(false);
-    BITCOIN_ASSERT(raw_block_header.size() == 80);
+    // Serialize the block header.
+    const auto raw_block_header = block.header.to_data(false);
+    BITCOIN_ASSERT(raw_block_header.size() == header_size);
 
     // Construct the message.
     //   height   [4 bytes]
@@ -91,30 +113,12 @@ void publisher::send_block(uint32_t height, const chain::block& block)
     message.append(raw_height);
     message.append(raw_block_header);
 
-    // Clients should be buffering their unconfirmed txs
-    // and only be requesting those they don't have.
     for (const auto& tx: block.transactions)
-        append_hash(message, tx.hash());
+        message.append(to_chunk(tx.hash()));
 
-    // Finished. Send message.
     if (!message.send(socket_block_))
-    {
-        log::warning(LOG_PUBLISHER) << "Problem publishing block data.";
-        return;
-    }
-}
-
-void publisher::send_tx(const chain::transaction& tx)
-{
-    data_chunk raw_tx = tx.to_data();
-    czmqpp::message message;
-    message.append(raw_tx);
-
-    if (!message.send(socket_tx_))
-    {
-        log::warning(LOG_PUBLISHER) << "Problem publishing tx data.";
-        return;
-    }
+        log::warning(LOG_PUBLISHER)
+            << "Problem publishing block data.";
 }
 
 } // namespace server

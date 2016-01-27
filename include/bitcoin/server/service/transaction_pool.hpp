@@ -29,11 +29,13 @@ namespace server {
 
 class server_node;
 
+// TODO: convert to class static.
+
 void BCS_API transaction_pool_validate(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 void BCS_API transaction_pool_fetch_transaction(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 } // namespace server
 } // namespace libbitcoin

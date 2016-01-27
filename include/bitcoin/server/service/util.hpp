@@ -23,12 +23,9 @@
 #include <functional>
 #include <system_error>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message.hpp>
 
 namespace libbitcoin {
 namespace server {
-
-typedef std::function<void (const outgoing_message&)> queue_send_callback;
 
 template <typename Serializer>
 void write_error_code(Serializer& serial, const code& ec)

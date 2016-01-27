@@ -21,6 +21,8 @@
 #define LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/incoming_message.hpp>
+#include <bitcoin/server/outgoing_message.hpp>
 #include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
@@ -28,32 +30,37 @@ namespace server {
 
 class server_node;
 
+// TODO: convert to class static.
+
+void BCS_API address_fetch_history2(server_node& node,
+    const incoming_message& request, send_handler handler);
+
 void BCS_API blockchain_fetch_history(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_transaction(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_last_height(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_block_header(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
-////void BCS_API blockchain_fetch_block_transaction_hashes(server_node& node,
-////    const incoming_message& request, queue_send_callback queue_send);
+void BCS_API blockchain_fetch_block_transaction_hashes(server_node& node,
+    const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_transaction_index(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_spend(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_block_height(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_stealth(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send);
+    const incoming_message& request, send_handler handler);
 
 } // namespace server
 } // namespace libbitcoin

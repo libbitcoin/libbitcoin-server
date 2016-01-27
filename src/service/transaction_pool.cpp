@@ -19,7 +19,8 @@
  */
 #include <bitcoin/server/service/transaction_pool.hpp>
 
-#include <bitcoin/server/config/configuration.hpp>
+#include <cstdint>
+#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 
@@ -32,11 +33,14 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
+static constexpr size_t code_size = sizeof(uint32_t);
+static constexpr size_t index_size = sizeof(uint32_t);
+
 static void transaction_validated(const code& ec, const transaction& tx,
     const hash_digest& tx_hash, const index_list& unconfirmed,
-    const incoming_message& request, queue_send_callback queue_send)
+    const incoming_message& request, send_handler handler)
 {
-    data_chunk result(4 + unconfirmed.size() * 4);
+    data_chunk result(code_size + unconfirmed.size() * index_size);
     auto serial = make_serializer(result.begin());
     write_error_code(serial, ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
@@ -54,24 +58,24 @@ static void transaction_validated(const code& ec, const transaction& tx,
         << ec.message();
 
     outgoing_message response(request, result);
-    queue_send(response);
+    handler(response);
 }
 
 void transaction_pool_validate(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send)
+    const incoming_message& request, send_handler handler)
 {
-    transaction tx;
-    if (tx.from_data(request.data()))
-        node.transaction_pool().validate(tx,
-            std::bind(transaction_validated,
-                _1, _2, _3, _4, request, queue_send));
-    else
-        transaction_validated(error::bad_stream, transaction(), hash_digest(),
-            index_list(), request, queue_send);
+    ////transaction tx;
+    ////if (tx.from_data(request.data()))
+    ////    node.transaction_pool().validate(tx,
+    ////        std::bind(transaction_validated,
+    ////            _1, _2, _3, _4, request, handler));
+    ////else
+    ////    transaction_validated(error::bad_stream, transaction(), hash_digest(),
+    ////        index_list(), request, handler);
 }
 
 void transaction_pool_fetch_transaction(server_node& node,
-    const incoming_message& request, queue_send_callback queue_send)
+    const incoming_message& request, send_handler handler)
 {
     hash_digest tx_hash;
     if (!unwrap_fetch_transaction_args(tx_hash, request))
@@ -80,9 +84,9 @@ void transaction_pool_fetch_transaction(server_node& node,
     log::debug(LOG_REQUEST) << "transaction_pool.fetch_transaction("
         << encode_hash(tx_hash) << ")";
 
-    node.transaction_pool().fetch(tx_hash,
-        std::bind(transaction_fetched,
-            _1, _2, request, queue_send));
+    ////node.transaction_pool().fetch(tx_hash,
+    ////    std::bind(transaction_fetched,
+    ////        _1, _2, request, handler));
 }
 
 } // namespace server

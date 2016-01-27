@@ -17,39 +17,57 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PUBLISHER_HPP
-#define LIBBITCOIN_SERVER_PUBLISHER_HPP
+#ifndef LIBBITCOIN_SERVER_REQUEST_WORKER_HPP
+#define LIBBITCOIN_SERVER_REQUEST_WORKER_HPP
 
 #include <cstdint>
+#include <unordered_map>
+#include <functional>
+#include <string>
+#include <boost/date_time.hpp>
 #include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/incoming_message.hpp>
+#include <bitcoin/server/outgoing_message.hpp>
+#include <bitcoin/server/send_worker.hpp>
+#include <bitcoin/server/service/util.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// The publisher subscribes to blocks accepted to the blockchain and
-/// transactions accepted to the memory pool. The blocks and transactions
-/// are then forwarded to its subscribers.
-class BCS_API publisher
+class BCS_API request_worker
 {
 public:
-    publisher(server_node& node, const settings& settings);
+    typedef std::function<void(const incoming_message&, send_handler)>
+        command_handler;
 
-    /// Start the publisher.
+    request_worker(const settings& settings);
+
     bool start();
+    void poll();
+    void attach(const std::string& command, command_handler handler);
 
 private:
-    void send_tx(const chain::transaction& tx);
-    void send_block(uint32_t height, const chain::block& block);
+    typedef std::unordered_map<std::string, command_handler> command_map;
 
-    server_node& node_;
-    czmqpp::context context_;
-    czmqpp::socket socket_tx_;
-    czmqpp::socket socket_block_;
+    void whitelist();
+    bool enable_crypto();
+    bool create_new_socket();
+    void publish_heartbeat();
+
+    uint32_t counter_;
+    send_worker sender_;
+    command_map handlers_;
+    boost::posix_time::ptime deadline_;
     const settings& settings_;
+
+    czmqpp::context context_;
+    czmqpp::socket socket_;
+    czmqpp::socket wakeup_socket_;
+    czmqpp::socket heartbeat_socket_;
+    czmqpp::authenticator authenticate_;
 };
 
 } // namespace server

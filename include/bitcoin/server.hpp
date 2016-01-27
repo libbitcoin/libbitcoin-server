@@ -15,19 +15,20 @@
  */
 
 #include <bitcoin/node.hpp>
+#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/dispatch.hpp>
-#include <bitcoin/server/message.hpp>
+#include <bitcoin/server/incoming_message.hpp>
+#include <bitcoin/server/outgoing_message.hpp>
+#include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/publisher.hpp>
+#include <bitcoin/server/request_worker.hpp>
+#include <bitcoin/server/send_worker.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/subscribe_manager.hpp>
 #include <bitcoin/server/version.hpp>
-#include <bitcoin/server/worker.hpp>
-#include <bitcoin/server/config/configuration.hpp>
-#include <bitcoin/server/config/parser.hpp>
-#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/service/blockchain.hpp>
-#include <bitcoin/server/service/compat.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
 #include <bitcoin/server/service/protocol.hpp>
 #include <bitcoin/server/service/transaction_pool.hpp>

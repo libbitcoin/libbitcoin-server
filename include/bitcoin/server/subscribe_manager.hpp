@@ -24,63 +24,82 @@
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/config/settings.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message.hpp>
+#include <bitcoin/server/incoming_message.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/util.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-enum class subscribe_type
-{
-    address = 0,
-    stealth = 1
-};
-
 class BCS_API subscribe_manager
 {
 public:
-
     subscribe_manager(server_node& node, const settings& settings);
 
-    void subscribe(const incoming_message& request,
-        queue_send_callback queue_send);
-    void renew(const incoming_message& request,
-        queue_send_callback queue_send);
-    void submit(size_t height, const hash_digest& block_hash,
+    void subscribe(const incoming_message& request, send_handler handler);
+    void renew(const incoming_message& request, send_handler handler);
+    void scan(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
 
 private:
+    enum class subscribe_type
+    {
+        address = 0,
+        stealth = 1
+    };
+
     struct subscription
     {
-        binary_type prefix;
+        binary prefix;
         boost::posix_time::ptime expiry_time;
         data_chunk client_origin;
-        queue_send_callback queue_send;
+        send_handler handler;
         subscribe_type type;
     };
 
-    typedef std::vector<subscription> subscription_list;
+    typedef std::vector<subscription> list;
+    
+    // Private class typedef so use a template function.
+    template <typename AddressPrefix>
+    bool deserialize_address(AddressPrefix& address, subscribe_type& type,
+        const data_chunk& data)
+    {
+        auto deserial = make_deserializer(data.begin(), data.end());
+        try
+        {
+            type = deserial.read_byte() == 0 ? subscribe_type::address :
+                subscribe_type::stealth;
+            auto bit_length = deserial.read_byte();
+            auto blocks = deserial.read_data(binary::blocks_size(bit_length));
+            address = AddressPrefix(bit_length, blocks);
+        }
+        catch (const end_of_stream&)
+        {
+            return false;
+        }
 
-    code add_subscription(const incoming_message& request,
-        queue_send_callback queue_send);
-    void do_subscribe(const incoming_message& request,
-        queue_send_callback queue_send);
-    void do_renew(const incoming_message& request,
-        queue_send_callback queue_send);
-    void do_submit(size_t height, const hash_digest& block_hash,
+        return deserial.iterator() == data.end();
+    }
+
+    void do_subscribe(const incoming_message& request, send_handler handler);
+    void do_renew(const incoming_message& request, send_handler handler);
+    void do_scan(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
+
     void post_updates(const wallet::payment_address& address,
-        size_t height, const hash_digest& block_hash,
+        uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
-    void post_stealth_updates(uint32_t prefix, size_t height,
+    void post_stealth_updates(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
-    void sweep_expired();
 
+    code add(const incoming_message& request, send_handler handler);
+    void sweep();
+
+    threadpool pool_;
     dispatcher dispatch_;
-    subscription_list subscriptions_;
+    list subscriptions_;
     const settings& settings_;
 };
 

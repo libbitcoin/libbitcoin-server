@@ -24,7 +24,7 @@
 #include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/config/settings.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

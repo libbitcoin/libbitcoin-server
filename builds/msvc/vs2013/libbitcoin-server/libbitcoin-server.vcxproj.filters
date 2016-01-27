@@ -22,12 +22,6 @@
     <Filter Include="include\bitcoin\server\service">
       <UniqueIdentifier>{12ff4913-25e2-4e09-aada-cccc3ba3f796}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\config">
-      <UniqueIdentifier>{426ae8b7-d26d-4451-85c8-30865a3de442}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\server\config">
-      <UniqueIdentifier>{3a649328-f790-43cc-bd32-c82477416648}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource.h" />
@@ -35,12 +29,6 @@
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\worker.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\publisher.hpp">
@@ -58,12 +46,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\blockchain.hpp">
       <Filter>include\bitcoin\server\service</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\compat.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fetch_x.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
@@ -73,17 +55,32 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp">
-      <Filter>include\bitcoin\server\config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\configuration.hpp">
-      <Filter>include\bitcoin\server\config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\parser.hpp">
-      <Filter>include\bitcoin\server\config</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp">
       <Filter>include\bitcoin</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fetch_x.hpp">
+      <Filter>include\bitcoin\server\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\incoming_message.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\outgoing_message.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\request_worker.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\send_worker.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
+      <Filter>include\bitcoin\server</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -99,20 +96,11 @@
     <ClCompile Include="..\..\..\..\src\service\transaction_pool.cpp">
       <Filter>src\service</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\publisher.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\subscribe_manager.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\worker.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\compat.cpp">
-      <Filter>src\service</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\dispatch.cpp">
       <Filter>src</Filter>
@@ -120,11 +108,23 @@
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\config\settings.cpp">
-      <Filter>src\config</Filter>
+    <ClCompile Include="..\..\..\..\src\incoming_message.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\config\parser.cpp">
-      <Filter>src\config</Filter>
+    <ClCompile Include="..\..\..\..\src\outgoing_message.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\request_worker.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\send_worker.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parser.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\settings.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
