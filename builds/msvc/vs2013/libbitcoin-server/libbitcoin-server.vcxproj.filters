@@ -40,9 +40,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\transaction_pool.hpp">
       <Filter>include\bitcoin\server\service</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\util.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\blockchain.hpp">
       <Filter>include\bitcoin\server\service</Filter>
     </ClInclude>

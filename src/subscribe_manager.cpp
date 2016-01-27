@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <boost/date_time.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/service/util.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -79,7 +78,7 @@ void subscribe_manager::do_subscribe(const incoming_message& request,
     // Send response.
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
+    serial.write_error_code(ec);
     outgoing_message response(request, result);
     handler(response);
 }
@@ -129,7 +128,7 @@ void subscribe_manager::do_renew(const incoming_message& request,
     // Send response.
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, code());
+    serial.write_error_code(error::success);
     outgoing_message response(request, result);
     handler(response);
 }

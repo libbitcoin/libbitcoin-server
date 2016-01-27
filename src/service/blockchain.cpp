@@ -23,7 +23,6 @@
 #include <boost/iostreams/stream.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
-#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -113,7 +112,8 @@ void last_height_fetched(const code& ec, size_t last_height,
 
     data_chunk result(code_size + sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
+    serial.write_error_code(ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     serial.write_4_bytes_little_endian(last_height32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
     log::debug(LOG_REQUEST)
@@ -176,7 +176,7 @@ void block_header_fetched(const code& ec, const chain::header& block,
 {
     data_chunk result(code_size + block.serialized_size(false));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
+    serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     data_chunk block_data = block.to_data(false);
@@ -244,10 +244,10 @@ void block_transaction_hashes_fetched(const code& ec,
     const hash_list& hashes, const incoming_message& request,
     send_handler handler)
 {
-    data_chunk result(4 + hash_size * hashes.size());
+    data_chunk result(code_size + hash_size * hashes.size());
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_error_code(ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     for (const auto& tx_hash: hashes)
         serial.write_hash(tx_hash);
     BITCOIN_ASSERT(serial.iterator() == result.end());
@@ -291,7 +291,7 @@ void transaction_index_fetched(const code& ec, size_t block_height,
     // error_code (4), block_height (4), index (4)
     data_chunk result(code_size + sizeof(uint32_t) + sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
+    serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     serial.write_4_bytes_little_endian(block_height32);
     serial.write_4_bytes_little_endian(index32);
@@ -333,7 +333,7 @@ void spend_fetched(const code& ec, const chain::input_point& inpoint,
     // error_code (4), hash (32), index (4)
     data_chunk result(code_size + inpoint.serialized_size());
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
+    serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     auto raw_inpoint = inpoint.to_data();
     serial.write_data(raw_inpoint);
@@ -374,8 +374,8 @@ void block_height_fetched(const code& ec, size_t block_height,
     // error_code (4), height (4)
     data_chunk result(code_size + sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_error_code(ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     serial.write_4_bytes_little_endian(block_height32);
     log::debug(LOG_REQUEST)
         << "blockchain.fetch_block_height() finished. Sending response.";
@@ -432,8 +432,8 @@ void stealth_fetched(const code& ec,
     static constexpr size_t row_size = hash_size + short_hash_size + hash_size;
     data_chunk result(code_size + row_size * stealth_results.size());
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_error_code(ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     for (const auto& row: stealth_results)
     {

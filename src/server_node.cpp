@@ -25,7 +25,6 @@
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/service/fetch_x.hpp>
-#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {

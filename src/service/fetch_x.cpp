@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <vector>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -71,7 +70,8 @@ void send_history_result(const code& ec, const block_chain::history& history,
 
     data_chunk result(code_size + row_size * history.size());
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
+    serial.write_error_code(ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     for (const auto& row: history)
     {
@@ -117,8 +117,8 @@ void transaction_fetched(const code& ec, const chain::transaction& tx,
 {
     data_chunk result(4 + tx.serialized_size());
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_error_code(ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     data_chunk tx_data = tx.to_data();
     serial.write_data(tx_data);

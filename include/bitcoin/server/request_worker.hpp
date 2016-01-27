@@ -31,7 +31,6 @@
 #include <bitcoin/server/incoming_message.hpp>
 #include <bitcoin/server/outgoing_message.hpp>
 #include <bitcoin/server/send_worker.hpp>
-#include <bitcoin/server/service/util.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {

@@ -22,7 +22,6 @@
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/service/util.hpp>
 
 // TODO: move to util or private class static in another location.
 

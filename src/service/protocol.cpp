@@ -23,7 +23,6 @@
 #include <bitcoin/server.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/service/util.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -41,7 +40,7 @@ void protocol_broadcast_transaction(server_node& node,
     if (!tx.from_data(raw_tx))
     {
         // error
-        write_error_code(serial, error::bad_stream);
+        serial.write_error_code(error::bad_stream);
         outgoing_message response(request, result);
         handler(response);
         return;
@@ -54,7 +53,7 @@ void protocol_broadcast_transaction(server_node& node,
     node.broadcast(tx, ignore_send, ignore_complete);
 
     // Response back to user saying everything is fine.
-    write_error_code(serial, code());
+    serial.write_error_code(error::success);
 
     log::debug(LOG_SERVICE)
         << "protocol.broadcast_transaction() finished. Sending response.";
@@ -70,9 +69,10 @@ void protocol_total_connections(server_node& node,
     ////node.connected_count(handler);
     const uint32_t total_connections = 0;
 
-    data_chunk result(8);
+    data_chunk result(code_size + sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, code());
+    serial.write_error_code(error::success);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     serial.write_4_bytes_little_endian(total_connections);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 

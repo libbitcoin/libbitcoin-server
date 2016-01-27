@@ -32,6 +32,5 @@
 #include <bitcoin/server/service/fetch_x.hpp>
 #include <bitcoin/server/service/protocol.hpp>
 #include <bitcoin/server/service/transaction_pool.hpp>
-#include <bitcoin/server/service/util.hpp>
 
 #endif

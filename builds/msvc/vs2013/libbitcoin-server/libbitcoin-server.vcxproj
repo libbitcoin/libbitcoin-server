@@ -86,7 +86,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fetch_x.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\service\transaction_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\util.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\subscribe_manager.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />

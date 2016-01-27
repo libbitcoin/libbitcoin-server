@@ -42,8 +42,8 @@ static void transaction_validated(const code& ec, const transaction& tx,
 {
     data_chunk result(code_size + unconfirmed.size() * index_size);
     auto serial = make_serializer(result.begin());
-    write_error_code(serial, ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + 4);
+    serial.write_error_code(ec);
+    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     for (const auto unconfirmed_index: unconfirmed)
     {
