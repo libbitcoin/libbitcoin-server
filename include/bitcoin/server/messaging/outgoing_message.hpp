@@ -43,13 +43,17 @@ public:
         const data_chunk& data);
 
     void send(czmqpp::socket& socket) const;
+
     uint32_t id() const;
+    const data_chunk& data() const;
+    const std::string& command() const;
+    const data_chunk destination() const;
 
 private:
-    data_chunk destination_;
-    std::string command_;
     uint32_t id_;
     data_chunk data_;
+    std::string command_;
+    data_chunk destination_;
 };
 
 typedef std::function<void(const outgoing_message&)> send_handler;

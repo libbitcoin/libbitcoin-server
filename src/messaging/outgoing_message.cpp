@@ -27,16 +27,19 @@
 namespace libbitcoin {
 namespace server {
 
+// ----------------------------------------------------------------------------
+// Constructors
+
 outgoing_message::outgoing_message()
 {
 }
 
 outgoing_message::outgoing_message(const data_chunk& destination,
     const std::string& command, const data_chunk& data)
-  : destination_(destination),
+  : id_(rand()),
+    data_(data),
     command_(command),
-    id_(rand()),
-    data_(data)
+    destination_(destination)
 {
 }
 
@@ -49,32 +52,45 @@ outgoing_message::outgoing_message(const incoming_message& request,
 {
 }
 
+// ----------------------------------------------------------------------------
+// Actions
+
 void outgoing_message::send(czmqpp::socket& socket) const
 {
     czmqpp::message message;
 
-    // [ DESTINATION ] (optional - ROUTER sockets strip this)
+    // Optional, ROUTER sockets strip this.
     if (!destination_.empty())
         message.append(destination_);
 
-    // [ COMMAND ]
     message.append({ command_.begin(), command_.end() });
-
-    // [ ID ]
-    const auto id = to_chunk(to_little_endian(id_));
-    BITCOIN_ASSERT(id.size() == sizeof(id_));
-    message.append(id);
-
-    // [ DATA ]
+    message.append(to_chunk(to_little_endian(id_)));
     message.append(data_);
 
-    // Send.
     message.send(socket);
 }
+
+// ----------------------------------------------------------------------------
+// Properties
 
 uint32_t outgoing_message::id() const
 {
     return id_;
+}
+
+const data_chunk& outgoing_message::data() const
+{
+    return data_;
+}
+
+const std::string& outgoing_message::command() const
+{
+    return command_;
+}
+
+const data_chunk outgoing_message::destination() const
+{
+    return destination_;
 }
 
 } // namespace server

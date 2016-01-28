@@ -207,8 +207,8 @@ void request_worker::poll()
         {
             if (settings_.log_requests)
                 log::debug(LOG_REQUEST)
-                    << "Service request [" << request.command() << "] from "
-                    << encode_base16(request.origin());
+                    << "Service request [" << request.command()
+                    << "] from "  << encode_base16(request.origin());
 
             it->second(request,
                 std::bind(&send_worker::queue,
@@ -216,9 +216,10 @@ void request_worker::poll()
         }
         else
         {
-            log::warning(LOG_SERVICE)
-                << "Unhandled service request [" << request.command()
-                << "] from " << encode_base16(request.origin());
+            if (settings_.log_requests)
+                log::warning(LOG_SERVICE)
+                    << "Unhandled service request [" << request.command()
+                    << "] from " << encode_base16(request.origin());
         }
     }
 

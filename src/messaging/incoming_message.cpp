@@ -26,30 +26,31 @@
 namespace libbitcoin {
 namespace server {
 
+// ----------------------------------------------------------------------------
+// Actions
+
 bool incoming_message::receive(czmqpp::socket& socket)
 {
     czmqpp::message message;
     message.receive(socket);
     const auto& parts = message.parts();
 
-    if (parts.size() != 3 && parts.size() != 4)
+    if (parts.size() < 3 || parts.size() > 4)
         return false;
 
     auto it = parts.begin();
 
-    // [ DESTINATION ] (optional - ROUTER sockets strip this)
+    // Optional - ROUTER sockets strip this.
     if (parts.size() == 4)
     {
         origin_ = *it;
         ++it;
     }
 
-    // [ COMMAND ]
     const auto& command = *it;
     command_ = std::string(command.begin(), command.end());
     ++it;
 
-    // [ ID ]
     const auto& id = *it;
     if (id.size() != sizeof(uint32_t))
         return false;
@@ -57,7 +58,6 @@ bool incoming_message::receive(czmqpp::socket& socket)
     id_ = from_little_endian_unsafe<uint32_t>(id.begin());
     ++it;
 
-    // [ DATA ]
     data_ = *it;
     ++it;
 
@@ -65,15 +65,8 @@ bool incoming_message::receive(czmqpp::socket& socket)
     return true;
 }
 
-const data_chunk incoming_message::origin() const
-{
-    return origin_;
-}
-
-const std::string& incoming_message::command() const
-{
-    return command_;
-}
+// ----------------------------------------------------------------------------
+// Properties
 
 uint32_t incoming_message::id() const
 {
@@ -83,6 +76,16 @@ uint32_t incoming_message::id() const
 const data_chunk& incoming_message::data() const
 {
     return data_;
+}
+
+const std::string& incoming_message::command() const
+{
+    return command_;
+}
+
+const data_chunk incoming_message::origin() const
+{
+    return origin_;
 }
 
 } // namespace server

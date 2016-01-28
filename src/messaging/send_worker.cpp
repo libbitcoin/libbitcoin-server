@@ -19,16 +19,10 @@
  */
 #include <bitcoin/server/messaging/send_worker.hpp>
 
-#include <cstdint>
-#include <vector>
-#include <boost/date_time.hpp>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/messaging/incoming_message.hpp>
 #include <bitcoin/server/messaging/outgoing_message.hpp>
-#include <bitcoin/server/messaging/request_worker.hpp>
-#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

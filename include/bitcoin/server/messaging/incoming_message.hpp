@@ -34,16 +34,16 @@ class BCS_API incoming_message
 public:
     bool receive(czmqpp::socket& socket);
 
-    const data_chunk origin() const;
-    const std::string& command() const;
     uint32_t id() const;
     const data_chunk& data() const;
+    const std::string& command() const;
+    const data_chunk origin() const;
 
 private:
-    data_chunk origin_;
-    std::string command_;
     uint32_t id_;
     data_chunk data_;
+    std::string command_;
+    data_chunk origin_;
 };
 
 } // namespace server
