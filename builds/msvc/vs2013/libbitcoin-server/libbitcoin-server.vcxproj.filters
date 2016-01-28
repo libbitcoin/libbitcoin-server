@@ -58,9 +58,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\queries\blockchain.hpp">
       <Filter>include\bitcoin\server\queries</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\queries\fetch_x.hpp">
-      <Filter>include\bitcoin\server\queries</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\queries\protocol.hpp">
       <Filter>include\bitcoin\server\queries</Filter>
     </ClInclude>
@@ -85,6 +82,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messaging\publisher.hpp">
       <Filter>include\bitcoin\server\messaging</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\queries\utility.hpp">
+      <Filter>src\queries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\dispatch.cpp">
@@ -98,9 +98,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\queries\fetch_x.cpp">
-      <Filter>src\queries</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\queries\protocol.cpp">
       <Filter>src\queries</Filter>
@@ -128,6 +125,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\messaging\outgoing_message.cpp">
       <Filter>src\messaging</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\queries\utility.cpp">
+      <Filter>src\queries</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

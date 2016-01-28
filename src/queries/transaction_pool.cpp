@@ -22,7 +22,7 @@
 #include <cstdint>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/queries/fetch_x.hpp>
+#include "utility.hpp"
 
 namespace libbitcoin {
 namespace server {

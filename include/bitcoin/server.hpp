@@ -29,7 +29,6 @@
 #include <bitcoin/server/messaging/send_worker.hpp>
 #include <bitcoin/server/messaging/subscribe_manager.hpp>
 #include <bitcoin/server/queries/blockchain.hpp>
-#include <bitcoin/server/queries/fetch_x.hpp>
 #include <bitcoin/server/queries/protocol.hpp>
 #include <bitcoin/server/queries/transaction_pool.hpp>
 

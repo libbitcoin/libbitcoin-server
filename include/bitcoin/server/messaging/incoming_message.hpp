@@ -32,7 +32,8 @@ namespace server {
 class BCS_API incoming_message
 {
 public:
-    bool recv(czmqpp::socket& socket);
+    bool receive(czmqpp::socket& socket);
+
     const data_chunk origin() const;
     const std::string& command() const;
     uint32_t id() const;

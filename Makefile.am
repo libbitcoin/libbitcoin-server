@@ -46,9 +46,10 @@ src_libbitcoin_server_la_SOURCES = \
     src/messaging/send_worker.cpp \
     src/messaging/subscribe_manager.cpp \
     src/queries/blockchain.cpp \
-    src/queries/fetch_x.cpp \
     src/queries/protocol.cpp \
-    src/queries/transaction_pool.cpp
+    src/queries/transaction_pool.cpp \
+    src/queries/utility.cpp \
+    src/queries/utility.hpp
 
 # local: test/libbitcoin_server_test
 #------------------------------------------------------------------------------
@@ -106,7 +107,6 @@ include_bitcoin_server_messaging_HEADERS = \
 include_bitcoin_server_queriesdir = ${includedir}/bitcoin/server/queries
 include_bitcoin_server_queries_HEADERS = \
     include/bitcoin/server/queries/blockchain.hpp \
-    include/bitcoin/server/queries/fetch_x.hpp \
     include/bitcoin/server/queries/protocol.hpp \
     include/bitcoin/server/queries/transaction_pool.hpp
 

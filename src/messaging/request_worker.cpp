@@ -199,7 +199,7 @@ void request_worker::poll()
     {
         // Get message: 6-part envelope + content -> request
         incoming_message request;
-        request.recv(socket_);
+        request.receive(socket_);
 
         // Perform request if handler exists.
         auto it = handlers_.find(request.command());

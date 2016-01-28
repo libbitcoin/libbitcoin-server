@@ -26,7 +26,7 @@
 namespace libbitcoin {
 namespace server {
 
-bool incoming_message::recv(czmqpp::socket& socket)
+bool incoming_message::receive(czmqpp::socket& socket)
 {
     czmqpp::message message;
     message.receive(socket);

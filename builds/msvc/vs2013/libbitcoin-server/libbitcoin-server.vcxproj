@@ -82,13 +82,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messaging\subscribe_manager.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\queries\blockchain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\queries\fetch_x.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\queries\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\queries\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
+    <ClInclude Include="..\..\..\..\src\queries\utility.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -100,7 +100,7 @@
     <ClCompile Include="..\..\..\..\src\messaging\subscribe_manager.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\queries\blockchain.cpp" />
-    <ClCompile Include="..\..\..\..\src\queries\fetch_x.cpp" />
+    <ClCompile Include="..\..\..\..\src\queries\utility.cpp" />
     <ClCompile Include="..\..\..\..\src\queries\protocol.cpp" />
     <ClCompile Include="..\..\..\..\src\queries\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />

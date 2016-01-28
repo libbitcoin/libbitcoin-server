@@ -33,14 +33,14 @@ namespace server {
 class BCS_API outgoing_message
 {
 public:
-    // Empty dest = unspecified destination.
-    outgoing_message(const data_chunk& destination, const std::string& command,
-        const data_chunk& data);
+    /// Default constructor provided for containers and copying.
+    outgoing_message();
 
     outgoing_message(const incoming_message& request, const data_chunk& data);
 
-    // Default constructor provided for containers and copying.
-    outgoing_message();
+    /// Empty destination is interpreted as an unspecified destination.
+    outgoing_message(const data_chunk& destination, const std::string& command,
+        const data_chunk& data);
 
     void send(czmqpp::socket& socket) const;
     uint32_t id() const;
