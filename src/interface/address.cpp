@@ -21,8 +21,8 @@
 
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/message/incoming_message.hpp>
-#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/message_outgoing.hpp>
 #include <bitcoin/server/message/notifier.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include "utility.hpp"
@@ -34,7 +34,7 @@ using namespace bc::wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-void address::fetch_history2(server_node& node, const incoming_message& request,
+void address::fetch_history2(server_node& node, const message_incoming& request,
     send_handler handler)
 {
     uint32_t from_height;
@@ -52,13 +52,13 @@ void address::fetch_history2(server_node& node, const incoming_message& request,
 }
 
 void address::subscribe(notifier& notifier,
-    const incoming_message& request, send_handler handler)
+    const message_incoming& request, send_handler handler)
 {
     notifier.subscribe(request, handler);
 }
 
 void address::renew(notifier& notifier,
-    const incoming_message& request, send_handler handler)
+    const message_incoming& request, send_handler handler)
 {
     notifier.renew(request, handler);
 }

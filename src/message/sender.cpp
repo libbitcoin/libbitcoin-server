@@ -22,7 +22,7 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/message_outgoing.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -36,7 +36,7 @@ sender::sender(czmqpp::context& context)
 {
 }
 
-void sender::queue(const outgoing_message& message)
+void sender::queue(const message_outgoing& message)
 {
     czmqpp::socket socket(context_, ZMQ_PUSH);
     BITCOIN_ASSERT(socket.self() != nullptr);

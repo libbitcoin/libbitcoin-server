@@ -17,12 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/message/incoming_message.hpp>
-#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/message_incoming.hpp>
 
 #include <cstdint>
 #include <random>
 #include <string>
+#include <czmq++/czmqpp.hpp>
+#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/message/message_outgoing.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -30,11 +32,11 @@ namespace server {
 // ----------------------------------------------------------------------------
 // Constructors
 
-outgoing_message::outgoing_message()
+message_outgoing::message_outgoing()
 {
 }
 
-outgoing_message::outgoing_message(const data_chunk& destination,
+message_outgoing::message_outgoing(const data_chunk& destination,
     const std::string& command, const data_chunk& data)
   : id_(rand()),
     data_(data),
@@ -43,7 +45,7 @@ outgoing_message::outgoing_message(const data_chunk& destination,
 {
 }
 
-outgoing_message::outgoing_message(const incoming_message& request,
+message_outgoing::message_outgoing(const message_incoming& request,
     const data_chunk& data)
   : destination_(request.origin()),
     command_(request.command()),
@@ -55,7 +57,7 @@ outgoing_message::outgoing_message(const incoming_message& request,
 // ----------------------------------------------------------------------------
 // Actions
 
-void outgoing_message::send(czmqpp::socket& socket) const
+void message_outgoing::send(czmqpp::socket& socket) const
 {
     czmqpp::message message;
 
@@ -73,22 +75,22 @@ void outgoing_message::send(czmqpp::socket& socket) const
 // ----------------------------------------------------------------------------
 // Properties
 
-uint32_t outgoing_message::id() const
+uint32_t message_outgoing::id() const
 {
     return id_;
 }
 
-const data_chunk& outgoing_message::data() const
+const data_chunk& message_outgoing::data() const
 {
     return data_;
 }
 
-const std::string& outgoing_message::command() const
+const std::string& message_outgoing::command() const
 {
     return command_;
 }
 
-const data_chunk outgoing_message::destination() const
+const data_chunk message_outgoing::destination() const
 {
     return destination_;
 }

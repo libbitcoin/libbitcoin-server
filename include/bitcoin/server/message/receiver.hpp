@@ -28,8 +28,8 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming_message.hpp>
-#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/message_outgoing.hpp>
 #include <bitcoin/server/message/sender.hpp>
 #include <bitcoin/server/settings.hpp>
 
@@ -39,7 +39,7 @@ namespace server {
 class BCS_API receiver
 {
 public:
-    typedef std::function<void(const incoming_message&, send_handler)>
+    typedef std::function<void(const message_incoming&, send_handler)>
         command_handler;
 
     receiver(const settings& settings);

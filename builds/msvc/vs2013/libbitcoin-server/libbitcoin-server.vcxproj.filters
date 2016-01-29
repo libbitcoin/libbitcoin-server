@@ -55,12 +55,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\incoming_message.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\outgoing_message.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\publisher.hpp">
       <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
@@ -88,6 +82,12 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\notifier.hpp">
       <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\message_incoming.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\message_outgoing.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\dispatch.cpp">
@@ -101,12 +101,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\incoming_message.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\outgoing_message.cpp">
-      <Filter>src\message</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\message\publisher.cpp">
       <Filter>src\message</Filter>
@@ -133,6 +127,12 @@
       <Filter>src\interface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\message\notifier.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\message_incoming.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\message_outgoing.cpp">
       <Filter>src\message</Filter>
     </ClCompile>
   </ItemGroup>

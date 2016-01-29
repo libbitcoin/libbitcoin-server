@@ -26,11 +26,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/message/incoming_message.hpp>
-#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/message_outgoing.hpp>
+#include <bitcoin/server/message/notifier.hpp>
 #include <bitcoin/server/message/publisher.hpp>
 #include <bitcoin/server/message/receiver.hpp>
-#include <bitcoin/server/message/notifier.hpp>
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/interface/address.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>

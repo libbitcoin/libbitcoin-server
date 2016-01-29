@@ -21,8 +21,8 @@
 #define LIBBITCOIN_SERVER_PROTOCOL_HPP
 
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming_message.hpp>
-#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/message_outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
@@ -34,10 +34,10 @@ class BCS_API protocol
 {
 public:
     static void broadcast_transaction(server_node& node,
-        const incoming_message& request, send_handler handler);
+        const message_incoming& request, send_handler handler);
 
     static void total_connections(server_node& node,
-        const incoming_message& request, send_handler handler);
+        const message_incoming& request, send_handler handler);
 };
 
 } // namespace server

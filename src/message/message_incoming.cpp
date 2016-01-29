@@ -17,11 +17,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/message/incoming_message.hpp>
+#include <bitcoin/server/message/message_incoming.hpp>
 
 #include <cstdint>
-#include <random>
 #include <string>
+#include <czmq++/czmqpp.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -29,7 +30,7 @@ namespace server {
 // ----------------------------------------------------------------------------
 // Actions
 
-bool incoming_message::receive(czmqpp::socket& socket)
+bool message_incoming::receive(czmqpp::socket& socket)
 {
     czmqpp::message message;
     message.receive(socket);
@@ -68,22 +69,22 @@ bool incoming_message::receive(czmqpp::socket& socket)
 // ----------------------------------------------------------------------------
 // Properties
 
-uint32_t incoming_message::id() const
+uint32_t message_incoming::id() const
 {
     return id_;
 }
 
-const data_chunk& incoming_message::data() const
+const data_chunk& message_incoming::data() const
 {
     return data_;
 }
 
-const std::string& incoming_message::command() const
+const std::string& message_incoming::command() const
 {
     return command_;
 }
 
-const data_chunk incoming_message::origin() const
+const data_chunk message_incoming::origin() const
 {
     return origin_;
 }

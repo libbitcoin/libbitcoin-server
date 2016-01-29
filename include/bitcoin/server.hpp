@@ -26,9 +26,9 @@
 #include <bitcoin/server/interface/blockchain.hpp>
 #include <bitcoin/server/interface/protocol.hpp>
 #include <bitcoin/server/interface/transaction_pool.hpp>
-#include <bitcoin/server/message/incoming_message.hpp>
+#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/message_outgoing.hpp>
 #include <bitcoin/server/message/notifier.hpp>
-#include <bitcoin/server/message/outgoing_message.hpp>
 #include <bitcoin/server/message/publisher.hpp>
 #include <bitcoin/server/message/receiver.hpp>
 #include <bitcoin/server/message/sender.hpp>

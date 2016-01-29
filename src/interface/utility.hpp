@@ -23,8 +23,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 
-// TODO: move to util or private class static in another location.
-
 namespace libbitcoin {
 namespace server {
 
@@ -37,19 +35,19 @@ static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 // fetch_history stuff
 
 bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
-    uint32_t& from_height, const incoming_message& request);
+    uint32_t& from_height, const message_incoming& request);
 
 void BCS_API send_history_result(const code& ec,
     const bc::blockchain::block_chain::history& history,
-    const incoming_message& request, send_handler handler);
+    const message_incoming& request, send_handler handler);
 
 // fetch_transaction stuff
 
 bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
-    const incoming_message& request);
+    const message_incoming& request);
 
 void BCS_API transaction_fetched(const code& ec, const chain::transaction& tx,
-    const incoming_message& request, send_handler handler);
+    const message_incoming& request, send_handler handler);
 
 } // namespace server
 } // namespace libbitcoin

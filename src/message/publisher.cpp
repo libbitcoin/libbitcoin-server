@@ -20,6 +20,8 @@
 #include <bitcoin/server/message/publisher.hpp>
 
 #include <string>
+#include <czmq++/czmqpp.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {

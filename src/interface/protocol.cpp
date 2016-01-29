@@ -30,7 +30,7 @@ namespace libbitcoin {
 namespace server {
 
 void protocol::broadcast_transaction(server_node& node,
-    const incoming_message& request, send_handler handler)
+    const message_incoming& request, send_handler handler)
 {
     const data_chunk& raw_tx = request.data();
     chain::transaction tx;
@@ -41,7 +41,7 @@ void protocol::broadcast_transaction(server_node& node,
     {
         // error
         serial.write_error_code(error::bad_stream);
-        outgoing_message response(request, result);
+        message_outgoing response(request, result);
         handler(response);
         return;
     }
@@ -58,12 +58,12 @@ void protocol::broadcast_transaction(server_node& node,
     log::debug(LOG_REQUEST)
         << "protocol.broadcast_transaction() finished. Sending response.";
 
-    outgoing_message response(request, result);
+    message_outgoing response(request, result);
     handler(response);
 }
 
 void protocol::total_connections(server_node& node,
-    const incoming_message& request, send_handler handler)
+    const message_incoming& request, send_handler handler)
 {
     // TODO:
     ////node.connected_count(handler);
@@ -79,7 +79,7 @@ void protocol::total_connections(server_node& node,
     log::debug(LOG_REQUEST)
         << "protocol.total_connections() finished. Sending response.";
 
-    outgoing_message response(request, result);
+    message_outgoing response(request, result);
     handler(response);
 }
 
