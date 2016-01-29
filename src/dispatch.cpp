@@ -204,22 +204,22 @@ static void attach_subscription_api(receiver& worker, notifier& notifier)
 }
 
 // Class and method names must match protocol expectations (do not change).
-static void attach_query_api(receiver& worker, server_node& node)
+static void attach_query_api(receiver& worker, server_node& server)
 {
-    ATTACH(worker, address, fetch_history2, node);
-    ATTACH(worker, blockchain, fetch_history, node);
-    ATTACH(worker, blockchain, fetch_transaction, node);
-    ATTACH(worker, blockchain, fetch_last_height, node);
-    ATTACH(worker, blockchain, fetch_block_header, node);
-    ATTACH(worker, blockchain, fetch_block_transaction_hashes, node);
-    ATTACH(worker, blockchain, fetch_transaction_index, node);
-    ATTACH(worker, blockchain, fetch_spend, node);
-    ATTACH(worker, blockchain, fetch_block_height, node);
-    ATTACH(worker, blockchain, fetch_stealth, node);
-    ATTACH(worker, protocol, broadcast_transaction, node);
-    ATTACH(worker, protocol, total_connections, node);
-    ATTACH(worker, transaction_pool, validate, node);
-    ATTACH(worker, transaction_pool, fetch_transaction, node);
+    ATTACH(worker, address, fetch_history2, server);
+    ATTACH(worker, blockchain, fetch_history, server);
+    ATTACH(worker, blockchain, fetch_transaction, server);
+    ATTACH(worker, blockchain, fetch_last_height, server);
+    ATTACH(worker, blockchain, fetch_block_header, server);
+    ATTACH(worker, blockchain, fetch_block_transaction_hashes, server);
+    ATTACH(worker, blockchain, fetch_transaction_index, server);
+    ATTACH(worker, blockchain, fetch_spend, server);
+    ATTACH(worker, blockchain, fetch_block_height, server);
+    ATTACH(worker, blockchain, fetch_stealth, server);
+    ATTACH(worker, protocol, broadcast_transaction, server);
+    ATTACH(worker, protocol, total_connections, server);
+    ATTACH(worker, transaction_pool, validate, server);
+    ATTACH(worker, transaction_pool, fetch_transaction, server);
 }
 
 // Run the server.
@@ -231,12 +231,12 @@ static console_result run(const configuration& configuration,
     if (result != console_result::okay)
         return result;
 
-    output << BS_SERVER_STARTING << std::endl;
-
     // These must be libbitcoin streams.
     bc::ofstream debug_file(configuration.network.debug_file.string(), append);
     bc::ofstream error_file(configuration.network.error_file.string(), append);
     initialize_logging(debug_file, error_file, bc::cout, bc::cerr);
+
+    log::info(LOG_SERVICE) << BS_SERVER_STARTING;
 
     static const auto startup = "================= startup ==================";
     log::debug(LOG_NODE) << startup;
@@ -252,13 +252,13 @@ static console_result run(const configuration& configuration,
         start_promise.set_value(ec);
     };
 
-    // Logging initialized here.
     server.start(configuration.server);
     auto ec = start_promise.get_future().get();
 
     if (ec)
     {
-        error << format(BS_SERVER_START_FAIL) % ec.message() << std::endl;
+        log::error(LOG_SERVICE)
+            << format(BS_SERVER_START_FAIL) % ec.message();
         return console_result::not_started;
     }
 
@@ -275,8 +275,8 @@ static console_result run(const configuration& configuration,
     publisher publish(server, configuration.server);
     if (configuration.server.publisher_enabled && !publish.start())
     {
-        error << format(BS_PUBLISHER_START_FAIL) %
-            zmq_strerror(zmq_errno()) << std::endl;
+        log::error(LOG_SERVICE)
+            << format(BS_PUBLISHER_START_FAIL) % zmq_strerror(zmq_errno());
         return console_result::not_started;
     }
 
@@ -284,7 +284,7 @@ static console_result run(const configuration& configuration,
     if ((configuration.server.queries_enabled ||
         configuration.server.subscriptions_enabled) && !worker.start())
     {
-        error << BS_WORKER_START_FAIL << std::endl;
+        log::error(LOG_SERVICE) << BS_WORKER_START_FAIL;
         return console_result::not_started;
     }
 
@@ -295,7 +295,7 @@ static console_result run(const configuration& configuration,
     if (configuration.server.subscriptions_enabled)
         attach_subscription_api(worker, notifier);
 
-    output << BS_SERVER_STARTED << std::endl;
+    log::info(LOG_SERVICE) << BS_SERVER_STARTED;
 
     // Catch C signals for stopping the program.
     signal(SIGABRT, interrupt_handler);
