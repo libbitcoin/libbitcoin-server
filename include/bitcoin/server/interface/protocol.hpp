@@ -38,6 +38,10 @@ public:
 
     static void total_connections(server_node& node,
         const incoming& request, send_handler handler);
+
+private:
+    static void protocol::handle_connected_count(size_t count,
+        const incoming& request, send_handler handler);
 };
 
 } // namespace server

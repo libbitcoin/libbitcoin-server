@@ -29,6 +29,8 @@
 namespace libbitcoin {
 namespace server {
 
+using std::placeholders::_1;
+
 void protocol::broadcast_transaction(server_node& node,
     const incoming& request, send_handler handler)
 {
@@ -62,17 +64,25 @@ void protocol::broadcast_transaction(server_node& node,
     handler(response);
 }
 
-void protocol::total_connections(server_node& node,
-    const incoming& request, send_handler handler)
+void protocol::total_connections(server_node& node, const incoming& request,
+    send_handler handler)
 {
-    // TODO:
-    ////node.connected_count(handler);
-    const uint32_t total_connections = 0;
+    node.connected_count(
+        std::bind(&protocol::handle_connected_count,
+            _1, request, handler));
+}
+
+void protocol::handle_connected_count(size_t count, const incoming& request,
+    send_handler handler)
+{
+    BITCOIN_ASSERT(count <= max_uint32);
+    const auto total_connections = static_cast<uint32_t>(count);
 
     data_chunk result(code_size + sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
     serial.write_error_code(error::success);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
+
     serial.write_4_bytes_little_endian(total_connections);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
