@@ -55,13 +55,13 @@ bool publisher::start()
     {
         if (socket_block_.bind(block_endpoint) == zmq_fail)
         {
-            log::error(LOG_PUBLISHER)
+            log::error(LOG_SERVICE)
                 << "Failed to start block publisher on "
                 << settings_.block_publish_endpoint;
             return false;
         }
 
-        log::debug(LOG_PUBLISHER)
+        log::debug(LOG_SERVICE)
             << "Publishing blocks on "
             << settings_.block_publish_endpoint;
     }
@@ -71,13 +71,13 @@ bool publisher::start()
     {
         if (socket_tx_.bind(tx_endpoint) == zmq_fail)
         {
-            log::error(LOG_PUBLISHER)
+            log::error(LOG_SERVICE)
                 << "Failed to start transaction publisher on "
                 << settings_.block_publish_endpoint;
             return false;
         }
 
-        log::debug(LOG_PUBLISHER)
+        log::debug(LOG_SERVICE)
             << "Publishing transactions on "
             << settings_.transaction_publish_endpoint;
     }
@@ -91,7 +91,7 @@ void publisher::send_tx(const chain::transaction& tx)
     message.append(tx.to_data());
 
     if (!message.send(socket_tx_))
-        log::warning(LOG_PUBLISHER)
+        log::warning(LOG_SERVICE)
         << "Problem publishing tx data.";
 }
 
@@ -117,7 +117,7 @@ void publisher::send_block(uint32_t height, const chain::block& block)
         message.append(to_chunk(tx.hash()));
 
     if (!message.send(socket_block_))
-        log::warning(LOG_PUBLISHER)
+        log::warning(LOG_SERVICE)
             << "Problem publishing block data.";
 }
 

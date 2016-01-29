@@ -30,7 +30,7 @@
 #include <bitcoin/server/message/outgoing_message.hpp>
 #include <bitcoin/server/message/publisher.hpp>
 #include <bitcoin/server/message/receiver.hpp>
-#include <bitcoin/server/message/subscriber.hpp>
+#include <bitcoin/server/message/notifier.hpp>
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/interface/address.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>
@@ -197,10 +197,10 @@ static void interrupt_handler(int code)
 }
 
 // Class and method names must match protocol expectations (do not change).
-static void attach_subscription_api(receiver& worker, subscriber& subscriber)
+static void attach_subscription_api(receiver& worker, notifier& notifier)
 {
-    ATTACH(worker, address, renew, subscriber);
-    ATTACH(worker, address, subscribe, subscriber);
+    ATTACH(worker, address, renew, notifier);
+    ATTACH(worker, address, subscribe, notifier);
 }
 
 // Class and method names must match protocol expectations (do not change).
@@ -291,9 +291,9 @@ static console_result run(const configuration& configuration,
     if (configuration.server.queries_enabled)
         attach_query_api(worker, server);
 
-    subscriber subscriber(server, configuration.server);
+    notifier notifier(server, configuration.server);
     if (configuration.server.subscriptions_enabled)
-        attach_subscription_api(worker, subscriber);
+        attach_subscription_api(worker, notifier);
 
     output << BS_SERVER_STARTED << std::endl;
 

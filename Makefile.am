@@ -46,11 +46,11 @@ src_libbitcoin_server_la_SOURCES = \
     src/interface/utility.cpp \
     src/interface/utility.hpp \
     src/message/incoming_message.cpp \
+    src/message/notifier.cpp \
     src/message/outgoing_message.cpp \
     src/message/publisher.cpp \
     src/message/receiver.cpp \
-    src/message/sender.cpp \
-    src/message/subscriber.cpp
+    src/message/sender.cpp
 
 # local: test/libbitcoin_server_test
 #------------------------------------------------------------------------------
@@ -106,11 +106,11 @@ include_bitcoin_server_interface_HEADERS = \
 include_bitcoin_server_messagedir = ${includedir}/bitcoin/server/message
 include_bitcoin_server_message_HEADERS = \
     include/bitcoin/server/message/incoming_message.hpp \
+    include/bitcoin/server/message/notifier.hpp \
     include/bitcoin/server/message/outgoing_message.hpp \
     include/bitcoin/server/message/publisher.hpp \
     include/bitcoin/server/message/receiver.hpp \
-    include/bitcoin/server/message/sender.hpp \
-    include/bitcoin/server/message/subscriber.hpp
+    include/bitcoin/server/message/sender.hpp
 
 # files => ${bash_completiondir}
 #------------------------------------------------------------------------------

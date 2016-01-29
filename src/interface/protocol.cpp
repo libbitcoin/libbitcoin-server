@@ -55,7 +55,7 @@ void protocol::broadcast_transaction(server_node& node,
     // Response back to user saying everything is fine.
     serial.write_error_code(error::success);
 
-    log::debug(LOG_SERVICE)
+    log::debug(LOG_REQUEST)
         << "protocol.broadcast_transaction() finished. Sending response.";
 
     outgoing_message response(request, result);

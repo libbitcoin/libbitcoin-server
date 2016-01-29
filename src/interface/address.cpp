@@ -23,7 +23,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/message/incoming_message.hpp>
 #include <bitcoin/server/message/outgoing_message.hpp>
-#include <bitcoin/server/message/subscriber.hpp>
+#include <bitcoin/server/message/notifier.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include "utility.hpp"
 
@@ -51,16 +51,16 @@ void address::fetch_history2(server_node& node, const incoming_message& request,
     ////    hande_fetch_history, from_height);
 }
 
-void address::subscribe(subscriber& subscriber,
+void address::subscribe(notifier& notifier,
     const incoming_message& request, send_handler handler)
 {
-    subscriber.subscribe(request, handler);
+    notifier.subscribe(request, handler);
 }
 
-void address::renew(subscriber& subscriber,
+void address::renew(notifier& notifier,
     const incoming_message& request, send_handler handler)
 {
-    subscriber.renew(request, handler);
+    notifier.renew(request, handler);
 }
 
 } // namespace server

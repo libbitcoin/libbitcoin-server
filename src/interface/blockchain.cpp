@@ -45,8 +45,9 @@ void blockchain::fetch_history(server_node& node,
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
 
-    log::debug(LOG_REQUEST) << "blockchain.fetch_history("
-        << address.encoded() << ", from_height=" << from_height << ")";
+    log::debug(LOG_REQUEST)
+        << "blockchain.fetch_history(" << address.encoded()
+        << ", from_height=" << from_height << ")";
 
     node.query().fetch_history(address,
         std::bind(send_history_result,
@@ -61,8 +62,8 @@ void blockchain::fetch_transaction(server_node& node,
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
 
-    log::debug(LOG_REQUEST) << "blockchain.fetch_transaction("
-        << encode_hash(tx_hash) << ")";
+    log::debug(LOG_REQUEST)
+        << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
 
     node.query().fetch_transaction(tx_hash,
         std::bind(transaction_fetched,
@@ -353,6 +354,7 @@ void blockchain::block_height_fetched(const code& ec, size_t block_height,
 
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     serial.write_4_bytes_little_endian(block_height32);
+
     log::debug(LOG_REQUEST)
         << "blockchain.fetch_block_height() finished. Sending response.";
 

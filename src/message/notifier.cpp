@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/message/subscriber.hpp>
+#include <bitcoin/server/message/notifier.hpp>
 
 #include <cstdint>
 #include <boost/date_time.hpp>
@@ -30,14 +30,14 @@ namespace server {
 using namespace bc::chain;
 using namespace bc::wallet;
 
-#define NAME "subscriber"
+#define NAME "notifier"
 
 const auto now = []()
 {
     return boost::posix_time::second_clock::universal_time();
 };
 
-subscriber::subscriber(server_node& node,
+notifier::notifier(server_node& node,
     const settings& settings)
   : pool_(settings.threads),
     dispatch_(pool_, NAME),
@@ -62,15 +62,15 @@ subscriber::subscriber(server_node& node,
     node.subscribe_transactions(receive_tx);
 }
 
-void subscriber::subscribe(const incoming_message& request,
+void notifier::subscribe(const incoming_message& request,
     send_handler handler)
 {
     dispatch_.ordered(
-        &subscriber::do_subscribe,
+        &notifier::do_subscribe,
             this, request, handler);
 }
 
-void subscriber::do_subscribe(const incoming_message& request,
+void notifier::do_subscribe(const incoming_message& request,
     send_handler handler)
 {
     const auto ec = add(request, handler);
@@ -83,15 +83,15 @@ void subscriber::do_subscribe(const incoming_message& request,
     handler(response);
 }
 
-void subscriber::renew(const incoming_message& request,
+void notifier::renew(const incoming_message& request,
     send_handler handler)
 {
     dispatch_.unordered(
-        &subscriber::do_renew,
+        &notifier::do_renew,
             this, request, handler);
 }
 
-void subscriber::do_renew(const incoming_message& request,
+void notifier::do_renew(const incoming_message& request,
     send_handler handler)
 {
     binary filter;
@@ -99,7 +99,7 @@ void subscriber::do_renew(const incoming_message& request,
 
     if (!deserialize_address(filter, type, request.data()))
     {
-        log::warning(LOG_SUBSCRIBER)
+        log::warning(LOG_SERVICE)
             << "Incorrect format for subscribe renew.";
         return;
     }
@@ -133,15 +133,15 @@ void subscriber::do_renew(const incoming_message& request,
     handler(response);
 }
 
-void subscriber::scan(uint32_t height, const hash_digest& block_hash,
+void notifier::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
 {
     dispatch_.ordered(
-        &subscriber::do_scan,
+        &notifier::do_scan,
             this, height, block_hash, tx);
 }
 
-void subscriber::do_scan(uint32_t height,
+void notifier::do_scan(uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
     for (const auto& input: tx.inputs)
@@ -169,7 +169,7 @@ void subscriber::do_scan(uint32_t height,
         sweep();
 }
 
-void subscriber::post_updates(const payment_address& address,
+void notifier::post_updates(const payment_address& address,
     uint32_t height, const hash_digest& block_hash, const transaction& tx)
 {
     // [ address.version:1 ]
@@ -209,7 +209,7 @@ void subscriber::post_updates(const payment_address& address,
     }
 }
 
-void subscriber::post_stealth_updates(uint32_t prefix, uint32_t height,
+void notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
     // [ prefix:4 ]
@@ -247,7 +247,7 @@ void subscriber::post_stealth_updates(uint32_t prefix, uint32_t height,
     }
 }
 
-code subscriber::add(const incoming_message& request,
+code notifier::add(const incoming_message& request,
     send_handler handler)
 {
     binary address_key;
@@ -255,7 +255,7 @@ code subscriber::add(const incoming_message& request,
 
     if (!deserialize_address(address_key, type, request.data()))
     {
-        log::warning(LOG_SUBSCRIBER)
+        log::warning(LOG_SERVICE)
             << "Incorrect format for subscribe data.";
         return error::bad_stream;
     }
@@ -279,7 +279,7 @@ code subscriber::add(const incoming_message& request,
     return error::success;
 }
 
-void subscriber::sweep()
+void notifier::sweep()
 {
     const auto fixed_time = now();
 
@@ -291,7 +291,7 @@ void subscriber::sweep()
         // Already expired? If so, then erase.
         if (subscription.expiry_time < fixed_time)
         {
-            log::debug(LOG_SUBSCRIBER)
+            log::debug(LOG_SERVICE)
                 << "Deleting expired subscription: " << subscription.prefix
                 << " from " << encode_base16(subscription.client_origin);
 

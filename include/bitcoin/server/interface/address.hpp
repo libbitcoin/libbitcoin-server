@@ -23,7 +23,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message/incoming_message.hpp>
 #include <bitcoin/server/message/outgoing_message.hpp>
-#include <bitcoin/server/message/subscriber.hpp>
+#include <bitcoin/server/message/notifier.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
@@ -37,10 +37,10 @@ public:
     static void fetch_history2(server_node& node,
         const incoming_message& request, send_handler handler);
 
-    static void subscribe(subscriber& subscriber,
+    static void subscribe(notifier& notifier,
         const incoming_message& request, send_handler handler);
 
-    static void renew(subscriber& subscriber,
+    static void renew(notifier& notifier,
         const incoming_message& request, send_handler handler);
 };
 

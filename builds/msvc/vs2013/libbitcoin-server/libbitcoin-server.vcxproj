@@ -83,7 +83,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\publisher.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\receiver.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\sender.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\subscriber.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\notifier.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp" />
@@ -103,7 +103,7 @@
     <ClCompile Include="..\..\..\..\src\message\publisher.cpp" />
     <ClCompile Include="..\..\..\..\src\message\receiver.cpp" />
     <ClCompile Include="..\..\..\..\src\message\sender.cpp" />
-    <ClCompile Include="..\..\..\..\src\message\subscriber.cpp" />
+    <ClCompile Include="..\..\..\..\src\message\notifier.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\dispatch.cpp" />

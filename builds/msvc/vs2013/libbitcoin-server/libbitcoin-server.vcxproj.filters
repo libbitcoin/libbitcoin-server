@@ -64,9 +64,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\publisher.hpp">
       <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\subscriber.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\sender.hpp">
       <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
@@ -87,6 +84,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp">
       <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\notifier.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -114,9 +114,6 @@
     <ClCompile Include="..\..\..\..\src\message\sender.cpp">
       <Filter>src\message</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\subscriber.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\message\receiver.cpp">
       <Filter>src\message</Filter>
     </ClCompile>
@@ -134,6 +131,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\interface\protocol.cpp">
       <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\notifier.cpp">
+      <Filter>src\message</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

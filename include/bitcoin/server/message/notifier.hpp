@@ -32,10 +32,10 @@
 namespace libbitcoin {
 namespace server {
 
-class BCS_API subscriber
+class BCS_API notifier
 {
 public:
-    subscriber(server_node& node, const settings& settings);
+    notifier(server_node& node, const settings& settings);
 
     void subscribe(const incoming_message& request, send_handler handler);
     void renew(const incoming_message& request, send_handler handler);

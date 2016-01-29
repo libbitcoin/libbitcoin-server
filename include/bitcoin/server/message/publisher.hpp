@@ -32,7 +32,7 @@ namespace server {
 
 /// The publisher subscribes to blocks accepted to the blockchain and
 /// transactions accepted to the memory pool. The blocks and transactions
-/// are then forwarded to its subscribers.
+/// are then forwarded to its notifiers.
 class BCS_API publisher
 {
 public:
