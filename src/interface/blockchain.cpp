@@ -202,14 +202,14 @@ void blockchain::fetch_block_transaction_hashes_by_hash(server_node& node,
 void blockchain::fetch_block_transaction_hashes_by_height(server_node& node,
     const incoming_message& request, send_handler handler)
 {
-    ////const auto& data = request.data();
-    ////BITCOIN_ASSERT(data.size() == sizeof(uint32_t));
+    const auto& data = request.data();
+    BITCOIN_ASSERT(data.size() == sizeof(uint32_t));
 
-    ////auto deserial = make_deserializer(data.begin(), data.end());
-    ////const size_t height = deserial.read_4_bytes_little_endian();
-    ////node.query().fetch_block_transaction_hashes(height,
-    ////    std::bind(&blockchain::block_transaction_hashes_fetched,
-    ////        _1, _2, request, handler));
+    auto deserial = make_deserializer(data.begin(), data.end());
+    const size_t block_height = deserial.read_4_bytes_little_endian();
+    node.query().fetch_block_transaction_hashes(block_height,
+        std::bind(&blockchain::block_transaction_hashes_fetched,
+            _1, _2, request, handler));
 }
 
 void blockchain::block_transaction_hashes_fetched(const code& ec,
