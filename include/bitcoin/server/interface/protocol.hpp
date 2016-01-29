@@ -17,46 +17,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_OUTGOING_MESSAGE
-#define LIBBITCOIN_SERVER_OUTGOING_MESSAGE
+#ifndef LIBBITCOIN_SERVER_PROTOCOL_HPP
+#define LIBBITCOIN_SERVER_PROTOCOL_HPP
 
-#include <cstdint>
-#include <string>
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messaging/incoming_message.hpp>
+#include <bitcoin/server/message/incoming_message.hpp>
+#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
-
-class BCS_API outgoing_message
+    
+/// Protocol interface.
+/// Class and method names are published and mapped to the zeromq interface.
+class BCS_API protocol
 {
 public:
-    /// Default constructor provided for containers and copying.
-    outgoing_message();
+    static void broadcast_transaction(server_node& node,
+        const incoming_message& request, send_handler handler);
 
-    outgoing_message(const incoming_message& request, const data_chunk& data);
-
-    /// Empty destination is interpreted as an unspecified destination.
-    outgoing_message(const data_chunk& destination, const std::string& command,
-        const data_chunk& data);
-
-    void send(czmqpp::socket& socket) const;
-
-    uint32_t id() const;
-    const data_chunk& data() const;
-    const std::string& command() const;
-    const data_chunk destination() const;
-
-private:
-    uint32_t id_;
-    data_chunk data_;
-    std::string command_;
-    data_chunk destination_;
+    static void total_connections(server_node& node,
+        const incoming_message& request, send_handler handler);
 };
-
-typedef std::function<void(const outgoing_message&)> send_handler;
 
 } // namespace server
 } // namespace libbitcoin

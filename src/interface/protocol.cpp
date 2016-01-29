@@ -17,19 +17,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/queries/protocol.hpp>
+#include <bitcoin/server/interface/protocol.hpp>
 
 #include <cstdint>
+#include <cstddef>
 #include <bitcoin/server.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include "utility.hpp"
 
 namespace libbitcoin {
 namespace server {
 
-static constexpr size_t code_size = sizeof(uint32_t);
-
-void protocol_broadcast_transaction(server_node& node,
+void protocol::broadcast_transaction(server_node& node,
     const incoming_message& request, send_handler handler)
 {
     const data_chunk& raw_tx = request.data();
@@ -62,7 +62,7 @@ void protocol_broadcast_transaction(server_node& node,
     handler(response);
 }
 
-void protocol_total_connections(server_node& node,
+void protocol::total_connections(server_node& node,
     const incoming_message& request, send_handler handler)
 {
     // TODO:

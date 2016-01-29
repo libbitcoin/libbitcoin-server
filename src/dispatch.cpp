@@ -26,18 +26,18 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/messaging/incoming_message.hpp>
-#include <bitcoin/server/messaging/outgoing_message.hpp>
+#include <bitcoin/server/message/incoming_message.hpp>
+#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/publisher.hpp>
+#include <bitcoin/server/message/receiver.hpp>
+#include <bitcoin/server/message/subscriber.hpp>
 #include <bitcoin/server/parser.hpp>
-#include <bitcoin/server/messaging/publisher.hpp>
-#include <bitcoin/server/messaging/request_worker.hpp>
+#include <bitcoin/server/interface/address.hpp>
+#include <bitcoin/server/interface/blockchain.hpp>
+#include <bitcoin/server/interface/protocol.hpp>
+#include <bitcoin/server/interface/transaction_pool.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/messaging/subscribe_manager.hpp>
-#include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/queries/blockchain.hpp>
-#include <bitcoin/server/queries/protocol.hpp>
-#include <bitcoin/server/queries/transaction_pool.hpp>
 #include <bitcoin/server/version.hpp>
 
 #define BS_APPLICATION_NAME "bs"
@@ -100,6 +100,11 @@ using namespace bc::blockchain;
 using namespace bc::config;
 using namespace bc::network;
 using namespace bc::node;
+
+#define ATTACH(worker, class_name, method_name, instance) \
+    worker.attach(#class_name "." #method_name, \
+        std::bind(&class_name::method_name, \
+            std::ref(instance), _1, _2));
 
 constexpr auto append = std::ofstream::out | std::ofstream::app;
 
@@ -191,51 +196,30 @@ static void interrupt_handler(int code)
     stopped = true;
 }
 
-static void attach_subscription_api(request_worker& worker,
-    subscribe_manager& subscriber)
+// Class and method names must match protocol expectations (do not change).
+static void attach_subscription_api(receiver& worker, subscriber& subscriber)
 {
-    ////typedef std::function<void(const incoming_message&, send_handler)>
-    ////    command_handler;
-
-    ////auto subscribe = [&worker, &subscriber](const std::string& command,
-    ////    command_handler handler)
-    ////{
-    ////    worker.attach(command,
-    ////        std::bind(handler,
-    ////            &subscriber, _1, _2));
-    ////};
-
-    ////subscribe("address.renew", &subscribe_manager::renew);
-    ////subscribe("address.subscribe", &subscribe_manager::subscribe);
+    ATTACH(worker, address, renew, subscriber);
+    ATTACH(worker, address, subscribe, subscriber);
 }
 
-static void attach_query_api(request_worker& worker, server_node& node)
+// Class and method names must match protocol expectations (do not change).
+static void attach_query_api(receiver& worker, server_node& node)
 {
-    typedef std::function<void(server_node&, const incoming_message&,
-        send_handler)> command_handler;
-
-    auto attach = [&worker, &node](const std::string& command,
-        command_handler handler)
-    {
-        worker.attach(command,
-            std::bind(handler,
-                std::ref(node), _1, _2));
-    };
-
-    attach("address.fetch_history2", address_fetch_history2);
-    attach("blockchain.fetch_history", blockchain_fetch_history);
-    attach("blockchain.fetch_transaction", blockchain_fetch_transaction);
-    attach("blockchain.fetch_last_height", blockchain_fetch_last_height);
-    attach("blockchain.fetch_block_header", blockchain_fetch_block_header);
-    attach("blockchain.fetch_block_transaction_hashes", blockchain_fetch_block_transaction_hashes);
-    attach("blockchain.fetch_transaction_index", blockchain_fetch_transaction_index);
-    attach("blockchain.fetch_spend", blockchain_fetch_spend);
-    attach("blockchain.fetch_block_height", blockchain_fetch_block_height);
-    attach("blockchain.fetch_stealth", blockchain_fetch_stealth);
-    attach("protocol.broadcast_transaction", protocol_broadcast_transaction);
-    attach("protocol.total_connections", protocol_total_connections);
-    attach("transaction_pool.validate", transaction_pool_validate);
-    attach("transaction_pool.fetch_transaction", transaction_pool_fetch_transaction);
+    ATTACH(worker, address, fetch_history2, node);
+    ATTACH(worker, blockchain, fetch_history, node);
+    ATTACH(worker, blockchain, fetch_transaction, node);
+    ATTACH(worker, blockchain, fetch_last_height, node);
+    ATTACH(worker, blockchain, fetch_block_header, node);
+    ATTACH(worker, blockchain, fetch_block_transaction_hashes, node);
+    ATTACH(worker, blockchain, fetch_transaction_index, node);
+    ATTACH(worker, blockchain, fetch_spend, node);
+    ATTACH(worker, blockchain, fetch_block_height, node);
+    ATTACH(worker, blockchain, fetch_stealth, node);
+    ATTACH(worker, protocol, broadcast_transaction, node);
+    ATTACH(worker, protocol, total_connections, node);
+    ATTACH(worker, transaction_pool, validate, node);
+    ATTACH(worker, transaction_pool, fetch_transaction, node);
 }
 
 // Run the server.
@@ -296,7 +280,7 @@ static console_result run(const configuration& configuration,
         return console_result::not_started;
     }
 
-    request_worker worker(configuration.server);
+    receiver worker(configuration.server);
     if ((configuration.server.queries_enabled ||
         configuration.server.subscriptions_enabled) && !worker.start())
     {
@@ -307,7 +291,7 @@ static console_result run(const configuration& configuration,
     if (configuration.server.queries_enabled)
         attach_query_api(worker, server);
 
-    subscribe_manager subscriber(server, configuration.server);
+    subscriber subscriber(server, configuration.server);
     if (configuration.server.subscriptions_enabled)
         attach_subscription_api(worker, subscriber);
 

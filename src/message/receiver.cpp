@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/messaging/request_worker.hpp>
+#include <bitcoin/server/message/receiver.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -25,8 +25,8 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/messaging/incoming_message.hpp>
-#include <bitcoin/server/messaging/outgoing_message.hpp>
+#include <bitcoin/server/message/incoming_message.hpp>
+#include <bitcoin/server/message/outgoing_message.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -46,7 +46,7 @@ const auto now = []()
     return boost::posix_time::second_clock::universal_time();
 };
 
-request_worker::request_worker(const settings& settings)
+receiver::receiver(const settings& settings)
   : counter_(0),
     sender_(context_),
     settings_(settings),
@@ -60,7 +60,7 @@ request_worker::request_worker(const settings& settings)
     BITCOIN_ASSERT(heartbeat_socket_.self() != nullptr);
 }
 
-bool request_worker::start()
+bool receiver::start()
 {
 #ifdef _MSC_VER
     if (settings_.log_requests)
@@ -139,7 +139,7 @@ static std::string format_whitelist(const config::authority& authority)
     return formatted;
 }
 
-void request_worker::whitelist()
+void receiver::whitelist()
 {
     for (const auto& ip_address: settings_.whitelists)
     {
@@ -150,7 +150,7 @@ void request_worker::whitelist()
 }
 
 // Returns false if server certificate exists and is invalid.
-bool request_worker::enable_crypto()
+bool receiver::enable_crypto()
 {
     if (settings_.certificate_file.empty())
         return true;
@@ -172,13 +172,13 @@ bool request_worker::enable_crypto()
     return false;
 }
 
-void request_worker::attach(const std::string& command,
+void receiver::attach(const std::string& command,
     command_handler handler)
 {
     handlers_[command] = handler;
 }
 
-void request_worker::poll()
+void receiver::poll()
 {
     // Poll for network updates.
     czmqpp::poller poller(socket_, wakeup_socket_);
@@ -211,7 +211,7 @@ void request_worker::poll()
                     << "] from "  << encode_base16(request.origin());
 
             it->second(request,
-                std::bind(&send_worker::queue,
+                std::bind(&sender::queue,
                     &sender_, _1));
         }
         else
@@ -232,7 +232,7 @@ void request_worker::poll()
     }
 }
 
-void request_worker::publish_heartbeat()
+void receiver::publish_heartbeat()
 {
     czmqpp::message message;
     const auto raw_counter = to_chunk(to_little_endian(counter_));

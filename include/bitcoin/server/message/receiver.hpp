@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_REQUEST_WORKER_HPP
-#define LIBBITCOIN_SERVER_REQUEST_WORKER_HPP
+#ifndef LIBBITCOIN_SERVER_RECEIVIER_HPP
+#define LIBBITCOIN_SERVER_RECEIVIER_HPP
 
 #include <cstdint>
 #include <unordered_map>
@@ -28,21 +28,21 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messaging/incoming_message.hpp>
-#include <bitcoin/server/messaging/outgoing_message.hpp>
-#include <bitcoin/server/messaging/send_worker.hpp>
+#include <bitcoin/server/message/incoming_message.hpp>
+#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/message/sender.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class BCS_API request_worker
+class BCS_API receiver
 {
 public:
     typedef std::function<void(const incoming_message&, send_handler)>
         command_handler;
 
-    request_worker(const settings& settings);
+    receiver(const settings& settings);
 
     bool start();
     void poll();
@@ -57,7 +57,7 @@ private:
     void publish_heartbeat();
 
     uint32_t counter_;
-    send_worker sender_;
+    sender sender_;
     command_map handlers_;
     boost::posix_time::ptime deadline_;
     const settings& settings_;

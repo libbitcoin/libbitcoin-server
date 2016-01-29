@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/messaging/subscribe_manager.hpp>
+#include <bitcoin/server/message/subscriber.hpp>
 
 #include <cstdint>
 #include <boost/date_time.hpp>
@@ -30,14 +30,14 @@ namespace server {
 using namespace bc::chain;
 using namespace bc::wallet;
 
-#define NAME "subscribe_manager"
+#define NAME "subscriber"
 
 const auto now = []()
 {
     return boost::posix_time::second_clock::universal_time();
 };
 
-subscribe_manager::subscribe_manager(server_node& node,
+subscriber::subscriber(server_node& node,
     const settings& settings)
   : pool_(settings.threads),
     dispatch_(pool_, NAME),
@@ -62,15 +62,15 @@ subscribe_manager::subscribe_manager(server_node& node,
     node.subscribe_transactions(receive_tx);
 }
 
-void subscribe_manager::subscribe(const incoming_message& request,
+void subscriber::subscribe(const incoming_message& request,
     send_handler handler)
 {
     dispatch_.ordered(
-        &subscribe_manager::do_subscribe,
+        &subscriber::do_subscribe,
             this, request, handler);
 }
 
-void subscribe_manager::do_subscribe(const incoming_message& request,
+void subscriber::do_subscribe(const incoming_message& request,
     send_handler handler)
 {
     const auto ec = add(request, handler);
@@ -83,15 +83,15 @@ void subscribe_manager::do_subscribe(const incoming_message& request,
     handler(response);
 }
 
-void subscribe_manager::renew(const incoming_message& request,
+void subscriber::renew(const incoming_message& request,
     send_handler handler)
 {
     dispatch_.unordered(
-        &subscribe_manager::do_renew,
+        &subscriber::do_renew,
             this, request, handler);
 }
 
-void subscribe_manager::do_renew(const incoming_message& request,
+void subscriber::do_renew(const incoming_message& request,
     send_handler handler)
 {
     binary filter;
@@ -133,15 +133,15 @@ void subscribe_manager::do_renew(const incoming_message& request,
     handler(response);
 }
 
-void subscribe_manager::scan(uint32_t height, const hash_digest& block_hash,
+void subscriber::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
 {
     dispatch_.ordered(
-        &subscribe_manager::do_scan,
+        &subscriber::do_scan,
             this, height, block_hash, tx);
 }
 
-void subscribe_manager::do_scan(uint32_t height,
+void subscriber::do_scan(uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
     for (const auto& input: tx.inputs)
@@ -169,7 +169,7 @@ void subscribe_manager::do_scan(uint32_t height,
         sweep();
 }
 
-void subscribe_manager::post_updates(const payment_address& address,
+void subscriber::post_updates(const payment_address& address,
     uint32_t height, const hash_digest& block_hash, const transaction& tx)
 {
     // [ address.version:1 ]
@@ -209,7 +209,7 @@ void subscribe_manager::post_updates(const payment_address& address,
     }
 }
 
-void subscribe_manager::post_stealth_updates(uint32_t prefix, uint32_t height,
+void subscriber::post_stealth_updates(uint32_t prefix, uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
     // [ prefix:4 ]
@@ -247,7 +247,7 @@ void subscribe_manager::post_stealth_updates(uint32_t prefix, uint32_t height,
     }
 }
 
-code subscribe_manager::add(const incoming_message& request,
+code subscriber::add(const incoming_message& request,
     send_handler handler)
 {
     binary address_key;
@@ -279,7 +279,7 @@ code subscribe_manager::add(const incoming_message& request,
     return error::success;
 }
 
-void subscribe_manager::sweep()
+void subscriber::sweep()
 {
     const auto fixed_time = now();
 

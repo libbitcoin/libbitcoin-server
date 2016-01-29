@@ -20,7 +20,7 @@
 #include "utility.hpp"
 
 #include <cstdint>
-#include <vector>
+#include <cstddef>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/configuration.hpp>
 
@@ -29,11 +29,6 @@ namespace server {
 
 using namespace bc::blockchain;
 using namespace bc::wallet;
-
-static constexpr uint8_t spend_type = 1;
-static constexpr uint8_t output_type = 0;
-static constexpr size_t code_size = sizeof(uint32_t);
-static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 
 // fetch_history stuff
 // ----------------------------------------------------------------------------

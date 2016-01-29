@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/queries/transaction_pool.hpp>
+#include <bitcoin/server/interface/transaction_pool.hpp>
 
 #include <cstdint>
+#include <cstddef>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include "utility.hpp"
@@ -33,10 +34,20 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
-static constexpr size_t code_size = sizeof(uint32_t);
-static constexpr size_t index_size = sizeof(uint32_t);
+void transaction_pool::validate(server_node& node,
+    const incoming_message& request, send_handler handler)
+{
+    ////transaction tx;
+    ////if (tx.from_data(request.data()))
+    ////    node.transaction_pool().validate(tx,
+    ////        std::bind(transaction_pool::transaction_validated,
+    ////            _1, _2, _3, _4, request, handler));
+    ////else
+    ////    transaction_validated(error::bad_stream, transaction(), hash_digest(),
+    ////        index_list(), request, handler);
+}
 
-static void transaction_validated(const code& ec, const transaction& tx,
+void transaction_pool::validated(const code& ec, const transaction& tx,
     const hash_digest& tx_hash, const index_list& unconfirmed,
     const incoming_message& request, send_handler handler)
 {
@@ -61,20 +72,7 @@ static void transaction_validated(const code& ec, const transaction& tx,
     handler(response);
 }
 
-void transaction_pool_validate(server_node& node,
-    const incoming_message& request, send_handler handler)
-{
-    ////transaction tx;
-    ////if (tx.from_data(request.data()))
-    ////    node.transaction_pool().validate(tx,
-    ////        std::bind(transaction_validated,
-    ////            _1, _2, _3, _4, request, handler));
-    ////else
-    ////    transaction_validated(error::bad_stream, transaction(), hash_digest(),
-    ////        index_list(), request, handler);
-}
-
-void transaction_pool_fetch_transaction(server_node& node,
+void transaction_pool::fetch_transaction(server_node& node,
     const incoming_message& request, send_handler handler)
 {
     hash_digest tx_hash;

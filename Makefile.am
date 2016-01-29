@@ -39,17 +39,18 @@ src_libbitcoin_server_la_SOURCES = \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
-    src/messaging/incoming_message.cpp \
-    src/messaging/outgoing_message.cpp \
-    src/messaging/publisher.cpp \
-    src/messaging/request_worker.cpp \
-    src/messaging/send_worker.cpp \
-    src/messaging/subscribe_manager.cpp \
-    src/queries/blockchain.cpp \
-    src/queries/protocol.cpp \
-    src/queries/transaction_pool.cpp \
-    src/queries/utility.cpp \
-    src/queries/utility.hpp
+    src/interface/address.cpp \
+    src/interface/blockchain.cpp \
+    src/interface/protocol.cpp \
+    src/interface/transaction_pool.cpp \
+    src/interface/utility.cpp \
+    src/interface/utility.hpp \
+    src/message/incoming_message.cpp \
+    src/message/outgoing_message.cpp \
+    src/message/publisher.cpp \
+    src/message/receiver.cpp \
+    src/message/sender.cpp \
+    src/message/subscriber.cpp
 
 # local: test/libbitcoin_server_test
 #------------------------------------------------------------------------------
@@ -95,20 +96,21 @@ include_bitcoin_server_HEADERS = \
     include/bitcoin/server/settings.hpp \
     include/bitcoin/server/version.hpp
 
-include_bitcoin_server_messagingdir = ${includedir}/bitcoin/server/messaging
-include_bitcoin_server_messaging_HEADERS = \
-    include/bitcoin/server/messaging/incoming_message.hpp \
-    include/bitcoin/server/messaging/outgoing_message.hpp \
-    include/bitcoin/server/messaging/publisher.hpp \
-    include/bitcoin/server/messaging/request_worker.hpp \
-    include/bitcoin/server/messaging/send_worker.hpp \
-    include/bitcoin/server/messaging/subscribe_manager.hpp
+include_bitcoin_server_interfacedir = ${includedir}/bitcoin/server/interface
+include_bitcoin_server_interface_HEADERS = \
+    include/bitcoin/server/interface/address.hpp \
+    include/bitcoin/server/interface/blockchain.hpp \
+    include/bitcoin/server/interface/protocol.hpp \
+    include/bitcoin/server/interface/transaction_pool.hpp
 
-include_bitcoin_server_queriesdir = ${includedir}/bitcoin/server/queries
-include_bitcoin_server_queries_HEADERS = \
-    include/bitcoin/server/queries/blockchain.hpp \
-    include/bitcoin/server/queries/protocol.hpp \
-    include/bitcoin/server/queries/transaction_pool.hpp
+include_bitcoin_server_messagedir = ${includedir}/bitcoin/server/message
+include_bitcoin_server_message_HEADERS = \
+    include/bitcoin/server/message/incoming_message.hpp \
+    include/bitcoin/server/message/outgoing_message.hpp \
+    include/bitcoin/server/message/publisher.hpp \
+    include/bitcoin/server/message/receiver.hpp \
+    include/bitcoin/server/message/sender.hpp \
+    include/bitcoin/server/message/subscriber.hpp
 
 # files => ${bash_completiondir}
 #------------------------------------------------------------------------------

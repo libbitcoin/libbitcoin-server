@@ -17,23 +17,38 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
-#define LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
+#ifndef LIBBITCOIN_SERVER_UTILITY_HPP
+#define LIBBITCOIN_SERVER_UTILITY_HPP
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 
+// TODO: move to util or private class static in another location.
+
 namespace libbitcoin {
 namespace server {
 
-class server_node;
+static constexpr uint8_t spend_type = 1;
+static constexpr uint8_t output_type = 0;
+static constexpr size_t code_size = sizeof(uint32_t);
+static constexpr size_t index_size = sizeof(uint32_t);
+static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 
-// TODO: convert to class static.
+// fetch_history stuff
 
-void BCS_API transaction_pool_validate(server_node& node,
+bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
+    uint32_t& from_height, const incoming_message& request);
+
+void BCS_API send_history_result(const code& ec,
+    const bc::blockchain::block_chain::history& history,
     const incoming_message& request, send_handler handler);
 
-void BCS_API transaction_pool_fetch_transaction(server_node& node,
+// fetch_transaction stuff
+
+bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
+    const incoming_message& request);
+
+void BCS_API transaction_fetched(const code& ec, const chain::transaction& tx,
     const incoming_message& request, send_handler handler);
 
 } // namespace server

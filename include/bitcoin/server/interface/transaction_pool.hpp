@@ -17,34 +17,33 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SEND_WORKER_HPP
-#define LIBBITCOIN_SERVER_SEND_WORKER_HPP
+#ifndef LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
+#define LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/node.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messaging/outgoing_message.hpp>
+#include <bitcoin/server/message/incoming_message.hpp>
+#include <bitcoin/server/message/outgoing_message.hpp>
+#include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/**
- * We don't want to block the originating threads that execute a send
- * as that would slow down requests if they all have to sync access
- * to a single socket.
- *
- * Instead we have a queue (push socket) where send requests are pushed,
- * and then the send_worker is notified. The worker wakes up and pushes
- * all pending requests to the socket.
- */
-class BCS_API send_worker
+/// Transaction pool interface.
+/// Class and method names are published and mapped to the zeromq interface.
+class BCS_API transaction_pool
 {
 public:
-    send_worker(czmqpp::context& context);
-    void queue(const outgoing_message& message);
+    static void validate(server_node& node,
+        const incoming_message& request, send_handler handler);
+
+    static void fetch_transaction(server_node& node,
+        const incoming_message& request, send_handler handler);
 
 private:
-    czmqpp::context& context_;
+    static void validated(const code& ec, const chain::transaction& tx,
+        const hash_digest& tx_hash, const index_list& unconfirmed,
+        const incoming_message& request, send_handler handler);
 };
 
 } // namespace server

@@ -17,36 +17,38 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_UTILITY_HPP
-#define LIBBITCOIN_SERVER_UTILITY_HPP
+#ifndef LIBBITCOIN_SERVER_SENDER_HPP
+#define LIBBITCOIN_SERVER_SENDER_HPP
 
+#include <czmq++/czmqpp.hpp>
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/server_node.hpp>
-
-// TODO: move to util or private class static in another location.
+#include <bitcoin/server/message/outgoing_message.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-// fetch_history stuff
+/**
+ * We don't want to block the originating threads that execute a send
+ * as that would slow down requests if they all have to sync access
+ * to a single socket.
+ *
+ * Instead we have a queue (push socket) where send requests are pushed,
+ * and then the sender is notified. The worker wakes up and pushes
+ * all pending requests to the socket.
+ */
+class BCS_API sender
+{
+public:
+    sender(czmqpp::context& context);
 
-bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
-    uint32_t& from_height, const incoming_message& request);
+    void queue(const outgoing_message& message);
 
-void BCS_API send_history_result(const code& ec,
-    const blockchain::block_chain::history& history,
-    const incoming_message& request, send_handler handler);
-
-// fetch_transaction stuff
-
-bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
-    const incoming_message& request);
-
-void BCS_API transaction_fetched(const code& ec, const chain::transaction& tx,
-    const incoming_message& request, send_handler handler);
+private:
+    czmqpp::context& context_;
+};
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
-

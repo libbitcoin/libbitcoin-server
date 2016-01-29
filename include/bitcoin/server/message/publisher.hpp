@@ -17,43 +17,41 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/messaging/send_worker.hpp>
+#ifndef LIBBITCOIN_SERVER_PUBLISHER_HPP
+#define LIBBITCOIN_SERVER_PUBLISHER_HPP
 
+#include <cstdint>
 #include <czmq++/czmqpp.hpp>
-#include <bitcoin/node.hpp>
-#include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/messaging/outgoing_message.hpp>
+#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
-    
-using std::placeholders::_1;
 
-static constexpr int zmq_fail = -1;
-
-send_worker::send_worker(czmqpp::context& context)
-  : context_(context)
+/// The publisher subscribes to blocks accepted to the blockchain and
+/// transactions accepted to the memory pool. The blocks and transactions
+/// are then forwarded to its subscribers.
+class BCS_API publisher
 {
-}
+public:
+    publisher(server_node& node, const settings& settings);
 
-void send_worker::queue(const outgoing_message& message)
-{
-    czmqpp::socket socket(context_, ZMQ_PUSH);
-    BITCOIN_ASSERT(socket.self() != nullptr);
+    bool start();
 
-    // Returns 0 if OK, -1 if the endpoint was invalid.
-    const auto rc = socket.connect("inproc://trigger-send");
+private:
+    void send_tx(const chain::transaction& tx);
+    void send_block(uint32_t height, const chain::block& block);
 
-    if (rc == zmq_fail)
-    {
-        log::error(LOG_SERVICE)
-            << "Failed to connect to send queue.";
-        return;
-    }
-
-    message.send(socket);
-    socket.destroy(context_);
-}
+    server_node& node_;
+    czmqpp::context context_;
+    czmqpp::socket socket_tx_;
+    czmqpp::socket socket_block_;
+    const settings& settings_;
+};
 
 } // namespace server
 } // namespace libbitcoin
+
+#endif
