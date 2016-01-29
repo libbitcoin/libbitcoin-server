@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 #define LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 
+#include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messaging/incoming_message.hpp>
 #include <bitcoin/server/messaging/outgoing_message.hpp>
@@ -59,6 +60,43 @@ void BCS_API blockchain_fetch_block_height(server_node& node,
     const incoming_message& request, send_handler handler);
 
 void BCS_API blockchain_fetch_stealth(server_node& node,
+    const incoming_message& request, send_handler handler);
+
+// TODO: private
+
+void last_height_fetched(const code& ec, size_t last_height,
+    const incoming_message& request, send_handler handler);
+
+void fetch_block_header_by_hash(server_node& node,
+    const incoming_message& request, send_handler handler);
+
+void fetch_block_header_by_height(server_node& node,
+    const incoming_message& request, send_handler handler);
+
+void block_header_fetched(const code& ec, const chain::header& block,
+    const incoming_message& request, send_handler handler);
+
+void fetch_block_transaction_hashes_by_hash(server_node& node,
+    const incoming_message& request, send_handler handler);
+
+void fetch_block_transaction_hashes_by_height(server_node& node,
+    const incoming_message& request, send_handler handler);
+
+void block_transaction_hashes_fetched(const code& ec,
+    const hash_list& hashes, const incoming_message& request,
+    send_handler handler);
+
+void transaction_index_fetched(const code& ec, size_t block_height,
+    size_t index, const incoming_message& request, send_handler handler);
+
+void spend_fetched(const code& ec, const chain::input_point& inpoint,
+    const incoming_message& request, send_handler handler);
+
+void block_height_fetched(const code& ec, size_t block_height,
+    const incoming_message& request, send_handler handler);
+
+void stealth_fetched(const code& ec,
+    const blockchain::block_chain::stealth& stealth_results,
     const incoming_message& request, send_handler handler);
 
 } // namespace server

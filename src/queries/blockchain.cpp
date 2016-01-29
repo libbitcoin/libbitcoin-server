@@ -86,9 +86,6 @@ void blockchain_fetch_transaction(server_node& node,
             _1, _2, request, handler));
 }
 
-void last_height_fetched(const code& ec, size_t last_height,
-    const incoming_message& request, send_handler handler);
-
 void blockchain_fetch_last_height(server_node& node,
     const incoming_message& request, send_handler handler)
 {
@@ -122,15 +119,6 @@ void last_height_fetched(const code& ec, size_t last_height,
     const outgoing_message response(request, result);
     handler(response);
 }
-
-void fetch_block_header_by_hash(server_node& node,
-    const incoming_message& request, send_handler handler);
-
-void fetch_block_header_by_height(server_node& node,
-    const incoming_message& request, send_handler handler);
-
-void block_header_fetched(const code& ec, const chain::header& block,
-    const incoming_message& request, send_handler handler);
 
 void blockchain_fetch_block_header(server_node& node,
     const incoming_message& request, send_handler handler)
@@ -190,16 +178,6 @@ void block_header_fetched(const code& ec, const chain::header& block,
     handler(response);
 }
 
-void fetch_block_transaction_hashes_by_hash(server_node& node,
-    const incoming_message& request, send_handler handler);
-
-void fetch_block_transaction_hashes_by_height(server_node& node,
-    const incoming_message& request, send_handler handler);
-
-void block_transaction_hashes_fetched(const code& ec,
-    const hash_list& hashes, const incoming_message& request,
-    send_handler handler);
-
 void blockchain_fetch_block_transaction_hashes(server_node& node,
     const incoming_message& request, send_handler handler)
 {
@@ -258,9 +236,6 @@ void block_transaction_hashes_fetched(const code& ec,
     handler(response);
 }
 
-void transaction_index_fetched(const code& ec, size_t block_height,
-    size_t index, const incoming_message& request, send_handler handler);
-
 void blockchain_fetch_transaction_index(server_node& node,
     const incoming_message& request, send_handler handler)
 {
@@ -302,9 +277,6 @@ void transaction_index_fetched(const code& ec, size_t block_height,
     handler(response);
 }
 
-void spend_fetched(const code& ec, const chain::input_point& inpoint,
-    const incoming_message& request, send_handler handler);
-
 void blockchain_fetch_spend(server_node& node,
     const incoming_message& request, send_handler handler)
 {
@@ -344,9 +316,6 @@ void spend_fetched(const code& ec, const chain::input_point& inpoint,
     handler(response);
 }
 
-void block_height_fetched(const code& ec, size_t block_height,
-    const incoming_message& request, send_handler handler);
-
 void blockchain_fetch_block_height(server_node& node,
     const incoming_message& request, send_handler handler)
 {
@@ -383,10 +352,6 @@ void block_height_fetched(const code& ec, size_t block_height,
     const outgoing_message response(request, result);
     handler(response);
 }
-
-void stealth_fetched(const code& ec,
-    const block_chain::stealth& stealth_results,
-    const incoming_message& request, send_handler handler);
 
 void blockchain_fetch_stealth(server_node& node,
     const incoming_message& request, send_handler handler)
