@@ -43,10 +43,11 @@ void address::fetch_history2(server_node& node, const incoming& request,
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
 
-    const auto hande_fetch_history =
-        std::bind(send_history_result,
-            _1, _2, request, handler);
+    ////const auto hande_fetch_history =
+    ////    std::bind(send_history_result,
+    ////        _1, _2, request, handler);
 
+    // TODO: should relies on the node.indexer, which is currently disabled.
     ////fetch_history(node.query(), node.transaction_indexer(), address,
     ////    hande_fetch_history, from_height);
 }
