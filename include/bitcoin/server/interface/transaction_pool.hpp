@@ -41,7 +41,7 @@ public:
         const incoming& request, send_handler handler);
 
 private:
-    static void validated(const code& ec, const chain::transaction& tx,
+    static void handle_validated(const code& ec, const chain::transaction& tx,
         const hash_digest& tx_hash, const index_list& unconfirmed,
         const incoming& request, send_handler handler);
 };

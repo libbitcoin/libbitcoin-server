@@ -40,14 +40,14 @@ void transaction_pool::validate(server_node& node,
     ////transaction tx;
     ////if (tx.from_data(request.data()))
     ////    node.transaction_pool().validate(tx,
-    ////        std::bind(transaction_pool::transaction_validated,
+    ////        std::bind(transaction_pool::handle_validated,
     ////            _1, _2, _3, _4, request, handler));
     ////else
     ////    transaction_validated(error::bad_stream, transaction(), hash_digest(),
     ////        index_list(), request, handler);
 }
 
-void transaction_pool::validated(const code& ec, const transaction& tx,
+void transaction_pool::handle_validated(const code& ec, const transaction& tx,
     const hash_digest& tx_hash, const index_list& unconfirmed,
     const incoming& request, send_handler handler)
 {
