@@ -63,7 +63,7 @@ notifier::notifier(server_node& node,
     node.subscribe_transactions(receive_tx);
 }
 
-void notifier::subscribe(const message_incoming& request,
+void notifier::subscribe(const incoming& request,
     send_handler handler)
 {
     dispatch_.ordered(
@@ -71,7 +71,7 @@ void notifier::subscribe(const message_incoming& request,
             this, request, handler);
 }
 
-void notifier::do_subscribe(const message_incoming& request,
+void notifier::do_subscribe(const incoming& request,
     send_handler handler)
 {
     const auto ec = add(request, handler);
@@ -80,11 +80,11 @@ void notifier::do_subscribe(const message_incoming& request,
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
-    message_outgoing response(request, result);
+    outgoing response(request, result);
     handler(response);
 }
 
-void notifier::renew(const message_incoming& request,
+void notifier::renew(const incoming& request,
     send_handler handler)
 {
     dispatch_.unordered(
@@ -92,7 +92,7 @@ void notifier::renew(const message_incoming& request,
             this, request, handler);
 }
 
-void notifier::do_renew(const message_incoming& request,
+void notifier::do_renew(const incoming& request,
     send_handler handler)
 {
     binary filter;
@@ -130,7 +130,7 @@ void notifier::do_renew(const message_incoming& request,
     data_chunk result(sizeof(uint32_t));
     auto serial = make_serializer(result.begin());
     serial.write_error_code(error::success);
-    message_outgoing response(request, result);
+    outgoing response(request, result);
     handler(response);
 }
 
@@ -203,7 +203,7 @@ void notifier::post_updates(const payment_address& address,
         if (!subscription.prefix.is_prefix_of(address.hash()))
             continue;
 
-        message_outgoing update(subscription.client_origin, "address.update",
+        outgoing update(subscription.client_origin, "address.update",
             data);
 
         subscription.handler(update);
@@ -241,14 +241,14 @@ void notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
             if (!subscription.prefix.is_prefix_of(prefix))
             continue;
 
-        message_outgoing update(subscription.client_origin,
+        outgoing update(subscription.client_origin,
             "address.stealth_update", data);
 
         subscription.handler(update);
     }
 }
 
-code notifier::add(const message_incoming& request,
+code notifier::add(const incoming& request,
     send_handler handler)
 {
     binary address_key;

@@ -33,7 +33,7 @@ using namespace bc::wallet;
 // fetch_history stuff
 // ----------------------------------------------------------------------------
 bool unwrap_fetch_history_args(payment_address& address,
-    uint32_t& from_height, const message_incoming& request)
+    uint32_t& from_height, const incoming& request)
 {
     static constexpr size_t history_args_size = sizeof(uint8_t) +
         short_hash_size + sizeof(uint32_t);
@@ -58,7 +58,7 @@ bool unwrap_fetch_history_args(payment_address& address,
 }
 
 void send_history_result(const code& ec, const block_chain::history& history,
-    const message_incoming& request, send_handler handler)
+    const incoming& request, send_handler handler)
 {
     static constexpr size_t row_size = sizeof(uint8_t) + point_size +
         sizeof(uint32_t) + sizeof(uint64_t);
@@ -84,14 +84,14 @@ void send_history_result(const code& ec, const block_chain::history& history,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    message_outgoing response(request, result);
+    outgoing response(request, result);
     handler(response);
 }
 
 // fetch_transaction stuff
 // ----------------------------------------------------------------------------
 bool unwrap_fetch_transaction_args(hash_digest& hash,
-    const message_incoming& request)
+    const incoming& request)
 {
     const auto& data = request.data();
 
@@ -108,7 +108,7 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
 }
 
 void transaction_fetched(const code& ec, const chain::transaction& tx,
-    const message_incoming& request, send_handler handler)
+    const incoming& request, send_handler handler)
 {
     data_chunk result(code_size + tx.serialized_size());
     auto serial = make_serializer(result.begin());
@@ -119,7 +119,7 @@ void transaction_fetched(const code& ec, const chain::transaction& tx,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    message_outgoing response(request, result);
+    outgoing response(request, result);
     handler(response);
 }
 

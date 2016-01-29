@@ -25,7 +25,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/incoming.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 
@@ -37,8 +37,8 @@ class BCS_API notifier
 public:
     notifier(server_node& node, const settings& settings);
 
-    void subscribe(const message_incoming& request, send_handler handler);
-    void renew(const message_incoming& request, send_handler handler);
+    void subscribe(const incoming& request, send_handler handler);
+    void renew(const incoming& request, send_handler handler);
     void scan(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
 
@@ -82,8 +82,8 @@ private:
         return deserial.iterator() == data.end();
     }
 
-    void do_subscribe(const message_incoming& request, send_handler handler);
-    void do_renew(const message_incoming& request, send_handler handler);
+    void do_subscribe(const incoming& request, send_handler handler);
+    void do_renew(const incoming& request, send_handler handler);
     void do_scan(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
 
@@ -93,7 +93,7 @@ private:
     void post_stealth_updates(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
 
-    code add(const message_incoming& request, send_handler handler);
+    code add(const incoming& request, send_handler handler);
     void sweep();
 
     threadpool pool_;

@@ -21,8 +21,8 @@
 #define LIBBITCOIN_SERVER_ADDRESS_HPP
 
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/message_incoming.hpp>
-#include <bitcoin/server/message/message_outgoing.hpp>
+#include <bitcoin/server/message/incoming.hpp>
+#include <bitcoin/server/message/outgoing.hpp>
 #include <bitcoin/server/message/notifier.hpp>
 #include <bitcoin/server/server_node.hpp>
 
@@ -35,13 +35,13 @@ class BCS_API address
 {
 public:
     static void fetch_history2(server_node& node,
-        const message_incoming& request, send_handler handler);
+        const incoming& request, send_handler handler);
 
     static void subscribe(notifier& notifier,
-        const message_incoming& request, send_handler handler);
+        const incoming& request, send_handler handler);
 
     static void renew(notifier& notifier,
-        const message_incoming& request, send_handler handler);
+        const incoming& request, send_handler handler);
 };
 
 } // namespace server

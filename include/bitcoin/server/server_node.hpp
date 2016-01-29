@@ -24,7 +24,7 @@
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/incoming.hpp>
 #include <bitcoin/server/message/receiver.hpp>
 #include <bitcoin/server/settings.hpp>
 

@@ -45,9 +45,9 @@ src_libbitcoin_server_la_SOURCES = \
     src/interface/transaction_pool.cpp \
     src/interface/utility.cpp \
     src/interface/utility.hpp \
-    src/message/message_incoming.cpp \
-    src/message/message_outgoing.cpp \
+    src/message/incoming.cpp \
     src/message/notifier.cpp \
+    src/message/outgoing.cpp \
     src/message/publisher.cpp \
     src/message/receiver.cpp \
     src/message/sender.cpp
@@ -105,9 +105,9 @@ include_bitcoin_server_interface_HEADERS = \
 
 include_bitcoin_server_messagedir = ${includedir}/bitcoin/server/message
 include_bitcoin_server_message_HEADERS = \
-    include/bitcoin/server/message/message_incoming.hpp \
-    include/bitcoin/server/message/message_outgoing.hpp \
+    include/bitcoin/server/message/incoming.hpp \
     include/bitcoin/server/message/notifier.hpp \
+    include/bitcoin/server/message/outgoing.hpp \
     include/bitcoin/server/message/publisher.hpp \
     include/bitcoin/server/message/receiver.hpp \
     include/bitcoin/server/message/sender.hpp

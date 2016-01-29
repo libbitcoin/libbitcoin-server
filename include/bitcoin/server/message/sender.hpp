@@ -23,7 +23,7 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/message_outgoing.hpp>
+#include <bitcoin/server/message/outgoing.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -42,7 +42,7 @@ class BCS_API sender
 public:
     sender(czmqpp::context& context);
 
-    void queue(const message_outgoing& message);
+    void queue(const outgoing& message);
 
 private:
     czmqpp::context& context_;

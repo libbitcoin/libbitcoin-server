@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_INCOMING_MESSAGE
-#define LIBBITCOIN_SERVER_INCOMING_MESSAGE
+#ifndef LIBBITCOIN_SERVER_INCOMING
+#define LIBBITCOIN_SERVER_INCOMING
 
 #include <cstdint>
 #include <string>
@@ -29,7 +29,7 @@
 namespace libbitcoin {
 namespace server {
 
-class BCS_API message_incoming
+class BCS_API incoming
 {
 public:
     bool receive(czmqpp::socket& socket);

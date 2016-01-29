@@ -35,7 +35,7 @@ using std::placeholders::_3;
 using std::placeholders::_4;
 
 void transaction_pool::validate(server_node& node,
-    const message_incoming& request, send_handler handler)
+    const incoming& request, send_handler handler)
 {
     ////transaction tx;
     ////if (tx.from_data(request.data()))
@@ -49,7 +49,7 @@ void transaction_pool::validate(server_node& node,
 
 void transaction_pool::validated(const code& ec, const transaction& tx,
     const hash_digest& tx_hash, const index_list& unconfirmed,
-    const message_incoming& request, send_handler handler)
+    const incoming& request, send_handler handler)
 {
     data_chunk result(code_size + unconfirmed.size() * index_size);
     auto serial = make_serializer(result.begin());
@@ -69,12 +69,12 @@ void transaction_pool::validated(const code& ec, const transaction& tx,
         << "transaction_pool.validate() finished. Sending response: ec="
         << ec.message();
 
-    message_outgoing response(request, result);
+    outgoing response(request, result);
     handler(response);
 }
 
 void transaction_pool::fetch_transaction(server_node& node,
-    const message_incoming& request, send_handler handler)
+    const incoming& request, send_handler handler)
 {
     hash_digest tx_hash;
     if (!unwrap_fetch_transaction_args(tx_hash, request))

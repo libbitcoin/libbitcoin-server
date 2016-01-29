@@ -25,8 +25,8 @@
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/message/message_incoming.hpp>
-#include <bitcoin/server/message/message_outgoing.hpp>
+#include <bitcoin/server/message/incoming.hpp>
+#include <bitcoin/server/message/outgoing.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -198,7 +198,7 @@ void receiver::poll()
     else if (which == socket_)
     {
         // Get message: 6-part envelope + content -> request
-        message_incoming request;
+        incoming request;
         request.receive(socket_);
 
         // Perform request if handler exists.

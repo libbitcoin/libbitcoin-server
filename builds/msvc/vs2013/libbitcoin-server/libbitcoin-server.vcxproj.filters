@@ -82,10 +82,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\notifier.hpp">
       <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\message_incoming.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\incoming.hpp">
       <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\message_outgoing.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\outgoing.hpp">
       <Filter>include\bitcoin\server\message</Filter>
     </ClInclude>
   </ItemGroup>
@@ -129,10 +129,10 @@
     <ClCompile Include="..\..\..\..\src\message\notifier.cpp">
       <Filter>src\message</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\message_incoming.cpp">
+    <ClCompile Include="..\..\..\..\src\message\incoming.cpp">
       <Filter>src\message</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\message_outgoing.cpp">
+    <ClCompile Include="..\..\..\..\src\message\outgoing.cpp">
       <Filter>src\message</Filter>
     </ClCompile>
   </ItemGroup>

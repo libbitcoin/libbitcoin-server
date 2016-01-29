@@ -17,29 +17,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_OUTGOING_MESSAGE
-#define LIBBITCOIN_SERVER_OUTGOING_MESSAGE
+#ifndef LIBBITCOIN_SERVER_OUTGOING
+#define LIBBITCOIN_SERVER_OUTGOING
 
 #include <cstdint>
 #include <string>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/incoming.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class BCS_API message_outgoing
+class BCS_API outgoing
 {
 public:
     /// Default constructor provided for containers and copying.
-    message_outgoing();
+    outgoing();
 
-    message_outgoing(const message_incoming& request, const data_chunk& data);
+    outgoing(const incoming& request, const data_chunk& data);
 
     /// Empty destination is interpreted as an unspecified destination.
-    message_outgoing(const data_chunk& destination, const std::string& command,
+    outgoing(const data_chunk& destination, const std::string& command,
         const data_chunk& data);
 
     void send(czmqpp::socket& socket) const;
@@ -56,7 +56,7 @@ private:
     data_chunk destination_;
 };
 
-typedef std::function<void(const message_outgoing&)> send_handler;
+typedef std::function<void(const outgoing&)> send_handler;
 
 } // namespace server
 } // namespace libbitcoin

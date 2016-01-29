@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/message/message_incoming.hpp>
+#include <bitcoin/server/message/incoming.hpp>
 
 #include <cstdint>
 #include <string>
@@ -30,7 +30,7 @@ namespace server {
 // ----------------------------------------------------------------------------
 // Actions
 
-bool message_incoming::receive(czmqpp::socket& socket)
+bool incoming::receive(czmqpp::socket& socket)
 {
     czmqpp::message message;
     message.receive(socket);
@@ -69,22 +69,22 @@ bool message_incoming::receive(czmqpp::socket& socket)
 // ----------------------------------------------------------------------------
 // Properties
 
-uint32_t message_incoming::id() const
+uint32_t incoming::id() const
 {
     return id_;
 }
 
-const data_chunk& message_incoming::data() const
+const data_chunk& incoming::data() const
 {
     return data_;
 }
 
-const std::string& message_incoming::command() const
+const std::string& incoming::command() const
 {
     return command_;
 }
 
-const data_chunk message_incoming::origin() const
+const data_chunk incoming::origin() const
 {
     return origin_;
 }
