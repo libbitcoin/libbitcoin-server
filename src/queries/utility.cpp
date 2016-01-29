@@ -32,7 +32,6 @@ using namespace bc::wallet;
 
 static constexpr uint8_t spend_type = 1;
 static constexpr uint8_t output_type = 0;
-static constexpr uint32_t no_value = bc::max_uint32;
 static constexpr size_t code_size = sizeof(uint32_t);
 static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 
@@ -96,7 +95,7 @@ void send_history_result(const code& ec, const block_chain::history& history,
 
 // fetch_transaction stuff
 // ----------------------------------------------------------------------------
-bool unwrap_fetch_transaction_args(hash_digest& tx_hash,
+bool unwrap_fetch_transaction_args(hash_digest& hash,
     const incoming_message& request)
 {
     const auto& data = request.data();
@@ -109,14 +108,14 @@ bool unwrap_fetch_transaction_args(hash_digest& tx_hash,
     }
 
     auto deserial = make_deserializer(data.begin(), data.end());
-    tx_hash = deserial.read_hash();
+    hash = deserial.read_hash();
     return true;
 }
 
 void transaction_fetched(const code& ec, const chain::transaction& tx,
     const incoming_message& request, send_handler handler)
 {
-    data_chunk result(4 + tx.serialized_size());
+    data_chunk result(code_size + tx.serialized_size());
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);

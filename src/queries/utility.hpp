@@ -39,7 +39,7 @@ void BCS_API send_history_result(const code& ec,
 
 // fetch_transaction stuff
 
-bool BCS_API unwrap_fetch_transaction_args(hash_digest& tx_hash,
+bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
     const incoming_message& request);
 
 void BCS_API transaction_fetched(const code& ec, const chain::transaction& tx,

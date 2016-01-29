@@ -34,6 +34,7 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 
 static constexpr size_t code_size = sizeof(uint32_t);
+static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 
 void address_fetch_history2(server_node& node, const incoming_message& request,
     send_handler handler)
@@ -232,7 +233,7 @@ void fetch_block_transaction_hashes_by_height(server_node& node,
     const incoming_message& request, send_handler handler)
 {
     ////const auto& data = request.data();
-    ////BITCOIN_ASSERT(data.size() == 4);
+    ////BITCOIN_ASSERT(data.size() == sizeof(uint32_t));
     ////auto deserial = make_deserializer(data.begin(), data.end());
     ////const size_t height = deserial.read_4_bytes_little_endian();
     ////node.query().fetch_block_transaction_hashes(height,
@@ -309,17 +310,17 @@ void blockchain_fetch_spend(server_node& node,
 {
     const auto& data = request.data();
 
-    if (data.size() != 36)
+    if (data.size() != point_size)
     {
         log::error(LOG_SERVICE)
             << "Incorrect data size for blockchain.fetch_spend";
         return;
     }
 
-    boost::iostreams::stream<byte_source<data_chunk>> istream(data);
-    istream.exceptions(
-        boost::iostreams::stream<byte_source<data_chunk>>::failbit);
-
+    using namespace boost::iostreams;
+    static const auto fail_bit = stream<byte_source<data_chunk>>::failbit;
+    stream<byte_source<data_chunk>> istream(data);
+    istream.exceptions(fail_bit);
     chain::output_point outpoint;
     outpoint.from_data(istream);
 
@@ -404,7 +405,8 @@ void blockchain_fetch_stealth(server_node& node,
     // number_bits
     const auto bitsize = deserial.read_byte();
 
-    if (data.size() != 1 + binary::blocks_size(bitsize) + 4)
+    if (data.size() != sizeof(uint8_t) + binary::blocks_size(bitsize) +
+        sizeof(uint32_t))
     {
         log::error(LOG_SERVICE)
             << "Incorrect data size (" << data.size()
