@@ -295,6 +295,12 @@ const options_description parser::load_settings()
         "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
+        "blockchain.transaction_pool_consistency",
+        value<bool>(&settings.chain.transaction_pool_consistency)->
+            default_value(BLOCKCHAIN_TRANSACTION_POOL_CONSISTENCY),
+        "Enforce consistency between the pool and the blockchain, defaults to false."
+    )
+    (
         "blockchain.use_testnet_rules",
         value<bool>(&settings.chain.use_testnet_rules)->
             default_value(BLOCKCHAIN_TESTNET_RULES_MAINNET),
