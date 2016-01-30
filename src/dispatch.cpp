@@ -260,7 +260,7 @@ static console_result run(const configuration& configuration,
         start_promise.set_value(ec);
     };
 
-    server.start(configuration.server);
+    server.start(handle_start);
     auto ec = start_promise.get_future().get();
 
     if (ec)

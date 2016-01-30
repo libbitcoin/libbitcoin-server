@@ -107,17 +107,28 @@ server_node::server_node(const configuration& configuration)
 {
 }
 
-void server_node::start(const settings& settings)
+void server_node::start(result_handler handler)
+{
+    // Start the network and blockchain before subscribing.
+    p2p_node::start(
+        std::bind(&server_node::handle_node_start,
+            this, _1, handler));
+}
+
+void server_node::handle_node_start(const code& ec, result_handler handler)
 {
     // Subscribe to blockchain reorganizations.
     query().subscribe_reorganize(
         std::bind(&server_node::handle_new_blocks,
             this, _1, _2, _3, _4));
 
-    // Subscribe to mempool acceptances.
+    // Subscribe to transaction pool acceptances.
     pool().subscribe_transaction(
         std::bind(&server_node::handle_tx_accepted,
             this, _1, _2, _3));
+
+    // This is the end of the derived start sequence.
+    handler(error::success);
 }
 
 // This serve both address subscription and the block publisher.
