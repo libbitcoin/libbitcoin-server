@@ -192,8 +192,15 @@ static console_result verify_chain(const path& directory, std::ostream& error)
 static bool stopped = false;
 static void interrupt_handler(int code)
 {
-    bc::cout << format(BS_SERVER_STOPPING) % code << std::endl;
-    stopped = true;
+    signal(SIGINT, interrupt_handler);
+    signal(SIGTERM, interrupt_handler);
+    signal(SIGABRT, interrupt_handler);
+
+    if (code != 0 && !stopped)
+    {
+        bc::cout << format(BS_SERVER_STOPPING) % code << std::endl;
+        stopped = true;
+    }
 }
 
 // Class and method names must match protocol expectations (do not change).
@@ -236,14 +243,15 @@ static console_result run(const configuration& configuration,
     bc::ofstream error_file(configuration.network.error_file.string(), append);
     initialize_logging(debug_file, error_file, bc::cout, bc::cerr);
 
-    log::info(LOG_SERVICE) << BS_SERVER_STARTING;
-
     static const auto startup = "================= startup ==================";
     log::debug(LOG_NODE) << startup;
     log::info(LOG_NODE) << startup;
     log::warning(LOG_NODE) << startup;
     log::error(LOG_NODE) << startup;
     log::fatal(LOG_NODE) << startup;
+
+    log::info(LOG_SERVICE)
+        << BS_SERVER_STARTING;
 
     server_node server(configuration);
     std::promise<code> start_promise;
@@ -281,8 +289,8 @@ static console_result run(const configuration& configuration,
     }
 
     receiver worker(configuration.server);
-    if ((configuration.server.queries_enabled ||
-        configuration.server.subscriptions_enabled) && !worker.start())
+    const auto subscribe = configuration.server.subscription_limit > 0;
+    if ((configuration.server.queries_enabled || subscribe) && !worker.start())
     {
         log::error(LOG_SERVICE) << BS_WORKER_START_FAIL;
         return console_result::not_started;
@@ -292,15 +300,13 @@ static console_result run(const configuration& configuration,
         attach_query_api(worker, server);
 
     notifier notifier(server, configuration.server);
-    if (configuration.server.subscriptions_enabled)
+    if (subscribe)
         attach_subscription_api(worker, notifier);
 
     log::info(LOG_SERVICE) << BS_SERVER_STARTED;
 
     // Catch C signals for stopping the program.
-    signal(SIGABRT, interrupt_handler);
-    signal(SIGTERM, interrupt_handler);
-    signal(SIGINT, interrupt_handler);
+    interrupt_handler(0);
 
     // Main loop.
     while (!stopped)

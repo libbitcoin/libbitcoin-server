@@ -65,8 +65,10 @@ static const configuration default_configuration()
     defaults.network.seeds = NETWORK_SEEDS_MAINNET;
 
     defaults.chain.threads = BLOCKCHAIN_THREADS;
-    defaults.chain.block_pool_capacity = BLOCKCHAIN_BLOCK_POOL_CAPACITY;
     defaults.chain.history_start_height = BLOCKCHAIN_HISTORY_START_HEIGHT;
+    defaults.chain.block_pool_capacity = BLOCKCHAIN_BLOCK_POOL_CAPACITY;
+    defaults.chain.transaction_pool_capacity = BLOCKCHAIN_TRANSACTION_POOL_CAPACITY;
+    defaults.chain.transaction_pool_consistency = BLOCKCHAIN_TRANSACTION_POOL_CONSISTENCY;
     defaults.chain.use_testnet_rules = BLOCKCHAIN_TESTNET_RULES_MAINNET;
     defaults.chain.database_path = BLOCKCHAIN_DATABASE_PATH;
     defaults.chain.checkpoints = BLOCKCHAIN_CHECKPOINTS_MAINNET;
@@ -75,8 +77,6 @@ static const configuration default_configuration()
     defaults.node.quorum = NODE_QUORUM;
     defaults.node.blocks_per_second = NODE_BLOCKS_PER_SECOND;
     defaults.node.headers_per_second = NODE_HEADERS_PER_SECOND;
-    defaults.node.transaction_pool_capacity = NODE_TRANSACTION_POOL_CAPACITY;
-    defaults.node.transaction_pool_consistency = NODE_TRANSACTION_POOL_CONSISTENCY;
     defaults.node.peers = NODE_PEERS;
 
     defaults.server.threads = SERVER_THREADS;
@@ -86,7 +86,6 @@ static const configuration default_configuration()
     defaults.server.subscription_limit = SERVER_SUBSCRIPTION_LIMIT;
     defaults.server.publisher_enabled = SERVER_PUBLISHER_ENABLED;
     defaults.server.queries_enabled = SERVER_QUERIES_ENABLED;
-    defaults.server.subscriptions_enabled = SERVER_SUBSCRIPTIONS_ENABLED;
     defaults.server.log_requests = SERVER_LOG_REQUESTS;
     defaults.server.query_endpoint = SERVER_QUERY_ENDPOINT;
     defaults.server.heartbeat_endpoint = SERVER_HEARTBEAT_ENDPOINT;
@@ -110,15 +109,15 @@ server_node::server_node(const configuration& configuration)
 
 void server_node::start(const settings& settings)
 {
-    ////// Subscribe to reorganizations.
-    ////blockchain_.subscribe_reorganize(
-    ////    std::bind(&server_node::handle_new_blocks,
-    ////        this, _1, _2, _3, _4));
+    // Subscribe to blockchain reorganizations.
+    query().subscribe_reorganize(
+        std::bind(&server_node::handle_new_blocks,
+            this, _1, _2, _3, _4));
 
-    ////// Subscribe to mempool acceptances.
-    ////tx_pool_.subscribe_transaction(
-    ////    std::bind(&server_node::handle_tx_validated,
-    ////        this, _1, _2, _3));
+    // Subscribe to mempool acceptances.
+    pool().subscribe_transaction(
+        std::bind(&server_node::handle_tx_accepted,
+            this, _1, _2, _3));
 }
 
 // This serve both address subscription and the block publisher.
@@ -133,8 +132,8 @@ void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
     tx_subscriptions_.push_back(notify_tx);
 }
 
-bool server_node::handle_tx_validated(const code& ec, const transaction& tx,
-    const hash_digest& hash, const index_list& unconfirmed)
+bool server_node::handle_tx_accepted(const code& ec,
+    const index_list& unconfirmed, const transaction& tx)
 {
     if (ec == bc::error::service_stopped)
         return false;
@@ -175,12 +174,8 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
 
     // Fire server protocol block subscription notifications.
     for (auto new_block: new_blocks)
-    {
-        // Fire server protocol block subscription notifications.
-        for (auto new_block: new_blocks)
-            for (const auto notify: block_sunscriptions_)
-                notify(++height, *new_block);
-    }
+        for (const auto notify: block_sunscriptions_)
+            notify(++height, new_block);
 
     return true;
 }

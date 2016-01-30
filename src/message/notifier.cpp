@@ -44,10 +44,10 @@ notifier::notifier(server_node& node,
     dispatch_(pool_, NAME),
     settings_(settings)
 {
-    const auto receive_block = [this](uint32_t height, const block& block)
+    const auto receive_block = [this](uint32_t height, const block::ptr block)
     {
-        const auto hash = block.header.hash();
-        for (const auto& tx: block.transactions)
+        const auto hash = block->header.hash();
+        for (const auto& tx: block->transactions)
             scan(height, hash, tx);
     };
 

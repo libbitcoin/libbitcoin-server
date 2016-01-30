@@ -34,17 +34,19 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
-void transaction_pool::validate(server_node& node,
-    const incoming& request, send_handler handler)
+void transaction_pool::validate(server_node& node, const incoming& request,
+    send_handler handler)
 {
-    ////transaction tx;
-    ////if (tx.from_data(request.data()))
-    ////    node.transaction_pool().validate(tx,
-    ////        std::bind(transaction_pool::handle_validated,
-    ////            _1, _2, _3, _4, request, handler));
-    ////else
-    ////    transaction_validated(error::bad_stream, transaction(), hash_digest(),
-    ////        index_list(), request, handler);
+    transaction tx;
+    if (!tx.from_data(request.data()))
+    {
+        handle_validated(error::bad_stream, {}, {}, {}, request, handler);
+        return;
+    }
+
+    node.pool().validate(tx,
+        std::bind(&transaction_pool::handle_validated,
+            _1, _2, _3, _4, request, handler));
 }
 
 void transaction_pool::handle_validated(const code& ec, const transaction& tx,
@@ -76,17 +78,17 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
 void transaction_pool::fetch_transaction(server_node& node,
     const incoming& request, send_handler handler)
 {
-    hash_digest tx_hash;
-    if (!unwrap_fetch_transaction_args(tx_hash, request))
+    hash_digest hash;
+    if (!unwrap_fetch_transaction_args(hash, request))
         return;
 
     log::debug(LOG_REQUEST)
-        << "transaction_pool.fetch_transaction(" << encode_hash(tx_hash)
+        << "transaction_pool.fetch_transaction(" << encode_hash(hash)
         << ")";
 
-    ////node.transaction_pool().fetch(tx_hash,
-    ////    std::bind(transaction_fetched,
-    ////        _1, _2, request, handler));
+    node.pool().fetch(hash,
+        std::bind(transaction_fetched,
+            _1, _2, request, handler));
 }
 
 } // namespace server

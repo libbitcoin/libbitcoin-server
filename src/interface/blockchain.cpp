@@ -39,6 +39,7 @@ using std::placeholders::_3;
 void blockchain::fetch_history(server_node& node,
     const incoming& request, send_handler handler)
 {
+    static constexpr uint64_t limit = 0;
     uint32_t from_height;
     payment_address address;
 
@@ -49,9 +50,9 @@ void blockchain::fetch_history(server_node& node,
         << "blockchain.fetch_history(" << address.encoded()
         << ", from_height=" << from_height << ")";
 
-    node.query().fetch_history(address,
+    node.query().fetch_history(address, limit, from_height,
         std::bind(send_history_result,
-            _1, _2, request, handler), from_height);
+            _1, _2, request, handler));
 }
 
 void blockchain::fetch_transaction(server_node& node,
@@ -395,9 +396,9 @@ void blockchain::fetch_stealth(server_node& node,
     // from_height
     const uint64_t from_height = deserial.read_4_bytes_little_endian();
 
-    node.query().fetch_stealth(prefix,
+    node.query().fetch_stealth(prefix, from_height,
         std::bind(&blockchain::stealth_fetched,
-            _1, _2, request, handler), from_height);
+            _1, _2, request, handler));
 }
 
 void blockchain::stealth_fetched(const code& ec,

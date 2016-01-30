@@ -97,14 +97,14 @@ void publisher::send_tx(const chain::transaction& tx)
         << "Problem publishing tx data.";
 }
 
-void publisher::send_block(uint32_t height, const chain::block& block)
+void publisher::send_block(uint32_t height, const chain::block::ptr block)
 {
     // Serialize the block height.
     const auto raw_height = to_chunk(to_little_endian(height));
     BITCOIN_ASSERT(raw_height.size() == sizeof(uint32_t));
 
     // Serialize the block header.
-    const auto raw_block_header = block.header.to_data(false);
+    const auto raw_block_header = block->header.to_data(false);
     BITCOIN_ASSERT(raw_block_header.size() == header_size);
 
     // Construct the message.
@@ -115,7 +115,7 @@ void publisher::send_block(uint32_t height, const chain::block& block)
     message.append(raw_height);
     message.append(raw_block_header);
 
-    for (const auto& tx: block.transactions)
+    for (const auto& tx: block->transactions)
         message.append(to_chunk(tx.hash()));
 
     if (!message.send(socket_block_))

@@ -31,6 +31,8 @@ namespace server {
 
 using std::placeholders::_1;
 
+// This does NOT save to our memory pool.
+// The transaction will hit our memory pool when it is picked up from a peer.
 void protocol::broadcast_transaction(server_node& node,
     const incoming& request, send_handler handler)
 {
@@ -43,7 +45,7 @@ void protocol::broadcast_transaction(server_node& node,
     {
         // error
         serial.write_error_code(error::bad_stream);
-        outgoing response(request, result);
+        const outgoing response(request, result);
         handler(response);
         return;
     }
@@ -54,13 +56,13 @@ void protocol::broadcast_transaction(server_node& node,
     // Send and hope for the best!
     node.broadcast(tx, ignore_send, ignore_complete);
 
-    // Response back to user saying everything is fine.
+    // Tell the user everything is fine.
     serial.write_error_code(error::success);
 
     log::debug(LOG_REQUEST)
         << "protocol.broadcast_transaction() finished. Sending response.";
 
-    outgoing response(request, result);
+    const outgoing response(request, result);
     handler(response);
 }
 
@@ -89,7 +91,7 @@ void protocol::handle_total_connections(size_t count, const incoming& request,
     log::debug(LOG_REQUEST)
         << "protocol.total_connections() finished. Sending response.";
 
-    outgoing response(request, result);
+    const outgoing response(request, result);
     handler(response);
 }
 

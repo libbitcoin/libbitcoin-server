@@ -36,7 +36,6 @@ namespace server {
 #define SERVER_SUBSCRIPTION_LIMIT               100000000
 #define SERVER_PUBLISHER_ENABLED                true
 #define SERVER_QUERIES_ENABLED                  true
-#define SERVER_SUBSCRIPTIONS_ENABLED            true
 #define SERVER_LOG_REQUESTS                     false
 #define SERVER_QUERY_ENDPOINT                   config::endpoint{"tcp://*:9091"}
 #define SERVER_HEARTBEAT_ENDPOINT               config::endpoint{"tcp://*:9092"}
@@ -55,7 +54,6 @@ struct BCS_API settings
     uint32_t subscription_limit;
     bool publisher_enabled;
     bool queries_enabled;
-    bool subscriptions_enabled;
     bool log_requests;
     config::endpoint query_endpoint;
     config::endpoint heartbeat_endpoint;

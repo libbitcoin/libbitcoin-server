@@ -42,7 +42,7 @@ public:
 
 private:
     void send_tx(const chain::transaction& tx);
-    void send_block(uint32_t height, const chain::block& block);
+    void send_block(uint32_t height, const chain::block::ptr block);
 
     server_node& node_;
     czmqpp::context context_;

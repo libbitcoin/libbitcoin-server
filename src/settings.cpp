@@ -277,16 +277,22 @@ const options_description parser::load_settings()
         "The number of threads in the blockchain threadpool, defaults to 6."
     )
     (
+        "blockchain.history_start_height",
+        value<uint32_t>(&settings.chain.history_start_height)->
+            default_value(BLOCKCHAIN_HISTORY_START_HEIGHT),
+        "The history index start height, defaults to 0."
+    )
+    (
         "blockchain.block_pool_capacity",
         value<uint32_t>(&settings.chain.block_pool_capacity)->
             default_value(BLOCKCHAIN_BLOCK_POOL_CAPACITY),
         "The maximum number of orphan blocks in the pool, defaults to 50."
     )
     (
-        "blockchain.history_start_height",
-        value<uint32_t>(&settings.chain.history_start_height)->
-            default_value(BLOCKCHAIN_HISTORY_START_HEIGHT),
-        "The history index start height, defaults to 0."
+        "blockchain.transaction_pool_capacity",
+        value<uint32_t>(&settings.chain.transaction_pool_capacity)->
+            default_value(BLOCKCHAIN_TRANSACTION_POOL_CAPACITY),
+        "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
         "blockchain.use_testnet_rules",
@@ -315,10 +321,22 @@ const options_description parser::load_settings()
         "The number of threads in the node threadpool, defaults to 4."
     )
     (
-        "node.transaction_pool_capacity",
-        value<uint32_t>(&settings.node.transaction_pool_capacity)->
-            default_value(NODE_TRANSACTION_POOL_CAPACITY),
-        "The maximum number of transactions in the pool, defaults to 2000."
+        "node.quorum",
+        value<uint32_t>(&settings.node.quorum)->
+            default_value(NODE_QUORUM),
+        "The number of peers to survey during sync, defaults to 8."
+    )
+    (
+        "node.blocks_per_second",
+        value<uint32_t>(&settings.node.blocks_per_second)->
+            default_value(NODE_BLOCKS_PER_SECOND),
+        "The minimum block rate required from a peer during block sync, defaults to 16."
+    )
+    (
+        "node.headers_per_second",
+        value<uint32_t>(&settings.node.headers_per_second)->
+            default_value(NODE_HEADERS_PER_SECOND),
+        "The minimum header rate required from a peer during header sync, defaults to 10000."
     )
     (
         "node.peer",
@@ -369,12 +387,6 @@ const options_description parser::load_settings()
         value<bool>(&settings.server.queries_enabled)->
             default_value(SERVER_QUERIES_ENABLED),
         "Enable the query and heartbeat endpoints, defaults to true."
-    )
-    (
-        "server.subscriptions_enabled",
-        value<bool>(&settings.server.subscriptions_enabled)->
-            default_value(SERVER_SUBSCRIPTIONS_ENABLED),
-        "Enable subscriptions, defaults to true."
     )
     (
         "server.log_requests",

@@ -35,7 +35,7 @@ class BCS_API server_node
   : public node::p2p_node
 {
 public:
-    typedef std::function<void(uint32_t, const chain::block&)>
+    typedef std::function<void(uint32_t, const chain::block::ptr)>
         block_notify_callback;
     typedef std::function<void (const chain::transaction&)>
         transaction_notify_callback;
@@ -52,8 +52,8 @@ private:
     typedef std::vector<block_notify_callback> block_notify_list;
     typedef std::vector<transaction_notify_callback> transaction_notify_list;
 
-    bool handle_tx_validated(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const index_list& unconfirmed);
+    bool handle_tx_accepted(const code& ec, const index_list& unconfirmed,
+        const chain::transaction& tx);
 
     bool handle_new_blocks(const code& ec, uint64_t fork_point,
         const blockchain::block_chain::list& new_blocks,
