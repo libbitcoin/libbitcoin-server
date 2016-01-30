@@ -31,7 +31,7 @@
 
 namespace libbitcoin {
 namespace server {
-    
+
 using std::placeholders::_1;
 
 // TODO: should we be testing zmq_fail in each bind call?
@@ -184,7 +184,7 @@ void receiver::poll()
     czmqpp::poller poller(socket_, wakeup_socket_);
     BITCOIN_ASSERT(poller.self() != nullptr);
 
-    const auto which = poller.wait(settings_.polling_interval_seconds);
+    const auto which = poller.wait(settings_.polling_interval_milliseconds);
     BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
 

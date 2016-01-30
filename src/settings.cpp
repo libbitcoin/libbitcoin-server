@@ -359,22 +359,22 @@ const options_description parser::load_settings()
         "The number of threads in the server threadpool, defaults to 2."
     )
     (
-        "server.polling_interval_seconds",
-        value<uint32_t>(&settings.server.polling_interval_seconds)->
-            default_value(SERVER_POLLING_INTERVAL_SECONDS),
-        "The query polling interval in seconds, defaults to 1."
-    )
-    (
         "server.heartbeat_interval_seconds",
         value<uint32_t>(&settings.server.heartbeat_interval_seconds)->
             default_value(SERVER_HEARTBEAT_INTERVAL_SECONDS),
-        "The heartbeat interval in seconds, defaults to 5."
+        "The heartbeat interval, defaults to 5."
+    )
+    (
+        "server.polling_interval_milliseconds",
+        value<uint32_t>(&settings.server.polling_interval_milliseconds)->
+            default_value(SERVER_POLLING_INTERVAL_MILLISECONDS),
+        "The query polling interval, defaults to 1."
     )
     (
         "server.subscription_expiration_minutes",
         value<uint32_t>(&settings.server.subscription_expiration_minutes)->
             default_value(SERVER_SUBSCRIPTION_EXPIRATION_MINUTES),
-        "The subscription expiration time, defaults to 10 minutes."
+        "The subscription expiration time, defaults to 10."
     )
     (
         "server.subscription_limit",

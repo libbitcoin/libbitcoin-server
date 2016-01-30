@@ -80,8 +80,8 @@ static const configuration default_configuration()
     defaults.node.peers = NODE_PEERS;
 
     defaults.server.threads = SERVER_THREADS;
-    defaults.server.polling_interval_seconds = SERVER_POLLING_INTERVAL_SECONDS;
     defaults.server.heartbeat_interval_seconds = SERVER_HEARTBEAT_INTERVAL_SECONDS;
+    defaults.server.polling_interval_milliseconds = SERVER_POLLING_INTERVAL_MILLISECONDS;
     defaults.server.subscription_expiration_minutes = SERVER_SUBSCRIPTION_EXPIRATION_MINUTES;
     defaults.server.subscription_limit = SERVER_SUBSCRIPTION_LIMIT;
     defaults.server.publisher_enabled = SERVER_PUBLISHER_ENABLED;

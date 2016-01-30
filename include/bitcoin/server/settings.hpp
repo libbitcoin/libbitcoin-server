@@ -30,8 +30,8 @@ namespace server {
     
 /// default settings
 #define SERVER_THREADS                          2
-#define SERVER_POLLING_INTERVAL_SECONDS         1
 #define SERVER_HEARTBEAT_INTERVAL_SECONDS       5
+#define SERVER_POLLING_INTERVAL_MILLISECONDS    1
 #define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
 #define SERVER_SUBSCRIPTION_LIMIT               100000000
 #define SERVER_PUBLISHER_ENABLED                true
@@ -48,8 +48,8 @@ namespace server {
 struct BCS_API settings
 {
     uint32_t threads;
-    uint32_t polling_interval_seconds;
     uint32_t heartbeat_interval_seconds;
+    uint32_t polling_interval_milliseconds;
     uint32_t subscription_expiration_minutes;
     uint32_t subscription_limit;
     bool publisher_enabled;
@@ -65,19 +65,17 @@ struct BCS_API settings
 
     asio::duration polling_interval() const
     {
-        // This should eventually be returned to milliseconds.
-        // It was changed to seconds as a quick hack, since ms is harder.
-        return asio::duration(0, 0, polling_interval_seconds);
+        return asio::milliseconds(polling_interval_milliseconds);
     }
 
     asio::duration heartbeat_interval() const
     {
-        return asio::duration(0, 0, heartbeat_interval_seconds);
+        return asio::seconds(polling_interval_milliseconds);
     }
 
     asio::duration subscription_expiration() const
     {
-        return asio::duration(0, subscription_expiration_minutes, 0);
+        return asio::minutes(subscription_expiration_minutes);
     }
 };
 
