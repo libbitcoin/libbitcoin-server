@@ -107,6 +107,9 @@ server_node::server_node(const configuration& configuration)
 {
 }
 
+// Start sequence.
+// ----------------------------------------------------------------------------
+
 void server_node::start(result_handler handler)
 {
     // Start the network and blockchain before subscribing.
@@ -118,12 +121,12 @@ void server_node::start(result_handler handler)
 void server_node::handle_node_start(const code& ec, result_handler handler)
 {
     // Subscribe to blockchain reorganizations.
-    query().subscribe_reorganize(
+    subscribe_blockchain(
         std::bind(&server_node::handle_new_blocks,
             this, _1, _2, _3, _4));
 
     // Subscribe to transaction pool acceptances.
-    pool().subscribe_transaction(
+    subscribe_transaction_pool(
         std::bind(&server_node::handle_tx_accepted,
             this, _1, _2, _3));
 
@@ -131,13 +134,13 @@ void server_node::handle_node_start(const code& ec, result_handler handler)
     handler(error::success);
 }
 
-// This serve both address subscription and the block publisher.
+// This serves both address subscription and the block publisher.
 void server_node::subscribe_blocks(block_notify_callback notify_block)
 {
     block_sunscriptions_.push_back(notify_block);
 }
 
-// This serve both address subscription and the tx publisher.
+// This serves both address subscription and the tx publisher.
 void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
 {
     tx_subscriptions_.push_back(notify_tx);
@@ -164,8 +167,7 @@ bool server_node::handle_tx_accepted(const code& ec,
 }
 
 bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
-    const block_chain::list& new_blocks,
-    const block_chain::list& replaced_blocks)
+    const block::ptr_list& new_blocks, const block::ptr_list& replaced_blocks)
 {
     if (ec == bc::error::service_stopped)
         return false;

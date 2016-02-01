@@ -34,10 +34,12 @@ namespace server {
 class BCS_API transaction_pool
 {
 public:
-    static void validate(server_node& node,
+    /// Fetch a transaction from the transaction pool (only), by its hash.
+    static void fetch_transaction(server_node& node,
         const incoming& request, send_handler handler);
 
-    static void fetch_transaction(server_node& node,
+    /// Validate a transaction against the transaction pool and blockchain.
+    static void validate(server_node& node,
         const incoming& request, send_handler handler);
 
 private:

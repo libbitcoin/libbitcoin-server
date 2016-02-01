@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_SERVER_NODE_HPP
 #define LIBBITCOIN_SERVER_SERVER_NODE_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
@@ -56,8 +57,8 @@ private:
     bool handle_tx_accepted(const code& ec, const index_list& unconfirmed,
         const chain::transaction& tx);
     bool handle_new_blocks(const code& ec, uint64_t fork_point,
-        const blockchain::block_chain::list& new_blocks,
-        const blockchain::block_chain::list& replaced_blocks);
+        const chain::block::ptr_list& new_blocks,
+        const chain::block::ptr_list& replaced_blocks);
 
     block_notify_list block_sunscriptions_;
     transaction_notify_list tx_subscriptions_;
