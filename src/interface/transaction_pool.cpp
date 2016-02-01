@@ -34,6 +34,22 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
+void transaction_pool::fetch_transaction(server_node& node,
+    const incoming& request, send_handler handler)
+{
+    hash_digest hash;
+    if (!unwrap_fetch_transaction_args(hash, request))
+        return;
+
+    log::debug(LOG_REQUEST)
+        << "transaction_pool.fetch_transaction(" << encode_hash(hash)
+        << ")";
+
+    node.pool().fetch(hash,
+        std::bind(transaction_fetched,
+            _1, _2, request, handler));
+}
+
 void transaction_pool::validate(server_node& node, const incoming& request,
     send_handler handler)
 {
@@ -73,22 +89,6 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
 
     outgoing response(request, result);
     handler(response);
-}
-
-void transaction_pool::fetch_transaction(server_node& node,
-    const incoming& request, send_handler handler)
-{
-    hash_digest hash;
-    if (!unwrap_fetch_transaction_args(hash, request))
-        return;
-
-    log::debug(LOG_REQUEST)
-        << "transaction_pool.fetch_transaction(" << encode_hash(hash)
-        << ")";
-
-    node.pool().fetch(hash,
-        std::bind(transaction_fetched,
-            _1, _2, request, handler));
 }
 
 } // namespace server
