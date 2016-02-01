@@ -44,7 +44,7 @@ void address::fetch_history2(server_node& node, const incoming& request,
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
 
-    // Obtain history from the transaction pool and blockchain.
+    // Obtain payment address history from the transaction pool and blockchain.
     node.pool().fetch_history(address, limit, from_height,
         std::bind(send_history_result,
             _1, _2, request, handler));

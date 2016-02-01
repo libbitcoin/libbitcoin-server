@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOL_HPP
 #define LIBBITCOIN_SERVER_PROTOCOL_HPP
 
+#include <cstddef>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message/incoming.hpp>
 #include <bitcoin/server/message/outgoing.hpp>
@@ -33,9 +34,11 @@ namespace server {
 class BCS_API protocol
 {
 public:
+    /// Broadcast a transaction to all connected peers.
     static void broadcast_transaction(server_node& node,
         const incoming& request, send_handler handler);
 
+    /// Determine the count of all connected peers.
     static void total_connections(server_node& node,
         const incoming& request, send_handler handler);
 
