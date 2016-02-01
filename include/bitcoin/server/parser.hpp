@@ -22,30 +22,40 @@
 
 #include <string>
 #include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
-#include <bitcoin/server/configuration.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/configuration.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/**
- * Parse configurable values from environment variables, settings file, and
- * command line positional and non-positional options.
- */
+/// Parse configurable values from environment variables, settings file, and
+/// command line positional and non-positional options.
 class BCS_API parser
+  : public config::parser
 {
 public:
-    static bool parse(parser& metadata, std::string& message, int argc,
-        const char* argv[]);
+    /// Parse all configuration into member settings.
+    virtual bool parse(std::string& out_error, int argc, const char* argv[]);
 
-    const boost::program_options::options_description load_settings();
-    const boost::program_options::options_description load_environment();
-    const boost::program_options::options_description load_options();
-    const boost::program_options::positional_options_description 
-        load_arguments();
+    /// Load command line options (named).
+    virtual options_metadata load_options();
 
+    /// Load command line arguments (positional).
+    virtual arguments_metadata load_arguments();
+
+    /// Load configuration file settings.
+    virtual options_metadata load_settings();
+
+    /// Load environment variable settings.
+    virtual options_metadata load_environment();
+
+    /// The populated configuration settings values.
     configuration settings;
+
+private:
+    static std::string system_config_directory();
+    static boost::filesystem::path default_config_path();
 };
 
 } // namespace server

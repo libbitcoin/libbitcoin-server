@@ -332,23 +332,23 @@ static console_result run(const configuration& configuration,
 console_result dispatch(int argc, const char* argv[], std::istream&, 
     std::ostream& output, std::ostream& error)
 {
-    parser parsed;
-    std::string message;
+    parser metadata;
+    std::string error_message;
 
-    if (!parser::parse(parsed, message, argc, argv))
+    if (!metadata.parse(error_message, argc, argv))
     {
-        display_invalid_parameter(error, message);
+        display_invalid_parameter(error, error_message);
         return console_result::failure;
     }
 
-    const auto settings = parsed.settings;
+    const auto settings = metadata.settings;
     if (!settings.file.empty())
         output << format(BS_USING_CONFIG_FILE) % settings.file << std::endl;
 
     if (settings.help)
-        show_help(parsed, output);
+        show_help(metadata, output);
     else if (settings.settings)
-        show_settings(parsed, output);
+        show_settings(metadata, output);
     else if (settings.version)
         show_version(output);
     else if (settings.mainnet)

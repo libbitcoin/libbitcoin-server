@@ -38,7 +38,6 @@ src_libbitcoin_server_la_SOURCES = \
     src/dispatch.cpp \
     src/parser.cpp \
     src/server_node.cpp \
-    src/settings.cpp \
     src/interface/address.cpp \
     src/interface/blockchain.cpp \
     src/interface/protocol.cpp \
