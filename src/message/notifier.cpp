@@ -203,8 +203,7 @@ void notifier::post_updates(const payment_address& address,
         if (!subscription.prefix.is_prefix_of(address.hash()))
             continue;
 
-        outgoing update(subscription.client_origin, "address.update",
-            data);
+        outgoing update("address.update", data, subscription.client_origin);
 
         subscription.handler(update);
     }
@@ -238,11 +237,11 @@ void notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
         if (subscription.type != subscribe_type::stealth)
             continue;
 
-            if (!subscription.prefix.is_prefix_of(prefix))
+        if (!subscription.prefix.is_prefix_of(prefix))
             continue;
 
-        outgoing update(subscription.client_origin,
-            "address.stealth_update", data);
+        outgoing update("address.stealth_update", data,
+            subscription.client_origin);
 
         subscription.handler(update);
     }

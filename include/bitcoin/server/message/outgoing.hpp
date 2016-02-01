@@ -36,11 +36,12 @@ public:
     /// Default constructor provided for containers and copying.
     outgoing();
 
+    /// Parse the incoming request and retain the outgoing data.
     outgoing(const incoming& request, const data_chunk& data);
 
     /// Empty destination is interpreted as an unspecified destination.
-    outgoing(const data_chunk& destination, const std::string& command,
-        const data_chunk& data);
+    outgoing(const std::string& command, const data_chunk& data,
+        const data_chunk& destination);
 
     void send(czmqpp::socket& socket) const;
 

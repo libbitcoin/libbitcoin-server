@@ -36,8 +36,8 @@ outgoing::outgoing()
 {
 }
 
-outgoing::outgoing(const data_chunk& destination,
-    const std::string& command, const data_chunk& data)
+outgoing::outgoing(const std::string& command, const data_chunk& data,
+    const data_chunk& destination)
   : id_(rand()),
     data_(data),
     command_(command),
