@@ -28,14 +28,7 @@
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/settings.hpp>
 
-// Define after boost asio, see stackoverflow.com/a/9750437/1172329.
-#ifdef _MSC_VER
-    #include <shlobj.h>
-    #include <windows.h>
-#else
-    #include <pwd.h>
-    #include <unistd.h>
-#endif
+BC_DECLARE_CONFIG_DEFAULT_PATH("libbitcoin" / "bs.cfg")
 
 // TODO: localize descriptions.
 
@@ -46,8 +39,6 @@ using namespace boost::filesystem;
 using namespace boost::program_options;
 using namespace bc::config;
 using namespace bc::network;
-
-#define BS_CONFIG_SUBDIRECTORY "libbitcoin" / "bs.cfg"
 
 options_metadata parser::load_options()
 {
@@ -419,32 +410,11 @@ options_metadata parser::load_environment()
         // This composes with the cmdline options and inits to system path.
         BS_CONFIG_VARIABLE,
         value<path>(&settings.file)->composing()
-            ->default_value(default_config_path()),
+            ->default_value(config_default_path()),
         "The path to the configuration settings file."
     );
 
     return description;
-}
-
-std::string parser::system_config_directory()
-{
-#ifdef _MSC_VER
-    char directory[MAX_PATH];
-    const auto result = SHGetFolderPathA(NULL, CSIDL_COMMON_APPDATA, NULL,
-        SHGFP_TYPE_CURRENT, directory);
-    return SUCCEEDED(result) ? directory : "";
-#else
-    // This symbol must be defined at compile for this project.
-    // Therefore do not move this definition into libbitcoin.
-    return std::string(SYSCONFDIR);
-#endif
-}
-
-path parser::default_config_path()
-{
-    // This subdirectory and file name must stay in sync with the path
-    // for the sample distributed via the build.
-    return path(system_config_directory()) / BS_CONFIG_SUBDIRECTORY;
 }
 
 bool parser::parse(std::string& out_error, int argc, const char* argv[])
