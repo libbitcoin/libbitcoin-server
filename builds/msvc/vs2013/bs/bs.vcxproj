@@ -65,6 +65,7 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\console\dispatch.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -114,6 +115,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\console\dispatch.cpp" />
     <ClCompile Include="..\..\..\..\console\main.cpp" />
   </ItemGroup>
 </Project>

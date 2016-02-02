@@ -36,7 +36,6 @@ src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconf
 src_libbitcoin_server_la_LIBADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 src_libbitcoin_server_la_SOURCES = \
     src/configuration.cpp \
-    src/dispatch.cpp \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
@@ -77,6 +76,8 @@ bin_PROGRAMS = console/bs
 console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
 console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 console_bs_SOURCES = \
+    console/dispatch.cpp \
+    console/dispatch.hpp \
     console/main.cpp
 
 endif WITH_CONSOLE
@@ -91,7 +92,6 @@ include_bitcoin_serverdir = ${includedir}/bitcoin/server
 include_bitcoin_server_HEADERS = \
     include/bitcoin/server/configuration.hpp \
     include/bitcoin/server/define.hpp \
-    include/bitcoin/server/dispatch.hpp \
     include/bitcoin/server/parser.hpp \
     include/bitcoin/server/server_node.hpp \
     include/bitcoin/server/settings.hpp \

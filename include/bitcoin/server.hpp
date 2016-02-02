@@ -17,7 +17,6 @@
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/dispatch.hpp>
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>

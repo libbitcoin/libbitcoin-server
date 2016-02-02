@@ -34,9 +34,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
@@ -90,9 +87,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\dispatch.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
     </ClCompile>

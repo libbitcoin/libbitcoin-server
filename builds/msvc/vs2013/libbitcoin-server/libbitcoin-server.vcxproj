@@ -86,7 +86,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\message\notifier.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
     <ClInclude Include="..\..\..\..\src\interface\utility.hpp" />
@@ -107,7 +106,6 @@
     <ClCompile Include="..\..\..\..\src\message\notifier.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
-    <ClCompile Include="..\..\..\..\src\dispatch.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
   </ItemGroup>
   <ItemGroup>
