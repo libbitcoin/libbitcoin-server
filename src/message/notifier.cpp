@@ -38,11 +38,10 @@ const auto now = []()
     return boost::posix_time::second_clock::universal_time();
 };
 
-notifier::notifier(server_node& node,
-    const settings& settings)
-  : pool_(settings.threads),
+notifier::notifier(server_node& node)
+  : pool_(node.settings().threads),
     dispatch_(pool_, NAME),
-    settings_(settings)
+    settings_(node.settings())
 {
     const auto receive_block = [this](uint32_t height, const block::ptr block)
     {
@@ -63,16 +62,14 @@ notifier::notifier(server_node& node,
     node.subscribe_transactions(receive_tx);
 }
 
-void notifier::subscribe(const incoming& request,
-    send_handler handler)
+void notifier::subscribe(const incoming& request, send_handler handler)
 {
     dispatch_.ordered(
         &notifier::do_subscribe,
             this, request, handler);
 }
 
-void notifier::do_subscribe(const incoming& request,
-    send_handler handler)
+void notifier::do_subscribe(const incoming& request, send_handler handler)
 {
     const auto ec = add(request, handler);
 
@@ -84,16 +81,14 @@ void notifier::do_subscribe(const incoming& request,
     handler(response);
 }
 
-void notifier::renew(const incoming& request,
-    send_handler handler)
+void notifier::renew(const incoming& request, send_handler handler)
 {
     dispatch_.unordered(
         &notifier::do_renew,
             this, request, handler);
 }
 
-void notifier::do_renew(const incoming& request,
-    send_handler handler)
+void notifier::do_renew(const incoming& request, send_handler handler)
 {
     binary filter;
     subscribe_type type;
@@ -142,8 +137,8 @@ void notifier::scan(uint32_t height, const hash_digest& block_hash,
             this, height, block_hash, tx);
 }
 
-void notifier::do_scan(uint32_t height,
-    const hash_digest& block_hash, const transaction& tx)
+void notifier::do_scan(uint32_t height, const hash_digest& block_hash,
+    const transaction& tx)
 {
     for (const auto& input: tx.inputs)
     {
@@ -247,8 +242,7 @@ void notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     }
 }
 
-code notifier::add(const incoming& request,
-    send_handler handler)
+code notifier::add(const incoming& request, send_handler handler)
 {
     binary address_key;
     subscribe_type type;

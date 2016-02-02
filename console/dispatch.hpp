@@ -28,6 +28,7 @@
     "These are the configuration settings that can be set."
 #define BS_INFORMATION_MESSAGE \
     "Runs a full bitcoin node in the global peer-to-peer network."
+
 #define BS_UNINITIALIZED_CHAIN \
     "The %1% directory is not initialized."
 #define BS_INITIALIZING_CHAIN \
@@ -38,26 +39,23 @@
     "Failed because the directory %1% already exists."
 #define BS_INITCHAIN_DIR_TEST \
     "Failed to test directory %1% with error, '%2%'."
+
 #define BS_SERVER_STARTING \
-    "Please wait while server is starting."
+    "Please wait while server is starting..."
 #define BS_SERVER_START_FAIL \
     "Server failed to start with error, %1%."
 #define BS_SERVER_STARTED \
     "Server started, press CTRL-C to stop."
+
 #define BS_SERVER_STOPPING \
     "Please wait while server is stopping (code: %1%)..."
 #define BS_SERVER_UNMAPPING \
     "Please wait while files are unmapped..."
 #define BS_SERVER_STOP_FAIL \
     "Server stopped with error, %1%."
-#define BS_PUBLISHER_START_FAIL \
-    "Publisher service failed to start: %1%"
-#define BS_PUBLISHER_STOP_FAIL \
-    "Publisher service failed to stop."
-#define BS_WORKER_START_FAIL \
-    "Query service failed to start."
-#define BS_WORKER_STOP_FAIL \
-    "Query service failed to stop."
+#define BS_SERVER_STOPPED \
+    "Server stopped successfully."
+
 #define BS_USING_CONFIG_FILE \
     "Using config file: %1%"
 #define BS_INVALID_PARAMETER \
@@ -75,8 +73,10 @@ namespace server {
 console_result wait_for_stop(server_node& server);
 void monitor_for_stop(server_node& server, server_node::result_handler);
 
-void handle_started(const code& ec, server_node& server);
-void handle_running(const code& ec);
+void handle_started(const code& ec, server_node& server, publisher& publish,
+    receiver& receive, notifier& notify);
+void handle_running(const code& ec, server_node& server, publisher& publish,
+    receiver& receive, notifier& notify);
 
 // Load arguments and config and then run the server.
 console_result dispatch(int argc, const char* argv[], std::istream&,

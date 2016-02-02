@@ -40,6 +40,7 @@ public:
 
     server_node(const configuration& configuration=configuration::mainnet);
 
+    virtual const settings& settings() const;
     virtual void start(result_handler handler);
     virtual void subscribe_blocks(block_notify_callback notify_block);
     virtual void subscribe_transactions(transaction_notify_callback notify_tx);
@@ -58,7 +59,7 @@ private:
     block_notify_list block_sunscriptions_;
     transaction_notify_list tx_subscriptions_;
     size_t last_checkpoint_height_;
-    const configuration configuration_;
+    const configuration& configuration_;
 };
 
 } // namespace server

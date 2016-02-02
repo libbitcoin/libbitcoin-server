@@ -36,7 +36,7 @@ namespace server {
 class BCS_API publisher
 {
 public:
-    publisher(server_node& node, const settings& settings);
+    publisher(server_node& node);
 
     bool start();
 

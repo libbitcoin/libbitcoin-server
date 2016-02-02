@@ -89,8 +89,10 @@ static void show_settings(parser& metadata, std::ostream& stream)
 
 static void show_version(std::ostream& stream)
 {
-    stream << format(BS_VERSION_MESSAGE) % LIBBITCOIN_SERVER_VERSION %
-        LIBBITCOIN_NODE_VERSION % LIBBITCOIN_BLOCKCHAIN_VERSION %
+    stream << format(BS_VERSION_MESSAGE) %
+        LIBBITCOIN_SERVER_VERSION %
+        LIBBITCOIN_NODE_VERSION %
+        LIBBITCOIN_BLOCKCHAIN_VERSION %
         LIBBITCOIN_VERSION << std::endl;
 }
 
@@ -142,56 +144,18 @@ static console_result verify_chain(const path& directory, std::ostream& error)
     return console_result::okay;
 }
 
-// Static handler for catching termination signals.
-static bool stopped = false;
-static void interrupt_handler(int code)
-{
-    signal(SIGINT, interrupt_handler);
-    signal(SIGTERM, interrupt_handler);
-    signal(SIGABRT, interrupt_handler);
-
-    if (code != 0 && !stopped)
-    {
-        bc::cout << format(BS_SERVER_STOPPING) % code << std::endl;
-        stopped = true;
-    }
-}
-
-// Class and method names must match protocol expectations (do not change).
-static void attach_subscription_api(receiver& worker, notifier& notifier)
-{
-    ATTACH(worker, address, renew, notifier);
-    ATTACH(worker, address, subscribe, notifier);
-}
-
-// Class and method names must match protocol expectations (do not change).
-static void attach_query_api(receiver& worker, server_node& server)
-{
-    ATTACH(worker, address, fetch_history2, server);
-    ATTACH(worker, blockchain, fetch_history, server);
-    ATTACH(worker, blockchain, fetch_transaction, server);
-    ATTACH(worker, blockchain, fetch_last_height, server);
-    ATTACH(worker, blockchain, fetch_block_header, server);
-    ATTACH(worker, blockchain, fetch_block_transaction_hashes, server);
-    ATTACH(worker, blockchain, fetch_transaction_index, server);
-    ATTACH(worker, blockchain, fetch_spend, server);
-    ATTACH(worker, blockchain, fetch_block_height, server);
-    ATTACH(worker, blockchain, fetch_stealth, server);
-    ATTACH(worker, protocol, broadcast_transaction, server);
-    ATTACH(worker, protocol, total_connections, server);
-    ATTACH(worker, transaction_pool, validate, server);
-    ATTACH(worker, transaction_pool, fetch_transaction, server);
-}
-
 // Run the server.
 static console_result run(const configuration& configuration,
     std::ostream& output, std::ostream& error)
 {
-    // Ensure the blockchain directory is initialized (at least exists).
-    const auto result = verify_chain(configuration.chain.database_path, error);
-    if (result != console_result::okay)
-        return result;
+    // TODO: make these members of new dispatch class.
+    // Keep server and services in scope until stop, but start after node start.
+    server_node server(configuration);
+    publisher publish(server);
+    receiver receive(server);
+    notifier notify(server);
 
+    // TODO: initialize on construct of new dispatch class.
     // These must be libbitcoin streams.
     bc::ofstream debug_file(configuration.network.debug_file.string(), append);
     bc::ofstream error_file(configuration.network.error_file.string(), append);
@@ -203,83 +167,21 @@ static console_result run(const configuration& configuration,
     log::warning(LOG_NODE) << startup;
     log::error(LOG_NODE) << startup;
     log::fatal(LOG_NODE) << startup;
+    log::info(LOG_SERVICE) << BS_SERVER_STARTING;
 
-    log::info(LOG_SERVICE)
-        << BS_SERVER_STARTING;
+    // Ensure the blockchain directory is initialized (at least exists).
+    const auto result = verify_chain(configuration.chain.database_path, error);
+    if (result != console_result::okay)
+        return result;
 
-    server_node server(configuration);
-    std::promise<code> start_promise;
-    const auto handle_start = [&start_promise](const code& ec)
-    {
-        start_promise.set_value(ec);
-    };
+    // The stop handlers are registered in start.
+    server.start(
+        std::bind(handle_started,
+            _1, std::ref(server), std::ref(publish), std::ref(receive),
+                std::ref(notify)));
 
-    server.start(handle_start);
-    auto ec = start_promise.get_future().get();
-
-    if (ec)
-    {
-        log::error(LOG_SERVICE)
-            << format(BS_SERVER_START_FAIL) % ec.message();
-        return console_result::not_started;
-    }
-
-    std::promise<code>run_promise;
-    const auto handle_run = [&run_promise](const code ec)
-    {
-        run_promise.set_value(ec);
-    };
-
-    // Start the long-running sessions.
-    server.run(handle_run);
-    ec = run_promise.get_future().get();
-
-    publisher publish(server, configuration.server);
-    if (configuration.server.publisher_enabled && !publish.start())
-    {
-        log::error(LOG_SERVICE)
-            << format(BS_PUBLISHER_START_FAIL) % zmq_strerror(zmq_errno());
-        return console_result::not_started;
-    }
-
-    receiver worker(configuration.server);
-    const auto subscribe = configuration.server.subscription_limit > 0;
-    if ((configuration.server.queries_enabled || subscribe) && !worker.start())
-    {
-        log::error(LOG_SERVICE) << BS_WORKER_START_FAIL;
-        return console_result::not_started;
-    }
-
-    if (configuration.server.queries_enabled)
-        attach_query_api(worker, server);
-
-    notifier notifier(server, configuration.server);
-    if (subscribe)
-        attach_subscription_api(worker, notifier);
-
-    log::info(LOG_SERVICE) << BS_SERVER_STARTED;
-
-    // Catch C signals for stopping the program.
-    interrupt_handler(0);
-
-    // Main loop.
-    while (!stopped)
-        worker.poll();
-
-    std::promise<code> stop_promise;
-    const auto handle_stop = [&stop_promise](const code& ec)
-    {
-        stop_promise.set_value(ec);
-    };
-
-    server.stop(handle_stop);
-    ec = stop_promise.get_future().get();
-
-    if (ec)
-        error << format(BS_SERVER_STOP_FAIL) % ec.message() << std::endl;
-
-    output << BS_SERVER_UNMAPPING << std::endl;
-    return ec ? console_result::failure : console_result::okay;
+    // Block until the node is stopped.
+    return wait_for_stop(server);
 }
 
 // Load argument, environment and config and then run the server.
@@ -313,6 +215,136 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
         return run(settings, output, error);
 
     return console_result::okay;
+}
+
+// Static handler for catching termination signals.
+static auto stopped = false;
+static void interrupt_handler(int code)
+{
+    signal(SIGINT, interrupt_handler);
+    signal(SIGTERM, interrupt_handler);
+    signal(SIGABRT, interrupt_handler);
+
+    if (code != 0 && !stopped)
+    {
+        bc::cout << format(BS_SERVER_STOPPING) % code << std::endl;
+        stopped = true;
+    }
+}
+
+// TODO: use server, publish, receive, notify as members.
+// This is called at the end of seeding.
+void handle_started(const code& ec, server_node& server, publisher& publish,
+    receiver& receive, notifier& notify)
+{
+    if (ec)
+    {
+        log::info(LOG_NODE) << format(BS_SERVER_START_FAIL) % ec.message();
+        stopped = true;
+        return;
+    }
+
+    // Start running the node (header and block sync for now).
+    server.run(
+        std::bind(handle_running,
+            _1, std::ref(server), std::ref(publish), std::ref(receive),
+                std::ref(notify)));
+}
+
+// TODO: use notifier and receive as members.
+// Class and method names must match protocol expectations (do not change).
+static void attach_subscription_api(receiver& receive, notifier& notifier)
+{
+    ATTACH(receive, address, renew, notifier);
+    ATTACH(receive, address, subscribe, notifier);
+}
+
+// TODO: user server and receive as members.
+// Class and method names must match protocol expectations (do not change).
+static void attach_query_api(receiver& receive, server_node& server)
+{
+    ATTACH(receive, address, fetch_history2, server);
+    ATTACH(receive, blockchain, fetch_history, server);
+    ATTACH(receive, blockchain, fetch_transaction, server);
+    ATTACH(receive, blockchain, fetch_last_height, server);
+    ATTACH(receive, blockchain, fetch_block_header, server);
+    ATTACH(receive, blockchain, fetch_block_transaction_hashes, server);
+    ATTACH(receive, blockchain, fetch_transaction_index, server);
+    ATTACH(receive, blockchain, fetch_spend, server);
+    ATTACH(receive, blockchain, fetch_block_height, server);
+    ATTACH(receive, blockchain, fetch_stealth, server);
+    ATTACH(receive, protocol, broadcast_transaction, server);
+    ATTACH(receive, protocol, total_connections, server);
+    ATTACH(receive, transaction_pool, validate, server);
+    ATTACH(receive, transaction_pool, fetch_transaction, server);
+}
+
+// TODO: use server as member.
+// This is called at the end of block sync, though execution continues after.
+void handle_running(const code& ec, server_node& server, publisher& publish,
+    receiver& receive, notifier& notify)
+{
+    if (ec)
+    {
+        log::info(LOG_NODE) << format(BS_SERVER_START_FAIL) % ec.message();
+        stopped = true;
+        return;
+    }
+
+    // The node is running now, waiting on stopped to be set to true.
+
+    // Start server services on top of the node, these log internally.
+    if (!publish.start() || receive.start())
+    {
+        stopped = true;
+        return;
+    }
+
+    if (server.settings().queries_enabled)
+        attach_query_api(receive, server);
+
+    if (server.settings().subscription_limit > 0)
+        attach_subscription_api(receive, notify);
+}
+
+// TODO: use server as member.
+console_result wait_for_stop(server_node& server)
+{
+    // Set up the stop handler.
+    std::promise<code> promise;
+    const auto stop_handler = [&promise](code ec) { promise.set_value(ec); };
+
+    // Monitor stopped for completion.
+    monitor_for_stop(server, stop_handler);
+
+    // Block until the stop handler is invoked.
+    const auto ec = promise.get_future().get();
+
+    if (ec)
+    {
+        log::info(LOG_NODE) << format(BS_SERVER_STOP_FAIL) % ec.message();
+        return console_result::failure;
+    }
+
+    log::info(LOG_NODE) << BS_SERVER_STOPPED;
+    return console_result::okay;
+}
+
+// TODO: use server as member.
+void monitor_for_stop(server_node& server, p2p::result_handler handler)
+{
+    using namespace std::chrono;
+    using namespace std::this_thread;
+    std::string command;
+
+    interrupt_handler(0);
+    log::info(LOG_NODE) << BS_SERVER_STARTED;
+
+    while (!stopped)
+        sleep_for(milliseconds(10));
+
+    log::info(LOG_NODE) << BS_SERVER_UNMAPPING;
+    server.stop(handler);
 }
 
 } // namespace server

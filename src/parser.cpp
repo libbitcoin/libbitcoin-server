@@ -90,6 +90,23 @@ arguments_metadata parser::load_arguments()
         .add(BS_CONFIG_VARIABLE, 1);
 }
 
+options_metadata parser::load_environment()
+{
+    options_metadata description("environment");
+    description.add_options()
+    (
+        // For some reason po requires this to be a lower case name.
+        // The case must match the other declarations for it to compose.
+        // This composes with the cmdline options and inits to system path.
+        BS_CONFIG_VARIABLE,
+        value<path>(&settings.file)->composing()
+            ->default_value(config_default_path()),
+        "The path to the configuration settings file."
+    );
+
+    return description;
+}
+
 options_metadata parser::load_settings()
 {
     options_metadata description("settings");
@@ -400,23 +417,6 @@ options_metadata parser::load_settings()
         value<config::authority::list>(&settings.server.whitelists)->
             multitoken()->default_value(server::settings::mainnet.whitelists),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
-    );
-
-    return description;
-}
-
-options_metadata parser::load_environment()
-{
-    options_metadata description("environment");
-    description.add_options()
-    (
-        // For some reason po requires this to be a lower case name.
-        // The case must match the other declarations for it to compose.
-        // This composes with the cmdline options and inits to system path.
-        BS_CONFIG_VARIABLE,
-        value<path>(&settings.file)->composing()
-            ->default_value(config_default_path()),
-        "The path to the configuration settings file."
     );
 
     return description;

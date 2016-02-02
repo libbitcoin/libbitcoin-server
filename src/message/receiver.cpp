@@ -27,12 +27,14 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/message/incoming.hpp>
 #include <bitcoin/server/message/outgoing.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 using std::placeholders::_1;
+using namespace bc::config;
 
 // TODO: should we be testing zmq_fail in each bind call?
 static constexpr int zmq_true = 1;
@@ -46,10 +48,10 @@ const auto now = []()
     return boost::posix_time::second_clock::universal_time();
 };
 
-receiver::receiver(const settings& settings)
+receiver::receiver(const server_node& node)
   : counter_(0),
     sender_(context_),
-    settings_(settings),
+    settings_(node.settings()),
     socket_(context_, ZMQ_ROUTER),
     wakeup_socket_(context_, ZMQ_PULL),
     heartbeat_socket_(context_, ZMQ_PUB),
@@ -62,6 +64,10 @@ receiver::receiver(const settings& settings)
 
 bool receiver::start()
 {
+    // The receiver is only enabled for query and notification.
+    if (!settings_.queries_enabled && settings_.subscription_limit == 0)
+        return true;
+
 #ifdef _MSC_VER
     if (settings_.log_requests)
         log::debug(LOG_SERVICE)
@@ -130,7 +136,7 @@ bool receiver::start()
     return true;
 }
 
-static std::string format_whitelist(const config::authority& authority)
+static std::string format_whitelist(const authority& authority)
 {
     auto formatted = authority.to_string();
     if (authority.port() == 0)
@@ -172,8 +178,7 @@ bool receiver::enable_crypto()
     return false;
 }
 
-void receiver::attach(const std::string& command,
-    command_handler handler)
+void receiver::attach(const std::string& command, command_handler handler)
 {
     handlers_[command] = handler;
 }

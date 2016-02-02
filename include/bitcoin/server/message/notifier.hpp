@@ -36,7 +36,7 @@ namespace server {
 class BCS_API notifier
 {
 public:
-    notifier(server_node& node, const settings& settings);
+    notifier(server_node& node);
 
     void subscribe(const incoming& request, send_handler handler);
     void renew(const incoming& request, send_handler handler);

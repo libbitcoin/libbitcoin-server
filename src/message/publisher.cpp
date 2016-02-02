@@ -19,6 +19,7 @@
  */
 #include <bitcoin/server/message/publisher.hpp>
 
+#include <cstdint>
 #include <string>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -29,13 +30,14 @@ namespace server {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
+using namespace bc::chain;
 
 static constexpr int zmq_fail = -1;
 static constexpr size_t header_size = 80;
 
-publisher::publisher(server_node& node, const settings& settings)
+publisher::publisher(server_node& node)
   : node_(node),
-    settings_(settings),
+    settings_(node.settings()),
     socket_tx_(context_, ZMQ_PUB),
     socket_block_(context_, ZMQ_PUB)
 {
@@ -43,15 +45,9 @@ publisher::publisher(server_node& node, const settings& settings)
 
 bool publisher::start()
 {
-    // These are not libbitcoin re/subscribers.
-    node_.subscribe_transactions(
-        std::bind(&publisher::send_tx,
-            this, _1));
-
-    node_.subscribe_blocks(
-        std::bind(&publisher::send_block,
-            this, _1, _2));
-
+    if (!settings_.publisher_enabled)
+        return true;
+    
     auto block_endpoint = settings_.block_publish_endpoint.to_string();
     if (!block_endpoint.empty())
     {
@@ -84,20 +80,29 @@ bool publisher::start()
             << settings_.transaction_publish_endpoint;
     }
 
+    // These are not libbitcoin re/subscribers.
+    node_.subscribe_transactions(
+        std::bind(&publisher::send_tx,
+            this, _1));
+
+    node_.subscribe_blocks(
+        std::bind(&publisher::send_block,
+            this, _1, _2));
+
     return true;
 }
 
-void publisher::send_tx(const chain::transaction& tx)
+void publisher::send_tx(const transaction& tx)
 {
     czmqpp::message message;
     message.append(tx.to_data());
 
     if (!message.send(socket_tx_))
         log::warning(LOG_SERVICE)
-        << "Problem publishing tx data.";
+            << "Problem publishing tx data.";
 }
 
-void publisher::send_block(uint32_t height, const chain::block::ptr block)
+void publisher::send_block(uint32_t height, const block::ptr block)
 {
     // Serialize the block height.
     const auto raw_height = to_chunk(to_little_endian(height));

@@ -31,6 +31,7 @@
 #include <bitcoin/server/message/incoming.hpp>
 #include <bitcoin/server/message/outgoing.hpp>
 #include <bitcoin/server/message/sender.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -41,7 +42,7 @@ class BCS_API receiver
 public:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
 
-    receiver(const settings& settings);
+    receiver(const server_node& node);
 
     bool start();
     void poll();
