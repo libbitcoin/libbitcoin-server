@@ -52,10 +52,6 @@ public:
 
     /// The populated configuration settings values.
     configuration settings;
-
-private:
-    static std::string system_config_directory();
-    static boost::filesystem::path default_config_path();
 };
 
 } // namespace server
