@@ -25,9 +25,6 @@
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming.hpp>
-#include <bitcoin/server/message/receiver.hpp>
-#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -41,9 +38,7 @@ public:
     typedef std::function<void (const chain::transaction&)>
         transaction_notify_callback;
 
-    static const configuration defaults;
-
-    server_node(const configuration& configuration=defaults);
+    server_node(const configuration& configuration=configuration::mainnet);
 
     virtual void start(result_handler handler);
     virtual void subscribe_blocks(block_notify_callback notify_block);

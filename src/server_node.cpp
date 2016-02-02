@@ -37,69 +37,6 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
-static const configuration default_configuration()
-{
-    configuration defaults;
-
-    defaults.network.threads = NETWORK_THREADS;
-    defaults.network.identifier = NETWORK_IDENTIFIER_MAINNET;
-    defaults.network.inbound_port = NETWORK_INBOUND_PORT_MAINNET;
-    defaults.network.connection_limit = NETWORK_CONNECTION_LIMIT;
-    defaults.network.outbound_connections = NETWORK_OUTBOUND_CONNECTIONS;
-    defaults.network.manual_retry_limit = NETWORK_MANUAL_RETRY_LIMIT;
-    defaults.network.connect_batch_size = NETWORK_CONNECT_BATCH_SIZE;
-    defaults.network.connect_timeout_seconds = NETWORK_CONNECT_TIMEOUT_SECONDS;
-    defaults.network.channel_handshake_seconds = NETWORK_CHANNEL_HANDSHAKE_SECONDS;
-    defaults.network.channel_poll_seconds = NETWORK_CHANNEL_POLL_SECONDS;
-    defaults.network.channel_heartbeat_minutes = NETWORK_CHANNEL_HEARTBEAT_MINUTES;
-    defaults.network.channel_inactivity_minutes = NETWORK_CHANNEL_INACTIVITY_MINUTES;
-    defaults.network.channel_expiration_minutes = NETWORK_CHANNEL_EXPIRATION_MINUTES;
-    defaults.network.channel_germination_seconds = NETWORK_CHANNEL_GERMINATION_SECONDS;
-    defaults.network.host_pool_capacity = NETWORK_HOST_POOL_CAPACITY;
-    defaults.network.relay_transactions = NETWORK_RELAY_TRANSACTIONS;
-    defaults.network.hosts_file = NETWORK_HOSTS_FILE;
-    defaults.network.debug_file = NETWORK_DEBUG_FILE;
-    defaults.network.error_file = NETWORK_ERROR_FILE;
-    defaults.network.self = NETWORK_SELF;
-    defaults.network.blacklists = NETWORK_BLACKLISTS;
-    defaults.network.seeds = NETWORK_SEEDS_MAINNET;
-
-    defaults.chain.threads = BLOCKCHAIN_THREADS;
-    defaults.chain.history_start_height = BLOCKCHAIN_HISTORY_START_HEIGHT;
-    defaults.chain.block_pool_capacity = BLOCKCHAIN_BLOCK_POOL_CAPACITY;
-    defaults.chain.transaction_pool_capacity = BLOCKCHAIN_TRANSACTION_POOL_CAPACITY;
-    defaults.chain.transaction_pool_consistency = BLOCKCHAIN_TRANSACTION_POOL_CONSISTENCY;
-    defaults.chain.use_testnet_rules = BLOCKCHAIN_TESTNET_RULES_MAINNET;
-    defaults.chain.database_path = BLOCKCHAIN_DATABASE_PATH;
-    defaults.chain.checkpoints = BLOCKCHAIN_CHECKPOINTS_MAINNET;
-
-    defaults.node.threads = NODE_THREADS;
-    defaults.node.quorum = NODE_QUORUM;
-    defaults.node.blocks_per_second = NODE_BLOCKS_PER_SECOND;
-    defaults.node.headers_per_second = NODE_HEADERS_PER_SECOND;
-    defaults.node.peers = NODE_PEERS;
-
-    defaults.server.threads = SERVER_THREADS;
-    defaults.server.heartbeat_interval_seconds = SERVER_HEARTBEAT_INTERVAL_SECONDS;
-    defaults.server.polling_interval_milliseconds = SERVER_POLLING_INTERVAL_MILLISECONDS;
-    defaults.server.subscription_expiration_minutes = SERVER_SUBSCRIPTION_EXPIRATION_MINUTES;
-    defaults.server.subscription_limit = SERVER_SUBSCRIPTION_LIMIT;
-    defaults.server.publisher_enabled = SERVER_PUBLISHER_ENABLED;
-    defaults.server.queries_enabled = SERVER_QUERIES_ENABLED;
-    defaults.server.log_requests = SERVER_LOG_REQUESTS;
-    defaults.server.query_endpoint = SERVER_QUERY_ENDPOINT;
-    defaults.server.heartbeat_endpoint = SERVER_HEARTBEAT_ENDPOINT;
-    defaults.server.block_publish_endpoint = SERVER_BLOCK_PUBLISH_ENDPOINT;
-    defaults.server.transaction_publish_endpoint = SERVER_TRANSACTION_PUBLISH_ENDPOINT;
-    defaults.server.certificate_file = SERVER_CERTIFICATE_FILE;
-    defaults.server.client_certificates_path = SERVER_CLIENT_CERTIFICATES_PATH;
-    defaults.server.whitelists = SERVER_WHITELISTS;
-
-    return defaults;
-};
-
-const configuration server_node::defaults = default_configuration();
-
 server_node::server_node(const configuration& configuration)
   : p2p_node(configuration),
     configuration_(configuration),

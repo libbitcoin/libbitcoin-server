@@ -20,8 +20,6 @@
 #ifndef LIBBITCOIN_SERVER_CONFIGURATION_HPP
 #define LIBBITCOIN_SERVER_CONFIGURATION_HPP
 
-#include <cstdint>
-#include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -44,35 +42,22 @@ namespace server {
 // This must match the case of the env var.
 #define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
 
+/// Full server node configuration, thread safe.
 class BCS_API configuration
   : public node::configuration
 {
 public:
-    configuration()
-    {
-    }
+    /// Default instances.
+    static const configuration mainnet;
+    static const configuration testnet;
 
-    configuration(
-        const server::settings& server_settings,
+    configuration();
+    configuration(const server::settings& server_settings,
         const node::settings& node_settings,
-        const blockchain::settings& chain_settings,
-        const network::settings& network_settings)
-      : node::configuration(node_settings, chain_settings, network_settings),
-        server(server_settings)
-    {
-    }
+        const bc::blockchain::settings& chain_settings,
+        const network::settings& network_settings);
 
-    // options
-    bool help;
-    bool mainnet;
-    bool settings;
-    bool testnet;
-    bool version;
-
-    // options + environment vars
-    boost::filesystem::path file;
-
-    // settings
+    /// Settings.
     server::settings server;
 };
 

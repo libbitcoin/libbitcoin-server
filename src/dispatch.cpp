@@ -351,9 +351,9 @@ console_result dispatch(int argc, const char* argv[], std::istream&,
         show_settings(metadata, output);
     else if (settings.version)
         show_version(output);
-    else if (settings.mainnet)
+    else if (settings.main_network)
         return init_chain(settings.chain.database_path, false, output, error);
-    else if (settings.testnet)
+    else if (settings.test_network)
         return init_chain(settings.chain.database_path, true, output, error);
     else
         return run(settings, output, error);

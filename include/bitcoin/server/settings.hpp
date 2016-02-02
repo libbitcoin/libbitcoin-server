@@ -28,25 +28,13 @@
 namespace libbitcoin {
 namespace server {
     
-/// default settings
-#define SERVER_THREADS                          2
-#define SERVER_HEARTBEAT_INTERVAL_SECONDS       5
-#define SERVER_POLLING_INTERVAL_MILLISECONDS    1
-#define SERVER_SUBSCRIPTION_EXPIRATION_MINUTES  10
-#define SERVER_SUBSCRIPTION_LIMIT               100000000
-#define SERVER_PUBLISHER_ENABLED                true
-#define SERVER_QUERIES_ENABLED                  true
-#define SERVER_LOG_REQUESTS                     false
-#define SERVER_QUERY_ENDPOINT                   config::endpoint{"tcp://*:9091"}
-#define SERVER_HEARTBEAT_ENDPOINT               config::endpoint{"tcp://*:9092"}
-#define SERVER_BLOCK_PUBLISH_ENDPOINT           config::endpoint{"tcp://*:9093"}
-#define SERVER_TRANSACTION_PUBLISH_ENDPOINT     config::endpoint{"tcp://*:9094"}
-#define SERVER_CERTIFICATE_FILE                 boost::filesystem::path()
-#define SERVER_CLIENT_CERTIFICATES_PATH         boost::filesystem::path()
-#define SERVER_WHITELISTS                       config::authority::list()
-
+/// Common server configuration settings, thread safe.
 struct BCS_API settings
 {
+    /// Default instances.
+    static const settings mainnet;
+    static const settings testnet;
+
     uint32_t threads;
     uint32_t heartbeat_interval_seconds;
     uint32_t polling_interval_milliseconds;
@@ -63,20 +51,10 @@ struct BCS_API settings
     boost::filesystem::path client_certificates_path;
     config::authority::list whitelists;
 
-    asio::duration polling_interval() const
-    {
-        return asio::milliseconds(polling_interval_milliseconds);
-    }
-
-    asio::duration heartbeat_interval() const
-    {
-        return asio::seconds(polling_interval_milliseconds);
-    }
-
-    asio::duration subscription_expiration() const
-    {
-        return asio::minutes(subscription_expiration_minutes);
-    }
+    /// Helpers.
+    asio::duration polling_interval() const;
+    asio::duration heartbeat_interval() const;
+    asio::duration subscription_expiration() const;
 };
 
 } // namespace server

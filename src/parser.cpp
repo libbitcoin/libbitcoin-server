@@ -51,27 +51,32 @@ options_metadata parser::load_options()
     )
     (
         BS_HELP_VARIABLE ",h",
-        value<bool>(&settings.help)->default_value(false)->zero_tokens(),
+        value<bool>(&settings.help)->
+            default_value(false)->zero_tokens(),
         "Get list of options for this command."
     )
     (
         "mainnet,m",
-        value<bool>(&settings.mainnet)->default_value(false)->zero_tokens(),
+        value<bool>(&settings.main_network)->
+            default_value(false)->zero_tokens(),
         "Initialize mainnet in the configured directory."
     )
     (
         BS_SETTINGS_VARIABLE ",s",
-        value<bool>(&settings.settings)->default_value(false)->zero_tokens(),
+        value<bool>(&settings.settings)->
+            default_value(false)->zero_tokens(),
         "Display the loaded configuration settings."
     )
     (
         "testnet,t",
-        value<bool>(&settings.testnet)->default_value(false)->zero_tokens(),
+        value<bool>(&settings.test_network)->
+            default_value(false)->zero_tokens(),
         "Initialize testnet in the configured directory."
     )
     (
         BS_VERSION_VARIABLE ",v",
-        value<bool>(&settings.version)->default_value(false)->zero_tokens(),
+        value<bool>(&settings.version)->
+            default_value(false)->zero_tokens(),
         "Get version information."
     );
 
@@ -93,133 +98,133 @@ options_metadata parser::load_settings()
     (
         "network.threads",
         value<uint32_t>(&settings.network.threads)->
-            default_value(p2p::mainnet.threads),
+            default_value(network::settings::mainnet.threads),
         "The number of threads in the network threadpool, defaults to 4."
     )
     (
         "network.identifier",
         value<uint32_t>(&settings.network.identifier)->
-        default_value(p2p::mainnet.identifier),
+            default_value(network::settings::mainnet.identifier),
         "The magic number for message headers, defaults to 3652501241."
     )
     (
         "network.inbound_port",
         value<uint16_t>(&settings.network.inbound_port)->
-            default_value(p2p::mainnet.inbound_port),
+            default_value(network::settings::mainnet.inbound_port),
         "The port for incoming connections, defaults to 8333."
     )
     (
         "network.connection_limit",
         value<uint32_t>(&settings.network.connection_limit)->
-        default_value(p2p::mainnet.connection_limit),
+            default_value(network::settings::mainnet.connection_limit),
         "The target number of total network connections, defaults to 16."
     )
     (
         "network.outbound_connections",
         value<uint32_t>(&settings.network.outbound_connections)->
-            default_value(p2p::mainnet.outbound_connections),
+            default_value(network::settings::mainnet.outbound_connections),
         "The target number of outgoing network connections, defaults to 8."
     )
     (
         "network.manual_retry_limit",
         value<uint32_t>(&settings.network.manual_retry_limit)->
-            default_value(p2p::mainnet.manual_retry_limit),
+            default_value(network::settings::mainnet.manual_retry_limit),
         "The retry limit for manual connection establishment, defaults to 0 (forever)."
     )
     (
         "network.connect_batch_size",
         value<uint32_t>(&settings.network.connect_batch_size)->
-            default_value(p2p::mainnet.connect_batch_size),
+            default_value(network::settings::mainnet.connect_batch_size),
         "The number of concurrent attempts to estalish one connection, defaults to 5."
     )
     (
         "network.connect_timeout_seconds",
         value<uint32_t>(&settings.network.connect_timeout_seconds)->
-            default_value(p2p::mainnet.connect_timeout_seconds),
+            default_value(network::settings::mainnet.connect_timeout_seconds),
         "The time limit for connection establishment, defaults to 5."
     )
     (
         "network.channel_handshake_seconds",
         value<uint32_t>(&settings.network.channel_handshake_seconds)->
-            default_value(p2p::mainnet.channel_handshake_seconds),
+            default_value(network::settings::mainnet.channel_handshake_seconds),
         "The time limit to complete the connection handshake, defaults to 30."
     )
     (
         "network.channel_poll_seconds",
         value<uint32_t>(&settings.network.channel_poll_seconds)->
-            default_value(p2p::mainnet.channel_poll_seconds),
+            default_value(network::settings::mainnet.channel_poll_seconds),
         "The polling interval for initial block download, defaults to 1."
     )
     (
         "network.channel_heartbeat_minutes",
         value<uint32_t>(&settings.network.channel_heartbeat_minutes)->
-            default_value(p2p::mainnet.channel_heartbeat_minutes),
+            default_value(network::settings::mainnet.channel_heartbeat_minutes),
         "The time between ping messages, defaults to 5."
     )
     (
         "network.channel_inactivity_minutes",
         value<uint32_t>(&settings.network.channel_inactivity_minutes)->
-            default_value(p2p::mainnet.channel_inactivity_minutes),
+            default_value(network::settings::mainnet.channel_inactivity_minutes),
         "The inactivity time limit for any connection, defaults to 30."
     )
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&settings.network.channel_expiration_minutes)->
-            default_value(p2p::mainnet.channel_expiration_minutes),
+            default_value(network::settings::mainnet.channel_expiration_minutes),
         "The maximum age limit for an outbound connection, defaults to 90."
     )
     (
         "network.channel_germination_seconds",
         value<uint32_t>(&settings.network.channel_germination_seconds)->
-            default_value(p2p::mainnet.channel_germination_seconds),
+            default_value(network::settings::mainnet.channel_germination_seconds),
         "The maximum time limit for obtaining seed addresses, defaults to 30."
     )
     (
         "network.host_pool_capacity",
         value<uint32_t>(&settings.network.host_pool_capacity)->
-            default_value(p2p::mainnet.host_pool_capacity),
+            default_value(network::settings::mainnet.host_pool_capacity),
         "The maximum number of peer hosts in the pool, defaults to 1000."
     )
     (
         "network.relay_transactions",
         value<bool>(&settings.network.relay_transactions)->
-            default_value(p2p::mainnet.relay_transactions),
+            default_value(network::settings::mainnet.relay_transactions),
         "Request that peers relay transactions, defaults to true."
     )
     (
         "network.hosts_file",
         value<path>(&settings.network.hosts_file)->
-            default_value(p2p::mainnet.hosts_file),
+            default_value(network::settings::mainnet.hosts_file),
         "The peer hosts cache file path, defaults to 'hosts.cache'."
     )
     (
         "network.debug_file",
         value<path>(&settings.network.debug_file)->
-            default_value(p2p::mainnet.debug_file),
+            default_value(network::settings::mainnet.debug_file),
         "The debug log file path, defaults to 'debug.log'."
     )
     (
         "network.error_file",
         value<path>(&settings.network.error_file)->
-            default_value(p2p::mainnet.error_file),
+            default_value(network::settings::mainnet.error_file),
         "The error log file path, defaults to 'error.log'."
     )
     (
         "network.self",
         value<config::authority>(&settings.network.self)->
-            multitoken()->default_value(p2p::mainnet.self),
+            multitoken()->default_value(network::settings::mainnet.self),
         "The advertised public address of this node, defaults to none."
     )
     (
         "network.blacklist",
         value<config::authority::list>(&settings.network.blacklists)->
-            multitoken()->default_value(p2p::mainnet.blacklists),
+            multitoken()->default_value(network::settings::mainnet.blacklists),
         "IP address to disallow as a peer, multiple entries allowed."
     )
     (
         "network.seed",
         value<config::endpoint::list>(&settings.network.seeds)->
-            multitoken()->default_value(p2p::mainnet.seeds),
+            multitoken()->default_value(network::settings::mainnet.seeds),
         "A seed node for initializing the host pool, multiple entries allowed."
     )
 
@@ -227,49 +232,49 @@ options_metadata parser::load_settings()
     (
         "blockchain.threads",
         value<uint32_t>(&settings.chain.threads)->
-            default_value(BLOCKCHAIN_THREADS),
+            default_value(blockchain::settings::mainnet.threads),
         "The number of threads in the blockchain threadpool, defaults to 6."
     )
     (
         "blockchain.history_start_height",
         value<uint32_t>(&settings.chain.history_start_height)->
-            default_value(BLOCKCHAIN_HISTORY_START_HEIGHT),
+            default_value(blockchain::settings::mainnet.history_start_height),
         "The history index start height, defaults to 0."
     )
     (
         "blockchain.block_pool_capacity",
         value<uint32_t>(&settings.chain.block_pool_capacity)->
-            default_value(BLOCKCHAIN_BLOCK_POOL_CAPACITY),
+            default_value(blockchain::settings::mainnet.block_pool_capacity),
         "The maximum number of orphan blocks in the pool, defaults to 50."
     )
     (
         "blockchain.transaction_pool_capacity",
         value<uint32_t>(&settings.chain.transaction_pool_capacity)->
-            default_value(BLOCKCHAIN_TRANSACTION_POOL_CAPACITY),
+            default_value(blockchain::settings::mainnet.transaction_pool_capacity),
         "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
         "blockchain.transaction_pool_consistency",
         value<bool>(&settings.chain.transaction_pool_consistency)->
-            default_value(BLOCKCHAIN_TRANSACTION_POOL_CONSISTENCY),
+            default_value(blockchain::settings::mainnet.transaction_pool_consistency),
         "Enforce consistency between the pool and the blockchain, defaults to false."
     )
     (
         "blockchain.use_testnet_rules",
         value<bool>(&settings.chain.use_testnet_rules)->
-            default_value(BLOCKCHAIN_TESTNET_RULES_MAINNET),
+            default_value(blockchain::settings::mainnet.use_testnet_rules),
         "Use testnet rules for determination of work required, defaults to false."
     )
     (
         "blockchain.database_path",
         value<path>(&settings.chain.database_path)->
-            default_value(BLOCKCHAIN_DATABASE_PATH),
+            default_value(blockchain::settings::mainnet.database_path),
         "The blockchain database directory, defaults to 'blockchain'."
     )
     (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&settings.chain.checkpoints)->
-            multitoken()->default_value(BLOCKCHAIN_CHECKPOINTS_MAINNET),
+            multitoken()->default_value(blockchain::settings::mainnet.checkpoints),
         "A hash:height checkpoint, multiple entries allowed."
     )
 
@@ -277,123 +282,123 @@ options_metadata parser::load_settings()
     (
         "node.threads",
         value<uint32_t>(&settings.node.threads)->
-            default_value(NODE_THREADS),
+            default_value(node::settings::mainnet.threads),
         "The number of threads in the node threadpool, defaults to 4."
     )
     (
         "node.quorum",
         value<uint32_t>(&settings.node.quorum)->
-            default_value(NODE_QUORUM),
+            default_value(node::settings::mainnet.quorum),
         "The number of peers to survey during sync, defaults to 8."
     )
     (
         "node.blocks_per_second",
         value<uint32_t>(&settings.node.blocks_per_second)->
-            default_value(NODE_BLOCKS_PER_SECOND),
+            default_value(node::settings::mainnet.blocks_per_second),
         "The minimum block rate required from a peer during block sync, defaults to 16."
     )
     (
         "node.headers_per_second",
         value<uint32_t>(&settings.node.headers_per_second)->
-            default_value(NODE_HEADERS_PER_SECOND),
+            default_value(node::settings::mainnet.headers_per_second),
         "The minimum header rate required from a peer during header sync, defaults to 10000."
     )
     (
         "node.peer",
         value<config::endpoint::list>(&settings.node.peers)->
-            multitoken()->default_value(NODE_PEERS),
+            multitoken()->default_value(node::settings::mainnet.peers),
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
 
     /* [server] */
     (
         "server.threads",
-        value<uint32_t>(&settings.network.threads)->
-            default_value(SERVER_THREADS),
+        value<uint32_t>(&settings.server.threads)->
+            default_value(server::settings::mainnet.threads),
         "The number of threads in the server threadpool, defaults to 2."
     )
     (
         "server.heartbeat_interval_seconds",
         value<uint32_t>(&settings.server.heartbeat_interval_seconds)->
-            default_value(SERVER_HEARTBEAT_INTERVAL_SECONDS),
+            default_value(server::settings::mainnet.heartbeat_interval_seconds),
         "The heartbeat interval, defaults to 5."
     )
     (
         "server.polling_interval_milliseconds",
         value<uint32_t>(&settings.server.polling_interval_milliseconds)->
-            default_value(SERVER_POLLING_INTERVAL_MILLISECONDS),
+            default_value(server::settings::mainnet.polling_interval_milliseconds),
         "The query polling interval, defaults to 1."
     )
     (
         "server.subscription_expiration_minutes",
         value<uint32_t>(&settings.server.subscription_expiration_minutes)->
-            default_value(SERVER_SUBSCRIPTION_EXPIRATION_MINUTES),
+            default_value(server::settings::mainnet.subscription_expiration_minutes),
         "The subscription expiration time, defaults to 10."
     )
     (
         "server.subscription_limit",
         value<uint32_t>(&settings.server.subscription_limit)->
-            default_value(SERVER_SUBSCRIPTION_LIMIT),
+            default_value(server::settings::mainnet.subscription_limit),
         "The maximum number of subscriptions, defaults to 100000000."
     )
     (
         "server.publisher_enabled",
         value<bool>(&settings.server.publisher_enabled)->
-            default_value(SERVER_PUBLISHER_ENABLED),
+            default_value(server::settings::mainnet.publisher_enabled),
         "Enable the block and transaction publishing endpoints, defaults to true."
     )
     (
         "server.queries_enabled",
         value<bool>(&settings.server.queries_enabled)->
-            default_value(SERVER_QUERIES_ENABLED),
+            default_value(server::settings::mainnet.queries_enabled),
         "Enable the query and heartbeat endpoints, defaults to true."
     )
     (
         "server.log_requests",
         value<bool>(&settings.server.log_requests)->
-            default_value(SERVER_LOG_REQUESTS),
+            default_value(server::settings::mainnet.log_requests),
         "Write service requests to the log, defaults to false."
     )
     (
         "server.query_endpoint",
         value<endpoint>(&settings.server.query_endpoint)->
-            default_value(SERVER_QUERY_ENDPOINT),
+            default_value(server::settings::mainnet.query_endpoint),
         "The query service endpoint, defaults to 'tcp://*:9091'."
     )
     (
         "server.heartbeat_endpoint",
         value<endpoint>(&settings.server.heartbeat_endpoint)->
-            default_value(SERVER_HEARTBEAT_ENDPOINT),
+            default_value(server::settings::mainnet.heartbeat_endpoint),
         "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
     )
     (
         "server.block_publish_endpoint",
         value<endpoint>(&settings.server.block_publish_endpoint)->
-            default_value(SERVER_BLOCK_PUBLISH_ENDPOINT),
+            default_value(server::settings::mainnet.block_publish_endpoint),
         "The block publishing service endpoint, defaults to 'tcp://*:9093'."
     )
     (
         "server.transaction_publish_endpoint",
         value<endpoint>(&settings.server.transaction_publish_endpoint)->
-            default_value(SERVER_TRANSACTION_PUBLISH_ENDPOINT),
+            default_value(server::settings::mainnet.transaction_publish_endpoint),
         "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
         "server.certificate_file",
         value<path>(&settings.server.certificate_file)->
-            default_value(SERVER_CERTIFICATE_FILE),
+            default_value(server::settings::mainnet.certificate_file),
         "The path to the ZPL-encoded server private certificate file."
     )
     (
         "server.client_certificates_path",
         value<path>(&settings.server.client_certificates_path)->
-            default_value(SERVER_CLIENT_CERTIFICATES_PATH),
+            default_value(server::settings::mainnet.client_certificates_path),
         "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
     )
     (
         "server.whitelist",
         value<config::authority::list>(&settings.server.whitelists)->
-            multitoken()->default_value(SERVER_WHITELISTS),
+            multitoken()->default_value(server::settings::mainnet.whitelists),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     );
 
