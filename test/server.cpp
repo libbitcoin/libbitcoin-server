@@ -26,6 +26,7 @@ using namespace bc::blockchain;
 using namespace bc::network;
 using namespace bc::node;
 using namespace bc::server;
+using namespace boost;
 
 struct low_thread_priority_fixture
 {
@@ -40,22 +41,26 @@ struct low_thread_priority_fixture
     }
 };
 
-static void uninitchain(const char prefix[])
+static void uninitchain(filesystem::path& path)
 {
-    boost::filesystem::remove_all(prefix);
+    boost::filesystem::remove_all(path);
 }
 
-static void initchain(const char prefix[])
+static void initchain(filesystem::path& path)
 {
-    uninitchain(prefix);
-    boost::filesystem::create_directories(prefix);
-    database::initialize(prefix, mainnet_genesis_block());
+    uninitchain(path);
+    boost::filesystem::create_directories(path);
+    database::initialize(path, mainnet_genesis_block());
 }
 
 BOOST_FIXTURE_TEST_SUITE(server_tests, low_thread_priority_fixture)
 
+// Just a basic test to get some coverage output.
 BOOST_AUTO_TEST_CASE(server_test)
 {
+    threadpool threads;
+    threads.shutdown();
+    threads.join();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
