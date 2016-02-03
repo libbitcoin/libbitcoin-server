@@ -31,9 +31,8 @@ namespace server {
 /// Common server configuration settings, thread safe.
 struct BCS_API settings
 {
-    /// Default instances.
-    static const settings mainnet;
-    static const settings testnet;
+    /// Default instance.
+    static const settings defaults;
 
     uint32_t threads;
     uint32_t heartbeat_interval_seconds;

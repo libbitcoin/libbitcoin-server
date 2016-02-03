@@ -26,13 +26,13 @@ namespace server {
 
 static const configuration mainnet_defaults()
 {
-    return configuration(server::settings::mainnet, node::settings::mainnet,
+    return configuration(server::settings::defaults, node::settings::defaults,
         blockchain::settings::mainnet, network::settings::mainnet);
 };
 
 static const configuration testnet_defaults()
 {
-    return configuration(server::settings::testnet, node::settings::testnet,
+    return configuration(server::settings::defaults, node::settings::defaults,
         blockchain::settings::testnet, network::settings::testnet);
 };
 

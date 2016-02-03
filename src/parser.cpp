@@ -299,31 +299,31 @@ options_metadata parser::load_settings()
     (
         "node.threads",
         value<uint32_t>(&settings.node.threads)->
-            default_value(node::settings::mainnet.threads),
+            default_value(node::settings::defaults.threads),
         "The number of threads in the node threadpool, defaults to 4."
     )
     (
         "node.quorum",
         value<uint32_t>(&settings.node.quorum)->
-            default_value(node::settings::mainnet.quorum),
+            default_value(node::settings::defaults.quorum),
         "The number of peers to survey during sync, defaults to 8."
     )
     (
         "node.blocks_per_second",
         value<uint32_t>(&settings.node.blocks_per_second)->
-            default_value(node::settings::mainnet.blocks_per_second),
+            default_value(node::settings::defaults.blocks_per_second),
         "The minimum block rate required from a peer during block sync, defaults to 16."
     )
     (
         "node.headers_per_second",
         value<uint32_t>(&settings.node.headers_per_second)->
-            default_value(node::settings::mainnet.headers_per_second),
+            default_value(node::settings::defaults.headers_per_second),
         "The minimum header rate required from a peer during header sync, defaults to 10000."
     )
     (
         "node.peer",
         value<config::endpoint::list>(&settings.node.peers)->
-            multitoken()->default_value(node::settings::mainnet.peers),
+            multitoken()->default_value(node::settings::defaults.peers),
         "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
 
@@ -331,91 +331,91 @@ options_metadata parser::load_settings()
     (
         "server.threads",
         value<uint32_t>(&settings.server.threads)->
-            default_value(server::settings::mainnet.threads),
+            default_value(server::settings::defaults.threads),
         "The number of threads in the server threadpool, defaults to 2."
     )
     (
         "server.heartbeat_interval_seconds",
         value<uint32_t>(&settings.server.heartbeat_interval_seconds)->
-            default_value(server::settings::mainnet.heartbeat_interval_seconds),
+            default_value(server::settings::defaults.heartbeat_interval_seconds),
         "The heartbeat interval, defaults to 5."
     )
     (
         "server.polling_interval_milliseconds",
         value<uint32_t>(&settings.server.polling_interval_milliseconds)->
-            default_value(server::settings::mainnet.polling_interval_milliseconds),
+            default_value(server::settings::defaults.polling_interval_milliseconds),
         "The query polling interval, defaults to 1."
     )
     (
         "server.subscription_expiration_minutes",
         value<uint32_t>(&settings.server.subscription_expiration_minutes)->
-            default_value(server::settings::mainnet.subscription_expiration_minutes),
+            default_value(server::settings::defaults.subscription_expiration_minutes),
         "The subscription expiration time, defaults to 10."
     )
     (
         "server.subscription_limit",
         value<uint32_t>(&settings.server.subscription_limit)->
-            default_value(server::settings::mainnet.subscription_limit),
+            default_value(server::settings::defaults.subscription_limit),
         "The maximum number of subscriptions, defaults to 100000000."
     )
     (
         "server.publisher_enabled",
         value<bool>(&settings.server.publisher_enabled)->
-            default_value(server::settings::mainnet.publisher_enabled),
+            default_value(server::settings::defaults.publisher_enabled),
         "Enable the block and transaction publishing endpoints, defaults to true."
     )
     (
         "server.queries_enabled",
         value<bool>(&settings.server.queries_enabled)->
-            default_value(server::settings::mainnet.queries_enabled),
+            default_value(server::settings::defaults.queries_enabled),
         "Enable the query and heartbeat endpoints, defaults to true."
     )
     (
         "server.log_requests",
         value<bool>(&settings.server.log_requests)->
-            default_value(server::settings::mainnet.log_requests),
+            default_value(server::settings::defaults.log_requests),
         "Write service requests to the log, defaults to false."
     )
     (
         "server.query_endpoint",
         value<endpoint>(&settings.server.query_endpoint)->
-            default_value(server::settings::mainnet.query_endpoint),
+            default_value(server::settings::defaults.query_endpoint),
         "The query service endpoint, defaults to 'tcp://*:9091'."
     )
     (
         "server.heartbeat_endpoint",
         value<endpoint>(&settings.server.heartbeat_endpoint)->
-            default_value(server::settings::mainnet.heartbeat_endpoint),
+            default_value(server::settings::defaults.heartbeat_endpoint),
         "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
     )
     (
         "server.block_publish_endpoint",
         value<endpoint>(&settings.server.block_publish_endpoint)->
-            default_value(server::settings::mainnet.block_publish_endpoint),
+            default_value(server::settings::defaults.block_publish_endpoint),
         "The block publishing service endpoint, defaults to 'tcp://*:9093'."
     )
     (
         "server.transaction_publish_endpoint",
         value<endpoint>(&settings.server.transaction_publish_endpoint)->
-            default_value(server::settings::mainnet.transaction_publish_endpoint),
+            default_value(server::settings::defaults.transaction_publish_endpoint),
         "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
         "server.certificate_file",
         value<path>(&settings.server.certificate_file)->
-            default_value(server::settings::mainnet.certificate_file),
+            default_value(server::settings::defaults.certificate_file),
         "The path to the ZPL-encoded server private certificate file."
     )
     (
         "server.client_certificates_path",
         value<path>(&settings.server.client_certificates_path)->
-            default_value(server::settings::mainnet.client_certificates_path),
+            default_value(server::settings::defaults.client_certificates_path),
         "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
     )
     (
         "server.whitelist",
         value<config::authority::list>(&settings.server.whitelists)->
-            multitoken()->default_value(server::settings::mainnet.whitelists),
+            multitoken()->default_value(server::settings::defaults.whitelists),
         "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
     );
 

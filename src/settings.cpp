@@ -26,7 +26,7 @@ namespace server {
 
 using namespace asio;
 
-static const settings mainnet_defaults()
+static const settings setting_defaults()
 {
     settings value;
     value.threads = 2;
@@ -47,13 +47,7 @@ static const settings mainnet_defaults()
     return value;
 };
 
-static const settings testnet_defaults()
-{
-    return mainnet_defaults();
-};
-
-const settings settings::mainnet = mainnet_defaults();
-const settings settings::testnet = testnet_defaults();
+const settings settings::defaults = setting_defaults();
 
 duration settings::polling_interval() const
 {
