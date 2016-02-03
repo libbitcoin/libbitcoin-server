@@ -175,6 +175,7 @@ static console_result run(const configuration& configuration,
     log::fatal(LOG_NODE) << startup;
     log::info(LOG_SERVICE) << BS_SERVER_STARTING;
 
+    // BUGBUG: race between this sequence and <CTRL-C>.
     // The stop handlers are registered in start.
     server.start(
         std::bind(handle_started,
@@ -295,7 +296,7 @@ void handle_running(const code& ec, server_node& server, publisher& publish,
     // The node is running now, waiting on stopped to be set to true.
 
     // Start server services on top of the node, these log internally.
-    if (!publish.start() || receive.start())
+    if (!publish.start() || !receive.start() || !notify.start())
     {
         stopped = true;
         return;
