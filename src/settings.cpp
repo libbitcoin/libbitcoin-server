@@ -24,7 +24,7 @@
 namespace libbitcoin {
 namespace server {
 
-using namespace config;
+using namespace asio;
 
 static const settings mainnet_defaults()
 {
@@ -41,8 +41,8 @@ static const settings mainnet_defaults()
     value.heartbeat_endpoint = { "tcp://*:9092" };
     value.block_publish_endpoint = { "tcp://*:9093" };
     value.transaction_publish_endpoint = { "tcp://*:9094" };
-    value.certificate_file = {};
-    value.client_certificates_path = {};
+    value.certificate_file = { "" };
+    value.client_certificates_path = { "" };
     value.whitelists = {};
     return value;
 };
@@ -55,19 +55,19 @@ static const settings testnet_defaults()
 const settings settings::mainnet = mainnet_defaults();
 const settings settings::testnet = testnet_defaults();
 
-asio::duration settings::polling_interval() const
+duration settings::polling_interval() const
 {
-    return asio::milliseconds(polling_interval_milliseconds);
+    return milliseconds(polling_interval_milliseconds);
 }
 
-asio::duration settings::heartbeat_interval() const
+duration settings::heartbeat_interval() const
 {
-    return asio::seconds(polling_interval_milliseconds);
+    return seconds(polling_interval_milliseconds);
 }
 
-asio::duration settings::subscription_expiration() const
+duration settings::subscription_expiration() const
 {
-    return asio::minutes(subscription_expiration_minutes);
+    return minutes(subscription_expiration_minutes);
 }
 
 } // namespace server
