@@ -40,7 +40,7 @@ public:
 
     server_node(const configuration& configuration=configuration::mainnet);
 
-    virtual const settings& settings() const;
+    virtual const settings& configuration_settings() const;
     virtual void start(result_handler handler);
     virtual void subscribe_blocks(block_notify_callback notify_block);
     virtual void subscribe_transactions(transaction_notify_callback notify_tx);

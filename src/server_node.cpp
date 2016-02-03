@@ -47,7 +47,7 @@ server_node::server_node(const configuration& configuration)
 // Properties.
 // ----------------------------------------------------------------------------
 
-const settings& server_node::settings() const
+const settings& server_node::configuration_settings() const
 {
     return configuration_.server;
 }

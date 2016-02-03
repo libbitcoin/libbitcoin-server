@@ -39,9 +39,9 @@ const auto now = []()
 };
 
 notifier::notifier(server_node& node)
-  : pool_(node.settings().threads),
+  : pool_(node.configuration_settings().threads),
     dispatch_(pool_, NAME),
-    settings_(node.settings())
+    settings_(node.configuration_settings())
 {
     const auto receive_block = [this](uint32_t height, const block::ptr block)
     {

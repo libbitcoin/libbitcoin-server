@@ -300,10 +300,10 @@ void handle_running(const code& ec, server_node& server, publisher& publish,
         return;
     }
 
-    if (server.settings().queries_enabled)
+    if (server.configuration_settings().queries_enabled)
         attach_query_api(receive, server);
 
-    if (server.settings().subscription_limit > 0)
+    if (server.configuration_settings().subscription_limit > 0)
         attach_subscription_api(receive, notify);
 }
 

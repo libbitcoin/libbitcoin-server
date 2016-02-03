@@ -51,7 +51,7 @@ const auto now = []()
 receiver::receiver(const server_node& node)
   : counter_(0),
     sender_(context_),
-    settings_(node.settings()),
+    settings_(node.configuration_settings()),
     socket_(context_, ZMQ_ROUTER),
     wakeup_socket_(context_, ZMQ_PULL),
     heartbeat_socket_(context_, ZMQ_PUB),
