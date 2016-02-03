@@ -62,7 +62,7 @@ duration settings::polling_interval() const
 
 duration settings::heartbeat_interval() const
 {
-    return seconds(polling_interval_milliseconds);
+    return seconds(heartbeat_interval_seconds);
 }
 
 duration settings::subscription_expiration() const
