@@ -148,6 +148,12 @@ static console_result verify_chain(const path& directory, std::ostream& error)
 static console_result run(const configuration& configuration,
     std::ostream& output, std::ostream& error)
 {
+    // This must be verified before node/blockchain construct.
+    // Ensure the blockchain directory is initialized (at least exists).
+    const auto result = verify_chain(configuration.chain.database_path, error);
+    if (result != console_result::okay)
+        return result;
+
     // TODO: make these members of new dispatch class.
     // Keep server and services in scope until stop, but start after node start.
     server_node server(configuration);
@@ -168,11 +174,6 @@ static console_result run(const configuration& configuration,
     log::error(LOG_NODE) << startup;
     log::fatal(LOG_NODE) << startup;
     log::info(LOG_SERVICE) << BS_SERVER_STARTING;
-
-    // Ensure the blockchain directory is initialized (at least exists).
-    const auto result = verify_chain(configuration.chain.database_path, error);
-    if (result != console_result::okay)
-        return result;
 
     // The stop handlers are registered in start.
     server.start(
