@@ -37,6 +37,11 @@ class BCS_API notifier
 {
 public:
     notifier(server_node& node);
+    ~notifier();
+
+    bool start();
+    void stop();
+    void close();
 
     void subscribe(const incoming& request, send_handler handler);
     void renew(const incoming& request, send_handler handler);
@@ -97,7 +102,7 @@ private:
     code add(const incoming& request, send_handler handler);
     void sweep();
 
-    threadpool pool_;
+    threadpool threadpool_;
     dispatcher dispatch_;
     list subscriptions_;
     const settings& settings_;

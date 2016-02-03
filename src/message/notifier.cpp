@@ -39,8 +39,8 @@ const auto now = []()
 };
 
 notifier::notifier(server_node& node)
-  : pool_(node.configuration_settings().threads),
-    dispatch_(pool_, NAME),
+  : threadpool_(node.configuration_settings().threads),
+    dispatch_(threadpool_, NAME),
     settings_(node.configuration_settings())
 {
     const auto receive_block = [this](uint32_t height, const block::ptr block)
@@ -62,6 +62,24 @@ notifier::notifier(server_node& node)
     node.subscribe_transactions(receive_tx);
 }
 
+// ----------------------------------------------------------------------------
+// Start sequence.
+
+bool notifier::start()
+{
+    if (settings_.subscription_limit > 0)
+    {
+        threadpool_.join();
+        threadpool_.spawn(settings_.threads, thread_priority::low);
+    }
+
+    // This is the end of the start sequence.
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+// Subscribe sequence.
+
 void notifier::subscribe(const incoming& request, send_handler handler)
 {
     dispatch_.ordered(
@@ -78,8 +96,13 @@ void notifier::do_subscribe(const incoming& request, send_handler handler)
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
     outgoing response(request, result);
+
+    // This is the end of the subscribe sequence.
     handler(response);
 }
+
+// ----------------------------------------------------------------------------
+// Renew sequence.
 
 void notifier::renew(const incoming& request, send_handler handler)
 {
@@ -126,8 +149,13 @@ void notifier::do_renew(const incoming& request, send_handler handler)
     auto serial = make_serializer(result.begin());
     serial.write_error_code(error::success);
     outgoing response(request, result);
+
+    // This is the end of the renew sequence.
     handler(response);
 }
+
+// ----------------------------------------------------------------------------
+// Scan sequence.
 
 void notifier::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
@@ -159,6 +187,7 @@ void notifier::do_scan(uint32_t height, const hash_digest& block_hash,
             post_stealth_updates(prefix, height, block_hash, tx);
     }
 
+    // This is the end of the scan sequence.
     // Periodicially sweep old expired entries.
     // Use the block 10 minute window as a periodic trigger.
     if (height > 0)
@@ -175,7 +204,7 @@ void notifier::post_updates(const payment_address& address,
     // [ tx ]
     static constexpr size_t info_size = sizeof(uint8_t) + short_hash_size +
         sizeof(uint32_t) + hash_size;
-    
+
     data_chunk data(info_size + tx.serialized_size());
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
@@ -295,6 +324,27 @@ void notifier::sweep()
 
         ++it;
     }
+}
+
+// ----------------------------------------------------------------------------
+// Destruct sequence.
+
+void notifier::stop()
+{
+    threadpool_.shutdown();
+}
+
+void notifier::close()
+{
+    stop();
+
+    // This is the end of the destruct sequence.
+    threadpool_.join();
+}
+
+notifier::~notifier()
+{
+    close();
 }
 
 } // namespace server
