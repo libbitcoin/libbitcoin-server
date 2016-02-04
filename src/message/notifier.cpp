@@ -205,7 +205,11 @@ void notifier::post_updates(const payment_address& address,
     static constexpr size_t info_size = sizeof(uint8_t) + short_hash_size +
         sizeof(uint32_t) + hash_size;
 
-    data_chunk data(info_size + tx.serialized_size());
+    const auto tx_size64 = tx.serialized_size();
+    BITCOIN_ASSERT(tx_size64 <= max_size_t);
+    const auto tx_size = static_cast<size_t>(tx_size64);
+
+    data_chunk data(info_size + tx_size);
     auto serial = make_serializer(data.begin());
     serial.write_byte(address.version());
     serial.write_short_hash(address.hash());
@@ -243,7 +247,11 @@ void notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     static constexpr size_t info_size = sizeof(uint32_t) + sizeof(uint32_t) +
         hash_size;
 
-    data_chunk data(info_size + tx.serialized_size());
+    const auto tx_size64 = tx.serialized_size();
+    BITCOIN_ASSERT(tx_size64 <= max_size_t);
+    const auto tx_size = static_cast<size_t>(tx_size64);
+
+    data_chunk data(info_size + tx_size);
     auto serial = make_serializer(data.begin());
     serial.write_4_bytes_little_endian(prefix);
     serial.write_4_bytes_little_endian(height);

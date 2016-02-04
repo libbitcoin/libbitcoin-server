@@ -110,7 +110,11 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
 void transaction_fetched(const code& ec, const chain::transaction& tx,
     const incoming& request, send_handler handler)
 {
-    data_chunk result(code_size + tx.serialized_size());
+    const auto tx_size64 = tx.serialized_size();
+    BITCOIN_ASSERT(tx_size64 <= max_size_t);
+    const auto tx_size = static_cast<size_t>(tx_size64);
+
+    data_chunk result(code_size + tx_size);
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);

@@ -154,7 +154,11 @@ void blockchain::fetch_block_header_by_height(server_node& node,
 void blockchain::block_header_fetched(const code& ec, const chain::header& block,
     const incoming& request, send_handler handler)
 {
-    data_chunk result(code_size + block.serialized_size(false));
+    const auto block_size64 = block.serialized_size(false);
+    BITCOIN_ASSERT_MSG(block_size64 <= max_size_t, "Obviously Bitcoin is dead.");
+    const auto block_size = static_cast<size_t>(block_size64);
+
+    data_chunk result(code_size + block_size);
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
@@ -308,7 +312,11 @@ void blockchain::spend_fetched(const code& ec, const chain::input_point& inpoint
     const incoming& request, send_handler handler)
 {
     // error_code (4), hash (32), index (4)
-    data_chunk result(code_size + inpoint.serialized_size());
+    const auto inpoint_size64 = inpoint.serialized_size();
+    BITCOIN_ASSERT(inpoint_size64 <= max_size_t);
+    const auto inpoint_size = static_cast<size_t>(inpoint_size64);
+
+    data_chunk result(code_size + inpoint_size);
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
