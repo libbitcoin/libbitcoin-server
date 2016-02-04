@@ -281,6 +281,8 @@ static void attach_query_api(receiver& receive, server_node& server)
     ATTACH(receive, transaction_pool, fetch_transaction, server);
 }
 
+// BUGBUG: this is never hit.
+//
 // TODO: use server as member.
 // This is called at the end of block sync, though execution continues after.
 void handle_running(const code& ec, server_node& server, publisher& publish,
