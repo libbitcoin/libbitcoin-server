@@ -43,7 +43,7 @@ static const settings setting_defaults()
     value.transaction_publish_endpoint = { "tcp://*:9094" };
     value.certificate_file = { "" };
     value.client_certificates_path = { "" };
-    value.whitelists = {};
+    value.whitelists = { {} };
     return value;
 };
 
