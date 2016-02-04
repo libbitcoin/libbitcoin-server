@@ -22,9 +22,9 @@
 
 #include <bitcoin/bitcoin.hpp>
 
-// We use the generic helper definitions in libbitcoin to define BCX_API 
-// and BCX_INTERNAL. BCX_API is used for the public API symbols. It either DLL
-// imports or DLL exports (or does nothing for static build) BCX_INTERNAL is 
+// We use the generic helper definitions in libbitcoin to define BCS_API 
+// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
+// imports or DLL exports (or does nothing for static build) BCS_INTERNAL is 
 // used for non-api symbols.
 
 #if defined BCS_STATIC
