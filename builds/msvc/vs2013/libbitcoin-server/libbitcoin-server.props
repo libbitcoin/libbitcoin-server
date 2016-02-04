@@ -32,6 +32,7 @@
     <Import Project="$(SolutionDir)libbitcoin.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-consensus.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-blockchain.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-network.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-node.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-server.import.props" />
   </ImportGroup>
@@ -45,6 +46,7 @@
     <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-blockchain>dynamic</Linkage-libbitcoin-blockchain>
+    <Linkage-libbitcoin-network>dynamic</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>dynamic</Linkage-libbitcoin-node>
     <Linkage-libbitcoin-server>dynamic</Linkage-libbitcoin-server>
   </PropertyGroup>
@@ -57,6 +59,7 @@
     <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-blockchain>ltcg</Linkage-libbitcoin-blockchain>
+    <Linkage-libbitcoin-network>ltcg</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>ltcg</Linkage-libbitcoin-node>
     <Linkage-libbitcoin-server>ltcg</Linkage-libbitcoin-server>
   </PropertyGroup>
@@ -69,6 +72,7 @@
     <Linkage-libbitcoin>static</Linkage-libbitcoin>
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-blockchain>static</Linkage-libbitcoin-blockchain>
+    <Linkage-libbitcoin-network>static</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>static</Linkage-libbitcoin-node>
     <Linkage-libbitcoin-server>static</Linkage-libbitcoin-server>
   </PropertyGroup>
@@ -84,6 +88,7 @@
     <Message Text="Linkage-libbitcoin : $(Linkage-libbitcoin)" Importance="high"/>
     <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
     <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
+    <Message Text="Linkage-_network   : $(Linkage-libbitcoin-network)" Importance="high"/>
     <Message Text="Linkage-_node      : $(Linkage-libbitcoin-node)" Importance="high"/>
     <Message Text="Linkage-_server    : $(Linkage-libbitcoin-server)" Importance="high"/>
   </Target>

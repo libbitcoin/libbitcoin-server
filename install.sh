@@ -276,6 +276,13 @@ BITCOIN_BLOCKCHAIN_OPTIONS=\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
+# Define bitcoin-network options.
+#------------------------------------------------------------------------------
+BITCOIN_NETWORK_OPTIONS=\
+"--without-tests "\
+"${with_boost} "\
+"${with_pkgconfigdir} "
+
 # Define bitcoin-node options.
 #------------------------------------------------------------------------------
 BITCOIN_NODE_OPTIONS=\
@@ -608,6 +615,7 @@ build_all()
     build_from_github libbitcoin libbitcoin sync $PARALLEL "$@" $BITCOIN_OPTIONS
     build_from_github libbitcoin libbitcoin-consensus version2 $PARALLEL "$@" $BITCOIN_CONSENSUS_OPTIONS
     build_from_github libbitcoin libbitcoin-blockchain sync $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
+    build_from_github libbitcoin libbitcoin-network master $PARALLEL "$@" $BITCOIN_NETWORK_OPTIONS
     build_from_github libbitcoin libbitcoin-node sync $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
     build_from_travis libbitcoin libbitcoin-server sync $PARALLEL "$@" $BITCOIN_SERVER_OPTIONS
 }
