@@ -35,19 +35,22 @@ lib_LTLIBRARIES = src/libbitcoin-server.la
 src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
 src_libbitcoin_server_la_LIBADD = ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 src_libbitcoin_server_la_SOURCES = \
-    src/dispatch.cpp \
-    src/message.cpp \
-    src/publisher.cpp \
+    src/configuration.cpp \
+    src/parser.cpp \
     src/server_node.cpp \
-    src/subscribe_manager.cpp \
-    src/worker.cpp \
-    src/config/parser.cpp \
-    src/config/settings.cpp \
-    src/service/blockchain.cpp \
-    src/service/compat.cpp \
-    src/service/fetch_x.cpp \
-    src/service/protocol.cpp \
-    src/service/transaction_pool.cpp
+    src/settings.cpp \
+    src/interface/address.cpp \
+    src/interface/blockchain.cpp \
+    src/interface/protocol.cpp \
+    src/interface/transaction_pool.cpp \
+    src/interface/utility.cpp \
+    src/interface/utility.hpp \
+    src/message/incoming.cpp \
+    src/message/notifier.cpp \
+    src/message/outgoing.cpp \
+    src/message/publisher.cpp \
+    src/message/receiver.cpp \
+    src/message/sender.cpp
 
 # local: test/libbitcoin_server_test
 #------------------------------------------------------------------------------
@@ -73,6 +76,8 @@ bin_PROGRAMS = console/bs
 console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
 console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 console_bs_SOURCES = \
+    console/dispatch.cpp \
+    console/dispatch.hpp \
     console/main.cpp
 
 endif WITH_CONSOLE
@@ -85,29 +90,28 @@ include_bitcoin_HEADERS = \
 
 include_bitcoin_serverdir = ${includedir}/bitcoin/server
 include_bitcoin_server_HEADERS = \
+    include/bitcoin/server/configuration.hpp \
     include/bitcoin/server/define.hpp \
-    include/bitcoin/server/dispatch.hpp \
-    include/bitcoin/server/message.hpp \
-    include/bitcoin/server/publisher.hpp \
+    include/bitcoin/server/parser.hpp \
     include/bitcoin/server/server_node.hpp \
-    include/bitcoin/server/subscribe_manager.hpp \
-    include/bitcoin/server/version.hpp \
-    include/bitcoin/server/worker.hpp
+    include/bitcoin/server/settings.hpp \
+    include/bitcoin/server/version.hpp
 
-include_bitcoin_server_configdir = ${includedir}/bitcoin/server/config
-include_bitcoin_server_config_HEADERS = \
-    include/bitcoin/server/config/configuration.hpp \
-    include/bitcoin/server/config/parser.hpp \
-    include/bitcoin/server/config/settings.hpp
+include_bitcoin_server_interfacedir = ${includedir}/bitcoin/server/interface
+include_bitcoin_server_interface_HEADERS = \
+    include/bitcoin/server/interface/address.hpp \
+    include/bitcoin/server/interface/blockchain.hpp \
+    include/bitcoin/server/interface/protocol.hpp \
+    include/bitcoin/server/interface/transaction_pool.hpp
 
-include_bitcoin_server_servicedir = ${includedir}/bitcoin/server/service
-include_bitcoin_server_service_HEADERS = \
-    include/bitcoin/server/service/blockchain.hpp \
-    include/bitcoin/server/service/compat.hpp \
-    include/bitcoin/server/service/fetch_x.hpp \
-    include/bitcoin/server/service/protocol.hpp \
-    include/bitcoin/server/service/transaction_pool.hpp \
-    include/bitcoin/server/service/util.hpp
+include_bitcoin_server_messagedir = ${includedir}/bitcoin/server/message
+include_bitcoin_server_message_HEADERS = \
+    include/bitcoin/server/message/incoming.hpp \
+    include/bitcoin/server/message/notifier.hpp \
+    include/bitcoin/server/message/outgoing.hpp \
+    include/bitcoin/server/message/publisher.hpp \
+    include/bitcoin/server/message/receiver.hpp \
+    include/bitcoin/server/message/sender.hpp
 
 # files => ${bash_completiondir}
 #------------------------------------------------------------------------------

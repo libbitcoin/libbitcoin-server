@@ -61,11 +61,13 @@ set -e
 #------------------------------------------------------------------------------
 SEQUENTIAL=1
 OS=`uname -s`
-if [[ $TRAVIS == true ]]; then
+if [[ $PARALLEL ]]; then
+    echo "Using shell-defined PARALLEL value."
+elif [[ $TRAVIS == true ]]; then
     PARALLEL=$SEQUENTIAL
 elif [[ $OS == Linux ]]; then
     PARALLEL=`nproc`
-elif [[ $OS == Darwin ]]; then
+elif [[ ($OS == Darwin) || ($OS == OpenBSD) ]]; then
     PARALLEL=`sysctl -n hw.ncpu`
 else
     echo "Unsupported system: $OS"
@@ -81,14 +83,20 @@ if [[ $OS == Darwin ]]; then
     export CC="clang"
     export CXX="clang++"
     LIBC="libc++"
-    
+
     # Always initialize prefix on OSX so default is useful.
     PREFIX="/usr/local"
+elif [[ $OS == OpenBSD ]]; then
+    make() { gmake "$@"; }
+    export CC="egcc"
+    export CXX="eg++"
+    LIBC="libestdc++"
 else
     LIBC="libstdc++"
 fi
 echo "Make with cc: $CC"
 echo "Make with cxx: $CXX"
+echo "Make with stdlib: $LIBC"
 
 # Define compiler specific settings.
 #------------------------------------------------------------------------------
@@ -230,8 +238,8 @@ ZMQ_OPTIONS=\
 # Define czmq options.
 #------------------------------------------------------------------------------
 CZMQ_OPTIONS=\
-"--without-zmakecert "\
-"--without-test_zgossip "\
+"--disable-zmakecert "\
+"--disable-czmq_selftest "\
 "${with_pkgconfigdir} "
 
 # Define czmqpp options.
@@ -242,7 +250,8 @@ CZMQPP_OPTIONS=\
 # Define secp256k1 options.
 #------------------------------------------------------------------------------
 SECP256K1_OPTIONS=\
-"--disable-tests "
+"--disable-tests "\
+"--enable-module-recovery "
 
 # Define bitcoin options.
 #------------------------------------------------------------------------------
@@ -264,6 +273,13 @@ BITCOIN_CONSENSUS_OPTIONS=\
 BITCOIN_BLOCKCHAIN_OPTIONS=\
 "--without-tests "\
 "--without-tools "\
+"${with_boost} "\
+"${with_pkgconfigdir} "
+
+# Define bitcoin-network options.
+#------------------------------------------------------------------------------
+BITCOIN_NETWORK_OPTIONS=\
+"--without-tests "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
@@ -358,7 +374,7 @@ initialize_boost_icu()
 
 initialize_icu_packages()
 {
-    if [[ $OS == Darwin && !($BUILD_ICU) ]]; then
+    if [[ ($OS == Darwin) && !($BUILD_ICU) ]]; then
         # Update PKG_CONFIG_PATH for ICU package installations on OSX.
         # OSX provides libicucore.dylib with no pkgconfig and doesn't support
         # renaming or important features, so we can't use that.
@@ -595,10 +611,11 @@ build_all()
     build_from_github zeromq libzmq master $PARALLEL "$@" $ZMQ_OPTIONS
     build_from_github zeromq czmq master $PARALLEL "$@" $CZMQ_OPTIONS
     build_from_github zeromq czmqpp master $PARALLEL "$@" $CZMQPP_OPTIONS
-    build_from_github libbitcoin secp256k1 version3 $PARALLEL "$@" $SECP256K1_OPTIONS
+    build_from_github libbitcoin secp256k1 version4 $PARALLEL "$@" $SECP256K1_OPTIONS
     build_from_github libbitcoin libbitcoin master $PARALLEL "$@" $BITCOIN_OPTIONS
-    build_from_github libbitcoin libbitcoin-consensus version1 $PARALLEL "$@" $BITCOIN_CONSENSUS_OPTIONS
+    build_from_github libbitcoin libbitcoin-consensus version2 $PARALLEL "$@" $BITCOIN_CONSENSUS_OPTIONS
     build_from_github libbitcoin libbitcoin-blockchain master $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
+    build_from_github libbitcoin libbitcoin-network master $PARALLEL "$@" $BITCOIN_NETWORK_OPTIONS
     build_from_github libbitcoin libbitcoin-node master $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
     build_from_travis libbitcoin libbitcoin-server master $PARALLEL "$@" $BITCOIN_SERVER_OPTIONS
 }

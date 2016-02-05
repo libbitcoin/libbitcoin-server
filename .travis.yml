@@ -11,11 +11,11 @@ language:
 os:
     - osx
     - linux
-    
+
 compiler:
     - clang
     - gcc
-    
+
 env:
     - LINK=static
     - LINK=dynamic
@@ -73,10 +73,10 @@ install:
 script:
 
     # Download and build libbitcoin-server and all dependencies.
-    - if [[ $OSX   && $CLANG && $STATIC  ]]; then ./install.sh --without-consensus --with-secp256k1 --without-openssl --disable-shared --build-boost --prefix=$TRAVIS_BUILD_DIR/my-prefix; fi
-    - if [[ $LINUX && $CLANG && $STATIC  ]]; then ./install.sh --with-secp256k1 --without-openssl --disable-shared --build-boost --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os' LDLIBS='-lstdc++' CXXFLAGS='-Os -stdlib=libstdc++'; fi
+    - if [[ $OSX   && $CLANG && $STATIC  ]]; then ./install.sh --without-consensus --disable-shared --build-boost --prefix=$TRAVIS_BUILD_DIR/my-prefix; fi
+    - if [[ $LINUX && $CLANG && $STATIC  ]]; then ./install.sh --disable-shared --build-boost --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os' LDLIBS='-lstdc++' CXXFLAGS='-Os -stdlib=libstdc++'; fi
     - if [[ $LINUX && $GCC   && $STATIC  ]]; then ./install.sh --build-boost --disable-shared --build-dir=my-build --prefix=$TRAVIS_BUILD_DIR/my-prefix --with-bash-completiondir CFLAGS='-O0 -g -static --coverage' CXXFLAGS='-O0 -g -static --coverage'; fi
-    - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then ./install.sh --with-secp256k1 --without-openssl --with-bash-completiondir; fi
+    - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then ./install.sh --with-bash-completiondir; fi
     - if [[ $LINUX && $CLANG && $DYNAMIC ]]; then sudo CXX=$CXX CC=$CC ./install.sh --disable-ndebug --disable-static CFLAGS='-Os' LDLIBS='-lstdc++' CXXFLAGS='-Os -stdlib=libstdc++'; fi
     - if [[ $LINUX && $GCC   && $DYNAMIC ]]; then sudo CXX=$CXX CC=$CC ./install.sh --without-consensus --disable-static --build-boost --with-bash-completiondir CFLAGS='-Os -s' CXXFLAGS='-Os -s'; fi
 
@@ -92,6 +92,6 @@ after_success:
     - if [[ $LINUX && $GCC   && $STATIC  ]]; then lcov --directory . --capture --output-file coverage.info; fi
     - if [[ $LINUX && $GCC   && $STATIC  ]]; then lcov --remove coverage.info "/usr/*" "$TRAVIS_BUILD_DIR/my-prefix/*" "my-build/*" "test/*" --output-file coverage.info; fi
     - if [[ $LINUX && $GCC   && $STATIC  ]]; then lcov --list coverage.info; fi
-    
+
     # Upload coverage info to coveralls service (--repo-token <private coveralls repo token>).
     - if [[ $LINUX && $GCC   && $STATIC  ]]; then coveralls-lcov coverage.info; fi

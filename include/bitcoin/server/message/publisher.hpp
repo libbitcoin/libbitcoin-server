@@ -17,25 +17,41 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_DEFINE_HPP
-#define LIBBITCOIN_SERVER_DEFINE_HPP
+#ifndef LIBBITCOIN_SERVER_PUBLISHER_HPP
+#define LIBBITCOIN_SERVER_PUBLISHER_HPP
 
+#include <cstdint>
+#include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 
-// We use the generic helper definitions in libbitcoin to define BCS_API 
-// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
-// imports or DLL exports (or does nothing for static build) BCS_INTERNAL is 
-// used for non-api symbols.
+namespace libbitcoin {
+namespace server {
 
-#if defined BCS_STATIC
-    #define BCS_API
-    #define BCS_INTERNAL
-#elif defined BCS_DLL
-    #define BCS_API      BC_HELPER_DLL_EXPORT
-    #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
-#else
-    #define BCS_API      BC_HELPER_DLL_IMPORT
-    #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
-#endif
+/// The publisher subscribes to blocks accepted to the blockchain and
+/// transactions accepted to the memory pool. The blocks and transactions
+/// are then forwarded to its notifiers.
+class BCS_API publisher
+{
+public:
+    publisher(server_node& node);
+
+    bool start();
+
+private:
+    void send_tx(const chain::transaction& tx);
+    void send_block(uint32_t height, const chain::block::ptr block);
+
+    server_node& node_;
+    czmqpp::context context_;
+    czmqpp::socket socket_tx_;
+    czmqpp::socket socket_block_;
+    const settings& settings_;
+};
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

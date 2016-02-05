@@ -17,25 +17,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_DEFINE_HPP
-#define LIBBITCOIN_SERVER_DEFINE_HPP
+#ifndef LIBBITCOIN_SERVER_INCOMING
+#define LIBBITCOIN_SERVER_INCOMING
 
+#include <cstdint>
+#include <string>
+#include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
 
-// We use the generic helper definitions in libbitcoin to define BCS_API 
-// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
-// imports or DLL exports (or does nothing for static build) BCS_INTERNAL is 
-// used for non-api symbols.
+namespace libbitcoin {
+namespace server {
 
-#if defined BCS_STATIC
-    #define BCS_API
-    #define BCS_INTERNAL
-#elif defined BCS_DLL
-    #define BCS_API      BC_HELPER_DLL_EXPORT
-    #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
-#else
-    #define BCS_API      BC_HELPER_DLL_IMPORT
-    #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
-#endif
+class BCS_API incoming
+{
+public:
+    bool receive(czmqpp::socket& socket);
+
+    uint32_t id() const;
+    const data_chunk& data() const;
+    const std::string& command() const;
+    const data_chunk origin() const;
+
+private:
+    uint32_t id_;
+    data_chunk data_;
+    std::string command_;
+    data_chunk origin_;
+};
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

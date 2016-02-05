@@ -7,9 +7,6 @@
     <Filter Include="src">
       <UniqueIdentifier>{86b385b3-059d-41a9-8455-6e217c481c69}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\service">
-      <UniqueIdentifier>{4897c614-3d98-47d0-a4f3-b7e2b5304397}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include">
       <UniqueIdentifier>{0c78674f-a42d-4615-8d15-07e2c77e20d6}</UniqueIdentifier>
     </Filter>
@@ -19,52 +16,22 @@
     <Filter Include="include\bitcoin\server">
       <UniqueIdentifier>{f1b85926-a0d1-4f86-a380-32ac7c8a8b73}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\service">
-      <UniqueIdentifier>{12ff4913-25e2-4e09-aada-cccc3ba3f796}</UniqueIdentifier>
+    <Filter Include="src\message">
+      <UniqueIdentifier>{44190abb-315a-4171-91a1-2e562c50cfc4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\config">
-      <UniqueIdentifier>{426ae8b7-d26d-4451-85c8-30865a3de442}</UniqueIdentifier>
+    <Filter Include="include\bitcoin\server\message">
+      <UniqueIdentifier>{e8a08974-3fec-4a14-b035-3361708e3647}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\config">
-      <UniqueIdentifier>{3a649328-f790-43cc-bd32-c82477416648}</UniqueIdentifier>
+    <Filter Include="include\bitcoin\server\interface">
+      <UniqueIdentifier>{ca115887-a19b-48e1-ad59-16400aa7a1de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\interface">
+      <UniqueIdentifier>{4dac9ec3-0b55-4804-90b2-1825858f8bfd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource.h" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\subscribe_manager.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\worker.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\publisher.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\protocol.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\transaction_pool.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\util.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\blockchain.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\compat.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\service\fetch_x.hpp">
-      <Filter>include\bitcoin\server\service</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\dispatch.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp">
@@ -73,58 +40,97 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\settings.hpp">
-      <Filter>include\bitcoin\server\config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\configuration.hpp">
-      <Filter>include\bitcoin\server\config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\config\parser.hpp">
-      <Filter>include\bitcoin\server\config</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp">
       <Filter>include\bitcoin</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\publisher.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\sender.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\receiver.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\interface\utility.hpp">
+      <Filter>src\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\protocol.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\transaction_pool.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\address.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\notifier.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\incoming.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\outgoing.hpp">
+      <Filter>include\bitcoin\server\message</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\service\blockchain.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\fetch_x.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\protocol.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\transaction_pool.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\publisher.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\subscribe_manager.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\worker.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\service\compat.cpp">
-      <Filter>src\service</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\dispatch.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\config\settings.cpp">
-      <Filter>src\config</Filter>
+    <ClCompile Include="..\..\..\..\src\parser.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\config\parser.cpp">
-      <Filter>src\config</Filter>
+    <ClCompile Include="..\..\..\..\src\message\publisher.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\sender.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\receiver.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\utility.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\address.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\protocol.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\notifier.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\incoming.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\message\outgoing.cpp">
+      <Filter>src\message</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\configuration.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\settings.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

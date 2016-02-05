@@ -19,6 +19,7 @@
  */
 #include <iostream>
 #include <bitcoin/server.hpp>
+#include "dispatch.hpp"
 
 BC_USE_LIBBITCOIN_MAIN
 
@@ -32,6 +33,6 @@ BC_USE_LIBBITCOIN_MAIN
 int bc::main(int argc, char* argv[])
 {
     bc::set_utf8_stdio();
-    return bc::server::dispatch(argc, const_cast<const char**>(argv),
-        bc::cin, bc::cout, bc::cerr);
+    const auto& args = const_cast<const char**>(argv);
+    return bc::server::dispatch(argc, args, bc::cin, bc::cout, bc::cerr);
 }

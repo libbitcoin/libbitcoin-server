@@ -17,17 +17,43 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <boost/test/unit_test.hpp>
-#include <bitcoin/server.hpp>
+#include <bitcoin/server/message/sender.hpp>
 
-using namespace bc;
+#include <czmq++/czmqpp.hpp>
+#include <bitcoin/node.hpp>
+#include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/message/outgoing.hpp>
 
-BOOST_AUTO_TEST_SUITE(server_tests)
+namespace libbitcoin {
+namespace server {
+    
+using std::placeholders::_1;
 
-// Just a basic test to get some coverage output.
-BOOST_AUTO_TEST_CASE(server_test)
+static constexpr int zmq_fail = -1;
+
+sender::sender(czmqpp::context& context)
+  : context_(context)
 {
-    BOOST_REQUIRE(true);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+void sender::queue(const outgoing& message)
+{
+    czmqpp::socket socket(context_, ZMQ_PUSH);
+    BITCOIN_ASSERT(socket.self() != nullptr);
+
+    // Returns 0 if OK, -1 if the endpoint was invalid.
+    const auto rc = socket.connect("inproc://trigger-send");
+
+    if (rc == zmq_fail)
+    {
+        log::error(LOG_SERVICE)
+            << "Failed to connect to send queue.";
+        return;
+    }
+
+    message.send(socket);
+    socket.destroy(context_);
+}
+
+} // namespace server
+} // namespace libbitcoin

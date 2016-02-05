@@ -7,15 +7,24 @@
     <Filter Include="src">
       <UniqueIdentifier>{86b385b3-059d-41a9-8455-6e217c481c69}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{b1543fdc-aee6-442f-9d31-1aef0c512067}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource.h" />
+    <ClInclude Include="..\..\..\..\console\dispatch.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resource.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\console\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\dispatch.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

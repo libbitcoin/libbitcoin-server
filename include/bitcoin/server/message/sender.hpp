@@ -17,25 +17,38 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_DEFINE_HPP
-#define LIBBITCOIN_SERVER_DEFINE_HPP
+#ifndef LIBBITCOIN_SERVER_SENDER_HPP
+#define LIBBITCOIN_SERVER_SENDER_HPP
 
-#include <bitcoin/bitcoin.hpp>
+#include <czmq++/czmqpp.hpp>
+#include <bitcoin/node.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/message/outgoing.hpp>
 
-// We use the generic helper definitions in libbitcoin to define BCS_API 
-// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
-// imports or DLL exports (or does nothing for static build) BCS_INTERNAL is 
-// used for non-api symbols.
+namespace libbitcoin {
+namespace server {
 
-#if defined BCS_STATIC
-    #define BCS_API
-    #define BCS_INTERNAL
-#elif defined BCS_DLL
-    #define BCS_API      BC_HELPER_DLL_EXPORT
-    #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
-#else
-    #define BCS_API      BC_HELPER_DLL_IMPORT
-    #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
-#endif
+/**
+ * We don't want to block the originating threads that execute a send
+ * as that would slow down requests if they all have to sync access
+ * to a single socket.
+ *
+ * Instead we have a queue (push socket) where send requests are pushed,
+ * and then the sender is notified. The worker wakes up and pushes
+ * all pending requests to the socket.
+ */
+class BCS_API sender
+{
+public:
+    sender(czmqpp::context& context);
+
+    void queue(const outgoing& message);
+
+private:
+    czmqpp::context& context_;
+};
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif
