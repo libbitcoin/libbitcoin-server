@@ -612,12 +612,12 @@ build_all()
     build_from_github zeromq czmq master $PARALLEL "$@" $CZMQ_OPTIONS
     build_from_github zeromq czmqpp master $PARALLEL "$@" $CZMQPP_OPTIONS
     build_from_github libbitcoin secp256k1 version4 $PARALLEL "$@" $SECP256K1_OPTIONS
-    build_from_github libbitcoin libbitcoin sync $PARALLEL "$@" $BITCOIN_OPTIONS
+    build_from_github libbitcoin libbitcoin master $PARALLEL "$@" $BITCOIN_OPTIONS
     build_from_github libbitcoin libbitcoin-consensus version2 $PARALLEL "$@" $BITCOIN_CONSENSUS_OPTIONS
-    build_from_github libbitcoin libbitcoin-blockchain sync $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
+    build_from_github libbitcoin libbitcoin-blockchain master $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
     build_from_github libbitcoin libbitcoin-network master $PARALLEL "$@" $BITCOIN_NETWORK_OPTIONS
-    build_from_github libbitcoin libbitcoin-node sync $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
-    build_from_travis libbitcoin libbitcoin-server sync $PARALLEL "$@" $BITCOIN_SERVER_OPTIONS
+    build_from_github libbitcoin libbitcoin-node master $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
+    build_from_travis libbitcoin libbitcoin-server master $PARALLEL "$@" $BITCOIN_SERVER_OPTIONS
 }
 
 
