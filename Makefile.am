@@ -76,8 +76,8 @@ bin_PROGRAMS = console/bs
 console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_CPPFLAGS} ${sodium_CPPFLAGS} ${czmq___CPPFLAGS}
 console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_node_LIBS} ${sodium_LIBS} ${czmq___LIBS}
 console_bs_SOURCES = \
-    console/dispatch.cpp \
-    console/dispatch.hpp \
+    console/executor.cpp \
+    console/executor.hpp \
     console/main.cpp
 
 endif WITH_CONSOLE

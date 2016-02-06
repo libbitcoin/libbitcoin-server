@@ -18,8 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <iostream>
+#include <memory>
 #include <bitcoin/server.hpp>
-#include "dispatch.hpp"
+#include "executor.hpp"
 
 BC_USE_LIBBITCOIN_MAIN
 
@@ -32,7 +33,16 @@ BC_USE_LIBBITCOIN_MAIN
  */
 int bc::main(int argc, char* argv[])
 {
-    bc::set_utf8_stdio();
+    using namespace bc;
+    using namespace bc::server;
+
+    set_utf8_stdio();
+    server::parser metadata;
     const auto& args = const_cast<const char**>(argv);
-    return bc::server::dispatch(argc, args, bc::cin, bc::cout, bc::cerr);
+
+    if (!metadata.parse(argc, args, cerr))
+        return console_result::failure;
+
+    const auto host = std::make_shared<executor>(metadata, cin, cout, cerr);
+    return host->invoke() ? console_result::okay : console_result::failure;
 }

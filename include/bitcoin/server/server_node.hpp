@@ -22,6 +22,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
@@ -33,6 +34,7 @@ class BCS_API server_node
   : public node::p2p_node
 {
 public:
+    typedef std::shared_ptr<server_node> ptr;
     typedef std::function<void(uint32_t, const chain::block::ptr)>
         block_notify_callback;
     typedef std::function<void (const chain::transaction&)>

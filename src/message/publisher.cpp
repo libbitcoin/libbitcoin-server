@@ -35,9 +35,9 @@ using namespace bc::chain;
 static constexpr int zmq_fail = -1;
 static constexpr size_t header_size = 80;
 
-publisher::publisher(server_node& node)
+publisher::publisher(server_node::ptr node)
   : node_(node),
-    settings_(node.configuration_settings()),
+    settings_(node->configuration_settings()),
     socket_tx_(context_, ZMQ_PUB),
     socket_block_(context_, ZMQ_PUB)
 {
@@ -81,13 +81,13 @@ bool publisher::start()
     }
 
     // These are not libbitcoin re/subscribers.
-    node_.subscribe_transactions(
+    node_->subscribe_transactions(
         std::bind(&publisher::send_tx,
-            this, _1));
+            shared_from_this(), _1));
 
-    node_.subscribe_blocks(
+    node_->subscribe_blocks(
         std::bind(&publisher::send_block,
-            this, _1, _2));
+            shared_from_this(), _1, _2));
 
     return true;
 }

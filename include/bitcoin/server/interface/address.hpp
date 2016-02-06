@@ -35,15 +35,15 @@ class BCS_API address
 {
 public:
     /// Fetch the blockchain and transaction pool history of a payment address.
-    static void fetch_history2(server_node& node, const incoming& request,
+    static void fetch_history2(server_node::ptr node, const incoming& request,
         send_handler handler);
 
     /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(notifier& notifier, const incoming& request,
+    static void subscribe(notifier::ptr notifier, const incoming& request,
         send_handler handler);
 
     /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(notifier& notifier, const incoming& request,
+    static void renew(notifier::ptr notifier, const incoming& request,
         send_handler handler);
 };
 

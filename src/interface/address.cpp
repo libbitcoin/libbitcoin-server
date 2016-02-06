@@ -34,7 +34,7 @@ using namespace bc::wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-void address::fetch_history2(server_node& node, const incoming& request,
+void address::fetch_history2(server_node::ptr node, const incoming& request,
     send_handler handler)
 {
     static constexpr uint64_t limit = 0;
@@ -45,21 +45,21 @@ void address::fetch_history2(server_node& node, const incoming& request,
         return;
 
     // Obtain payment address history from the transaction pool and blockchain.
-    node.pool().fetch_history(address, limit, from_height,
+    node->pool().fetch_history(address, limit, from_height,
         std::bind(send_history_result,
             _1, _2, request, handler));
 }
 
-void address::subscribe(notifier& notifier, const incoming& request,
+void address::subscribe(notifier::ptr notifier, const incoming& request,
     send_handler handler)
 {
-    notifier.subscribe(request, handler);
+    notifier->subscribe(request, handler);
 }
 
-void address::renew(notifier& notifier, const incoming& request,
+void address::renew(notifier::ptr notifier, const incoming& request,
     send_handler handler)
 {
-    notifier.renew(request, handler);
+    notifier->renew(request, handler);
 }
 
 } // namespace server

@@ -38,10 +38,10 @@ const auto now = []()
     return boost::posix_time::second_clock::universal_time();
 };
 
-notifier::notifier(server_node& node)
-  : threadpool_(node.configuration_settings().threads),
+notifier::notifier(server_node::ptr node)
+  : threadpool_(node->configuration_settings().threads),
     dispatch_(threadpool_, NAME),
-    settings_(node.configuration_settings())
+    settings_(node->configuration_settings())
 {
     const auto receive_block = [this](uint32_t height, const block::ptr block)
     {
@@ -58,8 +58,8 @@ notifier::notifier(server_node& node)
     // Subscribe against the node's tx and block publishers.
     // This allows the subscription manager to capture transactions from both
     // contexts and search them for payment addresses that match subscriptions.
-    node.subscribe_blocks(receive_block);
-    node.subscribe_transactions(receive_tx);
+    node->subscribe_blocks(receive_block);
+    node->subscribe_transactions(receive_tx);
 }
 
 // ----------------------------------------------------------------------------
@@ -84,7 +84,7 @@ void notifier::subscribe(const incoming& request, send_handler handler)
 {
     dispatch_.ordered(
         &notifier::do_subscribe,
-            this, request, handler);
+            shared_from_this(), request, handler);
 }
 
 void notifier::do_subscribe(const incoming& request, send_handler handler)
@@ -108,7 +108,7 @@ void notifier::renew(const incoming& request, send_handler handler)
 {
     dispatch_.unordered(
         &notifier::do_renew,
-            this, request, handler);
+            shared_from_this(), request, handler);
 }
 
 void notifier::do_renew(const incoming& request, send_handler handler)
@@ -162,7 +162,7 @@ void notifier::scan(uint32_t height, const hash_digest& block_hash,
 {
     dispatch_.ordered(
         &notifier::do_scan,
-            this, height, block_hash, tx);
+            shared_from_this(), height, block_hash, tx);
 }
 
 void notifier::do_scan(uint32_t height, const hash_digest& block_hash,

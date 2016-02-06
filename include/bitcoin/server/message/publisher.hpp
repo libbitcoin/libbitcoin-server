@@ -21,6 +21,7 @@
 #define LIBBITCOIN_SERVER_PUBLISHER_HPP
 
 #include <cstdint>
+#include <memory>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
@@ -34,9 +35,16 @@ namespace server {
 /// transactions accepted to the memory pool. The blocks and transactions
 /// are then forwarded to its notifiers.
 class BCS_API publisher
+  : public enable_shared_from_base<publisher>
 {
 public:
-    publisher(server_node& node);
+    typedef std::shared_ptr<publisher> ptr;
+
+    publisher(server_node::ptr node);
+
+    /// This class is not copyable.
+    publisher(const publisher&) = delete;
+    void operator=(const publisher&) = delete;
 
     bool start();
 
@@ -44,7 +52,7 @@ private:
     void send_tx(const chain::transaction& tx);
     void send_block(uint32_t height, const chain::block::ptr block);
 
-    server_node& node_;
+    server_node::ptr node_;
     czmqpp::context context_;
     czmqpp::socket socket_tx_;
     czmqpp::socket socket_block_;
