@@ -21,9 +21,10 @@
 #define LIBBITCOIN_SERVER_RECEIVIER_HPP
 
 #include <cstdint>
-#include <unordered_map>
+#include <memory>
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <boost/date_time.hpp>
 #include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
@@ -38,11 +39,17 @@ namespace libbitcoin {
 namespace server {
 
 class BCS_API receiver
+  : public enable_shared_from_base<receiver>
 {
 public:
+    typedef std::shared_ptr<receiver> ptr;
     typedef std::function<void(const incoming&, send_handler)> command_handler;
 
-    receiver(const server_node& node);
+    receiver(server_node::ptr node);
+
+    /// This class is not copyable.
+    receiver(const receiver&) = delete;
+    void operator=(const receiver&) = delete;
 
     bool start();
     void poll();

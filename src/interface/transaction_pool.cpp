@@ -34,7 +34,7 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
-void transaction_pool::fetch_transaction(server_node& node,
+void transaction_pool::fetch_transaction(server_node::ptr node,
     const incoming& request, send_handler handler)
 {
     hash_digest hash;
@@ -45,12 +45,12 @@ void transaction_pool::fetch_transaction(server_node& node,
         << "transaction_pool.fetch_transaction(" << encode_hash(hash)
         << ")";
 
-    node.pool().fetch(hash,
+    node->pool().fetch(hash,
         std::bind(transaction_fetched,
             _1, _2, request, handler));
 }
 
-void transaction_pool::validate(server_node& node, const incoming& request,
+void transaction_pool::validate(server_node::ptr node, const incoming& request,
     send_handler handler)
 {
     transaction tx;
@@ -60,7 +60,7 @@ void transaction_pool::validate(server_node& node, const incoming& request,
         return;
     }
 
-    node.pool().validate(tx,
+    node->pool().validate(tx,
         std::bind(&transaction_pool::handle_validated,
             _1, _2, _3, _4, request, handler));
 }

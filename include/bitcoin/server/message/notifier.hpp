@@ -21,6 +21,7 @@
 #define LIBBITCOIN_SERVER_SUBSCRIBER_HPP
 
 #include <cstdint>
+#include <memory>
 #include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -34,10 +35,17 @@ namespace libbitcoin {
 namespace server {
 
 class BCS_API notifier
+  : public enable_shared_from_base<notifier>
 {
 public:
-    notifier(server_node& node);
+    typedef std::shared_ptr<notifier> ptr;
+
+    notifier(server_node::ptr node);
     ~notifier();
+
+    /// This class is not copyable.
+    notifier(const notifier&) = delete;
+    void operator=(const notifier&) = delete;
 
     bool start();
     void stop();

@@ -60,7 +60,7 @@ void server_node::start(result_handler handler)
     // Start the network and blockchain before subscribing.
     p2p_node::start(
         std::bind(&server_node::handle_node_start,
-            this, _1, handler));
+            shared_from_base<server_node>(), _1, handler));
 }
 
 void server_node::handle_node_start(const code& ec, result_handler handler)
@@ -68,12 +68,12 @@ void server_node::handle_node_start(const code& ec, result_handler handler)
     // Subscribe to blockchain reorganizations.
     subscribe_blockchain(
         std::bind(&server_node::handle_new_blocks,
-            this, _1, _2, _3, _4));
+            shared_from_base<server_node>(), _1, _2, _3, _4));
 
     // Subscribe to transaction pool acceptances.
     subscribe_transaction_pool(
         std::bind(&server_node::handle_tx_accepted,
-            this, _1, _2, _3));
+            shared_from_base<server_node>(), _1, _2, _3));
 
     // This is the end of the derived start sequence.
     handler(error::success);
