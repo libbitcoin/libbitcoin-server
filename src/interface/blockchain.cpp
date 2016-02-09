@@ -50,7 +50,7 @@ void blockchain::fetch_history(server_node::ptr node,
         << "blockchain.fetch_history(" << address.encoded()
         << ", from_height=" << from_height << ")";
 
-    node->query().fetch_history(address, limit, from_height,
+    node->chain().fetch_history(address, limit, from_height,
         std::bind(send_history_result,
             _1, _2, request, handler));
 }
@@ -66,7 +66,7 @@ void blockchain::fetch_transaction(server_node::ptr node,
     log::debug(LOG_REQUEST)
         << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
 
-    node->query().fetch_transaction(tx_hash,
+    node->chain().fetch_transaction(tx_hash,
         std::bind(transaction_fetched,
             _1, _2, request, handler));
 }
@@ -83,7 +83,7 @@ void blockchain::fetch_last_height(server_node::ptr node,
         return;
     }
 
-    node->query().fetch_last_height(
+    node->chain().fetch_last_height(
         std::bind(&blockchain::last_height_fetched,
             _1, _2, request, handler));
 }
@@ -132,7 +132,7 @@ void blockchain::fetch_block_header_by_hash(server_node::ptr node,
     auto deserial = make_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
 
-    node->query().fetch_block_header(block_hash,
+    node->chain().fetch_block_header(block_hash,
         std::bind(&blockchain::block_header_fetched,
             _1, _2, request, handler));
 }
@@ -146,7 +146,7 @@ void blockchain::fetch_block_header_by_height(server_node::ptr node,
     auto deserial = make_deserializer(data.begin(), data.end());
     const uint64_t height = deserial.read_4_bytes_little_endian();
 
-    node->query().fetch_block_header(height,
+    node->chain().fetch_block_header(height,
         std::bind(&blockchain::block_header_fetched,
             _1, _2, request, handler));
 }
@@ -199,7 +199,7 @@ void blockchain::fetch_block_transaction_hashes_by_hash(server_node::ptr node,
 
     auto deserial = make_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
-    node->query().fetch_block_transaction_hashes(block_hash,
+    node->chain().fetch_block_transaction_hashes(block_hash,
         std::bind(&blockchain::block_transaction_hashes_fetched,
             _1, _2, request, handler));
 }
@@ -212,7 +212,7 @@ void blockchain::fetch_block_transaction_hashes_by_height(
 
     auto deserial = make_deserializer(data.begin(), data.end());
     const size_t block_height = deserial.read_4_bytes_little_endian();
-    node->query().fetch_block_transaction_hashes(block_height,
+    node->chain().fetch_block_transaction_hashes(block_height,
         std::bind(&blockchain::block_transaction_hashes_fetched,
             _1, _2, request, handler));
 }
@@ -254,7 +254,7 @@ void blockchain::fetch_transaction_index(server_node::ptr node,
     auto deserial = make_deserializer(data.begin(), data.end());
     const auto tx_hash = deserial.read_hash();
 
-    node->query().fetch_transaction_index(tx_hash,
+    node->chain().fetch_transaction_index(tx_hash,
         std::bind(&blockchain::transaction_index_fetched,
             _1, _2, _3, request, handler));
 }
@@ -303,7 +303,7 @@ void blockchain::fetch_spend(server_node::ptr node, const incoming& request,
     chain::output_point outpoint;
     outpoint.from_data(istream);
 
-    node->query().fetch_spend(outpoint,
+    node->chain().fetch_spend(outpoint,
         std::bind(&blockchain::spend_fetched,
             _1, _2, request, handler));
 }
@@ -345,7 +345,7 @@ void blockchain::fetch_block_height(server_node::ptr node,
 
     auto deserial = make_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
-    node->query().fetch_block_height(block_hash,
+    node->chain().fetch_block_height(block_hash,
         std::bind(&blockchain::block_height_fetched,
             _1, _2, request, handler));
 }
@@ -404,7 +404,7 @@ void blockchain::fetch_stealth(server_node::ptr node, const incoming& request,
     // from_height
     const uint64_t from_height = deserial.read_4_bytes_little_endian();
 
-    node->query().fetch_stealth(prefix, from_height,
+    node->chain().fetch_stealth(prefix, from_height,
         std::bind(&blockchain::stealth_fetched,
             _1, _2, request, handler));
 }
