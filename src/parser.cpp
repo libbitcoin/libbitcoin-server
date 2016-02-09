@@ -303,10 +303,10 @@ options_metadata parser::load_settings()
         "The number of peers to survey during sync, defaults to 8."
     )
     (
-        "node.blocks_per_second",
-        value<uint32_t>(&configured.node.blocks_per_second)->
-            default_value(node::settings::defaults.blocks_per_second),
-        "The minimum block rate required from a peer during block sync, defaults to 16."
+        "node.block_bytes_per_second",
+        value<uint32_t>(&configured.node.block_bytes_per_second)->
+            default_value(node::settings::defaults.block_bytes_per_second),
+        "The minimum block byte rate required from a peer during block sync, defaults to 100000."
     )
     (
         "node.headers_per_second",
