@@ -52,9 +52,11 @@ public:
     static const configuration testnet;
 
     configuration();
-    configuration(const server::settings& server_settings,
+    configuration(
+        const server::settings& server_settings,
         const node::settings& node_settings,
-        const bc::blockchain::settings& chain_settings,
+        const blockchain::settings& chain_settings,
+        const database::settings& database_settings,
         const network::settings& network_settings);
 
     /// Settings.
