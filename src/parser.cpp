@@ -250,7 +250,13 @@ options_metadata parser::load_settings()
         "blockchain.history_start_height",
         value<uint32_t>(&configured.chain.history_start_height)->
             default_value(blockchain::settings::mainnet.history_start_height),
-        "The history index start height, defaults to 0."
+        "The lower limit of spend indexing, defaults to 0."
+    )
+    (
+        "blockchain.stealth_start_height",
+        value<uint32_t>(&configured.chain.stealth_start_height)->
+            default_value(blockchain::settings::mainnet.stealth_start_height),
+        "The lower limit of stealth indexing, defaults to 350000."
     )
     (
         "blockchain.block_pool_capacity",

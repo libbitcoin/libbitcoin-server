@@ -37,7 +37,7 @@ static constexpr size_t header_size = 80;
 
 publisher::publisher(server_node::ptr node)
   : node_(node),
-    settings_(node->configuration_settings()),
+    settings_(node->server_settings()),
     socket_tx_(context_, ZMQ_PUB),
     socket_block_(context_, ZMQ_PUB)
 {
