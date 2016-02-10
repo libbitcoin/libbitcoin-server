@@ -239,24 +239,32 @@ options_metadata parser::load_settings()
         "A seed node for initializing the host pool, multiple entries allowed."
     )
 
+    /* [database] */
+    (
+        "database.history_start_height",
+        value<uint32_t>(&configured.database.history_start_height)->
+            default_value(database::settings::mainnet.history_start_height),
+        "The lower limit of spend indexing, defaults to 0."
+    )
+    (
+        "database.stealth_start_height",
+        value<uint32_t>(&configured.database.stealth_start_height)->
+            default_value(database::settings::mainnet.stealth_start_height),
+        "The lower limit of stealth indexing, defaults to 350000."
+    )
+    (
+        "database.directory",
+        value<path>(&configured.database.directory)->
+            default_value(database::settings::mainnet.directory),
+        "The blockchain database directory, defaults to 'mainnet'."
+    )
+
     /* [blockchain] */
     (
         "blockchain.threads",
         value<uint32_t>(&configured.chain.threads)->
             default_value(blockchain::settings::mainnet.threads),
         "The number of threads in the blockchain threadpool, defaults to 6."
-    )
-    (
-        "blockchain.history_start_height",
-        value<uint32_t>(&configured.chain.history_start_height)->
-            default_value(blockchain::settings::mainnet.history_start_height),
-        "The lower limit of spend indexing, defaults to 0."
-    )
-    (
-        "blockchain.stealth_start_height",
-        value<uint32_t>(&configured.chain.stealth_start_height)->
-            default_value(blockchain::settings::mainnet.stealth_start_height),
-        "The lower limit of stealth indexing, defaults to 350000."
     )
     (
         "blockchain.block_pool_capacity",
@@ -281,12 +289,6 @@ options_metadata parser::load_settings()
         value<bool>(&configured.chain.use_testnet_rules)->
             default_value(blockchain::settings::mainnet.use_testnet_rules),
         "Use testnet rules for determination of work required, defaults to false."
-    )
-    (
-        "blockchain.database_path",
-        value<path>(&configured.chain.database_path)->
-            default_value(blockchain::settings::mainnet.database_path),
-        "The blockchain database directory, defaults to 'blockchain'."
     )
     (
         "blockchain.checkpoint",

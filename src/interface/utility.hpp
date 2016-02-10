@@ -39,8 +39,7 @@ static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
     uint32_t& from_height, const incoming& request);
 
-void BCS_API send_history_result(const code& ec,
-    const bc::blockchain::block_chain::history& history,
+void BCS_API send_history_result(const code& ec, const chain::history& history,
     const incoming& request, send_handler handler);
 
 // fetch_transaction stuff

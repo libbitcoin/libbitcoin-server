@@ -26,14 +26,22 @@ namespace server {
 
 static const configuration mainnet_defaults()
 {
-    return configuration(server::settings::defaults, node::settings::defaults,
-        blockchain::settings::mainnet, network::settings::mainnet);
+    return configuration(
+        server::settings::defaults,
+        node::settings::defaults,
+        blockchain::settings::mainnet,
+        database::settings::mainnet,
+        network::settings::mainnet);
 };
 
 static const configuration testnet_defaults()
 {
-    return configuration(server::settings::defaults, node::settings::defaults,
-        blockchain::settings::testnet, network::settings::testnet);
+    return configuration(
+        server::settings::defaults,
+        node::settings::defaults,
+        blockchain::settings::testnet,
+        database::settings::testnet,
+        network::settings::testnet);
 };
 
 const configuration configuration::mainnet = mainnet_defaults();
@@ -43,11 +51,14 @@ configuration::configuration()
 {
 }
 
-configuration::configuration(const server::settings& server_settings,
+configuration::configuration(
+    const server::settings& server_settings,
     const node::settings& node_settings,
-    const bc::blockchain::settings& chain_settings,
+    const blockchain::settings& chain_settings,
+    const database::settings& database_settings,
     const network::settings& network_settings)
-  : node::configuration(node_settings, chain_settings, network_settings),
+  : node::configuration(node_settings, chain_settings, database_settings,
+        network_settings),
     server(server_settings)
 {
 }
