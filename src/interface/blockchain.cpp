@@ -29,8 +29,9 @@
 
 namespace libbitcoin {
 namespace server {
-    
+
 using namespace bc::blockchain;
+using namespace bc::chain;
 using namespace bc::wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -410,8 +411,8 @@ void blockchain::fetch_stealth(server_node::ptr node, const incoming& request,
 }
 
 void blockchain::stealth_fetched(const code& ec,
-    const block_chain::stealth& stealth_results,
-    const incoming& request, send_handler handler)
+    const stealth& stealth_results, const incoming& request,
+    send_handler handler)
 {
     // [ ephemkey:32 ][ address:20 ][ tx_hash:32 ]
     static constexpr size_t row_size = hash_size + short_hash_size + hash_size;
@@ -422,7 +423,7 @@ void blockchain::stealth_fetched(const code& ec,
 
     for (const auto& row: stealth_results)
     {
-        serial.write_hash(row.ephemkey);
+        serial.write_hash(row.ephemeral_key);
         serial.write_short_hash(row.address);
         serial.write_hash(row.transaction_hash);
     }

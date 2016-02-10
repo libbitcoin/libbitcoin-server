@@ -28,6 +28,7 @@ namespace libbitcoin {
 namespace server {
 
 using namespace bc::blockchain;
+using namespace bc::chain;
 using namespace bc::wallet;
 
 // fetch_history stuff
@@ -57,7 +58,7 @@ bool unwrap_fetch_history_args(payment_address& address,
     return true;
 }
 
-void send_history_result(const code& ec, const block_chain::history& history,
+void send_history_result(const code& ec, const history& history,
     const incoming& request, send_handler handler)
 {
     static constexpr size_t row_size = sizeof(uint8_t) + point_size +
@@ -72,7 +73,7 @@ void send_history_result(const code& ec, const block_chain::history& history,
     {
         BITCOIN_ASSERT(row.height <= max_uint32);
         auto row_height32 = static_cast<uint32_t>(row.height);
-        const auto value = row.kind == block_chain::point_kind::output ?
+        const auto value = row.kind == point_kind::output ?
             output_type : spend_type;
 
         serial.write_byte(value);
