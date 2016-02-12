@@ -179,7 +179,7 @@ bool executor::do_initchain()
 
         // Unfortunately we are still limited to a choice of hardcoded chains.
         const auto genesis = metadata_.configured.chain.use_testnet_rules ?
-            testnet_genesis_block() : mainnet_genesis_block();
+            chain::block::genesis_testnet() : chain::block::genesis_mainnet();
 
         return data_base::initialize(directory, genesis);
     }
