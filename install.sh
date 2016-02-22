@@ -42,8 +42,8 @@ BOOST_STANDARD_GCC=\
 
 # Boost archive for clang.
 #------------------------------------------------------------------------------
-BOOST_URL_CLANG="http://github.com/libbitcoin/libbitcoin-build/blob/master/mirror/boost_1_54_0.tar.bz2?raw=true"
-BOOST_ARCHIVE_CLANG="boost_1_54_0.tar.bz2"
+BOOST_URL_CLANG="http://github.com/libbitcoin/libbitcoin-build/blob/master/mirror/boost_1_55_0.tar.bz2?raw=true"
+BOOST_ARCHIVE_CLANG="boost_1_55_0.tar.bz2"
 BOOST_STANDARD_CLANG=\
 "threading=multi "\
 "variant=release "\
