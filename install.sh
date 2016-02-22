@@ -112,6 +112,8 @@ for OPTION in "$@"; do
     case $OPTION in
         # Custom build options (in the form of --build-<option>).
         (--build-icu)      BUILD_ICU="yes";;
+        (--build-png)      BUILD_PNG="yes";;
+        (--build-qrencode) BUILD_QRENCODE="yes";;
         (--build-boost)    BUILD_BOOST="yes";;
         (--build-dir=*)    BUILD_DIR="${OPTION#*=}";;
         
@@ -120,6 +122,8 @@ for OPTION in "$@"; do
         (--disable-shared) DISABLE_SHARED="yes";;
         (--disable-static) DISABLE_STATIC="yes";;
         (--with-icu)       WITH_ICU="yes";;
+        (--with-png)       WITH_PNG="yes";;
+        (--with-qrencode)  WITH_QRENCODE="yes";;
     esac
 done
 echo "Build directory: $BUILD_DIR"
@@ -128,11 +132,27 @@ echo "Prefix directory: $PREFIX"
 # Warn on configurations that imply static/prefix isolation.
 #------------------------------------------------------------------------------
 if [[ $BUILD_ICU == yes ]]; then
-    if [[ !($PREFIX)]]; then    
+    if [[ !($PREFIX)]]; then
         echo "Warning: --prefix recommended when building ICU."
     fi
     if [[ !($DISABLE_SHARED) ]]; then
         echo "Warning: --disable-shared recommended when building ICU."
+    fi
+fi
+if [[ $BUILD_QRENCODE == yes ]]; then
+    if [[ !($PREFIX)]]; then
+        echo "Warning: --prefix recommended when building QRENCODE."
+    fi
+    if [[ !($DISABLE_SHARED) ]]; then
+        echo "Warning: --disable-shared recommended when building QRENCODE."
+    fi
+fi
+if [[ $BUILD_PNG == yes ]]; then
+    if [[ !($PREFIX)]]; then
+        echo "Warning: --prefix recommended when building PNG."
+    fi
+    if [[ !($DISABLE_SHARED) ]]; then
+        echo "Warning: --disable-shared recommended when building PNG."
     fi
 fi
 if [[ $BUILD_BOOST == yes ]]; then
@@ -147,7 +167,7 @@ fi
 # Purge custom options so they don't go to configure.
 #------------------------------------------------------------------------------
 CONFIGURE_OPTIONS=( "$@" )
-CUSTOM_OPTIONS=( "--build-icu" "--build-boost" "--build-dir=$BUILD_DIR" )
+CUSTOM_OPTIONS=( "--build-icu" "--build-boost" "--build-png" "--build-qrencode" "--build-dir=$BUILD_DIR")
 for CUSTOM_OPTION in "${CUSTOM_OPTIONS[@]}"; do
     CONFIGURE_OPTIONS=( "${CONFIGURE_OPTIONS[@]/$CUSTOM_OPTION}" )
 done
@@ -157,12 +177,18 @@ done
 if [[ $DISABLE_STATIC == yes ]]; then
     BOOST_LINK="link=shared"
     ICU_LINK="--enable-shared --disable-static"
+    PNG_LINK="--enable-shared --disable-static"
+    QRENCODE_LINK="--enable-shared --disable-static"
 elif [[ $DISABLE_SHARED == yes ]]; then
     BOOST_LINK="link=static"
     ICU_LINK="--disable-shared --enable-static"
+    PNG_LINK="--disable-shared --enable-static"
+    QRENCODE_LINK="--disable-shared --enable-static"
 else
     BOOST_LINK="link=static,shared"
     ICU_LINK="--enable-shared --enable-static"
+    PNG_LINK="--enable-shared --enable-static"
+    QRENCODE_LINK="--enable-shared --enable-static"
 fi
 
 # Incorporate the prefix.
@@ -265,6 +291,14 @@ BITCOIN_OPTIONS=\
 #------------------------------------------------------------------------------
 BITCOIN_CONSENSUS_OPTIONS=\
 "--without-tests "\
+"${with_boost} "\
+"${with_pkgconfigdir} "
+
+# Define bitcoin-database options.
+#------------------------------------------------------------------------------
+BITCOIN_DATABASE_OPTIONS=\
+"--without-tests "\
+"--without-tools "\
 "${with_boost} "\
 "${with_pkgconfigdir} "
 
@@ -500,6 +534,35 @@ build_from_tarball_icu()
     pop_directory
 }
 
+build_from_tarball()
+{
+    local URL=$1
+    local ARCHIVE=$2
+    local ARCHIVE_TYPE=$3
+    local JOBS=$4
+    local LINK=$5
+    local STANDARD=$6
+    shift 6
+
+    display_message "Download $ARCHIVE"
+
+    local EXTRACTED_DIR=`echo $ARCHIVE | sed "s/.tar.$ARCHIVE_TYPE//g"`
+
+    create_directory $EXTRACTED_DIR
+    push_directory $EXTRACTED_DIR
+
+    # Extract the source locally.
+    wget --output-document $ARCHIVE $URL
+    tar --extract --file $ARCHIVE --$ARCHIVE_TYPE --strip-components=1
+
+    configure_options $LINK $STANDARD ${prefix} "$@"
+    make_jobs $JOBS --silent
+    make install
+    configure_links
+
+    pop_directory
+}
+
 build_from_tarball_boost()
 {
     local URL=$1
@@ -614,6 +677,7 @@ build_all()
     build_from_github libbitcoin secp256k1 version4 $PARALLEL "$@" $SECP256K1_OPTIONS
     build_from_github libbitcoin libbitcoin master $PARALLEL "$@" $BITCOIN_OPTIONS
     build_from_github libbitcoin libbitcoin-consensus version2 $PARALLEL "$@" $BITCOIN_CONSENSUS_OPTIONS
+    build_from_github libbitcoin libbitcoin-database master $PARALLEL "$@" $BITCOIN_DATABASE_OPTIONS
     build_from_github libbitcoin libbitcoin-blockchain master $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
     build_from_github libbitcoin libbitcoin-network master $PARALLEL "$@" $BITCOIN_NETWORK_OPTIONS
     build_from_github libbitcoin libbitcoin-node master $PARALLEL "$@" $BITCOIN_NODE_OPTIONS
