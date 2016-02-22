@@ -37,13 +37,13 @@ static const settings setting_defaults()
     value.publisher_enabled = true;
     value.queries_enabled = true;
     value.log_requests = false;
-    value.query_endpoint = { "tcp://*:9091" };
-    value.heartbeat_endpoint = { "tcp://*:9092" };
-    value.block_publish_endpoint = { "tcp://*:9093" };
-    value.transaction_publish_endpoint = { "tcp://*:9094" };
-    value.certificate_file = { "" };
-    value.client_certificates_path = { "" };
-    value.whitelists = { {} };
+    //////value.query_endpoint = { "tcp://*:9091" };
+    //////value.heartbeat_endpoint = { "tcp://*:9092" };
+    //////value.block_publish_endpoint = { "tcp://*:9093" };
+    //////value.transaction_publish_endpoint = { "tcp://*:9094" };
+    //////value.certificate_file = { "" };
+    //////value.client_certificates_path = { "" };
+    //////value.whitelists = { {} };
     return value;
 };
 
