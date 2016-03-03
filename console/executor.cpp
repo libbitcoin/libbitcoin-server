@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <bitcoin/server.hpp>
 
