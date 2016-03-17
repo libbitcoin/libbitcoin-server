@@ -110,7 +110,7 @@ options_metadata parser::load_settings()
         "network.threads",
         value<uint32_t>(&configured.network.threads)->
             default_value(network::settings::mainnet.threads),
-        "The number of threads in the network threadpool, defaults to 4."
+        "The number of threads in the network threadpool, defaults to 50."
     )
     (
         "network.identifier",
@@ -182,7 +182,7 @@ options_metadata parser::load_settings()
         "network.channel_expiration_minutes",
         value<uint32_t>(&configured.network.channel_expiration_minutes)->
             default_value(network::settings::mainnet.channel_expiration_minutes),
-        "The maximum age limit for an outbound connection, defaults to 90."
+        "The maximum age limit for an outbound connection, defaults to 1440."
     )
     (
         "network.channel_germination_seconds",
@@ -299,16 +299,10 @@ options_metadata parser::load_settings()
 
     /* [node] */
     (
-        "node.threads",
-        value<uint32_t>(&configured.node.threads)->
-            default_value(node::settings::defaults.threads),
-        "The number of threads in the node threadpool, defaults to 4."
-    )
-    (
         "node.quorum",
         value<uint32_t>(&configured.node.quorum)->
             default_value(node::settings::defaults.quorum),
-        "The number of peers to survey during sync, defaults to 8."
+        "The number of peers to survey during sync, defaults to 1."
     )
     (
         "node.block_bytes_per_second",

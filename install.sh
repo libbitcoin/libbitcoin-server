@@ -235,6 +235,7 @@ BOOST_OPTIONS_GCC=\
 "--with-program_options "\
 "--with-regex "\
 "--with-system "\
+"--with-thread "\
 "--with-test "
 
 # Define boost options for clang.
@@ -248,6 +249,7 @@ BOOST_OPTIONS_CLANG=\
 "--with-program_options "\
 "--with-regex "\
 "--with-system "\
+"--with-thread "\
 "--with-test "
 
 # Define sodium options.
