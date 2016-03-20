@@ -137,10 +137,10 @@ options_metadata parser::load_settings()
         "The target number of outgoing network connections, defaults to 8."
     )
     (
-        "network.manual_retry_limit",
-        value<uint32_t>(&configured.network.manual_retry_limit)->
-            default_value(network::settings::mainnet.manual_retry_limit),
-        "The retry limit for manual connection establishment, defaults to 0 (forever)."
+        "network.manual_attempt_limit",
+        value<uint32_t>(&configured.network.manual_attempt_limit)->
+            default_value(network::settings::mainnet.manual_attempt_limit),
+        "The attempt limit for manual connection establishment, defaults to 0 (forever)."
     )
     (
         "network.connect_batch_size",
