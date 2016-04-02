@@ -68,7 +68,7 @@ Next install the [build system](http://wikipedia.org/wiki/GNU_build_system):
 ```sh
 $ sudo apt-get install build-essential autoconf automake libtool pkg-config
 ```
-Next install the [Boost](http://www.boost.org) (minimum 1.55.0 for GCC or 1.54.0 for Clang) development package:
+Next install the [Boost](http://www.boost.org) (minimum 1.56.0) development package:
 ```sh
 $ sudo apt-get install libboost-all-dev
 ```
@@ -115,7 +115,7 @@ Next install the [build system](http://wikipedia.org/wiki/GNU_build_system) and 
 ```sh
 $ brew install autoconf automake libtool pkgconfig wget
 ```
-Next install the [Boost](http://www.boost.org) (1.54.0 or newer) development package:
+Next install the [Boost](http://www.boost.org) (1.56.0 or newer) development package:
 ```sh
 $ brew install boost
 ```
@@ -138,7 +138,7 @@ Next install the [build system](http://wikipedia.org/wiki/GNU_build_system) and 
 ```sh
 $ sudo port install autoconf automake libtool pkgconfig wget
 ```
-Next install the [Boost](http://www.boost.org) (1.54.0 or newer) development package. The `-` options remove MacPort defaults that are not Boost defaults:
+Next install the [Boost](http://www.boost.org) (1.56.0 or newer) development package. The `-` options remove MacPort defaults that are not Boost defaults:
 ```sh
 $ sudo port install boost -no_single -no_static -python27
 ```
@@ -228,9 +228,11 @@ The required set of NuGet packages can be viewed using the [NuGet package manage
    * [boost\_chrono-vc120](http://www.nuget.org/packages/boost_chrono-vc120)
    * [boost\_date\_time-vc120](http://www.nuget.org/packages/boost_date_time-vc120)
    * [boost\_filesystem-vc120](http://www.nuget.org/packages/boost_filesystem-vc120)
+   * [boost\_iostreams-vc120](http://www.nuget.org/packages/boost_iostreams-vc120)
    * [boost\_program\_options-vc120](http://www.nuget.org/packages/boost_program_options-vc120)
    * [boost\_regex-vc120](http://www.nuget.org/packages/boost_regex-vc120)
    * [boost\_system-vc120](http://www.nuget.org/packages/boost_system-vc120)
+   * [boost\_thread-vc120](http://www.nuget.org/packages/boost_thread-vc120)
    * [boost\_unit\_test\_framework-vc120](http://www.nuget.org/packages/boost_unit_test_framework-vc120)
 * Packages maintained by [evoskuil](http://www.nuget.org/profiles/evoskuil)
    * [czmq\_vc120](http://www.nuget.org/packages/czmq_vc120)
@@ -296,9 +298,11 @@ A better configuration is to centralize the NuGet repository outside of your `gi
         +boost_chrono-vc120.1.56.0.0
         +boost_date_time-vc120.1.56.0.0
         +boost_filesystem-vc120.1.56.0.0
+        +boost_iostreams-vc120.1.56.0.0
         +boost_program_options-vc120.1.56.0.0
         +boost_regex-vc120.1.56.0.0
         +boost_system-vc120.1.56.0.0
+        +boost_thread-vc120.1.56.0.0
         +boost_unit_test_framework-vc120.1.56.0.0
         +czmq_vc120.2.2.0.8
         +czmqpp_vc120.1.0.0.10
