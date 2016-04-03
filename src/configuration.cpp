@@ -24,42 +24,17 @@
 namespace libbitcoin {
 namespace server {
 
-static const configuration mainnet_defaults()
-{
-    return configuration(
-        server::settings::defaults,
-        node::settings::defaults,
-        blockchain::settings::mainnet,
-        database::settings::mainnet,
-        network::settings::mainnet);
-};
-
-static const configuration testnet_defaults()
-{
-    return configuration(
-        server::settings::defaults,
-        node::settings::defaults,
-        blockchain::settings::testnet,
-        database::settings::testnet,
-        network::settings::testnet);
-};
-
-const configuration configuration::mainnet = mainnet_defaults();
-const configuration configuration::testnet = testnet_defaults();
-
-configuration::configuration()
+// Construct with defaults derived from given context.
+configuration::configuration(bc::settings context)
+  : node::configuration(context),
+    server(context)
 {
 }
 
-configuration::configuration(
-    const server::settings& server_settings,
-    const node::settings& node_settings,
-    const blockchain::settings& chain_settings,
-    const database::settings& database_settings,
-    const network::settings& network_settings)
-  : node::configuration(node_settings, chain_settings, database_settings,
-        network_settings),
-    server(server_settings)
+// Copy constructor.
+configuration::configuration(const configuration& other)
+  : node::configuration(other),
+    server(other.server)
 {
 }
 
