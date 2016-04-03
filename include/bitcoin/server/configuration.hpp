@@ -47,17 +47,8 @@ class BCS_API configuration
   : public node::configuration
 {
 public:
-    /// Default instances.
-    static const configuration mainnet;
-    static const configuration testnet;
-
-    configuration();
-    configuration(
-        const server::settings& server_settings,
-        const node::settings& node_settings,
-        const blockchain::settings& chain_settings,
-        const database::settings& database_settings,
-        const network::settings& network_settings);
+    configuration(bc::settings context);
+    configuration(const configuration& other);
 
     /// Settings.
     server::settings server;

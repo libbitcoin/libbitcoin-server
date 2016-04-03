@@ -26,28 +26,27 @@ namespace server {
 
 using namespace asio;
 
-static const settings setting_defaults()
+settings::settings()
+  : threads(2),
+    heartbeat_interval_seconds(5),
+    polling_interval_milliseconds(1),
+    subscription_expiration_minutes(10),
+    subscription_limit(100000000),
+    publisher_enabled(true),
+    queries_enabled(true),
+    log_requests(false),
+    query_endpoint({ "tcp://*:9091" }),
+    heartbeat_endpoint({ "tcp://*:9092" }),
+    block_publish_endpoint({ "tcp://*:9093" }),
+    transaction_publish_endpoint({ "tcp://*:9094" })
 {
-    settings value;
-    value.threads = 2;
-    value.heartbeat_interval_seconds = 5;
-    value.polling_interval_milliseconds = 1;
-    value.subscription_expiration_minutes = 10;
-    value.subscription_limit = 100000000;
-    value.publisher_enabled = true;
-    value.queries_enabled = true;
-    value.log_requests = false;
-    value.query_endpoint = { "tcp://*:9091" };
-    value.heartbeat_endpoint = { "tcp://*:9092" };
-    value.block_publish_endpoint = { "tcp://*:9093" };
-    value.transaction_publish_endpoint = { "tcp://*:9094" };
-    value.certificate_file = { "" };
-    value.client_certificates_path = { "" };
-    ////value.whitelists = { {} };
-    return value;
-};
+}
 
-const settings settings::defaults = setting_defaults();
+// There are no current distinctions spanning chain contexts.
+settings::settings(bc::settings context)
+  : settings()
+{
+}
 
 duration settings::polling_interval() const
 {

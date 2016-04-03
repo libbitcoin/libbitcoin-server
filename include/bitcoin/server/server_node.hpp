@@ -40,7 +40,7 @@ public:
     typedef std::function<void (const chain::transaction&)>
         transaction_notify_callback;
 
-    server_node(const configuration& configuration=configuration::mainnet);
+    server_node(const configuration& configuration);
 
     virtual const settings& server_settings() const;
     virtual void start(result_handler handler);

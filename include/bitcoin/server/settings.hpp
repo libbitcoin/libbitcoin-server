@@ -27,13 +27,15 @@
 
 namespace libbitcoin {
 namespace server {
-    
-/// Common server configuration settings, thread safe.
-struct BCS_API settings
-{
-    /// Default instance.
-    static const settings defaults;
 
+/// Common database configuration settings, properties not thread safe.
+class BCS_API settings
+{
+public:
+    settings();
+    settings(bc::settings context);
+
+    /// Properties.
     uint32_t threads;
     uint32_t heartbeat_interval_seconds;
     uint32_t polling_interval_milliseconds;
