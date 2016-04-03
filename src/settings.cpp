@@ -35,10 +35,10 @@ settings::settings()
     publisher_enabled(true),
     queries_enabled(true),
     log_requests(false),
-    query_endpoint({ "tcp://*:9091" }),
-    heartbeat_endpoint({ "tcp://*:9092" }),
-    block_publish_endpoint({ "tcp://*:9093" }),
-    transaction_publish_endpoint({ "tcp://*:9094" })
+    query_endpoint("tcp://*:9091"),
+    heartbeat_endpoint("tcp://*:9092"),
+    block_publish_endpoint("tcp://*:9093"),
+    transaction_publish_endpoint("tcp://*:9094")
 {
 }
 
