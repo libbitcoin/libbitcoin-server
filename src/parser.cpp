@@ -280,11 +280,6 @@ options_metadata parser::load_settings()
 
     /* [node] */
     (
-        "node.quorum",
-        value<uint32_t>(&configured.node.quorum),
-        "The number of peers to survey during sync, defaults to 1."
-    )
-    (
         "node.block_bytes_per_second",
         value<uint32_t>(&configured.node.block_bytes_per_second),
         "The minimum block byte rate required from a peer during block sync, defaults to 100000."
