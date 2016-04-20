@@ -134,9 +134,9 @@ options_metadata parser::load_settings()
         "The port for incoming connections, defaults to 8333."
     )
     (
-        "network.connection_limit",
-        value<uint32_t>(&configured.network.connection_limit),
-        "The target number of total network connections, defaults to 16."
+        "network.inbound_connections",
+        value<uint32_t>(&configured.network.inbound_connections),
+        "The target number of incoming network connections, defaults to 8."
     )
     (
         "network.outbound_connections",
@@ -162,11 +162,6 @@ options_metadata parser::load_settings()
         "network.channel_handshake_seconds",
         value<uint32_t>(&configured.network.channel_handshake_seconds),
         "The time limit to complete the connection handshake, defaults to 30."
-    )
-    (
-        "network.channel_poll_seconds",
-        value<uint32_t>(&configured.network.channel_poll_seconds),
-        "The polling interval for initial block download, defaults to 1."
     )
     (
         "network.channel_heartbeat_minutes",
@@ -280,14 +275,9 @@ options_metadata parser::load_settings()
 
     /* [node] */
     (
-        "node.block_bytes_per_second",
-        value<uint32_t>(&configured.node.block_bytes_per_second),
-        "The minimum block byte rate required from a peer during block sync, defaults to 100000."
-    )
-    (
-        "node.headers_per_second",
-        value<uint32_t>(&configured.node.headers_per_second),
-        "The minimum header rate required from a peer during header sync, defaults to 10000."
+        "node.download_connections",
+        value<uint32_t>(&configured.node.download_connections),
+        "The maximum number of connections for initial block download, defaults to 8."
     )
     (
         "node.peer",
