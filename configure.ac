@@ -229,6 +229,12 @@ AS_CASE([${CC}], [*gcc*],
     [AX_CHECK_COMPILE_FLAG([-Wno-deprecated-declarations],
         [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"])])
 
+# Clean up boost 1.55 headers. Enabled in clang only.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*clang*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-redeclared-class-member],
+        [CXXFLAGS="$CXXFLAGS -Wno-redeclared-class-member"])])
+
 # Protect stack.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
