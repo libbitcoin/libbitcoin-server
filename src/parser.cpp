@@ -275,6 +275,11 @@ options_metadata parser::load_settings()
 
     /* [node] */
     (
+        "node.block_timeout_seconds",
+        value<uint32_t>(&configured.node.block_timeout_seconds),
+        "The time limit for block receipt during initial block download, defaults to 5."
+    )
+    (
         "node.download_connections",
         value<uint32_t>(&configured.node.download_connections),
         "The maximum number of connections for initial block download, defaults to 8."
