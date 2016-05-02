@@ -187,15 +187,21 @@ bool request_worker::enable_crypto(const settings_type& config)
         client_certs = config.server.client_certificates_path.string();
 
     authenticate_.configure_curve("*", client_certs);
-    czmqpp::certificate cert(config.server.certificate_file.string());
-    if (cert.valid())
+    auto cert_path = config.server.certificate_file.string();
+
+    if (!cert_path.empty())
     {
-        cert.apply(socket_);
-        socket_.set_curve_server(zmq_curve_enabled);
-        return true;
+        // TODO: create a czmqpp::reset(path) override to hide this.
+        // Create a new certificate and transfer ownership to the member.
+        certificate_.reset(zcert_load(cert_path.c_str()));
+
+        if (!certificate_.valid())
+            return false;
     }
 
-    return false;
+    certificate_.apply(socket_);
+    socket_.set_curve_server(zmq_curve_enabled);
+    return true;
 }
 
 bool request_worker::create_new_socket(const settings_type& config)
