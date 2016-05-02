@@ -81,9 +81,12 @@ private:
 
     czmqpp::context context_;
     czmqpp::socket socket_;
+    czmqpp::authenticator authenticate_;
+    czmqpp::certificate certificate_;
+
+    // These are not authenticated.
     czmqpp::socket wakeup_socket_;
     czmqpp::socket heartbeat_socket_;
-    czmqpp::authenticator authenticate_;
 
     send_worker sender_;
     command_map handlers_;
