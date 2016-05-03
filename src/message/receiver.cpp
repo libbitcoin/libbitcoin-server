@@ -158,6 +158,7 @@ void receiver::whitelist()
 // Returns false if server certificate exists and is invalid.
 bool receiver::enable_crypto()
 {
+    // TODO: should we allow an empty server cert with client certs?
     if (settings_.certificate_file.empty())
         return true;
 
@@ -166,16 +167,21 @@ bool receiver::enable_crypto()
         client_certs = settings_.client_certificates_path.string();
 
     authenticate_.configure_curve("*", client_certs);
-    czmqpp::certificate cert(settings_.certificate_file.string());
+    auto cert_path = settings_.certificate_file.string();
 
-    if (cert.valid())
+    if (!cert_path.empty())
     {
-        cert.apply(socket_);
-        socket_.set_curve_server(zmq_curve_enabled);
-        return true;
+        // TODO: create a czmqpp::reset(path) override to hide this.
+        // Create a new certificate and transfer ownership to the member.
+        certificate_.reset(zcert_load(cert_path.c_str()));
+
+        if (!certificate_.valid())
+            return false;
     }
 
-    return false;
+    certificate_.apply(socket_);
+    socket_.set_curve_server(zmq_curve_enabled);
+    return true;
 }
 
 void receiver::attach(const std::string& command, command_handler handler)
