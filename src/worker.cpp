@@ -173,34 +173,50 @@ void request_worker::whitelist(const config::authority::list& addresses)
     {
         log_info(LOG_SERVICE)
             << "Whitelisted client [" << format_whitelist(ip_address) << "]";
+
         authenticate_.allow(ip_address.to_string());
     }
 }
 
 bool request_worker::enable_crypto(const settings_type& config)
 {
-    if (config.server.certificate_file.empty())
-        return true;
+    const auto server_cert_path = config.server.certificate_file.string();
+    auto client_certs_path = config.server.client_certificates_path.string();
 
-    std::string client_certs(CURVE_ALLOW_ANY);
-    if (!config.server.client_certificates_path.empty())
-        client_certs = config.server.client_certificates_path.string();
+    if (!client_certs_path.empty() && server_cert_path.empty())
+    {
+        log_error(LOG_SERVICE)
+            << "Client authentication requires a server certificate.";
 
-    authenticate_.configure_curve("*", client_certs);
-    auto cert_path = config.server.certificate_file.string();
+        return false;
+    }
 
-    if (!cert_path.empty())
+    // Configure server certificate if specified.
+    if (!server_cert_path.empty())
     {
         // TODO: create a czmqpp::reset(path) override to hide this.
         // Create a new certificate and transfer ownership to the member.
-        certificate_.reset(zcert_load(cert_path.c_str()));
+        certificate_.reset(zcert_load(server_cert_path.c_str()));
 
         if (!certificate_.valid())
             return false;
+
+        certificate_.apply(socket_);
+        socket_.set_curve_server(zmq_curve_enabled);
+
+        log_info(LOG_SERVICE)
+            << "Loaded server certificate: " << server_cert_path;
     }
 
-    certificate_.apply(socket_);
-    socket_.set_curve_server(zmq_curve_enabled);
+    // Always configure client certificates directory or *.
+    if (client_certs_path.empty())
+        client_certs_path = CURVE_ALLOW_ANY;
+    else
+        log_info(LOG_SERVICE)
+        << "Require client certificates: " << client_certs_path;
+
+    static const auto all_domains = "*";
+    authenticate_.configure_curve(all_domains, client_certs_path);
     return true;
 }
 
