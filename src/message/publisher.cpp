@@ -35,12 +35,16 @@ using namespace bc::chain;
 static constexpr int zmq_fail = -1;
 static constexpr size_t header_size = 80;
 
+// BUGBUG: The publisher uses a context independent of the receiver/notifier
+// and is therefore independent of that security context (no auth/cert).
 publisher::publisher(server_node::ptr node)
   : node_(node),
     settings_(node->server_settings()),
     socket_tx_(context_, ZMQ_PUB),
     socket_block_(context_, ZMQ_PUB)
 {
+    BITCOIN_ASSERT(socket_tx_.self() != nullptr);
+    BITCOIN_ASSERT(socket_block_.self() != nullptr);
 }
 
 bool publisher::start()
