@@ -59,8 +59,8 @@ bool publisher::start()
             return false;
         }
 
-        log::debug(LOG_SERVICE)
-            << "Publishing blocks on "
+        log::info(LOG_SERVICE)
+            << "Bound block publish service on "
             << settings_.block_publish_endpoint;
     }
 
@@ -75,8 +75,8 @@ bool publisher::start()
             return false;
         }
 
-        log::debug(LOG_SERVICE)
-            << "Publishing transactions on "
+        log::info(LOG_SERVICE)
+            << "Bound transaction publish service on "
             << settings_.transaction_publish_endpoint;
     }
 
