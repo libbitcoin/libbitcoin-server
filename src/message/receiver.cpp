@@ -68,16 +68,14 @@ bool receiver::start()
     if (!settings_.queries_enabled && settings_.subscription_limit == 0)
         return true;
 
-#ifdef _MSC_VER
-    if (settings_.log_requests)
-        log::debug(LOG_SERVICE)
-            << "Authentication logging disabled on Windows.";
-#else
-    // This exposes the log stream to non-utf8 text on Windows.
-    // TODO: fix zeromq/czmq/czmqpp to be utf8 everywhere.
-    if (settings_.log_requests)
+#ifndef _MSC_VER
+    // Hack to prevent czmq from writing to stdout/stderr on Windows.
+    // This will prevent authentication feedback, but also prevent crashes.
+    // It is necessary to prevent stdio when using our utf8-everywhere pattern.
+    // TODO: modify czmq to not hardcode stdout/stderr for verbose output.
+    if (log_requests_)
         authenticate_.set_verbose(true);
-#endif 
+#endif
 
     if (!settings_.whitelists.empty())
         whitelist();
@@ -115,6 +113,7 @@ bool receiver::start()
     }
 
     socket_.set_linger(zmq_socket_no_linger);
+
     log::info(LOG_SERVICE)
         << "Bound query service on " << endpoint;
 
@@ -130,6 +129,7 @@ bool receiver::start()
     }
 
     deadline_ = now() + settings_.heartbeat_interval();
+
     log::info(LOG_SERVICE)
         << "Bound heartbeat service on " << endpoint;
 
@@ -139,6 +139,7 @@ bool receiver::start()
 static std::string format_whitelist(const authority& authority)
 {
     auto formatted = authority.to_string();
+
     if (authority.port() == 0)
         formatted += ":*";
 
@@ -151,6 +152,7 @@ void receiver::whitelist()
     {
         log::info(LOG_SERVICE)
             << "Whitelisted client [" << format_whitelist(ip_address) << "]";
+
         authenticate_.allow(ip_address.to_string());
     }
 }
@@ -158,29 +160,41 @@ void receiver::whitelist()
 // Returns false if server certificate exists and is invalid.
 bool receiver::enable_crypto()
 {
-    // TODO: should we allow an empty server cert with client certs?
-    if (settings_.certificate_file.empty())
-        return true;
+    const auto server_cert_path = settings_.certificate_file.string();
+    auto client_certs_path = settings_.client_certificates_path.string();
 
-    std::string client_certs(CURVE_ALLOW_ANY);
-    if (!settings_.client_certificates_path.empty())
-        client_certs = settings_.client_certificates_path.string();
-
-    authenticate_.configure_curve("*", client_certs);
-    auto cert_path = settings_.certificate_file.string();
-
-    if (!cert_path.empty())
+    if (!client_certs_path.empty() && server_cert_path.empty())
     {
-        // TODO: create a czmqpp::reset(path) override to hide this.
-        // Create a new certificate and transfer ownership to the member.
-        certificate_.reset(zcert_load(cert_path.c_str()));
+        log::error(LOG_SERVICE)
+            << "Client authentication requires a server certificate.";
+
+        return false;
+    }
+
+    // Configure server certificate if specified.
+    if (!server_cert_path.empty())
+    {
+        certificate_.reset(server_cert_path);
 
         if (!certificate_.valid())
             return false;
+
+        certificate_.apply(socket_);
+        socket_.set_curve_server(zmq_curve_enabled);
+
+        log::info(LOG_SERVICE)
+            << "Loaded server certificate: " << server_cert_path;
     }
 
-    certificate_.apply(socket_);
-    socket_.set_curve_server(zmq_curve_enabled);
+    // Always configure client certificates directory or *.
+    if (client_certs_path.empty())
+        client_certs_path = CURVE_ALLOW_ANY;
+    else
+        log::info(LOG_SERVICE)
+            << "Require client certificates: " << client_certs_path;
+
+    static const auto all_domains = "*";
+    authenticate_.configure_curve(all_domains, client_certs_path);
     return true;
 }
 
@@ -217,7 +231,7 @@ void receiver::poll()
         if (it != handlers_.end())
         {
             if (settings_.log_requests)
-                log::debug(LOG_REQUEST)
+                log::info(LOG_REQUEST)
                     << "Service request [" << request.command() << "] from "
                     << encode_base16(request.origin());
 
