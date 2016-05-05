@@ -28,7 +28,7 @@
 
 namespace libbitcoin {
 namespace server {
-    
+
 namespace posix_time = boost::posix_time;
 using posix_time::milliseconds;
 using posix_time::seconds;
@@ -46,6 +46,12 @@ auto now = []() { return microsec_clock::universal_time(); };
 send_worker::send_worker(czmqpp::context& context)
   : context_(context)
 {
+#ifdef _MSC_VER
+    // Hack to prevent czmq from writing to stdout/stderr on Windows.
+    // It is necessary to prevent stdio when using our utf8-everywhere pattern.
+    // TODO: provide a FILE* here that we can direct to our own log/console.
+    zsys_set_logstream(NULL);
+#endif
 }
 
 void send_worker::queue_send(const outgoing_message& message)
@@ -94,19 +100,16 @@ request_worker::request_worker(bool log_requests,
 
 bool request_worker::start(const settings_type& config)
 {
-    // Use config values.
     log_requests_ = config.server.log_requests;
 
-#ifdef _MSC_VER
-    if (log_requests_)
-        log_debug(LOG_SERVICE)
-            << "Authentication logging disabled on Windows.";
-#else
-    // This exposes the log stream to non-utf8 text on Windows.
-    // TODO: fix zeromq/czmq/czmqpp to be utf8 everywhere.
+#ifndef _MSC_VER
+    // Hack to prevent czmq from writing to stdout/stderr on Windows.
+    // This will prevent authentication feedback, but also prevent crashes.
+    // It is necessary to prevent stdio when using our utf8-everywhere pattern.
+    // TODO: modify czmq to not hardcode stdout/stderr for verbose output.
     if (log_requests_)
         authenticate_.set_verbose(true);
-#endif 
+#endif
 
     if (!config.server.whitelists.empty())
         whitelist(config.server.whitelists);
@@ -173,34 +176,50 @@ void request_worker::whitelist(const config::authority::list& addresses)
     {
         log_info(LOG_SERVICE)
             << "Whitelisted client [" << format_whitelist(ip_address) << "]";
+
         authenticate_.allow(ip_address.to_string());
     }
 }
 
 bool request_worker::enable_crypto(const settings_type& config)
 {
-    if (config.server.certificate_file.empty())
-        return true;
+    const auto server_cert_path = config.server.certificate_file.string();
+    auto client_certs_path = config.server.client_certificates_path.string();
 
-    std::string client_certs(CURVE_ALLOW_ANY);
-    if (!config.server.client_certificates_path.empty())
-        client_certs = config.server.client_certificates_path.string();
+    if (!client_certs_path.empty() && server_cert_path.empty())
+    {
+        log_error(LOG_SERVICE)
+            << "Client authentication requires a server certificate.";
 
-    authenticate_.configure_curve("*", client_certs);
-    auto cert_path = config.server.certificate_file.string();
+        return false;
+    }
 
-    if (!cert_path.empty())
+    // Configure server certificate if specified.
+    if (!server_cert_path.empty())
     {
         // TODO: create a czmqpp::reset(path) override to hide this.
         // Create a new certificate and transfer ownership to the member.
-        certificate_.reset(zcert_load(cert_path.c_str()));
+        certificate_.reset(zcert_load(server_cert_path.c_str()));
 
         if (!certificate_.valid())
             return false;
+
+        certificate_.apply(socket_);
+        socket_.set_curve_server(zmq_curve_enabled);
+
+        log_info(LOG_SERVICE)
+            << "Loaded server certificate: " << server_cert_path;
     }
 
-    certificate_.apply(socket_);
-    socket_.set_curve_server(zmq_curve_enabled);
+    // Always configure client certificates directory or *.
+    if (client_certs_path.empty())
+        client_certs_path = CURVE_ALLOW_ANY;
+    else
+        log_info(LOG_SERVICE)
+        << "Require client certificates: " << client_certs_path;
+
+    static const auto all_domains = "*";
+    authenticate_.configure_curve(all_domains, client_certs_path);
     return true;
 }
 
