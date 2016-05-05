@@ -166,10 +166,10 @@ AC_SUBST([sodium_CPPFLAGS], [${sodium_CFLAGS}])
 AC_MSG_NOTICE([sodium_CPPFLAGS : ${sodium_CPPFLAGS}])
 AC_MSG_NOTICE([sodium_LIBS : ${sodium_LIBS}])
 
-# Require czmq++ of at least version 1.1.0 and output ${czmq___CPPFLAGS/LIBS/PKG}.
+# Require czmq++ of at least version 1.2.0 and output ${czmq___CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
-PKG_CHECK_MODULES([czmq__], [libczmq++ >= 1.1.0])
-AC_SUBST([czmq___PKG], ['libczmq++ >= 1.1.0'])
+PKG_CHECK_MODULES([czmq__], [libczmq++ >= 1.2.0])
+AC_SUBST([czmq___PKG], ['libczmq++ >= 1.2.0'])
 AC_SUBST([czmq___CPPFLAGS], [${czmq___CFLAGS}])
 AC_MSG_NOTICE([czmq___CPPFLAGS : ${czmq___CPPFLAGS}])
 AC_MSG_NOTICE([czmq___LIBS : ${czmq___LIBS}])
