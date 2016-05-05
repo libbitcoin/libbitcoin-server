@@ -197,9 +197,7 @@ bool request_worker::enable_crypto(const settings_type& config)
     // Configure server certificate if specified.
     if (!server_cert_path.empty())
     {
-        // TODO: create a czmqpp::reset(path) override to hide this.
-        // Create a new certificate and transfer ownership to the member.
-        certificate_.reset(zcert_load(server_cert_path.c_str()));
+        certificate_.reset(server_cert_path);
 
         if (!certificate_.valid())
             return false;
