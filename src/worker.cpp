@@ -28,7 +28,7 @@
 
 namespace libbitcoin {
 namespace server {
-    
+
 namespace posix_time = boost::posix_time;
 using posix_time::milliseconds;
 using posix_time::seconds;
@@ -46,6 +46,12 @@ auto now = []() { return microsec_clock::universal_time(); };
 send_worker::send_worker(czmqpp::context& context)
   : context_(context)
 {
+#ifdef _MSC_VER
+    // Hack to prevent czmq from writing to stdout/stderr on Windows.
+    // It is necessary to prevent stdio when using our utf8-everywhere pattern.
+    // TODO: provide a FILE* here that we can direct to our own log/console.
+    zsys_set_logstream(NULL);
+#endif
 }
 
 void send_worker::queue_send(const outgoing_message& message)
@@ -94,19 +100,16 @@ request_worker::request_worker(bool log_requests,
 
 bool request_worker::start(const settings_type& config)
 {
-    // Use config values.
     log_requests_ = config.server.log_requests;
 
-#ifdef _MSC_VER
-    if (log_requests_)
-        log_debug(LOG_SERVICE)
-            << "Authentication logging disabled on Windows.";
-#else
-    // This exposes the log stream to non-utf8 text on Windows.
-    // TODO: fix zeromq/czmq/czmqpp to be utf8 everywhere.
+#ifndef _MSC_VER
+    // Hack to prevent czmq from writing to stdout/stderr on Windows.
+    // This will prevent authentication feedback, but also prevent crashes.
+    // It is necessary to prevent stdio when using our utf8-everywhere pattern.
+    // TODO: modify czmq to not hardcode stdout/stderr for verbose output.
     if (log_requests_)
         authenticate_.set_verbose(true);
-#endif 
+#endif
 
     if (!config.server.whitelists.empty())
         whitelist(config.server.whitelists);
