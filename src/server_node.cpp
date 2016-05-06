@@ -43,6 +43,9 @@ server_node::server_node(const configuration& configuration)
     configuration_(configuration),
     last_checkpoint_height_(configuration.last_checkpoint_height())
 {
+    // Disable czmq signal handling.
+    zsys_handler_set(NULL);
+
 #ifdef _MSC_VER
     // Hack to prevent czmq from writing to stdout/stderr on Windows.
     // It is necessary to prevent stdio when using our utf8-everywhere pattern.
@@ -64,6 +67,7 @@ const settings& server_node::server_settings() const
 
 void server_node::start(result_handler handler)
 {
+    // The handler is invoked sequentially.
     // Start the network and blockchain before subscribing.
     p2p_node::start(
         std::bind(&server_node::handle_node_start,
