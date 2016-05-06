@@ -52,7 +52,7 @@ public:
     void operator=(const receiver&) = delete;
 
     bool start();
-    void poll();
+    void poll(uint32_t interval_milliseconds);
     void attach(const std::string& command, command_handler handler);
 
 private:
@@ -66,7 +66,7 @@ private:
     uint32_t counter_;
     sender sender_;
     command_map handlers_;
-    boost::posix_time::ptime deadline_;
+    boost::posix_time::ptime heartbeat_;
     const settings& settings_;
 
     czmqpp::context context_;
@@ -75,6 +75,7 @@ private:
     czmqpp::socket heartbeat_socket_;
     czmqpp::certificate certificate_;
     czmqpp::authenticator authenticate_;
+    czmqpp::poller poller_;
 };
 
 } // namespace server

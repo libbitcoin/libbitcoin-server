@@ -55,8 +55,10 @@ receiver::receiver(server_node::ptr node)
     socket_(context_, ZMQ_ROUTER),
     wakeup_socket_(context_, ZMQ_PULL),
     heartbeat_socket_(context_, ZMQ_PUB),
-    authenticate_(context_)
+    authenticate_(context_),
+    poller_(socket_, wakeup_socket_)
 {
+    BITCOIN_ASSERT(poller_.self() != nullptr);
     BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
     BITCOIN_ASSERT(heartbeat_socket_.self() != nullptr);
@@ -128,7 +130,8 @@ bool receiver::start()
         return false;
     }
 
-    deadline_ = now() + settings_.heartbeat_interval();
+    // There is a conflict with poller granularity and heartbeat interval.
+    heartbeat_ = now() + settings_.heartbeat_interval();
 
     log::info(LOG_SERVICE)
         << "Bound heartbeat service on " << endpoint;
@@ -203,15 +206,9 @@ void receiver::attach(const std::string& command, command_handler handler)
     handlers_[command] = handler;
 }
 
-void receiver::poll()
+void receiver::poll(uint32_t interval_milliseconds)
 {
-    // Poll for network updates.
-    czmqpp::poller poller(socket_, wakeup_socket_);
-    BITCOIN_ASSERT(poller.self() != nullptr);
-
-    const auto which = poller.wait(settings_.polling_interval_milliseconds);
-    BITCOIN_ASSERT(socket_.self() != nullptr);
-    BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
+    const auto which = poller_.wait(interval_milliseconds);
 
     if (which == wakeup_socket_)
     {
@@ -249,9 +246,10 @@ void receiver::poll()
     }
 
     // Publish heartbeat.
-    if (now() > deadline_)
+    if (now() > heartbeat_)
     {
-        deadline_ = now() + settings_.heartbeat_interval();
+        // There is a conflict with poller granularity and heartbeat interval.
+        heartbeat_ = now() + settings_.heartbeat_interval();
         log::debug(LOG_SERVICE) << "Publish service heartbeat";
         publish_heartbeat();
     }
