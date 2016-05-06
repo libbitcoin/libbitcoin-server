@@ -46,6 +46,9 @@ auto now = []() { return microsec_clock::universal_time(); };
 send_worker::send_worker(czmqpp::context& context)
   : context_(context)
 {
+    // Disable czmq signal handling.
+    zsys_handler_set(NULL);
+
 #ifdef _MSC_VER
     // Hack to prevent czmq from writing to stdout/stderr on Windows.
     // It is necessary to prevent stdio when using our utf8-everywhere pattern.
