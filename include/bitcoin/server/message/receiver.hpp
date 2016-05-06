@@ -62,6 +62,8 @@ private:
     bool enable_crypto();
     bool create_new_socket();
     void publish_heartbeat();
+    void update_heartbeat();
+    boost::posix_time::ptime receiver::now();
 
     uint32_t counter_;
     sender sender_;
@@ -70,9 +72,9 @@ private:
     const settings& settings_;
 
     czmqpp::context context_;
-    czmqpp::socket socket_;
     czmqpp::socket wakeup_socket_;
     czmqpp::socket heartbeat_socket_;
+    czmqpp::socket receive_socket_;
     czmqpp::certificate certificate_;
     czmqpp::authenticator authenticate_;
     czmqpp::poller poller_;
