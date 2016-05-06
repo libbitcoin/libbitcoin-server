@@ -119,6 +119,9 @@ void executor::attach_subscription_api()
 // Class and method names must match protocol expectations (do not change).
 void executor::attach_query_api()
 {
+    // address.fetch_history was present in v1 (obelisk) and v2 (server).
+    // address.fetch_history was called by client v1 (sx) and v2 (bx).
+    ////ATTACH(receive_, address, fetch_history, node_);
     ATTACH(receive_, address, fetch_history2, node_);
     ATTACH(receive_, blockchain, fetch_history, node_);
     ATTACH(receive_, blockchain, fetch_transaction, node_);
