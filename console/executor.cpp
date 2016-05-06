@@ -19,7 +19,6 @@
  */
 #include "executor.hpp"
 
-#include <chrono>
 #include <csignal>
 #include <functional>
 #include <future>
@@ -33,7 +32,7 @@
 
 namespace libbitcoin {
 namespace server {
-    
+
 using boost::format;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -49,7 +48,6 @@ static constexpr int directory_not_found = 2;
 static constexpr auto append = std::ofstream::out | std::ofstream::app;
 
 static const auto application_name = "bn";
-static const auto stop_sensitivity = std::chrono::milliseconds(10);
 
 // Class and method names must match protocol expectations (do not change).
 #define ATTACH(worker, class_name, method_name, instance) \
@@ -253,6 +251,11 @@ bool executor::run()
 
     log::info(LOG_NODE) << BS_NODE_STARTED;
 
+    // Define here so that the poller is initialized for the wait loop.
+    notify_ = std::make_shared<notifier>(node_);
+    receive_ = std::make_shared<receiver>(node_);
+    publish_ = std::make_shared<publisher>(node_);
+
     // Block until the node is stopped or there is an interrupt.
     return wait_on_stop();
 }
@@ -283,10 +286,6 @@ void executor::handle_synchronized(const code& ec)
     }
 
     log::info(LOG_NODE) << BS_NODE_SYNCHRONIZED;
-
-    notify_ = std::make_shared<notifier>(node_);
-    receive_ = std::make_shared<receiver>(node_);
-    publish_ = std::make_shared<publisher>(node_);
 
     // Start server services on top of the node, these log internally.
     if (!receive_->start() || !publish_->start() || !notify_->start())
@@ -353,8 +352,10 @@ void executor::handle_stopped(const code& ec, std::promise<code>& promise)
 
 void executor::monitor_stop(p2p::result_handler handler)
 {
+    auto period = metadata_.configured.server.polling_interval_milliseconds;
+
     while (!stopped_ && !node_->stopped())
-        std::this_thread::sleep_for(stop_sensitivity);
+        receive_->poll(period);
 
     log::info(LOG_NODE) << BS_NODE_UNMAPPING;
     node_->stop(handler);
