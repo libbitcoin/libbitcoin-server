@@ -73,7 +73,7 @@ bool receiver::start()
     // This will prevent authentication feedback, but also prevent crashes.
     // It is necessary to prevent stdio when using our utf8-everywhere pattern.
     // TODO: modify czmq to not hardcode stdout/stderr for verbose output.
-    if (log_requests_)
+    if (settings_.log_requests)
         authenticate_.set_verbose(true);
 #endif
 
