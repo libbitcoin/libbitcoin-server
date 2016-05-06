@@ -289,7 +289,7 @@ void executor::handle_synchronized(const code& ec)
     publish_ = std::make_shared<publisher>(node_);
 
     // Start server services on top of the node, these log internally.
-    if (!publish_->start() || !receive_->start() || !notify_->start())
+    if (!receive_->start() || !publish_->start() || !notify_->start())
     {
         stopped_ = true;
         return;

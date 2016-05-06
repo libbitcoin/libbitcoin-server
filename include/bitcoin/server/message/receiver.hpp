@@ -73,8 +73,8 @@ private:
     czmqpp::socket socket_;
     czmqpp::socket wakeup_socket_;
     czmqpp::socket heartbeat_socket_;
-    czmqpp::authenticator authenticate_;
     czmqpp::certificate certificate_;
+    czmqpp::authenticator authenticate_;
 };
 
 } // namespace server
