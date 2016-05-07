@@ -63,7 +63,7 @@ private:
     bool create_new_socket();
     void publish_heartbeat();
     void update_heartbeat();
-    boost::posix_time::ptime receiver::now();
+    boost::posix_time::ptime now();
 
     uint32_t counter_;
     sender sender_;
