@@ -35,6 +35,7 @@ namespace server {
 
 using std::placeholders::_1;
 using namespace bc::config;
+using namespace boost::posix_time;
 
 // TODO: should we be testing zmq_fail in each bind call?
 static constexpr int zmq_true = 1;
@@ -43,25 +44,20 @@ static constexpr int zmq_fail = -1;
 static constexpr int zmq_curve_enabled = zmq_true;
 static constexpr int zmq_socket_no_linger = zmq_false;
 
-const auto now = []()
-{
-    return boost::posix_time::second_clock::universal_time();
-};
-
 receiver::receiver(server_node::ptr node)
   : counter_(0),
     sender_(context_),
     settings_(node->server_settings()),
-    socket_(context_, ZMQ_ROUTER),
     wakeup_socket_(context_, ZMQ_PULL),
     heartbeat_socket_(context_, ZMQ_PUB),
+    receive_socket_(context_, ZMQ_ROUTER),
     authenticate_(context_),
-    poller_(socket_, wakeup_socket_)
+    poller_(receive_socket_, wakeup_socket_)
 {
     BITCOIN_ASSERT(poller_.self() != nullptr);
-    BITCOIN_ASSERT(socket_.self() != nullptr);
     BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
     BITCOIN_ASSERT(heartbeat_socket_.self() != nullptr);
+    BITCOIN_ASSERT(receive_socket_.self() != nullptr);
 }
 
 bool receiver::start()
@@ -83,7 +79,7 @@ bool receiver::start()
         whitelist();
 
     if (settings_.certificate_file.empty())
-        socket_.set_zap_domain("global");
+        receive_socket_.set_zap_domain("global");
 
     if (!enable_crypto())
     {
@@ -105,7 +101,7 @@ bool receiver::start()
 
     // This binds the query service.
     auto endpoint = settings_.query_endpoint.to_string();
-    rc = socket_.bind(endpoint);
+    rc = receive_socket_.bind(endpoint);
 
     if (rc == zmq_false)
     {
@@ -114,7 +110,7 @@ bool receiver::start()
         return false;
     }
 
-    socket_.set_linger(zmq_socket_no_linger);
+    receive_socket_.set_linger(zmq_socket_no_linger);
 
     log::info(LOG_SERVICE)
         << "Bound query service on " << endpoint;
@@ -130,8 +126,7 @@ bool receiver::start()
         return false;
     }
 
-    // There is a conflict with poller granularity and heartbeat interval.
-    heartbeat_ = now() + settings_.heartbeat_interval();
+    update_heartbeat();
 
     log::info(LOG_SERVICE)
         << "Bound heartbeat service on " << endpoint;
@@ -182,8 +177,8 @@ bool receiver::enable_crypto()
         if (!certificate_.valid())
             return false;
 
-        certificate_.apply(socket_);
-        socket_.set_curve_server(zmq_curve_enabled);
+        certificate_.apply(receive_socket_);
+        receive_socket_.set_curve_server(zmq_curve_enabled);
 
         log::info(LOG_SERVICE)
             << "Loaded server certificate: " << server_cert_path;
@@ -206,62 +201,66 @@ void receiver::attach(const std::string& command, command_handler handler)
     handlers_[command] = handler;
 }
 
+ptime receiver::now()
+{
+    return second_clock::universal_time();
+};
+
+void receiver::update_heartbeat()
+{
+    heartbeat_ = now() + settings_.heartbeat_interval();
+}
+
 void receiver::poll(uint32_t interval_milliseconds)
 {
-    const auto which = poller_.wait(interval_milliseconds);
+    // Poller granularity limits the heartbeat interval.
+    publish_heartbeat();
 
-    if (which == wakeup_socket_)
+    const auto socket = poller_.wait(interval_milliseconds);
+
+    if (socket == receive_socket_)
+    {
+        // Get message: 6-part envelope + content -> request
+        incoming request;
+        request.receive(receive_socket_);
+
+        if (settings_.log_requests)
+            log::info(LOG_REQUEST)
+                << "Service request [" << request.command() << "] from "
+                << encode_base16(request.origin());
+
+        // Locate the request handler for this command.
+        auto handler = handlers_.find(request.command());
+
+        // Perform request if handler exists.
+        if (handler != handlers_.end())
+            handler->second(request,
+                std::bind(&sender::queue,
+                    &sender_, _1));
+    }
+    else if (socket == wakeup_socket_)
     {
         // Send queued message.
         czmqpp::message message;
         message.receive(wakeup_socket_);
-        message.send(socket_);
-    }
-    else if (which == socket_)
-    {
-        // Get message: 6-part envelope + content -> request
-        incoming request;
-        request.receive(socket_);
-
-        // Perform request if handler exists.
-        auto it = handlers_.find(request.command());
-        if (it != handlers_.end())
-        {
-            if (settings_.log_requests)
-                log::info(LOG_REQUEST)
-                    << "Service request [" << request.command() << "] from "
-                    << encode_base16(request.origin());
-
-            it->second(request,
-                std::bind(&sender::queue,
-                    &sender_, _1));
-        }
-        else
-        {
-            if (settings_.log_requests)
-                log::warning(LOG_REQUEST)
-                    << "Unhandled service request [" << request.command()
-                    << "] from " << encode_base16(request.origin());
-        }
-    }
-
-    // Publish heartbeat.
-    if (now() > heartbeat_)
-    {
-        // There is a conflict with poller granularity and heartbeat interval.
-        heartbeat_ = now() + settings_.heartbeat_interval();
-        log::debug(LOG_SERVICE) << "Publish service heartbeat";
-        publish_heartbeat();
+        message.send(receive_socket_);
     }
 }
 
 void receiver::publish_heartbeat()
 {
-    czmqpp::message message;
-    const auto raw_counter = to_chunk(to_little_endian(counter_));
-    message.append(raw_counter);
-    message.send(heartbeat_socket_);
-    ++counter_;
+    if (now() > heartbeat_)
+    {
+        update_heartbeat();
+        czmqpp::message message;
+        const auto raw_counter = to_chunk(to_little_endian(counter_));
+        message.append(raw_counter);
+        message.send(heartbeat_socket_);
+        ++counter_;
+
+        log::debug(LOG_SERVICE)
+            << "Published service heartbeat.";
+    }
 }
 
 } // namespace server
