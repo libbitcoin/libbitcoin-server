@@ -226,7 +226,7 @@ void receiver::poll(uint32_t interval_milliseconds)
 
         if (settings_.log_requests)
             log::info(LOG_REQUEST)
-                << "Service request [" << request.command() << "] from "
+                << "Command " << request.command() << " from "
                 << encode_base16(request.origin());
 
         // Locate the request handler for this command.

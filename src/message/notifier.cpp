@@ -62,8 +62,8 @@ notifier::notifier(server_node::ptr node)
     node->subscribe_transactions(receive_tx);
 }
 
-// ----------------------------------------------------------------------------
 // Start sequence.
+// ----------------------------------------------------------------------------
 
 bool notifier::start()
 {
@@ -77,8 +77,8 @@ bool notifier::start()
     return true;
 }
 
-// ----------------------------------------------------------------------------
 // Subscribe sequence.
+// ----------------------------------------------------------------------------
 
 void notifier::subscribe(const incoming& request, send_handler handler)
 {
@@ -101,8 +101,8 @@ void notifier::do_subscribe(const incoming& request, send_handler handler)
     handler(response);
 }
 
-// ----------------------------------------------------------------------------
 // Renew sequence.
+// ----------------------------------------------------------------------------
 
 void notifier::renew(const incoming& request, send_handler handler)
 {
@@ -154,8 +154,8 @@ void notifier::do_renew(const incoming& request, send_handler handler)
     handler(response);
 }
 
-// ----------------------------------------------------------------------------
 // Scan sequence.
+// ----------------------------------------------------------------------------
 
 void notifier::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
@@ -312,19 +312,16 @@ code notifier::add(const incoming& request, send_handler handler)
 
 void notifier::sweep()
 {
-    const auto fixed_time = now();
+    const auto current_time = now();
 
     // Delete entries that have expired.
     for (auto it = subscriptions_.begin(); it != subscriptions_.end();)
     {
-        const auto& subscription = *it;
-
-        // Already expired? If so, then erase.
-        if (subscription.expiry_time < fixed_time)
+        if (current_time > it->expiry_time)
         {
             log::debug(LOG_SERVICE)
-                << "Deleting expired subscription: " << subscription.prefix
-                << " from " << encode_base16(subscription.client_origin);
+                << "Deleting expired subscription: " << it->prefix
+                << " from " << encode_base16(it->client_origin);
 
             it = subscriptions_.erase(it);
             continue;
@@ -334,8 +331,8 @@ void notifier::sweep()
     }
 }
 
-// ----------------------------------------------------------------------------
 // Destruct sequence.
+// ----------------------------------------------------------------------------
 
 void notifier::stop()
 {
