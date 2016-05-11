@@ -411,10 +411,12 @@ void blockchain::fetch_stealth(server_node::ptr node, const incoming& request,
 }
 
 void blockchain::stealth_fetched(const code& ec,
-    const stealth& stealth_results, const incoming& request,
+    const stealth_compact::list& stealth_results, const incoming& request,
     send_handler handler)
 {
-    // [ ephemkey:32 ][ address:20 ][ tx_hash:32 ]
+    // [ ephemeral_key_hash:32 ]
+    // [ address_hash:20 ]
+    // [ tx_hash:32 ]
     static constexpr size_t row_size = hash_size + short_hash_size + hash_size;
     data_chunk result(code_size + row_size * stealth_results.size());
     auto serial = make_serializer(result.begin());
@@ -423,8 +425,8 @@ void blockchain::stealth_fetched(const code& ec,
 
     for (const auto& row: stealth_results)
     {
-        serial.write_hash(row.ephemeral_key);
-        serial.write_short_hash(row.address);
+        serial.write_hash(row.ephemeral_public_key_hash);
+        serial.write_short_hash(row.public_key_hash);
         serial.write_hash(row.transaction_hash);
     }
 

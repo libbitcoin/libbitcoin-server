@@ -107,8 +107,8 @@ private:
         const incoming& request, send_handler handler);
 
     static void stealth_fetched(const code& ec,
-        const chain::stealth& stealth_results, const incoming& request,
-        send_handler handler);
+        const chain::stealth_compact::list& stealth_results,
+        const incoming& request, send_handler handler);
 };
 
 } // namespace server

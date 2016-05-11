@@ -103,7 +103,7 @@ void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
 }
 
 bool server_node::handle_tx_accepted(const code& ec,
-    const index_list& unconfirmed, const transaction& tx)
+    const point::indexes& unconfirmed, const transaction& tx)
 {
     if (ec == bc::error::service_stopped)
         return false;
