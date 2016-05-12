@@ -112,6 +112,7 @@ void executor::initialize_output()
 // Class and method names must match protocol expectations (do not change).
 void executor::attach_subscription_api()
 {
+    // TODO: add renew to client.
     ATTACH(receive_, address, renew, notify_);
     ATTACH(receive_, address, subscribe, notify_);
 }
@@ -119,23 +120,28 @@ void executor::attach_subscription_api()
 // Class and method names must match protocol expectations (do not change).
 void executor::attach_query_api()
 {
+    // TODO: add total_connections to client.
+    ATTACH(receive_, protocol, total_connections, node_);
+    ATTACH(receive_, protocol, broadcast_transaction, node_);
+    ATTACH(receive_, transaction_pool, validate, node_);
+    ATTACH(receive_, transaction_pool, fetch_transaction, node_);
+
+    // TODO: add fetch_spend to client.
+    // TODO: add fetch_block_transaction_hashes to client.
+    ATTACH(receive_, blockchain, fetch_spend, node_);
+    ATTACH(receive_, blockchain, fetch_block_transaction_hashes, node_);
+    ATTACH(receive_, blockchain, fetch_transaction, node_);
+    ATTACH(receive_, blockchain, fetch_last_height, node_);
+    ATTACH(receive_, blockchain, fetch_block_header, node_);
+    ATTACH(receive_, blockchain, fetch_block_height, node_);
+    ATTACH(receive_, blockchain, fetch_transaction_index, node_);
+    ATTACH(receive_, blockchain, fetch_stealth, node_);
+    ATTACH(receive_, blockchain, fetch_history, node_);
+
     // address.fetch_history was present in v1 (obelisk) and v2 (server).
     // address.fetch_history was called by client v1 (sx) and v2 (bx).
     ////ATTACH(receive_, address, fetch_history, node_);
     ATTACH(receive_, address, fetch_history2, node_);
-    ATTACH(receive_, blockchain, fetch_history, node_);
-    ATTACH(receive_, blockchain, fetch_transaction, node_);
-    ATTACH(receive_, blockchain, fetch_last_height, node_);
-    ATTACH(receive_, blockchain, fetch_block_header, node_);
-    ATTACH(receive_, blockchain, fetch_block_transaction_hashes, node_);
-    ATTACH(receive_, blockchain, fetch_transaction_index, node_);
-    ATTACH(receive_, blockchain, fetch_spend, node_);
-    ATTACH(receive_, blockchain, fetch_block_height, node_);
-    ATTACH(receive_, blockchain, fetch_stealth, node_);
-    ATTACH(receive_, transaction_pool, validate, node_);
-    ATTACH(receive_, transaction_pool, fetch_transaction, node_);
-    ATTACH(receive_, protocol, total_connections, node_);
-    ATTACH(receive_, protocol, broadcast_transaction, node_);
 }
 
 // ----------------------------------------------------------------------------

@@ -28,8 +28,6 @@
 namespace libbitcoin {
 namespace server {
 
-static constexpr uint8_t spend_type = 1;
-static constexpr uint8_t output_type = 0;
 static constexpr size_t code_size = sizeof(uint32_t);
 static constexpr size_t index_size = sizeof(uint32_t);
 static constexpr size_t point_size = hash_size + sizeof(uint32_t);
@@ -39,8 +37,9 @@ static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
     uint32_t& from_height, const incoming& request);
 
-void BCS_API send_history_result(const code& ec, const chain::history& history,
-    const incoming& request, send_handler handler);
+void BCS_API send_history_result(const code& ec,
+    const chain::history_compact::list& history, const incoming& request,
+    send_handler handler);
 
 // fetch_transaction stuff
 

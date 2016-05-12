@@ -58,7 +58,7 @@ bool unwrap_fetch_history_args(payment_address& address,
     return true;
 }
 
-void send_history_result(const code& ec, const history& history,
+void send_history_result(const code& ec, const history_compact::list& history,
     const incoming& request, send_handler handler)
 {
     static constexpr size_t row_size = sizeof(uint8_t) + point_size +
@@ -72,14 +72,9 @@ void send_history_result(const code& ec, const history& history,
     for (const auto& row: history)
     {
         BITCOIN_ASSERT(row.height <= max_uint32);
-        auto row_height32 = static_cast<uint32_t>(row.height);
-        const auto value = row.kind == point_kind::output ?
-            output_type : spend_type;
-
-        serial.write_byte(value);
-        data_chunk raw_point = row.point.to_data();
-        serial.write_data(raw_point);
-        serial.write_4_bytes_little_endian(row_height32);
+        serial.write_byte(static_cast<uint8_t>(row.kind));
+        serial.write_data(row.point.to_data());
+        serial.write_4_bytes_little_endian(static_cast<uint32_t>(row.height));
         serial.write_8_bytes_little_endian(row.value);
     }
 

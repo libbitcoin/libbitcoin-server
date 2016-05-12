@@ -57,33 +57,26 @@ public:
         const chain::transaction& tx);
 
 private:
-    enum class subscribe_type
-    {
-        address = 0,
-        stealth = 1
-    };
-
     struct subscription
     {
         binary prefix;
         boost::posix_time::ptime expiry_time;
         data_chunk client_origin;
         send_handler handler;
-        subscribe_type type;
+        chain::subscribe_type type;
     };
 
     typedef std::vector<subscription> list;
     
     // Private class typedef so use a template function.
     template <typename AddressPrefix>
-    bool deserialize_address(AddressPrefix& address, subscribe_type& type,
-        const data_chunk& data)
+    bool deserialize_address(AddressPrefix& address,
+        chain::subscribe_type& type, const data_chunk& data)
     {
         auto deserial = make_deserializer(data.begin(), data.end());
         try
         {
-            type = deserial.read_byte() == 0 ? subscribe_type::address :
-                subscribe_type::stealth;
+            type = static_cast<chain::subscribe_type>(deserial.read_byte());
             auto bit_length = deserial.read_byte();
             auto blocks = deserial.read_data(binary::blocks_size(bit_length));
             address = AddressPrefix(bit_length, blocks);

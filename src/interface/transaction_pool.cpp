@@ -66,7 +66,7 @@ void transaction_pool::validate(server_node::ptr node, const incoming& request,
 }
 
 void transaction_pool::handle_validated(const code& ec, const transaction& tx,
-    const hash_digest& tx_hash, const index_list& unconfirmed,
+    const hash_digest& tx_hash, const point::indexes& unconfirmed,
     const incoming& request, send_handler handler)
 {
     data_chunk result(code_size + unconfirmed.size() * index_size);
@@ -84,7 +84,7 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
     log::debug(LOG_REQUEST)
-        << "transaction_pool.validate() finished. Sending response: ec="
+        << "transaction_pool.validate() finished. Sending response: "
         << ec.message();
 
     outgoing response(request, result);
