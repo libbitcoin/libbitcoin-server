@@ -157,15 +157,6 @@ AS_CASE([${bash_completiondir}], [yes],
      AC_MSG_NOTICE([bash_completion_LIBS : ${bash_completion_LIBS}])],
     [AC_SUBST([bash_completion_PKG], [])])
 
-# Require sodium of at least version 1.0.0 and output ${sodium_CPPFLAGS/LIBS/PKG}.
-#------------------------------------------------------------------------------
-# The chained zmq dependency doesn't set a minimum version for sodium.
-PKG_CHECK_MODULES([sodium], [libsodium >= 1.0.0])
-AC_SUBST([sodium_PKG], ['libsodium >= 1.0.0'])
-AC_SUBST([sodium_CPPFLAGS], [${sodium_CFLAGS}])
-AC_MSG_NOTICE([sodium_CPPFLAGS : ${sodium_CPPFLAGS}])
-AC_MSG_NOTICE([sodium_LIBS : ${sodium_LIBS}])
-
 # Require czmq++ of at least version 1.2.0 and output ${czmq___CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([czmq__], [libczmq++ >= 1.2.0])

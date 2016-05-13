@@ -195,17 +195,6 @@ BOOST_OPTIONS=(
 "--with-thread" \
 "--with-test")
 
-# Define sodium options.
-#------------------------------------------------------------------------------
-SODIUM_OPTIONS=(
-"${with_pkgconfigdir}")
-
-# Define zmq options.
-#------------------------------------------------------------------------------
-ZMQ_OPTIONS=(
-"--with-libsodium" \
-"${with_pkgconfigdir}")
-
 # Define czmq options.
 #------------------------------------------------------------------------------
 CZMQ_OPTIONS=(
@@ -723,7 +712,6 @@ build_from_travis()
 build_all()
 {
     build_from_tarball_boost $BOOST_URL $BOOST_ARCHIVE bzip2 . $PARALLEL "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
-    build_from_github jedisct1 libsodium master $PARALLEL ${SODIUM_OPTIONS[@]} "$@"
     build_from_github zeromq libzmq master $PARALLEL ${ZMQ_OPTIONS[@]} "$@"
     build_from_github zeromq czmq master $PARALLEL ${CZMQ_OPTIONS[@]} "$@"
     build_from_github zeromq czmqpp master $PARALLEL ${CZMQPP_OPTIONS[@]} "$@"
