@@ -19,7 +19,6 @@
  */
 #include <bitcoin/server/message/sender.hpp>
 
-#include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/message/outgoing.hpp>
@@ -28,17 +27,18 @@ namespace libbitcoin {
 namespace server {
     
 using std::placeholders::_1;
+using namespace bc::protocol;
 
 static constexpr int zmq_fail = -1;
 
-sender::sender(czmqpp::context& context)
+sender::sender(zmq::context& context)
   : context_(context)
 {
 }
 
 void sender::queue(const outgoing& message)
 {
-    czmqpp::socket socket(context_, ZMQ_PUSH);
+    zmq::socket socket(context_, ZMQ_PUSH);
     BITCOIN_ASSERT(socket.self() != nullptr);
 
     // Returns 0 if OK, -1 if the endpoint was invalid.

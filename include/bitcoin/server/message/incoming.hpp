@@ -22,8 +22,7 @@
 
 #include <cstdint>
 #include <string>
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -32,7 +31,7 @@ namespace server {
 class BCS_API incoming
 {
 public:
-    bool receive(czmqpp::socket& socket);
+    bool receive(bc::protocol::zmq::socket& socket);
 
     uint32_t id() const;
     const data_chunk& data() const;

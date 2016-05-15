@@ -22,8 +22,7 @@
 
 #include <cstdint>
 #include <memory>
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -53,9 +52,9 @@ private:
     void send_block(uint32_t height, const chain::block::ptr block);
 
     server_node::ptr node_;
-    czmqpp::context context_;
-    czmqpp::socket socket_tx_;
-    czmqpp::socket socket_block_;
+    bc::protocol::zmq::context context_;
+    bc::protocol::zmq::socket socket_tx_;
+    bc::protocol::zmq::socket socket_block_;
     const settings& settings_;
 };
 

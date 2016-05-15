@@ -21,7 +21,6 @@
 
 #include <future>
 #include <iostream>
-#include <czmq++/czmqpp.hpp>
 #include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
@@ -43,15 +42,6 @@ server_node::server_node(const configuration& configuration)
     configuration_(configuration),
     last_checkpoint_height_(configuration.last_checkpoint_height())
 {
-    // Disable czmq signal handling.
-    zsys_handler_set(NULL);
-
-#ifdef _MSC_VER
-    // Hack to prevent czmq from writing to stdout/stderr on Windows.
-    // It is necessary to prevent stdio when using our utf8-everywhere pattern.
-    // TODO: provide a FILE* here that we can direct to our own log/console.
-    zsys_set_logstream(NULL);
-#endif
 }
 
 // Properties.

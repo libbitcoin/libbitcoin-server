@@ -26,7 +26,6 @@
 #include <string>
 #include <unordered_map>
 #include <boost/date_time.hpp>
-#include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message/incoming.hpp>
@@ -71,13 +70,13 @@ private:
     boost::posix_time::ptime heartbeat_;
     const settings& settings_;
 
-    czmqpp::context context_;
-    czmqpp::socket wakeup_socket_;
-    czmqpp::socket heartbeat_socket_;
-    czmqpp::socket receive_socket_;
-    czmqpp::certificate certificate_;
-    czmqpp::authenticator authenticate_;
-    czmqpp::poller poller_;
+    bc::protocol::zmq::context context_;
+    bc::protocol::zmq::socket wakeup_socket_;
+    bc::protocol::zmq::socket heartbeat_socket_;
+    bc::protocol::zmq::socket receive_socket_;
+    bc::protocol::zmq::certificate certificate_;
+    bc::protocol::zmq::authenticator authenticate_;
+    bc::protocol::zmq::poller poller_;
 };
 
 } // namespace server

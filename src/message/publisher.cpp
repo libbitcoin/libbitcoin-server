@@ -21,8 +21,7 @@
 
 #include <cstdint>
 #include <string>
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -31,6 +30,7 @@ namespace server {
 using std::placeholders::_1;
 using std::placeholders::_2;
 using namespace bc::chain;
+using namespace bc::protocol;
 
 static constexpr int zmq_fail = -1;
 static constexpr size_t header_size = 80;
@@ -98,7 +98,7 @@ bool publisher::start()
 
 void publisher::send_tx(const transaction& tx)
 {
-    czmqpp::message message;
+    zmq::message message;
     message.append(tx.to_data());
 
     if (!message.send(socket_tx_))
@@ -120,7 +120,7 @@ void publisher::send_block(uint32_t height, const block::ptr block)
     //   height   [4 bytes]
     //   header   [80 bytes]
     //   ... txs ...
-    czmqpp::message message;
+    zmq::message message;
     message.append(raw_height);
     message.append(raw_block_header);
 

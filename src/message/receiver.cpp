@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <vector>
 #include <boost/date_time.hpp>
-#include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/message/incoming.hpp>
@@ -35,14 +34,11 @@ namespace server {
 
 using std::placeholders::_1;
 using namespace bc::config;
+using namespace bc::protocol;
 using namespace boost::posix_time;
 
-// TODO: should we be testing zmq_fail in each bind call?
-static constexpr int zmq_true = 1;
-static constexpr int zmq_false = 0;
 static constexpr int zmq_fail = -1;
-static constexpr int zmq_curve_enabled = zmq_true;
-static constexpr int zmq_socket_no_linger = zmq_false;
+static constexpr int zmq_unbound = 0;
 
 receiver::receiver(server_node::ptr node)
   : counter_(0),
@@ -66,14 +62,8 @@ bool receiver::start()
     if (!settings_.queries_enabled && settings_.subscription_limit == 0)
         return true;
 
-#ifndef _MSC_VER
-    // Hack to prevent czmq from writing to stdout/stderr on Windows.
-    // This will prevent authentication feedback, but also prevent crashes.
-    // It is necessary to prevent stdio when using our utf8-everywhere pattern.
-    // TODO: modify czmq to not hardcode stdout/stderr for verbose output.
     if (settings_.log_requests)
         authenticate_.set_verbose(true);
-#endif
 
     if (!settings_.whitelists.empty())
         whitelist();
@@ -103,14 +93,12 @@ bool receiver::start()
     auto endpoint = settings_.query_endpoint.to_string();
     rc = receive_socket_.bind(endpoint);
 
-    if (rc == zmq_false)
+    if (rc == zmq_unbound)
     {
         log::error(LOG_SERVICE)
             << "Failed to bind query service on " << endpoint;
         return false;
     }
-
-    receive_socket_.set_linger(zmq_socket_no_linger);
 
     log::info(LOG_SERVICE)
         << "Bound query service on " << endpoint;
@@ -119,7 +107,7 @@ bool receiver::start()
     endpoint = settings_.heartbeat_endpoint.to_string();
     rc = heartbeat_socket_.bind(endpoint);
 
-    if (rc == zmq_false)
+    if (rc == zmq_unbound)
     {
         log::error(LOG_SERVICE)
             << "Failed to bind heartbeat service on " << endpoint;
@@ -174,11 +162,11 @@ bool receiver::enable_crypto()
     {
         certificate_.reset(server_cert_path);
 
-        if (!certificate_.valid())
+        if (!certificate_)
             return false;
 
         certificate_.apply(receive_socket_);
-        receive_socket_.set_curve_server(zmq_curve_enabled);
+        receive_socket_.set_curve_server();
 
         log::info(LOG_SERVICE)
             << "Loaded server certificate: " << server_cert_path;
@@ -241,7 +229,7 @@ void receiver::poll(uint32_t interval_milliseconds)
     else if (socket == wakeup_socket_)
     {
         // Send queued message.
-        czmqpp::message message;
+        zmq::message message;
         message.receive(wakeup_socket_);
         message.send(receive_socket_);
     }
@@ -252,7 +240,7 @@ void receiver::publish_heartbeat()
     if (now() > heartbeat_)
     {
         update_heartbeat();
-        czmqpp::message message;
+        zmq::message message;
         const auto raw_counter = to_chunk(to_little_endian(counter_));
         message.append(raw_counter);
         message.send(heartbeat_socket_);
