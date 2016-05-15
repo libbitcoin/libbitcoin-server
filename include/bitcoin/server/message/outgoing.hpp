@@ -22,8 +22,7 @@
 
 #include <cstdint>
 #include <string>
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message/incoming.hpp>
 
@@ -43,7 +42,7 @@ public:
     outgoing(const std::string& command, const data_chunk& data,
         const data_chunk& destination);
 
-    void send(czmqpp::socket& socket) const;
+    void send(protocol::zmq::socket& socket) const;
 
     uint32_t id() const;
     const data_chunk& data() const;

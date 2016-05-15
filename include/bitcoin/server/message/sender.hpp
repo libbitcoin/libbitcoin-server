@@ -20,7 +20,6 @@
 #ifndef LIBBITCOIN_SERVER_SENDER_HPP
 #define LIBBITCOIN_SERVER_SENDER_HPP
 
-#include <czmq++/czmqpp.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/message/outgoing.hpp>
@@ -40,12 +39,12 @@ namespace server {
 class BCS_API sender
 {
 public:
-    sender(czmqpp::context& context);
+    sender(bc::protocol::zmq::context& context);
 
     void queue(const outgoing& message);
 
 private:
-    czmqpp::context& context_;
+    bc::protocol::zmq::context& context_;
 };
 
 } // namespace server

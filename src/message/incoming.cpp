@@ -21,18 +21,19 @@
 
 #include <cstdint>
 #include <string>
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 
 namespace libbitcoin {
 namespace server {
 
+using namespace bc::protocol;
+
 // Actions
 // ----------------------------------------------------------------------------
 
-bool incoming::receive(czmqpp::socket& socket)
+bool incoming::receive(zmq::socket& socket)
 {
-    czmqpp::message message;
+    zmq::message message;
     message.receive(socket);
     const auto& parts = message.parts();
 

@@ -22,12 +22,13 @@
 #include <cstdint>
 #include <random>
 #include <string>
-#include <czmq++/czmqpp.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/message/outgoing.hpp>
 
 namespace libbitcoin {
 namespace server {
+
+using namespace bc::protocol;
 
 // Constructors
 // ----------------------------------------------------------------------------
@@ -57,9 +58,9 @@ outgoing::outgoing(const incoming& request,
 // Actions
 // ----------------------------------------------------------------------------
 
-void outgoing::send(czmqpp::socket& socket) const
+void outgoing::send(zmq::socket& socket) const
 {
-    czmqpp::message message;
+    zmq::message message;
 
     // Optional, ROUTER sockets strip this.
     if (!destination_.empty())
