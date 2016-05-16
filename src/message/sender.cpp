@@ -52,7 +52,6 @@ void sender::queue(const outgoing& message)
     }
 
     message.send(socket);
-    socket.destroy(context_);
 }
 
 } // namespace server
