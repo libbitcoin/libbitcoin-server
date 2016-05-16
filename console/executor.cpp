@@ -260,7 +260,7 @@ bool executor::run()
 
     log::info(LOG_NODE) << BS_NODE_STARTED;
 
-    // Define here so that the poller is initialized for the wait loop.
+    // Define here so that the receiver is initialized for the wait loop.
     notify_ = std::make_shared<notifier>(node_);
     receive_ = std::make_shared<receiver>(node_);
     publish_ = std::make_shared<publisher>(node_);
