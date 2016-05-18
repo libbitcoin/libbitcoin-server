@@ -74,7 +74,6 @@ private:
     bc::protocol::zmq::socket wakeup_socket_;
     bc::protocol::zmq::socket heartbeat_socket_;
     bc::protocol::zmq::socket receive_socket_;
-    bc::protocol::zmq::certificate certificate_;
     bc::protocol::zmq::authenticator authenticate_;
     bc::protocol::zmq::poller poller_;
 };

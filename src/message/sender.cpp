@@ -29,8 +29,6 @@ namespace server {
 using std::placeholders::_1;
 using namespace bc::protocol;
 
-static constexpr int zmq_fail = -1;
-
 sender::sender(zmq::context& context)
   : context_(context)
 {
@@ -38,16 +36,13 @@ sender::sender(zmq::context& context)
 
 void sender::queue(const outgoing& message)
 {
-    zmq::socket socket(context_, ZMQ_PUSH);
-    BITCOIN_ASSERT(socket.self() != nullptr);
+    zmq::socket socket(context_, zmq::socket::role::pusher);
 
-    // Returns 0 if OK, -1 if the endpoint was invalid.
-    const auto rc = socket.connect("inproc://trigger-send");
-
-    if (rc == zmq_fail)
+    if (!socket || !socket.connect("inproc://trigger-send"))
     {
         log::error(LOG_SERVICE)
             << "Failed to connect to send queue.";
+
         return;
     }
 

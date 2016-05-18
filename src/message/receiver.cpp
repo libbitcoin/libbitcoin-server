@@ -37,23 +37,21 @@ using namespace bc::config;
 using namespace bc::protocol;
 using namespace boost::posix_time;
 
-static constexpr int zmq_fail = -1;
-static constexpr int zmq_unbound = 0;
-
 receiver::receiver(server_node::ptr node)
-  : counter_(0),
+    : counter_(0),
     sender_(context_),
     settings_(node->server_settings()),
-    wakeup_socket_(context_, ZMQ_PULL),
-    heartbeat_socket_(context_, ZMQ_PUB),
-    receive_socket_(context_, ZMQ_ROUTER),
-    authenticate_(context_),
-    poller_(receive_socket_, wakeup_socket_)
+    wakeup_socket_(context_, zmq::socket::role::puller),
+    heartbeat_socket_(context_, zmq::socket::role::publisher),
+    receive_socket_(context_, zmq::socket::role::router),
+    authenticate_(context_)
 {
-    BITCOIN_ASSERT(poller_.self() != nullptr);
-    BITCOIN_ASSERT(wakeup_socket_.self() != nullptr);
-    BITCOIN_ASSERT(heartbeat_socket_.self() != nullptr);
-    BITCOIN_ASSERT(receive_socket_.self() != nullptr);
+    BITCOIN_ASSERT((bool)wakeup_socket_);
+    BITCOIN_ASSERT((bool)heartbeat_socket_);
+    BITCOIN_ASSERT((bool)receive_socket_);
+
+    poller_.add(receive_socket_);
+    poller_.add(wakeup_socket_);
 }
 
 bool receiver::start()
@@ -62,14 +60,11 @@ bool receiver::start()
     if (!settings_.queries_enabled && settings_.subscription_limit == 0)
         return true;
 
-    if (settings_.log_requests)
-        authenticate_.set_verbose(true);
-
     if (!settings_.whitelists.empty())
         whitelist();
 
     if (settings_.certificate_file.empty())
-        receive_socket_.set_zap_domain("global");
+        receive_socket_.set_authentication_domain("global");
 
     if (!enable_crypto())
     {
@@ -80,9 +75,7 @@ bool receiver::start()
 
     // This binds the request queue.
     // Returns 0 if OK, -1 if the endpoint was invalid.
-    auto rc = wakeup_socket_.bind("inproc://trigger-send");
-
-    if (rc == zmq_fail)
+    if (!wakeup_socket_.bind("inproc://trigger-send"))
     {
         log::error(LOG_SERVICE)
             << "Failed to connect to request queue.";
@@ -91,9 +84,7 @@ bool receiver::start()
 
     // This binds the query service.
     auto endpoint = settings_.query_endpoint.to_string();
-    rc = receive_socket_.bind(endpoint);
-
-    if (rc == zmq_unbound)
+    if (!receive_socket_.bind(endpoint))
     {
         log::error(LOG_SERVICE)
             << "Failed to bind query service on " << endpoint;
@@ -105,9 +96,7 @@ bool receiver::start()
 
     // This binds the heartbeat service.
     endpoint = settings_.heartbeat_endpoint.to_string();
-    rc = heartbeat_socket_.bind(endpoint);
-
-    if (rc == zmq_unbound)
+    if (!heartbeat_socket_.bind(endpoint))
     {
         log::error(LOG_SERVICE)
             << "Failed to bind heartbeat service on " << endpoint;
@@ -160,27 +149,27 @@ bool receiver::enable_crypto()
     // Configure server certificate if specified.
     if (!server_cert_path.empty())
     {
-        certificate_.reset(server_cert_path);
+        zmq::certificate certificate(server_cert_path);
 
-        if (!certificate_)
+        if (!certificate)
             return false;
 
-        certificate_.apply(receive_socket_);
+        receive_socket_.set_certificate(certificate);
         receive_socket_.set_curve_server();
 
         log::info(LOG_SERVICE)
             << "Loaded server certificate: " << server_cert_path;
     }
 
-    // Always configure client certificates directory or *.
-    if (client_certs_path.empty())
-        client_certs_path = CURVE_ALLOW_ANY;
-    else
+    if (!client_certs_path.empty())
+    {
+        if (!authenticate_.certificates(client_certs_path))
+            return false;
+
         log::info(LOG_SERVICE)
             << "Require client certificates: " << client_certs_path;
+    }
 
-    static const auto all_domains = "*";
-    authenticate_.configure_curve(all_domains, client_certs_path);
     return true;
 }
 
@@ -204,9 +193,10 @@ void receiver::poll(uint32_t interval_milliseconds)
     // Poller granularity limits the heartbeat interval.
     publish_heartbeat();
 
-    const auto socket = poller_.wait(interval_milliseconds);
+    // The socket id can be zero (none) or a registered socket id.
+    const auto socket_id = poller_.wait(interval_milliseconds);
 
-    if (socket == receive_socket_)
+    if (socket_id == receive_socket_.id())
     {
         // Get message: 6-part envelope + content -> request
         incoming request;
@@ -226,7 +216,7 @@ void receiver::poll(uint32_t interval_milliseconds)
                 std::bind(&sender::queue,
                     &sender_, _1));
     }
-    else if (socket == wakeup_socket_)
+    else if (socket_id == wakeup_socket_.id())
     {
         // Send queued message.
         zmq::message message;

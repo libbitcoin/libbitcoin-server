@@ -139,5 +139,10 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
     return true;
 }
 
+// Stop sequence.
+// ----------------------------------------------------------------------------
+
+// TODO: signal services to stop and wait on shutdown (see node).
+
 } // namespace server
 } // namespace libbitcoin

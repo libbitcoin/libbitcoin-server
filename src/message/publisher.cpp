@@ -32,7 +32,6 @@ using std::placeholders::_2;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-static constexpr int zmq_fail = -1;
 static constexpr size_t header_size = 80;
 
 // BUGBUG: The publisher uses a context independent of the receiver/notifier
@@ -40,11 +39,11 @@ static constexpr size_t header_size = 80;
 publisher::publisher(server_node::ptr node)
   : node_(node),
     settings_(node->server_settings()),
-    socket_tx_(context_, ZMQ_PUB),
-    socket_block_(context_, ZMQ_PUB)
+    socket_tx_(context_, zmq::socket::role::pusher),
+    socket_block_(context_, zmq::socket::role::pusher)
 {
-    BITCOIN_ASSERT(socket_tx_.self() != nullptr);
-    BITCOIN_ASSERT(socket_block_.self() != nullptr);
+    BITCOIN_ASSERT((bool)socket_tx_);
+    BITCOIN_ASSERT((bool)socket_block_);
 }
 
 bool publisher::start()
@@ -55,7 +54,7 @@ bool publisher::start()
     auto block_endpoint = settings_.block_publish_endpoint.to_string();
     if (!block_endpoint.empty())
     {
-        if (socket_block_.bind(block_endpoint) == zmq_fail)
+        if (!socket_block_.bind(block_endpoint))
         {
             log::error(LOG_SERVICE)
                 << "Failed to start block publisher on "
@@ -71,7 +70,7 @@ bool publisher::start()
     auto tx_endpoint = settings_.transaction_publish_endpoint.to_string();
     if (!tx_endpoint.empty())
     {
-        if (socket_tx_.bind(tx_endpoint) == zmq_fail)
+        if (!socket_tx_.bind(tx_endpoint))
         {
             log::error(LOG_SERVICE)
                 << "Failed to start transaction publisher on "
