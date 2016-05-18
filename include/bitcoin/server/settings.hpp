@@ -51,7 +51,7 @@ public:
     config::endpoint heartbeat_endpoint;
     config::endpoint block_publish_endpoint;
     config::endpoint transaction_publish_endpoint;
-    std::string server_secret_key;
+    std::string server_private_key;
     std::vector<std::string> client_public_keys;
     config::authority::list client_addresses;
 

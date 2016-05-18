@@ -60,9 +60,9 @@ bool receiver::start()
     if (!settings_.queries_enabled && settings_.subscription_limit == 0)
         return true;
 
-    if (!settings_.server_secret_key.empty())
+    if (!settings_.server_private_key.empty())
     {
-        if (!receive_socket_.set_secret_key(settings_.server_secret_key) ||
+        if (!receive_socket_.set_private_key(settings_.server_private_key) ||
             !receive_socket_.set_curve_server())
         {
             log::error(LOG_SERVICE)
@@ -75,7 +75,7 @@ bool receiver::start()
     }
 
     // Client authentication requires a server key.
-    if (settings_.server_secret_key.empty() &&
+    if (settings_.server_private_key.empty() &&
         !settings_.client_public_keys.empty())
     {
         log::error(LOG_SERVICE)
@@ -139,12 +139,12 @@ void receiver::load_whitelist()
         authenticate_.allow(public_key);
     }
 
-    for (const auto& address : settings_.client_addresses)
+    for (const auto& address: settings_.client_addresses)
     {
         log::info(LOG_SERVICE)
             << "Allowed client [" << format_whitelist(address) << "]";
 
-        authenticate_.allow(address.to_string());
+        authenticate_.allow(address);
     }
 }
 

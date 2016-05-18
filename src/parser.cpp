@@ -353,9 +353,9 @@ options_metadata parser::load_settings()
         "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
-        "server.server_secret_key",
-        value<std::string>(&configured.server.server_secret_key),
-        "The Z85-encoded secret key of the server."
+        "server.server_private_key",
+        value<std::string>(&configured.server.server_private_key),
+        "The Z85-encoded private key of the server."
     )
     (
         "server.client_public_key",
