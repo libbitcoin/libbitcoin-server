@@ -63,8 +63,13 @@ bool receiver::start()
     if (!settings_.whitelists.empty())
         whitelist();
 
-    if (settings_.certificate_file.empty())
-        receive_socket_.set_authentication_domain("global");
+    if (settings_.certificate_file.empty() &&
+        !receive_socket_.set_authentication_domain("global"))
+    {
+        log::error(LOG_SERVICE)
+            << "Failed to configure authentication.";
+        return false;
+    }
 
     if (!enable_crypto())
     {
@@ -73,8 +78,6 @@ bool receiver::start()
         return false;
     }
 
-    // This binds the request queue.
-    // Returns 0 if OK, -1 if the endpoint was invalid.
     if (!wakeup_socket_.bind("inproc://trigger-send"))
     {
         log::error(LOG_SERVICE)
@@ -82,31 +85,29 @@ bool receiver::start()
         return false;
     }
 
-    // This binds the query service.
-    auto endpoint = settings_.query_endpoint.to_string();
-    if (!receive_socket_.bind(endpoint))
+    const auto query_endpoint = settings_.query_endpoint.to_string();
+    if (!receive_socket_.bind(query_endpoint))
     {
         log::error(LOG_SERVICE)
-            << "Failed to bind query service on " << endpoint;
+            << "Failed to bind query service on " << query_endpoint;
         return false;
     }
 
     log::info(LOG_SERVICE)
-        << "Bound query service on " << endpoint;
+        << "Bound query service on " << query_endpoint;
 
-    // This binds the heartbeat service.
-    endpoint = settings_.heartbeat_endpoint.to_string();
-    if (!heartbeat_socket_.bind(endpoint))
+    const auto heartbeat_endpoint = settings_.heartbeat_endpoint.to_string();
+    if (!heartbeat_socket_.bind(heartbeat_endpoint))
     {
         log::error(LOG_SERVICE)
-            << "Failed to bind heartbeat service on " << endpoint;
+            << "Failed to bind heartbeat service on " << heartbeat_endpoint;
         return false;
     }
 
     update_heartbeat();
 
     log::info(LOG_SERVICE)
-        << "Bound heartbeat service on " << endpoint;
+        << "Bound heartbeat service on " << heartbeat_endpoint;
 
     return true;
 }
