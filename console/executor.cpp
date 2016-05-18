@@ -361,7 +361,7 @@ void executor::handle_stopped(const code& ec, std::promise<code>& promise)
 
 void executor::monitor_stop(p2p::result_handler handler)
 {
-    auto period = metadata_.configured.server.polling_interval_milliseconds;
+    auto period = metadata_.configured.server.polling_interval_microseconds;
 
     while (!stopped_ && !node_->stopped())
         receive_->poll(period);

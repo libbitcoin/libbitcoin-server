@@ -29,7 +29,7 @@ using namespace asio;
 settings::settings()
   : threads(2),
     heartbeat_interval_seconds(5),
-    polling_interval_milliseconds(1),
+    polling_interval_microseconds(1),
     subscription_expiration_minutes(10),
     subscription_limit(100000000),
     publisher_enabled(true),
@@ -50,7 +50,7 @@ settings::settings(bc::settings context)
 
 duration settings::polling_interval() const
 {
-    return milliseconds(polling_interval_milliseconds);
+    return microseconds(polling_interval_microseconds);
 }
 
 duration settings::heartbeat_interval() const

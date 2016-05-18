@@ -38,7 +38,7 @@ using namespace bc::protocol;
 using namespace boost::posix_time;
 
 receiver::receiver(server_node::ptr node)
-    : counter_(0),
+  : counter_(0),
     sender_(context_),
     settings_(node->server_settings()),
     wakeup_socket_(context_, zmq::socket::role::puller),
@@ -60,23 +60,30 @@ bool receiver::start()
     if (!settings_.queries_enabled && settings_.subscription_limit == 0)
         return true;
 
-    if (!settings_.whitelists.empty())
-        whitelist();
+    if (!settings_.server_secret_key.empty())
+    {
+        if (!receive_socket_.set_secret_key(settings_.server_secret_key) ||
+            !receive_socket_.set_curve_server())
+        {
+            log::error(LOG_SERVICE)
+                << "Invalid server key.";
+            return false;
+        }
 
-    if (settings_.certificate_file.empty() &&
-        !receive_socket_.set_authentication_domain("global"))
+        log::info(LOG_SERVICE)
+            << "Loaded server key.";
+    }
+
+    // Client authentication requires a server key.
+    if (settings_.server_secret_key.empty() &&
+        !settings_.client_public_keys.empty())
     {
         log::error(LOG_SERVICE)
-            << "Failed to configure authentication.";
+            << "Client authentication requires a server key.";
         return false;
     }
 
-    if (!enable_crypto())
-    {
-        log::error(LOG_SERVICE)
-            << "Invalid server certificate.";
-        return false;
-    }
+    load_whitelist();
 
     if (!wakeup_socket_.bind("inproc://trigger-send"))
     {
@@ -122,56 +129,23 @@ static std::string format_whitelist(const authority& authority)
     return formatted;
 }
 
-void receiver::whitelist()
+void receiver::load_whitelist()
 {
-    for (const auto& ip_address: settings_.whitelists)
+    for (const auto& public_key: settings_.client_public_keys)
     {
         log::info(LOG_SERVICE)
-            << "Whitelisted client [" << format_whitelist(ip_address) << "]";
+            << "Allowed client [" << public_key << "]";
 
-        authenticate_.allow(ip_address.to_string());
-    }
-}
-
-// Returns false if server certificate exists and is invalid.
-bool receiver::enable_crypto()
-{
-    const auto server_cert_path = settings_.certificate_file.string();
-    auto client_certs_path = settings_.client_certificates_path.string();
-
-    if (!client_certs_path.empty() && server_cert_path.empty())
-    {
-        log::error(LOG_SERVICE)
-            << "Client authentication requires a server certificate.";
-
-        return false;
+        authenticate_.allow(public_key);
     }
 
-    // Configure server certificate if specified.
-    if (!server_cert_path.empty())
+    for (const auto& address : settings_.client_addresses)
     {
-        zmq::certificate certificate(server_cert_path);
-
-        if (!certificate)
-            return false;
-
-        receive_socket_.set_certificate(certificate);
-        receive_socket_.set_curve_server();
-
         log::info(LOG_SERVICE)
-            << "Loaded server certificate: " << server_cert_path;
+            << "Allowed client [" << format_whitelist(address) << "]";
+
+        authenticate_.allow(address.to_string());
     }
-
-    if (!client_certs_path.empty())
-    {
-        if (!authenticate_.certificates(client_certs_path))
-            return false;
-
-        log::info(LOG_SERVICE)
-            << "Require client certificates: " << client_certs_path;
-    }
-
-    return true;
 }
 
 void receiver::attach(const std::string& command, command_handler handler)
@@ -189,13 +163,13 @@ void receiver::update_heartbeat()
     heartbeat_ = now() + settings_.heartbeat_interval();
 }
 
-void receiver::poll(uint32_t interval_milliseconds)
+void receiver::poll(uint32_t interval_microseconds)
 {
     // Poller granularity limits the heartbeat interval.
     publish_heartbeat();
 
     // The socket id can be zero (none) or a registered socket id.
-    const auto socket_id = poller_.wait(interval_milliseconds);
+    const auto socket_id = poller_.wait(interval_microseconds);
 
     if (socket_id == receive_socket_.id())
     {

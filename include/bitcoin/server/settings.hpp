@@ -21,8 +21,11 @@
 #define LIBBITCOIN_SERVER_SETTINGS_HPP
 
 #include <cstdint>
+#include <string>
+#include <vector>
 #include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -38,7 +41,7 @@ public:
     /// Properties.
     uint32_t threads;
     uint32_t heartbeat_interval_seconds;
-    uint32_t polling_interval_milliseconds;
+    uint32_t polling_interval_microseconds;
     uint32_t subscription_expiration_minutes;
     uint32_t subscription_limit;
     bool publisher_enabled;
@@ -48,9 +51,9 @@ public:
     config::endpoint heartbeat_endpoint;
     config::endpoint block_publish_endpoint;
     config::endpoint transaction_publish_endpoint;
-    boost::filesystem::path certificate_file;
-    boost::filesystem::path client_certificates_path;
-    config::authority::list whitelists;
+    std::string server_secret_key;
+    std::vector<std::string> client_public_keys;
+    config::authority::list client_addresses;
 
     /// Helpers.
     asio::duration polling_interval() const;

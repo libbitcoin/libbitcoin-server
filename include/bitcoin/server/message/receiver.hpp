@@ -51,14 +51,13 @@ public:
     void operator=(const receiver&) = delete;
 
     bool start();
-    void poll(uint32_t interval_milliseconds);
+    void poll(uint32_t interval_microseconds);
     void attach(const std::string& command, command_handler handler);
 
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist();
-    bool enable_crypto();
+    void load_whitelist();
     bool create_new_socket();
     void publish_heartbeat();
     void update_heartbeat();

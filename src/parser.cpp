@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
@@ -302,8 +303,8 @@ options_metadata parser::load_settings()
         "The heartbeat interval, defaults to 5."
     )
     (
-        "server.polling_interval_milliseconds",
-        value<uint32_t>(&configured.server.polling_interval_milliseconds),
+        "server.polling_interval_microseconds",
+        value<uint32_t>(&configured.server.polling_interval_microseconds),
         "The query polling interval, defaults to 1."
     )
     (
@@ -352,19 +353,19 @@ options_metadata parser::load_settings()
         "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
     )
     (
-        "server.certificate_file",
-        value<path>(&configured.server.certificate_file),
-        "The path to the ZPL-encoded server private certificate file."
+        "server.server_secret_key",
+        value<std::string>(&configured.server.server_secret_key),
+        "The Z85-encoded secret key of the server."
     )
     (
-        "server.client_certificates_path",
-        value<path>(&configured.server.client_certificates_path),
-        "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
+        "server.client_public_key",
+        value<std::vector<std::string>>(&configured.server.client_public_keys),
+        "Allowed Z85-encoded public key of the client, multiple entries allowed."
     )
     (
-        "server.whitelist",
-        value<config::authority::list>(&configured.server.whitelists),
-        "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
+        "server.client_address",
+        value<config::authority::list>(&configured.server.client_addresses),
+        "Allowed client IP address, multiple entries allowed."
     );
 
     return description;
