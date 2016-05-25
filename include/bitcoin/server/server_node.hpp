@@ -22,6 +22,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
