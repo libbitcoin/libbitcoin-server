@@ -52,8 +52,6 @@ query_endpoint::query_endpoint(zmq::context& context, server_node* node)
     pull_socket_(context_, zmq::socket::role::puller),
     push_socket_(context_, zmq::socket::role::pusher)
 {
-    poller_.add(pull_socket_);
-    poller_.add(query_socket_);
 }
 
 // Start.
@@ -92,6 +90,7 @@ bool query_endpoint::start_queue()
         return false;
     }
 
+    poller_.add(pull_socket_);
     return true;
 }
 
@@ -114,17 +113,22 @@ bool query_endpoint::start_endpoint()
         std::bind(&query_endpoint::monitor,
             this));
 
+    poller_.add(query_socket_);
     return true;
 }
 
 // Stop.
 //-----------------------------------------------------------------------------
-
-void query_endpoint::stop()
+ 
+bool query_endpoint::stop()
 {
-    push_socket_.stop();
-    pull_socket_.stop();
-    query_socket_.stop();
+    const auto stopped = push_socket_.stop() && pull_socket_.stop() && 
+        query_socket_.stop();
+
+    if (stopped)
+        poller_.clear();
+
+    return stopped;
 }
 
 // Monitors.

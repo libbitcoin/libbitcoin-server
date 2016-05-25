@@ -56,7 +56,7 @@ public:
     bool start();
 
     /// Stop the sockets.
-    void stop();
+    bool stop();
 
     // Attach query handlers for given commands.
     void attach(const std::string& command, command_handler handler);
