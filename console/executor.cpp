@@ -50,8 +50,6 @@ static constexpr int no_interrupt = 0;
 static constexpr int directory_exists = 0;
 static constexpr int directory_not_found = 2;
 static constexpr auto append = std::ofstream::out | std::ofstream::app;
-static constexpr uint32_t polling_interval_milliseconds = 1;
-
 static const auto application_name = "bn";
 
 // Static interrupt state (unavoidable).
@@ -105,8 +103,8 @@ void executor::initialize_output()
         log::info(LOG_NODE) << format(BS_USING_CONFIG_FILE) % file;
 }
 
-// ----------------------------------------------------------------------------
 // Command line options.
+// ----------------------------------------------------------------------------
 // These emit directly to standard output (not the log).
 
 void executor::do_help()
@@ -129,6 +127,7 @@ void executor::do_version()
 {
     output_ << format(BS_VERSION_MESSAGE) %
         LIBBITCOIN_SERVER_VERSION %
+        LIBBITCOIN_PROTOCOL_VERSION %
         LIBBITCOIN_NODE_VERSION %
         LIBBITCOIN_BLOCKCHAIN_VERSION %
         LIBBITCOIN_VERSION << std::endl;
@@ -163,8 +162,8 @@ bool executor::do_initchain()
     return false;
 }
 
+// Invoke.
 // ----------------------------------------------------------------------------
-// Invoke an action based on command line option.
 
 bool executor::invoke()
 {
@@ -193,12 +192,12 @@ bool executor::invoke()
         return do_initchain();
     }
 
-    // There are no command line arguments, just run the node.
+    // There are no command line arguments, just run the server.
     return run();
 }
 
-// ----------------------------------------------------------------------------
 // Run sequence.
+// ----------------------------------------------------------------------------
 
 // Use missing directory as a sentinel indicating lack of initialization.
 bool executor::verify_directory()

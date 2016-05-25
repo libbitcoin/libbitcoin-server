@@ -87,7 +87,7 @@ private:
 #define BS_NODE_INTERRUPT \
     "Press CTRL-C to stop the server."
 #define BS_NODE_STARTING \
-    "Please wait while server is starting..."
+    "Please wait while the server is starting..."
 #define BS_NODE_START_FAIL \
     "Server failed to start with error, %1%."
 #define BS_NODE_SEEDED \
@@ -111,9 +111,10 @@ private:
 #define BS_VERSION_MESSAGE \
     "\nVersion Information:\n\n" \
     "libbitcoin-server:     %1%\n" \
-    "libbitcoin-node:       %2%\n" \
-    "libbitcoin-blockchain: %3%\n" \
-    "libbitcoin:            %4%"
+    "libbitcoin-protocol:   %2%\n" \
+    "libbitcoin-node:       %3%\n" \
+    "libbitcoin-blockchain: %4%\n" \
+    "libbitcoin:            %5%"
 #define BS_LOG_HEADER \
     "================= startup =================="
 
