@@ -17,37 +17,53 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_ADDRESS_HPP
-#define LIBBITCOIN_SERVER_ADDRESS_HPP
-
-#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
+
+#include <cstdint>
+#include <random>
+#include <string>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Address interface.
-/// Class and method names are published and mapped to the zeromq interface.
-class BCS_API address
+using namespace bc::protocol;
+
+outgoing::outgoing(const incoming& request, const code& ec)
+  : outgoing(request.command,
+        build_chunk({ to_little_endian(static_cast<uint32_t>(ec.value())) }),
+        request.address, request.id)
 {
-public:
-    /// Fetch the blockchain and transaction pool history of a payment address.
-    static void fetch_history2(server_node* node,
-        const incoming& request, send_handler handler);
+}
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(address_notifier::ptr notifier,
-        const incoming& request, send_handler handler);
+outgoing::outgoing(const incoming& request, const data_chunk& data)
+  : outgoing(request.command, data, request.address, request.id)
+{
+}
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(address_notifier::ptr notifier,
-        const incoming& request, send_handler handler);
-};
+outgoing::outgoing(const std::string& command, const data_chunk& data,
+    const data_chunk& destination)
+  : outgoing(command, data, destination, rand())
+{
+}
+
+outgoing::outgoing(const std::string& command, const data_chunk& data,
+    const data_chunk& destination, uint32_t id)
+{
+    // Optional, ROUTER sockets strip this.
+    if (!destination.empty())
+        message_.enqueue(destination);
+
+    message_.enqueue(command);
+    message_.enqueue_little_endian(id);
+    message_.enqueue(data);
+}
+
+bool outgoing::send(zmq::socket& socket)
+{
+    return message_.send(socket);
+}
 
 } // namespace server
 } // namespace libbitcoin
-
-#endif

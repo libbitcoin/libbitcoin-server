@@ -17,34 +17,37 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SENDER_HPP
-#define LIBBITCOIN_SERVER_SENDER_HPP
+#ifndef LIBBITCOIN_SERVER_SECURE_AUTHENTICATOR_HPP
+#define LIBBITCOIN_SERVER_SECURE_AUTHENTICATOR_HPP
 
-#include <bitcoin/node.hpp>
+#include <memory>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/**
- * We don't want to block the originating threads that execute a send
- * as that would slow down requests if they all have to sync access
- * to a single socket.
- *
- * Instead we have a queue (push socket) where send requests are pushed,
- * and then the sender is notified. The worker wakes up and pushes
- * all pending requests to the socket.
- */
-class BCS_API sender
+class server_node;
+
+class BCS_API curve_authenticator
+  : public bc::protocol::zmq::authenticator
 {
 public:
-    sender(bc::protocol::zmq::context& context);
+    typedef std::shared_ptr<curve_authenticator> ptr;
 
-    void queue(const outgoing& message);
+    /// Construct an instance of the authenticator.
+    curve_authenticator(server_node* node);
+
+    /// This class is not copyable.
+    curve_authenticator(const curve_authenticator&) = delete;
+    void operator=(const curve_authenticator&) = delete;
+
+    /// Alloy authentication to the socket.
+    bool apply(bc::protocol::zmq::socket& socket);
 
 private:
-    bc::protocol::zmq::context& context_;
+    const settings& settings_;
 };
 
 } // namespace server

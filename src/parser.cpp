@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
@@ -291,20 +292,15 @@ options_metadata parser::load_settings()
     )
 
     /* [server] */
-    (
-        "server.threads",
-        value<uint32_t>(&configured.server.threads),
-        "The number of threads in the server threadpool, defaults to 2."
-    )
+    ////(
+    ////    "server.threads",
+    ////    value<uint32_t>(&configured.server.threads),
+    ////    "The number of threads in the server threadpool, defaults to 4."
+    ////)
     (
         "server.heartbeat_interval_seconds",
         value<uint32_t>(&configured.server.heartbeat_interval_seconds),
         "The heartbeat interval, defaults to 5."
-    )
-    (
-        "server.polling_interval_milliseconds",
-        value<uint32_t>(&configured.server.polling_interval_milliseconds),
-        "The query polling interval, defaults to 1."
     )
     (
         "server.subscription_expiration_minutes",
@@ -317,54 +313,64 @@ options_metadata parser::load_settings()
         "The maximum number of subscriptions, defaults to 100000000."
     )
     (
-        "server.publisher_enabled",
-        value<bool>(&configured.server.publisher_enabled),
-        "Enable the block and transaction publishing endpoints, defaults to true."
-    )
-    (
-        "server.queries_enabled",
-        value<bool>(&configured.server.queries_enabled),
-        "Enable the query and heartbeat endpoints, defaults to true."
-    )
-    (
         "server.log_requests",
         value<bool>(&configured.server.log_requests),
         "Write service requests to the log, defaults to false."
     )
     (
+        "server.query_endpoint_enabled",
+        value<bool>(&configured.server.query_endpoint_enabled),
+        "Enable the query endpoint, defaults to true."
+    )
+    (
+        "server.heartbeat_endpoint_enabled",
+        value<bool>(&configured.server.heartbeat_endpoint_enabled),
+        "Enable the heartbeat endpoint, defaults to true."
+    )
+    (
+        "server.block_endpoint_enabled",
+        value<bool>(&configured.server.block_endpoint_enabled),
+        "Enable the block publishing endpoint, defaults to true."
+    )
+    (
+        "server.transaction_endpoint_enabled",
+        value<bool>(&configured.server.transaction_endpoint_enabled),
+        "Enable the transaction publishing endpoint, defaults to true."
+    )
+    (
         "server.query_endpoint",
         value<endpoint>(&configured.server.query_endpoint),
-        "The query service endpoint, defaults to 'tcp://*:9091'."
+        "The query endpoint, defaults to 'tcp://*:9091'."
     )
     (
         "server.heartbeat_endpoint",
         value<endpoint>(&configured.server.heartbeat_endpoint),
-        "The heartbeat service endpoint, defaults to 'tcp://*:9092'."
+        "The heartbeat endpoint, defaults to 'tcp://*:9092'."
     )
     (
-        "server.block_publish_endpoint",
-        value<endpoint>(&configured.server.block_publish_endpoint),
-        "The block publishing service endpoint, defaults to 'tcp://*:9093'."
+        "server.block_endpoint",
+        value<endpoint>(&configured.server.query_endpoint),
+        "The block publishing endpoint, defaults to 'tcp://*:9093'."
     )
     (
-        "server.transaction_publish_endpoint",
-        value<endpoint>(&configured.server.transaction_publish_endpoint),
-        "The transaction publishing service endpoint, defaults to 'tcp://*:9094'."
+        "server.transaction_endpoint",
+        value<endpoint>(&configured.server.transaction_endpoint),
+        "The transaction publishing endpoint, defaults to 'tcp://*:9094'."
     )
     (
-        "server.certificate_file",
-        value<path>(&configured.server.certificate_file),
-        "The path to the ZPL-encoded server private certificate file."
+        "server.server_private_key",
+        value<std::string>(&configured.server.server_private_key),
+        "The Z85-encoded private key of the server."
     )
     (
-        "server.client_certificates_path",
-        value<path>(&configured.server.client_certificates_path),
-        "The directory for ZPL-encoded client public certificate files, allows anonymous clients if not set."
+        "server.client_public_key",
+        value<config::base85::list>(&configured.server.client_public_keys),
+        "Allowed Z85-encoded public key of the client, multiple entries allowed."
     )
     (
-        "server.whitelist",
-        value<config::authority::list>(&configured.server.whitelists),
-        "Allowed client IP address, all clients allowed if none set, multiple entries allowed."
+        "server.client_address",
+        value<config::authority::list>(&configured.server.client_addresses),
+        "Allowed client IP address, multiple entries allowed."
     );
 
     return description;

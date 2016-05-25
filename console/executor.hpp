@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_EXECUTOR_HPP
 #define LIBBITCOIN_SERVER_EXECUTOR_HPP
 
+#include <atomic>
 #include <future>
 #include <iostream>
 #include <memory>
@@ -45,32 +46,29 @@ public:
     bool invoke();
 
 private:
-    void attach_query_api();
-    void attach_subscription_api();
-
     void do_help();
     void do_settings();
     void do_version();
     bool do_initchain();
 
     bool run();
-    bool verify();
-    bool wait_on_stop();
+    bool verify_directory();
     void initialize_output();
-    void monitor_stop(server_node::result_handler);
-    void handle_seeded(const code& ec);
-    void handle_synchronized(const code& ec);
-    void handle_stopped(const code& ec, std::promise<code>& promise);
+    void monitor_stop();
 
-    notifier::ptr notify_;
-    receiver::ptr receive_;
-    publisher::ptr publish_;
-    server_node::ptr node_;
+    void handle_started(const code& ec);
+    void handle_running(const code& ec);
+    void handle_stopped(const code& ec);
+    void handle_server_stopped(const code& ec, std::promise<code>& done);
+
+    static std::atomic<bool> stopped_;
+    static void initialize_interrupt(int code);
 
     parser& metadata_;
     std::ostream& output_;
     bc::ofstream debug_file_;
     bc::ofstream error_file_;
+    server_node::ptr node_;
 };
 
 // Localizable messages.
@@ -93,15 +91,13 @@ private:
 #define BS_NODE_INTERRUPT \
     "Press CTRL-C to stop the server."
 #define BS_NODE_STARTING \
-    "Please wait while server is starting..."
+    "Please wait while the server is starting..."
 #define BS_NODE_START_FAIL \
     "Server failed to start with error, %1%."
-#define BS_NODE_STARTED \
-    "Blockchain is started."
 #define BS_NODE_SEEDED \
     "Seeding is complete."
-#define BS_NODE_SYNCHRONIZED \
-    "Synchronization is complete."
+#define BS_NODE_STARTED \
+    "Server is started."
 
 #define BS_NODE_STOPPING \
     "Please wait while server is stopping (code: %1%)..."
@@ -119,9 +115,10 @@ private:
 #define BS_VERSION_MESSAGE \
     "\nVersion Information:\n\n" \
     "libbitcoin-server:     %1%\n" \
-    "libbitcoin-node:       %2%\n" \
-    "libbitcoin-blockchain: %3%\n" \
-    "libbitcoin:            %4%"
+    "libbitcoin-protocol:   %2%\n" \
+    "libbitcoin-node:       %3%\n" \
+    "libbitcoin-blockchain: %4%\n" \
+    "libbitcoin:            %5%"
 #define BS_LOG_HEADER \
     "================= startup =================="
 

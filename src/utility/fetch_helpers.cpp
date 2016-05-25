@@ -17,12 +17,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "utility.hpp"
+#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 #include <cstdint>
 #include <cstddef>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -33,13 +34,14 @@ using namespace bc::wallet;
 
 // fetch_history stuff
 // ----------------------------------------------------------------------------
+
 bool unwrap_fetch_history_args(payment_address& address,
     uint32_t& from_height, const incoming& request)
 {
     static constexpr size_t history_args_size = sizeof(uint8_t) +
         short_hash_size + sizeof(uint32_t);
 
-    const auto& data = request.data();
+    const auto& data = request.data;
 
     if (data.size() != history_args_size)
     {
@@ -86,10 +88,11 @@ void send_history_result(const code& ec, const history_compact::list& history,
 
 // fetch_transaction stuff
 // ----------------------------------------------------------------------------
+
 bool unwrap_fetch_transaction_args(hash_digest& hash,
     const incoming& request)
 {
-    const auto& data = request.data();
+    const auto& data = request.data;
 
     if (data.size() != hash_size)
     {

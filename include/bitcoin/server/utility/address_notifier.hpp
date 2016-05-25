@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SUBSCRIBER_HPP
-#define LIBBITCOIN_SERVER_SUBSCRIBER_HPP
+#ifndef LIBBITCOIN_SERVER_ADDRESS_NOTIFIER_HPP
+#define LIBBITCOIN_SERVER_ADDRESS_NOTIFIER_HPP
 
 #include <cstdint>
 #include <memory>
@@ -26,30 +26,26 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class BCS_API notifier
-  : public enable_shared_from_base<notifier>
+class server_node;
+
+class BCS_API address_notifier
+  : public enable_shared_from_base<address_notifier>
 {
 public:
-    typedef std::shared_ptr<notifier> ptr;
+    typedef std::shared_ptr<address_notifier> ptr;
 
-    notifier(server_node::ptr node);
-    ~notifier();
+    address_notifier(server_node* node);
 
     /// This class is not copyable.
-    notifier(const notifier&) = delete;
-    void operator=(const notifier&) = delete;
-
-    bool start();
-    void stop();
-    void close();
+    address_notifier(const address_notifier&) = delete;
+    void operator=(const address_notifier&) = delete;
 
     void subscribe(const incoming& request, send_handler handler);
     void renew(const incoming& request, send_handler handler);
@@ -67,27 +63,6 @@ private:
     };
 
     typedef std::vector<subscription> list;
-    
-    // Private class typedef so use a template function.
-    template <typename AddressPrefix>
-    bool deserialize_address(AddressPrefix& address,
-        chain::subscribe_type& type, const data_chunk& data)
-    {
-        auto deserial = make_deserializer(data.begin(), data.end());
-        try
-        {
-            type = static_cast<chain::subscribe_type>(deserial.read_byte());
-            auto bit_length = deserial.read_byte();
-            auto blocks = deserial.read_data(binary::blocks_size(bit_length));
-            address = AddressPrefix(bit_length, blocks);
-        }
-        catch (const end_of_stream&)
-        {
-            return false;
-        }
-
-        return deserial.iterator() == data.end();
-    }
 
     void do_subscribe(const incoming& request, send_handler handler);
     void do_renew(const incoming& request, send_handler handler);
@@ -100,10 +75,12 @@ private:
     void post_stealth_updates(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
 
-    code add(const incoming& request, send_handler handler);
     void sweep();
+    code add(const incoming& request, send_handler handler);
+    boost::posix_time::ptime now();
+    bool deserialize_address(binary& address, chain::subscribe_type& type,
+        const data_chunk& data);
 
-    threadpool threadpool_;
     dispatcher dispatch_;
     list subscriptions_;
     const settings& settings_;

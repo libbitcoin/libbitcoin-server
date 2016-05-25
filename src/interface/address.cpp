@@ -21,11 +21,11 @@
 
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/message/incoming.hpp>
-#include <bitcoin/server/message/notifier.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include "utility.hpp"
+#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -34,7 +34,7 @@ using namespace bc::wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-void address::fetch_history2(server_node::ptr node, const incoming& request,
+void address::fetch_history2(server_node* node, const incoming& request,
     send_handler handler)
 {
     static constexpr uint64_t limit = 0;
@@ -50,13 +50,13 @@ void address::fetch_history2(server_node::ptr node, const incoming& request,
             _1, _2, request, handler));
 }
 
-void address::subscribe(notifier::ptr notifier, const incoming& request,
-    send_handler handler)
+void address::subscribe(address_notifier::ptr notifier,
+    const incoming& request, send_handler handler)
 {
     notifier->subscribe(request, handler);
 }
 
-void address::renew(notifier::ptr notifier, const incoming& request,
+void address::renew(address_notifier::ptr notifier, const incoming& request,
     send_handler handler)
 {
     notifier->renew(request, handler);

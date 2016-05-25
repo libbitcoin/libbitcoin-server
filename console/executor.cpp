@@ -19,6 +19,8 @@
  */
 #include "executor.hpp"
 
+#include <atomic>
+#include <chrono>
 #include <csignal>
 #include <functional>
 #include <future>
@@ -36,6 +38,8 @@ namespace server {
 using boost::format;
 using std::placeholders::_1;
 using std::placeholders::_2;
+using namespace std::chrono;
+using namespace std::this_thread;
 using namespace boost::system;
 using namespace bc::blockchain;
 using namespace bc::config;
@@ -46,20 +50,13 @@ static constexpr int no_interrupt = 0;
 static constexpr int directory_exists = 0;
 static constexpr int directory_not_found = 2;
 static constexpr auto append = std::ofstream::out | std::ofstream::app;
-
 static const auto application_name = "bn";
 
-// Class and method names must match protocol expectations (do not change).
-#define ATTACH(worker, class_name, method_name, instance) \
-    worker->attach(#class_name "." #method_name, \
-        std::bind(&class_name::method_name, \
-            instance, _1, _2));
-
 // Static interrupt state (unavoidable).
-static auto stopped_ = false;
+std::atomic<bool> executor::stopped_(false);
 
 // Static handler for catching termination signals.
-static void initialize_interrupt(int code)
+void executor::initialize_interrupt(int code)
 {
     // Reinitialize after each capture.
     signal(SIGINT, initialize_interrupt);
@@ -74,10 +71,10 @@ static void initialize_interrupt(int code)
     }
 
     // Signal the service to stop if not already signaled.
-    if (!stopped_)
+    if (!stopped_.load())
     {
         log::info(LOG_NODE) << format(BS_NODE_STOPPING) % code;
-        stopped_ = true;
+        stopped_.store(true);
     }
 }
 
@@ -106,47 +103,9 @@ void executor::initialize_output()
         log::info(LOG_NODE) << format(BS_USING_CONFIG_FILE) % file;
 }
 
-// ----------------------------------------------------------------------------
-// Server API bindings.
-
-// Class and method names must match protocol expectations (do not change).
-void executor::attach_subscription_api()
-{
-    // TODO: add renew to client.
-    ATTACH(receive_, address, renew, notify_);
-    ATTACH(receive_, address, subscribe, notify_);
-}
-
-// Class and method names must match protocol expectations (do not change).
-void executor::attach_query_api()
-{
-    // TODO: add total_connections to client.
-    ATTACH(receive_, protocol, total_connections, node_);
-    ATTACH(receive_, protocol, broadcast_transaction, node_);
-    ATTACH(receive_, transaction_pool, validate, node_);
-    ATTACH(receive_, transaction_pool, fetch_transaction, node_);
-
-    // TODO: add fetch_spend to client.
-    // TODO: add fetch_block_transaction_hashes to client.
-    ATTACH(receive_, blockchain, fetch_spend, node_);
-    ATTACH(receive_, blockchain, fetch_block_transaction_hashes, node_);
-    ATTACH(receive_, blockchain, fetch_transaction, node_);
-    ATTACH(receive_, blockchain, fetch_last_height, node_);
-    ATTACH(receive_, blockchain, fetch_block_header, node_);
-    ATTACH(receive_, blockchain, fetch_block_height, node_);
-    ATTACH(receive_, blockchain, fetch_transaction_index, node_);
-    ATTACH(receive_, blockchain, fetch_stealth, node_);
-    ATTACH(receive_, blockchain, fetch_history, node_);
-
-    // address.fetch_history was present in v1 (obelisk) and v2 (server).
-    // address.fetch_history was called by client v1 (sx) and v2 (bx).
-    ////ATTACH(receive_, address, fetch_history, node_);
-    ATTACH(receive_, address, fetch_history2, node_);
-}
-
-// ----------------------------------------------------------------------------
 // Command line options.
-// Emit directly to standard output (not the log).
+// ----------------------------------------------------------------------------
+// These emit directly to standard output (not the log).
 
 void executor::do_help()
 {
@@ -168,6 +127,7 @@ void executor::do_version()
 {
     output_ << format(BS_VERSION_MESSAGE) %
         LIBBITCOIN_SERVER_VERSION %
+        LIBBITCOIN_PROTOCOL_VERSION %
         LIBBITCOIN_NODE_VERSION %
         LIBBITCOIN_BLOCKCHAIN_VERSION %
         LIBBITCOIN_VERSION << std::endl;
@@ -202,8 +162,8 @@ bool executor::do_initchain()
     return false;
 }
 
+// Invoke.
 // ----------------------------------------------------------------------------
-// Invoke an action based on command line option.
 
 bool executor::invoke()
 {
@@ -232,88 +192,15 @@ bool executor::invoke()
         return do_initchain();
     }
 
-    // There are no command line arguments, just run the node.
+    // There are no command line arguments, just run the server.
     return run();
 }
 
-// ----------------------------------------------------------------------------
 // Run sequence.
-
-bool executor::run()
-{
-    initialize_output();
-    initialize_interrupt(no_interrupt);
-
-    log::info(LOG_NODE) << BS_NODE_STARTING;
-
-    // Ensure the blockchain directory is initialized (at least exists).
-    if (!verify())
-        return false;
-
-    // Now that the directory is verified we can create the node for it.
-    node_ = std::make_shared<server_node>(metadata_.configured);
-
-    // Start seeding the node, stop handlers are registered in start.
-    node_->start(
-        std::bind(&executor::handle_seeded,
-            shared_from_this(), _1));
-
-    log::info(LOG_NODE) << BS_NODE_STARTED;
-
-    // Define here so that the poller is initialized for the wait loop.
-    notify_ = std::make_shared<notifier>(node_);
-    receive_ = std::make_shared<receiver>(node_);
-    publish_ = std::make_shared<publisher>(node_);
-
-    // Block until the node is stopped or there is an interrupt.
-    return wait_on_stop();
-}
-
-void executor::handle_seeded(const code& ec)
-{
-    if (ec)
-    {
-        log::error(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
-        stopped_ = true;
-        return;
-    }
-
-    node_->run(
-        std::bind(&executor::handle_synchronized,
-            shared_from_this(), _1));
-
-    log::info(LOG_NODE) << BS_NODE_SEEDED;
-}
-
-void executor::handle_synchronized(const code& ec)
-{
-    if (ec)
-    {
-        log::info(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
-        stopped_ = true;
-        return;
-    }
-
-    log::info(LOG_NODE) << BS_NODE_SYNCHRONIZED;
-
-    // Start server services on top of the node, these log internally.
-    if (!receive_->start() || !publish_->start() || !notify_->start())
-    {
-        stopped_ = true;
-        return;
-    }
-
-    const auto& settings = metadata_.configured.server;
-
-    if (settings.queries_enabled)
-        attach_query_api();
-
-    if (settings.subscription_limit > 0)
-        attach_subscription_api();
-}
+// ----------------------------------------------------------------------------
 
 // Use missing directory as a sentinel indicating lack of initialization.
-bool executor::verify()
+bool executor::verify_directory()
 {
     error_code ec;
     const auto& directory = metadata_.configured.database.directory;
@@ -332,46 +219,94 @@ bool executor::verify()
     return false;
 }
 
-bool executor::wait_on_stop()
+bool executor::run()
 {
-    std::promise<code> promise;
+    initialize_output();
+    initialize_interrupt(no_interrupt);
 
-    // Monitor stopped for completion.
-    monitor_stop(
-        std::bind(&executor::handle_stopped,
-            shared_from_this(), _1, std::ref(promise)));
+    log::info(LOG_NODE) << BS_NODE_STARTING;
 
-    // Block until the stop handler is invoked.
-    const auto ec = promise.get_future().get();
-
-    if (ec)
-    {
-        log::error(LOG_NODE) << format(BS_NODE_STOP_FAIL) % ec.message();
+    if (!verify_directory())
         return false;
-    }
 
-    log::info(LOG_NODE) << BS_NODE_STOPPED;
+    // Now that the directory is verified we can create the node for it.
+    node_ = std::make_shared<server_node>(metadata_.configured);
+
+    node_->start(
+        std::bind(&executor::handle_started,
+            shared_from_this(), _1));
+
+    monitor_stop();
     return true;
 }
 
-void executor::handle_stopped(const code& ec, std::promise<code>& promise)
+// Handle the completion of the start sequence and begin the run sequence.
+void executor::handle_started(const code& ec)
 {
-    promise.set_value(ec);
+    if (ec)
+    {
+        log::error(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
+        return;
+    }
+
+    log::info(LOG_NODE) << BS_NODE_SEEDED;
+
+    // This is the beginning of the stop sequence.
+    node_->subscribe_stop(
+        std::bind(&executor::handle_stopped,
+            shared_from_this(), _1));
+
+    // This is the beginning of the run sequence.
+    node_->run(
+        std::bind(&executor::handle_running,
+            shared_from_this(), _1));
 }
 
-void executor::monitor_stop(p2p::result_handler handler)
+// This is the end of the run sequence.
+void executor::handle_running(const code& ec)
 {
-    auto period = metadata_.configured.server.polling_interval_milliseconds;
+    if (ec)
+        log::info(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
+    else
+        log::info(LOG_NODE) << BS_NODE_STARTED;
+}
 
+// In case the server stops on its own.
+void executor::handle_stopped(const code&)
+{
+    stopped_.store(true);
+}
+
+// In case the console is terminated with CTRL-C.
+void executor::monitor_stop()
+{
     while (!stopped_ && !node_->stopped())
-        receive_->poll(period);
+        sleep_for(milliseconds(10));
 
     log::info(LOG_NODE) << BS_NODE_UNMAPPING;
-    node_->stop(handler);
-    node_->close();
 
-    // This is the end of the run sequence.
-    node_ = nullptr;
+    std::promise<code> done;
+
+    if (node_->stopped())
+        handle_server_stopped(error::success, done);
+    else
+        node_->stop(
+            std::bind(&executor::handle_server_stopped,
+                shared_from_this(), _1, std::ref(done)));
+
+    // block until server stop completes.
+    done.get_future();
+}
+
+// This is the end of the stop sequence.
+void executor::handle_server_stopped(const code& ec, std::promise<code>& done)
+{
+    if (ec)
+        log::info(LOG_NODE) << format(BS_NODE_STOP_FAIL) % ec.message();
+    else
+        log::info(LOG_NODE) << BS_NODE_STOPPED;
+
+    done.set_value(ec);
 }
 
 } // namespace server

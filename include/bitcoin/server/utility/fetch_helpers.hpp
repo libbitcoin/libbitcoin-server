@@ -17,35 +17,43 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_INCOMING
-#define LIBBITCOIN_SERVER_INCOMING
+#ifndef LIBBITCOIN_SERVER_FETCH_HELPERS_HPP
+#define LIBBITCOIN_SERVER_FETCH_HELPERS_HPP
 
+#include <cstddef>
 #include <cstdint>
-#include <string>
-#include <bitcoin/protocol.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class BCS_API incoming
-{
-public:
-    bool receive(bc::protocol::zmq::socket& socket);
+static BC_CONSTEXPR size_t code_size = sizeof(uint32_t);
+static BC_CONSTEXPR size_t index_size = sizeof(uint32_t);
+static BC_CONSTEXPR size_t point_size = hash_size + sizeof(uint32_t);
 
-    uint32_t id() const;
-    const data_chunk& data() const;
-    const std::string& command() const;
-    const data_chunk origin() const;
+// fetch_history stuff
 
-private:
-    uint32_t id_;
-    data_chunk data_;
-    std::string command_;
-    data_chunk origin_;
-};
+bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
+    uint32_t& from_height, const incoming& request);
+
+void BCS_API send_history_result(const code& ec,
+    const chain::history_compact::list& history, const incoming& request,
+    send_handler handler);
+
+// fetch_transaction stuff
+
+bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
+    const incoming& request);
+
+void BCS_API transaction_fetched(const code& ec, const chain::transaction& tx,
+    const incoming& request, send_handler handler);
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
+

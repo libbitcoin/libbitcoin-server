@@ -22,15 +22,18 @@
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/version.hpp>
+#include <bitcoin/server/endpoints/block_endpoint.hpp>
+#include <bitcoin/server/endpoints/heartbeat_endpoint.hpp>
+#include <bitcoin/server/endpoints/query_endpoint.hpp>
+#include <bitcoin/server/endpoints/transaction_endpoint.hpp>
 #include <bitcoin/server/interface/address.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>
 #include <bitcoin/server/interface/protocol.hpp>
 #include <bitcoin/server/interface/transaction_pool.hpp>
-#include <bitcoin/server/message/incoming.hpp>
-#include <bitcoin/server/message/notifier.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
-#include <bitcoin/server/message/publisher.hpp>
-#include <bitcoin/server/message/receiver.hpp>
-#include <bitcoin/server/message/sender.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
+#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 #endif

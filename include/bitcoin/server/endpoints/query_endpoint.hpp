@@ -17,66 +17,66 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_RECEIVIER_HPP
-#define LIBBITCOIN_SERVER_RECEIVIER_HPP
+#ifndef LIBBITCOIN_SERVER_QUERY_ENDPOINT_HPP
+#define LIBBITCOIN_SERVER_QUERY_ENDPOINT_HPP
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <functional>
 #include <string>
 #include <unordered_map>
-#include <boost/date_time.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
-#include <bitcoin/server/message/sender.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/settings.hpp>
 
+/// This class must be constructed as a shared pointer.
 namespace libbitcoin {
 namespace server {
 
-class BCS_API receiver
-  : public enable_shared_from_base<receiver>
+class server_node;
+
+class BCS_API query_endpoint
+  : public enable_shared_from_base<query_endpoint>
 {
 public:
-    typedef std::shared_ptr<receiver> ptr;
+    typedef std::shared_ptr<query_endpoint> ptr;
     typedef std::function<void(const incoming&, send_handler)> command_handler;
 
-    receiver(server_node::ptr node);
+    query_endpoint(bc::protocol::zmq::context::ptr context, server_node* node);
 
     /// This class is not copyable.
-    receiver(const receiver&) = delete;
-    void operator=(const receiver&) = delete;
+    query_endpoint(const query_endpoint&) = delete;
+    void operator=(const query_endpoint&) = delete;
 
     bool start();
-    void poll(uint32_t interval_milliseconds);
+    void stop();
+    bool stopped() const;
+
     void attach(const std::string& command, command_handler handler);
+    void poll(uint32_t interval_milliseconds);
 
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void whitelist();
-    bool enable_crypto();
-    bool create_new_socket();
-    void publish_heartbeat();
-    void update_heartbeat();
-    boost::posix_time::ptime now();
+    void dequeue();
+    void enqueue(outgoing& message);
 
-    uint32_t counter_;
-    sender sender_;
     command_map handlers_;
-    boost::posix_time::ptime heartbeat_;
+    std::atomic<bool> stopped_;
+    dispatcher dispatch_;
     const settings& settings_;
 
-    bc::protocol::zmq::context context_;
-    bc::protocol::zmq::socket wakeup_socket_;
-    bc::protocol::zmq::socket heartbeat_socket_;
-    bc::protocol::zmq::socket receive_socket_;
-    bc::protocol::zmq::certificate certificate_;
-    bc::protocol::zmq::authenticator authenticate_;
+    // This polls the query socket *and* the internal queue.
     bc::protocol::zmq::poller poller_;
+    bc::protocol::zmq::socket query_socket_;
+
+    // The push/pull sockets form an internal queue.
+    bc::protocol::zmq::context context_;
+    bc::protocol::zmq::socket push_socket_;
+    bc::protocol::zmq::socket pull_socket_;
 };
 
 } // namespace server

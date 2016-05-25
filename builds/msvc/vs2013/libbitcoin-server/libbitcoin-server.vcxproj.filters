@@ -16,17 +16,29 @@
     <Filter Include="include\bitcoin\server">
       <UniqueIdentifier>{f1b85926-a0d1-4f86-a380-32ac7c8a8b73}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\message">
-      <UniqueIdentifier>{44190abb-315a-4171-91a1-2e562c50cfc4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\server\message">
-      <UniqueIdentifier>{e8a08974-3fec-4a14-b035-3361708e3647}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include\bitcoin\server\interface">
       <UniqueIdentifier>{ca115887-a19b-48e1-ad59-16400aa7a1de}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\interface">
       <UniqueIdentifier>{4dac9ec3-0b55-4804-90b2-1825858f8bfd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\messages">
+      <UniqueIdentifier>{ddd6a42d-2582-46b6-b46b-07aa2dddae0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\messages">
+      <UniqueIdentifier>{9f17e891-9f2a-4eb0-a2be-65d9ebf5aae1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\endpoints">
+      <UniqueIdentifier>{58adecc3-28cc-4ff0-bb74-3f34bf675ff9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\utility">
+      <UniqueIdentifier>{81095e51-7dfd-482b-bf2b-8b88a05591ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\endpoints">
+      <UniqueIdentifier>{8010b7df-0b56-4fdc-a7ec-a7a80b40f9b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utility">
+      <UniqueIdentifier>{6284645b-ec72-461f-9046-dfa5ea049fb0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -52,18 +64,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\publisher.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\sender.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\receiver.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\interface\utility.hpp">
-      <Filter>src\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\protocol.hpp">
       <Filter>include\bitcoin\server\interface</Filter>
     </ClInclude>
@@ -76,14 +76,32 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp">
       <Filter>include\bitcoin\server\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\notifier.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\outgoing.hpp">
+      <Filter>include\bitcoin\server\messages</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\incoming.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\incoming.hpp">
+      <Filter>include\bitcoin\server\messages</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\message\outgoing.hpp">
-      <Filter>include\bitcoin\server\message</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\heartbeat_endpoint.hpp">
+      <Filter>include\bitcoin\server\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\query_endpoint.hpp">
+      <Filter>include\bitcoin\server\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\transaction_endpoint.hpp">
+      <Filter>include\bitcoin\server\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\block_endpoint.hpp">
+      <Filter>include\bitcoin\server\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\address_notifier.hpp">
+      <Filter>include\bitcoin\server\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\curve_authenticator.hpp">
+      <Filter>include\bitcoin\server\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\fetch_helpers.hpp">
+      <Filter>include\bitcoin\server\utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -93,19 +111,7 @@
     <ClCompile Include="..\..\..\..\src\parser.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\publisher.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\sender.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\receiver.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp">
-      <Filter>src\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\interface\utility.cpp">
       <Filter>src\interface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\interface\address.cpp">
@@ -117,20 +123,38 @@
     <ClCompile Include="..\..\..\..\src\interface\protocol.cpp">
       <Filter>src\interface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\notifier.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\incoming.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\message\outgoing.cpp">
-      <Filter>src\message</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\configuration.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\messages\incoming.cpp">
+      <Filter>src\messages</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\messages\outgoing.cpp">
+      <Filter>src\messages</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\block_endpont.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\heartbeat_endpont.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\query_endpont.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\transaction_endpont.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utility\address_notifier.cpp">
+      <Filter>src\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utility\curve_authenticator.cpp">
+      <Filter>src\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utility\fetch_helpers.cpp">
+      <Filter>src\utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

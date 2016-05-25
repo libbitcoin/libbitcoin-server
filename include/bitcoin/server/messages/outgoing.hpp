@@ -17,35 +17,42 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_ADDRESS_HPP
-#define LIBBITCOIN_SERVER_ADDRESS_HPP
+#ifndef LIBBITCOIN_SERVER_OUTGOING
+#define LIBBITCOIN_SERVER_OUTGOING
 
+#include <cstdint>
+#include <string>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
-#include <bitcoin/server/messages/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Address interface.
-/// Class and method names are published and mapped to the zeromq interface.
-class BCS_API address
+class BCS_API outgoing
 {
 public:
-    /// Fetch the blockchain and transaction pool history of a payment address.
-    static void fetch_history2(server_node* node,
-        const incoming& request, send_handler handler);
+    /// Parse the incoming request and retain the outgoing code.
+    outgoing(const incoming& request, const code& ec);
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(address_notifier::ptr notifier,
-        const incoming& request, send_handler handler);
+    /// Parse the incoming request and retain the outgoing data.
+    outgoing(const incoming& request, const data_chunk& data);
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(address_notifier::ptr notifier,
-        const incoming& request, send_handler handler);
+    /// Empty destination is interpreted as an unspecified destination.
+    outgoing(const std::string& command, const data_chunk& data,
+        const data_chunk& destination);
+
+    bool send(bc::protocol::zmq::socket& socket);
+
+protected:
+    outgoing(const std::string& command, const data_chunk& data,
+        const data_chunk& destination, uint32_t id);
+
+private:
+    bc::protocol::zmq::message message_;
 };
+
+typedef std::function<void(outgoing&)> send_handler;
 
 } // namespace server
 } // namespace libbitcoin

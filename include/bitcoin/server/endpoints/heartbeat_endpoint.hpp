@@ -17,34 +17,47 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_ADDRESS_HPP
-#define LIBBITCOIN_SERVER_ADDRESS_HPP
+#ifndef LIBBITCOIN_SERVER_HEARTBEAT_ENDPONT_HPP
+#define LIBBITCOIN_SERVER_HEARTBEAT_ENDPONT_HPP
 
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <thread>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messages/incoming.hpp>
-#include <bitcoin/server/messages/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Address interface.
-/// Class and method names are published and mapped to the zeromq interface.
-class BCS_API address
+class server_node;
+
+/// This class must be constructed as a shared pointer.
+class BCS_API heartbeat_endpoint
+  : public enable_shared_from_base<heartbeat_endpoint>
 {
 public:
-    /// Fetch the blockchain and transaction pool history of a payment address.
-    static void fetch_history2(server_node* node,
-        const incoming& request, send_handler handler);
+    typedef std::shared_ptr<heartbeat_endpoint> ptr;
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(address_notifier::ptr notifier,
-        const incoming& request, send_handler handler);
+    heartbeat_endpoint(bc::protocol::zmq::context::ptr context,
+        server_node* node);
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(address_notifier::ptr notifier,
-        const incoming& request, send_handler handler);
+    /// This class is not copyable.
+    heartbeat_endpoint(const heartbeat_endpoint&) = delete;
+    void operator=(const heartbeat_endpoint&) = delete;
+
+    bool start();
+    void stop();
+
+private:
+    void start_timer();
+    void send(const code& ec);
+
+    uint32_t counter_;
+    const settings& settings_;
+    bc::protocol::zmq::socket socket_;
+    deadline::ptr deadline_;
 };
 
 } // namespace server

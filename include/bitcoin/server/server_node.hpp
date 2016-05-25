@@ -22,10 +22,17 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/endpoints/block_endpoint.hpp>
+#include <bitcoin/server/endpoints/heartbeat_endpoint.hpp>
+#include <bitcoin/server/endpoints/query_endpoint.hpp>
+#include <bitcoin/server/endpoints/transaction_endpoint.hpp>
+#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -40,27 +47,74 @@ public:
     typedef std::function<void (const chain::transaction&)>
         transaction_notify_callback;
 
+    /// Construct a server node.
     server_node(const configuration& configuration);
 
+    /// Ensure all threads are coalesced.
+    virtual ~server_node();
+
+    // Start/Run/Stop/Close sequences.
+    // ------------------------------------------------------------------------
+
+    /// Synchronize the blockchain and then begin long running sessions,
+    /// call from start result handler. Call base method to skip sync.
+    virtual void run(result_handler handler) override;
+
+    /// Non-blocking call to coalesce all work, start may be reinvoked after.
+    /// Handler returns the result of file save operations.
+    virtual void stop(result_handler handler) override;
+
+    /// Blocking call to coalesce all work and then terminate all threads.
+    /// Call from thread that constructed this class, or don't call at all.
+    /// This calls stop, and start may be reinvoked after calling this.
+    virtual void close() override;
+
+    // Properties.
+    // ----------------------------------------------------------------------------
+
+    /// Server configuration settings.
     virtual const settings& server_settings() const;
-    virtual void start(result_handler handler);
+
+    // Subscriptions.
+    // ----------------------------------------------------------------------------
+
+    /// Subscribe to block announcements and reorgs.
     virtual void subscribe_blocks(block_notify_callback notify_block);
+
+    /// Subscribe to new memory pool transactions.
     virtual void subscribe_transactions(transaction_notify_callback notify_tx);
 
 private:
     typedef std::vector<block_notify_callback> block_notify_list;
     typedef std::vector<transaction_notify_callback> transaction_notify_list;
 
-    void handle_node_start(const code& ec, result_handler handler);
-    bool handle_tx_accepted(const code& ec,
+    bool handle_new_transaction(const code& ec,
         const chain::point::indexes& unconfirmed,
         const chain::transaction& tx);
     bool handle_new_blocks(const code& ec, uint64_t fork_point,
         const chain::block::ptr_list& new_blocks,
         const chain::block::ptr_list& replaced_blocks);
 
-    block_notify_list block_sunscriptions_;
-    transaction_notify_list tx_subscriptions_;
+    void handle_running(const code& ec, result_handler handler);
+    void handle_closing(const code& ec, std::promise<code>& wait);
+
+    void attach_query_api();
+    void attach_subscription_api();
+
+    address_notifier::ptr address_notifier_;
+    curve_authenticator::ptr authenticator_;
+
+    query_endpoint::ptr query_endpoint_;
+    heartbeat_endpoint::ptr heartbeat_endpoint_;
+    block_endpoint::ptr block_endpoint_;
+    transaction_endpoint::ptr transaction_endpoint_;
+
+    mutable upgrade_mutex block_mutex_;
+    block_notify_list block_subscriptions_;
+
+    mutable upgrade_mutex transaction_mutex_;
+    transaction_notify_list transaction_subscriptions_;
+
     size_t last_checkpoint_height_;
     const configuration& configuration_;
 };

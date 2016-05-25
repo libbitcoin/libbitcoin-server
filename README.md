@@ -231,9 +231,6 @@ The required set of NuGet packages can be viewed using the [NuGet package manage
    * [boost\_thread-vc120](http://www.nuget.org/packages/boost_thread-vc120)
    * [boost\_unit\_test\_framework-vc120](http://www.nuget.org/packages/boost_unit_test_framework-vc120)
 * Packages maintained by [evoskuil](http://www.nuget.org/profiles/evoskuil)
-   * [czmq\_vc120](http://www.nuget.org/packages/czmq_vc120)
-   * [czmqpp\_vc120](http://www.nuget.org/packages/czmqpp_vc120)
-   * [libsodium\_vc120](http://www.nuget.org/packages/libsodium_vc120)
    * [libzmq\_vc120](http://www.nuget.org/packages/libzmq_vc120)
    * [secp256k1\_vc120](http://www.nuget.org/packages/secp256k1_vc120)
 
@@ -246,6 +243,7 @@ To build Libbitcoin Server you must also download and build its **libbitcoin dep
 Build these solutions in order:
 
 1. [libbitcoin/libbitcoin](https://github.com/libbitcoin/libbitcoin)
+2. [libbitcoin/libbitcoin-consensus](https://github.com/libbitcoin/libbitcoin-consensus)
 2. [libbitcoin/libbitcoin-blockchain](https://github.com/libbitcoin/libbitcoin-blockchain)
 2. [libbitcoin/libbitcoin-node](https://github.com/libbitcoin/libbitcoin-node)
 3. [libbitcoin/libbitcoin-server](https://github.com/libbitcoin/libbitcoin-server)
@@ -259,12 +257,9 @@ Configuration options are exposed in the Visual Studio property pages.
 The non-boost packages above are all sourced from GitHub repositories maintained using the same [Visual Studio template](https://github.com/evoskuil/visual-studio-template) as the libbitcoin libraries. If so desired each of these can be built locally, in the same manner as the libbitcoin libraries above. This allows you to avoid using the pre-built NuGet packages. The repositories for each dependency are as follows:
 
 * Cryptography
-   * [jedisct1/libsodium](https://github.com/jedisct1/libsodium)
    * [libbitcoin/secp256k1](https://github.com/libbitcoin/secp256k1)
 * Zero Message Queue
    * [zeromq/libzmq](https://github.com/zeromq/libzmq)
-   * [zeromq/czmq](https://github.com/zeromq/czmq)
-   * [zeromq/czmqpp](https://github.com/zeromq/czmqpp)
 
 This change is properly accomplished by disabling the "NuGet Dependencies" in the Visual Studio properties user interface for each libbitcoin project and then importing the `.import.props` file(s) for the corresponding dependencies.
 
@@ -278,8 +273,10 @@ A better configuration is to centralize the NuGet repository outside of your `gi
     -git
         nuget.config
         -libbitcoin
+        -libbitcoin-consensus
         -libbitcoin-blockchain
         -libbitcoin-node
+        -libbitcoin-protocol
         -libbitcoin-server
             -builds
                 -msvc
@@ -300,11 +297,8 @@ A better configuration is to centralize the NuGet repository outside of your `gi
         +boost_system-vc120.1.56.0.0
         +boost_thread-vc120.1.56.0.0
         +boost_unit_test_framework-vc120.1.56.0.0
-        +czmq_vc120.2.2.0.8
-        +czmqpp_vc120.1.0.0.10
-        +libsodium_vc120.1.0.0.0
-        +libzmq_vc120.4.1.0.7
-        +secp256k1_vc120.0.1.0.3
+        +libzmq_vc120.4.2.2.0
+        +secp256k1_vc120.0.1.0.13
 ```
 
 If properly configured the NuGet Package Manager will share this NuGet repository across all solutions within the `git` directory. There are three steps required in this configuration:
