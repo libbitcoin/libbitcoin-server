@@ -38,13 +38,18 @@ class BCS_API block_endpoint
 public:
     typedef std::shared_ptr<block_endpoint> ptr;
 
-    block_endpoint(bc::protocol::zmq::context::ptr context, server_node* node);
+    /// Construct a block endpoint.
+    block_endpoint(bc::protocol::zmq::context& context, server_node* node);
 
     /// This class is not copyable.
     block_endpoint(const block_endpoint&) = delete;
     void operator=(const block_endpoint&) = delete;
 
+    /// Subscribe to block notifications and relay blocks.
     bool start();
+
+    /// Stop the socket.
+    void stop();
 
 private:
     void send(uint32_t height, const chain::block::ptr block);

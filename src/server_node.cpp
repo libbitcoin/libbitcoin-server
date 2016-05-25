@@ -44,7 +44,13 @@ using namespace bc::wallet;
 server_node::server_node(const configuration& configuration)
   : p2p_node(configuration),
     configuration_(configuration),
-    last_checkpoint_height_(configuration.last_checkpoint_height())
+    last_checkpoint_height_(configuration.last_checkpoint_height()),
+    authenticator_(this),
+    address_notifier_(this),
+    query_endpoint_(authenticator_, this),
+    block_endpoint_(authenticator_, this),
+    heartbeat_endpoint_(authenticator_, this),
+    transaction_endpoint_(authenticator_, this)
 {
 }
 
@@ -59,14 +65,11 @@ void server_node::run(result_handler handler)
         return;
     }
 
-    // The handler invoked on a new thread.
-    p2p_node::start(
+    // The handler is invoked on a new thread.
+    p2p_node::run(
         std::bind(&server_node::handle_running,
             this, _1, handler));
 }
-
-#define ENDPOINT(endpoint, authenticator) \
-    std::make_shared<endpoint>(authenticator, this)
 
 void server_node::handle_running(const code& ec, result_handler handler)
 {
@@ -76,31 +79,23 @@ void server_node::handle_running(const code& ec, result_handler handler)
         return;
     }
 
-    // Declare services.
-    authenticator_ = std::make_shared<curve_authenticator>(this);
-    ////address_notifier_ = std::make_shared<address_notifier>(this);
-    ////query_endpoint_ = ENDPOINT(query_endpoint, authenticator_);
-    ////block_endpoint_ = ENDPOINT(block_endpoint, authenticator_);
-    ////heartbeat_endpoint_ = ENDPOINT(heartbeat_endpoint, authenticator_);
-    ////transaction_endpoint_ = ENDPOINT(transaction_endpoint, authenticator_);
-
     // Start authenticator monitor and services, these log internally.
-    if (!authenticator_->start())
-        ////!query_endpoint_->start() || !heartbeat_endpoint_->start() ||
-        ////!block_endpoint_->start() || !transaction_endpoint_->start())
+    if (!authenticator_.start() || !address_notifier_.start() ||
+        !query_endpoint_.start() || !heartbeat_endpoint_.start() ||
+        !block_endpoint_.start() || !transaction_endpoint_.start())
     {
         handler(error::operation_failed);
         return;
     }
 
-    ////// Attach service handlers.
-    ////if (server_settings().query_endpoint_enabled)
-    ////{
-    ////    attach_query_api();
+    // Attach service handlers.
+    if (server_settings().query_endpoint_enabled)
+    {
+        attach_query_api();
 
-    ////    if (server_settings().subscription_limit > 0)
-    ////        attach_subscription_api();
-    ////}
+        if (server_settings().subscription_limit > 0)
+            attach_subscription_api();
+    }
 
     // Subscribe to blockchain reorganizations.
     subscribe_blockchain(
@@ -115,8 +110,6 @@ void server_node::handle_running(const code& ec, result_handler handler)
     // This is the end of the derived run sequence.
     handler(error::success);
 }
-
-#undef ENDPOINT
 
 // Stop sequence.
 // ----------------------------------------------------------------------------
@@ -137,10 +130,12 @@ void server_node::stop(result_handler handler)
     block_mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    // Stop all work so that the threadpool can join.
-    ////query_endpoint_->stop();
-    ////heartbeat_endpoint_->stop();
-    authenticator_->stop();
+    block_endpoint_.stop();
+    heartbeat_endpoint_.stop();
+    transaction_endpoint_.stop();
+
+    //// The authenticated context blocks until all related sockets are closed.
+    authenticator_.stop();
 
     // This is invoked on a new thread.
     // This is the end of the derived stop sequence.
@@ -160,13 +155,13 @@ server_node::~server_node()
 // Okay to ignore code as we are in the destructor, use stop if code is needed.
 void server_node::close()
 {
-    // This must block until handle_closing completes.
     std::promise<code> wait;
 
     server_node::stop(
         std::bind(&server_node::handle_closing,
             this, _1, std::ref(wait)));
 
+    // This blocks until handle_closing completes.
     wait.get_future();
     p2p_node::close();
 }
@@ -223,7 +218,7 @@ bool server_node::handle_new_transaction(const code& ec,
 
     if (ec)
     {
-        log::error(LOG_SERVICE)
+        log::error(LOG_NODE)
             << "Failure handling new tx: " << ec.message();
         return false;
     }
@@ -253,7 +248,7 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
 
     if (ec)
     {
-        log::error(LOG_SERVICE)
+        log::error(LOG_NODE)
             << "Failure handling new blocks: " << ec.message();
         return false;
     }
@@ -281,7 +276,7 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
 
 // Class and method names must match protocol expectations (do not change).
 #define ATTACH(endpoint, class_name, method_name, instance) \
-    endpoint->attach(#class_name "." #method_name, \
+    endpoint.attach(#class_name "." #method_name, \
         std::bind(&bc::server::class_name::method_name, \
             instance, _1, _2));
 
@@ -289,8 +284,8 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
 void server_node::attach_subscription_api()
 {
     // TODO: add renew to client.
-    ATTACH(query_endpoint_, address, renew, address_notifier_);
-    ATTACH(query_endpoint_, address, subscribe, address_notifier_);
+    ATTACH(query_endpoint_, address, renew, &address_notifier_);
+    ATTACH(query_endpoint_, address, subscribe, &address_notifier_);
 }
 
 // Class and method names must match protocol expectations (do not change).

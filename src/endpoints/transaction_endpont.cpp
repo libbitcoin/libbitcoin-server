@@ -33,41 +33,49 @@ using std::placeholders::_1;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-transaction_endpoint::transaction_endpoint(zmq::context::ptr context,
+transaction_endpoint::transaction_endpoint(zmq::context& context,
     server_node* node)
   : node_(node),
-    socket_(*context, zmq::socket::role::pusher),
+    socket_(context, zmq::socket::role::pusher),
     settings_(node->server_settings())
 {
-    BITCOIN_ASSERT(node_);
-    BITCOIN_ASSERT(socket_);
 }
 
 // The instance is retained in scope by subscribe_transactions until stopped.
 bool transaction_endpoint::start()
 {
     if (!settings_.transaction_endpoint_enabled)
+    {
+        stop();
         return true;
+    }
     
     auto tx_endpoint = settings_.transaction_endpoint.to_string();
 
-    if (!socket_.set_authentication_domain("transaction") ||
+    if (!socket_ || !socket_.set_authentication_domain("transaction") ||
         !socket_.bind(tx_endpoint))
     {
-        log::error(LOG_SERVICE)
-            << "Failed to start transaction publisher on " << tx_endpoint;
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize transaction publisher on " << tx_endpoint;
+
+        stop();
         return false;
     }
 
-    log::info(LOG_SERVICE)
+    log::info(LOG_ENDPOINT)
         << "Bound transaction publish service on " << tx_endpoint;
 
     // This is not a libbitcoin re/subscriber.
     node_->subscribe_transactions(
         std::bind(&transaction_endpoint::send,
-            shared_from_this(), _1));
+            this, _1));
 
     return true;
+}
+
+void transaction_endpoint::stop()
+{
+    socket_.stop();
 }
 
 void transaction_endpoint::send(const transaction& tx)
@@ -76,7 +84,7 @@ void transaction_endpoint::send(const transaction& tx)
     message.enqueue(tx.to_data());
 
     if (!message.send(socket_))
-        log::warning(LOG_SERVICE)
+        log::warning(LOG_ENDPOINT)
             << "Failure publishing tx data.";
 }
 

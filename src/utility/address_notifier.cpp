@@ -37,8 +37,17 @@ using namespace boost::posix_time;
 #define NAME "address_notifier"
 
 address_notifier::address_notifier(server_node* node)
-  : dispatch_(node->thread_pool(), NAME),
+  : node_(node),
+    dispatch_(node->thread_pool(), NAME),
     settings_(node->server_settings())
+{
+}
+
+// Start.
+// ----------------------------------------------------------------------------
+
+// Subscribe against the node's tx and block publishers.
+bool address_notifier::start()
 {
     const auto receive_block = [this](uint32_t height, const block::ptr block)
     {
@@ -52,11 +61,11 @@ address_notifier::address_notifier(server_node* node)
         scan(0, null_hash, tx);
     };
 
-    // Subscribe against the node's tx and block publishers.
     // This allows the subscription manager to capture transactions from both
     // contexts and search them for payment addresses that match subscriptions.
-    node->subscribe_blocks(receive_block);
-    node->subscribe_transactions(receive_tx);
+    node_->subscribe_blocks(receive_block);
+    node_->subscribe_transactions(receive_tx);
+    return true;
 }
 
 // Subscribe sequence.
@@ -66,7 +75,7 @@ void address_notifier::subscribe(const incoming& request, send_handler handler)
 {
     dispatch_.ordered(
         &address_notifier::do_subscribe,
-            shared_from_this(), request, handler);
+            this, request, handler);
 }
 
 void address_notifier::do_subscribe(const incoming& request,
@@ -88,7 +97,7 @@ void address_notifier::renew(const incoming& request, send_handler handler)
 {
     dispatch_.unordered(
         &address_notifier::do_renew,
-            shared_from_this(), request, handler);
+            this, request, handler);
 }
 
 void address_notifier::do_renew(const incoming& request, send_handler handler)
@@ -98,7 +107,7 @@ void address_notifier::do_renew(const incoming& request, send_handler handler)
 
     if (!deserialize_address(filter, type, request.data))
     {
-        log::warning(LOG_SERVICE)
+        log::warning(LOG_INTERFACE)
             << "Incorrect format for subscribe renew.";
         return;
     }
@@ -139,7 +148,7 @@ void address_notifier::scan(uint32_t height, const hash_digest& block_hash,
 {
     dispatch_.ordered(
         &address_notifier::do_scan,
-            shared_from_this(), height, block_hash, tx);
+            this, height, block_hash, tx);
 }
 
 void address_notifier::do_scan(uint32_t height, const hash_digest& block_hash,
@@ -263,7 +272,7 @@ code address_notifier::add(const incoming& request, send_handler handler)
 
     if (!deserialize_address(address_key, type, request.data))
     {
-        log::warning(LOG_SERVICE)
+        log::warning(LOG_INTERFACE)
             << "Incorrect format for subscribe data.";
         return error::bad_stream;
     }
@@ -296,7 +305,7 @@ void address_notifier::sweep()
     {
         if (current_time > it->expiry_time)
         {
-            log::debug(LOG_SERVICE)
+            log::debug(LOG_INTERFACE)
                 << "Deleting expired subscription: " << it->prefix
                 << " from " << encode_base16(it->client_origin);
 

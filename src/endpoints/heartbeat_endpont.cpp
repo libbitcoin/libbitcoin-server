@@ -31,33 +31,36 @@ namespace server {
 using std::placeholders::_1;
 using namespace bc::protocol;
 
-heartbeat_endpoint::heartbeat_endpoint(zmq::context::ptr context,
+heartbeat_endpoint::heartbeat_endpoint(zmq::context& context,
     server_node* node)
   : counter_(rand()),
     settings_(node->server_settings()),
-    socket_(*context, zmq::socket::role::publisher),
+    socket_(context, zmq::socket::role::publisher),
     deadline_(std::make_shared<deadline>(node->thread_pool(),
         settings_.heartbeat_interval()))
 {
-    BITCOIN_ASSERT(socket_);
 }
 
 bool heartbeat_endpoint::start()
 {
     if (!settings_.heartbeat_endpoint_enabled)
+    {
+        stop();
         return true;
+    }
 
     const auto heartbeat_endpoint = settings_.heartbeat_endpoint.to_string();
 
-    if (!socket_.set_authentication_domain("heartbeat") ||
+    if (!socket_ || !socket_.set_authentication_domain("heartbeat") ||
         !socket_.bind(heartbeat_endpoint))
     {
-        log::error(LOG_SERVICE)
-            << "Failed to bind heartbeat service on " << heartbeat_endpoint;
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize heartbeat service on " << heartbeat_endpoint;
+        stop();
         return false;
     }
 
-    log::info(LOG_SERVICE)
+    log::info(LOG_ENDPOINT)
         << "Bound heartbeat service on " << heartbeat_endpoint;
 
     start_timer();
@@ -67,20 +70,21 @@ bool heartbeat_endpoint::start()
 void heartbeat_endpoint::stop()
 {
     deadline_->stop();
+    socket_.stop();
 }
 
 void heartbeat_endpoint::start_timer()
 {
     deadline_->start(
         std::bind(&heartbeat_endpoint::send,
-            shared_from_this(), _1));
+            this, _1));
 }
 
 void heartbeat_endpoint::send(const code& ec)
 {
     if (ec)
     {
-        log::error(LOG_SERVICE)
+        log::error(LOG_ENDPOINT)
             << "Heartbeat timer failed: " << ec.message();
         return;
     }
@@ -90,10 +94,10 @@ void heartbeat_endpoint::send(const code& ec)
     const auto result = message.send(socket_);
 
     if (result)
-        log::debug(LOG_SERVICE)
+        log::debug(LOG_ENDPOINT)
             << "Heartbeat sent: " << counter_;
     else
-        log::debug(LOG_SERVICE)
+        log::debug(LOG_ENDPOINT)
             << "Heartbeat failed to send.";
 
     ++counter_;

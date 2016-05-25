@@ -39,7 +39,6 @@ public:
     settings(bc::settings context);
 
     /// Properties.
-    ////uint32_t threads;
     uint32_t heartbeat_interval_seconds;
     uint32_t subscription_expiration_minutes;
     uint32_t subscription_limit;

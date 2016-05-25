@@ -47,7 +47,7 @@ void blockchain::fetch_history(server_node* node,
     if (!unwrap_fetch_history_args(address, from_height, request))
         return;
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_history(" << address.encoded()
         << ", from_height=" << from_height << ")";
 
@@ -64,7 +64,7 @@ void blockchain::fetch_transaction(server_node* node,
     if (!unwrap_fetch_transaction_args(tx_hash, request))
         return;
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
 
     node->chain().fetch_transaction(tx_hash,
@@ -103,7 +103,7 @@ void blockchain::last_height_fetched(const code& ec, size_t last_height,
     serial.write_4_bytes_little_endian(last_height32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_last_height() finished. Sending response.";
 
     outgoing response(request, result);
@@ -168,7 +168,7 @@ void blockchain::block_header_fetched(const code& ec,
     serial.write_data(block_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_block_header() finished. Sending response.";
 
     outgoing response(request, result);
@@ -186,7 +186,8 @@ void blockchain::fetch_block_transaction_hashes(server_node* node,
         fetch_block_transaction_hashes_by_height(node, request, handler);
     else
     {
-        log::error(LOG_SERVICE) << "Incorrect data size for "
+        log::error(LOG_SERVICE)
+            << "Incorrect data size for "
             "blockchain.fetch_block_transaction_hashes_by_height";
         return;
     }
@@ -232,7 +233,7 @@ void blockchain::block_transaction_hashes_fetched(const code& ec,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_block_transaction_hashes()"
        " finished. Sending response.";
 
@@ -278,7 +279,7 @@ void blockchain::transaction_index_fetched(const code& ec, size_t block_height,
     serial.write_4_bytes_little_endian(block_height32);
     serial.write_4_bytes_little_endian(index32);
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_transaction_index() finished. Sending response.";
 
     outgoing response(request, result);
@@ -325,7 +326,7 @@ void blockchain::spend_fetched(const code& ec, const chain::input_point& inpoint
     auto raw_inpoint = inpoint.to_data();
     serial.write_data(raw_inpoint);
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_spend() finished. Sending response.";
 
     outgoing response(request, result);
@@ -365,7 +366,7 @@ void blockchain::block_height_fetched(const code& ec, size_t block_height,
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     serial.write_4_bytes_little_endian(block_height32);
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_block_height() finished. Sending response.";
 
     outgoing response(request, result);
@@ -430,7 +431,7 @@ void blockchain::stealth_fetched(const code& ec,
         serial.write_hash(row.transaction_hash);
     }
 
-    log::debug(LOG_REQUEST)
+    log::debug(LOG_INTERFACE)
         << "blockchain.fetch_stealth() finished. Sending response.";
 
     outgoing response(request, result);

@@ -41,16 +41,21 @@ class BCS_API address_notifier
 public:
     typedef std::shared_ptr<address_notifier> ptr;
 
+    /// Construct an address notifier.
     address_notifier(server_node* node);
 
     /// This class is not copyable.
     address_notifier(const address_notifier&) = delete;
     void operator=(const address_notifier&) = delete;
 
+    /// Subscribe to block and transaction notifications and send messages.
+    bool start();
+
+    /// Subscribe addresses to the notifier.
     void subscribe(const incoming& request, send_handler handler);
+
+    /// Renew an existing subscription to the notifier.
     void renew(const incoming& request, send_handler handler);
-    void scan(uint32_t height, const hash_digest& block_hash,
-        const chain::transaction& tx);
 
 private:
     struct subscription
@@ -64,16 +69,18 @@ private:
 
     typedef std::vector<subscription> list;
 
-    void do_subscribe(const incoming& request, send_handler handler);
-    void do_renew(const incoming& request, send_handler handler);
-    void do_scan(uint32_t height, const hash_digest& block_hash,
+    void scan(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
-
     void post_updates(const wallet::payment_address& address,
         uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
     void post_stealth_updates(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
+
+    void do_scan(uint32_t height, const hash_digest& block_hash,
+        const chain::transaction& tx);
+    void do_subscribe(const incoming& request, send_handler handler);
+    void do_renew(const incoming& request, send_handler handler);
 
     void sweep();
     code add(const incoming& request, send_handler handler);
@@ -81,8 +88,9 @@ private:
     bool deserialize_address(binary& address, chain::subscribe_type& type,
         const data_chunk& data);
 
-    dispatcher dispatch_;
+    server_node* node_;
     list subscriptions_;
+    dispatcher dispatch_;
     const settings& settings_;
 };
 

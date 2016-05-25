@@ -45,38 +45,49 @@ public:
     typedef std::shared_ptr<query_endpoint> ptr;
     typedef std::function<void(const incoming&, send_handler)> command_handler;
 
-    query_endpoint(bc::protocol::zmq::context::ptr context, server_node* node);
+    /// Construct a query endpoint.
+    query_endpoint(bc::protocol::zmq::context& context, server_node* node);
 
     /// This class is not copyable.
     query_endpoint(const query_endpoint&) = delete;
     void operator=(const query_endpoint&) = delete;
 
+    /// Bind the endpoints and start the monitors.
     bool start();
-    void stop();
-    bool stopped() const;
 
+    /// Stop the socket.
+    void stop();
+
+    // Attach query handlers for given commands.
     void attach(const std::string& command, command_handler handler);
-    void poll(uint32_t interval_milliseconds);
 
 private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
+    bool start_queue();
+    void monitor_queue();
+
+    bool start_endpoint();
+    void monitor_endpoint();
+
+    void receive();
     void dequeue();
     void enqueue(outgoing& message);
 
-    command_map handlers_;
-    std::atomic<bool> stopped_;
     dispatcher dispatch_;
+    command_map handlers_;
     const settings& settings_;
 
-    // This polls the query socket *and* the internal queue.
-    bc::protocol::zmq::poller poller_;
+
+    // The query socket uses the constructed context.
     bc::protocol::zmq::socket query_socket_;
+    bc::protocol::zmq::poller query_poller_;
 
     // The push/pull sockets form an internal queue.
     bc::protocol::zmq::context context_;
     bc::protocol::zmq::socket push_socket_;
     bc::protocol::zmq::socket pull_socket_;
+    bc::protocol::zmq::poller pull_poller_;
 };
 
 } // namespace server

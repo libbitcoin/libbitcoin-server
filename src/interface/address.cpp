@@ -50,13 +50,13 @@ void address::fetch_history2(server_node* node, const incoming& request,
             _1, _2, request, handler));
 }
 
-void address::subscribe(address_notifier::ptr notifier,
-    const incoming& request, send_handler handler)
+void address::subscribe(address_notifier* notifier, const incoming& request,
+    send_handler handler)
 {
     notifier->subscribe(request, handler);
 }
 
-void address::renew(address_notifier::ptr notifier, const incoming& request,
+void address::renew(address_notifier* notifier, const incoming& request,
     send_handler handler)
 {
     notifier->renew(request, handler);

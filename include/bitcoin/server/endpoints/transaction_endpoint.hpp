@@ -38,14 +38,19 @@ class BCS_API transaction_endpoint
 public:
     typedef std::shared_ptr<transaction_endpoint> ptr;
 
-    transaction_endpoint(bc::protocol::zmq::context::ptr context,
+    /// Construct a transaction endpoint.
+    transaction_endpoint(bc::protocol::zmq::context& context,
         server_node* node);
 
     /// This class is not copyable.
     transaction_endpoint(const transaction_endpoint&) = delete;
     void operator=(const transaction_endpoint&) = delete;
 
+    /// Subscribe to transaction notifications and relay transactions.
     bool start();
+
+    /// Stop the socket.
+    void stop();
 
 private:
     void send(const chain::transaction& tx);

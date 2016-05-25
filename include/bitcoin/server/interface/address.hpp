@@ -39,11 +39,11 @@ public:
         const incoming& request, send_handler handler);
 
     /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(address_notifier::ptr notifier,
+    static void subscribe(address_notifier* notifier,
         const incoming& request, send_handler handler);
 
     /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(address_notifier::ptr notifier,
+    static void renew(address_notifier* notifier,
         const incoming& request, send_handler handler);
 };
 

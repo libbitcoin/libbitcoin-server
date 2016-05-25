@@ -28,8 +28,9 @@ namespace libbitcoin {
 namespace server {
 
 // Log names.
-#define LOG_REQUEST "request"
 #define LOG_SERVICE "service"
+#define LOG_ENDPOINT "endpoint"
+#define LOG_INTERFACE "interface"
 
 // Not localizable.
 #define BS_HELP_VARIABLE "help"

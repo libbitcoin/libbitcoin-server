@@ -35,6 +35,7 @@ curve_authenticator::curve_authenticator(server_node* node)
 {
 }
 
+// TODO: apply this to secured sockets.
 bool curve_authenticator::apply(zmq::socket& socket)
 {
     const auto server_private_key = settings_.server_private_key;
