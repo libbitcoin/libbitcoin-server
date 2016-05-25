@@ -53,10 +53,10 @@ static constexpr auto append = std::ofstream::out | std::ofstream::app;
 static const auto application_name = "bn";
 
 // Static interrupt state (unavoidable).
-static std::atomic<bool> stopped_ = false;
+std::atomic<bool> executor::stopped_(false);
 
 // Static handler for catching termination signals.
-static void initialize_interrupt(int code)
+void executor::initialize_interrupt(int code)
 {
     // Reinitialize after each capture.
     signal(SIGINT, initialize_interrupt);
