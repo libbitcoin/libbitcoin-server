@@ -17,45 +17,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PUBLISHER_HPP
-#define LIBBITCOIN_SERVER_PUBLISHER_HPP
+#ifndef LIBBITCOIN_SERVER_INCOMING
+#define LIBBITCOIN_SERVER_INCOMING
 
 #include <cstdint>
-#include <memory>
+#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// The publisher subscribes to blocks accepted to the blockchain and
-/// transactions accepted to the memory pool. The blocks and transactions
-/// are then forwarded to its notifiers.
-class BCS_API publisher
-  : public enable_shared_from_base<publisher>
+class BCS_API incoming
 {
 public:
-    typedef std::shared_ptr<publisher> ptr;
+    bool receive(bc::protocol::zmq::socket& socket);
 
-    publisher(server_node::ptr node);
-
-    /// This class is not copyable.
-    publisher(const publisher&) = delete;
-    void operator=(const publisher&) = delete;
-
-    bool start();
-
-private:
-    void send_tx(const chain::transaction& tx);
-    void send_block(uint32_t height, const chain::block::ptr block);
-
-    server_node::ptr node_;
-    bc::protocol::zmq::context context_;
-    bc::protocol::zmq::socket socket_tx_;
-    bc::protocol::zmq::socket socket_block_;
-    const settings& settings_;
+    uint32_t id;
+    data_chunk data;
+    std::string command;
+    data_chunk address;
 };
 
 } // namespace server

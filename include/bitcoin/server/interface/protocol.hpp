@@ -22,8 +22,8 @@
 
 #include <cstddef>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
@@ -35,11 +35,11 @@ class BCS_API protocol
 {
 public:
     /// Broadcast a transaction to all connected peers.
-    static void broadcast_transaction(server_node::ptr node,
+    static void broadcast_transaction(server_node* node,
         const incoming& request, send_handler handler);
 
     /// Determine the count of all connected peers.
-    static void total_connections(server_node::ptr node,
+    static void total_connections(server_node* node,
         const incoming& request, send_handler handler);
 
 private:

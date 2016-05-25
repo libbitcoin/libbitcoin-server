@@ -17,37 +17,40 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/message/sender.hpp>
+#ifndef LIBBITCOIN_SERVER_SECURE_AUTHENTICATOR_HPP
+#define LIBBITCOIN_SERVER_SECURE_AUTHENTICATOR_HPP
 
-#include <bitcoin/node.hpp>
-#include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
+#include <memory>
+#include <bitcoin/protocol.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
-    
-using std::placeholders::_1;
-using namespace bc::protocol;
 
-sender::sender(zmq::context& context)
-  : context_(context)
+class server_node;
+
+class BCS_API curve_authenticator
+  : public bc::protocol::zmq::authenticator
 {
-}
+public:
+    typedef std::shared_ptr<curve_authenticator> ptr;
 
-void sender::queue(const outgoing& message)
-{
-    zmq::socket socket(context_, zmq::socket::role::pusher);
+    /// Construct an instance of the authenticator.
+    curve_authenticator(server_node* node);
 
-    if (!socket || !socket.connect("inproc://trigger-send"))
-    {
-        log::error(LOG_SERVICE)
-            << "Failed to connect to send queue.";
+    /// This class is not copyable.
+    curve_authenticator(const curve_authenticator&) = delete;
+    void operator=(const curve_authenticator&) = delete;
 
-        return;
-    }
+    /// Alloy authentication to the socket.
+    bool apply(bc::protocol::zmq::socket& socket);
 
-    message.send(socket);
-}
+private:
+    const settings& settings_;
+};
 
 } // namespace server
 } // namespace libbitcoin
+
+#endif

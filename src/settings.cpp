@@ -27,18 +27,21 @@ namespace server {
 using namespace asio;
 
 settings::settings()
-  : threads(2),
+  : ////threads(4),
     heartbeat_interval_seconds(5),
-    polling_interval_microseconds(1),
     subscription_expiration_minutes(10),
     subscription_limit(100000000),
-    publisher_enabled(true),
-    queries_enabled(true),
+
     log_requests(false),
+    query_endpoint_enabled(true),
+    heartbeat_endpoint_enabled(true),
+    block_endpoint_enabled(true),
+    transaction_endpoint_enabled(true),
+
     query_endpoint("tcp://*:9091"),
     heartbeat_endpoint("tcp://*:9092"),
-    block_publish_endpoint("tcp://*:9093"),
-    transaction_publish_endpoint("tcp://*:9094")
+    block_endpoint("tcp://*:9093"),
+    transaction_endpoint("tcp://*:9094")
 {
 }
 
@@ -46,11 +49,6 @@ settings::settings()
 settings::settings(bc::settings context)
   : settings()
 {
-}
-
-duration settings::polling_interval() const
-{
-    return microseconds(polling_interval_microseconds);
 }
 
 duration settings::heartbeat_interval() const

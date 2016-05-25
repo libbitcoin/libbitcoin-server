@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include "utility.hpp"
+#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -34,7 +34,7 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
-void transaction_pool::fetch_transaction(server_node::ptr node,
+void transaction_pool::fetch_transaction(server_node* node,
     const incoming& request, send_handler handler)
 {
     hash_digest hash;
@@ -50,11 +50,11 @@ void transaction_pool::fetch_transaction(server_node::ptr node,
             _1, _2, request, handler));
 }
 
-void transaction_pool::validate(server_node::ptr node, const incoming& request,
+void transaction_pool::validate(server_node* node, const incoming& request,
     send_handler handler)
 {
     transaction tx;
-    if (!tx.from_data(request.data()))
+    if (!tx.from_data(request.data))
     {
         handle_validated(error::bad_stream, {}, {}, {}, request, handler);
         return;

@@ -17,40 +17,45 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_UTILITY_HPP
-#define LIBBITCOIN_SERVER_UTILITY_HPP
+#ifndef LIBBITCOIN_SERVER_TRANSACTION_ENDPOINT_HPP
+#define LIBBITCOIN_SERVER_TRANSACTION_ENDPOINT_HPP
 
+#include <cstdint>
+#include <memory>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-static constexpr size_t code_size = sizeof(uint32_t);
-static constexpr size_t index_size = sizeof(uint32_t);
-static constexpr size_t point_size = hash_size + sizeof(uint32_t);
+class server_node;
 
-// fetch_history stuff
+/// This class must be constructed as a shared pointer.
+class BCS_API transaction_endpoint
+  : public enable_shared_from_base<transaction_endpoint>
+{
+public:
+    typedef std::shared_ptr<transaction_endpoint> ptr;
 
-bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
-    uint32_t& from_height, const incoming& request);
+    transaction_endpoint(bc::protocol::zmq::context::ptr context,
+        server_node* node);
 
-void BCS_API send_history_result(const code& ec,
-    const chain::history_compact::list& history, const incoming& request,
-    send_handler handler);
+    /// This class is not copyable.
+    transaction_endpoint(const transaction_endpoint&) = delete;
+    void operator=(const transaction_endpoint&) = delete;
 
-// fetch_transaction stuff
+    bool start();
 
-bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
-    const incoming& request);
+private:
+    void send(const chain::transaction& tx);
 
-void BCS_API transaction_fetched(const code& ec, const chain::transaction& tx,
-    const incoming& request, send_handler handler);
+    server_node* node_;
+    bc::protocol::zmq::socket socket_;
+    const settings& settings_;
+};
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
-

@@ -24,7 +24,7 @@
 #include <bitcoin/server.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include "utility.hpp"
+#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -33,10 +33,10 @@ using std::placeholders::_1;
 
 // This does NOT save to our memory pool.
 // The transaction will hit our memory pool when it is picked up from a peer.
-void protocol::broadcast_transaction(server_node::ptr node,
+void protocol::broadcast_transaction(server_node* node,
     const incoming& request, send_handler handler)
 {
-    const data_chunk& raw_tx = request.data();
+    const data_chunk& raw_tx = request.data;
     chain::transaction tx;
     data_chunk result(code_size);
     auto serial = make_serializer(result.begin());
@@ -45,7 +45,7 @@ void protocol::broadcast_transaction(server_node::ptr node,
     {
         // error
         serial.write_error_code(error::bad_stream);
-        const outgoing response(request, result);
+        outgoing response(request, result);
         handler(response);
         return;
     }
@@ -62,11 +62,11 @@ void protocol::broadcast_transaction(server_node::ptr node,
     log::debug(LOG_REQUEST)
         << "protocol.broadcast_transaction() finished. Sending response.";
 
-    const outgoing response(request, result);
+    outgoing response(request, result);
     handler(response);
 }
 
-void protocol::total_connections(server_node::ptr node, const incoming& request,
+void protocol::total_connections(server_node* node, const incoming& request,
     send_handler handler)
 {
     node->connected_count(
@@ -91,7 +91,7 @@ void protocol::handle_total_connections(size_t count, const incoming& request,
     log::debug(LOG_REQUEST)
         << "protocol.total_connections() finished. Sending response.";
 
-    const outgoing response(request, result);
+    outgoing response(request, result);
     handler(response);
 }
 

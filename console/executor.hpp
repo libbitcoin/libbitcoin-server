@@ -45,32 +45,26 @@ public:
     bool invoke();
 
 private:
-    void attach_query_api();
-    void attach_subscription_api();
-
     void do_help();
     void do_settings();
     void do_version();
     bool do_initchain();
 
     bool run();
-    bool verify();
-    bool wait_on_stop();
+    bool verify_directory();
     void initialize_output();
-    void monitor_stop(server_node::result_handler);
-    void handle_seeded(const code& ec);
-    void handle_synchronized(const code& ec);
-    void handle_stopped(const code& ec, std::promise<code>& promise);
+    void monitor_stop();
 
-    notifier::ptr notify_;
-    receiver::ptr receive_;
-    publisher::ptr publish_;
-    server_node::ptr node_;
+    void handle_started(const code& ec);
+    void handle_running(const code& ec);
+    void handle_stopped(const code& ec);
+    void handle_server_stopped(const code& ec, std::promise<code>& done);
 
     parser& metadata_;
     std::ostream& output_;
     bc::ofstream debug_file_;
     bc::ofstream error_file_;
+    server_node::ptr node_;
 };
 
 // Localizable messages.
@@ -96,12 +90,10 @@ private:
     "Please wait while server is starting..."
 #define BS_NODE_START_FAIL \
     "Server failed to start with error, %1%."
-#define BS_NODE_STARTED \
-    "Blockchain is started."
 #define BS_NODE_SEEDED \
     "Seeding is complete."
-#define BS_NODE_SYNCHRONIZED \
-    "Synchronization is complete."
+#define BS_NODE_STARTED \
+    "Server is started."
 
 #define BS_NODE_STOPPING \
     "Please wait while server is stopping (code: %1%)..."

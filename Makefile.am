@@ -39,18 +39,19 @@ src_libbitcoin_server_la_SOURCES = \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
+    src/endpoints/block_endpont.cpp \
+    src/endpoints/heartbeat_endpont.cpp \
+    src/endpoints/query_endpont.cpp \
+    src/endpoints/transaction_endpont.cpp \
     src/interface/address.cpp \
     src/interface/blockchain.cpp \
     src/interface/protocol.cpp \
     src/interface/transaction_pool.cpp \
-    src/interface/utility.cpp \
-    src/interface/utility.hpp \
-    src/message/incoming.cpp \
-    src/message/notifier.cpp \
-    src/message/outgoing.cpp \
-    src/message/publisher.cpp \
-    src/message/receiver.cpp \
-    src/message/sender.cpp
+    src/messages/incoming.cpp \
+    src/messages/outgoing.cpp \
+    src/utility/address_notifier.cpp \
+    src/utility/curve_authenticator.cpp \
+    src/utility/fetch_helpers.cpp
 
 # local: test/libbitcoin_server_test
 #------------------------------------------------------------------------------
@@ -97,6 +98,13 @@ include_bitcoin_server_HEADERS = \
     include/bitcoin/server/settings.hpp \
     include/bitcoin/server/version.hpp
 
+include_bitcoin_server_endpointsdir = ${includedir}/bitcoin/server/endpoints
+include_bitcoin_server_endpoints_HEADERS = \
+    include/bitcoin/server/endpoints/block_endpoint.hpp \
+    include/bitcoin/server/endpoints/heartbeat_endpoint.hpp \
+    include/bitcoin/server/endpoints/query_endpoint.hpp \
+    include/bitcoin/server/endpoints/transaction_endpoint.hpp
+
 include_bitcoin_server_interfacedir = ${includedir}/bitcoin/server/interface
 include_bitcoin_server_interface_HEADERS = \
     include/bitcoin/server/interface/address.hpp \
@@ -104,14 +112,16 @@ include_bitcoin_server_interface_HEADERS = \
     include/bitcoin/server/interface/protocol.hpp \
     include/bitcoin/server/interface/transaction_pool.hpp
 
-include_bitcoin_server_messagedir = ${includedir}/bitcoin/server/message
-include_bitcoin_server_message_HEADERS = \
-    include/bitcoin/server/message/incoming.hpp \
-    include/bitcoin/server/message/notifier.hpp \
-    include/bitcoin/server/message/outgoing.hpp \
-    include/bitcoin/server/message/publisher.hpp \
-    include/bitcoin/server/message/receiver.hpp \
-    include/bitcoin/server/message/sender.hpp
+include_bitcoin_server_messagesdir = ${includedir}/bitcoin/server/messages
+include_bitcoin_server_messages_HEADERS = \
+    include/bitcoin/server/messages/incoming.hpp \
+    include/bitcoin/server/messages/outgoing.hpp
+
+include_bitcoin_server_utilitydir = ${includedir}/bitcoin/server/utility
+include_bitcoin_server_utility_HEADERS = \
+    include/bitcoin/server/utility/address_notifier.hpp \
+    include/bitcoin/server/utility/curve_authenticator.hpp \
+    include/bitcoin/server/utility/fetch_helpers.hpp
 
 # files => ${bash_completiondir}
 #------------------------------------------------------------------------------

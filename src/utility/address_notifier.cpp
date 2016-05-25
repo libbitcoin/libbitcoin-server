@@ -17,12 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/message/notifier.hpp>
+#include <bitcoin/server/utility/address_notifier.hpp>
 
 #include <cstdint>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -30,16 +32,12 @@ namespace server {
 
 using namespace bc::chain;
 using namespace bc::wallet;
+using namespace boost::posix_time;
 
-#define NAME "notifier"
+#define NAME "address_notifier"
 
-const auto now = []()
-{
-    return boost::posix_time::second_clock::universal_time();
-};
-
-notifier::notifier(server_node::ptr node)
-  : dispatch_(threadpool_, NAME),
+address_notifier::address_notifier(server_node* node)
+  : dispatch_(node->thread_pool(), NAME),
     settings_(node->server_settings())
 {
     const auto receive_block = [this](uint32_t height, const block::ptr block)
@@ -61,40 +59,23 @@ notifier::notifier(server_node::ptr node)
     node->subscribe_transactions(receive_tx);
 }
 
-// Start sequence.
-// ----------------------------------------------------------------------------
-
-bool notifier::start()
-{
-    if (settings_.subscription_limit > 0)
-    {
-        threadpool_.join();
-        threadpool_.spawn(settings_.threads, thread_priority::low);
-    }
-
-    // This is the end of the start sequence.
-    return true;
-}
-
 // Subscribe sequence.
 // ----------------------------------------------------------------------------
 
-void notifier::subscribe(const incoming& request, send_handler handler)
+void address_notifier::subscribe(const incoming& request, send_handler handler)
 {
     dispatch_.ordered(
-        &notifier::do_subscribe,
+        &address_notifier::do_subscribe,
             shared_from_this(), request, handler);
 }
 
-void notifier::do_subscribe(const incoming& request, send_handler handler)
+void address_notifier::do_subscribe(const incoming& request,
+    send_handler handler)
 {
     const auto ec = add(request, handler);
 
     // Send response.
-    data_chunk result(sizeof(uint32_t));
-    auto serial = make_serializer(result.begin());
-    serial.write_error_code(ec);
-    outgoing response(request, result);
+    outgoing response(request, ec);
 
     // This is the end of the subscribe sequence.
     handler(response);
@@ -103,19 +84,19 @@ void notifier::do_subscribe(const incoming& request, send_handler handler)
 // Renew sequence.
 // ----------------------------------------------------------------------------
 
-void notifier::renew(const incoming& request, send_handler handler)
+void address_notifier::renew(const incoming& request, send_handler handler)
 {
     dispatch_.unordered(
-        &notifier::do_renew,
+        &address_notifier::do_renew,
             shared_from_this(), request, handler);
 }
 
-void notifier::do_renew(const incoming& request, send_handler handler)
+void address_notifier::do_renew(const incoming& request, send_handler handler)
 {
     binary filter;
     subscribe_type type;
 
-    if (!deserialize_address(filter, type, request.data()))
+    if (!deserialize_address(filter, type, request.data))
     {
         log::warning(LOG_SERVICE)
             << "Incorrect format for subscribe renew.";
@@ -132,7 +113,7 @@ void notifier::do_renew(const incoming& request, send_handler handler)
 
         // Only update subscriptions which were created by
         // the same client as this request originated from.
-        if (subscription.client_origin != request.origin())
+        if (subscription.client_origin != request.address)
             continue;
 
         // Find matching subscription.
@@ -144,10 +125,7 @@ void notifier::do_renew(const incoming& request, send_handler handler)
     }
 
     // Send response.
-    data_chunk result(sizeof(uint32_t));
-    auto serial = make_serializer(result.begin());
-    serial.write_error_code(error::success);
-    outgoing response(request, result);
+    outgoing response(request, error::success);
 
     // This is the end of the renew sequence.
     handler(response);
@@ -156,15 +134,15 @@ void notifier::do_renew(const incoming& request, send_handler handler)
 // Scan sequence.
 // ----------------------------------------------------------------------------
 
-void notifier::scan(uint32_t height, const hash_digest& block_hash,
+void address_notifier::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
 {
     dispatch_.ordered(
-        &notifier::do_scan,
+        &address_notifier::do_scan,
             shared_from_this(), height, block_hash, tx);
 }
 
-void notifier::do_scan(uint32_t height, const hash_digest& block_hash,
+void address_notifier::do_scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
 {
     for (const auto& input: tx.inputs)
@@ -193,7 +171,7 @@ void notifier::do_scan(uint32_t height, const hash_digest& block_hash,
         sweep();
 }
 
-void notifier::post_updates(const payment_address& address,
+void address_notifier::post_updates(const payment_address& address,
     uint32_t height, const hash_digest& block_hash, const transaction& tx)
 {
     // [ address.version:1 ]
@@ -236,7 +214,7 @@ void notifier::post_updates(const payment_address& address,
     }
 }
 
-void notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
+void address_notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
     // [ prefix:4 ]
@@ -278,12 +256,12 @@ void notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     }
 }
 
-code notifier::add(const incoming& request, send_handler handler)
+code address_notifier::add(const incoming& request, send_handler handler)
 {
     binary address_key;
     subscribe_type type;
 
-    if (!deserialize_address(address_key, type, request.data()))
+    if (!deserialize_address(address_key, type, request.data))
     {
         log::warning(LOG_SERVICE)
             << "Incorrect format for subscribe data.";
@@ -300,7 +278,7 @@ code notifier::add(const incoming& request, send_handler handler)
     {
         address_key,
         expire_time,
-        request.origin(),
+        request.address,
         handler,
         type
     };
@@ -309,7 +287,7 @@ code notifier::add(const incoming& request, send_handler handler)
     return error::success;
 }
 
-void notifier::sweep()
+void address_notifier::sweep()
 {
     const auto current_time = now();
 
@@ -330,25 +308,35 @@ void notifier::sweep()
     }
 }
 
-// Destruct sequence.
+// Utilities
 // ----------------------------------------------------------------------------
 
-void notifier::stop()
+ptime address_notifier::now()
 {
-    threadpool_.shutdown();
-}
+    return second_clock::universal_time();
+};
 
-void notifier::close()
+bool address_notifier::deserialize_address(binary& address,
+    chain::subscribe_type& type, const data_chunk& data)
 {
-    stop();
+    if (data.size() < 2)
+        return false;
 
-    // This is the end of the destruct sequence.
-    threadpool_.join();
-}
+    // First byte is the subscribe_type enumeration.
+    type = static_cast<chain::subscribe_type>(data[0]);
 
-notifier::~notifier()
-{
-    close();
+    // Second byte is the number of bits.
+    const auto bit_length = data[1];
+
+    // Convert the bit length to byte length.
+    const auto byte_length = binary::blocks_size(bit_length);
+
+    if (data.size() != byte_length + 2)
+        return false;
+    
+    const data_chunk bytes({ data.begin() + 2, data.end() });
+    address = binary(bit_length, bytes);
+    return true;
 }
 
 } // namespace server

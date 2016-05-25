@@ -17,46 +17,42 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_OUTGOING
-#define LIBBITCOIN_SERVER_OUTGOING
+#ifndef LIBBITCOIN_SERVER_BLOCK_ENDPOINT_HPP
+#define LIBBITCOIN_SERVER_BLOCK_ENDPOINT_HPP
 
 #include <cstdint>
-#include <string>
+#include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/incoming.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class BCS_API outgoing
+class server_node;
+
+/// This class must be constructed as a shared pointer.
+class BCS_API block_endpoint
+  : public enable_shared_from_base<block_endpoint>
 {
 public:
-    /// Default constructor provided for containers and copying.
-    outgoing();
+    typedef std::shared_ptr<block_endpoint> ptr;
 
-    /// Parse the incoming request and retain the outgoing data.
-    outgoing(const incoming& request, const data_chunk& data);
+    block_endpoint(bc::protocol::zmq::context::ptr context, server_node* node);
 
-    /// Empty destination is interpreted as an unspecified destination.
-    outgoing(const std::string& command, const data_chunk& data,
-        const data_chunk& destination);
+    /// This class is not copyable.
+    block_endpoint(const block_endpoint&) = delete;
+    void operator=(const block_endpoint&) = delete;
 
-    void send(protocol::zmq::socket& socket) const;
-
-    uint32_t id() const;
-    const data_chunk& data() const;
-    const std::string& command() const;
-    const data_chunk destination() const;
+    bool start();
 
 private:
-    uint32_t id_;
-    data_chunk data_;
-    std::string command_;
-    data_chunk destination_;
-};
+    void send(uint32_t height, const chain::block::ptr block);
 
-typedef std::function<void(const outgoing&)> send_handler;
+    server_node* node_;
+    bc::protocol::zmq::socket socket_;
+    const settings& settings_;
+};
 
 } // namespace server
 } // namespace libbitcoin

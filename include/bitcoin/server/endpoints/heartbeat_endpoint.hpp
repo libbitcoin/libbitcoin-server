@@ -17,34 +17,47 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SENDER_HPP
-#define LIBBITCOIN_SERVER_SENDER_HPP
+#ifndef LIBBITCOIN_SERVER_HEARTBEAT_ENDPONT_HPP
+#define LIBBITCOIN_SERVER_HEARTBEAT_ENDPONT_HPP
 
-#include <bitcoin/node.hpp>
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <thread>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/message/outgoing.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/**
- * We don't want to block the originating threads that execute a send
- * as that would slow down requests if they all have to sync access
- * to a single socket.
- *
- * Instead we have a queue (push socket) where send requests are pushed,
- * and then the sender is notified. The worker wakes up and pushes
- * all pending requests to the socket.
- */
-class BCS_API sender
+class server_node;
+
+/// This class must be constructed as a shared pointer.
+class BCS_API heartbeat_endpoint
+  : public enable_shared_from_base<heartbeat_endpoint>
 {
 public:
-    sender(bc::protocol::zmq::context& context);
+    typedef std::shared_ptr<heartbeat_endpoint> ptr;
 
-    void queue(const outgoing& message);
+    heartbeat_endpoint(bc::protocol::zmq::context::ptr context,
+        server_node* node);
+
+    /// This class is not copyable.
+    heartbeat_endpoint(const heartbeat_endpoint&) = delete;
+    void operator=(const heartbeat_endpoint&) = delete;
+
+    bool start();
+    void stop();
 
 private:
-    bc::protocol::zmq::context& context_;
+    void start_timer();
+    void send(const code& ec);
+
+    uint32_t counter_;
+    const settings& settings_;
+    bc::protocol::zmq::socket socket_;
+    deadline::ptr deadline_;
 };
 
 } // namespace server
