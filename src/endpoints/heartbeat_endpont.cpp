@@ -67,10 +67,10 @@ bool heartbeat_endpoint::start()
     return true;
 }
 
-void heartbeat_endpoint::stop()
+bool heartbeat_endpoint::stop()
 {
     deadline_->stop();
-    socket_.stop();
+    return socket_.stop();
 }
 
 void heartbeat_endpoint::start_timer()

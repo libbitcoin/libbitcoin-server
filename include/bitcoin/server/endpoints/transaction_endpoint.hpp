@@ -50,7 +50,7 @@ public:
     bool start();
 
     /// Stop the socket.
-    void stop();
+    bool stop();
 
 private:
     void send(const chain::transaction& tx);

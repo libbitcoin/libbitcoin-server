@@ -73,9 +73,9 @@ bool transaction_endpoint::start()
     return true;
 }
 
-void transaction_endpoint::stop()
+bool transaction_endpoint::stop()
 {
-    socket_.stop();
+    return socket_.stop();
 }
 
 void transaction_endpoint::send(const transaction& tx)

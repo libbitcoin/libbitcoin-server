@@ -49,7 +49,7 @@ public:
     bool start();
 
     /// Stop the socket.
-    void stop();
+    bool stop();
 
 private:
     void send(uint32_t height, const chain::block::ptr block);

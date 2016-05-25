@@ -73,9 +73,9 @@ bool block_endpoint::start()
     return true;
 }
 
-void block_endpoint::stop()
+bool block_endpoint::stop()
 {
-    socket_.stop();
+    return socket_.stop();
 }
 
 void block_endpoint::send(uint32_t height, const block::ptr block)

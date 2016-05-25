@@ -51,7 +51,7 @@ public:
     bool start();
 
     /// Stop the heartbeat timer.
-    void stop();
+    bool stop();
 
 private:
     void start_timer();
