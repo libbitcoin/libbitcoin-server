@@ -52,9 +52,8 @@ query_endpoint::query_endpoint(zmq::context& context, server_node* node)
     pull_socket_(context_, zmq::socket::role::puller),
     push_socket_(context_, zmq::socket::role::pusher)
 {
-    ////pull_poller_.add(pull_socket_);
-    query_poller_.add(pull_socket_);
-    query_poller_.add(query_socket_);
+    poller_.add(pull_socket_);
+    poller_.add(query_socket_);
 }
 
 // Start.
@@ -93,10 +92,6 @@ bool query_endpoint::start_queue()
         return false;
     }
 
-    ////dispatch_.concurrent(
-    ////    std::bind(&query_endpoint::monitor_queue,
-    ////        this));
-
     return true;
 }
 
@@ -116,7 +111,7 @@ bool query_endpoint::start_endpoint()
         << "Bound query service on " << query_endpoint;
 
     dispatch_.concurrent(
-        std::bind(&query_endpoint::monitor_endpoint,
+        std::bind(&query_endpoint::monitor,
             this));
 
     return true;
@@ -135,39 +130,21 @@ void query_endpoint::stop()
 // Monitors.
 //-----------------------------------------------------------------------------
 
-void query_endpoint::monitor_endpoint()
+void query_endpoint::monitor()
 {
     // Ignore expired and keep looping, exiting the thread when terminated.
-    while (!query_poller_.terminated())
+    while (!poller_.terminated())
     {
-        const auto socket_id = query_poller_.wait(polling_interval_milliseconds);
+        const auto socket_id = poller_.wait(polling_interval_milliseconds);
 
         if (socket_id == query_socket_.id())
-        {
             receive();
-        }
         else if (socket_id == pull_socket_.id())
-        {
             dequeue();
-        }
     }
 
+    // When context is stopped the loop terminates, still need to stop sockets.
     stop();
-}
-
-// Disabled to prevent concurrent read/write on the query socket.
-void query_endpoint::monitor_queue()
-{
-    ////// Ignore expired and keep looping, exiting the thread when terminated.
-    ////while (!pull_poller_.terminated())
-    ////{
-    ////    if (pull_poller_.wait(polling_interval_milliseconds) == pull_socket_.id())
-    ////    {
-    ////        dequeue();
-    ////    }
-    ////}
-
-    ////stop();
 }
 
 // Utilities.

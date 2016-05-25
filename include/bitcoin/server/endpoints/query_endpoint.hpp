@@ -55,7 +55,7 @@ public:
     /// Bind the endpoints and start the monitors.
     bool start();
 
-    /// Stop the socket.
+    /// Stop the sockets.
     void stop();
 
     // Attach query handlers for given commands.
@@ -65,10 +65,8 @@ private:
     typedef std::unordered_map<std::string, command_handler> command_map;
 
     bool start_queue();
-    void monitor_queue();
-
     bool start_endpoint();
-    void monitor_endpoint();
+    void monitor();
 
     void receive();
     void dequeue();
@@ -78,16 +76,16 @@ private:
     command_map handlers_;
     const settings& settings_;
 
+    // This polls the query socket *and* the internal queue.
+    bc::protocol::zmq::poller poller_;
 
     // The query socket uses the constructed context.
     bc::protocol::zmq::socket query_socket_;
-    bc::protocol::zmq::poller query_poller_;
 
     // The push/pull sockets form an internal queue.
     bc::protocol::zmq::context context_;
     bc::protocol::zmq::socket push_socket_;
     bc::protocol::zmq::socket pull_socket_;
-    bc::protocol::zmq::poller pull_poller_;
 };
 
 } // namespace server
