@@ -40,14 +40,17 @@ class BCS_API heartbeat_endpoint
 public:
     typedef std::shared_ptr<heartbeat_endpoint> ptr;
 
-    heartbeat_endpoint(bc::protocol::zmq::context::ptr context,
-        server_node* node);
+    /// Construct a heartbeat endpoint.
+    heartbeat_endpoint(bc::protocol::zmq::context& context, server_node* node);
 
     /// This class is not copyable.
     heartbeat_endpoint(const heartbeat_endpoint&) = delete;
     void operator=(const heartbeat_endpoint&) = delete;
 
+    /// Start the heartbeat timer and send notifications.
     bool start();
+
+    /// Stop the heartbeat timer.
     void stop();
 
 private:

@@ -101,22 +101,21 @@ private:
     void attach_query_api();
     void attach_subscription_api();
 
-    address_notifier::ptr address_notifier_;
-    curve_authenticator::ptr authenticator_;
+    size_t last_checkpoint_height_;
+    const configuration& configuration_;
 
-    query_endpoint::ptr query_endpoint_;
-    heartbeat_endpoint::ptr heartbeat_endpoint_;
-    block_endpoint::ptr block_endpoint_;
-    transaction_endpoint::ptr transaction_endpoint_;
+    curve_authenticator authenticator_;
+    address_notifier address_notifier_;
+    query_endpoint query_endpoint_;
+    block_endpoint block_endpoint_;
+    heartbeat_endpoint heartbeat_endpoint_;
+    transaction_endpoint transaction_endpoint_;
 
     mutable upgrade_mutex block_mutex_;
     block_notify_list block_subscriptions_;
 
     mutable upgrade_mutex transaction_mutex_;
     transaction_notify_list transaction_subscriptions_;
-
-    size_t last_checkpoint_height_;
-    const configuration& configuration_;
 };
 
 } // namespace server

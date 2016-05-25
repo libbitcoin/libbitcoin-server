@@ -43,138 +43,171 @@ using namespace boost::posix_time;
 // Arbitrary inprocess endpoint for outbound queueing.
 static const auto queue_endpoint = "inproc://trigger-send";
 
-query_endpoint::query_endpoint(zmq::context::ptr context, server_node* node)
-  : stopped_(true),
-    dispatch_(node->thread_pool(), NAME),
+static constexpr uint32_t polling_interval_milliseconds = 1;
+
+query_endpoint::query_endpoint(zmq::context& context, server_node* node)
+  : dispatch_(node->thread_pool(), NAME),
     settings_(node->server_settings()),
-    query_socket_(*context, zmq::socket::role::router),
+    query_socket_(context, zmq::socket::role::router),
     pull_socket_(context_, zmq::socket::role::puller),
     push_socket_(context_, zmq::socket::role::pusher)
 {
-    BITCOIN_ASSERT(push_socket_);
-    BITCOIN_ASSERT(pull_socket_);
-    BITCOIN_ASSERT(query_socket_);
-
     poller_.add(pull_socket_);
     poller_.add(query_socket_);
 }
 
+// Start.
+//-----------------------------------------------------------------------------
+
 bool query_endpoint::start()
 {
     if (!settings_.query_endpoint_enabled)
+    {
+        stop();
         return true;
+    }
 
-    if (!pull_socket_.bind(queue_endpoint))
+    if (!start_queue() || !start_endpoint())
     {
-        log::error(LOG_SERVICE)
-            << "Failed to create to send queue.";
+        stop();
         return false;
     }
 
-    if (!push_socket_.connect(queue_endpoint))
-    {
-        log::error(LOG_SERVICE)
-            << "Failed to connect to send queue.";
-        return false;
-    }
-
-    const auto query_endpoint = settings_.query_endpoint.to_string();
-
-    if (!query_socket_.set_authentication_domain("query") ||
-        !query_socket_.bind(query_endpoint))
-    {
-        log::error(LOG_SERVICE)
-            << "Failed to bind query service on " << query_endpoint;
-        return false;
-    }
-
-    log::info(LOG_SERVICE)
-        << "Bound query service on " << query_endpoint;
-
-    // TODO: start polling thread here.
-    // dispatch_.concurrent();
-    stopped_.store(false);
     return true;
 }
 
-void query_endpoint::stop()
+bool query_endpoint::start_queue()
 {
-    stopped_.store(true);
+    if (!pull_socket_ || !pull_socket_.bind(queue_endpoint))
+    {
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize to queue puller.";
+        return false;
+    }
+
+    if (!push_socket_ || !push_socket_.connect(queue_endpoint))
+    {
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize to queue pusher.";
+        return false;
+    }
+
+    return true;
 }
 
-// TODO: use this to stop the internal context after the external stops.
-bool query_endpoint::stopped() const
+bool query_endpoint::start_endpoint()
 {
-    return stopped_.load();
+    const auto query_endpoint = settings_.query_endpoint.to_string();
+
+    if (!query_socket_ || !query_socket_.set_authentication_domain("query") ||
+        !query_socket_.bind(query_endpoint))
+    {
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize query service on " << query_endpoint;
+        return false;
+    }
+
+    log::info(LOG_ENDPOINT)
+        << "Bound query service on " << query_endpoint;
+
+    dispatch_.concurrent(
+        std::bind(&query_endpoint::monitor,
+            this));
+
+    return true;
+}
+
+// Stop.
+//-----------------------------------------------------------------------------
+
+void query_endpoint::stop()
+{
+    push_socket_.stop();
+    pull_socket_.stop();
+    query_socket_.stop();
+}
+
+// Monitors.
+//-----------------------------------------------------------------------------
+
+void query_endpoint::monitor()
+{
+    // Ignore expired and keep looping, exiting the thread when terminated.
+    while (!poller_.terminated())
+    {
+        const auto socket_id = poller_.wait(polling_interval_milliseconds);
+
+        if (socket_id == query_socket_.id())
+            receive();
+        else if (socket_id == pull_socket_.id())
+            dequeue();
+    }
+
+    // When context is stopped the loop terminates, still need to stop sockets.
+    stop();
+}
+
+// Utilities.
+//-----------------------------------------------------------------------------
+
+void query_endpoint::receive()
+{
+    incoming request;
+
+    if (!request.receive(query_socket_))
+    {
+        log::info(LOG_ENDPOINT)
+            << "Malformed request from "
+            << encode_base16(request.address);
+        return;
+    }
+
+    if (settings_.log_requests)
+    {
+        log::info(LOG_ENDPOINT)
+            << "Command " << request.command << " from "
+            << encode_base16(request.address);
+    }
+
+    // Locate the request handler for this command.
+    const auto handler = handlers_.find(request.command);
+
+    if (handler == handlers_.end())
+    {
+        log::info(LOG_ENDPOINT)
+            << "Invalid command from "
+            << encode_base16(request.address);
+    }
+
+    // Execute the request if a handler exists.
+    handler->second(request,
+        std::bind(&query_endpoint::enqueue,
+            this, _1));
+}
+
+void query_endpoint::dequeue()
+{
+    zmq::message message;
+    if (message.receive(pull_socket_) && message.send(query_socket_))
+        return;
+
+    log::debug(LOG_ENDPOINT)
+        << "Failed to dequeue message.";
+}
+
+void query_endpoint::enqueue(outgoing& message)
+{
+    if (message.send(push_socket_))
+        return;
+
+    log::debug(LOG_ENDPOINT)
+        << "Failed to enqueue message.";
 }
 
 void query_endpoint::attach(const std::string& command,
     command_handler handler)
 {
     handlers_[command] = handler;
-}
-
-void query_endpoint::poll(uint32_t interval_milliseconds)
-{
-    // The socket id can be zero (none) or a registered socket id.
-    const auto socket_id = poller_.wait(interval_milliseconds);
-
-    if (socket_id == query_socket_.id())
-    {
-        incoming request;
-
-        if (!request.receive(query_socket_))
-        {
-            log::info(LOG_REQUEST)
-                << "Malformed request from "
-                << encode_base16(request.address);
-            return;
-        }
-
-        if (settings_.log_requests)
-        {
-            log::info(LOG_REQUEST)
-                << "Command " << request.command << " from "
-                << encode_base16(request.address);
-        }
-
-        // Locate the request handler for this command.
-        const auto handler = handlers_.find(request.command);
-
-        // Perform request if handler exists.
-        if (handler == handlers_.end())
-        {
-            log::info(LOG_REQUEST)
-                << "Invalid command from "
-                << encode_base16(request.address);
-        }
-
-        // Push an outgoing message.
-        handler->second(request,
-            std::bind(&query_endpoint::enqueue,
-                shared_from_this(), _1));
-    }
-    else if (socket_id == pull_socket_.id())
-    {
-        // Pull and send an outgoing message.
-        dequeue();
-    }
-}
-
-// It's not clear what is the benefit of the queue. The poll is still blocked
-// when we are delayed in transmitting the message, just as it would be if we
-// simply did not enqueue the message and instead sent it directly. We should
-// either move the queue onto another thread or eliminate it altogether.
-void query_endpoint::dequeue()
-{
-    zmq::message message;
-    /* bool */ message.receive(pull_socket_);
-    /* bool */ message.send(query_socket_);
-}
-
-void query_endpoint::enqueue(outgoing& message)
-{
-    /* bool */ message.send(push_socket_);
 }
 
 } // namespace server

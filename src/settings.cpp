@@ -27,8 +27,7 @@ namespace server {
 using namespace asio;
 
 settings::settings()
-  : ////threads(4),
-    heartbeat_interval_seconds(5),
+  : heartbeat_interval_seconds(5),
     subscription_expiration_minutes(10),
     subscription_limit(100000000),
 

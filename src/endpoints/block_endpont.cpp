@@ -35,40 +35,47 @@ using std::placeholders::_2;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-block_endpoint::block_endpoint(zmq::context::ptr context, server_node* node)
+block_endpoint::block_endpoint(zmq::context& context, server_node* node)
   : node_(node),
-    socket_(*context, zmq::socket::role::pusher),
+    socket_(context, zmq::socket::role::pusher),
     settings_(node->server_settings())
 {
-    BITCOIN_ASSERT(node_);
-    BITCOIN_ASSERT(socket_);
 }
 
 // The instance is retained in scope by subscribe_blocks until stopped.
 bool block_endpoint::start()
 {
     if (!settings_.block_endpoint_enabled)
+    {
+        stop();
         return true;
+    }
     
     auto block_endpoint = settings_.block_endpoint.to_string();
 
-    if (!socket_.set_authentication_domain("block") ||
+    if (!socket_ || !socket_.set_authentication_domain("block") ||
         !socket_.bind(block_endpoint))
     {
-        log::error(LOG_SERVICE)
-            << "Failed to start block publisher on " << block_endpoint;
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize block publisher on " << block_endpoint;
+        stop();
         return false;
     }
 
-    log::info(LOG_SERVICE)
+    log::info(LOG_ENDPOINT)
         << "Bound block publish service on " << block_endpoint;
 
     // This is not a libbitcoin re/subscriber.
     node_->subscribe_blocks(
         std::bind(&block_endpoint::send,
-            shared_from_this(), _1, _2));
+            this, _1, _2));
 
     return true;
+}
+
+void block_endpoint::stop()
+{
+    socket_.stop();
 }
 
 void block_endpoint::send(uint32_t height, const block::ptr block)
@@ -81,7 +88,7 @@ void block_endpoint::send(uint32_t height, const block::ptr block)
         message.enqueue(tx.hash());
 
     if (!message.send(socket_))
-        log::warning(LOG_SERVICE)
+        log::warning(LOG_ENDPOINT)
             << "Failure publishing block data.";
 }
 

@@ -18,7 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <iostream>
-#include <memory>
 #include <bitcoin/server.hpp>
 #include "executor.hpp"
 
@@ -43,6 +42,6 @@ int bc::main(int argc, char* argv[])
     if (!metadata.parse(argc, args, cerr))
         return console_result::failure;
 
-    const auto host = std::make_shared<executor>(metadata, cin, cout, cerr);
-    return host->invoke() ? console_result::okay : console_result::failure;
+    executor host(metadata, cin, cout, cerr);
+    return host.invoke() ? console_result::okay : console_result::failure;
 }

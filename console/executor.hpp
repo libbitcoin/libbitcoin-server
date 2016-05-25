@@ -30,7 +30,6 @@ namespace libbitcoin {
 namespace server {
 
 class executor
-  : public enable_shared_from_base<executor>
 {
 public:
     typedef std::shared_ptr<executor> ptr;

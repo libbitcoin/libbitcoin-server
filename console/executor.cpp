@@ -234,7 +234,7 @@ bool executor::run()
 
     node_->start(
         std::bind(&executor::handle_started,
-            shared_from_this(), _1));
+            this, _1));
 
     monitor_stop();
     return true;
@@ -254,12 +254,12 @@ void executor::handle_started(const code& ec)
     // This is the beginning of the stop sequence.
     node_->subscribe_stop(
         std::bind(&executor::handle_stopped,
-            shared_from_this(), _1));
+            this, _1));
 
     // This is the beginning of the run sequence.
     node_->run(
         std::bind(&executor::handle_running,
-            shared_from_this(), _1));
+            this, _1));
 }
 
 // This is the end of the run sequence.
@@ -292,7 +292,7 @@ void executor::monitor_stop()
     else
         node_->stop(
             std::bind(&executor::handle_server_stopped,
-                shared_from_this(), _1, std::ref(done)));
+                this, _1, std::ref(done)));
 
     // block until server stop completes.
     done.get_future();
