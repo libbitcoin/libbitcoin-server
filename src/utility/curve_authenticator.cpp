@@ -82,12 +82,12 @@ bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain)
             !socket.set_curve_server())
         {
             log::error(LOG_SERVICE)
-                << "Invalid server key for domain [" << domain << "]";
+                << "Invalid server key for [" << domain << "]";
             return false;
         }
 
         log::info(LOG_SERVICE)
-            << "Loaded server key for domain [" << domain << "]";
+            << "Set server key for [" << domain << "]";
     }
 
     return true;
