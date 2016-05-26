@@ -33,12 +33,47 @@ curve_authenticator::curve_authenticator(server_node* node)
   : authenticator(node->thread_pool()),
     settings_(node->server_settings())
 {
+    const auto server_private_key = settings_.server_private_key;
+
+    if (server_private_key.empty() && !settings_.client_public_keys.empty())
+    {
+        log::error(LOG_SERVICE)
+            << "Client authentication requires a server key.";
+        return;
+    }
+
+    for (const auto& address: settings_.client_addresses)
+    {
+        log::info(LOG_SERVICE)
+            << "Allow client address [" << address
+            << (address.port() == 0 ? ":*" : "") << "]";
+
+        allow(address);
+    }
+
+    for (const auto& public_key: settings_.client_public_keys)
+    {
+        log::info(LOG_SERVICE)
+            << "Allow client public key [" << public_key << "]";
+
+        allow(public_key);
+    }
 }
 
-// TODO: apply this to secured sockets.
-bool curve_authenticator::apply(zmq::socket& socket)
+bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain)
 {
     const auto server_private_key = settings_.server_private_key;
+
+    // This failure condition has already been logged in construct.
+    if (server_private_key.empty() && !settings_.client_public_keys.empty())
+        return false;
+
+    if (domain.empty() || !socket.set_authentication_domain(domain))
+    {
+        log::error(LOG_SERVICE)
+            << "Invalid authentication domain [" << domain << "]";
+        return false;
+    }
 
     if (!server_private_key.empty())
     {
@@ -47,36 +82,12 @@ bool curve_authenticator::apply(zmq::socket& socket)
             !socket.set_curve_server())
         {
             log::error(LOG_SERVICE)
-                << "Invalid server key.";
+                << "Invalid server key for domain [" << domain << "]";
             return false;
         }
 
         log::info(LOG_SERVICE)
-            << "Loaded server key.";
-    }
-
-    if (server_private_key.empty() && !settings_.client_public_keys.empty())
-    {
-        log::error(LOG_SERVICE)
-            << "Client authentication requires a server key.";
-        return false;
-    }
-
-    for (const auto& public_key: settings_.client_public_keys)
-    {
-        log::info(LOG_SERVICE)
-            << "Allowed client [" << public_key << "]";
-
-        allow(public_key);
-    }
-
-    for (const auto& address: settings_.client_addresses)
-    {
-        log::info(LOG_SERVICE)
-            << "Allowed client [" << address
-            << (address.port() == 0 ? ":*" : "") << "]";
-
-        allow(address);
+            << "Loaded server key for domain [" << domain << "]";
     }
 
     return true;

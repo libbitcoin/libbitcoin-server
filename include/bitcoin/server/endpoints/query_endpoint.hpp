@@ -31,6 +31,7 @@
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 /// This class must be constructed as a shared pointer.
 namespace libbitcoin {
@@ -46,7 +47,7 @@ public:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
 
     /// Construct a query endpoint.
-    query_endpoint(bc::protocol::zmq::context& context, server_node* node);
+    query_endpoint(curve_authenticator& authenticator, server_node* node);
 
     /// This class is not copyable.
     query_endpoint(const query_endpoint&) = delete;
@@ -56,7 +57,7 @@ public:
     bool start();
 
     /// Stop the sockets.
-    void stop();
+    bool stop();
 
     // Attach query handlers for given commands.
     void attach(const std::string& command, command_handler handler);
@@ -80,7 +81,7 @@ private:
     bc::protocol::zmq::poller poller_;
 
     // The query socket uses the constructed context.
-    bc::protocol::zmq::socket query_socket_;
+    bc::protocol::zmq::socket socket_;
 
     // The push/pull sockets form an internal queue.
     bc::protocol::zmq::context context_;

@@ -26,20 +26,29 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
+
+#define NAME "block_endpoint"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-block_endpoint::block_endpoint(zmq::context& context, server_node* node)
+block_endpoint::block_endpoint(curve_authenticator& authenticator,
+    server_node* node)
   : node_(node),
-    socket_(context, zmq::socket::role::pusher),
+    socket_(authenticator, zmq::socket::role::pusher),
     settings_(node->server_settings())
 {
+    if (!settings_.block_endpoint_enabled)
+        return;
+
+    if (!authenticator.apply(socket_, NAME))
+        socket_.stop();
 }
 
 // The instance is retained in scope by subscribe_blocks until stopped.
@@ -53,8 +62,7 @@ bool block_endpoint::start()
     
     auto block_endpoint = settings_.block_endpoint.to_string();
 
-    if (!socket_ || !socket_.set_authentication_domain("block") ||
-        !socket_.bind(block_endpoint))
+    if (!socket_ || !socket_.bind(block_endpoint))
     {
         log::error(LOG_ENDPOINT)
             << "Failed to initialize block publisher on " << block_endpoint;
@@ -73,9 +81,9 @@ bool block_endpoint::start()
     return true;
 }
 
-void block_endpoint::stop()
+bool block_endpoint::stop()
 {
-    socket_.stop();
+    return socket_.stop();
 }
 
 void block_endpoint::send(uint32_t height, const block::ptr block)
