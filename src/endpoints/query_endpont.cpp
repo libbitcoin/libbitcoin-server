@@ -29,6 +29,7 @@
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -45,13 +46,19 @@ static const auto queue_endpoint = "inproc://trigger-send";
 
 static constexpr uint32_t polling_interval_milliseconds = 1;
 
-query_endpoint::query_endpoint(zmq::context& context, server_node* node)
+query_endpoint::query_endpoint(curve_authenticator& authenticator,
+    server_node* node)
   : dispatch_(node->thread_pool(), NAME),
     settings_(node->server_settings()),
-    query_socket_(context, zmq::socket::role::router),
+    socket_(authenticator, zmq::socket::role::router),
     pull_socket_(context_, zmq::socket::role::puller),
     push_socket_(context_, zmq::socket::role::pusher)
 {
+    if (!settings_.query_endpoint_enabled)
+        return;
+
+    if (!authenticator.apply(socket_, NAME))
+        socket_.stop();
 }
 
 // Start.
@@ -98,8 +105,7 @@ bool query_endpoint::start_endpoint()
 {
     const auto query_endpoint = settings_.query_endpoint.to_string();
 
-    if (!query_socket_ || !query_socket_.set_authentication_domain("query") ||
-        !query_socket_.bind(query_endpoint))
+    if (!socket_ || !socket_.bind(query_endpoint))
     {
         log::error(LOG_ENDPOINT)
             << "Failed to initialize query service on " << query_endpoint;
@@ -113,7 +119,7 @@ bool query_endpoint::start_endpoint()
         std::bind(&query_endpoint::monitor,
             this));
 
-    poller_.add(query_socket_);
+    poller_.add(socket_);
     return true;
 }
 
@@ -123,7 +129,7 @@ bool query_endpoint::start_endpoint()
 bool query_endpoint::stop()
 {
     const auto stopped = push_socket_.stop() && pull_socket_.stop() && 
-        query_socket_.stop();
+        socket_.stop();
 
     if (stopped)
         poller_.clear();
@@ -141,7 +147,7 @@ void query_endpoint::monitor()
     {
         const auto socket_id = poller_.wait(polling_interval_milliseconds);
 
-        if (socket_id == query_socket_.id())
+        if (socket_id == socket_.id())
             receive();
         else if (socket_id == pull_socket_.id())
             dequeue();
@@ -158,7 +164,7 @@ void query_endpoint::receive()
 {
     incoming request;
 
-    if (!request.receive(query_socket_))
+    if (!request.receive(socket_))
     {
         log::info(LOG_ENDPOINT)
             << "Malformed request from "
@@ -192,7 +198,7 @@ void query_endpoint::receive()
 void query_endpoint::dequeue()
 {
     zmq::message message;
-    if (message.receive(pull_socket_) && message.send(query_socket_))
+    if (message.receive(pull_socket_) && message.send(socket_))
         return;
 
     log::debug(LOG_ENDPOINT)

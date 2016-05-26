@@ -24,21 +24,29 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
+#define NAME "heartbeat_endpoint"
+
 using std::placeholders::_1;
 using namespace bc::protocol;
 
-heartbeat_endpoint::heartbeat_endpoint(zmq::context& context,
+heartbeat_endpoint::heartbeat_endpoint(curve_authenticator& authenticator,
     server_node* node)
   : counter_(rand()),
     settings_(node->server_settings()),
-    socket_(context, zmq::socket::role::publisher),
+    socket_(authenticator, zmq::socket::role::publisher),
     deadline_(std::make_shared<deadline>(node->thread_pool(),
         settings_.heartbeat_interval()))
 {
+    if (!settings_.heartbeat_endpoint_enabled)
+        return;
+
+    if (!authenticator.apply(socket_, NAME))
+        socket_.stop();
 }
 
 bool heartbeat_endpoint::start()
@@ -51,8 +59,7 @@ bool heartbeat_endpoint::start()
 
     const auto heartbeat_endpoint = settings_.heartbeat_endpoint.to_string();
 
-    if (!socket_ || !socket_.set_authentication_domain("heartbeat") ||
-        !socket_.bind(heartbeat_endpoint))
+    if (!socket_ || !socket_.bind(heartbeat_endpoint))
     {
         log::error(LOG_ENDPOINT)
             << "Failed to initialize heartbeat service on " << heartbeat_endpoint;
