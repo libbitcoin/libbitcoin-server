@@ -43,8 +43,9 @@ public:
     curve_authenticator(const curve_authenticator&) = delete;
     void operator=(const curve_authenticator&) = delete;
 
-    /// Alloy authentication to the socket.
-    bool apply(bc::protocol::zmq::socket& socket, const std::string& domain);
+    /// Apply authentication to the socket.
+    bool apply(bc::protocol::zmq::socket& socket, const std::string& domain,
+        bool secure);
 
 private:
     const settings& settings_;

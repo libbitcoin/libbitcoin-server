@@ -40,7 +40,7 @@ public:
     typedef std::shared_ptr<transaction_endpoint> ptr;
 
     /// Construct a transaction endpoint.
-    transaction_endpoint(curve_authenticator& authenticator,
+    transaction_endpoint(bc::protocol::zmq::authenticator& authenticator,
         server_node* node);
 
     /// This class is not copyable.

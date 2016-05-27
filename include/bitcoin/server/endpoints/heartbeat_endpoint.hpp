@@ -42,7 +42,8 @@ public:
     typedef std::shared_ptr<heartbeat_endpoint> ptr;
 
     /// Construct a heartbeat endpoint.
-    heartbeat_endpoint(curve_authenticator& authenticator, server_node* node);
+    heartbeat_endpoint(bc::protocol::zmq::authenticator& authenticator,
+        server_node* node);
 
     /// This class is not copyable.
     heartbeat_endpoint(const heartbeat_endpoint&) = delete;

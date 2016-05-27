@@ -42,11 +42,11 @@ using namespace bc::protocol;
 using namespace boost::posix_time;
 
 // Arbitrary inprocess endpoint for outbound queueing.
-static const auto queue_endpoint = "inproc://trigger-send";
+static const endpoint queue_endpoint("inproc://trigger-send");
 
 static constexpr uint32_t polling_interval_milliseconds = 1;
 
-query_endpoint::query_endpoint(curve_authenticator& authenticator,
+query_endpoint::query_endpoint(zmq::authenticator& authenticator,
     server_node* node)
   : dispatch_(node->thread_pool(), NAME),
     settings_(node->server_settings()),
@@ -57,7 +57,9 @@ query_endpoint::query_endpoint(curve_authenticator& authenticator,
     if (!settings_.query_endpoint_enabled)
         return;
 
-    if (!authenticator.apply(socket_, NAME))
+    const auto secure = settings_.server_private_key;
+
+    if (!authenticator.apply(socket_, NAME, secure))
         socket_.stop();
 }
 
@@ -103,7 +105,7 @@ bool query_endpoint::start_queue()
 
 bool query_endpoint::start_endpoint()
 {
-    const auto query_endpoint = settings_.query_endpoint.to_string();
+    const auto query_endpoint = settings_.query_endpoint;
 
     if (!socket_ || !socket_.bind(query_endpoint))
     {

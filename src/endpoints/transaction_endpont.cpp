@@ -36,7 +36,7 @@ using std::placeholders::_1;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-transaction_endpoint::transaction_endpoint(curve_authenticator& authenticator,
+transaction_endpoint::transaction_endpoint(zmq::authenticator& authenticator,
     server_node* node)
   : node_(node),
     socket_(authenticator, zmq::socket::role::pusher),
@@ -45,7 +45,9 @@ transaction_endpoint::transaction_endpoint(curve_authenticator& authenticator,
     if (!settings_.transaction_endpoint_enabled)
         return;
 
-    if (!authenticator.apply(socket_, NAME))
+    const auto secure = settings_.server_private_key;
+
+    if (!authenticator.apply(socket_, NAME, secure))
         socket_.stop();
 }
 
@@ -58,7 +60,7 @@ bool transaction_endpoint::start()
         return true;
     }
     
-    auto tx_endpoint = settings_.transaction_endpoint.to_string();
+    auto tx_endpoint = settings_.transaction_endpoint;
 
     if (!socket_ || !socket_.bind(tx_endpoint))
     {

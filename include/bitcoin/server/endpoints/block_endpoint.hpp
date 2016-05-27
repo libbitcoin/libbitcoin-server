@@ -40,7 +40,8 @@ public:
     typedef std::shared_ptr<block_endpoint> ptr;
 
     /// Construct a block endpoint.
-    block_endpoint(curve_authenticator& authenticator, server_node* node);
+    block_endpoint(bc::protocol::zmq::authenticator& authenticator,
+        server_node* node);
 
     /// This class is not copyable.
     block_endpoint(const block_endpoint&) = delete;

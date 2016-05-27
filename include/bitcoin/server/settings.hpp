@@ -51,8 +51,8 @@ public:
     config::endpoint heartbeat_endpoint;
     config::endpoint block_endpoint;
     config::endpoint transaction_endpoint;
-    std::string server_private_key;
-    config::base85::list client_public_keys;
+    config::sodium server_private_key;
+    config::sodium::list client_public_keys;
     config::authority::list client_addresses;
 
     /// Helpers.
