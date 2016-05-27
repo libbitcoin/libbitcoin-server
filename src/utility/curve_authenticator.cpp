@@ -33,14 +33,14 @@ curve_authenticator::curve_authenticator(server_node* node)
   : authenticator(node->thread_pool()),
     settings_(node->server_settings())
 {
-    const auto server_private_key = settings_.server_private_key;
-
-    if (server_private_key.empty() && !settings_.client_public_keys.empty())
+    if (!settings_.server_private_key && !settings_.client_public_keys.empty())
     {
         log::error(LOG_SERVICE)
             << "Client authentication requires a server key.";
         return;
     }
+
+    set_private_key(settings_.server_private_key);
 
     for (const auto& address: settings_.client_addresses)
     {
@@ -60,32 +60,21 @@ curve_authenticator::curve_authenticator(server_node* node)
     }
 }
 
-bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain)
+bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
+    bool secure)
 {
-    const auto server_private_key = settings_.server_private_key;
-
-    // This failure condition has already been logged in construct.
-    if (server_private_key.empty() && !settings_.client_public_keys.empty())
+    if (!settings_.server_private_key && !settings_.client_public_keys.empty())
         return false;
 
-    if (domain.empty() || !socket.set_authentication_domain(domain))
+    if (!authenticator::apply(socket, domain, secure))
     {
         log::error(LOG_SERVICE)
-            << "Invalid authentication domain [" << domain << "]";
+            << "Failed configuring authentication for [" << domain << "]";
         return false;
     }
 
-    if (!server_private_key.empty())
+    if (settings_.server_private_key)
     {
-        // Server identification does not require the public key.
-        if (!socket.set_private_key(server_private_key) ||
-            !socket.set_curve_server())
-        {
-            log::error(LOG_SERVICE)
-                << "Invalid server key for [" << domain << "]";
-            return false;
-        }
-
         log::info(LOG_SERVICE)
             << "Set server key for [" << domain << "]";
     }

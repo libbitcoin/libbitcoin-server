@@ -359,12 +359,12 @@ options_metadata parser::load_settings()
     )
     (
         "server.server_private_key",
-        value<std::string>(&configured.server.server_private_key),
+        value<config::sodium>(&configured.server.server_private_key),
         "The Z85-encoded private key of the server."
     )
     (
         "server.client_public_key",
-        value<config::base85::list>(&configured.server.client_public_keys),
+        value<config::sodium::list>(&configured.server.client_public_keys),
         "Allowed Z85-encoded public key of the client, multiple entries allowed."
     )
     (

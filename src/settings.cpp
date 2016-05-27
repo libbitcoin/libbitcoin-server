@@ -30,13 +30,11 @@ settings::settings()
   : heartbeat_interval_seconds(5),
     subscription_expiration_minutes(10),
     subscription_limit(100000000),
-
     log_requests(false),
     query_endpoint_enabled(true),
     heartbeat_endpoint_enabled(true),
     block_endpoint_enabled(true),
     transaction_endpoint_enabled(true),
-
     query_endpoint("tcp://*:9091"),
     heartbeat_endpoint("tcp://*:9092"),
     block_endpoint("tcp://*:9093"),

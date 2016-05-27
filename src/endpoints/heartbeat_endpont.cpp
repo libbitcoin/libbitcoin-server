@@ -34,7 +34,7 @@ namespace server {
 using std::placeholders::_1;
 using namespace bc::protocol;
 
-heartbeat_endpoint::heartbeat_endpoint(curve_authenticator& authenticator,
+heartbeat_endpoint::heartbeat_endpoint(zmq::authenticator& authenticator,
     server_node* node)
   : counter_(rand()),
     settings_(node->server_settings()),
@@ -45,7 +45,9 @@ heartbeat_endpoint::heartbeat_endpoint(curve_authenticator& authenticator,
     if (!settings_.heartbeat_endpoint_enabled)
         return;
 
-    if (!authenticator.apply(socket_, NAME))
+    const auto secure = settings_.server_private_key;
+
+    if (!authenticator.apply(socket_, NAME, secure))
         socket_.stop();
 }
 
@@ -57,7 +59,7 @@ bool heartbeat_endpoint::start()
         return true;
     }
 
-    const auto heartbeat_endpoint = settings_.heartbeat_endpoint.to_string();
+    const auto heartbeat_endpoint = settings_.heartbeat_endpoint;
 
     if (!socket_ || !socket_.bind(heartbeat_endpoint))
     {

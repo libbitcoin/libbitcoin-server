@@ -47,7 +47,8 @@ public:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
 
     /// Construct a query endpoint.
-    query_endpoint(curve_authenticator& authenticator, server_node* node);
+    query_endpoint(bc::protocol::zmq::authenticator& authenticator,
+        server_node* node);
 
     /// This class is not copyable.
     query_endpoint(const query_endpoint&) = delete;
