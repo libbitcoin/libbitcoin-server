@@ -56,7 +56,7 @@ private:
     bool start();
     void initialize_output();
     bool verify_directory();
-    bool monitor_stop();
+    void monitor_stop();
 
     void handle_started(const code& ec);
     void handle_running(const code& ec);
@@ -104,8 +104,6 @@ private:
     "Please wait while server is stopping (code: %1%)..."
 #define BS_NODE_UNMAPPING \
     "Please wait while files are unmapped..."
-#define BS_NODE_STOP_FAIL \
-    "Server stopped with error, %1%."
 #define BS_NODE_STOPPED \
     "Server stopped successfully."
 

@@ -174,7 +174,8 @@ bool executor::start()
         std::bind(&executor::handle_started,
             this, _1));
 
-    return monitor_stop();
+    monitor_stop();
+    return true;
 }
 
 // Handle the completion of the start sequence and begin the run sequence.
@@ -241,22 +242,17 @@ void executor::stop()
     stopped_.store(true);
 }
 
-bool executor::monitor_stop()
+void executor::monitor_stop()
 {
     while (!stopped_.load())
         sleep_for(stop_sensitivity);
 
     log::info(LOG_NODE) << BS_NODE_UNMAPPING;
 
-    const auto ec = node_->close();
-
-    if (ec)
-        log::info(LOG_NODE) << format(BS_NODE_STOP_FAIL) % ec.message();
-    else
-        log::info(LOG_NODE) << BS_NODE_STOPPED;
+    node_->close();
 
     // This is the end of the stop sequence.
-    return !ec;
+    log::info(LOG_NODE) << BS_NODE_STOPPED;
 }
 
 // Utilities.

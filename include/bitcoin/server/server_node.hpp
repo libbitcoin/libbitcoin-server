@@ -67,7 +67,7 @@ public:
     /// Blocking call to coalesce all work and then terminate all threads.
     /// Call from thread that constructed this class, or don't call at all.
     /// This calls stop, and start may be reinvoked after calling this.
-    virtual code close() override;
+    virtual void close() override;
 
     // Properties.
     // ----------------------------------------------------------------------------
