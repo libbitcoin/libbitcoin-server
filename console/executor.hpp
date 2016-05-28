@@ -42,26 +42,28 @@ public:
     void operator=(const executor&) = delete;
 
     /// Invoke the command indicated by the metadata.
-    bool invoke();
+    bool menu();
 
 private:
+    static void stop();
+    static void handle_stop(int code);
+
     void do_help();
     void do_settings();
     void do_version();
     bool do_initchain();
 
-    bool run();
-    bool verify_directory();
+    bool start();
     void initialize_output();
+    bool verify_directory();
     void monitor_stop();
 
     void handle_started(const code& ec);
     void handle_running(const code& ec);
     void handle_stopped(const code& ec);
-    void handle_server_stopped(const code& ec, std::promise<code>& done);
 
+    // Termination state.
     static std::atomic<bool> stopped_;
-    static void initialize_interrupt(int code);
 
     parser& metadata_;
     std::ostream& output_;
@@ -102,8 +104,6 @@ private:
     "Please wait while server is stopping (code: %1%)..."
 #define BS_NODE_UNMAPPING \
     "Please wait while files are unmapped..."
-#define BS_NODE_STOP_FAIL \
-    "Server stopped with error, %1%."
 #define BS_NODE_STOPPED \
     "Server stopped successfully."
 

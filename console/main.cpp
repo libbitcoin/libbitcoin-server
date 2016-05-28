@@ -43,5 +43,5 @@ int bc::main(int argc, char* argv[])
         return console_result::failure;
 
     executor host(metadata, cin, cout, cerr);
-    return host.invoke() ? console_result::okay : console_result::failure;
+    return host.menu() ? console_result::okay : console_result::failure;
 }

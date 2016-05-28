@@ -80,9 +80,9 @@ void server_node::handle_running(const code& ec, result_handler handler)
     }
 
     // Start authenticator monitor and services, these log internally.
-    if (!authenticator_.start() || !address_notifier_.start() ||
-        !query_endpoint_.start() || !heartbeat_endpoint_.start() ||
-        !block_endpoint_.start() || !transaction_endpoint_.start())
+    if (!authenticator_.start() || !query_endpoint_.start() ||
+        !heartbeat_endpoint_.start() || !block_endpoint_.start() ||
+        !transaction_endpoint_.start() || !address_notifier_.start())
     {
         handler(error::operation_failed);
         return;
@@ -130,11 +130,14 @@ void server_node::stop(result_handler handler)
     block_mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
+    // BUGBUG: There is a race between start and stop. A monitor may be started
+    // after this stop and therefore not be shutdown properly.
+    query_endpoint_.stop();
     block_endpoint_.stop();
     heartbeat_endpoint_.stop();
     transaction_endpoint_.stop();
 
-    //// The authenticated context blocks until all related sockets are closed.
+    // The authenticated context blocks until all related sockets are closed.
     authenticator_.stop();
 
     // This is invoked on a new thread.
@@ -152,7 +155,6 @@ server_node::~server_node()
 }
 
 // This must be called from the thread that constructed this class (see join).
-// Okay to ignore code as we are in the destructor, use stop if code is needed.
 void server_node::close()
 {
     std::promise<code> wait;
@@ -162,7 +164,7 @@ void server_node::close()
             this, _1, std::ref(wait)));
 
     // This blocks until handle_closing completes.
-    wait.get_future();
+    wait.get_future().get();
     p2p_node::close();
 }
 
