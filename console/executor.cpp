@@ -59,9 +59,9 @@ std::atomic<bool> executor::stopped_(false);
 void executor::initialize_interrupt(int code)
 {
     // Reinitialize after each capture.
-    signal(SIGINT, initialize_interrupt);
-    signal(SIGTERM, initialize_interrupt);
-    signal(SIGABRT, initialize_interrupt);
+    std::signal(SIGINT, initialize_interrupt);
+    std::signal(SIGTERM, initialize_interrupt);
+    std::signal(SIGABRT, initialize_interrupt);
 
     // The no_interrupt sentinel is used for first initialization.
     if (code == no_interrupt)
@@ -285,6 +285,8 @@ void executor::handle_stopped(const code&)
 // In case the console is terminated with CTRL-C.
 void executor::monitor_stop()
 {
+    // TODO: replace this loop with a wait on a static condition_variable.
+    // TODO: signal the cv from the signal handler and node stop.
     while (!stopped_ && !node_->stopped())
         sleep_for(milliseconds(10));
 
