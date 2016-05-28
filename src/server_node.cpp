@@ -152,8 +152,7 @@ server_node::~server_node()
 }
 
 // This must be called from the thread that constructed this class (see join).
-// Okay to ignore code as we are in the destructor, use stop if code is needed.
-void server_node::close()
+code server_node::close()
 {
     std::promise<code> wait;
 
@@ -162,8 +161,13 @@ void server_node::close()
             this, _1, std::ref(wait)));
 
     // This blocks until handle_closing completes.
-    wait.get_future();
-    p2p_node::close();
+    const auto ec1 = wait.get_future().get();
+
+    // We want to close base even if there is a failure on the derived close.
+    const auto ec2 = p2p_node::close();
+
+    // Prioritize the first close error.
+    return ec1 ? ec1 : ec2;
 }
 
 void server_node::handle_closing(const code& ec, std::promise<code>& wait)

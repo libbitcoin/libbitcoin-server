@@ -37,46 +37,21 @@ namespace server {
 
 using boost::format;
 using std::placeholders::_1;
-using std::placeholders::_2;
 using namespace std::chrono;
 using namespace std::this_thread;
 using namespace boost::system;
-using namespace bc::blockchain;
 using namespace bc::config;
 using namespace bc::database;
 using namespace bc::network;
 
-static constexpr int no_interrupt = 0;
+static constexpr int initialize_stop = 0;
 static constexpr int directory_exists = 0;
 static constexpr int directory_not_found = 2;
 static constexpr auto append = std::ofstream::out | std::ofstream::app;
+static const auto stop_sensitivity = milliseconds(10);
 static const auto application_name = "bn";
 
-// Static interrupt state (unavoidable).
 std::atomic<bool> executor::stopped_(false);
-
-// Static handler for catching termination signals.
-void executor::initialize_interrupt(int code)
-{
-    // Reinitialize after each capture.
-    std::signal(SIGINT, initialize_interrupt);
-    std::signal(SIGTERM, initialize_interrupt);
-    std::signal(SIGABRT, initialize_interrupt);
-
-    // The no_interrupt sentinel is used for first initialization.
-    if (code == no_interrupt)
-    {
-        log::info(LOG_NODE) << BS_NODE_INTERRUPT;
-        return;
-    }
-
-    // Signal the service to stop if not already signaled.
-    if (!stopped_.load())
-    {
-        log::info(LOG_NODE) << format(BS_NODE_STOPPING) % code;
-        stopped_.store(true);
-    }
-}
 
 executor::executor(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
@@ -85,27 +60,12 @@ executor::executor(parser& metadata, std::istream& input,
     error_file_(metadata_.configured.network.error_file.string(), append)
 {
     initialize_logging(debug_file_, error_file_, output, error);
-}
-
-void executor::initialize_output()
-{
-    log::debug(LOG_NODE) << BS_LOG_HEADER;
-    log::info(LOG_NODE) << BS_LOG_HEADER;
-    log::warning(LOG_NODE) << BS_LOG_HEADER;
-    log::error(LOG_NODE) << BS_LOG_HEADER;
-    log::fatal(LOG_NODE) << BS_LOG_HEADER;
-
-    const auto& file = metadata_.configured.file;
-
-    if (file.empty())
-        log::info(LOG_NODE) << BS_USING_DEFAULT_CONFIG;
-    else
-        log::info(LOG_NODE) << format(BS_USING_CONFIG_FILE) % file;
+    handle_stop(initialize_stop);
 }
 
 // Command line options.
 // ----------------------------------------------------------------------------
-// These emit directly to standard output (not the log).
+// Emit directly to standard output (not the log).
 
 void executor::do_help()
 {
@@ -133,7 +93,6 @@ void executor::do_version()
         LIBBITCOIN_VERSION << std::endl;
 }
 
-// Emit to the logs.
 bool executor::do_initchain()
 {
     initialize_output();
@@ -162,10 +121,10 @@ bool executor::do_initchain()
     return false;
 }
 
-// Invoke.
+// Menu selection.
 // ----------------------------------------------------------------------------
 
-bool executor::invoke()
+bool executor::menu()
 {
     const auto& config = metadata_.configured;
 
@@ -193,36 +152,15 @@ bool executor::invoke()
     }
 
     // There are no command line arguments, just run the server.
-    return run();
+    return start();
 }
 
-// Run sequence.
+// Start sequence.
 // ----------------------------------------------------------------------------
 
-// Use missing directory as a sentinel indicating lack of initialization.
-bool executor::verify_directory()
-{
-    error_code ec;
-    const auto& directory = metadata_.configured.database.directory;
-
-    if (exists(directory, ec))
-        return true;
-
-    if (ec.value() == directory_not_found)
-    {
-        log::error(LOG_NODE) << format(BS_UNINITIALIZED_CHAIN) % directory;
-        return false;
-    }
-
-    const auto message = ec.message();
-    log::error(LOG_NODE) << format(BS_INITCHAIN_TRY) % directory % message;
-    return false;
-}
-
-bool executor::run()
+bool executor::start()
 {
     initialize_output();
-    initialize_interrupt(no_interrupt);
 
     log::info(LOG_NODE) << BS_NODE_STARTING;
 
@@ -236,8 +174,7 @@ bool executor::run()
         std::bind(&executor::handle_started,
             this, _1));
 
-    monitor_stop();
-    return true;
+    return monitor_stop();
 }
 
 // Handle the completion of the start sequence and begin the run sequence.
@@ -246,7 +183,7 @@ void executor::handle_started(const code& ec)
     if (ec)
     {
         log::error(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
-        stopped_.store(true);
+        stop();
         return;
     }
 
@@ -269,7 +206,7 @@ void executor::handle_running(const code& ec)
     if (ec)
     {
         log::info(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
-        stopped_.store(true);
+        stop();
         return;
     }
     
@@ -279,41 +216,87 @@ void executor::handle_running(const code& ec)
 // In case the server stops on its own.
 void executor::handle_stopped(const code&)
 {
+    stop();
+}
+
+// Stop sequence.
+// ----------------------------------------------------------------------------
+
+void executor::handle_stop(int code)
+{
+    // Reinitialize after each capture to prevent hard shutdown.
+    std::signal(SIGINT, handle_stop);
+    std::signal(SIGTERM, handle_stop);
+    std::signal(SIGABRT, handle_stop);
+
+    if (code == initialize_stop)
+        return;
+
+    log::info(LOG_NODE) << format(BS_NODE_STOPPING) % code;
+    stop();
+}
+
+void executor::stop()
+{
     stopped_.store(true);
 }
 
-// In case the console is terminated with CTRL-C.
-void executor::monitor_stop()
+bool executor::monitor_stop()
 {
-    // TODO: replace this loop with a wait on a static condition_variable.
-    // TODO: signal the cv from the signal handler and node stop.
-    while (!stopped_ && !node_->stopped())
-        sleep_for(milliseconds(10));
+    while (!stopped_.load())
+        sleep_for(stop_sensitivity);
 
     log::info(LOG_NODE) << BS_NODE_UNMAPPING;
 
-    std::promise<code> done;
+    const auto ec = node_->close();
 
-    if (node_->stopped())
-        handle_server_stopped(error::success, done);
-    else
-        node_->stop(
-            std::bind(&executor::handle_server_stopped,
-                this, _1, std::ref(done)));
-
-    // block until server stop completes.
-    done.get_future();
-}
-
-// This is the end of the stop sequence.
-void executor::handle_server_stopped(const code& ec, std::promise<code>& done)
-{
     if (ec)
         log::info(LOG_NODE) << format(BS_NODE_STOP_FAIL) % ec.message();
     else
         log::info(LOG_NODE) << BS_NODE_STOPPED;
 
-    done.set_value(ec);
+    // This is the end of the stop sequence.
+    return !ec;
+}
+
+// Utilities.
+// ----------------------------------------------------------------------------
+
+// Set up logging.
+void executor::initialize_output()
+{
+    log::debug(LOG_NODE) << BS_LOG_HEADER;
+    log::info(LOG_NODE) << BS_LOG_HEADER;
+    log::warning(LOG_NODE) << BS_LOG_HEADER;
+    log::error(LOG_NODE) << BS_LOG_HEADER;
+    log::fatal(LOG_NODE) << BS_LOG_HEADER;
+
+    const auto& file = metadata_.configured.file;
+
+    if (file.empty())
+        log::info(LOG_NODE) << BS_USING_DEFAULT_CONFIG;
+    else
+        log::info(LOG_NODE) << format(BS_USING_CONFIG_FILE) % file;
+}
+
+// Use missing directory as a sentinel indicating lack of initialization.
+bool executor::verify_directory()
+{
+    error_code ec;
+    const auto& directory = metadata_.configured.database.directory;
+
+    if (exists(directory, ec))
+        return true;
+
+    if (ec.value() == directory_not_found)
+    {
+        log::error(LOG_NODE) << format(BS_UNINITIALIZED_CHAIN) % directory;
+        return false;
+    }
+
+    const auto message = ec.message();
+    log::error(LOG_NODE) << format(BS_INITCHAIN_TRY) % directory % message;
+    return false;
 }
 
 } // namespace server
