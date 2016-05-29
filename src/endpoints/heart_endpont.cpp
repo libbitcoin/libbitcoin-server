@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/endpoints/heartbeat_endpoint.hpp>
+#include <bitcoin/server/endpoints/heart_endpoint.hpp>
 
 #include <cstdint>
+#include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -29,67 +30,85 @@
 namespace libbitcoin {
 namespace server {
 
-#define NAME "heartbeat_endpoint"
+#define PUBLIC_NAME "public_heartbeat"
+#define SECURE_NAME "secure_heartbeat"
 
 using std::placeholders::_1;
 using namespace bc::protocol;
 
-heartbeat_endpoint::heartbeat_endpoint(zmq::authenticator& authenticator,
-    server_node* node)
-  : counter_(rand()),
-    settings_(node->server_settings()),
-    socket_(authenticator, zmq::socket::role::publisher),
-    deadline_(std::make_shared<deadline>(node->thread_pool(),
-        settings_.heartbeat_interval()))
+static inline bool is_enabled(server_node& node, bool secure)
 {
-    if (!settings_.heartbeat_endpoint_enabled)
-        return;
+    const auto& settings = node.server_settings();
+    return settings.heartbeat_endpoints_enabled &&
+        (!secure || settings.server_private_key);
+}
 
-    const auto secure = settings_.server_private_key;
+static inline config::endpoint get_endpoint(server_node& node, bool secure)
+{
+    const auto& settings = node.server_settings();
+    return secure ? settings.secure_heartbeat_endpoint :
+        settings.public_heartbeat_endpoint;
+}
 
-    if (!authenticator.apply(socket_, NAME, secure))
+static inline deadline::ptr deadline_factory(server_node& node)
+{
+    auto& pool = node.thread_pool();
+    const auto& settings = node.server_settings();
+    return std::make_shared<deadline>(pool, settings.heartbeat_interval());
+}
+
+heart_endpoint::heart_endpoint(zmq::authenticator& authenticator,
+    server_node& node, bool secure)
+  : counter_(rand()),
+    socket_(authenticator, zmq::socket::role::publisher),
+    deadline_(deadline_factory(node)),
+    endpoint_(get_endpoint(node, secure)),
+    enabled_(is_enabled(node, secure)),
+    secure_(secure)
+{
+    const auto name = secure ? SECURE_NAME : PUBLIC_NAME;
+
+    // The authenticator logs apply failures and stopped socket halts start.
+    if (!enabled_ || !authenticator.apply(socket_, name, secure))
         socket_.stop();
 }
 
-bool heartbeat_endpoint::start()
+// The endpoint is not restartable.
+bool heart_endpoint::start()
 {
-    if (!settings_.heartbeat_endpoint_enabled)
-    {
-        stop();
+    if (!enabled_)
         return true;
-    }
 
-    const auto heartbeat_endpoint = settings_.heartbeat_endpoint;
-
-    if (!socket_ || !socket_.bind(heartbeat_endpoint))
+    if (!socket_ || !socket_.bind(endpoint_))
     {
         log::error(LOG_ENDPOINT)
-            << "Failed to initialize heartbeat service on " << heartbeat_endpoint;
+            << "Failed to bind heartbeat service to " << endpoint_;
         stop();
         return false;
     }
 
     log::info(LOG_ENDPOINT)
-        << "Bound heartbeat service on " << heartbeat_endpoint;
+        << "Bound " << (secure_ ? "secure " : "public")
+        << "heartbeat service to " << endpoint_;
 
     start_timer();
     return true;
 }
 
-bool heartbeat_endpoint::stop()
+bool heart_endpoint::stop()
 {
     deadline_->stop();
     return socket_.stop();
 }
 
-void heartbeat_endpoint::start_timer()
+void heart_endpoint::start_timer()
 {
     deadline_->start(
-        std::bind(&heartbeat_endpoint::send,
+        std::bind(&heart_endpoint::send,
             this, _1));
 }
 
-void heartbeat_endpoint::send(const code& ec)
+void heart_endpoint::send(const code& ec)
 {
     if (ec)
     {

@@ -40,9 +40,9 @@ src_libbitcoin_server_la_SOURCES = \
     src/server_node.cpp \
     src/settings.cpp \
     src/endpoints/block_endpont.cpp \
-    src/endpoints/heartbeat_endpont.cpp \
+    src/endpoints/heart_endpont.cpp \
     src/endpoints/query_endpont.cpp \
-    src/endpoints/transaction_endpont.cpp \
+    src/endpoints/trans_endpont.cpp \
     src/interface/address.cpp \
     src/interface/blockchain.cpp \
     src/interface/protocol.cpp \
@@ -101,9 +101,9 @@ include_bitcoin_server_HEADERS = \
 include_bitcoin_server_endpointsdir = ${includedir}/bitcoin/server/endpoints
 include_bitcoin_server_endpoints_HEADERS = \
     include/bitcoin/server/endpoints/block_endpoint.hpp \
-    include/bitcoin/server/endpoints/heartbeat_endpoint.hpp \
+    include/bitcoin/server/endpoints/heart_endpoint.hpp \
     include/bitcoin/server/endpoints/query_endpoint.hpp \
-    include/bitcoin/server/endpoints/transaction_endpoint.hpp
+    include/bitcoin/server/endpoints/trans_endpoint.hpp
 
 include_bitcoin_server_interfacedir = ${includedir}/bitcoin/server/interface
 include_bitcoin_server_interface_HEADERS = \

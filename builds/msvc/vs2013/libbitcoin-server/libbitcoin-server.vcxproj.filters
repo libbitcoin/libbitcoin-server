@@ -82,13 +82,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\incoming.hpp">
       <Filter>include\bitcoin\server\messages</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\heartbeat_endpoint.hpp">
-      <Filter>include\bitcoin\server\endpoints</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\query_endpoint.hpp">
-      <Filter>include\bitcoin\server\endpoints</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\transaction_endpoint.hpp">
       <Filter>include\bitcoin\server\endpoints</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\block_endpoint.hpp">
@@ -102,6 +96,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\fetch_helpers.hpp">
       <Filter>include\bitcoin\server\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\heart_endpoint.hpp">
+      <Filter>include\bitcoin\server\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\trans_endpoint.hpp">
+      <Filter>include\bitcoin\server\endpoints</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -138,13 +138,7 @@
     <ClCompile Include="..\..\..\..\src\endpoints\block_endpont.cpp">
       <Filter>src\endpoints</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\heartbeat_endpont.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\endpoints\query_endpont.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\transaction_endpont.cpp">
       <Filter>src\endpoints</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utility\address_notifier.cpp">
@@ -155,6 +149,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utility\fetch_helpers.cpp">
       <Filter>src\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpont.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpont.cpp">
+      <Filter>src\endpoints</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

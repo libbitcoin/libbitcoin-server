@@ -23,9 +23,9 @@
 #include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/version.hpp>
 #include <bitcoin/server/endpoints/block_endpoint.hpp>
-#include <bitcoin/server/endpoints/heartbeat_endpoint.hpp>
+#include <bitcoin/server/endpoints/heart_endpoint.hpp>
 #include <bitcoin/server/endpoints/query_endpoint.hpp>
-#include <bitcoin/server/endpoints/transaction_endpoint.hpp>
+#include <bitcoin/server/endpoints/trans_endpoint.hpp>
 #include <bitcoin/server/interface/address.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>
 #include <bitcoin/server/interface/protocol.hpp>

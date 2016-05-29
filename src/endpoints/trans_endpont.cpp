@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/endpoints/transaction_endpoint.hpp>
+#include <bitcoin/server/endpoints/trans_endpoint.hpp>
 
 #include <cstdint>
 #include <string>
@@ -30,64 +30,76 @@
 namespace libbitcoin {
 namespace server {
 
-#define NAME "transaction_endpoint"
+#define PUBLIC_NAME "public_transaction"
+#define SECURE_NAME "secure_transaction"
 
 using std::placeholders::_1;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-transaction_endpoint::transaction_endpoint(zmq::authenticator& authenticator,
-    server_node* node)
+static inline bool is_enabled(server_node& node, bool secure)
+{
+    const auto& settings = node.server_settings();
+    return settings.transaction_endpoints_enabled &&
+        (!secure || settings.server_private_key);
+}
+
+static inline config::endpoint get_endpoint(server_node& node, bool secure)
+{
+    const auto& settings = node.server_settings();
+    return secure ? settings.secure_transaction_endpoint :
+        settings.public_transaction_endpoint;
+}
+
+trans_endpoint::trans_endpoint(zmq::authenticator& authenticator,
+    server_node& node, bool secure)
   : node_(node),
     socket_(authenticator, zmq::socket::role::pusher),
-    settings_(node->server_settings())
+    endpoint_(get_endpoint(node, secure)),
+    enabled_(is_enabled(node, secure)),
+    secure_(secure)
 {
-    if (!settings_.transaction_endpoint_enabled)
-        return;
+    const auto name = secure ? SECURE_NAME : PUBLIC_NAME;
 
-    const auto secure = settings_.server_private_key;
-
-    if (!authenticator.apply(socket_, NAME, secure))
+    // The authenticator logs apply failures and stopped socket halts start.
+    if (!enabled_ || !authenticator.apply(socket_, name, secure))
         socket_.stop();
 }
 
+// The endpoint is not restartable.
 // The instance is retained in scope by subscribe_transactions until stopped.
-bool transaction_endpoint::start()
+bool trans_endpoint::start()
 {
-    if (!settings_.transaction_endpoint_enabled)
-    {
-        stop();
+    if (!enabled_)
         return true;
-    }
-    
-    auto tx_endpoint = settings_.transaction_endpoint;
 
-    if (!socket_ || !socket_.bind(tx_endpoint))
+    if (!socket_ || !socket_.bind(endpoint_))
     {
         log::error(LOG_ENDPOINT)
-            << "Failed to initialize transaction publisher on " << tx_endpoint;
+            << "Failed to bind transaction publish to " << endpoint_;
 
         stop();
         return false;
     }
 
     log::info(LOG_ENDPOINT)
-        << "Bound transaction publish service on " << tx_endpoint;
+        << "Bound " << (secure_ ? "secure " : "public")
+        << "transaction publish service to " << endpoint_;
 
     // This is not a libbitcoin re/subscriber.
-    node_->subscribe_transactions(
-        std::bind(&transaction_endpoint::send,
+    node_.subscribe_transactions(
+        std::bind(&trans_endpoint::send,
             this, _1));
 
     return true;
 }
 
-bool transaction_endpoint::stop()
+bool trans_endpoint::stop()
 {
     return socket_.stop();
 }
 
-void transaction_endpoint::send(const transaction& tx)
+void trans_endpoint::send(const transaction& tx)
 {
     zmq::message message;
     message.enqueue(tx.to_data());

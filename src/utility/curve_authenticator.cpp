@@ -29,20 +29,14 @@ namespace server {
 
 using namespace bc::protocol;
 
-curve_authenticator::curve_authenticator(server_node* node)
-  : authenticator(node->thread_pool()),
-    settings_(node->server_settings())
+curve_authenticator::curve_authenticator(server_node& node)
+  : authenticator(node.thread_pool())
 {
-    if (!settings_.server_private_key && !settings_.client_public_keys.empty())
-    {
-        log::error(LOG_SERVICE)
-            << "Client authentication requires a server key.";
-        return;
-    }
+    const auto& settings = node.server_settings();
 
-    set_private_key(settings_.server_private_key);
+    set_private_key(settings.server_private_key);
 
-    for (const auto& address: settings_.client_addresses)
+    for (const auto& address: settings.client_addresses)
     {
         log::info(LOG_SERVICE)
             << "Allow client address [" << address
@@ -51,7 +45,7 @@ curve_authenticator::curve_authenticator(server_node* node)
         allow(address);
     }
 
-    for (const auto& public_key: settings_.client_public_keys)
+    for (const auto& public_key: settings.client_public_keys)
     {
         log::info(LOG_SERVICE)
             << "Allow client public key [" << public_key << "]";
@@ -63,9 +57,7 @@ curve_authenticator::curve_authenticator(server_node* node)
 bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
     bool secure)
 {
-    if (!settings_.server_private_key && !settings_.client_public_keys.empty())
-        return false;
-
+    // This will fail if there are client keys but no server key.
     if (!authenticator::apply(socket, domain, secure))
     {
         log::error(LOG_SERVICE)
@@ -73,10 +65,15 @@ bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
         return false;
     }
 
-    if (settings_.server_private_key)
+    if (secure)
     {
-        log::info(LOG_SERVICE)
-            << "Set server key for [" << domain << "]";
+        log::debug(LOG_SERVICE)
+            << "Configured secure endpoint [" << domain << "]";
+    }
+    else
+    {
+        log::debug(LOG_SERVICE)
+            << "Configured public endpoint [" << domain << "]";
     }
 
     return true;

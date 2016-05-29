@@ -45,12 +45,16 @@ server_node::server_node(const configuration& configuration)
   : p2p_node(configuration),
     configuration_(configuration),
     last_checkpoint_height_(configuration.last_checkpoint_height()),
-    authenticator_(this),
-    address_notifier_(this),
-    query_endpoint_(authenticator_, this),
-    block_endpoint_(authenticator_, this),
-    heartbeat_endpoint_(authenticator_, this),
-    transaction_endpoint_(authenticator_, this)
+    authenticator_(*this),
+    address_notifier_(*this),
+    secure_query_endpoint_(authenticator_, *this, true),
+    secure_heart_endpoint_(authenticator_, *this, true),
+    secure_block_endpoint_(authenticator_, *this, true),
+    secure_trans_endpoint_(authenticator_, *this, true),
+    public_query_endpoint_(authenticator_, *this, false),
+    public_heart_endpoint_(authenticator_, *this, false),
+    public_block_endpoint_(authenticator_, *this, false),
+    public_trans_endpoint_(authenticator_, *this, false)
 {
 }
 
@@ -79,22 +83,41 @@ void server_node::handle_running(const code& ec, result_handler handler)
         return;
     }
 
-    // Start authenticator monitor and services, these log internally.
-    if (!authenticator_.start() || !query_endpoint_.start() ||
-        !heartbeat_endpoint_.start() || !block_endpoint_.start() ||
-        !transaction_endpoint_.start() || !address_notifier_.start())
+    // Start authenticator and notifier, these log internally.
+    if (!authenticator_.start() || !address_notifier_.start())
     {
         handler(error::operation_failed);
         return;
     }
 
-    // Attach service handlers.
-    if (server_settings().query_endpoint_enabled)
+    // Start secure services.
+    if (server_settings().server_private_key)
     {
-        attach_query_api();
+        if (!secure_query_endpoint_.start() ||
+            !secure_heart_endpoint_.start() ||
+            !secure_block_endpoint_.start() ||
+            !secure_trans_endpoint_.start())
+        {
+            handler(error::operation_failed);
+            return;
+        }
 
-        if (server_settings().subscription_limit > 0)
-            attach_subscription_api();
+        attach_query_interface(secure_query_endpoint_);
+    }
+
+    // Start public services.
+    if (!server_settings().secure_only)
+    {
+        if (!public_query_endpoint_.start() ||
+            !public_heart_endpoint_.start() ||
+            !public_block_endpoint_.start() ||
+            !public_trans_endpoint_.start())
+        {
+            handler(error::operation_failed);
+            return;
+        }
+
+        attach_query_interface(public_query_endpoint_);
     }
 
     // Subscribe to blockchain reorganizations.
@@ -130,12 +153,15 @@ void server_node::stop(result_handler handler)
     block_mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    // BUGBUG: There is a race between start and stop. A monitor may be started
-    // after this stop and therefore not be shutdown properly.
-    query_endpoint_.stop();
-    block_endpoint_.stop();
-    heartbeat_endpoint_.stop();
-    transaction_endpoint_.stop();
+    public_query_endpoint_.stop();
+    public_heart_endpoint_.stop();
+    public_block_endpoint_.stop();
+    public_trans_endpoint_.stop();
+
+    secure_query_endpoint_.stop();
+    secure_heart_endpoint_.stop();
+    secure_block_endpoint_.stop();
+    secure_trans_endpoint_.stop();
 
     // The authenticated context blocks until all related sockets are closed.
     authenticator_.stop();
@@ -283,38 +309,37 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
             instance, _1, _2));
 
 // Class and method names must match protocol expectations (do not change).
-void server_node::attach_subscription_api()
+void server_node::attach_query_interface(query_endpoint& endpoint)
 {
-    // TODO: add renew to client.
-    ATTACH(query_endpoint_, address, renew, &address_notifier_);
-    ATTACH(query_endpoint_, address, subscribe, &address_notifier_);
-}
+    if (!server_settings().query_endpoints_enabled)
+        return;
 
-// Class and method names must match protocol expectations (do not change).
-void server_node::attach_query_api()
-{
     // TODO: add total_connections to client.
-    ATTACH(query_endpoint_, protocol, total_connections, this);
-    ATTACH(query_endpoint_, protocol, broadcast_transaction, this);
-    ATTACH(query_endpoint_, transaction_pool, validate, this);
-    ATTACH(query_endpoint_, transaction_pool, fetch_transaction, this);
+    ATTACH(endpoint, protocol, total_connections, this);
+    ATTACH(endpoint, protocol, broadcast_transaction, this);
+    ATTACH(endpoint, transaction_pool, validate, this);
+    ATTACH(endpoint, transaction_pool, fetch_transaction, this);
 
     // TODO: add fetch_spend to client.
     // TODO: add fetch_block_transaction_hashes to client.
-    ATTACH(query_endpoint_, blockchain, fetch_spend, this);
-    ATTACH(query_endpoint_, blockchain, fetch_block_transaction_hashes, this);
-    ATTACH(query_endpoint_, blockchain, fetch_transaction, this);
-    ATTACH(query_endpoint_, blockchain, fetch_last_height, this);
-    ATTACH(query_endpoint_, blockchain, fetch_block_header, this);
-    ATTACH(query_endpoint_, blockchain, fetch_block_height, this);
-    ATTACH(query_endpoint_, blockchain, fetch_transaction_index, this);
-    ATTACH(query_endpoint_, blockchain, fetch_stealth, this);
-    ATTACH(query_endpoint_, blockchain, fetch_history, this);
+    ATTACH(endpoint, blockchain, fetch_spend, this);
+    ATTACH(endpoint, blockchain, fetch_transaction, this);
+    ATTACH(endpoint, blockchain, fetch_last_height, this);
+    ATTACH(endpoint, blockchain, fetch_block_header, this);
+    ATTACH(endpoint, blockchain, fetch_block_height, this);
+    ATTACH(endpoint, blockchain, fetch_transaction_index, this);
+    ATTACH(endpoint, blockchain, fetch_stealth, this);
+    ATTACH(endpoint, blockchain, fetch_history, this);
+    ATTACH(endpoint, blockchain, fetch_block_transaction_hashes, this);
 
     // address.fetch_history was present in v1 (obelisk) and v2 (server).
     // address.fetch_history was called by client v1 (sx) and v2 (bx).
-    ////ATTACH(query_endpoint_, address, fetch_history, this);
-    ATTACH(query_endpoint_, address, fetch_history2, this);
+    ////ATTACH(endpoint, address, fetch_history, this);
+    ATTACH(endpoint, address, fetch_history2, this);
+
+    // TODO: add renew to client.
+    ATTACH(endpoint, address, renew, &address_notifier_);
+    ATTACH(endpoint, address, subscribe, &address_notifier_);
 }
 
 #undef ATTACH

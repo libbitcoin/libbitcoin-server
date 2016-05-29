@@ -41,7 +41,7 @@ public:
 
     /// Construct a block endpoint.
     block_endpoint(bc::protocol::zmq::authenticator& authenticator,
-        server_node* node);
+        server_node& node, bool secure);
 
     /// This class is not copyable.
     block_endpoint(const block_endpoint&) = delete;
@@ -56,9 +56,11 @@ public:
 private:
     void send(uint32_t height, const chain::block::ptr block);
 
-    server_node* node_;
+    server_node& node_;
     bc::protocol::zmq::socket socket_;
-    const settings& settings_;
+    const bc::config::endpoint endpoint_;
+    const bool enabled_;
+    const bool secure_;
 };
 
 } // namespace server
