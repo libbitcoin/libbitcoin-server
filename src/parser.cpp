@@ -292,11 +292,6 @@ options_metadata parser::load_settings()
     )
 
     /* [server] */
-    ////(
-    ////    "server.threads",
-    ////    value<uint32_t>(&configured.server.threads),
-    ////    "The number of threads in the server threadpool, defaults to 4."
-    ////)
     (
         "server.heartbeat_interval_seconds",
         value<uint32_t>(&configured.server.heartbeat_interval_seconds),
@@ -318,49 +313,74 @@ options_metadata parser::load_settings()
         "Write service requests to the log, defaults to false."
     )
     (
-        "server.query_endpoint_enabled",
-        value<bool>(&configured.server.query_endpoint_enabled),
-        "Enable the query endpoint, defaults to true."
+        "server.secure_only",
+        value<bool>(&configured.server.secure_only),
+        "Disable public endpoints, defaults to false."
     )
     (
-        "server.heartbeat_endpoint_enabled",
-        value<bool>(&configured.server.heartbeat_endpoint_enabled),
-        "Enable the heartbeat endpoint, defaults to true."
+        "server.query_endpoints_enabled",
+        value<bool>(&configured.server.query_endpoints_enabled),
+        "Enable the query endpoints, defaults to true."
     )
     (
-        "server.block_endpoint_enabled",
-        value<bool>(&configured.server.block_endpoint_enabled),
-        "Enable the block publishing endpoint, defaults to true."
+        "server.heartbeat_endpoints_enabled",
+        value<bool>(&configured.server.heartbeat_endpoints_enabled),
+        "Enable the heartbeat endpoints, defaults to true."
     )
     (
-        "server.transaction_endpoint_enabled",
-        value<bool>(&configured.server.transaction_endpoint_enabled),
-        "Enable the transaction publishing endpoint, defaults to true."
+        "server.block_endpoints_enabled",
+        value<bool>(&configured.server.block_endpoints_enabled),
+        "Enable the block publishing endpoints, defaults to true."
     )
     (
-        "server.query_endpoint",
-        value<endpoint>(&configured.server.query_endpoint),
-        "The query endpoint, defaults to 'tcp://*:9091'."
+        "server.transaction_endpoints_enabled",
+        value<bool>(&configured.server.transaction_endpoints_enabled),
+        "Enable the transaction publishing endpoints, defaults to true."
     )
     (
-        "server.heartbeat_endpoint",
-        value<endpoint>(&configured.server.heartbeat_endpoint),
-        "The heartbeat endpoint, defaults to 'tcp://*:9092'."
+        "server.public_query_endpoint",
+        value<endpoint>(&configured.server.public_query_endpoint),
+        "The public query endpoint, defaults to 'tcp://*:9091'."
     )
     (
-        "server.block_endpoint",
-        value<endpoint>(&configured.server.query_endpoint),
-        "The block publishing endpoint, defaults to 'tcp://*:9093'."
+        "server.public_heartbeat_endpoint",
+        value<endpoint>(&configured.server.public_heartbeat_endpoint),
+        "The public heartbeat endpoint, defaults to 'tcp://*:9092'."
     )
     (
-        "server.transaction_endpoint",
-        value<endpoint>(&configured.server.transaction_endpoint),
-        "The transaction publishing endpoint, defaults to 'tcp://*:9094'."
+        "server.public_block_endpoint",
+        value<endpoint>(&configured.server.public_block_endpoint),
+        "The public block publishing endpoint, defaults to 'tcp://*:9093'."
+    )
+    (
+        "server.public_transaction_endpoint",
+        value<endpoint>(&configured.server.public_transaction_endpoint),
+        "The public transaction publishing endpoint, defaults to 'tcp://*:9094'."
+    )
+    (
+        "server.secure_query_endpoint",
+        value<endpoint>(&configured.server.secure_query_endpoint),
+        "The secure query endpoint, defaults to 'tcp://*:9081'."
+    )
+    (
+        "server.secure_heartbeat_endpoint",
+        value<endpoint>(&configured.server.secure_heartbeat_endpoint),
+        "The secure heartbeat endpoint, defaults to 'tcp://*:9082'."
+    )
+    (
+        "server.secure_block_endpoint",
+        value<endpoint>(&configured.server.secure_block_endpoint),
+        "The secure block publishing endpoint, defaults to 'tcp://*:9083'."
+    )
+    (
+        "server.secure_transaction_endpoint",
+        value<endpoint>(&configured.server.secure_transaction_endpoint),
+        "The secure transaction publishing endpoint, defaults to 'tcp://*:9084'."
     )
     (
         "server.server_private_key",
         value<config::sodium>(&configured.server.server_private_key),
-        "The Z85-encoded private key of the server."
+        "The Z85-encoded private key of the server, enables secure endpoints."
     )
     (
         "server.client_public_key",

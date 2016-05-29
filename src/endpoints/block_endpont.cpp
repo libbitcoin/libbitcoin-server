@@ -31,52 +31,64 @@
 namespace libbitcoin {
 namespace server {
 
-#define NAME "block_endpoint"
+#define PUBLIC_NAME "public_block"
+#define SECURE_NAME "secure_block"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 using namespace bc::chain;
 using namespace bc::protocol;
 
+static inline bool is_enabled(server_node& node, bool secure)
+{
+    const auto& settings = node.server_settings();
+    return settings.block_endpoints_enabled &&
+        (!secure || settings.server_private_key);
+}
+
+static inline config::endpoint get_endpoint(server_node& node, bool secure)
+{
+    const auto& settings = node.server_settings();
+    return secure ? settings.secure_block_endpoint :
+        settings.public_block_endpoint;
+}
+
 block_endpoint::block_endpoint(zmq::authenticator& authenticator,
-    server_node* node)
+    server_node& node, bool secure)
   : node_(node),
     socket_(authenticator, zmq::socket::role::pusher),
-    settings_(node->server_settings())
+    endpoint_(get_endpoint(node, secure)),
+    enabled_(is_enabled(node, secure)),
+    secure_(secure)
 {
-    if (!settings_.block_endpoint_enabled)
-        return;
+    const auto name = secure ? SECURE_NAME : PUBLIC_NAME;
 
-    const auto secure = settings_.server_private_key;
-
-    if (!authenticator.apply(socket_, NAME, secure))
+    // The authenticator logs apply failures and stopped socket halts start.
+    if (!enabled_ || !authenticator.apply(socket_, name, secure))
         socket_.stop();
 }
 
+// The endpoint is not restartable.
 // The instance is retained in scope by subscribe_blocks until stopped.
 bool block_endpoint::start()
 {
-    if (!settings_.block_endpoint_enabled)
-    {
-        stop();
+    if (!enabled_)
         return true;
-    }
-    
-    auto block_endpoint = settings_.block_endpoint;
 
-    if (!socket_ || !socket_.bind(block_endpoint))
+    if (!socket_ || !socket_.bind(endpoint_))
     {
         log::error(LOG_ENDPOINT)
-            << "Failed to initialize block publisher on " << block_endpoint;
+            << "Failed to bind block publisher to " << endpoint_;
         stop();
         return false;
     }
 
     log::info(LOG_ENDPOINT)
-        << "Bound block publish service on " << block_endpoint;
+        << "Bound " << (secure_ ? "secure " : "public")
+        << "block publish service to " << endpoint_;
 
     // This is not a libbitcoin re/subscriber.
-    node_->subscribe_blocks(
+    node_.subscribe_blocks(
         std::bind(&block_endpoint::send,
             this, _1, _2));
 

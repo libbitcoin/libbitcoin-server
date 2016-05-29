@@ -48,7 +48,7 @@ public:
 
     /// Construct a query endpoint.
     query_endpoint(bc::protocol::zmq::authenticator& authenticator,
-        server_node* node);
+        server_node& node, bool secure);
 
     /// This class is not copyable.
     query_endpoint(const query_endpoint&) = delete;
@@ -74,13 +74,6 @@ private:
     void dequeue();
     void enqueue(outgoing& message);
 
-    dispatcher dispatch_;
-    command_map handlers_;
-    const settings& settings_;
-
-    // This polls the query socket *and* the internal queue.
-    bc::protocol::zmq::poller poller_;
-
     // The query socket uses the constructed context.
     bc::protocol::zmq::socket socket_;
 
@@ -88,6 +81,13 @@ private:
     bc::protocol::zmq::context context_;
     bc::protocol::zmq::socket push_socket_;
     bc::protocol::zmq::socket pull_socket_;
+
+    dispatcher dispatch_;
+    command_map handlers_;
+    const bc::config::endpoint endpoint_;
+    const bool log_;
+    const bool enabled_;
+    const bool secure_;
 };
 
 } // namespace server

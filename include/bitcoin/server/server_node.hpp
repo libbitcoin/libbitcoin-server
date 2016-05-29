@@ -28,9 +28,9 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/endpoints/block_endpoint.hpp>
-#include <bitcoin/server/endpoints/heartbeat_endpoint.hpp>
+#include <bitcoin/server/endpoints/heart_endpoint.hpp>
 #include <bitcoin/server/endpoints/query_endpoint.hpp>
-#include <bitcoin/server/endpoints/transaction_endpoint.hpp>
+#include <bitcoin/server/endpoints/trans_endpoint.hpp>
 #include <bitcoin/server/utility/address_notifier.hpp>
 #include <bitcoin/server/utility/curve_authenticator.hpp>
 
@@ -98,24 +98,30 @@ private:
     void handle_running(const code& ec, result_handler handler);
     void handle_closing(const code& ec, std::promise<code>& wait);
 
-    void attach_query_api();
-    void attach_subscription_api();
+    void attach_query_interface(query_endpoint& endpoint);
 
-    size_t last_checkpoint_height_;
     const configuration& configuration_;
+    const size_t last_checkpoint_height_;
 
+    // These are thread safe.
     curve_authenticator authenticator_;
     address_notifier address_notifier_;
-    query_endpoint query_endpoint_;
-    block_endpoint block_endpoint_;
-    heartbeat_endpoint heartbeat_endpoint_;
-    transaction_endpoint transaction_endpoint_;
+    query_endpoint public_query_endpoint_;
+    block_endpoint public_block_endpoint_;
+    heart_endpoint public_heart_endpoint_;
+    trans_endpoint public_trans_endpoint_;
+    query_endpoint secure_query_endpoint_;
+    block_endpoint secure_block_endpoint_;
+    heart_endpoint secure_heart_endpoint_;
+    trans_endpoint secure_trans_endpoint_;
 
-    mutable upgrade_mutex block_mutex_;
+    // This is protected by block mutex.
     block_notify_list block_subscriptions_;
+    mutable upgrade_mutex block_mutex_;
 
-    mutable upgrade_mutex transaction_mutex_;
+    // This is protected by transaction mutex.
     transaction_notify_list transaction_subscriptions_;
+    mutable upgrade_mutex transaction_mutex_;
 };
 
 } // namespace server

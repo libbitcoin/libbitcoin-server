@@ -43,14 +43,23 @@ public:
     uint32_t subscription_expiration_minutes;
     uint32_t subscription_limit;
     bool log_requests;
-    bool query_endpoint_enabled;
-    bool heartbeat_endpoint_enabled;
-    bool block_endpoint_enabled;
-    bool transaction_endpoint_enabled;
-    config::endpoint query_endpoint;
-    config::endpoint heartbeat_endpoint;
-    config::endpoint block_endpoint;
-    config::endpoint transaction_endpoint;
+    bool secure_only;
+
+    bool query_endpoints_enabled;
+    bool heartbeat_endpoints_enabled;
+    bool block_endpoints_enabled;
+    bool transaction_endpoints_enabled;
+
+    config::endpoint public_query_endpoint;
+    config::endpoint public_heartbeat_endpoint;
+    config::endpoint public_block_endpoint;
+    config::endpoint public_transaction_endpoint;
+
+    config::endpoint secure_query_endpoint;
+    config::endpoint secure_heartbeat_endpoint;
+    config::endpoint secure_block_endpoint;
+    config::endpoint secure_transaction_endpoint;
+
     config::sodium server_private_key;
     config::sodium::list client_public_keys;
     config::authority::list client_addresses;

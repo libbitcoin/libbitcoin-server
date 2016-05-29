@@ -42,7 +42,7 @@ public:
     typedef std::shared_ptr<address_notifier> ptr;
 
     /// Construct an address notifier.
-    address_notifier(server_node* node);
+    address_notifier(server_node& node);
 
     /// This class is not copyable.
     address_notifier(const address_notifier&) = delete;
@@ -88,7 +88,7 @@ private:
     bool deserialize_address(binary& address, chain::subscribe_type& type,
         const data_chunk& data);
 
-    server_node* node_;
+    server_node& node_;
     list subscriptions_;
     dispatcher dispatch_;
     const settings& settings_;

@@ -31,14 +31,19 @@ settings::settings()
     subscription_expiration_minutes(10),
     subscription_limit(100000000),
     log_requests(false),
-    query_endpoint_enabled(true),
-    heartbeat_endpoint_enabled(true),
-    block_endpoint_enabled(true),
-    transaction_endpoint_enabled(true),
-    query_endpoint("tcp://*:9091"),
-    heartbeat_endpoint("tcp://*:9092"),
-    block_endpoint("tcp://*:9093"),
-    transaction_endpoint("tcp://*:9094")
+    secure_only(false),
+    query_endpoints_enabled(true),
+    heartbeat_endpoints_enabled(true),
+    block_endpoints_enabled(true),
+    transaction_endpoints_enabled(true),
+    public_query_endpoint("tcp://*:9091"),
+    public_heartbeat_endpoint("tcp://*:9092"),
+    public_block_endpoint("tcp://*:9093"),
+    public_transaction_endpoint("tcp://*:9094"),
+    secure_query_endpoint("tcp://*:9081"),
+    secure_heartbeat_endpoint("tcp://*:9082"),
+    secure_block_endpoint("tcp://*:9083"),
+    secure_transaction_endpoint("tcp://*:9084")
 {
 }
 

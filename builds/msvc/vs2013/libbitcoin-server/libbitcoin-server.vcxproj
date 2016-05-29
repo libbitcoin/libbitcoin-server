@@ -75,9 +75,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\block_endpoint.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\heartbeat_endpoint.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\heart_endpoint.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\query_endpoint.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\transaction_endpoint.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\trans_endpoint.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\address.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\protocol.hpp" />
@@ -96,9 +96,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
     <ClCompile Include="..\..\..\..\src\endpoints\block_endpont.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\heartbeat_endpont.cpp" />
+    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpont.cpp" />
     <ClCompile Include="..\..\..\..\src\endpoints\query_endpont.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\transaction_endpont.cpp" />
+    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpont.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\address.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\protocol.cpp" />

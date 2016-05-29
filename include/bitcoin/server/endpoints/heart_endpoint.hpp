@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_HEARTBEAT_ENDPONT_HPP
-#define LIBBITCOIN_SERVER_HEARTBEAT_ENDPONT_HPP
+#ifndef LIBBITCOIN_SERVER_HEART_ENDPOINT_HPP
+#define LIBBITCOIN_SERVER_HEART_ENDPOINT_HPP
 
 #include <atomic>
 #include <cstdint>
@@ -35,19 +35,19 @@ namespace server {
 class server_node;
 
 /// This class must be constructed as a shared pointer.
-class BCS_API heartbeat_endpoint
-  : public enable_shared_from_base<heartbeat_endpoint>
+class BCS_API heart_endpoint
+  : public enable_shared_from_base<heart_endpoint>
 {
 public:
-    typedef std::shared_ptr<heartbeat_endpoint> ptr;
+    typedef std::shared_ptr<heart_endpoint> ptr;
 
     /// Construct a heartbeat endpoint.
-    heartbeat_endpoint(bc::protocol::zmq::authenticator& authenticator,
-        server_node* node);
+    heart_endpoint(bc::protocol::zmq::authenticator& authenticator,
+        server_node& node, bool secure);
 
     /// This class is not copyable.
-    heartbeat_endpoint(const heartbeat_endpoint&) = delete;
-    void operator=(const heartbeat_endpoint&) = delete;
+    heart_endpoint(const heart_endpoint&) = delete;
+    void operator=(const heart_endpoint&) = delete;
 
     /// Start the heartbeat timer and send notifications.
     bool start();
@@ -60,9 +60,11 @@ private:
     void send(const code& ec);
 
     uint32_t counter_;
-    const settings& settings_;
     bc::protocol::zmq::socket socket_;
     deadline::ptr deadline_;
+    const bc::config::endpoint endpoint_;
+    const bool enabled_;
+    const bool secure_;
 };
 
 } // namespace server

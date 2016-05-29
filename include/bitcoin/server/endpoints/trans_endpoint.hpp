@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TRANSACTION_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_TRANSACTION_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_TRANS_ENDPOINT_HPP
+#define LIBBITCOIN_SERVER_TRANS_ENDPOINT_HPP
 
 #include <cstdint>
 #include <memory>
@@ -33,19 +33,19 @@ namespace server {
 class server_node;
 
 /// This class must be constructed as a shared pointer.
-class BCS_API transaction_endpoint
-  : public enable_shared_from_base<transaction_endpoint>
+class BCS_API trans_endpoint
+  : public enable_shared_from_base<trans_endpoint>
 {
 public:
-    typedef std::shared_ptr<transaction_endpoint> ptr;
+    typedef std::shared_ptr<trans_endpoint> ptr;
 
     /// Construct a transaction endpoint.
-    transaction_endpoint(bc::protocol::zmq::authenticator& authenticator,
-        server_node* node);
+    trans_endpoint(bc::protocol::zmq::authenticator& authenticator,
+        server_node& node, bool secure);
 
     /// This class is not copyable.
-    transaction_endpoint(const transaction_endpoint&) = delete;
-    void operator=(const transaction_endpoint&) = delete;
+    trans_endpoint(const trans_endpoint&) = delete;
+    void operator=(const trans_endpoint&) = delete;
 
     /// Subscribe to transaction notifications and relay transactions.
     bool start();
@@ -56,9 +56,11 @@ public:
 private:
     void send(const chain::transaction& tx);
 
-    server_node* node_;
+    server_node& node_;
     bc::protocol::zmq::socket socket_;
-    const settings& settings_;
+    const bc::config::endpoint endpoint_;
+    const bool enabled_;
+    const bool secure_;
 };
 
 } // namespace server

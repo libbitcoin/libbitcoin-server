@@ -37,7 +37,7 @@ public:
     typedef std::shared_ptr<curve_authenticator> ptr;
 
     /// Construct an instance of the authenticator.
-    curve_authenticator(server_node* node);
+    curve_authenticator(server_node& node);
 
     /// This class is not copyable.
     curve_authenticator(const curve_authenticator&) = delete;
@@ -46,9 +46,6 @@ public:
     /// Apply authentication to the socket.
     bool apply(bc::protocol::zmq::socket& socket, const std::string& domain,
         bool secure);
-
-private:
-    const settings& settings_;
 };
 
 } // namespace server

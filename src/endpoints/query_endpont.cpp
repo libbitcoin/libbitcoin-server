@@ -35,6 +35,8 @@ namespace libbitcoin {
 namespace server {
 
 #define NAME "query_endpoint"
+#define PUBLIC_NAME "public_query"
+#define SECURE_NAME "secure_query"
 
 using std::placeholders::_1;
 using namespace bc::config;
@@ -46,33 +48,46 @@ static const endpoint queue_endpoint("inproc://trigger-send");
 
 static constexpr uint32_t polling_interval_milliseconds = 1;
 
-query_endpoint::query_endpoint(zmq::authenticator& authenticator,
-    server_node* node)
-  : dispatch_(node->thread_pool(), NAME),
-    settings_(node->server_settings()),
-    socket_(authenticator, zmq::socket::role::router),
-    pull_socket_(context_, zmq::socket::role::puller),
-    push_socket_(context_, zmq::socket::role::pusher)
+static inline bool is_enabled(server_node& node, bool secure)
 {
-    if (!settings_.query_endpoint_enabled)
-        return;
+    const auto& settings = node.server_settings();
+    return settings.query_endpoints_enabled &&
+        (!secure || settings.server_private_key);
+}
 
-    const auto secure = settings_.server_private_key;
+static inline config::endpoint get_endpoint(server_node& node, bool secure)
+{
+    const auto& settings = node.server_settings();
+    return secure ? settings.secure_query_endpoint :
+        settings.public_query_endpoint;
+}
 
-    if (!authenticator.apply(socket_, NAME, secure))
+query_endpoint::query_endpoint(zmq::authenticator& authenticator,
+    server_node& node, bool secure)
+  : socket_(authenticator, zmq::socket::role::router),
+    pull_socket_(context_, zmq::socket::role::puller),
+    push_socket_(context_, zmq::socket::role::pusher), 
+    dispatch_(node.thread_pool(), NAME),
+    endpoint_(get_endpoint(node, secure)),
+    log_(node.server_settings().log_requests),
+    enabled_(is_enabled(node, secure)),
+    secure_(secure)
+{
+    const auto name = secure ? SECURE_NAME : PUBLIC_NAME;
+
+    // The authenticator logs apply failures and stopped socket halts start.
+    if (!enabled_ || !authenticator.apply(socket_, name, secure))
         socket_.stop();
 }
 
 // Start.
 //-----------------------------------------------------------------------------
 
+// The endpoint is not restartable.
 bool query_endpoint::start()
 {
-    if (!settings_.query_endpoint_enabled)
-    {
-        stop();
+    if (!enabled_)
         return true;
-    }
 
     if (!start_queue() || !start_endpoint())
     {
@@ -99,29 +114,26 @@ bool query_endpoint::start_queue()
         return false;
     }
 
-    poller_.add(pull_socket_);
     return true;
 }
 
 bool query_endpoint::start_endpoint()
 {
-    const auto query_endpoint = settings_.query_endpoint;
-
-    if (!socket_ || !socket_.bind(query_endpoint))
+    if (!socket_ || !socket_.bind(endpoint_))
     {
         log::error(LOG_ENDPOINT)
-            << "Failed to initialize query service on " << query_endpoint;
+            << "Failed to bind query service to " << endpoint_;
         return false;
     }
 
     log::info(LOG_ENDPOINT)
-        << "Bound query service on " << query_endpoint;
+        << "Bound " << (secure_ ? "secure " : "public")
+        << "query service to " << endpoint_;
 
     dispatch_.concurrent(
         std::bind(&query_endpoint::monitor,
             this));
 
-    poller_.add(socket_);
     return true;
 }
 
@@ -130,13 +142,7 @@ bool query_endpoint::start_endpoint()
  
 bool query_endpoint::stop()
 {
-    const auto stopped = push_socket_.stop() && pull_socket_.stop() && 
-        socket_.stop();
-
-    if (stopped)
-        poller_.clear();
-
-    return stopped;
+    return push_socket_.stop() && pull_socket_.stop() && socket_.stop();
 }
 
 // Monitors.
@@ -144,10 +150,14 @@ bool query_endpoint::stop()
 
 void query_endpoint::monitor()
 {
+    zmq::poller poller;
+    poller.add(socket_);
+    poller.add(pull_socket_);
+
     // Ignore expired and keep looping, exiting the thread when terminated.
-    while (!poller_.terminated())
+    while (!poller.terminated())
     {
-        const auto socket_id = poller_.wait(polling_interval_milliseconds);
+        const auto socket_id = poller.wait(polling_interval_milliseconds);
 
         if (socket_id == socket_.id())
             receive();
@@ -174,7 +184,7 @@ void query_endpoint::receive()
         return;
     }
 
-    if (settings_.log_requests)
+    if (log_)
     {
         log::info(LOG_ENDPOINT)
             << "Command " << request.command << " from "

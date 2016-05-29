@@ -36,10 +36,10 @@ using namespace boost::posix_time;
 
 #define NAME "address_notifier"
 
-address_notifier::address_notifier(server_node* node)
+address_notifier::address_notifier(server_node& node)
   : node_(node),
-    dispatch_(node->thread_pool(), NAME),
-    settings_(node->server_settings())
+    dispatch_(node.thread_pool(), NAME),
+    settings_(node.server_settings())
 {
 }
 
@@ -63,8 +63,8 @@ bool address_notifier::start()
 
     // This allows the subscription manager to capture transactions from both
     // contexts and search them for payment addresses that match subscriptions.
-    node_->subscribe_blocks(receive_block);
-    node_->subscribe_transactions(receive_tx);
+    node_.subscribe_blocks(receive_block);
+    node_.subscribe_transactions(receive_tx);
     return true;
 }
 
