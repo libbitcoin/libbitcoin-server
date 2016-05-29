@@ -127,7 +127,7 @@ bool query_endpoint::start_endpoint()
     }
 
     log::info(LOG_ENDPOINT)
-        << "Bound " << (secure_ ? "secure " : "public")
+        << "Bound " << (secure_ ? "secure " : "public ")
         << "query service to " << endpoint_;
 
     dispatch_.concurrent(

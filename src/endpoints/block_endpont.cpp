@@ -84,7 +84,7 @@ bool block_endpoint::start()
     }
 
     log::info(LOG_ENDPOINT)
-        << "Bound " << (secure_ ? "secure " : "public")
+        << "Bound " << (secure_ ? "secure " : "public ")
         << "block publish service to " << endpoint_;
 
     // This is not a libbitcoin re/subscriber.
