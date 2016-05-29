@@ -88,7 +88,7 @@ bool heart_endpoint::start()
     }
 
     log::info(LOG_ENDPOINT)
-        << "Bound " << (secure_ ? "secure " : "public")
+        << "Bound " << (secure_ ? "secure " : "public ")
         << "heartbeat service to " << endpoint_;
 
     start_timer();
