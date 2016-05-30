@@ -105,7 +105,6 @@ private:
 
     // These are thread safe.
     curve_authenticator authenticator_;
-    address_notifier address_notifier_;
     query_endpoint public_query_endpoint_;
     block_endpoint public_block_endpoint_;
     heart_endpoint public_heart_endpoint_;

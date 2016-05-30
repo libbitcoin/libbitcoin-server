@@ -73,6 +73,7 @@ bool address_notifier::start()
 
 void address_notifier::subscribe(const incoming& request, send_handler handler)
 {
+    // BUGBUG: zeromq calls must be on main thread.
     dispatch_.ordered(
         &address_notifier::do_subscribe,
             this, request, handler);
@@ -95,6 +96,7 @@ void address_notifier::do_subscribe(const incoming& request,
 
 void address_notifier::renew(const incoming& request, send_handler handler)
 {
+    // BUGBUG: zeromq calls must be on main thread.
     dispatch_.unordered(
         &address_notifier::do_renew,
             this, request, handler);

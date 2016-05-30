@@ -37,59 +37,59 @@ class BCS_API blockchain
 {
 public:
     /// Fetch the blockchain history of a payment address.
-    static void fetch_history(server_node* node,
+    static void fetch_history(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch a transaction from the blockchain by its hash.
-    static void fetch_transaction(server_node* node,
+    static void fetch_transaction(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch the current height of the blockchain.
-    static void fetch_last_height(server_node* node,
+    static void fetch_last_height(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch a block header by hash or height (conditional serialization).
-    static void fetch_block_header(server_node* node,
+    static void fetch_block_header(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch tx hashes of block by hash or height (conditional serialization).
-    static void fetch_block_transaction_hashes(server_node* node,
+    static void fetch_block_transaction_hashes(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch the block index of a transaction and the height of its block.
-    static void fetch_transaction_index(server_node* node,
+    static void fetch_transaction_index(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch the inpoint which is spent by the specified output.
-    static void fetch_spend(server_node* node,
+    static void fetch_spend(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch the height of a block by its hash.
-    static void fetch_block_height(server_node* node,
+    static void fetch_block_height(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Fetch the blockchain history of a stealth address by its prefix filter.
-    static void fetch_stealth(server_node* node,
+    static void fetch_stealth(server_node& node,
         const incoming& request, send_handler handler);
 
 private:
     static void last_height_fetched(const code& ec, size_t last_height,
         const incoming& request, send_handler handler);
 
-    static void fetch_block_header_by_hash(server_node* node,
+    static void fetch_block_header_by_hash(server_node& node,
         const incoming& request, send_handler handler);
 
-    static void fetch_block_header_by_height(server_node* node,
+    static void fetch_block_header_by_height(server_node& node,
         const incoming& request, send_handler handler);
 
     static void block_header_fetched(const code& ec,
         const chain::header& block, const incoming& request,
         send_handler handler);
 
-    static void fetch_block_transaction_hashes_by_hash(server_node* node,
+    static void fetch_block_transaction_hashes_by_hash(server_node& node,
         const incoming& request, send_handler handler);
 
-    static void fetch_block_transaction_hashes_by_height(server_node* node,
+    static void fetch_block_transaction_hashes_by_height(server_node& node,
         const incoming& request, send_handler handler);
 
     static void block_transaction_hashes_fetched(const code& ec,

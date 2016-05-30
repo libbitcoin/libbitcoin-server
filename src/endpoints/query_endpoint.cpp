@@ -20,15 +20,21 @@
 #include <bitcoin/server/endpoints/query_endpoint.hpp>
 
 #include <cstdint>
+#include <functional>
 #include <vector>
 #include <boost/date_time.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/interface/address.hpp>
+#include <bitcoin/server/interface/blockchain.hpp>
+#include <bitcoin/server/interface/protocol.hpp>
+#include <bitcoin/server/interface/transaction_pool.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/address_notifier.hpp>
 #include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
@@ -39,6 +45,7 @@ namespace server {
 #define SECURE_NAME "secure_query"
 
 using std::placeholders::_1;
+using std::placeholders::_2;
 using namespace bc::config;
 using namespace bc::protocol;
 using namespace boost::posix_time;
@@ -66,8 +73,10 @@ query_endpoint::query_endpoint(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : socket_(authenticator, zmq::socket::role::router),
     pull_socket_(context_, zmq::socket::role::puller),
-    push_socket_(context_, zmq::socket::role::pusher), 
+    push_socket_(context_, zmq::socket::role::pusher),
+    node_(node),
     dispatch_(node.thread_pool(), NAME),
+    address_notifier_(node),
     endpoint_(get_endpoint(node, secure)),
     log_(node.server_settings().log_requests),
     enabled_(is_enabled(node, secure)),
@@ -89,25 +98,40 @@ bool query_endpoint::start()
     if (!enabled_)
         return true;
 
-    if (!start_queue() || !start_endpoint())
+    if (!start_queue() || !start_endpoint() || !address_notifier_.start())
     {
         stop();
         return false;
     }
 
+    attach_interface();
     return true;
 }
 
 bool query_endpoint::start_queue()
 {
-    if (!pull_socket_ || !pull_socket_.bind(queue_endpoint))
+    if (!pull_socket_)
+    {
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize queue puller.";
+        return false;
+    }
+
+    if (!push_socket_)
+    {
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize queue puller.";
+        return false;
+    }
+
+    if (!pull_socket_.bind(queue_endpoint))
     {
         log::error(LOG_ENDPOINT)
             << "Failed to initialize to queue puller.";
         return false;
     }
 
-    if (!push_socket_ || !push_socket_.connect(queue_endpoint))
+    if (!push_socket_.connect(queue_endpoint))
     {
         log::error(LOG_ENDPOINT)
             << "Failed to initialize to queue pusher.";
@@ -119,7 +143,14 @@ bool query_endpoint::start_queue()
 
 bool query_endpoint::start_endpoint()
 {
-    if (!socket_ || !socket_.bind(endpoint_))
+    if (!socket_)
+    {
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize query service.";
+        return false;
+    }
+
+    if (!socket_.bind(endpoint_))
     {
         log::error(LOG_ENDPOINT)
             << "Failed to bind query service to " << endpoint_;
@@ -142,7 +173,14 @@ bool query_endpoint::start_endpoint()
  
 bool query_endpoint::stop()
 {
-    return push_socket_.stop() && pull_socket_.stop() && socket_.stop();
+    const auto result = push_socket_.stop() && pull_socket_.stop() 
+        && socket_.stop();
+
+    log::debug(LOG_ENDPOINT)
+        << "Unbound " << (secure_ ? "secure " : "public ")
+        << "query service to " << endpoint_;
+
+    return result;
 }
 
 // Monitors.
@@ -226,11 +264,53 @@ void query_endpoint::enqueue(outgoing& message)
         << "Failed to enqueue message.";
 }
 
+// Query Interface.
+// ----------------------------------------------------------------------------
+
+// Class and method names must match protocol expectations (do not change).
+#define ATTACH(class_name, method_name, instance) \
+    attach(#class_name "." #method_name, \
+        std::bind(&bc::server::class_name::method_name, \
+            std::ref(instance), _1, _2));
+
 void query_endpoint::attach(const std::string& command,
     command_handler handler)
 {
     handlers_[command] = handler;
 }
+
+// Class and method names must match protocol expectations (do not change).
+void query_endpoint::attach_interface()
+{
+    // TODO: add total_connections to client.
+    ATTACH(protocol, total_connections, node_);
+    ATTACH(protocol, broadcast_transaction, node_);
+    ATTACH(transaction_pool, validate, node_);
+    ATTACH(transaction_pool, fetch_transaction, node_);
+
+    // TODO: add fetch_spend to client.
+    // TODO: add fetch_block_transaction_hashes to client.
+    ATTACH(blockchain, fetch_spend, node_);
+    ATTACH(blockchain, fetch_transaction, node_);
+    ATTACH(blockchain, fetch_last_height, node_);
+    ATTACH(blockchain, fetch_block_header, node_);
+    ATTACH(blockchain, fetch_block_height, node_);
+    ATTACH(blockchain, fetch_transaction_index, node_);
+    ATTACH(blockchain, fetch_stealth, node_);
+    ATTACH(blockchain, fetch_history, node_);
+    ATTACH(blockchain, fetch_block_transaction_hashes, node_);
+
+    // address.fetch_history was present in v1 (obelisk) and v2 (server).
+    // address.fetch_history was called by client v1 (sx) and v2 (bx).
+    ////ATTACH(endpoint, address, fetch_history, node_);
+    ATTACH(address, fetch_history2, node_);
+
+    // TODO: add renew to client.
+    ATTACH(address, renew, address_notifier_);
+    ATTACH(address, subscribe, address_notifier_);
+}
+
+#undef ATTACH
 
 } // namespace server
 } // namespace libbitcoin

@@ -35,11 +35,11 @@ class BCS_API protocol
 {
 public:
     /// Broadcast a transaction to all connected peers.
-    static void broadcast_transaction(server_node* node,
+    static void broadcast_transaction(server_node& node,
         const incoming& request, send_handler handler);
 
     /// Determine the count of all connected peers.
-    static void total_connections(server_node* node,
+    static void total_connections(server_node& node,
         const incoming& request, send_handler handler);
 
 private:

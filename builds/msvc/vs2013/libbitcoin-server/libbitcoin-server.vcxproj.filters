@@ -135,12 +135,6 @@
     <ClCompile Include="..\..\..\..\src\messages\outgoing.cpp">
       <Filter>src\messages</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\block_endpont.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\query_endpont.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utility\address_notifier.cpp">
       <Filter>src\utility</Filter>
     </ClCompile>
@@ -150,10 +144,16 @@
     <ClCompile Include="..\..\..\..\src\utility\fetch_helpers.cpp">
       <Filter>src\utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpont.cpp">
+    <ClCompile Include="..\..\..\..\src\endpoints\block_endpoint.cpp">
       <Filter>src\endpoints</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpont.cpp">
+    <ClCompile Include="..\..\..\..\src\endpoints\query_endpoint.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpoint.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpoint.cpp">
       <Filter>src\endpoints</Filter>
     </ClCompile>
   </ItemGroup>

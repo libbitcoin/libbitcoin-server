@@ -39,10 +39,10 @@ src_libbitcoin_server_la_SOURCES = \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
-    src/endpoints/block_endpont.cpp \
-    src/endpoints/heart_endpont.cpp \
-    src/endpoints/query_endpont.cpp \
-    src/endpoints/trans_endpont.cpp \
+    src/endpoints/block_endpoint.cpp \
+    src/endpoints/heart_endpoint.cpp \
+    src/endpoints/query_endpoint.cpp \
+    src/endpoints/trans_endpoint.cpp \
     src/interface/address.cpp \
     src/interface/blockchain.cpp \
     src/interface/protocol.cpp \

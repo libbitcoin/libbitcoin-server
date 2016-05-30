@@ -31,6 +31,7 @@
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/address_notifier.hpp>
 #include <bitcoin/server/utility/curve_authenticator.hpp>
 
 /// This class must be constructed as a shared pointer.
@@ -68,6 +69,7 @@ private:
 
     bool start_queue();
     bool start_endpoint();
+    void attach_interface();
     void monitor();
 
     void receive();
@@ -82,8 +84,10 @@ private:
     bc::protocol::zmq::socket push_socket_;
     bc::protocol::zmq::socket pull_socket_;
 
+    server_node& node_;
     dispatcher dispatch_;
     command_map handlers_;
+    address_notifier address_notifier_;
     const bc::config::endpoint endpoint_;
     const bool log_;
     const bool enabled_;
