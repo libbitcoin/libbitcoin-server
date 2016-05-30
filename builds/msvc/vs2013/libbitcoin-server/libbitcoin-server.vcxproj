@@ -95,10 +95,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\block_endpont.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpont.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\query_endpont.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpont.cpp" />
+    <ClCompile Include="..\..\..\..\src\endpoints\block_endpoint.cpp" />
+    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpoint.cpp" />
+    <ClCompile Include="..\..\..\..\src\endpoints\query_endpoint.cpp" />
+    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpoint.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\address.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\protocol.cpp" />

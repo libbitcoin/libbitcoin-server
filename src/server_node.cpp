@@ -23,10 +23,6 @@
 #include <future>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/interface/address.hpp>
-#include <bitcoin/server/interface/blockchain.hpp>
-#include <bitcoin/server/interface/protocol.hpp>
-#include <bitcoin/server/interface/transaction_pool.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -46,7 +42,6 @@ server_node::server_node(const configuration& configuration)
     configuration_(configuration),
     last_checkpoint_height_(configuration.last_checkpoint_height()),
     authenticator_(*this),
-    address_notifier_(*this),
     secure_query_endpoint_(authenticator_, *this, true),
     secure_heart_endpoint_(authenticator_, *this, true),
     secure_block_endpoint_(authenticator_, *this, true),
@@ -84,40 +79,32 @@ void server_node::handle_running(const code& ec, result_handler handler)
     }
 
     // Start authenticator and notifier, these log internally.
-    if (!authenticator_.start() || !address_notifier_.start())
+    if (!authenticator_.start())
     {
         handler(error::operation_failed);
         return;
     }
 
     // Start secure services.
-    if (server_settings().server_private_key)
+    if (server_settings().server_private_key && (
+        !secure_query_endpoint_.start() ||
+        !secure_heart_endpoint_.start() ||
+        !secure_block_endpoint_.start() ||
+        !secure_trans_endpoint_.start()))
     {
-        if (!secure_query_endpoint_.start() ||
-            !secure_heart_endpoint_.start() ||
-            !secure_block_endpoint_.start() ||
-            !secure_trans_endpoint_.start())
-        {
-            handler(error::operation_failed);
-            return;
-        }
-
-        attach_query_interface(secure_query_endpoint_);
+        handler(error::operation_failed);
+        return;
     }
 
     // Start public services.
-    if (!server_settings().secure_only)
+    if (!server_settings().secure_only && (
+        !public_query_endpoint_.start() ||
+        !public_heart_endpoint_.start() ||
+        !public_block_endpoint_.start() ||
+        !public_trans_endpoint_.start()))
     {
-        if (!public_query_endpoint_.start() ||
-            !public_heart_endpoint_.start() ||
-            !public_block_endpoint_.start() ||
-            !public_trans_endpoint_.start())
-        {
-            handler(error::operation_failed);
-            return;
-        }
-
-        attach_query_interface(public_query_endpoint_);
+        handler(error::operation_failed);
+        return;
     }
 
     // Subscribe to blockchain reorganizations.
@@ -137,6 +124,7 @@ void server_node::handle_running(const code& ec, result_handler handler)
 // Stop sequence.
 // ----------------------------------------------------------------------------
 
+// This must be called from the thread that constructed this class (zeromq).
 void server_node::stop(result_handler handler)
 {
     // Critical Section
@@ -259,7 +247,7 @@ bool server_node::handle_new_transaction(const code& ec,
     ///////////////////////////////////////////////////////////////////////////
 
     // Fire server protocol tx subscription notifications.
-    for (const auto notify : transaction_subscriptions)
+    for (const auto notify: transaction_subscriptions)
         notify(tx);
 
     return true;
@@ -292,57 +280,12 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
     ///////////////////////////////////////////////////////////////////////////
 
     // Fire server protocol block subscription notifications.
-    for (auto new_block : new_blocks)
-        for (const auto notify : block_subscriptions)
+    for (auto new_block: new_blocks)
+        for (const auto notify: block_subscriptions)
             notify(++height, new_block);
 
     return true;
 }
-
-// ----------------------------------------------------------------------------
-// Server API bindings.
-
-// Class and method names must match protocol expectations (do not change).
-#define ATTACH(endpoint, class_name, method_name, instance) \
-    endpoint.attach(#class_name "." #method_name, \
-        std::bind(&bc::server::class_name::method_name, \
-            instance, _1, _2));
-
-// Class and method names must match protocol expectations (do not change).
-void server_node::attach_query_interface(query_endpoint& endpoint)
-{
-    if (!server_settings().query_endpoints_enabled)
-        return;
-
-    // TODO: add total_connections to client.
-    ATTACH(endpoint, protocol, total_connections, this);
-    ATTACH(endpoint, protocol, broadcast_transaction, this);
-    ATTACH(endpoint, transaction_pool, validate, this);
-    ATTACH(endpoint, transaction_pool, fetch_transaction, this);
-
-    // TODO: add fetch_spend to client.
-    // TODO: add fetch_block_transaction_hashes to client.
-    ATTACH(endpoint, blockchain, fetch_spend, this);
-    ATTACH(endpoint, blockchain, fetch_transaction, this);
-    ATTACH(endpoint, blockchain, fetch_last_height, this);
-    ATTACH(endpoint, blockchain, fetch_block_header, this);
-    ATTACH(endpoint, blockchain, fetch_block_height, this);
-    ATTACH(endpoint, blockchain, fetch_transaction_index, this);
-    ATTACH(endpoint, blockchain, fetch_stealth, this);
-    ATTACH(endpoint, blockchain, fetch_history, this);
-    ATTACH(endpoint, blockchain, fetch_block_transaction_hashes, this);
-
-    // address.fetch_history was present in v1 (obelisk) and v2 (server).
-    // address.fetch_history was called by client v1 (sx) and v2 (bx).
-    ////ATTACH(endpoint, address, fetch_history, this);
-    ATTACH(endpoint, address, fetch_history2, this);
-
-    // TODO: add renew to client.
-    ATTACH(endpoint, address, renew, &address_notifier_);
-    ATTACH(endpoint, address, subscribe, &address_notifier_);
-}
-
-#undef ATTACH
 
 } // namespace server
 } // namespace libbitcoin

@@ -33,7 +33,7 @@ using std::placeholders::_1;
 
 // This does NOT save to our memory pool.
 // The transaction will hit our memory pool when it is picked up from a peer.
-void protocol::broadcast_transaction(server_node* node,
+void protocol::broadcast_transaction(server_node& node,
     const incoming& request, send_handler handler)
 {
     const data_chunk& raw_tx = request.data;
@@ -54,7 +54,7 @@ void protocol::broadcast_transaction(server_node* node,
     const auto ignore_send = [](const code&, network::channel::ptr) {};
 
     // Send and hope for the best!
-    node->broadcast(tx, ignore_send, ignore_complete);
+    node.broadcast(tx, ignore_send, ignore_complete);
 
     // Tell the user everything is fine.
     serial.write_error_code(error::success);
@@ -66,10 +66,10 @@ void protocol::broadcast_transaction(server_node* node,
     handler(response);
 }
 
-void protocol::total_connections(server_node* node, const incoming& request,
+void protocol::total_connections(server_node& node, const incoming& request,
     send_handler handler)
 {
-    node->connected_count(
+    node.connected_count(
         std::bind(&protocol::handle_total_connections,
             _1, request, handler));
 }

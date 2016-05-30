@@ -79,7 +79,14 @@ bool heart_endpoint::start()
     if (!enabled_)
         return true;
 
-    if (!socket_ || !socket_.bind(endpoint_))
+    if (!socket_)
+    {
+        log::error(LOG_ENDPOINT)
+            << "Failed to initialize heartbeat service.";
+        return false;
+    }
+
+    if (!socket_.bind(endpoint_))
     {
         log::error(LOG_ENDPOINT)
             << "Failed to bind heartbeat service to " << endpoint_;
@@ -98,7 +105,13 @@ bool heart_endpoint::start()
 bool heart_endpoint::stop()
 {
     deadline_->stop();
-    return socket_.stop();
+    const auto result = socket_.stop();
+
+    log::debug(LOG_ENDPOINT)
+        << "Unbound " << (secure_ ? "secure " : "public ")
+        << "heartbeat service to " << endpoint_;
+
+    return result;
 }
 
 void heart_endpoint::start_timer()

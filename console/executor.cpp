@@ -249,6 +249,7 @@ void executor::monitor_stop()
 
     log::info(LOG_NODE) << BS_NODE_UNMAPPING;
 
+    // Because lack of zeromq thread safety, must be called from main thread.
     node_->close();
 
     // This is the end of the stop sequence.
