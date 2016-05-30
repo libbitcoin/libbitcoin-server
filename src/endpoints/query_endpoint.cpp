@@ -173,14 +173,13 @@ bool query_endpoint::start_endpoint()
  
 bool query_endpoint::stop()
 {
-    const auto result = push_socket_.stop() && pull_socket_.stop() 
+    if (socket_)
+        log::debug(LOG_ENDPOINT)
+            << "Unbound " << (secure_ ? "secure " : "public ")
+            << "query service to " << endpoint_;
+
+    return push_socket_.stop() && pull_socket_.stop()
         && socket_.stop();
-
-    log::debug(LOG_ENDPOINT)
-        << "Unbound " << (secure_ ? "secure " : "public ")
-        << "query service to " << endpoint_;
-
-    return result;
 }
 
 // Monitors.

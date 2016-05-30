@@ -102,13 +102,12 @@ bool trans_endpoint::start()
 
 bool trans_endpoint::stop()
 {
-    const auto result = socket_.stop();
+    if (socket_)
+        log::debug(LOG_ENDPOINT)
+            << "Unbound " << (secure_ ? "secure " : "public ")
+            << "transaction publish service to " << endpoint_;
 
-    log::debug(LOG_ENDPOINT)
-        << "Unbound " << (secure_ ? "secure " : "public ")
-        << "transaction publish service to " << endpoint_;
-
-    return result;
+    return socket_.stop();
 }
 
 void trans_endpoint::send(const transaction& tx)

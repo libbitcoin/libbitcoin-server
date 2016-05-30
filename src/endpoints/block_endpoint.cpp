@@ -104,13 +104,12 @@ bool block_endpoint::start()
 
 bool block_endpoint::stop()
 {
-    const auto result = socket_.stop();
+    if (socket_)
+        log::debug(LOG_ENDPOINT)
+            << "Unbound " << (secure_ ? "secure " : "public ")
+            << "block publish service to " << endpoint_;
 
-    log::debug(LOG_ENDPOINT)
-        << "Unbound " << (secure_ ? "secure " : "public ")
-        << "block publish service to " << endpoint_;
-
-    return result;
+    return socket_.stop();
 }
 
 void block_endpoint::send(uint32_t height, const block::ptr block)
