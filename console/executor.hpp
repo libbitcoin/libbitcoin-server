@@ -20,7 +20,6 @@
 #ifndef LIBBITCOIN_SERVER_EXECUTOR_HPP
 #define LIBBITCOIN_SERVER_EXECUTOR_HPP
 
-#include <atomic>
 #include <future>
 #include <iostream>
 #include <memory>
@@ -45,7 +44,7 @@ public:
     bool menu();
 
 private:
-    static void stop();
+    static void stop(const code& ec);
     static void handle_stop(int code);
 
     void do_help();
@@ -63,7 +62,7 @@ private:
     void handle_stopped(const code& ec);
 
     // Termination state.
-    static std::atomic<bool> stopped_;
+    static std::promise<code> stopped_;
 
     parser& metadata_;
     std::ostream& output_;

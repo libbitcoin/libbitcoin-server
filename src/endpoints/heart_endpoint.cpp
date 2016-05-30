@@ -105,13 +105,13 @@ bool heart_endpoint::start()
 bool heart_endpoint::stop()
 {
     deadline_->stop();
-    const auto result = socket_.stop();
 
-    log::debug(LOG_ENDPOINT)
-        << "Unbound " << (secure_ ? "secure " : "public ")
-        << "heartbeat service to " << endpoint_;
+    if (socket_)
+        log::debug(LOG_ENDPOINT)
+            << "Unbound " << (secure_ ? "secure " : "public ")
+            << "heartbeat service to " << endpoint_;
 
-    return result;
+    return socket_.stop();
 }
 
 void heart_endpoint::start_timer()
