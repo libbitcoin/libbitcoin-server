@@ -41,7 +41,7 @@ void transaction_pool::fetch_transaction(server_node& node,
     if (!unwrap_fetch_transaction_args(hash, request))
         return;
 
-    log::debug(LOG_INTERFACE)
+    log::debug(LOG_SERVER)
         << "transaction_pool.fetch_transaction(" << encode_hash(hash)
         << ")";
 
@@ -83,7 +83,7 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    log::debug(LOG_INTERFACE)
+    log::debug(LOG_SERVER)
         << "transaction_pool.validate() finished. Sending response: "
         << ec.message();
 

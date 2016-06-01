@@ -45,7 +45,7 @@ bool unwrap_fetch_history_args(payment_address& address,
 
     if (data.size() != history_args_size)
     {
-        log::error(LOG_INTERFACE)
+        log::error(LOG_SERVER)
             << "Incorrect data size for .fetch_history";
         return false;
     }
@@ -96,7 +96,7 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
 
     if (data.size() != hash_size)
     {
-        log::error(LOG_INTERFACE)
+        log::error(LOG_SERVER)
             << "Invalid hash length in fetch_transaction request.";
         return false;
     }

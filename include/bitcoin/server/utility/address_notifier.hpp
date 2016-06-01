@@ -77,11 +77,6 @@ private:
     void post_stealth_updates(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
 
-    void do_scan(uint32_t height, const hash_digest& block_hash,
-        const chain::transaction& tx);
-    void do_subscribe(const incoming& request, send_handler handler);
-    void do_renew(const incoming& request, send_handler handler);
-
     void sweep();
     code add(const incoming& request, send_handler handler);
     boost::posix_time::ptime now();
@@ -90,7 +85,6 @@ private:
 
     server_node& node_;
     list subscriptions_;
-    dispatcher dispatch_;
     const settings& settings_;
 };
 

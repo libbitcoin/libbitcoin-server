@@ -40,6 +40,12 @@
     <Filter Include="src\utility">
       <UniqueIdentifier>{6284645b-ec72-461f-9046-dfa5ea049fb0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\bitcoin\server\workers">
+      <UniqueIdentifier>{34c1e606-eb9c-4a7f-a60b-3e903634a9fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\workers">
+      <UniqueIdentifier>{db33e05d-a911-44af-9bae-9f224a6254af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource.h" />
@@ -103,6 +109,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\trans_endpoint.hpp">
       <Filter>include\bitcoin\server\endpoints</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp">
+      <Filter>include\bitcoin\server\workers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
@@ -155,6 +164,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\endpoints\heart_endpoint.cpp">
       <Filter>src\endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp">
+      <Filter>src\workers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

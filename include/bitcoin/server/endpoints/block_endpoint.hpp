@@ -32,7 +32,6 @@ namespace server {
 
 class server_node;
 
-/// This class must be constructed as a shared pointer.
 class BCS_API block_endpoint
   : public enable_shared_from_base<block_endpoint>
 {
@@ -47,10 +46,10 @@ public:
     block_endpoint(const block_endpoint&) = delete;
     void operator=(const block_endpoint&) = delete;
 
-    /// Subscribe to block notifications and relay blocks.
+    /// Start the endpoint.
     bool start();
 
-    /// Stop the socket.
+    /// Stop the endpoint.
     bool stop();
 
 private:

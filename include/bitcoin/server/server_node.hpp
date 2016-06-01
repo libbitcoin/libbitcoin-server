@@ -25,6 +25,7 @@
 #include <future>
 #include <memory>
 #include <bitcoin/node.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/endpoints/block_endpoint.hpp>
@@ -33,6 +34,7 @@
 #include <bitcoin/server/endpoints/trans_endpoint.hpp>
 #include <bitcoin/server/utility/address_notifier.hpp>
 #include <bitcoin/server/utility/curve_authenticator.hpp>
+#include <bitcoin/server/workers/query_worker.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -98,21 +100,14 @@ private:
     void handle_running(const code& ec, result_handler handler);
     void handle_closing(const code& ec, std::promise<code>& wait);
 
-    void attach_query_interface(query_endpoint& endpoint);
-
     const configuration& configuration_;
     const size_t last_checkpoint_height_;
 
     // These are thread safe.
     curve_authenticator authenticator_;
-    query_endpoint public_query_endpoint_;
-    block_endpoint public_block_endpoint_;
-    heart_endpoint public_heart_endpoint_;
-    trans_endpoint public_trans_endpoint_;
-    query_endpoint secure_query_endpoint_;
-    block_endpoint secure_block_endpoint_;
-    heart_endpoint secure_heart_endpoint_;
-    trans_endpoint secure_trans_endpoint_;
+    query_worker query_worker_;
+    query_endpoint secure_query_service_;
+    query_endpoint public_query_service_;
 
     // This is protected by block mutex.
     block_notify_list block_subscriptions_;
