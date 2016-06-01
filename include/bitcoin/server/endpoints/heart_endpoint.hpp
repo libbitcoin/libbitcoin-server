@@ -21,20 +21,18 @@
 #define LIBBITCOIN_SERVER_HEART_ENDPOINT_HPP
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <future>
 #include <memory>
-#include <thread>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
 
-/// This class must be constructed as a shared pointer.
 class BCS_API heart_endpoint
   : public enable_shared_from_base<heart_endpoint>
 {
@@ -49,20 +47,27 @@ public:
     heart_endpoint(const heart_endpoint&) = delete;
     void operator=(const heart_endpoint&) = delete;
 
-    /// Start the heartbeat timer and send notifications.
+    /// Start the endpoint.
     bool start();
 
-    /// Stop the heartbeat timer.
+    /// Stop the endpoint.
+    /// Stopping the authenticated context does not stop the publisher.
     bool stop();
 
 private:
-    void start_timer();
-    void send(const code& ec);
+    void publisher(std::promise<code>& started);
+    void send(uint32_t count, bc::protocol::zmq::socket& socket);
 
-    uint32_t counter_;
-    bc::protocol::zmq::socket socket_;
-    deadline::ptr deadline_;
+    // These are protected by mutex.
+    bc::protocol::zmq::authenticator& authenticator_;
+    dispatcher dispatch_;
+    std::atomic<bool> stopped_;
+    std::promise<code> stopping_;
+    mutable shared_mutex mutex_;
+
     const bc::config::endpoint endpoint_;
+    const std::chrono::seconds interval_;
+    const bool log_;
     const bool enabled_;
     const bool secure_;
 };

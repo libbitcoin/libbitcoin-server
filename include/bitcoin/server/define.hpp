@@ -38,4 +38,7 @@
     #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
+// Log name.
+#define LOG_SERVER "server"
+
 #endif

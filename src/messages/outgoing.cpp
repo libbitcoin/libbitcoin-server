@@ -44,16 +44,24 @@ outgoing::outgoing(const incoming& request, const data_chunk& data)
 
 outgoing::outgoing(const std::string& command, const data_chunk& data,
     const data_chunk& destination)
-  : outgoing(command, data, destination, rand())
+    : outgoing(command, data, destination,
+        static_cast<uint32_t>(pseudo_random()))
 {
 }
 
+// BUGBUG: this supports only single hop routing (zero or one address).
 outgoing::outgoing(const std::string& command, const data_chunk& data,
     const data_chunk& destination, uint32_t id)
 {
-    // Optional, ROUTER sockets strip this.
     if (!destination.empty())
+    {
+        // Don't set when sending to DEALER (?)
         message_.enqueue(destination);
+
+        // Delimiter frame required for REP sockets.
+        // BUGBUG: This is not consistent with existing wire protocol.
+        ////message_.enqueue();
+    }
 
     message_.enqueue(command);
     message_.enqueue_little_endian(id);

@@ -34,11 +34,9 @@ using namespace bc::chain;
 using namespace bc::wallet;
 using namespace boost::posix_time;
 
-#define NAME "address_notifier"
-
+// TODO: replace with zeromq filtered pub-sub model.
 address_notifier::address_notifier(server_node& node)
   : node_(node),
-    dispatch_(node.thread_pool(), NAME),
     settings_(node.server_settings())
 {
 }
@@ -73,15 +71,6 @@ bool address_notifier::start()
 
 void address_notifier::subscribe(const incoming& request, send_handler handler)
 {
-    // BUGBUG: zeromq calls must be on main thread.
-    dispatch_.ordered(
-        &address_notifier::do_subscribe,
-            this, request, handler);
-}
-
-void address_notifier::do_subscribe(const incoming& request,
-    send_handler handler)
-{
     const auto ec = add(request, handler);
 
     // Send response.
@@ -96,20 +85,12 @@ void address_notifier::do_subscribe(const incoming& request,
 
 void address_notifier::renew(const incoming& request, send_handler handler)
 {
-    // BUGBUG: zeromq calls must be on main thread.
-    dispatch_.unordered(
-        &address_notifier::do_renew,
-            this, request, handler);
-}
-
-void address_notifier::do_renew(const incoming& request, send_handler handler)
-{
     binary filter;
     subscribe_type type;
 
     if (!deserialize_address(filter, type, request.data))
     {
-        log::warning(LOG_INTERFACE)
+        log::warning(LOG_SERVER)
             << "Incorrect format for subscribe renew.";
         return;
     }
@@ -146,14 +127,6 @@ void address_notifier::do_renew(const incoming& request, send_handler handler)
 // ----------------------------------------------------------------------------
 
 void address_notifier::scan(uint32_t height, const hash_digest& block_hash,
-    const transaction& tx)
-{
-    dispatch_.ordered(
-        &address_notifier::do_scan,
-            this, height, block_hash, tx);
-}
-
-void address_notifier::do_scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
 {
     for (const auto& input: tx.inputs)
@@ -210,6 +183,7 @@ void address_notifier::post_updates(const payment_address& address,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 
+    // TODO: can we detect and are we purging send failures?
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
     {
@@ -251,6 +225,7 @@ void address_notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 
+    // TODO: can we detect and are we purging send failures?
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
     {
@@ -274,7 +249,7 @@ code address_notifier::add(const incoming& request, send_handler handler)
 
     if (!deserialize_address(address_key, type, request.data))
     {
-        log::warning(LOG_INTERFACE)
+        log::warning(LOG_SERVER)
             << "Incorrect format for subscribe data.";
         return error::bad_stream;
     }
@@ -307,7 +282,7 @@ void address_notifier::sweep()
     {
         if (current_time > it->expiry_time)
         {
-            log::debug(LOG_INTERFACE)
+            log::debug(LOG_SERVER)
                 << "Deleting expired subscription: " << it->prefix
                 << " from " << encode_base16(it->client_origin);
 

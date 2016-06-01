@@ -50,7 +50,7 @@ static constexpr int directory_not_found = 2;
 static constexpr auto append = std::ofstream::out | std::ofstream::app;
 static const auto application_name = "bs";
 
-std::promise<code> executor::stopped_;
+std::promise<code> executor::stopping_;
 
 executor::executor(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
@@ -101,22 +101,25 @@ bool executor::do_initchain()
 
     if (create_directories(directory, ec))
     {
-        log::info(LOG_NODE) << format(BS_INITIALIZING_CHAIN) % directory;
+        log::info(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
         // Unfortunately we are still limited to a choice of hardcoded chains.
         const auto genesis = metadata_.configured.chain.use_testnet_rules ?
             chain::block::genesis_testnet() : chain::block::genesis_mainnet();
 
-        return data_base::initialize(directory, genesis);
+        const auto result = data_base::initialize(directory, genesis);
+
+        log::info(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
+        return result;
     }
 
     if (ec.value() == directory_exists)
     {
-        log::error(LOG_NODE) << format(BS_INITCHAIN_EXISTS) % directory;
+        log::error(LOG_SERVER) << format(BS_INITCHAIN_EXISTS) % directory;
         return false;
     }
 
-    log::error(LOG_NODE) << format(BS_INITCHAIN_NEW) % directory % ec.message();
+    log::error(LOG_SERVER) << format(BS_INITCHAIN_NEW) % directory % ec.message();
     return false;
 }
 
@@ -151,17 +154,17 @@ bool executor::menu()
     }
 
     // There are no command line arguments, just run the server.
-    return start();
+    return run();
 }
 
-// Start sequence.
+// Run.
 // ----------------------------------------------------------------------------
 
-bool executor::start()
+bool executor::run()
 {
     initialize_output();
 
-    log::info(LOG_NODE) << BS_NODE_STARTING;
+    log::info(LOG_SERVER) << BS_NODE_STARTING;
 
     if (!verify_directory())
         return false;
@@ -173,7 +176,16 @@ bool executor::start()
         std::bind(&executor::handle_started,
             this, _1));
 
-    monitor_stop();
+    // Wait for stop.
+    stopping_.get_future().wait();
+
+    log::info(LOG_SERVER) << BS_NODE_STOPPING;
+
+    // Close must be called from main thread.
+    node_->close();
+    node_.reset();
+
+    log::info(LOG_SERVER) << BS_NODE_STOPPED;
     return true;
 }
 
@@ -182,12 +194,12 @@ void executor::handle_started(const code& ec)
 {
     if (ec)
     {
-        log::error(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
+        log::error(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
         stop(ec);
         return;
     }
 
-    log::info(LOG_NODE) << BS_NODE_SEEDED;
+    log::info(LOG_SERVER) << BS_NODE_SEEDED;
 
     // This is the beginning of the stop sequence.
     node_->subscribe_stop(
@@ -205,15 +217,15 @@ void executor::handle_running(const code& ec)
 {
     if (ec)
     {
-        log::info(LOG_NODE) << format(BS_NODE_START_FAIL) % ec.message();
+        log::info(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
         stop(ec);
         return;
     }
 
-    log::info(LOG_NODE) << BS_NODE_STARTED;
+    log::info(LOG_SERVER) << BS_NODE_STARTED;
 }
 
-// In case the server stops on its own.
+// This is the end of the stop sequence.
 void executor::handle_stopped(const code& ec)
 {
     stop(ec);
@@ -232,30 +244,16 @@ void executor::handle_stop(int code)
     if (code == initialize_stop)
         return;
 
-    log::info(LOG_NODE) << format(BS_NODE_STOPPING) % code;
+    log::info(LOG_SERVER) << format(BS_NODE_SIGNALED) % code;
     stop(error::success);
 }
 
 void executor::stop(const code& ec)
 {
     static std::once_flag stop_mutex;
-    std::call_once(stop_mutex, [&](){ stopped_.set_value(ec); });
+    std::call_once(stop_mutex, [&](){ stopping_.set_value(ec); });
 }
 
-void executor::monitor_stop()
-{
-    // Wait for stop on this thread.
-    stopped_.get_future().wait();
-
-    log::info(LOG_NODE) << BS_NODE_UNMAPPING;
-
-    // This must be called from main thread.
-    node_->close();
-    node_.reset();
-
-    // This is the end of the stop sequence.
-    log::info(LOG_NODE) << BS_NODE_STOPPED;
-}
 
 // Utilities.
 // ----------------------------------------------------------------------------
@@ -263,18 +261,18 @@ void executor::monitor_stop()
 // Set up logging.
 void executor::initialize_output()
 {
-    log::debug(LOG_NODE) << BS_LOG_HEADER;
-    log::info(LOG_NODE) << BS_LOG_HEADER;
-    log::warning(LOG_NODE) << BS_LOG_HEADER;
-    log::error(LOG_NODE) << BS_LOG_HEADER;
-    log::fatal(LOG_NODE) << BS_LOG_HEADER;
+    log::debug(LOG_SERVER) << BS_LOG_HEADER;
+    log::info(LOG_SERVER) << BS_LOG_HEADER;
+    log::warning(LOG_SERVER) << BS_LOG_HEADER;
+    log::error(LOG_SERVER) << BS_LOG_HEADER;
+    log::fatal(LOG_SERVER) << BS_LOG_HEADER;
 
     const auto& file = metadata_.configured.file;
 
     if (file.empty())
-        log::info(LOG_NODE) << BS_USING_DEFAULT_CONFIG;
+        log::info(LOG_SERVER) << BS_USING_DEFAULT_CONFIG;
     else
-        log::info(LOG_NODE) << format(BS_USING_CONFIG_FILE) % file;
+        log::info(LOG_SERVER) << format(BS_USING_CONFIG_FILE) % file;
 }
 
 // Use missing directory as a sentinel indicating lack of initialization.
@@ -288,12 +286,12 @@ bool executor::verify_directory()
 
     if (ec.value() == directory_not_found)
     {
-        log::error(LOG_NODE) << format(BS_UNINITIALIZED_CHAIN) % directory;
+        log::error(LOG_SERVER) << format(BS_UNINITIALIZED_CHAIN) % directory;
         return false;
     }
 
     const auto message = ec.message();
-    log::error(LOG_NODE) << format(BS_INITCHAIN_TRY) % directory % message;
+    log::error(LOG_SERVER) << format(BS_INITCHAIN_TRY) % directory % message;
     return false;
 }
 

@@ -32,12 +32,24 @@ bool incoming::receive(zmq::socket& socket)
 {
     zmq::message message;
 
-    if (!message.receive(socket) || message.size() < 3 || message.size() > 4)
+    // BUGBUG: this supports only single hop routing (zero or one address).
+    if (!message.receive(socket) || message.size() < 3 || message.size() > 5)
         return false;
 
-    // Optional, ROUTER sockets strip this.
-    if (message.size() == 4)
+    if (message.size() == 5)
+    {
+        // Delimited requests are new in v3 and backward compatible.
+        // REQ adds addressing frame and delimiter.
         address = message.dequeue_data();
+        message.dequeue();
+    }
+    else if (message.size() == 4)
+    {
+        // TODO: our client dealer should prepend the delimiter frame.
+        // See: zeromq.org/tutorials:dealer-and-router
+        // DEALER adds addressing frame only.
+        address = message.dequeue_data();
+    }
 
     command = message.dequeue_text();
 

@@ -35,5 +35,6 @@
 #include <bitcoin/server/utility/address_notifier.hpp>
 #include <bitcoin/server/utility/curve_authenticator.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
+#include <bitcoin/server/workers/query_worker.hpp>
 
 #endif

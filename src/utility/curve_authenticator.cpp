@@ -38,7 +38,7 @@ curve_authenticator::curve_authenticator(server_node& node)
 
     for (const auto& address: settings.client_addresses)
     {
-        log::info(LOG_SERVICE)
+        log::info(LOG_SERVER)
             << "Allow client address [" << address
             << (address.port() == 0 ? ":*" : "") << "]";
 
@@ -47,7 +47,7 @@ curve_authenticator::curve_authenticator(server_node& node)
 
     for (const auto& public_key: settings.client_public_keys)
     {
-        log::info(LOG_SERVICE)
+        log::info(LOG_SERVER)
             << "Allow client public key [" << public_key << "]";
 
         allow(public_key);
@@ -60,20 +60,20 @@ bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
     // This will fail if there are client keys but no server key.
     if (!authenticator::apply(socket, domain, secure))
     {
-        log::error(LOG_SERVICE)
-            << "Failed configuring authentication for [" << domain << "]";
+        log::error(LOG_SERVER)
+            << "Failed to apply authentication to socket [" << domain << "]";
         return false;
     }
 
     if (secure)
     {
-        log::debug(LOG_SERVICE)
-            << "Configured secure endpoint [" << domain << "]";
+        log::debug(LOG_SERVER)
+            << "Applied CURVE to socket [" << domain << "]";
     }
     else
     {
-        log::debug(LOG_SERVICE)
-            << "Configured public endpoint [" << domain << "]";
+        log::debug(LOG_SERVER)
+            << "Applied NULL to socket [" << domain << "]";
     }
 
     return true;

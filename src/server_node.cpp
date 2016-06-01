@@ -42,14 +42,9 @@ server_node::server_node(const configuration& configuration)
     configuration_(configuration),
     last_checkpoint_height_(configuration.last_checkpoint_height()),
     authenticator_(*this),
-    secure_query_endpoint_(authenticator_, *this, true),
-    secure_heart_endpoint_(authenticator_, *this, true),
-    secure_block_endpoint_(authenticator_, *this, true),
-    secure_trans_endpoint_(authenticator_, *this, true),
-    public_query_endpoint_(authenticator_, *this, false),
-    public_heart_endpoint_(authenticator_, *this, false),
-    public_block_endpoint_(authenticator_, *this, false),
-    public_trans_endpoint_(authenticator_, *this, false)
+    query_worker_(authenticator_, *this),
+    secure_query_service_(authenticator_, *this, true),
+    public_query_service_(authenticator_, *this, false)
 {
 }
 
@@ -78,7 +73,7 @@ void server_node::handle_running(const code& ec, result_handler handler)
         return;
     }
 
-    // Start authenticator and notifier, these log internally.
+    // Start authenticated context.
     if (!authenticator_.start())
     {
         handler(error::operation_failed);
@@ -87,10 +82,7 @@ void server_node::handle_running(const code& ec, result_handler handler)
 
     // Start secure services.
     if (server_settings().server_private_key && (
-        !secure_query_endpoint_.start() ||
-        !secure_heart_endpoint_.start() ||
-        !secure_block_endpoint_.start() ||
-        !secure_trans_endpoint_.start()))
+        !secure_query_service_.start()))
     {
         handler(error::operation_failed);
         return;
@@ -98,10 +90,14 @@ void server_node::handle_running(const code& ec, result_handler handler)
 
     // Start public services.
     if (!server_settings().secure_only && (
-        !public_query_endpoint_.start() ||
-        !public_heart_endpoint_.start() ||
-        !public_block_endpoint_.start() ||
-        !public_trans_endpoint_.start()))
+        !public_query_service_.start()))
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    // Start workers.
+    if (!query_worker_.start())
     {
         handler(error::operation_failed);
         return;
@@ -124,7 +120,6 @@ void server_node::handle_running(const code& ec, result_handler handler)
 // Stop sequence.
 // ----------------------------------------------------------------------------
 
-// This must be called from the thread that constructed this class (zeromq).
 void server_node::stop(result_handler handler)
 {
     // Critical Section
@@ -141,17 +136,11 @@ void server_node::stop(result_handler handler)
     block_mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    public_query_endpoint_.stop();
-    public_heart_endpoint_.stop();
-    public_block_endpoint_.stop();
-    public_trans_endpoint_.stop();
+    ////query_worker_.stop();
+    ////secure_query_service_.stop();
+    ////public_query_service_.stop();
 
-    secure_query_endpoint_.stop();
-    secure_heart_endpoint_.stop();
-    secure_block_endpoint_.stop();
-    secure_trans_endpoint_.stop();
-
-    // The authenticated context blocks until all related sockets are closed.
+    // Signals close and blocks until all sockets are closed.
     authenticator_.stop();
 
     // This is invoked on a new thread.
@@ -234,7 +223,7 @@ bool server_node::handle_new_transaction(const code& ec,
 
     if (ec)
     {
-        log::error(LOG_NODE)
+        log::error(LOG_SERVER)
             << "Failure handling new tx: " << ec.message();
         return false;
     }
@@ -264,7 +253,7 @@ bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
 
     if (ec)
     {
-        log::error(LOG_NODE)
+        log::error(LOG_SERVER)
             << "Failure handling new blocks: " << ec.message();
         return false;
     }

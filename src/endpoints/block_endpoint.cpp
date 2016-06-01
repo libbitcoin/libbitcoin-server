@@ -53,6 +53,12 @@ static inline config::endpoint get_endpoint(server_node& node, bool secure)
         settings.public_block_endpoint;
 }
 
+// ZMQ_PUSH (we might want ZMQ_SUB here)
+// When a ZMQ_PUSH socket enters an exceptional state due to having reached the
+// high water mark for all downstream nodes, or if there are no downstream
+// nodes at all, then any zmq_send(3) operations on the socket shall block
+// until the exceptional state ends or at least one downstream node becomes
+//available for sending; messages are not discarded.
 block_endpoint::block_endpoint(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : node_(node),
@@ -75,22 +81,15 @@ bool block_endpoint::start()
     if (!enabled_)
         return true;
 
-    if (!socket_)
+    if (!socket_ || !socket_.bind(endpoint_))
     {
-        log::error(LOG_ENDPOINT)
-            << "Failed to initialize block publisher.";
-        return false;
-    }
-
-    if (!socket_.bind(endpoint_))
-    {
-        log::error(LOG_ENDPOINT)
-            << "Failed to bind block publisher to " << endpoint_;
+        log::error(LOG_SERVER)
+            << "Failed to bind block publish service to " << endpoint_;
         stop();
         return false;
     }
 
-    log::info(LOG_ENDPOINT)
+    log::info(LOG_SERVER)
         << "Bound " << (secure_ ? "secure " : "public ")
         << "block publish service to " << endpoint_;
 
@@ -104,14 +103,16 @@ bool block_endpoint::start()
 
 bool block_endpoint::stop()
 {
-    if (socket_)
-        log::debug(LOG_ENDPOINT)
-            << "Unbound " << (secure_ ? "secure " : "public ")
-            << "block publish service to " << endpoint_;
+    if (!socket_ || socket_.stop())
+        return true;
+    
+    log::debug(LOG_SERVER)
+        << "Failed to unbind block publish service from " << endpoint_;
 
-    return socket_.stop();
+    return false;
 }
 
+// BUGBUG: this must be translated to the socket thread.
 void block_endpoint::send(uint32_t height, const block::ptr block)
 {
     zmq::message message;
@@ -121,9 +122,11 @@ void block_endpoint::send(uint32_t height, const block::ptr block)
     for (const auto& tx: block->transactions)
         message.enqueue(tx.hash());
 
-    if (!message.send(socket_))
-        log::warning(LOG_ENDPOINT)
-            << "Failure publishing block data.";
+    if (message.send(socket_))
+        return;
+
+    log::warning(LOG_SERVER)
+        << "Failed to publish block on " << endpoint_;
 }
 
 } // namespace server

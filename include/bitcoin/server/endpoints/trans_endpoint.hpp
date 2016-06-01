@@ -32,7 +32,6 @@ namespace server {
 
 class server_node;
 
-/// This class must be constructed as a shared pointer.
 class BCS_API trans_endpoint
   : public enable_shared_from_base<trans_endpoint>
 {
@@ -47,10 +46,10 @@ public:
     trans_endpoint(const trans_endpoint&) = delete;
     void operator=(const trans_endpoint&) = delete;
 
-    /// Subscribe to transaction notifications and relay transactions.
+    /// Start the endpoint.
     bool start();
 
-    /// Stop the socket.
+    /// Stop the endpoint.
     bool stop();
 
 private:
