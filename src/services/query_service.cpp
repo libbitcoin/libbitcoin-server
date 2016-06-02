@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/endpoints/query_endpoint.hpp>
+#include <bitcoin/server/services/query_service.hpp>
 
 #include <string>
 #include <bitcoin/protocol.hpp>
@@ -29,9 +29,9 @@ namespace server {
 using namespace bc::config;
 using namespace bc::protocol;
 
-const config::endpoint query_endpoint::workers("inproc://query_workers");
+const config::endpoint query_service::workers("inproc://query_workers");
 
-query_endpoint::query_endpoint(zmq::authenticator& authenticator,
+query_service::query_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
     secure_(secure),
@@ -41,7 +41,7 @@ query_endpoint::query_endpoint(zmq::authenticator& authenticator,
 {
 }
 
-bool query_endpoint::start()
+bool query_service::start()
 {
     if (!enabled_)
         return true;
@@ -59,7 +59,7 @@ bool query_endpoint::start()
     return true;
 }
 
-bool query_endpoint::stop()
+bool query_service::stop()
 {
     if (!zmq::worker::stop())
     {
@@ -76,10 +76,10 @@ bool query_endpoint::stop()
 
 // Implement worker as a broker.
 // TODO: implement as a load balancing broker.
-void query_endpoint::work()
+void query_service::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
-    zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
+    zmq::socket dealer(authenticator_, zmq::socket::role::router);
 
     const auto result = 
         authenticator_.apply(router, get_domain(true, secure_), secure_) &&
@@ -99,24 +99,24 @@ void query_endpoint::work()
 // Utilities.
 //-----------------------------------------------------------------------------
 
-std::string query_endpoint::get_domain(bool service, bool secure)
+std::string query_service::get_domain(bool service, bool secure)
 {
     const std::string prefix = secure ? "secure" : "public";
     const std::string suffix = service ? "service" : "worker";
     return prefix + "_query_" + suffix;
 }
 
-config::endpoint query_endpoint::get_service(server_node& node, bool secure)
+config::endpoint query_service::get_service(server_node& node, bool secure)
 {
     const auto& settings = node.server_settings();
     return secure ? settings.secure_query_endpoint :
         settings.public_query_endpoint;
 }
 
-bool query_endpoint::is_enabled(server_node& node, bool secure)
+bool query_service::is_enabled(server_node& node, bool secure)
 {
     const auto& settings = node.server_settings();
-    return settings.query_endpoints_enabled &&
+    return settings.query_service_enabled &&
         (!secure || settings.server_private_key);
 }
 

@@ -17,49 +17,53 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TRANS_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_TRANS_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_QUERY_SERVICE_HPP
+#define LIBBITCOIN_SERVER_QUERY_SERVICE_HPP
 
-#include <cstdint>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
 
-class BCS_API trans_endpoint
-  : public enable_shared_from_base<trans_endpoint>
+class BCS_API query_service
+  : public bc::protocol::zmq::worker
 {
 public:
-    typedef std::shared_ptr<trans_endpoint> ptr;
+    typedef std::shared_ptr<query_service> ptr;
 
-    /// Construct a transaction endpoint.
-    trans_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    /// The fixed inprocess workers endpoint.
+    static const config::endpoint workers;
+
+    /// Construct a query service.
+    query_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// This class is not copyable.
-    trans_endpoint(const trans_endpoint&) = delete;
-    void operator=(const trans_endpoint&) = delete;
+    /// Start the service (restartable).
+    bool start() override;
 
-    /// Start the endpoint.
-    bool start();
-
-    /// Stop the endpoint.
-    bool stop();
+    /// Stop the service (idempotent).
+    bool stop() override;
 
 private:
-    void send(const chain::transaction& tx);
+    static std::string get_domain(bool service, bool secure);
+    static config::endpoint get_service(server_node& node, bool secure);
+    static bool is_enabled(server_node& node, bool secure);
 
-    server_node& node_;
-    bc::protocol::zmq::socket socket_;
-    const bc::config::endpoint endpoint_;
-    const bool enabled_;
+    // Implement the service.
+    virtual void work();
+
     const bool secure_;
+    const bool enabled_;
+    const bc::config::endpoint service_;
+
+    // This is thread safe.
+    bc::protocol::zmq::authenticator& authenticator_;
 };
 
 } // namespace server

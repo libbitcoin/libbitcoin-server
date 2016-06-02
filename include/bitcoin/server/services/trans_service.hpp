@@ -17,57 +17,47 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_HEART_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_HEART_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
+#define LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
 
-#include <atomic>
-#include <chrono>
 #include <cstdint>
-#include <future>
 #include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
 
-class BCS_API heart_endpoint
-  : public enable_shared_from_base<heart_endpoint>
+class BCS_API trans_service
+  : public enable_shared_from_base<trans_service>
 {
 public:
-    typedef std::shared_ptr<heart_endpoint> ptr;
+    typedef std::shared_ptr<trans_service> ptr;
 
-    /// Construct a heartbeat endpoint.
-    heart_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    /// Construct a transaction endpoint.
+    trans_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
     /// This class is not copyable.
-    heart_endpoint(const heart_endpoint&) = delete;
-    void operator=(const heart_endpoint&) = delete;
+    trans_service(const trans_service&) = delete;
+    void operator=(const trans_service&) = delete;
 
     /// Start the endpoint.
     bool start();
 
     /// Stop the endpoint.
-    /// Stopping the authenticated context does not stop the publisher.
     bool stop();
 
 private:
-    void publisher(std::promise<code>& started);
-    void send(uint32_t count, bc::protocol::zmq::socket& socket);
+    void send(const chain::transaction& tx);
 
-    // These are protected by mutex.
-    bc::protocol::zmq::authenticator& authenticator_;
-    dispatcher dispatch_;
-    std::atomic<bool> stopped_;
-    std::promise<code> stopping_;
-    mutable shared_mutex mutex_;
-
+    server_node& node_;
+    bc::protocol::zmq::socket socket_;
     const bc::config::endpoint endpoint_;
-    const std::chrono::seconds interval_;
-    const bool log_;
     const bool enabled_;
     const bool secure_;
 };

@@ -28,10 +28,10 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/endpoints/block_endpoint.hpp>
-#include <bitcoin/server/endpoints/heart_endpoint.hpp>
-#include <bitcoin/server/endpoints/query_endpoint.hpp>
-#include <bitcoin/server/endpoints/trans_endpoint.hpp>
+#include <bitcoin/server/services/block_service.hpp>
+#include <bitcoin/server/services/heart_service.hpp>
+#include <bitcoin/server/services/query_service.hpp>
+#include <bitcoin/server/services/trans_service.hpp>
 #include <bitcoin/server/utility/address_notifier.hpp>
 #include <bitcoin/server/utility/curve_authenticator.hpp>
 #include <bitcoin/server/workers/query_worker.hpp>
@@ -106,8 +106,8 @@ private:
     // These are thread safe.
     curve_authenticator authenticator_;
     query_worker query_worker_;
-    query_endpoint secure_query_service_;
-    query_endpoint public_query_service_;
+    query_service secure_query_endpoint_;
+    query_service public_query_endpoint_;
 
     // This is protected by block mutex.
     block_notify_list block_subscriptions_;

@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_BLOCK_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_BLOCK_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
+#define LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
 
 #include <cstdint>
 #include <memory>
@@ -32,19 +32,19 @@ namespace server {
 
 class server_node;
 
-class BCS_API block_endpoint
-  : public enable_shared_from_base<block_endpoint>
+class BCS_API block_service
+  : public enable_shared_from_base<block_service>
 {
 public:
-    typedef std::shared_ptr<block_endpoint> ptr;
+    typedef std::shared_ptr<block_service> ptr;
 
     /// Construct a block endpoint.
-    block_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    block_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
     /// This class is not copyable.
-    block_endpoint(const block_endpoint&) = delete;
-    void operator=(const block_endpoint&) = delete;
+    block_service(const block_service&) = delete;
+    void operator=(const block_service&) = delete;
 
     /// Start the endpoint.
     bool start();

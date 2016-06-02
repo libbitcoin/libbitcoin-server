@@ -43,8 +43,8 @@ server_node::server_node(const configuration& configuration)
     last_checkpoint_height_(configuration.last_checkpoint_height()),
     authenticator_(*this),
     query_worker_(authenticator_, *this),
-    secure_query_service_(authenticator_, *this, true),
-    public_query_service_(authenticator_, *this, false)
+    secure_query_endpoint_(authenticator_, *this, true),
+    public_query_endpoint_(authenticator_, *this, false)
 {
 }
 
@@ -82,7 +82,7 @@ void server_node::handle_running(const code& ec, result_handler handler)
 
     // Start secure services.
     if (server_settings().server_private_key && (
-        !secure_query_service_.start()))
+        !secure_query_endpoint_.start()))
     {
         handler(error::operation_failed);
         return;
@@ -90,7 +90,7 @@ void server_node::handle_running(const code& ec, result_handler handler)
 
     // Start public services.
     if (!server_settings().secure_only && (
-        !public_query_service_.start()))
+        !public_query_endpoint_.start()))
     {
         handler(error::operation_failed);
         return;
@@ -137,8 +137,8 @@ void server_node::stop(result_handler handler)
     ///////////////////////////////////////////////////////////////////////////
 
     ////query_worker_.stop();
-    ////secure_query_service_.stop();
-    ////public_query_service_.stop();
+    ////secure_query_endpoint_.stop();
+    ////public_query_endpoint_.stop();
 
     // Signals close and blocks until all sockets are closed.
     authenticator_.stop();

@@ -17,12 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_QUERY_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_QUERY_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_HEART_SERVICE_HPP
+#define LIBBITCOIN_SERVER_HEART_SERVICE_HPP
 
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <future>
 #include <memory>
-#include <string>
-#include <unordered_map>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 
@@ -31,39 +33,43 @@ namespace server {
 
 class server_node;
 
-class BCS_API query_endpoint
-  : public bc::protocol::zmq::worker
+class BCS_API heart_service
+  : public enable_shared_from_base<heart_service>
 {
 public:
-    typedef std::shared_ptr<query_endpoint> ptr;
+    typedef std::shared_ptr<heart_service> ptr;
 
-    /// The fixed inprocess workers endpoint.
-    static const config::endpoint workers;
-
-    /// Construct a query service.
-    query_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    /// Construct a heartbeat endpoint.
+    heart_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// Start the service (restartable).
-    bool start() override;
+    /// This class is not copyable.
+    heart_service(const heart_service&) = delete;
+    void operator=(const heart_service&) = delete;
 
-    /// Stop the service (idempotent).
-    bool stop() override;
+    /// Start the endpoint.
+    bool start();
+
+    /// Stop the endpoint.
+    /// Stopping the authenticated context does not stop the publisher.
+    bool stop();
 
 private:
-    static std::string get_domain(bool service, bool secure);
-    static config::endpoint get_service(server_node& node, bool secure);
-    static bool is_enabled(server_node& node, bool secure);
+    void publisher(std::promise<code>& started);
+    void send(uint32_t count, bc::protocol::zmq::socket& socket);
 
-    // Implement the service.
-    virtual void work();
-
-    const bool secure_;
-    const bool enabled_;
-    const bc::config::endpoint service_;
-
-    // This is thread safe.
+    // These are protected by mutex.
     bc::protocol::zmq::authenticator& authenticator_;
+    dispatcher dispatch_;
+    std::atomic<bool> stopped_;
+    std::promise<code> stopping_;
+    mutable shared_mutex mutex_;
+
+    const bc::config::endpoint endpoint_;
+    const std::chrono::seconds interval_;
+    const bool log_;
+    const bool enabled_;
+    const bool secure_;
 };
 
 } // namespace server

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/endpoints/heart_endpoint.hpp>
+#include <bitcoin/server/services/heart_service.hpp>
 
 #include <algorithm>
 #include <cstdint>
@@ -42,7 +42,7 @@ using namespace bc::protocol;
 static inline bool is_enabled(server_node& node, bool secure)
 {
     const auto& settings = node.server_settings();
-    return settings.heartbeat_endpoints_enabled &&
+    return settings.heartbeat_service_enabled &&
         settings.heartbeat_interval_seconds > 0 &&
         (!secure || settings.server_private_key);
 }
@@ -64,7 +64,7 @@ static inline seconds get_interval(server_node& node)
 // the high water mark for a subscriber, then any messages that would be sent
 // to the subscriber in question shall instead be dropped until the exceptional
 // state ends. The zmq_send() function shall never block for this socket type.
-heart_endpoint::heart_endpoint(zmq::authenticator& authenticator,
+heart_service::heart_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : authenticator_(authenticator),
     dispatch_(node.thread_pool(), NAME),
@@ -78,7 +78,7 @@ heart_endpoint::heart_endpoint(zmq::authenticator& authenticator,
 }
 
 // The endpoint is restartable.
-bool heart_endpoint::start()
+bool heart_service::start()
 {
     if (!enabled_)
         return true;
@@ -97,7 +97,7 @@ bool heart_endpoint::start()
 
         // Create the pubisher thread and socket and start sending.
         dispatch_.concurrent(
-            std::bind(&heart_endpoint::publisher,
+            std::bind(&heart_service::publisher,
                 this, std::ref(started)));
 
         // Wait on publisher start.
@@ -120,7 +120,7 @@ bool heart_endpoint::start()
     return true;
 }
 
-bool heart_endpoint::stop()
+bool heart_service::stop()
 {
     code ec(error::success);
 
@@ -154,7 +154,7 @@ bool heart_endpoint::stop()
 }
 
 // A context stop does not stop the publisher.
-void heart_endpoint::publisher(std::promise<code>& started)
+void heart_service::publisher(std::promise<code>& started)
 {
     const auto name = secure_ ? SECURE_NAME : PUBLIC_NAME;
     zmq::socket socket(authenticator_, zmq::socket::role::publisher);
@@ -183,7 +183,7 @@ void heart_endpoint::publisher(std::promise<code>& started)
     stopping_.set_value(result);
 }
 
-void heart_endpoint::send(uint32_t count, zmq::socket& socket)
+void heart_service::send(uint32_t count, zmq::socket& socket)
 {
     zmq::message message;
     message.enqueue_little_endian(count);

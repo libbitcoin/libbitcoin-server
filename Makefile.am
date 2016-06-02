@@ -39,16 +39,16 @@ src_libbitcoin_server_la_SOURCES = \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
-    src/endpoints/block_endpoint.cpp \
-    src/endpoints/heart_endpoint.cpp \
-    src/endpoints/query_endpoint.cpp \
-    src/endpoints/trans_endpoint.cpp \
     src/interface/address.cpp \
     src/interface/blockchain.cpp \
     src/interface/protocol.cpp \
     src/interface/transaction_pool.cpp \
     src/messages/incoming.cpp \
     src/messages/outgoing.cpp \
+    src/services/block_service.cpp \
+    src/services/heart_service.cpp \
+    src/services/query_service.cpp \
+    src/services/trans_service.cpp \
     src/utility/address_notifier.cpp \
     src/utility/curve_authenticator.cpp \
     src/utility/fetch_helpers.cpp \
@@ -99,13 +99,6 @@ include_bitcoin_server_HEADERS = \
     include/bitcoin/server/settings.hpp \
     include/bitcoin/server/version.hpp
 
-include_bitcoin_server_endpointsdir = ${includedir}/bitcoin/server/endpoints
-include_bitcoin_server_endpoints_HEADERS = \
-    include/bitcoin/server/endpoints/block_endpoint.hpp \
-    include/bitcoin/server/endpoints/heart_endpoint.hpp \
-    include/bitcoin/server/endpoints/query_endpoint.hpp \
-    include/bitcoin/server/endpoints/trans_endpoint.hpp
-
 include_bitcoin_server_interfacedir = ${includedir}/bitcoin/server/interface
 include_bitcoin_server_interface_HEADERS = \
     include/bitcoin/server/interface/address.hpp \
@@ -117,6 +110,13 @@ include_bitcoin_server_messagesdir = ${includedir}/bitcoin/server/messages
 include_bitcoin_server_messages_HEADERS = \
     include/bitcoin/server/messages/incoming.hpp \
     include/bitcoin/server/messages/outgoing.hpp
+
+include_bitcoin_server_servicesdir = ${includedir}/bitcoin/server/services
+include_bitcoin_server_services_HEADERS = \
+    include/bitcoin/server/services/block_service.hpp \
+    include/bitcoin/server/services/heart_service.hpp \
+    include/bitcoin/server/services/query_service.hpp \
+    include/bitcoin/server/services/trans_service.hpp
 
 include_bitcoin_server_utilitydir = ${includedir}/bitcoin/server/utility
 include_bitcoin_server_utility_HEADERS = \

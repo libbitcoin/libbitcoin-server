@@ -45,10 +45,10 @@ public:
     bool log_requests;
     bool secure_only;
 
-    bool query_endpoints_enabled;
-    bool heartbeat_endpoints_enabled;
-    bool block_endpoints_enabled;
-    bool transaction_endpoints_enabled;
+    bool query_service_enabled;
+    bool heartbeat_service_enabled;
+    bool block_service_enabled;
+    bool transaction_service_enabled;
 
     config::endpoint public_query_endpoint;
     config::endpoint public_heartbeat_endpoint;

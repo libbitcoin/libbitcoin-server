@@ -39,7 +39,7 @@ using namespace bc::protocol;
 query_worker::query_worker(zmq::context& context, server_node& node)
   : worker(node.thread_pool()),
     log_(node.server_settings().log_requests),
-    enabled_(node.server_settings().query_endpoints_enabled),
+    enabled_(node.server_settings().query_service_enabled),
     address_notifier_(node),
     context_(context)
 {
@@ -54,12 +54,12 @@ bool query_worker::start()
     {
         log::error(LOG_SERVER)
             << "Failed to bind inproc query worker to "
-            << query_endpoint::workers;
+            << query_service::workers;
         return false;
     }
 
     log::debug(LOG_SERVER)
-        << "Bound inproc query worker to " << query_endpoint::workers;
+        << "Bound inproc query worker to " << query_service::workers;
     return true;
 }
 
@@ -69,12 +69,12 @@ bool query_worker::stop()
     {
         log::error(LOG_SERVER)
             << "Failed to unbind inproc query worker from "
-            << query_endpoint::workers;
+            << query_service::workers;
         return false;
     }
 
     log::debug(LOG_SERVER)
-        << "Unbound inproc query worker from " << query_endpoint::workers;
+        << "Unbound inproc query worker from " << query_service::workers;
     return true;
 }
 
@@ -82,9 +82,9 @@ bool query_worker::stop()
 // A replier requires strict receive-send ordering.
 void query_worker::work()
 {
-    zmq::socket replier(context_, zmq::socket::role::replier);
+    zmq::socket replier(context_, zmq::socket::role::requester);
 
-    if (!started(replier.connect(query_endpoint::workers)))
+    if (!started(replier.connect(query_service::workers)))
         return;
 
     zmq::poller poller;
@@ -94,8 +94,6 @@ void query_worker::work()
     {
         if (!poller.wait().contains(replier.id()))
             continue;
-
-        // In order to handle asynchronous reply we need a router here.
 
         // NOTE: v2 libbitcoin-client DEALER does not add delimiter frame.
         zmq::message request;

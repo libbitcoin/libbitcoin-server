@@ -313,24 +313,24 @@ options_metadata parser::load_settings()
         "Disable public endpoints, defaults to false."
     )
     (
-        "server.query_endpoints_enabled",
-        value<bool>(&configured.server.query_endpoints_enabled),
-        "Enable the query endpoints, defaults to true."
+        "server.query_service_enabled",
+        value<bool>(&configured.server.query_service_enabled),
+        "Enable the query service, defaults to true."
     )
     (
-        "server.heartbeat_endpoints_enabled",
-        value<bool>(&configured.server.heartbeat_endpoints_enabled),
-        "Enable the heartbeat endpoints, defaults to true."
+        "server.heartbeat_service_enabled",
+        value<bool>(&configured.server.heartbeat_service_enabled),
+        "Enable the heartbeat service, defaults to true."
     )
     (
-        "server.block_endpoints_enabled",
-        value<bool>(&configured.server.block_endpoints_enabled),
-        "Enable the block publishing endpoints, defaults to true."
+        "server.block_service_enabled",
+        value<bool>(&configured.server.block_service_enabled),
+        "Enable the block publishing service, defaults to true."
     )
     (
-        "server.transaction_endpoints_enabled",
-        value<bool>(&configured.server.transaction_endpoints_enabled),
-        "Enable the transaction publishing endpoints, defaults to true."
+        "server.transaction_service_enabled",
+        value<bool>(&configured.server.transaction_service_enabled),
+        "Enable the transaction publishing service, defaults to true."
     )
     (
         "server.public_query_endpoint",
