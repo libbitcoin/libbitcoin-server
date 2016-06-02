@@ -36,8 +36,6 @@ namespace server {
 
 using namespace bc::protocol;
 
-const config::endpoint query_worker::endpoint("inproc://query_worker");
-
 query_worker::query_worker(zmq::context& context, server_node& node)
   : worker(node.thread_pool()),
     log_(node.server_settings().log_requests),
@@ -55,12 +53,13 @@ bool query_worker::start()
     if (!zmq::worker::start())
     {
         log::error(LOG_SERVER)
-            << "Failed to bind inproc query worker to " << endpoint;
+            << "Failed to bind inproc query worker to "
+            << query_endpoint::workers;
         return false;
     }
 
     log::debug(LOG_SERVER)
-        << "Bound inproc query worker to " << endpoint;
+        << "Bound inproc query worker to " << query_endpoint::workers;
     return true;
 }
 
@@ -69,21 +68,23 @@ bool query_worker::stop()
     if (!zmq::worker::stop())
     {
         log::error(LOG_SERVER)
-            << "Failed to unbind inproc query worker from " << endpoint;
+            << "Failed to unbind inproc query worker from "
+            << query_endpoint::workers;
         return false;
     }
 
     log::debug(LOG_SERVER)
-        << "Unbound inproc query worker from " << endpoint;
+        << "Unbound inproc query worker from " << query_endpoint::workers;
     return true;
 }
 
 // Implement worker as a replier.
+// A replier requires strict receive-send ordering.
 void query_worker::work()
 {
     zmq::socket replier(context_, zmq::socket::role::replier);
 
-    if (!started(replier.connect(endpoint)))
+    if (!started(replier.connect(query_endpoint::workers)))
         return;
 
     zmq::poller poller;
@@ -94,10 +95,10 @@ void query_worker::work()
         if (!poller.wait().contains(replier.id()))
             continue;
 
-        // The replier requires strict receive-send ordering.
+        // In order to handle asynchronous reply we need a router here.
 
-        // v2 clients do not add the delimiter frame, causing a failure here.
-        incoming request;
+        // NOTE: v2 libbitcoin-client DEALER does not add delimiter frame.
+        zmq::message request;
         auto result = request.receive(replier);
 
         // Process request->data.
@@ -105,7 +106,6 @@ void query_worker::work()
         ////outgoing response(request, error::success);
         ////result = response.send(replier);
     }
-
 
     // Stop the socket and exit this thread.
     finished(replier.stop());

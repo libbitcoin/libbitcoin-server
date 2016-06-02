@@ -41,10 +41,7 @@ class BCS_API query_worker
 public:
     typedef std::shared_ptr<query_worker> ptr;
 
-    /// The fixed inprocess background worker endpoint.
-    static const config::endpoint endpoint;
-
-    /// Construct a query background worker.
+    /// Construct a query worker.
     query_worker(bc::protocol::zmq::context& context, server_node& node);
 
     /// Start the worker (restartable).

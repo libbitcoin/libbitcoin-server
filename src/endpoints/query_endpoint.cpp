@@ -22,7 +22,6 @@
 #include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/workers/query_worker.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -30,12 +29,14 @@ namespace server {
 using namespace bc::config;
 using namespace bc::protocol;
 
+const config::endpoint query_endpoint::workers("inproc://query_workers");
+
 query_endpoint::query_endpoint(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
     secure_(secure),
     enabled_(is_enabled(node, secure)),
-    foreground_(get_foreground(node, secure)),
+    service_(get_service(node, secure)),
     authenticator_(authenticator)
 {
 }
@@ -48,13 +49,13 @@ bool query_endpoint::start()
     if (!zmq::worker::start())
     {
         log::error(LOG_SERVER)
-            << "Failed to bind query service to " << foreground_;
+            << "Failed to bind query service to " << service_;
         return false;
     }
 
     log::info(LOG_SERVER)
         << "Bound " << (secure_ ? "secure " : "public ")
-        << "query service to " << foreground_;
+        << "query service to " << service_;
     return true;
 }
 
@@ -63,18 +64,18 @@ bool query_endpoint::stop()
     if (!zmq::worker::stop())
     {
         log::error(LOG_SERVER)
-            << "Failed to unbind query service from " << foreground_;
+            << "Failed to unbind query service from " << service_;
         return false;
     }
 
     log::debug(LOG_SERVER)
         << "Unbound " << (secure_ ? "secure " : "public ")
-        << "query service from " << foreground_;
+        << "query service from " << service_;
     return true;
 }
 
-// api.zeromq.org/3-2:zmq-proxy
-// Implement worker as a broker (shared queue proxy). 
+// Implement worker as a broker.
+// TODO: implement as a load balancing broker.
 void query_endpoint::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
@@ -83,7 +84,7 @@ void query_endpoint::work()
     const auto result = 
         authenticator_.apply(router, get_domain(true, secure_), secure_) &&
         authenticator_.apply(dealer, get_domain(false, secure_), false) &&
-        dealer.bind(query_worker::endpoint) && router.bind(foreground_);
+        dealer.bind(workers) && router.bind(service_);
 
     if (!started(result))
         return;
@@ -105,7 +106,7 @@ std::string query_endpoint::get_domain(bool service, bool secure)
     return prefix + "_query_" + suffix;
 }
 
-config::endpoint query_endpoint::get_foreground(server_node& node, bool secure)
+config::endpoint query_endpoint::get_service(server_node& node, bool secure)
 {
     const auto& settings = node.server_settings();
     return secure ? settings.secure_query_endpoint :

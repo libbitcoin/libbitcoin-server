@@ -37,27 +37,30 @@ class BCS_API query_endpoint
 public:
     typedef std::shared_ptr<query_endpoint> ptr;
 
-    /// Construct a query forground worker.
+    /// The fixed inprocess workers endpoint.
+    static const config::endpoint workers;
+
+    /// Construct a query service.
     query_endpoint(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// Start the worker (restartable).
+    /// Start the service (restartable).
     bool start() override;
 
-    /// Stop the worker (idempotent).
+    /// Stop the service (idempotent).
     bool stop() override;
 
 private:
     static std::string get_domain(bool service, bool secure);
-    static config::endpoint get_foreground(server_node& node, bool secure);
+    static config::endpoint get_service(server_node& node, bool secure);
     static bool is_enabled(server_node& node, bool secure);
 
-    // Implement the worker.
+    // Implement the service.
     virtual void work();
 
     const bool secure_;
     const bool enabled_;
-    const bc::config::endpoint foreground_;
+    const bc::config::endpoint service_;
 
     // This is thread safe.
     bc::protocol::zmq::authenticator& authenticator_;
