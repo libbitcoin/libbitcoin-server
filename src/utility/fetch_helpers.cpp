@@ -82,8 +82,7 @@ void send_history_result(const code& ec, const history_compact::list& history,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 // fetch_transaction stuff
@@ -122,8 +121,7 @@ void transaction_fetched(const code& ec, const chain::transaction& tx,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 } // namespace server

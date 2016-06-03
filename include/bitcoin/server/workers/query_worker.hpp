@@ -50,15 +50,11 @@ protected:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    virtual void attach(const std::string& command, command_handler handler);
     virtual void attach_interface();
-
+    virtual void attach(const std::string& command, command_handler handler);
     virtual bool connect(bc::protocol::zmq::socket& socket);
     virtual bool disconnect(bc::protocol::zmq::socket& socket);
-
     virtual void query(bc::protocol::zmq::socket& socket);
-    virtual void handle_query(outgoing& response,
-        bc::protocol::zmq::socket& socket);
 
     // Implement the worker.
     virtual void work();

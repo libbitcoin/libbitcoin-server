@@ -19,7 +19,9 @@
  */
 #include <bitcoin/server/utility/address_notifier.hpp>
 
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <utility>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -31,6 +33,8 @@
 namespace libbitcoin {
 namespace server {
 
+using std::placeholders::_1;
+using std::placeholders::_2;
 using namespace bc::chain;
 using namespace bc::wallet;
 using namespace boost::posix_time;
@@ -47,22 +51,14 @@ address_notifier::address_notifier(server_node& node)
 // Subscribe against the node's tx and block publishers.
 bool address_notifier::start()
 {
-    const auto receive_block = [this](uint32_t height, const block::ptr block)
-    {
-        const auto hash = block->header.hash();
-        for (const auto& tx: block->transactions)
-            scan(height, hash, tx);
-    };
+    node_.subscribe_blocks(
+        std::bind(&address_notifier::receive_block,
+            this, _1, _2));
 
-    const auto receive_tx = [this](const transaction& tx)
-    {
-        scan(0, null_hash, tx);
-    };
+    node_.subscribe_transactions(
+        std::bind(&address_notifier::receive_transaction,
+            this, _1));
 
-    // This allows the subscription manager to capture transactions from both
-    // contexts and search them for payment addresses that match subscriptions.
-    node_.subscribe_blocks(receive_block);
-    node_.subscribe_transactions(receive_tx);
     return true;
 }
 
@@ -71,13 +67,46 @@ bool address_notifier::start()
 
 void address_notifier::subscribe(const incoming& request, send_handler handler)
 {
-    const auto ec = add(request, handler);
+    const auto ec = create(request, handler);
 
     // Send response.
-    outgoing response(request, ec);
+    handler(outgoing(request, ec));
+}
+
+// Create new subscription entry.
+code address_notifier::create(const incoming& request, send_handler handler)
+{
+    subscription_record record;
+
+    if (!deserialize_address(record.prefix, record.type, request.data))
+        return error::bad_stream;
+
+    record.expiry_time = now() + settings_.subscription_expiration();
+    record.locator.handler = std::move(handler);
+    record.locator.address1 = request.address1;
+    record.locator.address2 = request.address2;
+    record.locator.delimited = request.delimited;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    mutex_.lock_upgrade();
+
+    if (subscriptions_.size() >= settings_.subscription_limit)
+    {
+        mutex_.unlock_upgrade();
+        //---------------------------------------------------------------------
+        return error::pool_filled;
+    }
+
+    mutex_.unlock_upgrade_and_lock();
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    subscriptions_.emplace_back(record);
+
+    mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
 
     // This is the end of the subscribe sequence.
-    handler(response);
+    return error::success;
 }
 
 // Renew sequence.
@@ -85,49 +114,94 @@ void address_notifier::subscribe(const incoming& request, send_handler handler)
 
 void address_notifier::renew(const incoming& request, send_handler handler)
 {
-    binary filter;
-    subscribe_type type;
-
-    if (!deserialize_address(filter, type, request.data))
-    {
-        log::warning(LOG_SERVER)
-            << "Incorrect format for subscribe renew.";
-        return;
-    }
-
-    const auto expire_time = now() + settings_.subscription_expiration();
-
-    // Find entry and update expiry_time.
-    for (auto& subscription: subscriptions_)
-    {
-        if (subscription.type != type)
-            continue;
-
-        // TODO: validate that both of these addreses remain consistent.
-
-        // Only update subscriptions which were created by
-        // the same client as this request originated from.
-        if (subscription.address1 != request.address1 ||
-            subscription.address2 != request.address2)
-            continue;
-
-        // Find matching subscription.
-        if (!subscription.prefix.is_prefix_of(filter))
-            continue;
-
-        // Future expiry time.
-        subscription.expiry_time = expire_time;
-    }
+    const auto ec = update(request, handler);
 
     // Send response.
-    outgoing response(request, error::success);
+    handler(outgoing(request, error::success));
+}
+
+// Find subscription record and update expiration.
+code address_notifier::update(const incoming& request, send_handler handler)
+{
+    binary prefix;
+    subscribe_type type;
+
+    if (!deserialize_address(prefix, type, request.data))
+        return error::bad_stream;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    mutex_.lock_upgrade();
+
+    const auto expiry_time = now() + settings_.subscription_expiration();
+
+    for (auto& subscription: subscriptions_)
+    {
+        // TODO: is address1 correct and sufficient?
+        if (subscription.type != type ||
+            subscription.locator.address1 != request.address1 ||
+            !subscription.prefix.is_prefix_of(prefix))
+        {
+            continue;
+        }
+
+        mutex_.unlock_upgrade_and_lock();
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        subscription.expiry_time = expiry_time;
+        //---------------------------------------------------------------------
+        mutex_.unlock_and_lock_upgrade();
+    }
+
+    mutex_.unlock_upgrade();
+    ///////////////////////////////////////////////////////////////////////////
 
     // This is the end of the renew sequence.
-    handler(response);
+    return error::success;
+}
+
+// Pruning sequence.
+// ----------------------------------------------------------------------------
+
+// Delete entries that have expired.
+size_t address_notifier::prune()
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    unique_lock(mutex_);
+
+    const auto current_time = now();
+    const auto start_size = subscriptions_.size();
+
+    for (auto it = subscriptions_.begin(); it != subscriptions_.end();)
+    {
+        if (current_time < it->expiry_time)
+            ++it;
+        else
+            it = subscriptions_.erase(it);
+    }
+
+    // This is the end of the pruning sequence.
+    return start_size - subscriptions_.size();
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 // Scan sequence.
 // ----------------------------------------------------------------------------
+
+void address_notifier::receive_block(uint32_t height, const block::ptr block)
+{
+    const auto hash = block->header.hash();
+
+    for (const auto& transaction: block->transactions)
+        scan(height, hash, transaction);
+
+    prune();
+}
+
+void address_notifier::receive_transaction(const transaction& transaction)
+{
+    scan(0, null_hash, transaction);
+}
 
 void address_notifier::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
@@ -150,154 +224,88 @@ void address_notifier::scan(uint32_t height, const hash_digest& block_hash,
         else if (to_stealth_prefix(prefix, output.script))
             post_stealth_updates(prefix, height, block_hash, tx);
     }
-
-    // This is the end of the scan sequence.
-    // Periodicially sweep old expired entries.
-    // Use the block 10 minute window as a periodic trigger.
-    if (height > 0)
-        sweep();
 }
 
 void address_notifier::post_updates(const payment_address& address,
     uint32_t height, const hash_digest& block_hash, const transaction& tx)
 {
+    subscription_locators locators;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    mutex_.lock_shared();
+
+    for (const auto& subscription: subscriptions_)
+        if (subscription.type == subscribe_type::address &&
+            subscription.prefix.is_prefix_of(address.hash()))
+                locators.push_back(subscription.locator);
+
+    mutex_.unlock_shared();
+    ///////////////////////////////////////////////////////////////////////////
+
+    if (locators.empty())
+        return;
+
     // [ address.version:1 ]
     // [ address.hash:20 ]
     // [ height:4 ]
     // [ block_hash:32 ]
     // [ tx ]
-    static constexpr size_t info_size = sizeof(uint8_t) + short_hash_size +
-        sizeof(uint32_t) + hash_size;
-
-    const auto tx_size64 = tx.serialized_size();
-    BITCOIN_ASSERT(tx_size64 <= max_size_t);
-    const auto tx_size = static_cast<size_t>(tx_size64);
-
-    data_chunk data(info_size + tx_size);
-    auto serial = make_serializer(data.begin());
-    serial.write_byte(address.version());
-    serial.write_short_hash(address.hash());
-    serial.write_4_bytes_little_endian(height);
-    serial.write_hash(block_hash);
-    BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
-
-    // Now write the tx part.
-    data_chunk tx_data = tx.to_data();
-    serial.write_data(tx_data);
-    BITCOIN_ASSERT(serial.iterator() == data.end());
+    const auto data = build_chunk(
+    {
+        to_array(address.version()),
+        address.hash(),
+        to_little_endian(height),
+        block_hash,
+        tx.to_data()
+    });
 
     // Send the result to everyone interested.
-    for (const auto& subscription: subscriptions_)
-    {
-        if (subscription.type != subscribe_type::address)
-            continue;
+    for (const auto& locator: locators)
+        locator.handler(outgoing("address.update", data, locator.address1,
+                locator.address2, locator.delimited));
 
-        if (!subscription.prefix.is_prefix_of(address.hash()))
-            continue;
-
-        outgoing update("address.update", data, subscription.address1,
-            subscription.address2, subscription.delimited);
-
-        subscription.handler(update);
-    }
+    // This is the end of the scan address sequence.
 }
 
 void address_notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
+    subscription_locators locators;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    mutex_.lock_shared();
+
+    for (const auto& subscription: subscriptions_)
+        if (subscription.type == subscribe_type::stealth &&
+            subscription.prefix.is_prefix_of(prefix))
+                locators.push_back(subscription.locator);
+
+    mutex_.unlock_shared();
+    ///////////////////////////////////////////////////////////////////////////
+
+    if (locators.empty())
+        return;
+
     // [ prefix:4 ]
     // [ height:4 ] 
     // [ block_hash:32 ]
     // [ tx ]
-    static constexpr size_t info_size = sizeof(uint32_t) + sizeof(uint32_t) +
-        hash_size;
-
-    const auto tx_size64 = tx.serialized_size();
-    BITCOIN_ASSERT(tx_size64 <= max_size_t);
-    const auto tx_size = static_cast<size_t>(tx_size64);
-
-    data_chunk data(info_size + tx_size);
-    auto serial = make_serializer(data.begin());
-    serial.write_4_bytes_little_endian(prefix);
-    serial.write_4_bytes_little_endian(height);
-    serial.write_hash(block_hash);
-    BITCOIN_ASSERT(serial.iterator() == data.begin() + info_size);
-
-    // Now write the tx part.
-    auto tx_data = tx.to_data();
-    serial.write_data(tx_data);
-    BITCOIN_ASSERT(serial.iterator() == data.end());
+    const auto data = build_chunk(
+    {
+        to_little_endian(prefix),
+        to_little_endian(height),
+        block_hash,
+        tx.to_data()
+    });
 
     // Send the result to everyone interested.
-    for (const auto& subscription: subscriptions_)
-    {
-        if (subscription.type != subscribe_type::stealth)
-            continue;
+    for (const auto& locator: locators)
+        locator.handler(outgoing("address.stealth_update", data,
+            locator.address1, locator.address2, locator.delimited));
 
-        if (!subscription.prefix.is_prefix_of(prefix))
-            continue;
-
-        outgoing update("address.stealth_update", data, subscription.address1,
-            subscription.address2, subscription.delimited);
-
-        subscription.handler(update);
-    }
-}
-
-code address_notifier::add(const incoming& request, send_handler handler)
-{
-    binary address_key;
-    subscribe_type type;
-
-    if (!deserialize_address(address_key, type, request.data))
-    {
-        log::warning(LOG_SERVER)
-            << "Incorrect format for subscribe data.";
-        return error::bad_stream;
-    }
-
-    // Limit absolute number of subscriptions to prevent exhaustion attacks.
-    if (subscriptions_.size() >= settings_.subscription_limit)
-        return error::pool_filled;
-
-    const auto expire_time = now() + settings_.subscription_expiration();
-
-    subscription subscription;
-
-    // Subscription metadata.
-    subscription.type = type;
-    subscription.handler = std::move(handler);
-    subscription.prefix = std::move(address_key);
-    subscription.expiry_time = std::move(expire_time);
-
-    // Client addressing.
-    subscription.address1 = request.address1;
-    subscription.address2 = request.address2;
-    subscription.delimited = request.delimited;
-
-    subscriptions_.emplace_back(subscription);
-    return error::success;
-}
-
-void address_notifier::sweep()
-{
-    const auto current_time = now();
-
-    // Delete entries that have expired.
-    for (auto it = subscriptions_.begin(); it != subscriptions_.end();)
-    {
-        if (current_time > it->expiry_time)
-        {
-            log::debug(LOG_SERVER)
-                << "Deleting expired subscription: " << it->prefix
-                << " from " << encode_base16(it->address1);
-
-            it = subscriptions_.erase(it);
-            continue;
-        }
-
-        ++it;
-    }
+    // This is the end of the scan stealth sequence.
 }
 
 // Utilities

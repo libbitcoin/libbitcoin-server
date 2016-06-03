@@ -172,6 +172,7 @@ void heart_service::publisher(std::promise<code>& started)
     // Pick a random counter start, overflow is okay.
     auto counter = static_cast<uint32_t>(pseudo_random());
 
+    // TODO: use poller against outbound socket, allowing context to close it.
     // A simple loop is optimal and keeps us on a single thread.
     while (!stopped_)
     {

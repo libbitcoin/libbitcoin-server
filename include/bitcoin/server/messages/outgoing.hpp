@@ -54,7 +54,7 @@ private:
     bc::protocol::zmq::message message_;
 };
 
-typedef std::function<void(outgoing&)> send_handler;
+typedef std::function<void(outgoing&&)> send_handler;
 
 } // namespace server
 } // namespace libbitcoin

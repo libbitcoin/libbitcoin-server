@@ -103,8 +103,7 @@ void blockchain::last_height_fetched(const code& ec, size_t last_height,
     serial.write_4_bytes_little_endian(last_height32);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 void blockchain::fetch_block_header(server_node& node,
@@ -165,8 +164,7 @@ void blockchain::block_header_fetched(const code& ec,
     serial.write_data(block_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 void blockchain::fetch_block_transaction_hashes(server_node& node,
@@ -227,8 +225,7 @@ void blockchain::block_transaction_hashes_fetched(const code& ec,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 void blockchain::fetch_transaction_index(server_node& node,
@@ -269,8 +266,7 @@ void blockchain::transaction_index_fetched(const code& ec, size_t block_height,
     serial.write_4_bytes_little_endian(block_height32);
     serial.write_4_bytes_little_endian(index32);
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 void blockchain::fetch_spend(server_node& node, const incoming& request,
@@ -313,8 +309,7 @@ void blockchain::spend_fetched(const code& ec, const chain::input_point& inpoint
     auto raw_inpoint = inpoint.to_data();
     serial.write_data(raw_inpoint);
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 void blockchain::fetch_block_height(server_node& node,
@@ -350,8 +345,7 @@ void blockchain::block_height_fetched(const code& ec, size_t block_height,
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
     serial.write_4_bytes_little_endian(block_height32);
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 void blockchain::fetch_stealth(server_node& node, const incoming& request,
@@ -412,8 +406,7 @@ void blockchain::stealth_fetched(const code& ec,
         serial.write_hash(row.transaction_hash);
     }
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 } // namespace server

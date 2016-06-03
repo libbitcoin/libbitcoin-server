@@ -35,6 +35,7 @@ namespace server {
 
 class server_node;
 
+// This class is thread safe.
 class BCS_API address_notifier
   : public enable_shared_from_base<address_notifier>
 {
@@ -58,21 +59,27 @@ public:
     void renew(const incoming& request, send_handler handler);
 
 private:
-    struct subscription
+    struct subscription_locator
     {
-        binary prefix;
         send_handler handler;
-        chain::subscribe_type type;
-        boost::posix_time::ptime expiry_time;
-
-        // client addressing
         data_chunk address1;
         data_chunk address2;
         bool delimited;
     };
 
-    typedef std::vector<subscription> list;
+    struct subscription_record
+    {
+        binary prefix;
+        chain::subscribe_type type;
+        boost::posix_time::ptime expiry_time;
+        subscription_locator locator;
+    };
 
+    typedef std::vector<subscription_record> subscription_records;
+    typedef std::vector<subscription_locator> subscription_locators;
+
+    void receive_block(uint32_t height, const chain::block::ptr block);
+    void receive_transaction(const chain::transaction& transaction);
     void scan(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
     void post_updates(const wallet::payment_address& address,
@@ -81,14 +88,19 @@ private:
     void post_stealth_updates(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
 
-    void sweep();
-    code add(const incoming& request, send_handler handler);
+    size_t prune();
     boost::posix_time::ptime now();
+    code create(const incoming& request, send_handler handler);
+    code update(const incoming& request, send_handler handler);
     bool deserialize_address(binary& address, chain::subscribe_type& type,
         const data_chunk& data);
 
+    // This is protected by mutex;
+    subscription_records subscriptions_;
+    upgrade_mutex mutex_;
+
+    // This is thread safe.
     server_node& node_;
-    list subscriptions_;
     const settings& settings_;
 };
 
