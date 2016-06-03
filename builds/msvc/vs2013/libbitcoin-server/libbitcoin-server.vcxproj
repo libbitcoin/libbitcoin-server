@@ -74,10 +74,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\block_endpoint.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\heart_endpoint.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\query_endpoint.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\trans_endpoint.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\address.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\protocol.hpp" />
@@ -86,6 +82,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\outgoing.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\block_service.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\heart_service.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\query_service.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\trans_service.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\address_notifier.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\curve_authenticator.hpp" />
@@ -96,10 +96,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\block_endpoint.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpoint.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\query_endpoint.cpp" />
-    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpoint.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\address.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\protocol.cpp" />
@@ -108,6 +104,10 @@
     <ClCompile Include="..\..\..\..\src\messages\outgoing.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\block_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\heart_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\query_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\trans_service.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\utility\address_notifier.cpp" />
     <ClCompile Include="..\..\..\..\src\utility\curve_authenticator.cpp" />

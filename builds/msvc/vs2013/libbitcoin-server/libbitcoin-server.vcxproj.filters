@@ -28,14 +28,8 @@
     <Filter Include="include\bitcoin\server\messages">
       <UniqueIdentifier>{9f17e891-9f2a-4eb0-a2be-65d9ebf5aae1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\endpoints">
-      <UniqueIdentifier>{58adecc3-28cc-4ff0-bb74-3f34bf675ff9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include\bitcoin\server\utility">
       <UniqueIdentifier>{81095e51-7dfd-482b-bf2b-8b88a05591ff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\endpoints">
-      <UniqueIdentifier>{8010b7df-0b56-4fdc-a7ec-a7a80b40f9b9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\utility">
       <UniqueIdentifier>{6284645b-ec72-461f-9046-dfa5ea049fb0}</UniqueIdentifier>
@@ -45,6 +39,12 @@
     </Filter>
     <Filter Include="src\workers">
       <UniqueIdentifier>{db33e05d-a911-44af-9bae-9f224a6254af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\services">
+      <UniqueIdentifier>{fba31d02-f9f2-4e81-886c-5349084778db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\services">
+      <UniqueIdentifier>{551d60af-175f-46c0-ab51-344a3ab8c77f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -88,12 +88,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\incoming.hpp">
       <Filter>include\bitcoin\server\messages</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\query_endpoint.hpp">
-      <Filter>include\bitcoin\server\endpoints</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\block_endpoint.hpp">
-      <Filter>include\bitcoin\server\endpoints</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\address_notifier.hpp">
       <Filter>include\bitcoin\server\utility</Filter>
     </ClInclude>
@@ -103,14 +97,20 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\fetch_helpers.hpp">
       <Filter>include\bitcoin\server\utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\heart_endpoint.hpp">
-      <Filter>include\bitcoin\server\endpoints</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\endpoints\trans_endpoint.hpp">
-      <Filter>include\bitcoin\server\endpoints</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp">
       <Filter>include\bitcoin\server\workers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\query_service.hpp">
+      <Filter>include\bitcoin\server\services</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\trans_service.hpp">
+      <Filter>include\bitcoin\server\services</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\block_service.hpp">
+      <Filter>include\bitcoin\server\services</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\heart_service.hpp">
+      <Filter>include\bitcoin\server\services</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -153,20 +153,20 @@
     <ClCompile Include="..\..\..\..\src\utility\fetch_helpers.cpp">
       <Filter>src\utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\block_endpoint.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\query_endpoint.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\trans_endpoint.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\endpoints\heart_endpoint.cpp">
-      <Filter>src\endpoints</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp">
       <Filter>src\workers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\heart_service.cpp">
+      <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\query_service.cpp">
+      <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\trans_service.cpp">
+      <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\block_service.cpp">
+      <Filter>src\services</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

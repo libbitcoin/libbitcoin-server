@@ -34,148 +34,130 @@
 namespace libbitcoin {
 namespace server {
 
+using std::placeholders::_1;
+using std::placeholders::_2;
 using namespace bc::protocol;
 
-const config::endpoint query_worker::endpoint("inproc://query_worker");
-
-query_worker::query_worker(zmq::context& context, server_node& node)
+query_worker::query_worker(zmq::authenticator& authenticator,
+    server_node& node, bool secure)
   : worker(node.thread_pool()),
-    log_(node.server_settings().log_requests),
-    enabled_(node.server_settings().query_endpoints_enabled),
-    address_notifier_(node),
-    context_(context)
+    secure_(secure),
+    settings_(node.server_settings()),
+    node_(node),
+    authenticator_(authenticator),
+    address_notifier_(node)
 {
+    // The same interface is attached to the secure and public interfaces.
+    attach_interface();
 }
 
-bool query_worker::start()
-{
-    if (!enabled_)
-        return true;
-
-    if (!zmq::worker::start())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to bind inproc query worker to " << endpoint;
-        return false;
-    }
-
-    log::debug(LOG_SERVER)
-        << "Bound inproc query worker to " << endpoint;
-    return true;
-}
-
-bool query_worker::stop()
-{
-    if (!zmq::worker::stop())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to unbind inproc query worker from " << endpoint;
-        return false;
-    }
-
-    log::debug(LOG_SERVER)
-        << "Unbound inproc query worker from " << endpoint;
-    return true;
-}
-
-// Implement worker as a replier.
+// Implement worker as a router.
+// NOTE: v2 libbitcoin-client DEALER does not add delimiter frame.
 void query_worker::work()
 {
-    zmq::socket replier(context_, zmq::socket::role::replier);
+    zmq::socket router(authenticator_, zmq::socket::role::router);
 
-    if (!started(replier.connect(endpoint)))
+    // Connect socket to the worker endpoint.
+    if (!started(connect(router)))
         return;
 
     zmq::poller poller;
-    poller.add(replier);
-
+    poller.add(router);
+    
+    // We can drop messages here because this is a router.
     while (!poller.terminated() && !stopped())
     {
-        if (!poller.wait().contains(replier.id()))
-            continue;
-
-        // The replier requires strict receive-send ordering.
-
-        // v2 clients do not add the delimiter frame, causing a failure here.
-        incoming request;
-        auto result = request.receive(replier);
-
-        // Process request->data.
-
-        ////outgoing response(request, error::success);
-        ////result = response.send(replier);
+        if (poller.wait().contains(router.id()))
+            query(router);
     }
 
+    // Disconnect the socket and exit this thread.
+    finished(disconnect(router));
+}
 
-    // Stop the socket and exit this thread.
-    finished(replier.stop());
+// Connect/Disconnect.
+//-----------------------------------------------------------------------------
+
+bool query_worker::connect(zmq::socket& socket)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& endpoint = secure_ ? query_service::secure_worker :
+        query_service::public_worker;
+
+    if (!socket.connect(endpoint))
+    {
+        log::error(LOG_SERVER)
+            << "Failed to connect " << security << " query worker to "
+            << endpoint;
+        return false;
+    }
+
+    log::debug(LOG_SERVER)
+        << "Connected " << security << " query worker to " << endpoint;
+    return true;
+}
+
+bool query_worker::disconnect(zmq::socket& socket)
+{
+    const auto security = secure_ ? "secure" : "public";
+
+    if (!socket.stop())
+    {
+        log::error(LOG_SERVER)
+            << "Failed to disconnect " << security << " query worker.";
+        return false;
+    }
+
+    // Don't log stop success.
+    return true;
 }
 
 // Utilities.
 //-----------------------------------------------------------------------------
 
-////void query_worker::receive(zmq::socket& socket)
-////{
-////    incoming request;
-////
-////    if (!request.receive(socket))
-////    {
-////        log::warning(LOG_SERVER)
-////            << "Malformed query from "
-////            << encode_base16(request.address);
-////        return;
-////    }
-////
-////    if (log_)
-////    {
-////        log::info(LOG_SERVER)
-////            << "Query " << request.command << " from "
-////            << encode_base16(request.address);
-////    }
-////
-////    // Locate the request handler for this command.
-////    const auto handler = handlers_.find(request.command);
-////
-////    if (handler == handlers_.end())
-////    {
-////        log::warning(LOG_SERVER)
-////            << "Invalid query from "
-////            << encode_base16(request.address);
-////        return;
-////    }
-////
-////    // TODO: wrong endpoint.
-////    // Execute the request if a handler exists and forward result to queue.
-////    handler->second(request,
-////        std::bind(&query_worker::send,
-////            this, _1, std::ref(endpoint_)));
-////}
+void query_worker::query(zmq::socket& socket)
+{
+    incoming request;
 
-////void query_worker::send(outgoing& response, const config::endpoint& query_worker)
-////{
-////    // TODO: make members of query worker.
-////    // TODO: in stop we have no way to detect completion of all callback work.
-////    // TODO: this can only be terminated by thread join. so callback worker
-////    // stop must be non-blocking and the worker and context must be kept in
-////    // scope until thread join. Both stopped_ and context stop will signal
-////    // callback worker stop. Socket destruct won't happen until thread join
-////    // so context must be kept in scope until after node stop.
-////    zmq::context context_;
-////    boost::thread_specific_ptr<zmq::socket> socket_ptr_();
-////
-////    if (!socket_ptr_.get())
-////    {
-////        static const auto role = zmq::socket::role::replier;
-////        socket_ptr_.reset(new zmq::socket(context_, role));
-////        socket_ptr_->bind(query_worker);
-////    }
-////    
-////    if (response.send(*socket_ptr_))
-////        return;
-////
-////    log::warning(LOG_SERVER)
-////        << "Failed to send query response on " << endpoint_;
-////}
+    if (!request.receive(socket))
+    {
+        log::warning(LOG_SERVER)
+            << "Malformed query from " << encode_base16(request.address1);
+        return;
+    }
+
+    if (settings_.log_requests)
+    {
+        log::info(LOG_SERVER)
+            << "Query " << request.command << " from "
+            << encode_base16(request.address1);
+    }
+
+    // Locate the request handler for this command.
+    const auto handler = command_handlers_.find(request.command);
+
+    if (handler == command_handlers_.end())
+    {
+        log::warning(LOG_SERVER)
+            << "Invalid query command from " << encode_base16(request.address1);
+        return;
+    }
+
+    // Execute the request and forward result to queue.
+    handler->second(request,
+        std::bind(&query_worker::handle_query,
+            this, _1, std::ref(socket)));
+}
+
+// This handler is invoked on the receive thread.
+void query_worker::handle_query(outgoing& response, zmq::socket& socket)
+{
+    if (response.send(socket))
+        return;
+
+    log::warning(LOG_SERVER)
+        << "Failed to send query response.";
+}
 
 // Query Interface.
 // ----------------------------------------------------------------------------
@@ -189,38 +171,38 @@ void query_worker::work()
 void query_worker::attach(const std::string& command,
     command_handler handler)
 {
-    handlers_[command] = handler;
+    command_handlers_[command] = handler;
 }
 
 // Class and method names must match protocol expectations (do not change).
 void query_worker::attach_interface()
 {
-    ////// TODO: add total_connections to client.
-    ////ATTACH(protocol, total_connections, node_);
-    ////ATTACH(protocol, broadcast_transaction, node_);
-    ////ATTACH(transaction_pool, validate, node_);
-    ////ATTACH(transaction_pool, fetch_transaction, node_);
+    // TODO: add total_connections to client.
+    ATTACH(protocol, total_connections, node_);
+    ATTACH(protocol, broadcast_transaction, node_);
+    ATTACH(transaction_pool, validate, node_);
+    ATTACH(transaction_pool, fetch_transaction, node_);
 
-    ////// TODO: add fetch_spend to client.
-    ////// TODO: add fetch_block_transaction_hashes to client.
-    ////ATTACH(blockchain, fetch_spend, node_);
-    ////ATTACH(blockchain, fetch_transaction, node_);
-    ////ATTACH(blockchain, fetch_last_height, node_);
-    ////ATTACH(blockchain, fetch_block_header, node_);
-    ////ATTACH(blockchain, fetch_block_height, node_);
-    ////ATTACH(blockchain, fetch_transaction_index, node_);
-    ////ATTACH(blockchain, fetch_stealth, node_);
-    ////ATTACH(blockchain, fetch_history, node_);
-    ////ATTACH(blockchain, fetch_block_transaction_hashes, node_);
+    // TODO: add fetch_spend to client.
+    // TODO: add fetch_block_transaction_hashes to client.
+    ATTACH(blockchain, fetch_spend, node_);
+    ATTACH(blockchain, fetch_transaction, node_);
+    ATTACH(blockchain, fetch_last_height, node_);
+    ATTACH(blockchain, fetch_block_header, node_);
+    ATTACH(blockchain, fetch_block_height, node_);
+    ATTACH(blockchain, fetch_transaction_index, node_);
+    ATTACH(blockchain, fetch_stealth, node_);
+    ATTACH(blockchain, fetch_history, node_);
+    ATTACH(blockchain, fetch_block_transaction_hashes, node_);
 
-    ////// address.fetch_history was present in v1 (obelisk) and v2 (server).
-    ////// address.fetch_history was called by client v1 (sx) and v2 (bx).
-    ////////ATTACH(endpoint, address, fetch_history, node_);
-    ////ATTACH(address, fetch_history2, node_);
+    // address.fetch_history was present in v1 (obelisk) and v2 (server).
+    // address.fetch_history was called by client v1 (sx) and v2 (bx).
+    ////ATTACH(endpoint, address, fetch_history, node_);
+    ATTACH(address, fetch_history2, node_);
 
-    ////// TODO: add renew to client.
-    ////ATTACH(address, renew, address_notifier_);
-    ////ATTACH(address, subscribe, address_notifier_);
+    // TODO: add renew to client.
+    ATTACH(address, renew, address_notifier_);
+    ATTACH(address, subscribe, address_notifier_);
 }
 
 #undef ATTACH

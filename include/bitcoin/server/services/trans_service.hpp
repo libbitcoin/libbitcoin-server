@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TRANS_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_TRANS_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
+#define LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
 
 #include <cstdint>
 #include <memory>
@@ -32,19 +32,19 @@ namespace server {
 
 class server_node;
 
-class BCS_API trans_endpoint
-  : public enable_shared_from_base<trans_endpoint>
+class BCS_API trans_service
+  : public enable_shared_from_base<trans_service>
 {
 public:
-    typedef std::shared_ptr<trans_endpoint> ptr;
+    typedef std::shared_ptr<trans_service> ptr;
 
     /// Construct a transaction endpoint.
-    trans_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    trans_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
     /// This class is not copyable.
-    trans_endpoint(const trans_endpoint&) = delete;
-    void operator=(const trans_endpoint&) = delete;
+    trans_service(const trans_service&) = delete;
+    void operator=(const trans_service&) = delete;
 
     /// Start the endpoint.
     bool start();

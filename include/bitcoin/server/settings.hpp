@@ -39,16 +39,17 @@ public:
     settings(bc::settings context);
 
     /// Properties.
+    uint16_t query_workers;
     uint32_t heartbeat_interval_seconds;
     uint32_t subscription_expiration_minutes;
     uint32_t subscription_limit;
     bool log_requests;
     bool secure_only;
 
-    bool query_endpoints_enabled;
-    bool heartbeat_endpoints_enabled;
-    bool block_endpoints_enabled;
-    bool transaction_endpoints_enabled;
+    bool query_service_enabled;
+    bool heartbeat_service_enabled;
+    bool block_service_enabled;
+    bool transaction_service_enabled;
 
     config::endpoint public_query_endpoint;
     config::endpoint public_heartbeat_endpoint;

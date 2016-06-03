@@ -17,49 +17,48 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_BLOCK_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_BLOCK_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_QUERY_SERVICE_HPP
+#define LIBBITCOIN_SERVER_QUERY_SERVICE_HPP
 
-#include <cstdint>
 #include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
 
-class BCS_API block_endpoint
-  : public enable_shared_from_base<block_endpoint>
+class BCS_API query_service
+  : public bc::protocol::zmq::worker
 {
 public:
-    typedef std::shared_ptr<block_endpoint> ptr;
+    typedef std::shared_ptr<query_service> ptr;
 
-    /// Construct a block endpoint.
-    block_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    /// The fixed inprocess worker endpoints.
+    static const config::endpoint public_worker;
+    static const config::endpoint secure_worker;
+
+    /// Construct a query service.
+    query_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// This class is not copyable.
-    block_endpoint(const block_endpoint&) = delete;
-    void operator=(const block_endpoint&) = delete;
+protected:
+    virtual bool bind(bc::protocol::zmq::socket& router,
+        bc::protocol::zmq::socket& dealer);
+    virtual bool unbind(bc::protocol::zmq::socket& router,
+        bc::protocol::zmq::socket& dealer);
 
-    /// Start the endpoint.
-    bool start();
-
-    /// Stop the endpoint.
-    bool stop();
+    // Implement the service.
+    virtual void work();
 
 private:
-    void send(uint32_t height, const chain::block::ptr block);
-
-    server_node& node_;
-    bc::protocol::zmq::socket socket_;
-    const bc::config::endpoint endpoint_;
-    const bool enabled_;
     const bool secure_;
+    const server::settings& settings_;
+
+    // This is thread safe.
+    bc::protocol::zmq::authenticator& authenticator_;
 };
 
 } // namespace server

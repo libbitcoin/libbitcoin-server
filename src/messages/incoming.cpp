@@ -28,35 +28,47 @@ namespace server {
 
 using namespace bc::protocol;
 
+// Protocol delimitation migration plan.
+//-----------------------------------------------------------------------------
+//    v1/v2 server: ROUTER, requires not framed
+//       v3 server: ROUTER, allows/echos framed
+// v1/v2/v3 client: DEALER (not framed)
+//-----------------------------------------------------------------------------
+//       v4 server: ROUTER, requires framed
+//       v4 client: DEALER (framed) or REQ
+//-----------------------------------------------------------------------------
+
+// TODO: generalize address stripping with hack parameter of expected
+// payload length for parsing undelimited addressing.
 bool incoming::receive(zmq::socket& socket)
 {
     zmq::message message;
 
-    // BUGBUG: this supports only single hop routing (zero or one address).
-    if (!message.receive(socket) || message.size() < 3 || message.size() > 5)
+    if (!message.receive(socket) || message.size() < 5 || message.size() > 6)
         return false;
 
-    if (message.size() == 5)
-    {
-        // Delimited requests are new in v3 and backward compatible.
-        // REQ adds addressing frame and delimiter.
-        address = message.dequeue_data();
-        message.dequeue();
-    }
-    else if (message.size() == 4)
-    {
-        // TODO: our client dealer should prepend the delimiter frame.
-        // See: zeromq.org/tutorials:dealer-and-router
-        // DEALER adds addressing frame only.
-        address = message.dequeue_data();
-    }
+    // Client is undelimited DEALER -> 2 addresses with no delimiter.
+    // Client is REQ or delimited DEALER -> 2 addresses with delimiter.
+    address1 = message.dequeue_data();
+    address2 = message.dequeue_data();
 
+    // In the reply we echo the delimited-ness of the original request.
+    delimited = message.size() == 4;
+
+    if (delimited)
+        message.dequeue();
+
+    // All libbitcoin queries have these three frames.
+    //-------------------------------------------------------------------------
+
+    // Query command (returned to caller).
     command = message.dequeue_text();
 
+    // Arbitrary caller data (returned to caller for correlation).
     if (!message.dequeue(id))
         return false;
 
-    // This copy could be avoided by deferring the dequeue.
+    // Serialized query.
     data = message.dequeue_data();
     return true;
 }

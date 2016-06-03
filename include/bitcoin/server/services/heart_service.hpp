@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_HEART_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_HEART_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_HEART_SERVICE_HPP
+#define LIBBITCOIN_SERVER_HEART_SERVICE_HPP
 
 #include <atomic>
 #include <chrono>
@@ -33,19 +33,19 @@ namespace server {
 
 class server_node;
 
-class BCS_API heart_endpoint
-  : public enable_shared_from_base<heart_endpoint>
+class BCS_API heart_service
+  : public enable_shared_from_base<heart_service>
 {
 public:
-    typedef std::shared_ptr<heart_endpoint> ptr;
+    typedef std::shared_ptr<heart_service> ptr;
 
     /// Construct a heartbeat endpoint.
-    heart_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    heart_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
     /// This class is not copyable.
-    heart_endpoint(const heart_endpoint&) = delete;
-    void operator=(const heart_endpoint&) = delete;
+    heart_service(const heart_service&) = delete;
+    void operator=(const heart_service&) = delete;
 
     /// Start the endpoint.
     bool start();

@@ -20,6 +20,7 @@
 #include <bitcoin/server/utility/address_notifier.hpp>
 
 #include <cstdint>
+#include <utility>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/configuration.hpp>
@@ -34,7 +35,6 @@ using namespace bc::chain;
 using namespace bc::wallet;
 using namespace boost::posix_time;
 
-// TODO: replace with zeromq filtered pub-sub model.
 address_notifier::address_notifier(server_node& node)
   : node_(node),
     settings_(node.server_settings())
@@ -103,9 +103,12 @@ void address_notifier::renew(const incoming& request, send_handler handler)
         if (subscription.type != type)
             continue;
 
+        // TODO: validate that both of these addreses remain consistent.
+
         // Only update subscriptions which were created by
         // the same client as this request originated from.
-        if (subscription.client_origin != request.address)
+        if (subscription.address1 != request.address1 ||
+            subscription.address2 != request.address2)
             continue;
 
         // Find matching subscription.
@@ -183,7 +186,6 @@ void address_notifier::post_updates(const payment_address& address,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 
-    // TODO: can we detect and are we purging send failures?
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
     {
@@ -193,7 +195,8 @@ void address_notifier::post_updates(const payment_address& address,
         if (!subscription.prefix.is_prefix_of(address.hash()))
             continue;
 
-        outgoing update("address.update", data, subscription.client_origin);
+        outgoing update("address.update", data, subscription.address1,
+            subscription.address2, subscription.delimited);
 
         subscription.handler(update);
     }
@@ -225,7 +228,6 @@ void address_notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == data.end());
 
-    // TODO: can we detect and are we purging send failures?
     // Send the result to everyone interested.
     for (const auto& subscription: subscriptions_)
     {
@@ -235,8 +237,8 @@ void address_notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
         if (!subscription.prefix.is_prefix_of(prefix))
             continue;
 
-        outgoing update("address.stealth_update", data,
-            subscription.client_origin);
+        outgoing update("address.stealth_update", data, subscription.address1,
+            subscription.address2, subscription.delimited);
 
         subscription.handler(update);
     }
@@ -258,18 +260,22 @@ code address_notifier::add(const incoming& request, send_handler handler)
     if (subscriptions_.size() >= settings_.subscription_limit)
         return error::pool_filled;
 
-    // Now create subscription.
     const auto expire_time = now() + settings_.subscription_expiration();
-    const subscription new_subscription =
-    {
-        address_key,
-        expire_time,
-        request.address,
-        handler,
-        type
-    };
 
-    subscriptions_.emplace_back(new_subscription);
+    subscription subscription;
+
+    // Subscription metadata.
+    subscription.type = type;
+    subscription.handler = std::move(handler);
+    subscription.prefix = std::move(address_key);
+    subscription.expiry_time = std::move(expire_time);
+
+    // Client addressing.
+    subscription.address1 = request.address1;
+    subscription.address2 = request.address2;
+    subscription.delimited = request.delimited;
+
+    subscriptions_.emplace_back(subscription);
     return error::success;
 }
 
@@ -284,7 +290,7 @@ void address_notifier::sweep()
         {
             log::debug(LOG_SERVER)
                 << "Deleting expired subscription: " << it->prefix
-                << " from " << encode_base16(it->client_origin);
+                << " from " << encode_base16(it->address1);
 
             it = subscriptions_.erase(it);
             continue;

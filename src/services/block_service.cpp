@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/endpoints/block_endpoint.hpp>
+#include <bitcoin/server/services/block_service.hpp>
 
 #include <cstdint>
 #include <cstddef>
@@ -42,7 +42,7 @@ using namespace bc::protocol;
 static inline bool is_enabled(server_node& node, bool secure)
 {
     const auto& settings = node.server_settings();
-    return settings.block_endpoints_enabled &&
+    return settings.block_service_enabled &&
         (!secure || settings.server_private_key);
 }
 
@@ -59,7 +59,7 @@ static inline config::endpoint get_endpoint(server_node& node, bool secure)
 // nodes at all, then any zmq_send(3) operations on the socket shall block
 // until the exceptional state ends or at least one downstream node becomes
 //available for sending; messages are not discarded.
-block_endpoint::block_endpoint(zmq::authenticator& authenticator,
+block_service::block_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : node_(node),
     socket_(authenticator, zmq::socket::role::pusher),
@@ -76,7 +76,7 @@ block_endpoint::block_endpoint(zmq::authenticator& authenticator,
 
 // The endpoint is not restartable.
 // The instance is retained in scope by subscribe_blocks until stopped.
-bool block_endpoint::start()
+bool block_service::start()
 {
     if (!enabled_)
         return true;
@@ -95,13 +95,13 @@ bool block_endpoint::start()
 
     // This is not a libbitcoin re/subscriber.
     node_.subscribe_blocks(
-        std::bind(&block_endpoint::send,
+        std::bind(&block_service::send,
             this, _1, _2));
 
     return true;
 }
 
-bool block_endpoint::stop()
+bool block_service::stop()
 {
     if (!socket_ || socket_.stop())
         return true;
@@ -113,7 +113,7 @@ bool block_endpoint::stop()
 }
 
 // BUGBUG: this must be translated to the socket thread.
-void block_endpoint::send(uint32_t height, const block::ptr block)
+void block_service::send(uint32_t height, const block::ptr block)
 {
     zmq::message message;
     message.enqueue_little_endian(height);

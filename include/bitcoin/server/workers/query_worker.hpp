@@ -28,6 +28,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/utility/address_notifier.hpp>
 
 namespace libbitcoin {
@@ -41,40 +42,38 @@ class BCS_API query_worker
 public:
     typedef std::shared_ptr<query_worker> ptr;
 
-    /// The fixed inprocess background worker endpoint.
-    static const config::endpoint endpoint;
+    /// Construct a query worker.
+    query_worker(bc::protocol::zmq::authenticator& authenticator,
+        server_node& node, bool secure);
 
-    /// Construct a query background worker.
-    query_worker(bc::protocol::zmq::context& context, server_node& node);
-
-    /// Start the worker (restartable).
-    bool start() override;
-
-    /// Stop the worker (idempotent).
-    bool stop() override;
-
-private:
+protected:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void attach_interface();
-    void attach(const std::string& command, command_handler handler);
-    ////void receive(bc::protocol::zmq::socket& socket);
-    ////void send(outgoing& response, const config::endpoint& query_worker);
+    virtual void attach(const std::string& command, command_handler handler);
+    virtual void attach_interface();
+
+    virtual bool connect(bc::protocol::zmq::socket& socket);
+    virtual bool disconnect(bc::protocol::zmq::socket& socket);
+
+    virtual void query(bc::protocol::zmq::socket& socket);
+    virtual void handle_query(outgoing& response,
+        bc::protocol::zmq::socket& socket);
 
     // Implement the worker.
     virtual void work();
 
-    const bool log_;
-    const bool enabled_;
-
-    // These are protected by mutex.
-    command_map handlers_;
-    address_notifier address_notifier_;
-    mutable shared_mutex mutex_;
+private:
+    const bool secure_;
+    const server::settings& settings_;
 
     // This is thread safe.
-    bc::protocol::zmq::context& context_;
+    bc::protocol::zmq::authenticator& authenticator_;
+
+    // These are protected by base class mutex.
+    server_node& node_;
+    command_map command_handlers_;
+    address_notifier address_notifier_;
 };
 
 } // namespace server

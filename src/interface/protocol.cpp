@@ -59,9 +59,6 @@ void protocol::broadcast_transaction(server_node& node,
     // Tell the user everything is fine.
     serial.write_error_code(error::success);
 
-    log::debug(LOG_SERVER)
-        << "protocol.broadcast_transaction() finished. Sending response.";
-
     outgoing response(request, result);
     handler(response);
 }
@@ -87,9 +84,6 @@ void protocol::handle_total_connections(size_t count, const incoming& request,
 
     serial.write_4_bytes_little_endian(total_connections);
     BITCOIN_ASSERT(serial.iterator() == result.end());
-
-    log::debug(LOG_SERVER)
-        << "protocol.total_connections() finished. Sending response.";
 
     outgoing response(request, result);
     handler(response);

@@ -17,50 +17,49 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_QUERY_ENDPOINT_HPP
-#define LIBBITCOIN_SERVER_QUERY_ENDPOINT_HPP
+#ifndef LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
+#define LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
 
+#include <cstdint>
 #include <memory>
-#include <string>
-#include <unordered_map>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
 
-class BCS_API query_endpoint
-  : public bc::protocol::zmq::worker
+class BCS_API block_service
+  : public enable_shared_from_base<block_service>
 {
 public:
-    typedef std::shared_ptr<query_endpoint> ptr;
+    typedef std::shared_ptr<block_service> ptr;
 
-    /// Construct a query forground worker.
-    query_endpoint(bc::protocol::zmq::authenticator& authenticator,
+    /// Construct a block endpoint.
+    block_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// Start the worker (restartable).
-    bool start() override;
+    /// This class is not copyable.
+    block_service(const block_service&) = delete;
+    void operator=(const block_service&) = delete;
 
-    /// Stop the worker (idempotent).
-    bool stop() override;
+    /// Start the endpoint.
+    bool start();
+
+    /// Stop the endpoint.
+    bool stop();
 
 private:
-    static std::string get_domain(bool service, bool secure);
-    static config::endpoint get_foreground(server_node& node, bool secure);
-    static bool is_enabled(server_node& node, bool secure);
+    void send(uint32_t height, const chain::block::ptr block);
 
-    // Implement the worker.
-    virtual void work();
-
-    const bool secure_;
+    server_node& node_;
+    bc::protocol::zmq::socket socket_;
+    const bc::config::endpoint endpoint_;
     const bool enabled_;
-    const bc::config::endpoint foreground_;
-
-    // This is thread safe.
-    bc::protocol::zmq::authenticator& authenticator_;
+    const bool secure_;
 };
 
 } // namespace server

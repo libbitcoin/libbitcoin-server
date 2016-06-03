@@ -27,15 +27,16 @@ namespace server {
 using namespace asio;
 
 settings::settings()
-  : heartbeat_interval_seconds(5),
+  : query_workers(1),
+    heartbeat_interval_seconds(5),
     subscription_expiration_minutes(10),
     subscription_limit(100000000),
     log_requests(false),
     secure_only(false),
-    query_endpoints_enabled(true),
-    heartbeat_endpoints_enabled(true),
-    block_endpoints_enabled(true),
-    transaction_endpoints_enabled(true),
+    query_service_enabled(true),
+    heartbeat_service_enabled(true),
+    block_service_enabled(true),
+    transaction_service_enabled(true),
     public_query_endpoint("tcp://*:9091"),
     public_heartbeat_endpoint("tcp://*:9092"),
     public_block_endpoint("tcp://*:9093"),

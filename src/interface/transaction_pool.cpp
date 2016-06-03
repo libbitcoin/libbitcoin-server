@@ -83,10 +83,6 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    log::debug(LOG_SERVER)
-        << "transaction_pool.validate() finished. Sending response: "
-        << ec.message();
-
     outgoing response(request, result);
     handler(response);
 }
