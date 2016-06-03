@@ -42,36 +42,34 @@ public:
     typedef std::shared_ptr<query_worker> ptr;
 
     /// Construct a query worker.
-    query_worker(bc::protocol::zmq::context& context, server_node& node);
+    query_worker(bc::protocol::zmq::authenticator& authenticator,
+        server_node& node, bool secure);
 
-    /// Start the worker (restartable).
-    bool start() override;
-
-    /// Stop the worker (idempotent).
-    bool stop() override;
-
-private:
+protected:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    void attach_interface();
-    void attach(const std::string& command, command_handler handler);
-    ////void receive(bc::protocol::zmq::socket& socket);
-    ////void send(outgoing& response, const config::endpoint& query_worker);
+    virtual void attach_interface();
+    virtual void attach(const std::string& command, command_handler handler);
+
+    virtual bool connect(bc::protocol::zmq::socket& replier);
+    virtual bool disconnect(bc::protocol::zmq::socket& replier);
 
     // Implement the worker.
     virtual void work();
 
+private:
     const bool log_;
-    const bool enabled_;
+    const bool secure_;
+    const server::settings& settings_;
+
+    // This is thread safe.
+    bc::protocol::zmq::authenticator& authenticator_;
 
     // These are protected by mutex.
     command_map handlers_;
     address_notifier address_notifier_;
     mutable shared_mutex mutex_;
-
-    // This is thread safe.
-    bc::protocol::zmq::context& context_;
 };
 
 } // namespace server

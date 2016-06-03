@@ -21,8 +21,10 @@
 
 #include <functional>
 #include <future>
+#include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/workers/query_worker.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -42,79 +44,9 @@ server_node::server_node(const configuration& configuration)
     configuration_(configuration),
     last_checkpoint_height_(configuration.last_checkpoint_height()),
     authenticator_(*this),
-    query_worker_(authenticator_, *this),
-    secure_query_endpoint_(authenticator_, *this, true),
-    public_query_endpoint_(authenticator_, *this, false)
+    secure_query_service_(authenticator_, *this, true),
+    public_query_service_(authenticator_, *this, false)
 {
-}
-
-// Run sequence.
-// ----------------------------------------------------------------------------
-
-void server_node::run(result_handler handler)
-{
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
-    // The handler is invoked on a new thread.
-    p2p_node::run(
-        std::bind(&server_node::handle_running,
-            this, _1, handler));
-}
-
-void server_node::handle_running(const code& ec, result_handler handler)
-{
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
-    // Start authenticated context.
-    if (!authenticator_.start())
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // Start secure services.
-    if (server_settings().server_private_key && (
-        !secure_query_endpoint_.start()))
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // Start public services.
-    if (!server_settings().secure_only && (
-        !public_query_endpoint_.start()))
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // Start workers.
-    if (!query_worker_.start())
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // Subscribe to blockchain reorganizations.
-    subscribe_blockchain(
-        std::bind(&server_node::handle_new_blocks,
-            this, _1, _2, _3, _4));
-
-    // Subscribe to transaction pool acceptances.
-    subscribe_transaction_pool(
-        std::bind(&server_node::handle_new_transaction,
-            this, _1, _2, _3));
-
-    // This is the end of the derived run sequence.
-    handler(error::success);
 }
 
 // Stop sequence.
@@ -135,10 +67,6 @@ void server_node::stop(result_handler handler)
     block_subscriptions_.clear();
     block_mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
-
-    ////query_worker_.stop();
-    ////secure_query_endpoint_.stop();
-    ////public_query_endpoint_.stop();
 
     // Signals close and blocks until all sockets are closed.
     authenticator_.stop();
@@ -183,6 +111,110 @@ void server_node::handle_closing(const code& ec, std::promise<code>& wait)
 const settings& server_node::server_settings() const
 {
     return configuration_.server;
+}
+
+// Run sequence.
+// ----------------------------------------------------------------------------
+
+void server_node::run(result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    // The handler is invoked on a new thread.
+    p2p_node::run(
+        std::bind(&server_node::handle_running,
+            this, _1, handler));
+}
+
+void server_node::handle_running(const code& ec, result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    // Start authenticated context.
+    if (!authenticator_.start())
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    // Start query services and workers.
+    start_query_services(handler);
+
+    // Subscribe to blockchain reorganizations.
+    subscribe_blockchain(
+        std::bind(&server_node::handle_new_blocks,
+            this, _1, _2, _3, _4));
+
+    // Subscribe to transaction pool acceptances.
+    subscribe_transaction_pool(
+        std::bind(&server_node::handle_new_transaction,
+            this, _1, _2, _3));
+
+    // This is the end of the derived run sequence.
+    handler(error::success);
+}
+
+// Services.
+// ----------------------------------------------------------------------------
+
+// The number of threads available in the thread pool must be sufficient
+// to allocate the workers. This will wait forever on thread availability.
+void server_node::allocate_query_workers(bool secure, result_handler handler)
+{
+    auto& server = *this;
+    const auto& settings = configuration_.server;
+
+    for (auto count = 0; count < settings.query_workers; ++count)
+    {
+        auto worker = std::make_shared<query_worker>(authenticator_,
+            server, secure);
+
+        if (!worker->start())
+        {
+            handler(error::operation_failed);
+            return;
+        }
+
+        subscribe_stop([=](const code&) { worker->stop(); });
+    }
+}
+
+void server_node::start_query_services(result_handler handler)
+{
+    const auto& settings = configuration_.server;
+
+    if (!settings.query_service_enabled)
+        return;
+
+    if (settings.server_private_key)
+    {
+        if (!secure_query_service_.start())
+        {
+            handler(error::operation_failed);
+            return;
+        }
+
+        allocate_query_workers(true, handler);
+    }
+
+    if (!settings.secure_only)
+    {
+        if (!public_query_service_.start())
+        {
+            handler(error::operation_failed);
+            return;
+        }
+
+        allocate_query_workers(false, handler);
+    }
 }
 
 // Subscriptions.

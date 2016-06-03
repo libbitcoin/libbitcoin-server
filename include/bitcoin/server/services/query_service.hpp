@@ -21,10 +21,9 @@
 #define LIBBITCOIN_SERVER_QUERY_SERVICE_HPP
 
 #include <memory>
-#include <string>
-#include <unordered_map>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -37,30 +36,26 @@ class BCS_API query_service
 public:
     typedef std::shared_ptr<query_service> ptr;
 
-    /// The fixed inprocess workers endpoint.
-    static const config::endpoint workers;
+    /// The fixed inprocess worker endpoints.
+    static const config::endpoint public_worker;
+    static const config::endpoint secure_worker;
 
     /// Construct a query service.
     query_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// Start the service (restartable).
-    bool start() override;
-
-    /// Stop the service (idempotent).
-    bool stop() override;
-
-private:
-    static std::string get_domain(bool service, bool secure);
-    static config::endpoint get_service(server_node& node, bool secure);
-    static bool is_enabled(server_node& node, bool secure);
+protected:
+    virtual bool bind(bc::protocol::zmq::socket& router,
+        bc::protocol::zmq::socket& dealer);
+    virtual bool unbind(bc::protocol::zmq::socket& router,
+        bc::protocol::zmq::socket& dealer);
 
     // Implement the service.
     virtual void work();
 
+private:
     const bool secure_;
-    const bool enabled_;
-    const bc::config::endpoint service_;
+    const server::settings& settings_;
 
     // This is thread safe.
     bc::protocol::zmq::authenticator& authenticator_;

@@ -36,77 +36,83 @@ namespace server {
 
 using namespace bc::protocol;
 
-query_worker::query_worker(zmq::context& context, server_node& node)
+query_worker::query_worker(zmq::authenticator& authenticator,
+    server_node& node, bool secure)
   : worker(node.thread_pool()),
     log_(node.server_settings().log_requests),
-    enabled_(node.server_settings().query_service_enabled),
-    address_notifier_(node),
-    context_(context)
+    secure_(secure),
+    settings_(node.server_settings()),
+    authenticator_(authenticator),
+    address_notifier_(node)
 {
-}
-
-bool query_worker::start()
-{
-    if (!enabled_)
-        return true;
-
-    if (!zmq::worker::start())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to bind inproc query worker to "
-            << query_service::workers;
-        return false;
-    }
-
-    log::debug(LOG_SERVER)
-        << "Bound inproc query worker to " << query_service::workers;
-    return true;
-}
-
-bool query_worker::stop()
-{
-    if (!zmq::worker::stop())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to unbind inproc query worker from "
-            << query_service::workers;
-        return false;
-    }
-
-    log::debug(LOG_SERVER)
-        << "Unbound inproc query worker from " << query_service::workers;
-    return true;
 }
 
 // Implement worker as a replier.
 // A replier requires strict receive-send ordering.
+// NOTE: v2 libbitcoin-client DEALER does not add delimiter frame.
 void query_worker::work()
 {
-    zmq::socket replier(context_, zmq::socket::role::requester);
+    //// TODO: change back to replier once response is implemented.
+    zmq::socket replier(authenticator_, zmq::socket::role::router);
 
-    if (!started(replier.connect(query_service::workers)))
+    // Connect socket to the worker endpoint.
+    if (!started(connect(replier)))
         return;
 
     zmq::poller poller;
     poller.add(replier);
-
+    
     while (!poller.terminated() && !stopped())
     {
         if (!poller.wait().contains(replier.id()))
             continue;
 
-        // NOTE: v2 libbitcoin-client DEALER does not add delimiter frame.
         zmq::message request;
         auto result = request.receive(replier);
-
         // Process request->data.
-
         ////outgoing response(request, error::success);
         ////result = response.send(replier);
     }
 
-    // Stop the socket and exit this thread.
-    finished(replier.stop());
+    // Disconnect the socket and exit this thread.
+    finished(disconnect(replier));
+}
+
+// Connect/Disconnect.
+//-----------------------------------------------------------------------------
+
+bool query_worker::connect(zmq::socket& replier)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& endpoint = secure_ ? query_service::secure_worker :
+        query_service::public_worker;
+
+    if (!replier.connect(endpoint))
+    {
+        log::error(LOG_SERVER)
+            << "Failed to connect " << security << " query worker to "
+            << endpoint;
+        return false;
+    }
+
+    log::debug(LOG_SERVER)
+        << "Connected " << security << " query worker to " << endpoint;
+    return true;
+}
+
+bool query_worker::disconnect(zmq::socket& replier)
+{
+    const auto security = secure_ ? "secure" : "public";
+
+    if (!replier.stop())
+    {
+        log::error(LOG_SERVER)
+            << "Failed to disconnect " << security << " query worker.";
+        return false;
+    }
+
+    // Don't log stop success.
+    return true;
 }
 
 // Utilities.
@@ -149,26 +155,9 @@ void query_worker::work()
 ////            this, _1, std::ref(endpoint_)));
 ////}
 
-////void query_worker::send(outgoing& response, const config::endpoint& query_worker)
+////void query_worker::send(zmq::socket& socket, outgoing& response)
 ////{
-////    // TODO: make members of query worker.
-////    // TODO: in stop we have no way to detect completion of all callback work.
-////    // TODO: this can only be terminated by thread join. so callback worker
-////    // stop must be non-blocking and the worker and context must be kept in
-////    // scope until thread join. Both stopped_ and context stop will signal
-////    // callback worker stop. Socket destruct won't happen until thread join
-////    // so context must be kept in scope until after node stop.
-////    zmq::context context_;
-////    boost::thread_specific_ptr<zmq::socket> socket_ptr_();
-////
-////    if (!socket_ptr_.get())
-////    {
-////        static const auto role = zmq::socket::role::replier;
-////        socket_ptr_.reset(new zmq::socket(context_, role));
-////        socket_ptr_->bind(query_worker);
-////    }
-////    
-////    if (response.send(*socket_ptr_))
+////    if (response.send(socket))
 ////        return;
 ////
 ////    log::warning(LOG_SERVER)

@@ -19,9 +19,9 @@
  */
 #include <bitcoin/server/services/query_service.hpp>
 
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -29,95 +29,97 @@ namespace server {
 using namespace bc::config;
 using namespace bc::protocol;
 
-const config::endpoint query_service::workers("inproc://query_workers");
+static const auto domain = "query";
+const config::endpoint query_service::public_worker("inproc://public_query");
+const config::endpoint query_service::secure_worker("inproc://secure_query");
 
 query_service::query_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
     secure_(secure),
-    enabled_(is_enabled(node, secure)),
-    service_(get_service(node, secure)),
+    settings_(node.server_settings()),
     authenticator_(authenticator)
 {
-}
-
-bool query_service::start()
-{
-    if (!enabled_)
-        return true;
-
-    if (!zmq::worker::start())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to bind query service to " << service_;
-        return false;
-    }
-
-    log::info(LOG_SERVER)
-        << "Bound " << (secure_ ? "secure " : "public ")
-        << "query service to " << service_;
-    return true;
-}
-
-bool query_service::stop()
-{
-    if (!zmq::worker::stop())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to unbind query service from " << service_;
-        return false;
-    }
-
-    log::debug(LOG_SERVER)
-        << "Unbound " << (secure_ ? "secure " : "public ")
-        << "query service from " << service_;
-    return true;
 }
 
 // Implement worker as a broker.
 // TODO: implement as a load balancing broker.
 void query_service::work()
 {
+    // TODO: how to proxy two routers to one dealer.
     zmq::socket router(authenticator_, zmq::socket::role::router);
-    zmq::socket dealer(authenticator_, zmq::socket::role::router);
+    zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
 
-    const auto result = 
-        authenticator_.apply(router, get_domain(true, secure_), secure_) &&
-        authenticator_.apply(dealer, get_domain(false, secure_), false) &&
-        dealer.bind(workers) && router.bind(service_);
-
-    if (!started(result))
+    // Bind sockets to the service endpoint(s) and the workers endpoint.
+    if (!started(bind(router, dealer)))
         return;
 
     // Relay messages between router and dealer (blocks on context).
     relay(router, dealer);
 
-    // Stop the sockets and exit this thread.
-    finished(router.stop() && dealer.stop());
+    // Unbind the sockets and exit this thread.
+    finished(unbind(router, dealer));
 }
 
-// Utilities.
+// Bind/Unbind.
 //-----------------------------------------------------------------------------
 
-std::string query_service::get_domain(bool service, bool secure)
+bool query_service::bind(zmq::socket& router, zmq::socket& dealer)
 {
-    const std::string prefix = secure ? "secure" : "public";
-    const std::string suffix = service ? "service" : "worker";
-    return prefix + "_query_" + suffix;
+    const auto security = secure_ ? "secure" : "public";
+    const auto& worker = secure_ ? secure_worker : public_worker;
+    const auto& service = secure_ ? settings_.secure_query_endpoint :
+        settings_.public_query_endpoint;
+
+    if (secure_ && !authenticator_.apply(router, domain, true))
+    {
+        log::error(LOG_SERVER)
+            << "Failed to apply authenticator to secure query service.";
+        return false;
+    }
+
+    if (!router.bind(service))
+    {
+        log::error(LOG_SERVER)
+            << "Failed to bind " << security << " query service to "
+            << service;
+        return false;
+    }
+
+    if (!dealer.bind(worker))
+    {
+        log::error(LOG_SERVER)
+            << "Failed to bind " << security << " query workers to "
+            << worker;
+        return false;
+    }
+
+    log::info(LOG_SERVER)
+        << "Bound " << security << " query service to " << service;
+    return true;
 }
 
-config::endpoint query_service::get_service(server_node& node, bool secure)
+bool query_service::unbind(zmq::socket& router, zmq::socket& dealer)
 {
-    const auto& settings = node.server_settings();
-    return secure ? settings.secure_query_endpoint :
-        settings.public_query_endpoint;
-}
+    // Stop both even if one fails.
+    const auto router_stop = router.stop();
+    const auto dealer_stop = dealer.stop();
+    const auto security = secure_ ? "secure" : "public";
 
-bool query_service::is_enabled(server_node& node, bool secure)
-{
-    const auto& settings = node.server_settings();
-    return settings.query_service_enabled &&
-        (!secure || settings.server_private_key);
+    if (!router_stop)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to unbind " << security << " query service.";
+    }
+
+    if (!dealer_stop)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to unbind " << security << " query workers.";
+    }
+
+    // Don't log stop success.
+    return router_stop && dealer_stop;
 }
 
 } // namespace server
