@@ -67,13 +67,13 @@ private:
     const bool secure_;
     const server::settings& settings_;
 
-    // This is thread safe.
+    // These are thread safe.
+    server_node& node_;
+    address_notifier address_notifier_;
     bc::protocol::zmq::authenticator& authenticator_;
 
-    // These are protected by base class mutex.
-    server_node& node_;
+    // This is protected by base class mutex.
     command_map command_handlers_;
-    address_notifier address_notifier_;
 };
 
 } // namespace server

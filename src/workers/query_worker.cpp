@@ -44,8 +44,8 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     secure_(secure),
     settings_(node.server_settings()),
     node_(node),
-    authenticator_(authenticator),
-    address_notifier_(node)
+    address_notifier_(node),
+    authenticator_(authenticator)
 {
     // The same interface is attached to the secure and public interfaces.
     attach_interface();
