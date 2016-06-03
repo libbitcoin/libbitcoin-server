@@ -45,8 +45,7 @@ void protocol::broadcast_transaction(server_node& node,
     {
         // error
         serial.write_error_code(error::bad_stream);
-        outgoing response(request, result);
-        handler(response);
+        handler(outgoing(request, result));
         return;
     }
 
@@ -59,8 +58,7 @@ void protocol::broadcast_transaction(server_node& node,
     // Tell the user everything is fine.
     serial.write_error_code(error::success);
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 void protocol::total_connections(server_node& node, const incoming& request,
@@ -85,8 +83,7 @@ void protocol::handle_total_connections(size_t count, const incoming& request,
     serial.write_4_bytes_little_endian(total_connections);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 } // namespace server

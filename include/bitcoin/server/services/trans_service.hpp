@@ -55,8 +55,11 @@ public:
 private:
     void send(const chain::transaction& tx);
 
-    server_node& node_;
+    // BUGBUG: This is NOT thread safe.
     bc::protocol::zmq::socket socket_;
+
+    // This is thread safe.
+    server_node& node_;
     const bc::config::endpoint endpoint_;
     const bool enabled_;
     const bool secure_;

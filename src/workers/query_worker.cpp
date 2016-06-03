@@ -44,8 +44,8 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     secure_(secure),
     settings_(node.server_settings()),
     node_(node),
-    authenticator_(authenticator),
-    address_notifier_(node)
+    address_notifier_(node),
+    authenticator_(authenticator)
 {
     // The same interface is attached to the secure and public interfaces.
     attach_interface();
@@ -139,24 +139,21 @@ void query_worker::query(zmq::socket& socket)
     if (handler == command_handlers_.end())
     {
         log::warning(LOG_SERVER)
-            << "Invalid query command from " << encode_base16(request.address1);
+            << "Invalid query command from "
+            << encode_base16(request.address1);
         return;
     }
 
+    // TODO: rewrite the serial blockchain interface to avoid callbacks.
+    const auto sender = [&socket](outgoing&& response)
+    {
+        if (!response.send(socket))
+            log::warning(LOG_SERVER)
+                << "Failed to send query response.";
+    };
+
     // Execute the request and forward result to queue.
-    handler->second(request,
-        std::bind(&query_worker::handle_query,
-            this, _1, std::ref(socket)));
-}
-
-// This handler is invoked on the receive thread.
-void query_worker::handle_query(outgoing& response, zmq::socket& socket)
-{
-    if (response.send(socket))
-        return;
-
-    log::warning(LOG_SERVER)
-        << "Failed to send query response.";
+    handler->second(request, sender);
 }
 
 // Query Interface.

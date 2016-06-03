@@ -50,15 +50,11 @@ protected:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    virtual void attach(const std::string& command, command_handler handler);
     virtual void attach_interface();
-
+    virtual void attach(const std::string& command, command_handler handler);
     virtual bool connect(bc::protocol::zmq::socket& socket);
     virtual bool disconnect(bc::protocol::zmq::socket& socket);
-
     virtual void query(bc::protocol::zmq::socket& socket);
-    virtual void handle_query(outgoing& response,
-        bc::protocol::zmq::socket& socket);
 
     // Implement the worker.
     virtual void work();
@@ -67,13 +63,13 @@ private:
     const bool secure_;
     const server::settings& settings_;
 
-    // This is thread safe.
+    // These are thread safe.
+    server_node& node_;
+    address_notifier address_notifier_;
     bc::protocol::zmq::authenticator& authenticator_;
 
-    // These are protected by base class mutex.
-    server_node& node_;
+    // This is protected by base class mutex.
     command_map command_handlers_;
-    address_notifier address_notifier_;
 };
 
 } // namespace server

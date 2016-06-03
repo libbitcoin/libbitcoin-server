@@ -83,8 +83,7 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    outgoing response(request, result);
-    handler(response);
+    handler(outgoing(request, result));
 }
 
 } // namespace server

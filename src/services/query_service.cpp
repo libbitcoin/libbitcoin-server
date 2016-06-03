@@ -46,11 +46,10 @@ query_service::query_service(zmq::authenticator& authenticator,
 // TODO: implement as a load balancing broker.
 void query_service::work()
 {
-    // TODO: how to proxy two routers to one dealer.
     zmq::socket router(authenticator_, zmq::socket::role::router);
     zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
 
-    // Bind sockets to the service endpoint(s) and the workers endpoint.
+    // Bind sockets to the service and worker endpoints.
     if (!started(bind(router, dealer)))
         return;
 
