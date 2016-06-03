@@ -30,39 +30,51 @@ namespace server {
 
 using namespace bc::protocol;
 
-outgoing::outgoing(const incoming& request, const code& ec)
-  : outgoing(request.command,
-        build_chunk({ to_little_endian(static_cast<uint32_t>(ec.value())) }),
-        request.address, request.id)
+// Convert an error code to data for payload.
+inline data_chunk to_chunk(const code& ec)
 {
-}
-
-outgoing::outgoing(const incoming& request, const data_chunk& data)
-  : outgoing(request.command, data, request.address, request.id)
-{
-}
-
-outgoing::outgoing(const std::string& command, const data_chunk& data,
-    const data_chunk& destination)
-    : outgoing(command, data, destination,
-        static_cast<uint32_t>(pseudo_random()))
-{
-}
-
-// BUGBUG: this supports only single hop routing (zero or one address).
-outgoing::outgoing(const std::string& command, const data_chunk& data,
-    const data_chunk& destination, uint32_t id)
-{
-    if (!destination.empty())
+    return build_chunk(
     {
-        // Don't set when sending to DEALER (?)
-        message_.enqueue(destination);
+        to_little_endian(static_cast<uint32_t>(ec.value()))
+    });
+}
 
-        // Delimiter frame required for REP sockets.
-        // BUGBUG: This is not consistent with existing wire protocol.
-        ////message_.enqueue();
-    }
+// Return an error code in response to the incoming query.
+outgoing::outgoing(const incoming& request, const code& ec)
+  : outgoing(request, to_chunk(ec))
+{
+}
 
+// Return data in response to a successfully-executed incoming query.
+outgoing::outgoing(const incoming& request, const data_chunk& data)
+  : outgoing(request.command, data, request.address1, request.address2,
+    request.delimited, request.id)
+{
+}
+
+// Return data as a subscription by the given address (zero id).
+outgoing::outgoing(const std::string& command, const data_chunk& data,
+    const data_chunk& address1, const data_chunk& address2, bool delimited)
+  : outgoing(command, data, address1, address2, delimited, 0)
+{
+}
+
+// protected
+outgoing::outgoing(const std::string& command, const data_chunk& data,
+    const data_chunk& address1, const data_chunk& address2, bool delimited,
+    uint32_t id)
+{
+    // Client is undelimited DEALER -> 2 addresses with no delimiter.
+    // Client is REQ or delimited DEALER -> 2 addresses with delimiter.
+    message_.enqueue(address1);
+    message_.enqueue(address2);
+
+    // In the reply we echo the delimited-ness of the original request.
+    if (delimited)
+        message_.enqueue();
+
+    // All libbitcoin queries have these three frames.
+    //-------------------------------------------------------------------------
     message_.enqueue(command);
     message_.enqueue_little_endian(id);
     message_.enqueue(data);

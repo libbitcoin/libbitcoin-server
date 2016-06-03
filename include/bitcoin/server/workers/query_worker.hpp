@@ -28,6 +28,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/utility/address_notifier.hpp>
 
 namespace libbitcoin {
@@ -49,27 +50,30 @@ protected:
     typedef std::function<void(const incoming&, send_handler)> command_handler;
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    virtual void attach_interface();
     virtual void attach(const std::string& command, command_handler handler);
+    virtual void attach_interface();
 
-    virtual bool connect(bc::protocol::zmq::socket& replier);
-    virtual bool disconnect(bc::protocol::zmq::socket& replier);
+    virtual bool connect(bc::protocol::zmq::socket& socket);
+    virtual bool disconnect(bc::protocol::zmq::socket& socket);
+
+    virtual void query(bc::protocol::zmq::socket& socket);
+    virtual void handle_query(outgoing& response,
+        bc::protocol::zmq::socket& socket);
 
     // Implement the worker.
     virtual void work();
 
 private:
-    const bool log_;
     const bool secure_;
     const server::settings& settings_;
 
     // This is thread safe.
     bc::protocol::zmq::authenticator& authenticator_;
 
-    // These are protected by mutex.
-    command_map handlers_;
+    // These are protected by base class mutex.
+    server_node& node_;
+    command_map command_handlers_;
     address_notifier address_notifier_;
-    mutable shared_mutex mutex_;
 };
 
 } // namespace server

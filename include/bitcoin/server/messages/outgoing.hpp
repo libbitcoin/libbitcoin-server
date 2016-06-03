@@ -32,21 +32,23 @@ namespace server {
 class BCS_API outgoing
 {
 public:
-    /// Parse the incoming request and retain the outgoing code.
+    /// Return an error code in response to the incoming query.
     outgoing(const incoming& request, const code& ec);
 
-    /// Parse the incoming request and retain the outgoing data.
+    /// Return data in response to a successfully-executed incoming query.
     outgoing(const incoming& request, const data_chunk& data);
 
-    /// Empty destination is interpreted as an unspecified destination.
+    /// Return data as a subscription by the given address.
     outgoing(const std::string& command, const data_chunk& data,
-        const data_chunk& destination);
+        const data_chunk& address1, const data_chunk& address2,
+        bool delimited);
 
     bool send(bc::protocol::zmq::socket& socket);
 
 protected:
     outgoing(const std::string& command, const data_chunk& data,
-        const data_chunk& destination, uint32_t id);
+        const data_chunk& address1, const data_chunk& address2, bool delimited,
+        uint32_t id);
 
 private:
     bc::protocol::zmq::message message_;

@@ -61,10 +61,14 @@ private:
     struct subscription
     {
         binary prefix;
-        boost::posix_time::ptime expiry_time;
-        data_chunk client_origin;
         send_handler handler;
         chain::subscribe_type type;
+        boost::posix_time::ptime expiry_time;
+
+        // client addressing
+        data_chunk address1;
+        data_chunk address2;
+        bool delimited;
     };
 
     typedef std::vector<subscription> list;

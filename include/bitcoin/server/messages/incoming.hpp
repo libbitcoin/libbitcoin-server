@@ -33,10 +33,20 @@ class BCS_API incoming
 public:
     bool receive(bc::protocol::zmq::socket& socket);
 
-    uint32_t id;
-    data_chunk data;
+    /// The message route as seen at workers.
+    data_chunk address1;
+    data_chunk address2;
+    bool delimited;
+
+    /// Query command (returned to caller).
     std::string command;
-    data_chunk address;
+
+    /// Structure is little-endian.
+    /// Arbitrary caller data (returned to caller for correlation).
+    uint32_t id;
+
+    /// Serialized query (structure defined in relation to command).
+    data_chunk data;
 };
 
 } // namespace server
