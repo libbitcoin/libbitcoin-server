@@ -191,7 +191,7 @@ void server_node::start_query_services(result_handler handler)
 {
     const auto& settings = configuration_.server;
 
-    if (!settings.query_service_enabled)
+    if (!settings.query_service_enabled || settings.query_workers == 0)
         return;
 
     if (settings.server_private_key)
