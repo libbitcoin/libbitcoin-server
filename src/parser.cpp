@@ -325,17 +325,17 @@ options_metadata parser::load_settings()
     (
         "server.heartbeat_service_enabled",
         value<bool>(&configured.server.heartbeat_service_enabled),
-        "Enable the heartbeat service, defaults to true."
+        "Enable the heartbeat service, defaults to false."
     )
     (
         "server.block_service_enabled",
         value<bool>(&configured.server.block_service_enabled),
-        "Enable the block publishing service, defaults to true."
+        "Enable the block publishing service, defaults to false."
     )
     (
         "server.transaction_service_enabled",
         value<bool>(&configured.server.transaction_service_enabled),
-        "Enable the transaction publishing service, defaults to true."
+        "Enable the transaction publishing service, defaults to false."
     )
     (
         "server.public_query_endpoint",

@@ -80,7 +80,13 @@ outgoing::outgoing(const std::string& command, const data_chunk& data,
     message_.enqueue(data);
 }
 
-bool outgoing::send(zmq::socket& socket)
+std::string outgoing::address()
+{
+    auto message = message_;
+    return "[" + encode_base16(message.dequeue_data()) + "]";
+}
+
+code outgoing::send(zmq::socket& socket)
 {
     return message_.send(socket);
 }

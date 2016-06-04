@@ -44,6 +44,8 @@ query_service::query_service(zmq::authenticator& authenticator,
 
 // Implement worker as a broker.
 // TODO: implement as a load balancing broker.
+// The dealer blocks until there are available workers.
+// The router drops messages for lost peers (clients) and high water.
 void query_service::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
@@ -53,6 +55,8 @@ void query_service::work()
     if (!started(bind(router, dealer)))
         return;
 
+    // TODO: replace with native implementation that allows us to log send
+    // and receive failures in the relay, so we can log high water.
     // Relay messages between router and dealer (blocks on context).
     relay(router, dealer);
 
@@ -77,19 +81,23 @@ bool query_service::bind(zmq::socket& router, zmq::socket& dealer)
         return false;
     }
 
-    if (!router.bind(service))
+    auto ec = router.bind(service);
+
+    if (ec)
     {
         log::error(LOG_SERVER)
             << "Failed to bind " << security << " query service to "
-            << service;
+            << service << " : " << ec.message();
         return false;
     }
 
-    if (!dealer.bind(worker))
+    ec = dealer.bind(worker);
+
+    if (ec)
     {
         log::error(LOG_SERVER)
             << "Failed to bind " << security << " query workers to "
-            << worker;
+            << worker << " : " << ec.message();
         return false;
     }
 

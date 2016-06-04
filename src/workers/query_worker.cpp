@@ -52,7 +52,8 @@ query_worker::query_worker(zmq::authenticator& authenticator,
 }
 
 // Implement worker as a router.
-// NOTE: v2 libbitcoin-client DEALER does not add delimiter frame.
+// v2 libbitcoin-client DEALER does not add delimiter frame.
+// The router drops messages for lost peers (query service) and high water.
 void query_worker::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
@@ -63,8 +64,7 @@ void query_worker::work()
 
     zmq::poller poller;
     poller.add(router);
-    
-    // We can drop messages here because this is a router.
+
     while (!poller.terminated() && !stopped())
     {
         if (poller.wait().contains(router.id()))
@@ -78,17 +78,19 @@ void query_worker::work()
 // Connect/Disconnect.
 //-----------------------------------------------------------------------------
 
-bool query_worker::connect(zmq::socket& socket)
+bool query_worker::connect(zmq::socket& router)
 {
     const auto security = secure_ ? "secure" : "public";
     const auto& endpoint = secure_ ? query_service::secure_worker :
         query_service::public_worker;
 
-    if (!socket.connect(endpoint))
+    auto ec = router.connect(endpoint);
+
+    if (ec)
     {
         log::error(LOG_SERVER)
             << "Failed to connect " << security << " query worker to "
-            << endpoint;
+            << endpoint << " : " << ec.message();
         return false;
     }
 
@@ -97,11 +99,11 @@ bool query_worker::connect(zmq::socket& socket)
     return true;
 }
 
-bool query_worker::disconnect(zmq::socket& socket)
+bool query_worker::disconnect(zmq::socket& router)
 {
     const auto security = secure_ ? "secure" : "public";
 
-    if (!socket.stop())
+    if (!router.stop())
     {
         log::error(LOG_SERVER)
             << "Failed to disconnect " << security << " query worker.";
@@ -112,25 +114,43 @@ bool query_worker::disconnect(zmq::socket& socket)
     return true;
 }
 
-// Utilities.
+// Query Execution.
 //-----------------------------------------------------------------------------
 
-void query_worker::query(zmq::socket& socket)
+// Because the socket is a router we may simply drop invalid queries.
+// As a single thread worker this router should not reach high water.
+// If we implemented as a replier we would need to always provide a response.
+void query_worker::query(zmq::socket& router)
 {
-    incoming request;
-
-    if (!request.receive(socket))
+    // TODO: rewrite the serial blockchain interface to avoid callbacks.
+    const auto sender = [&router](outgoing&& response)
     {
-        log::warning(LOG_SERVER)
-            << "Malformed query from " << encode_base16(request.address1);
+        const auto ec = response.send(router);
+
+        if (ec)
+            log::warning(LOG_SERVER)
+                << "Failed to send query response to " << response.address()
+                << ec.message();
+    };
+
+    incoming request;
+    const auto ec = request.receive(router);
+
+    if (ec)
+    {
+        log::debug(LOG_SERVER)
+            << "Failed to receive query from " << request.address()
+            << ec.message();
+
+        // Because the query did not parse this is likely to be misaddressed.
+        sender(outgoing(request, ec));
         return;
     }
 
     if (settings_.log_requests)
     {
         log::info(LOG_SERVER)
-            << "Query " << request.command << " from "
-            << encode_base16(request.address1);
+            << "Query " << request.command << " from " << request.address();
     }
 
     // Locate the request handler for this command.
@@ -138,19 +158,12 @@ void query_worker::query(zmq::socket& socket)
 
     if (handler == command_handlers_.end())
     {
-        log::warning(LOG_SERVER)
-            << "Invalid query command from "
-            << encode_base16(request.address1);
+        log::debug(LOG_SERVER)
+            << "Invalid query command from " << request.address();
+
+        sender(outgoing(request, error::not_found));
         return;
     }
-
-    // TODO: rewrite the serial blockchain interface to avoid callbacks.
-    const auto sender = [&socket](outgoing&& response)
-    {
-        if (!response.send(socket))
-            log::warning(LOG_SERVER)
-                << "Failed to send query response.";
-    };
 
     // Execute the request and forward result to queue.
     handler->second(request, sender);

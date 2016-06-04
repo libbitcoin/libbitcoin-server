@@ -21,185 +21,127 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <chrono>
-#include <memory>
-#include <thread>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
-    
-#define NAME "heartbeat_endpoint"
-#define PUBLIC_NAME "public_heartbeat"
-#define SECURE_NAME "secure_heartbeat"
 
-using std::placeholders::_1;
-using namespace std::chrono;
-using namespace std::this_thread;
+static const auto domain = "heartbeat";
+
+using namespace bc::config;
 using namespace bc::protocol;
 
-static inline bool is_enabled(server_node& node, bool secure)
+static uint32_t to_milliseconds(uint16_t seconds)
 {
-    const auto& settings = node.server_settings();
-    return settings.heartbeat_service_enabled &&
-        settings.heartbeat_interval_seconds > 0 &&
-        (!secure || settings.server_private_key);
-}
+    const auto milliseconds = static_cast<uint32_t>(seconds) * 1000;
+    return std::min(milliseconds, max_uint32);
+};
 
-static inline config::endpoint get_endpoint(server_node& node, bool secure)
-{
-    const auto& settings = node.server_settings();
-    return secure ? settings.secure_heartbeat_endpoint :
-        settings.public_heartbeat_endpoint;
-}
-
-static inline seconds get_interval(server_node& node)
-{
-    return seconds(node.server_settings().heartbeat_interval_seconds);
-}
-
-// ZMQ_PUB (ok to drop, never block)
-// When a ZMQ_PUB socket enters an exceptional state due to having reached
-// the high water mark for a subscriber, then any messages that would be sent
-// to the subscriber in question shall instead be dropped until the exceptional
-// state ends. The zmq_send() function shall never block for this socket type.
+// Heartbeat is capped at ~ 25 days by signed/millsecond conversions.
 heart_service::heart_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : authenticator_(authenticator),
-    dispatch_(node.thread_pool(), NAME),
-    stopped_(true),
-    endpoint_(get_endpoint(node, secure)),
-    interval_(get_interval(node)),
-    log_(node.server_settings().log_requests),
-    enabled_(is_enabled(node, secure)),
+  : worker(node.thread_pool()),
+    settings_(node.server_settings()),
+    period_(to_milliseconds(settings_.heartbeat_interval_seconds)),
+    authenticator_(authenticator),
     secure_(secure)
 {
 }
 
-// The endpoint is restartable.
-bool heart_service::start()
+// Implement service as a publisher.
+// The publisher does not block if there are no subscribers or at high water.
+void heart_service::work()
 {
-    if (!enabled_)
-        return true;
+    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
 
-    std::promise<code> started;
-    code ec(error::operation_failed);
+    // Bind socket to the worker endpoint.
+    if (!started(bind(publisher)))
+        return;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    mutex_.lock();
+    zmq::poller poller;
+    poller.add(publisher);
 
-    if (stopped_)
+    // Pick a random counter start, will wrap around at overflow.
+    auto count = static_cast<uint32_t>(pseudo_random());
+
+    // We will not receive on the poller, we use its timer and context stop.
+    while (!poller.terminated() && !stopped())
     {
-        // Enable publisher start.
-        stopped_ = false;
-
-        // Create the pubisher thread and socket and start sending.
-        dispatch_.concurrent(
-            std::bind(&heart_service::publisher,
-                this, std::ref(started)));
-
-        // Wait on publisher start.
-        ec = started.get_future().get();
+        poller.wait(period_);
+        publish(count++, publisher);
     }
 
-    mutex_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
+    // Unbind the socket and exit this thread.
+    finished(unbind(publisher));
+}
+
+void heart_service::publish(uint32_t count, zmq::socket& publisher)
+{
+    const auto security = secure_ ? "secure" : "public";
+
+    zmq::message message;
+    message.enqueue_little_endian(count);
+    auto ec = message.send(publisher);
+
+    if (ec && ec != error::service_stopped)
+        log::warning(LOG_SERVER)
+            << "Failed to publish " << security << " heartbeat: "
+            << ec.message();
+
+    // This isn't actually a request, should probably update settings.
+    if (!settings_.log_requests)
+        return;
+
+    log::debug(LOG_SERVER)
+        << "Published " << security << " heartbeat [" << count << "].";
+}
+
+// Bind/Unbind.
+//-----------------------------------------------------------------------------
+
+bool heart_service::bind(zmq::socket& publisher)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& endpoint = secure_ ? settings_.secure_heartbeat_endpoint :
+        settings_.public_heartbeat_endpoint;
+
+    if (secure_ && !authenticator_.apply(publisher, domain, true))
+    {
+        log::error(LOG_SERVER)
+            << "Failed to apply authenticator to secure heartbeat service.";
+        return false;
+    }
+
+    const auto ec = publisher.bind(endpoint);
 
     if (ec)
     {
         log::error(LOG_SERVER)
-            << "Failed to bind heartbeat service to " << endpoint_;
+            << "Failed to bind " << security << " heartbeat service to "
+            << endpoint << " : " << ec.message();
         return false;
     }
 
     log::info(LOG_SERVER)
-        << "Bound " << (secure_ ? "secure " : "public ")
-        << "heartbeat service to " << endpoint_;
+        << "Bound " << security << " heartbeat service to " << endpoint;
     return true;
 }
 
-bool heart_service::stop()
+bool heart_service::unbind(zmq::socket& publisher)
 {
-    code ec(error::success);
+    const auto security = secure_ ? "secure" : "public";
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    mutex_.lock();
-
-    if (!stopped_)
-    {
-        // Stop the publisher.
-        stopped_ = true;
-
-        // Wait on publisher stop.
-        ec = stopping_.get_future().get();
-
-        // Enable restart capability.
-        stopping_ = std::promise<code>();
-    }
-    
-    mutex_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
-    if (ec)
+    if (!publisher.stop())
     {
         log::error(LOG_SERVER)
-            << "Failed to unbind heartbeat service from " << endpoint_;
+            << "Failed to disconnect " << security << " heartbeat worker.";
         return false;
     }
 
+    // Don't log stop success.
     return true;
-}
-
-// A context stop does not stop the publisher.
-void heart_service::publisher(std::promise<code>& started)
-{
-    const auto name = secure_ ? SECURE_NAME : PUBLIC_NAME;
-    zmq::socket socket(authenticator_, zmq::socket::role::publisher);
-
-    if (!socket || !authenticator_.apply(socket, name, secure_) ||
-        !socket.bind(endpoint_))
-    {
-        stopping_.set_value(error::success);
-        started.set_value(error::operation_failed);
-        return;
-    }
-
-    started.set_value(error::success);
-
-    // Pick a random counter start, overflow is okay.
-    auto counter = static_cast<uint32_t>(pseudo_random());
-
-    // TODO: use poller against outbound socket, allowing context to close it.
-    // A simple loop is optimal and keeps us on a single thread.
-    while (!stopped_)
-    {
-        send(counter++, socket);
-        sleep_for(interval_);
-    }
-
-    auto result = socket.stop() ? error::success : error::operation_failed;
-    stopping_.set_value(result);
-}
-
-void heart_service::send(uint32_t count, zmq::socket& socket)
-{
-    zmq::message message;
-    message.enqueue_little_endian(count);
-    const auto result = message.send(socket);
-
-    if (!result)
-    {
-        log::warning(LOG_SERVER)
-            << "Failed to send heartbeat on " << endpoint_;
-        return;
-    }
-
-    if (log_)
-        log::debug(LOG_SERVER)
-            << "Heartbeat [" << count << "] sent on " << endpoint_;
 }
 
 } // namespace server

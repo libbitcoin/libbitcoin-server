@@ -43,7 +43,11 @@ public:
         const data_chunk& address1, const data_chunk& address2,
         bool delimited);
 
-    bool send(bc::protocol::zmq::socket& socket);
+    /// A printable address for logging only.
+    std::string address();
+
+    /// Send the message one the socket.
+    code send(bc::protocol::zmq::socket& socket);
 
 protected:
     outgoing(const std::string& command, const data_chunk& data,

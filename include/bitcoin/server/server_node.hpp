@@ -29,7 +29,7 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 ////#include <bitcoin/server/services/block_service.hpp>
-////#include <bitcoin/server/services/heart_service.hpp>
+#include <bitcoin/server/services/heart_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
 ////#include <bitcoin/server/services/trans_service.hpp>
 #include <bitcoin/server/utility/address_notifier.hpp>
@@ -99,8 +99,9 @@ private:
     void handle_running(const code& ec, result_handler handler);
     void handle_closing(const code& ec, std::promise<code>& wait);
 
-    void start_query_services(result_handler handler);
-    void allocate_query_workers(bool secure, result_handler handler);
+    bool start_heart_services();
+    bool start_query_services();
+    bool start_query_workers(bool secure);
 
     const configuration& configuration_;
     const size_t last_checkpoint_height_;
@@ -109,6 +110,8 @@ private:
     curve_authenticator authenticator_;
     query_service secure_query_service_;
     query_service public_query_service_;
+    heart_service secure_heart_service_;
+    heart_service public_heart_service_;
 
     // This is protected by block mutex.
     block_notify_list block_subscriptions_;

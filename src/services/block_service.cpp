@@ -81,10 +81,20 @@ bool block_service::start()
     if (!enabled_)
         return true;
 
-    if (!socket_ || !socket_.bind(endpoint_))
+    if (!socket_)
     {
         log::error(LOG_SERVER)
-            << "Failed to bind block publish service to " << endpoint_;
+            << "Failed to initialize block publish service.";
+        return false;
+    }
+
+    const auto ec = socket_.bind(endpoint_);
+
+    if (ec)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to bind block publish service to " << endpoint_
+            << " : " << ec.message();
         stop();
         return false;
     }
@@ -122,11 +132,12 @@ void block_service::send(uint32_t height, const block::ptr block)
     for (const auto& tx: block->transactions)
         message.enqueue(tx.hash());
 
-    if (message.send(socket_))
-        return;
+    auto ec = message.send(socket_);
 
-    log::warning(LOG_SERVER)
-        << "Failed to publish block on " << endpoint_;
+    if (ec)
+        log::warning(LOG_SERVER)
+            << "Failed to publish block on " << endpoint_
+            << " : " << ec.message();
 }
 
 } // namespace server
