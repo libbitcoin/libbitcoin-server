@@ -84,7 +84,7 @@ bool query_worker::connect(zmq::socket& router)
     const auto& endpoint = secure_ ? query_service::secure_worker :
         query_service::public_worker;
 
-    auto ec = router.connect(endpoint);
+    const auto ec = router.connect(endpoint);
 
     if (ec)
     {
@@ -147,12 +147,6 @@ void query_worker::query(zmq::socket& router)
         return;
     }
 
-    if (settings_.log_requests)
-    {
-        log::info(LOG_SERVER)
-            << "Query " << request.command << " from " << request.address();
-    }
-
     // Locate the request handler for this command.
     const auto handler = command_handlers_.find(request.command);
 
@@ -163,6 +157,12 @@ void query_worker::query(zmq::socket& router)
 
         sender(outgoing(request, error::not_found));
         return;
+    }
+
+    if (settings_.log_requests)
+    {
+        log::info(LOG_SERVER)
+            << "Query " << request.command << " from " << request.address();
     }
 
     // Execute the request and forward result to queue.

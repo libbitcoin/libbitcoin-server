@@ -19,118 +19,195 @@
  */
 #include <bitcoin/server/services/trans_service.hpp>
 
-#include <cstdint>
-#include <string>
+#include <functional>
+#include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-#define PUBLIC_NAME "public_transaction"
-#define SECURE_NAME "secure_transaction"
-
 using std::placeholders::_1;
+using std::placeholders::_2;
+using std::placeholders::_3;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-static inline bool is_enabled(server_node& node, bool secure)
-{
-    const auto& settings = node.server_settings();
-    return settings.transaction_service_enabled &&
-        (!secure || settings.server_private_key);
-}
+static const auto domain = "transaction";
+const config::endpoint trans_service::public_worker("inproc://public_tx");
+const config::endpoint trans_service::secure_worker("inproc://secure_tx");
 
-static inline config::endpoint get_endpoint(server_node& node, bool secure)
-{
-    const auto& settings = node.server_settings();
-    return secure ? settings.secure_transaction_endpoint :
-        settings.public_transaction_endpoint;
-}
-
-// ZMQ_PUSH (we might want ZMQ_SUB here)
-// When a ZMQ_PUSH socket enters an exceptional state due to having reached the
-// high water mark for all downstream nodes, or if there are no downstream
-// nodes at all, then any zmq_send(3) operations on the socket shall block
-// until the exceptional state ends or at least one downstream node becomes
-//available for sending; messages are not discarded.
 trans_service::trans_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : node_(node),
-    socket_(authenticator, zmq::socket::role::pusher),
-    endpoint_(get_endpoint(node, secure)),
-    enabled_(is_enabled(node, secure)),
-    secure_(secure)
+  : worker(node.thread_pool()),
+    secure_(secure),
+    settings_(node.server_settings()),
+    authenticator_(authenticator),
+    node_(node)
 {
-    const auto name = secure ? SECURE_NAME : PUBLIC_NAME;
-
-    // The authenticator logs apply failures and stopped socket halts start.
-    if (!enabled_ || !authenticator.apply(socket_, name, secure))
-        socket_.stop();
 }
 
-// The endpoint is not restartable.
-// The instance is retained in scope by subscribe_transactions until stopped.
+// There is no unsubscribe so this class shouldn't be restarted.
 bool trans_service::start()
 {
-    if (!enabled_)
-        return true;
+    // Subscribe to transaction pool acceptances.
+    node_.subscribe_transaction_pool(
+        std::bind(&trans_service::handle_transaction,
+            this, _1, _2, _3));
 
-    if (!socket_)
+    return zmq::worker::start();
+}
+
+
+// No unsubscribe so must be kept in scope until subscriber stop complete.
+bool trans_service::stop()
+{
+    return zmq::worker::stop();
+}
+
+// Implement worker as extended pub-sub.
+// The publisher drops messages for lost peers (clients) and high water.
+void trans_service::work()
+{
+    zmq::socket xpub(authenticator_, zmq::socket::role::extended_publisher);
+    zmq::socket xsub(authenticator_, zmq::socket::role::extended_subscriber);
+
+    // Bind sockets to the service and worker endpoints.
+    if (!started(bind(xpub, xsub)))
+        return;
+
+    // TODO: tap in to failure conditions, such as high water.
+    // Relay messages between subscriber and publisher (blocks on context).
+    relay(xpub, xsub);
+
+    // Unbind the sockets and exit this thread.
+    finished(unbind(xpub, xsub));
+}
+
+// Bind/Unbind.
+//-----------------------------------------------------------------------------
+
+bool trans_service::bind(zmq::socket& xpub, zmq::socket& xsub)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& worker = secure_ ? secure_worker : public_worker;
+    const auto& service = secure_ ? settings_.secure_transaction_endpoint :
+        settings_.public_transaction_endpoint;
+
+    if (secure_ && !authenticator_.apply(xpub, domain, true))
     {
         log::error(LOG_SERVER)
-            << "Failed to initialize transaction publish service.";
+            << "Failed to apply authenticator to secure transaction service.";
         return false;
     }
 
-    const auto ec = socket_.bind(endpoint_);
+    auto ec = xpub.bind(service);
 
     if (ec)
     {
         log::error(LOG_SERVER)
-            << "Failed to bind transaction publish service to " << endpoint_
-            << " : " << ec.message();
-        stop();
+            << "Failed to bind " << security << " transaction service to "
+            << service << " : " << ec.message();
+        return false;
+    }
+
+    ec = xsub.bind(worker);
+
+    if (ec)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to bind " << security << " transaction workers to "
+            << worker << " : " << ec.message();
         return false;
     }
 
     log::info(LOG_SERVER)
-        << "Bound " << (secure_ ? "secure " : "public ")
-        << "transaction publish service to " << endpoint_;
-
-    // This is not a libbitcoin re/subscriber.
-    node_.subscribe_transactions(
-        std::bind(&trans_service::send,
-            this, _1));
-
+        << "Bound " << security << " transaction service to " << service;
     return true;
 }
 
-bool trans_service::stop()
+bool trans_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 {
-    if (!socket_ || socket_.stop())
-        return true;
+    // Stop both even if one fails.
+    const auto service_stop = xpub.stop();
+    const auto worker_stop = xsub.stop();
+    const auto security = secure_ ? "secure" : "public";
 
-    log::debug(LOG_SERVER)
-        << "Failed to unbind transaction publish service from " << endpoint_;
-    return false;
+    if (!service_stop)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to unbind " << security << " transaction service.";
+    }
+
+    if (!worker_stop)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to unbind " << security << " transaction workers.";
+    }
+
+    // Don't log stop success.
+    return service_stop && worker_stop;
 }
 
-// BUGBUG: this must be translated to the socket thread.
-void trans_service::send(const transaction& tx)
-{
-    zmq::message message;
-    message.enqueue(tx.to_data());
+// Publish Execution (integral worker).
+// ----------------------------------------------------------------------------
 
-    auto ec = message.send(socket_);
+// A failure here does not prevent future notifications.
+bool trans_service::handle_transaction(const code& ec,
+    const point::indexes&, const transaction& tx)
+{
+    if (stopped() || ec == bc::error::service_stopped)
+        return false;
 
     if (ec)
+    {
         log::warning(LOG_SERVER)
-            << "Failed to publish transaction on " << endpoint_
-            << " : " << ec.message();
+            << "Failure handling new transaction: " << ec.message();
+        return true;
+    }
+
+    publish_transaction(tx);
+    return true;
+}
+
+void trans_service::publish_transaction(const transaction& tx)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& endpoint = secure_ ? trans_service::secure_worker :
+        trans_service::public_worker;
+
+    // Notifications are off the pub-sub thread so this must connect back.
+    // This could be optimized by caching the socket as thread static.
+    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
+    auto ec = publisher.connect(endpoint);
+
+    if (ec)
+    {
+        log::warning(LOG_SERVER)
+            << "Failed to connect " << security << " transaction worker: "
+            << ec.message();
+    }
+
+    zmq::message respose;
+    respose.enqueue(tx.to_data());
+    ec = publisher.send(respose);
+
+    if (ec)
+    {
+        log::warning(LOG_SERVER)
+            << "Failed to publish " << security << " transaction ["
+            << encode_hash(tx.hash()) << "] " << ec.message();
+    }
+
+    // This isn't actually a request, should probably update settings.
+    if (!settings_.log_requests)
+        return;
+
+    log::debug(LOG_SERVER)
+        << "Published " << security << " transaction ["
+        << encode_hash(tx.hash()) << "]";
 }
 
 } // namespace server

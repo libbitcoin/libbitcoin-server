@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2016 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
  *
@@ -20,124 +20,215 @@
 #include <bitcoin/server/services/block_service.hpp>
 
 #include <cstdint>
-#include <cstddef>
-#include <string>
+#include <functional>
+#include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-#define PUBLIC_NAME "public_block"
-#define SECURE_NAME "secure_block"
-
 using std::placeholders::_1;
 using std::placeholders::_2;
+using std::placeholders::_3;
+using std::placeholders::_4;
 using namespace bc::chain;
 using namespace bc::protocol;
 
-static inline bool is_enabled(server_node& node, bool secure)
-{
-    const auto& settings = node.server_settings();
-    return settings.block_service_enabled &&
-        (!secure || settings.server_private_key);
-}
+static const auto domain = "block";
+const config::endpoint block_service::public_worker("inproc://public_block");
+const config::endpoint block_service::secure_worker("inproc://secure_block");
 
-static inline config::endpoint get_endpoint(server_node& node, bool secure)
-{
-    const auto& settings = node.server_settings();
-    return secure ? settings.secure_block_endpoint :
-        settings.public_block_endpoint;
-}
-
-// ZMQ_PUSH (we might want ZMQ_SUB here)
-// When a ZMQ_PUSH socket enters an exceptional state due to having reached the
-// high water mark for all downstream nodes, or if there are no downstream
-// nodes at all, then any zmq_send(3) operations on the socket shall block
-// until the exceptional state ends or at least one downstream node becomes
-//available for sending; messages are not discarded.
 block_service::block_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : node_(node),
-    socket_(authenticator, zmq::socket::role::pusher),
-    endpoint_(get_endpoint(node, secure)),
-    enabled_(is_enabled(node, secure)),
-    secure_(secure)
+  : worker(node.thread_pool()),
+    secure_(secure),
+    settings_(node.server_settings()),
+    authenticator_(authenticator),
+    node_(node)
 {
-    const auto name = secure ? SECURE_NAME : PUBLIC_NAME;
-
-    // The authenticator logs apply failures and stopped socket halts start.
-    if (!enabled_ || !authenticator.apply(socket_, name, secure))
-        socket_.stop();
 }
 
-// The endpoint is not restartable.
-// The instance is retained in scope by subscribe_blocks until stopped.
+// There is no unsubscribe so this class shouldn't be restarted.
 bool block_service::start()
 {
-    if (!enabled_)
-        return true;
+    // Subscribe to blockchain reorganizations.
+    node_.subscribe_blockchain(
+        std::bind(&block_service::handle_reorganization,
+            this, _1, _2, _3, _4));
 
-    if (!socket_)
+    return zmq::worker::start();
+}
+
+
+// No unsubscribe so must be kept in scope until subscriber stop complete.
+bool block_service::stop()
+{
+    return zmq::worker::stop();
+}
+
+// Implement worker as extended pub-sub.
+// The publisher drops messages for lost peers (clients) and high water.
+void block_service::work()
+{
+    zmq::socket xpub(authenticator_, zmq::socket::role::extended_publisher);
+    zmq::socket xsub(authenticator_, zmq::socket::role::extended_subscriber);
+
+    // Bind sockets to the service and worker endpoints.
+    if (!started(bind(xpub, xsub)))
+        return;
+
+    // TODO: tap in to failure conditions, such as high water.
+    // Relay messages between subscriber and publisher (blocks on context).
+    relay(xpub, xsub);
+
+    // Unbind the sockets and exit this thread.
+    finished(unbind(xpub, xsub));
+}
+
+// Bind/Unbind.
+//-----------------------------------------------------------------------------
+
+bool block_service::bind(zmq::socket& xpub, zmq::socket& xsub)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& worker = secure_ ? secure_worker : public_worker;
+    const auto& service = secure_ ? settings_.secure_block_endpoint :
+        settings_.public_block_endpoint;
+
+    if (secure_ && !authenticator_.apply(xpub, domain, true))
     {
         log::error(LOG_SERVER)
-            << "Failed to initialize block publish service.";
+            << "Failed to apply authenticator to secure block service.";
         return false;
     }
 
-    const auto ec = socket_.bind(endpoint_);
+    auto ec = xpub.bind(service);
 
     if (ec)
     {
         log::error(LOG_SERVER)
-            << "Failed to bind block publish service to " << endpoint_
-            << " : " << ec.message();
-        stop();
+            << "Failed to bind " << security << " block service to "
+            << service << " : " << ec.message();
+        return false;
+    }
+
+    ec = xsub.bind(worker);
+
+    if (ec)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to bind " << security << " block workers to "
+            << worker << " : " << ec.message();
         return false;
     }
 
     log::info(LOG_SERVER)
-        << "Bound " << (secure_ ? "secure " : "public ")
-        << "block publish service to " << endpoint_;
-
-    // This is not a libbitcoin re/subscriber.
-    node_.subscribe_blocks(
-        std::bind(&block_service::send,
-            this, _1, _2));
-
+        << "Bound " << security << " block service to " << service;
     return true;
 }
 
-bool block_service::stop()
+bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 {
-    if (!socket_ || socket_.stop())
-        return true;
-    
-    log::debug(LOG_SERVER)
-        << "Failed to unbind block publish service from " << endpoint_;
+    // Stop both even if one fails.
+    const auto service_stop = xpub.stop();
+    const auto worker_stop = xsub.stop();
+    const auto security = secure_ ? "secure" : "public";
 
-    return false;
+    if (!service_stop)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to unbind " << security << " block service.";
+    }
+
+    if (!worker_stop)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to unbind " << security << " block workers.";
+    }
+
+    // Don't log stop success.
+    return service_stop && worker_stop;
 }
 
-// BUGBUG: this must be translated to the socket thread.
-void block_service::send(uint32_t height, const block::ptr block)
+// Publish Execution (integral worker).
+// ----------------------------------------------------------------------------
+
+// A failure here does not prevent future notifications.
+bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
+    const block::ptr_list& new_blocks, const block::ptr_list&)
 {
-    zmq::message message;
-    message.enqueue_little_endian(height);
-    message.enqueue(block->header.to_data(false));
-
-    for (const auto& tx: block->transactions)
-        message.enqueue(tx.hash());
-
-    auto ec = message.send(socket_);
+    if (stopped() || ec == bc::error::service_stopped)
+        return false;
 
     if (ec)
+    {
         log::warning(LOG_SERVER)
-            << "Failed to publish block on " << endpoint_
-            << " : " << ec.message();
+            << "Failure handling new block: " << ec.message();
+        return true;
+    }
+
+    // Blockchain height is 64 bit but obelisk protocol is 32 bit.
+    BITCOIN_ASSERT(fork_point <= max_uint32);
+    const auto fork_point32 = static_cast<uint32_t>(fork_point);
+
+    publish_blocks(fork_point32, new_blocks);
+    return true;
+}
+
+void block_service::publish_blocks(uint32_t fork_point,
+    const block::ptr_list& blocks)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& endpoint = secure_ ? block_service::secure_worker :
+        block_service::public_worker;
+
+    // Notifications are off the pub-sub thread so this must connect back.
+    // This could be optimized by caching the socket as thread static.
+    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
+    const auto ec = publisher.connect(endpoint);
+
+    if (ec)
+    {
+        log::warning(LOG_SERVER)
+            << "Failed to connect " << security << " block worker: "
+            << ec.message();
+    }
+
+    BITCOIN_ASSERT(blocks.size() <= max_uint32);
+    BITCOIN_ASSERT(fork_point < max_uint32 - blocks.size());
+    auto height = fork_point;
+
+    for (const auto block: blocks)
+        publish_block(publisher, height++, block);
+}
+
+void block_service::publish_block(zmq::socket& publisher, uint32_t height,
+    const block::ptr block)
+{
+    const auto security = secure_ ? "secure" : "public";
+
+    zmq::message respose;
+    respose.enqueue_little_endian(height);
+    respose.enqueue(block->to_data(false));
+    const auto ec = publisher.send(respose);
+
+    if (ec)
+    {
+        log::warning(LOG_SERVER)
+            << "Failed to publish " << security << " bloc ["
+            << encode_hash(block->header.hash()) << "] " << ec.message();
+    }
+
+    // This isn't actually a request, should probably update settings.
+    if (!settings_.log_requests)
+        return;
+
+    log::debug(LOG_SERVER)
+        << "Published " << security << " block ["
+        << encode_hash(block->header.hash()) << "]";
 }
 
 } // namespace server

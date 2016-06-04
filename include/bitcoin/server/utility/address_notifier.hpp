@@ -75,6 +75,10 @@ private:
         subscription_locator locator;
     };
 
+
+    ////typedef resubscriber<const chain::transaction&> block_subscriber;
+    ////typedef resubscriber<const chain::transaction&> tx_subscriber;
+
     typedef std::vector<subscription_record> subscription_records;
     typedef std::vector<subscription_locator> subscription_locators;
 

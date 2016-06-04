@@ -51,13 +51,15 @@ address_notifier::address_notifier(server_node& node)
 // Subscribe against the node's tx and block publishers.
 bool address_notifier::start()
 {
-    node_.subscribe_blocks(
-        std::bind(&address_notifier::receive_block,
-            this, _1, _2));
+    ////////// This is not a libbitcoin re/subscriber.
+    ////////node_.subscribe_blocks(
+    ////////    std::bind(&address_notifier::receive_block,
+    ////////        this, _1, _2));
 
-    node_.subscribe_transactions(
-        std::bind(&address_notifier::receive_transaction,
-            this, _1));
+    ////////// This is not a libbitcoin re/subscriber.
+    ////////node_.subscribe_transactions(
+    ////////    std::bind(&address_notifier::receive_transaction,
+    ////////        this, _1));
 
     return true;
 }
