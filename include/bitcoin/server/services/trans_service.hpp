@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2016 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin-server.
  *
@@ -20,49 +20,58 @@
 #ifndef LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
 #define LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
 
-#include <cstdint>
 #include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
 
+// Subscribe to transaction acceptances into the transaction memory pool.
 class BCS_API trans_service
-  : public enable_shared_from_base<trans_service>
+  : public bc::protocol::zmq::worker
 {
 public:
     typedef std::shared_ptr<trans_service> ptr;
 
-    /// Construct a transaction endpoint.
+    /// The fixed inprocess worker endpoints.
+    static const config::endpoint public_worker;
+    static const config::endpoint secure_worker;
+
+    /// Construct a transaction service.
     trans_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// This class is not copyable.
-    trans_service(const trans_service&) = delete;
-    void operator=(const trans_service&) = delete;
+    /// Start the service.
+    bool start() override;
 
-    /// Start the endpoint.
-    bool start();
-
-    /// Stop the endpoint.
+    /// Stop the service.
     bool stop();
 
+protected:
+    typedef bc::protocol::zmq::socket socket;
+    typedef bc::chain::point::indexes index_list;
+
+    virtual bool bind(socket& xpub, socket& xsub);
+    virtual bool unbind(socket& xpub, socket& xsub);
+
+    // Implement the service.
+    virtual void work();
+
 private:
-    void send(const chain::transaction& tx);
+    bool handle_transaction(const code& ec, const index_list&,
+        const chain::transaction& tx);
+    void publish_transaction(const chain::transaction& tx);
 
-    // BUGBUG: This is NOT thread safe.
-    bc::protocol::zmq::socket socket_;
-
-    // This is thread safe.
-    server_node& node_;
-    const bc::config::endpoint endpoint_;
-    const bool enabled_;
     const bool secure_;
+    const server::settings& settings_;
+
+    // These are thread safe.
+    bc::protocol::zmq::authenticator& authenticator_;
+    server_node& node_;
 };
 
 } // namespace server

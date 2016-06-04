@@ -20,19 +20,17 @@
 #ifndef LIBBITCOIN_SERVER_SERVER_NODE_HPP
 #define LIBBITCOIN_SERVER_SERVER_NODE_HPP
 
-#include <cstddef>
-#include <cstdint>
 #include <future>
 #include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-////#include <bitcoin/server/services/block_service.hpp>
+#include <bitcoin/server/services/block_service.hpp>
 #include <bitcoin/server/services/heart_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
-////#include <bitcoin/server/services/trans_service.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/services/trans_service.hpp>
+////#include <bitcoin/server/services/address_worker.hpp>
 #include <bitcoin/server/utility/curve_authenticator.hpp>
 
 namespace libbitcoin {
@@ -43,10 +41,6 @@ class BCS_API server_node
 {
 public:
     typedef std::shared_ptr<server_node> ptr;
-    typedef std::function<void(uint32_t, const chain::block::ptr)>
-        block_notify_callback;
-    typedef std::function<void (const chain::transaction&)>
-        transaction_notify_callback;
 
     /// Construct a server node.
     server_node(const configuration& configuration);
@@ -76,35 +70,17 @@ public:
     /// Server configuration settings.
     virtual const settings& server_settings() const;
 
-    // Subscriptions.
-    // ----------------------------------------------------------------------------
-
-    /// Subscribe to block announcements and reorgs.
-    virtual void subscribe_blocks(block_notify_callback notify_block);
-
-    /// Subscribe to new memory pool transactions.
-    virtual void subscribe_transactions(transaction_notify_callback notify_tx);
-
 private:
-    typedef std::vector<block_notify_callback> block_notify_list;
-    typedef std::vector<transaction_notify_callback> transaction_notify_list;
-
-    bool handle_new_transaction(const code& ec,
-        const chain::point::indexes& unconfirmed,
-        const chain::transaction& tx);
-    bool handle_new_blocks(const code& ec, uint64_t fork_point,
-        const chain::block::ptr_list& new_blocks,
-        const chain::block::ptr_list& replaced_blocks);
-
     void handle_running(const code& ec, result_handler handler);
     void handle_closing(const code& ec, std::promise<code>& wait);
 
-    bool start_heart_services();
     bool start_query_services();
+    bool start_heart_services();
+    bool start_block_services();
+    bool start_trans_services();
     bool start_query_workers(bool secure);
 
     const configuration& configuration_;
-    const size_t last_checkpoint_height_;
 
     // These are thread safe.
     curve_authenticator authenticator_;
@@ -112,14 +88,10 @@ private:
     query_service public_query_service_;
     heart_service secure_heart_service_;
     heart_service public_heart_service_;
-
-    // This is protected by block mutex.
-    block_notify_list block_subscriptions_;
-    mutable upgrade_mutex block_mutex_;
-
-    // This is protected by transaction mutex.
-    transaction_notify_list transaction_subscriptions_;
-    mutable upgrade_mutex transaction_mutex_;
+    block_service secure_block_service_;
+    block_service public_block_service_;
+    trans_service secure_trans_service_;
+    trans_service public_trans_service_;
 };
 
 } // namespace server

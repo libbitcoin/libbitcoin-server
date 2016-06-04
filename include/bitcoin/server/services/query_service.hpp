@@ -45,10 +45,10 @@ public:
         server_node& node, bool secure);
 
 protected:
-    virtual bool bind(bc::protocol::zmq::socket& router,
-        bc::protocol::zmq::socket& dealer);
-    virtual bool unbind(bc::protocol::zmq::socket& router,
-        bc::protocol::zmq::socket& dealer);
+    typedef bc::protocol::zmq::socket socket;
+
+    virtual bool bind(socket& router, socket& dealer);
+    virtual bool unbind(socket& router, socket& dealer);
 
     // Implement the service.
     virtual void work();

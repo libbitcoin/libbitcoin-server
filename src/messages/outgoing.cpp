@@ -88,7 +88,7 @@ std::string outgoing::address()
 
 code outgoing::send(zmq::socket& socket)
 {
-    return message_.send(socket);
+    return socket.send(message_);
 }
 
 } // namespace server

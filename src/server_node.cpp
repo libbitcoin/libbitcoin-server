@@ -30,24 +30,22 @@ namespace libbitcoin {
 namespace server {
 
 using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
-using std::placeholders::_4;
-using namespace bc::blockchain;
 using namespace bc::chain;
 using namespace bc::node;
 using namespace bc::protocol;
-using namespace bc::wallet;
 
 server_node::server_node(const configuration& configuration)
   : p2p_node(configuration),
     configuration_(configuration),
-    last_checkpoint_height_(configuration.last_checkpoint_height()),
     authenticator_(*this),
     secure_query_service_(authenticator_, *this, true),
     public_query_service_(authenticator_, *this, false),
     secure_heart_service_(authenticator_, *this, true),
-    public_heart_service_(authenticator_, *this, false)
+    public_heart_service_(authenticator_, *this, false),
+    secure_block_service_(authenticator_, *this, true),
+    public_block_service_(authenticator_, *this, false),
+    secure_trans_service_(authenticator_, *this, true),
+    public_trans_service_(authenticator_, *this, false)
 {
 }
 
@@ -56,20 +54,6 @@ server_node::server_node(const configuration& configuration)
 
 void server_node::stop(result_handler handler)
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    transaction_mutex_.lock();
-    transaction_subscriptions_.clear();
-    transaction_mutex_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    block_mutex_.lock();
-    block_subscriptions_.clear();
-    block_mutex_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
     // Signals close and blocks until all sockets are closed.
     authenticator_.stop();
 
@@ -148,21 +132,12 @@ void server_node::handle_running(const code& ec, result_handler handler)
     }
 
     // Start services and workers.
-    if (!start_query_services() || !start_heart_services())
+    if (!start_query_services() || !start_heart_services() ||
+        !start_block_services() || !start_trans_services())
     {
         handler(error::operation_failed);
         return;
     }
-
-    // Subscribe to blockchain reorganizations.
-    subscribe_blockchain(
-        std::bind(&server_node::handle_new_blocks,
-            this, _1, _2, _3, _4));
-
-    // Subscribe to transaction pool acceptances.
-    subscribe_transaction_pool(
-        std::bind(&server_node::handle_new_transaction,
-            this, _1, _2, _3));
 
     // This is the end of the derived run sequence.
     handler(error::success);
@@ -231,96 +206,14 @@ bool server_node::start_heart_services()
     return true;
 }
 
-// Subscriptions.
-// ----------------------------------------------------------------------------
-
-// This serves both address subscription and the block publisher.
-void server_node::subscribe_blocks(block_notify_callback notify_block)
+bool server_node::start_block_services()
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(block_mutex_);
-
-    if (!stopped())
-        block_subscriptions_.push_back(notify_block);
-    ///////////////////////////////////////////////////////////////////////////
-}
-
-// This serves both address subscription and the tx publisher.
-void server_node::subscribe_transactions(transaction_notify_callback notify_tx)
-{
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(transaction_mutex_);
-
-    if (!stopped())
-        transaction_subscriptions_.push_back(notify_tx);
-    ///////////////////////////////////////////////////////////////////////////
-}
-
-// Notifications.
-// ----------------------------------------------------------------------------
-
-bool server_node::handle_new_transaction(const code& ec,
-    const point::indexes& unconfirmed, const transaction& tx)
-{
-    if (stopped() || ec == bc::error::service_stopped)
-        return false;
-
-    if (ec)
-    {
-        log::error(LOG_SERVER)
-            << "Failure handling new tx: " << ec.message();
-        return false;
-    }
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    transaction_mutex_.lock_shared();
-    const auto transaction_subscriptions = transaction_subscriptions_;
-    transaction_mutex_.unlock_shared();
-    ///////////////////////////////////////////////////////////////////////////
-
-    // Fire server protocol tx subscription notifications.
-    for (const auto notify: transaction_subscriptions)
-        notify(tx);
-
     return true;
 }
 
-bool server_node::handle_new_blocks(const code& ec, uint64_t fork_point,
-    const block::ptr_list& new_blocks, const block::ptr_list& replaced_blocks)
+bool server_node::start_trans_services()
 {
-    if (stopped() || ec == bc::error::service_stopped)
-        return false;
-
-    if (fork_point < last_checkpoint_height_)
-        return false;
-
-    if (ec)
-    {
-        log::error(LOG_SERVER)
-            << "Failure handling new blocks: " << ec.message();
-        return false;
-    }
-
-    BITCOIN_ASSERT(fork_point < max_uint32 - new_blocks.size());
-    auto height = static_cast<uint32_t>(fork_point);
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    block_mutex_.lock_shared();
-    const auto block_subscriptions = block_subscriptions_;
-    block_mutex_.unlock_shared();
-    ///////////////////////////////////////////////////////////////////////////
-
-    // Fire server protocol block subscription notifications.
-    for (auto new_block: new_blocks)
-        for (const auto notify: block_subscriptions)
-            notify(++height, new_block);
-
     return true;
 }
-
 } // namespace server
 } // namespace libbitcoin

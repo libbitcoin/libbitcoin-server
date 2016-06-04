@@ -47,15 +47,17 @@ public:
         server_node& node, bool secure);
 
 protected:
+    typedef bc::protocol::zmq::socket socket;
+
     typedef std::function<void(const incoming&, send_handler)> command_handler;
     typedef std::unordered_map<std::string, command_handler> command_map;
 
-    virtual bool connect(bc::protocol::zmq::socket& router);
-    virtual bool disconnect(bc::protocol::zmq::socket& router);
-
     virtual void attach_interface();
     virtual void attach(const std::string& command, command_handler handler);
-    virtual void query(bc::protocol::zmq::socket& router);
+
+    virtual bool connect(socket& router);
+    virtual bool disconnect(socket& router);
+    virtual void query(socket& router);
 
     // Implement the worker.
     virtual void work();

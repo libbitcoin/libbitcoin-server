@@ -77,27 +77,6 @@ void heart_service::work()
     finished(unbind(publisher));
 }
 
-void heart_service::publish(uint32_t count, zmq::socket& publisher)
-{
-    const auto security = secure_ ? "secure" : "public";
-
-    zmq::message message;
-    message.enqueue_little_endian(count);
-    auto ec = message.send(publisher);
-
-    if (ec && ec != error::service_stopped)
-        log::warning(LOG_SERVER)
-            << "Failed to publish " << security << " heartbeat: "
-            << ec.message();
-
-    // This isn't actually a request, should probably update settings.
-    if (!settings_.log_requests)
-        return;
-
-    log::debug(LOG_SERVER)
-        << "Published " << security << " heartbeat [" << count << "].";
-}
-
 // Bind/Unbind.
 //-----------------------------------------------------------------------------
 
@@ -142,6 +121,30 @@ bool heart_service::unbind(zmq::socket& publisher)
 
     // Don't log stop success.
     return true;
+}
+
+// Publish Execution (integral worker).
+//-----------------------------------------------------------------------------
+
+void heart_service::publish(uint32_t count, zmq::socket& publisher)
+{
+    const auto security = secure_ ? "secure" : "public";
+
+    zmq::message message;
+    message.enqueue_little_endian(count);
+    auto ec = publisher.send(message);
+
+    if (ec && ec != error::service_stopped)
+        log::warning(LOG_SERVER)
+            << "Failed to publish " << security << " heartbeat: "
+            << ec.message();
+
+    // This isn't actually a request, should probably update settings.
+    if (!settings_.log_requests)
+        return;
+
+    log::debug(LOG_SERVER)
+        << "Published " << security << " heartbeat [" << count << "].";
 }
 
 } // namespace server

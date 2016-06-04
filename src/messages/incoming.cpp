@@ -50,7 +50,7 @@ std::string incoming::address()
 code incoming::receive(zmq::socket& socket)
 {
     zmq::message message;
-    auto ec = message.receive(socket);
+    auto ec = socket.receive(message);
 
     if (ec)
         return ec;

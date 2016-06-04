@@ -42,14 +42,16 @@ public:
         server_node& node, bool secure);
 
 protected:
-    virtual bool bind(bc::protocol::zmq::socket& publisher);
-    virtual bool unbind(bc::protocol::zmq::socket& publisher);
+    typedef bc::protocol::zmq::socket socket;
+
+    virtual bool bind(socket& publisher);
+    virtual bool unbind(socket& publisher);
 
     // Implement the service.
     virtual void work();
 
     // Publish the heartbeat (integrated worker).
-    void publish(uint32_t count, bc::protocol::zmq::socket& socket);
+    void publish(uint32_t count, socket& socket);
 
 private:
     const server::settings& settings_;
