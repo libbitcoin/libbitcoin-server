@@ -79,10 +79,20 @@ bool trans_service::start()
     if (!enabled_)
         return true;
 
-    if (!socket_ || !socket_.bind(endpoint_))
+    if (!socket_)
     {
         log::error(LOG_SERVER)
-            << "Failed to bind transaction publish service to " << endpoint_;
+            << "Failed to initialize transaction publish service.";
+        return false;
+    }
+
+    const auto ec = socket_.bind(endpoint_);
+
+    if (ec)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to bind transaction publish service to " << endpoint_
+            << " : " << ec.message();
         stop();
         return false;
     }
@@ -115,11 +125,12 @@ void trans_service::send(const transaction& tx)
     zmq::message message;
     message.enqueue(tx.to_data());
 
-    if (message.send(socket_))
-        return;
+    auto ec = message.send(socket_);
 
-    log::warning(LOG_SERVER)
-        << "Failed to publish transaction on " << endpoint_;
+    if (ec)
+        log::warning(LOG_SERVER)
+            << "Failed to publish transaction on " << endpoint_
+            << " : " << ec.message();
 }
 
 } // namespace server

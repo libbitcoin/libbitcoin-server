@@ -28,24 +28,35 @@ namespace server {
 
 using namespace bc::protocol;
 
+std::string incoming::address()
+{
+    return "[" + encode_base16(address1) + "]";
+}
+
 // Protocol delimitation migration plan.
 //-----------------------------------------------------------------------------
-//    v1/v2 server: ROUTER, requires not framed
-//       v3 server: ROUTER, allows/echos framed
+//    v1/v2 server: ROUTER, requires not delimited
+//       v3 server: ROUTER, allows/echos delimited
 // v1/v2/v3 client: DEALER (not framed)
 //-----------------------------------------------------------------------------
-//       v4 server: ROUTER, requires framed
-//       v4 client: DEALER (framed) or REQ
+//       v4 server: ROUTER, requires delimited
+//       v4 client: DEALER (delimited) or REQ
 //-----------------------------------------------------------------------------
 
-// TODO: generalize address stripping with hack parameter of expected
-// payload length for parsing undelimited addressing.
-bool incoming::receive(zmq::socket& socket)
+// TODO: generalize address stripping, store all routes, use (hack) parameter
+// of expected payload length for parsing undelimited addressing.
+// BUGBUG: current implementation assumes client has not added any addresses.
+// This probably prevents the use of generalized zeromq routing to the server.
+code incoming::receive(zmq::socket& socket)
 {
     zmq::message message;
+    auto ec = message.receive(socket);
 
-    if (!message.receive(socket) || message.size() < 5 || message.size() > 6)
-        return false;
+    if (ec)
+        return ec;
+    
+    if (message.size() < 5 || message.size() > 6)
+        return error::bad_stream;
 
     // Client is undelimited DEALER -> 2 addresses with no delimiter.
     // Client is REQ or delimited DEALER -> 2 addresses with delimiter.
@@ -66,11 +77,11 @@ bool incoming::receive(zmq::socket& socket)
 
     // Arbitrary caller data (returned to caller for correlation).
     if (!message.dequeue(id))
-        return false;
+        return error::bad_stream;
 
     // Serialized query.
     data = message.dequeue_data();
-    return true;
+    return error::success;
 }
 
 } // namespace server

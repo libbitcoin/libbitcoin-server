@@ -31,7 +31,11 @@ namespace server {
 class BCS_API incoming
 {
 public:
-    bool receive(bc::protocol::zmq::socket& socket);
+    /// A printable address for logging only.
+    std::string address();
+
+    /// Send a message from the socket.
+    code receive(bc::protocol::zmq::socket& socket);
 
     /// The message route as seen at workers.
     data_chunk address1;

@@ -20,13 +20,11 @@
 #ifndef LIBBITCOIN_SERVER_HEART_SERVICE_HPP
 #define LIBBITCOIN_SERVER_HEART_SERVICE_HPP
 
-#include <atomic>
-#include <chrono>
 #include <cstdint>
-#include <future>
 #include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -34,7 +32,7 @@ namespace server {
 class server_node;
 
 class BCS_API heart_service
-  : public enable_shared_from_base<heart_service>
+  : public bc::protocol::zmq::worker
 {
 public:
     typedef std::shared_ptr<heart_service> ptr;
@@ -43,33 +41,23 @@ public:
     heart_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// This class is not copyable.
-    heart_service(const heart_service&) = delete;
-    void operator=(const heart_service&) = delete;
+protected:
+    virtual bool bind(bc::protocol::zmq::socket& publisher);
+    virtual bool unbind(bc::protocol::zmq::socket& publisher);
 
-    /// Start the endpoint.
-    bool start();
+    // Implement the service.
+    virtual void work();
 
-    /// Stop the endpoint.
-    /// Stopping the authenticated context does not stop the publisher.
-    bool stop();
+    // Publish the heartbeat (integrated worker).
+    void publish(uint32_t count, bc::protocol::zmq::socket& socket);
 
 private:
-    void publisher(std::promise<code>& started);
-    void send(uint32_t count, bc::protocol::zmq::socket& socket);
-
-    // These are protected by mutex.
-    bc::protocol::zmq::authenticator& authenticator_;
-    dispatcher dispatch_;
-    std::atomic<bool> stopped_;
-    std::promise<code> stopping_;
-    mutable shared_mutex mutex_;
-
-    const bc::config::endpoint endpoint_;
-    const std::chrono::seconds interval_;
-    const bool log_;
-    const bool enabled_;
+    const server::settings& settings_;
+    const int32_t period_;
     const bool secure_;
+
+    // This is thread safe.
+    bc::protocol::zmq::authenticator& authenticator_;
 };
 
 } // namespace server

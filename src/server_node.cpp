@@ -45,7 +45,9 @@ server_node::server_node(const configuration& configuration)
     last_checkpoint_height_(configuration.last_checkpoint_height()),
     authenticator_(*this),
     secure_query_service_(authenticator_, *this, true),
-    public_query_service_(authenticator_, *this, false)
+    public_query_service_(authenticator_, *this, false),
+    secure_heart_service_(authenticator_, *this, true),
+    public_heart_service_(authenticator_, *this, false)
 {
 }
 
@@ -145,8 +147,12 @@ void server_node::handle_running(const code& ec, result_handler handler)
         return;
     }
 
-    // Start query services and workers.
-    start_query_services(handler);
+    // Start services and workers.
+    if (!start_query_services() || !start_heart_services())
+    {
+        handler(error::operation_failed);
+        return;
+    }
 
     // Subscribe to blockchain reorganizations.
     subscribe_blockchain(
@@ -167,7 +173,7 @@ void server_node::handle_running(const code& ec, result_handler handler)
 
 // The number of threads available in the thread pool must be sufficient
 // to allocate the workers. This will wait forever on thread availability.
-void server_node::allocate_query_workers(bool secure, result_handler handler)
+bool server_node::start_query_workers(bool secure)
 {
     auto& server = *this;
     const auto& settings = configuration_.server;
@@ -178,43 +184,51 @@ void server_node::allocate_query_workers(bool secure, result_handler handler)
             server, secure);
 
         if (!worker->start())
-        {
-            handler(error::operation_failed);
-            return;
-        }
+            return false;
 
         subscribe_stop([=](const code&) { worker->stop(); });
     }
+
+    return true;
 }
 
-void server_node::start_query_services(result_handler handler)
+bool server_node::start_query_services()
 {
     const auto& settings = configuration_.server;
 
     if (!settings.query_service_enabled || settings.query_workers == 0)
-        return;
+        return true;
 
-    if (settings.server_private_key)
-    {
-        if (!secure_query_service_.start())
-        {
-            handler(error::operation_failed);
-            return;
-        }
+    // Start secure service and workers if enabled.
+    if (settings.server_private_key && (!secure_query_service_.start() ||
+        !start_query_workers(true)))
+            return false;
 
-        allocate_query_workers(true, handler);
-    }
+    // Start public service and workers if enabled.
+    if (!settings.secure_only && (!public_query_service_.start() ||
+        !start_query_workers(false)))
+            return false;
 
-    if (!settings.secure_only)
-    {
-        if (!public_query_service_.start())
-        {
-            handler(error::operation_failed);
-            return;
-        }
+    return true;
+}
 
-        allocate_query_workers(false, handler);
-    }
+bool server_node::start_heart_services()
+{
+    const auto& settings = configuration_.server;
+
+    if (!settings.heartbeat_service_enabled ||
+        settings.heartbeat_interval_seconds == 0)
+        return true;
+
+    // Start public service if enabled.
+    if (settings.server_private_key && !secure_heart_service_.start())
+        return false;
+
+    // Start public service if enabled.
+    if (!settings.secure_only && !public_heart_service_.start())
+        return false;
+
+    return true;
 }
 
 // Subscriptions.
