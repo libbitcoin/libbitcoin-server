@@ -174,7 +174,7 @@ bool server_node::start_heart_services()
         settings.heartbeat_interval_seconds == 0)
         return true;
 
-    // Start public service if enabled.
+    // Start secure service if enabled.
     if (settings.server_private_key && !secure_heart_service_.start())
         return false;
 
@@ -187,13 +187,37 @@ bool server_node::start_heart_services()
 
 bool server_node::start_block_services()
 {
-    // TODO:
+    const auto& settings = configuration_.server;
+
+    if (!settings.block_service_enabled)
+        return true;
+
+    // Start secure service if enabled.
+    if (settings.server_private_key && !secure_block_service_.start())
+        return false;
+
+    // Start public service if enabled.
+    if (!settings.secure_only && !public_block_service_.start())
+        return false;
+
     return true;
 }
 
 bool server_node::start_trans_services()
 {
-    // TODO:
+    const auto& settings = configuration_.server;
+
+    if (!settings.transaction_service_enabled)
+        return true;
+
+    // Start secure service if enabled.
+    if (settings.server_private_key && !secure_trans_service_.start())
+        return false;
+
+    // Start public service if enabled.
+    if (!settings.secure_only && !public_trans_service_.start())
+        return false;
+
     return true;
 }
 } // namespace server
