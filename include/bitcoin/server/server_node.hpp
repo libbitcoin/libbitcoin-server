@@ -48,21 +48,24 @@ public:
     /// Ensure all threads are coalesced.
     virtual ~server_node();
 
-    // Start/Run/Stop/Close sequences.
+    // Start/Run sequences.
     // ------------------------------------------------------------------------
 
     /// Synchronize the blockchain and then begin long running sessions,
     /// call from start result handler. Call base method to skip sync.
     virtual void run(result_handler handler) override;
 
-    /// Non-blocking call to coalesce all work, start may be reinvoked after.
-    /// Handler returns the result of file save operations.
-    virtual void stop(result_handler handler) override;
+    // Shutdown.
+    // ------------------------------------------------------------------------
+
+    /// Idempotent call to signal work stop, start may be reinvoked after.
+    /// Returns the result of file save operation.
+    virtual bool stop() override;
 
     /// Blocking call to coalesce all work and then terminate all threads.
     /// Call from thread that constructed this class, or don't call at all.
     /// This calls stop, and start may be reinvoked after calling this.
-    virtual void close() override;
+    virtual bool close() override;
 
     // Properties.
     // ----------------------------------------------------------------------------
@@ -72,7 +75,6 @@ public:
 
 private:
     void handle_running(const code& ec, result_handler handler);
-    void handle_closing(const code& ec, std::promise<code>& wait);
 
     bool start_query_services();
     bool start_heart_services();

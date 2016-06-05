@@ -49,48 +49,11 @@ server_node::server_node(const configuration& configuration)
 {
 }
 
-// Stop sequence.
-// ----------------------------------------------------------------------------
-
-void server_node::stop(result_handler handler)
-{
-    // Signals close and blocks until all sockets are closed.
-    authenticator_.stop();
-
-    // This is invoked on a new thread.
-    // This is the end of the derived stop sequence.
-    p2p_node::stop(handler);
-}
-
-// Close sequence.
-// ----------------------------------------------------------------------------
-
 // This allows for shutdown based on destruct without need to call stop.
 server_node::~server_node()
 {
     server_node::close();
 }
-
-// This must be called from the thread that constructed this class (see join).
-void server_node::close()
-{
-    std::promise<code> wait;
-
-    server_node::stop(
-        std::bind(&server_node::handle_closing,
-            this, _1, std::ref(wait)));
-
-    // This blocks until handle_closing completes.
-    wait.get_future().get();
-    p2p_node::close();
-}
-
-void server_node::handle_closing(const code& ec, std::promise<code>& wait)
-{
-    // This is the end of the derived close sequence.
-    wait.set_value(ec);
-}
-
 // Properties.
 // ----------------------------------------------------------------------------
 
@@ -141,6 +104,22 @@ void server_node::handle_running(const code& ec, result_handler handler)
 
     // This is the end of the derived run sequence.
     handler(error::success);
+}
+
+// Shutdown.
+// ----------------------------------------------------------------------------
+
+bool server_node::stop()
+{
+    // Suspend new work last so we can use work to clear subscribers.
+    return authenticator_.stop() && p2p_node::stop();
+}
+
+// This must be called from the thread that constructed this class (see join).
+bool server_node::close()
+{
+    // Invoke own stop to signal work suspension, then close the node.
+    return server_node::stop() && p2p_node::close();
 }
 
 // Services.
@@ -208,11 +187,13 @@ bool server_node::start_heart_services()
 
 bool server_node::start_block_services()
 {
+    // TODO:
     return true;
 }
 
 bool server_node::start_trans_services()
 {
+    // TODO:
     return true;
 }
 } // namespace server
