@@ -30,18 +30,18 @@ namespace server {
 
 class server_node;
 
-class BCS_API curve_authenticator
+class BCS_API authenticator
   : public bc::protocol::zmq::authenticator
 {
 public:
-    typedef std::shared_ptr<curve_authenticator> ptr;
+    typedef std::shared_ptr<authenticator> ptr;
 
     /// Construct an instance of the authenticator.
-    curve_authenticator(server_node& node);
+    authenticator(server_node& node);
 
     /// This class is not copyable.
-    curve_authenticator(const curve_authenticator&) = delete;
-    void operator=(const curve_authenticator&) = delete;
+    authenticator(const authenticator&) = delete;
+    void operator=(const authenticator&) = delete;
 
     /// Apply authentication to the socket.
     bool apply(bc::protocol::zmq::socket& socket, const std::string& domain,

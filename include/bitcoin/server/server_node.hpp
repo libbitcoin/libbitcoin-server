@@ -31,7 +31,7 @@
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/trans_service.hpp>
 ////#include <bitcoin/server/services/address_worker.hpp>
-#include <bitcoin/server/utility/curve_authenticator.hpp>
+#include <bitcoin/server/utility/authenticator.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -85,7 +85,7 @@ private:
     const configuration& configuration_;
 
     // These are thread safe.
-    curve_authenticator authenticator_;
+    authenticator authenticator_;
     query_service secure_query_service_;
     query_service public_query_service_;
     heart_service secure_heart_service_;

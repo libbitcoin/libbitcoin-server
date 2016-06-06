@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/utility/curve_authenticator.hpp>
+#include <bitcoin/server/utility/authenticator.hpp>
 
 #include <string>
 #include <bitcoin/protocol.hpp>
@@ -29,8 +29,8 @@ namespace server {
 
 using namespace bc::protocol;
 
-curve_authenticator::curve_authenticator(server_node& node)
-  : authenticator(node.thread_pool())
+authenticator::authenticator(server_node& node)
+  : zmq::authenticator(node.thread_pool())
 {
     const auto& settings = node.server_settings();
 
@@ -54,11 +54,11 @@ curve_authenticator::curve_authenticator(server_node& node)
     }
 }
 
-bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
+bool authenticator::apply(zmq::socket& socket, const std::string& domain,
     bool secure)
 {
     // This will fail if there are client keys but no server key.
-    if (!authenticator::apply(socket, domain, secure))
+    if (!zmq::authenticator::apply(socket, domain, secure))
     {
         log::error(LOG_SERVER)
             << "Failed to apply authentication to socket [" << domain << "]";
