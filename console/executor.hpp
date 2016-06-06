@@ -104,6 +104,8 @@ private:
     "Stop signal detected (code: %1%)."
 #define BS_NODE_STOPPING \
     "Please wait while the server is stopping..."
+#define BS_NODE_STOP_FAIL \
+    "Server failed to stop properly, see log."
 #define BS_NODE_STOPPED \
     "Server stopped successfully."
 

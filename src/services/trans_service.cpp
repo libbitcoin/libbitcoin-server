@@ -96,12 +96,8 @@ bool trans_service::bind(zmq::socket& xpub, zmq::socket& xsub)
     const auto& service = secure_ ? settings_.secure_transaction_endpoint :
         settings_.public_transaction_endpoint;
 
-    if (secure_ && !authenticator_.apply(xpub, domain, true))
-    {
-        log::error(LOG_SERVER)
-            << "Failed to apply authenticator to secure transaction service.";
+    if (!authenticator_.apply(xpub, domain, secure_))
         return false;
-    }
 
     auto ec = xpub.bind(service);
 

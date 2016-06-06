@@ -50,7 +50,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/services/query_service.cpp \
     src/services/trans_service.cpp \
     src/utility/address_notifier.cpp \
-    src/utility/curve_authenticator.cpp \
+    src/utility/authenticator.cpp \
     src/utility/fetch_helpers.cpp \
     src/workers/query_worker.cpp
 
@@ -121,7 +121,7 @@ include_bitcoin_server_services_HEADERS = \
 include_bitcoin_server_utilitydir = ${includedir}/bitcoin/server/utility
 include_bitcoin_server_utility_HEADERS = \
     include/bitcoin/server/utility/address_notifier.hpp \
-    include/bitcoin/server/utility/curve_authenticator.hpp \
+    include/bitcoin/server/utility/authenticator.hpp \
     include/bitcoin/server/utility/fetch_helpers.hpp
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers

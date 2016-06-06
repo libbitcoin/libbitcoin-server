@@ -98,12 +98,8 @@ bool block_service::bind(zmq::socket& xpub, zmq::socket& xsub)
     const auto& service = secure_ ? settings_.secure_block_endpoint :
         settings_.public_block_endpoint;
 
-    if (secure_ && !authenticator_.apply(xpub, domain, true))
-    {
-        log::error(LOG_SERVER)
-            << "Failed to apply authenticator to secure block service.";
+    if (!authenticator_.apply(xpub, domain, secure_))
         return false;
-    }
 
     auto ec = xpub.bind(service);
 

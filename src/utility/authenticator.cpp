@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/utility/curve_authenticator.hpp>
+#include <bitcoin/server/utility/authenticator.hpp>
 
 #include <string>
 #include <bitcoin/protocol.hpp>
@@ -29,8 +29,8 @@ namespace server {
 
 using namespace bc::protocol;
 
-curve_authenticator::curve_authenticator(server_node& node)
-  : authenticator(node.thread_pool())
+authenticator::authenticator(server_node& node)
+  : zmq::authenticator(node.thread_pool())
 {
     const auto& settings = node.server_settings();
 
@@ -38,7 +38,7 @@ curve_authenticator::curve_authenticator(server_node& node)
 
     for (const auto& address: settings.client_addresses)
     {
-        log::info(LOG_SERVER)
+        log::debug(LOG_SERVER)
             << "Allow client address [" << address
             << (address.port() == 0 ? ":*" : "") << "]";
 
@@ -47,18 +47,18 @@ curve_authenticator::curve_authenticator(server_node& node)
 
     for (const auto& public_key: settings.client_public_keys)
     {
-        log::info(LOG_SERVER)
+        log::debug(LOG_SERVER)
             << "Allow client public key [" << public_key << "]";
 
         allow(public_key);
     }
 }
 
-bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
+bool authenticator::apply(zmq::socket& socket, const std::string& domain,
     bool secure)
 {
     // This will fail if there are client keys but no server key.
-    if (!authenticator::apply(socket, domain, secure))
+    if (!zmq::authenticator::apply(socket, domain, secure))
     {
         log::error(LOG_SERVER)
             << "Failed to apply authentication to socket [" << domain << "]";
@@ -68,12 +68,12 @@ bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
     if (secure)
     {
         log::debug(LOG_SERVER)
-            << "Applied CURVE to socket [" << domain << "]";
+            << "Applied curve authentication to socket [" << domain << "]";
     }
     else
     {
         log::debug(LOG_SERVER)
-            << "Applied NULL to socket [" << domain << "]";
+            << "Applied address authentication to socket [" << domain << "]";
     }
 
     return true;

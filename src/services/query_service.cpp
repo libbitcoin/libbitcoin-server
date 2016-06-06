@@ -72,12 +72,8 @@ bool query_service::bind(zmq::socket& router, zmq::socket& dealer)
     const auto& service = secure_ ? settings_.secure_query_endpoint :
         settings_.public_query_endpoint;
 
-    if (secure_ && !authenticator_.apply(router, domain, true))
-    {
-        log::error(LOG_SERVER)
-            << "Failed to apply authenticator to secure query service.";
+    if (!authenticator_.apply(router, domain, secure_))
         return false;
-    }
 
     auto ec = router.bind(service);
 
