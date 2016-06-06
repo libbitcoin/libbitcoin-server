@@ -30,15 +30,19 @@ namespace server {
 
 class server_node;
 
+// This class is thread safe.
+// Submit queries and address subscriptions and receive address notifications.
 class BCS_API query_service
   : public bc::protocol::zmq::worker
 {
 public:
     typedef std::shared_ptr<query_service> ptr;
 
-    /// The fixed inprocess worker endpoints.
-    static const config::endpoint public_worker;
-    static const config::endpoint secure_worker;
+    /// The fixed inprocess query and notify worker endpoints.
+    static const config::endpoint public_query;
+    static const config::endpoint secure_query;
+    static const config::endpoint public_notify;
+    static const config::endpoint secure_notify;
 
     /// Construct a query service.
     query_service(bc::protocol::zmq::authenticator& authenticator,
@@ -47,8 +51,8 @@ public:
 protected:
     typedef bc::protocol::zmq::socket socket;
 
-    virtual bool bind(socket& router, socket& dealer);
-    virtual bool unbind(socket& router, socket& dealer);
+    virtual bool bind(socket& router, socket& dealer, socket& pair);
+    virtual bool unbind(socket& router, socket& dealer, socket& pair);
 
     // Implement the service.
     virtual void work();

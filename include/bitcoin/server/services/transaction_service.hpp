@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
-#define LIBBITCOIN_SERVER_TRANS_SERVICE_HPP
+#ifndef LIBBITCOIN_SERVER_TRANSACTION_SERVICE_HPP
+#define LIBBITCOIN_SERVER_TRANSACTION_SERVICE_HPP
 
 #include <memory>
 #include <bitcoin/protocol.hpp>
@@ -30,6 +30,7 @@ namespace server {
 
 class server_node;
 
+// This class is thread safe.
 // Subscribe to transaction acceptances into the transaction memory pool.
 class BCS_API transaction_service
   : public bc::protocol::zmq::worker
@@ -49,7 +50,7 @@ public:
     bool start() override;
 
     /// Stop the service.
-    bool stop();
+    bool stop() override;
 
 protected:
     typedef bc::protocol::zmq::socket socket;

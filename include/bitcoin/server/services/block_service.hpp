@@ -31,6 +31,7 @@ namespace server {
 
 class server_node;
 
+// This class is thread safe.
 // Subscribe to block acceptances into the long chain.
 class BCS_API block_service
   : public bc::protocol::zmq::worker
@@ -50,7 +51,7 @@ public:
     bool start() override;
 
     /// Stop the service.
-    bool stop();
+    bool stop() override;
 
 protected:
     typedef chain::block::ptr_list block_list;

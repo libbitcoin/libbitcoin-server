@@ -20,7 +20,6 @@
 #include <bitcoin/server/server_node.hpp>
 
 #include <functional>
-#include <future>
 #include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
@@ -38,6 +37,7 @@ server_node::server_node(const configuration& configuration)
   : p2p_node(configuration),
     configuration_(configuration),
     authenticator_(*this),
+    ////notifications_();
     secure_query_service_(authenticator_, *this, true),
     public_query_service_(authenticator_, *this, false),
     secure_heartbeat_service_(authenticator_, *this, true),
@@ -45,7 +45,9 @@ server_node::server_node(const configuration& configuration)
     secure_block_service_(authenticator_, *this, true),
     public_block_service_(authenticator_, *this, false),
     secure_transaction_service_(authenticator_, *this, true),
-    public_transaction_service_(authenticator_, *this, false)
+    public_transaction_service_(authenticator_, *this, false),
+    secure_address_worker_(authenticator_, *this, true),
+    public_address_worker_(authenticator_, *this, true)
 {
 }
 
@@ -57,6 +59,11 @@ server_node::~server_node()
 
 // Properties.
 // ----------------------------------------------------------------------------
+
+notifications& server_node::notifier()
+{
+    return notifications_;
+}
 
 const settings& server_node::server_settings() const
 {
@@ -154,16 +161,18 @@ bool server_node::start_query_services()
     if (!settings.query_service_enabled || settings.query_workers == 0)
         return true;
 
-    // Start secure service and workers if enabled.
+    // Start secure service, query workers and address workers if enabled.
     if (settings.server_private_key && (!secure_query_service_.start() ||
+        (settings.subscription_limit > 0 && !secure_address_worker_.start()) ||
         !start_query_workers(true)))
             return false;
 
-    // Start public service and workers if enabled.
+    // Start public service, query workers and address workers if enabled.
     if (!settings.secure_only && (!public_query_service_.start() ||
+        (settings.subscription_limit > 0 && !public_address_worker_.start()) ||
         !start_query_workers(false)))
             return false;
-
+    
     return true;
 }
 

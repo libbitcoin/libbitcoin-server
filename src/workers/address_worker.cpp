@@ -24,10 +24,12 @@
 #include <functional>
 #include <utility>
 #include <boost/date_time.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/services/query_service.hpp>
+#include <bitcoin/server/utility/authenticator.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -35,33 +37,99 @@ namespace server {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
+using std::placeholders::_3;
+using std::placeholders::_4;
 using namespace bc::chain;
+using namespace bc::protocol;
 using namespace bc::wallet;
 using namespace boost::posix_time;
 
-address_worker::address_worker(server_node& node)
-  : node_(node),
-    settings_(node.server_settings())
+address_worker::address_worker(zmq::authenticator& authenticator,
+    server_node& node, bool secure)
+  : worker(node.thread_pool()),
+    secure_(secure),
+    settings_(node.server_settings()),
+    node_(node),
+    authenticator_(authenticator)
 {
 }
 
-// Start.
-// ----------------------------------------------------------------------------
-
-// Subscribe against the node's tx and block publishers.
+// There is no unsubscribe so this class shouldn't be restarted.
 bool address_worker::start()
 {
-    ////////// This is not a libbitcoin re/subscriber.
-    ////////node_.subscribe_blocks(
-    ////////    std::bind(&address_worker::receive_block,
-    ////////        this, _1, _2));
+    // TODO: connect subscriptions: work in progress.
 
-    ////////// This is not a libbitcoin re/subscriber.
-    ////////node_.subscribe_transactions(
-    ////////    std::bind(&address_worker::receive_transaction,
-    ////////        this, _1));
+    ////// Subscribe to blockchain reorganizations.
+    ////node_.subscribe_blockchain(
+    ////    std::bind(&block_service::handle_reorganization,
+    ////        this, _1, _2, _3, _4));
 
+    return zmq::worker::start();
+}
+
+// No unsubscribe so must be kept in scope until subscriber stop complete.
+bool address_worker::stop()
+{
+    return zmq::worker::stop();
+}
+
+void address_worker::work()
+{
+    zmq::socket pair(authenticator_, zmq::socket::role::pair);
+
+    // Connect socket to the worker endpoint.
+    if (!started(connect(pair)))
+        return;
+
+    zmq::poller poller;
+    poller.add(pair);
+
+    // We will not receive on the poller, we use its timer and context stop.
+    while (!poller.terminated() && !stopped())
+    {
+        poller.wait();
+        prune();
+    }
+
+    // Disconnect the socket and exit this thread.
+    finished(disconnect(pair));
+}
+
+// Connect/Disconnect.
+//-----------------------------------------------------------------------------
+
+bool address_worker::connect(socket& pair)
+{
+    const auto security = secure_ ? "secure" : "public";
+    const auto& endpoint = secure_ ? query_service::secure_notify :
+        query_service::public_notify;
+
+    const auto ec = pair.connect(endpoint);
+
+    if (ec)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to connect " << security << " address worker to "
+            << endpoint << " : " << ec.message();
+        return false;
+    }
+
+    log::debug(LOG_SERVER)
+        << "Connected " << security << " address worker to " << endpoint;
     return true;
+}
+
+bool address_worker::disconnect(socket& pair)
+{
+    const auto security = secure_ ? "secure" : "public";
+
+    // Don't log stop success.
+    if (pair.stop())
+        return true;
+
+    log::error(LOG_SERVER)
+        << "Failed to disconnect " << security << " address worker.";
+    return false;
 }
 
 // Subscribe sequence.
@@ -80,7 +148,7 @@ code address_worker::create(const incoming& request, send_handler handler)
 {
     subscription_record record;
 
-    if (!deserialize_address(record.prefix, record.type, request.data))
+    if (!deserialize(record.prefix, record.type, request.data))
         return error::bad_stream;
 
     record.expiry_time = now() + settings_.subscription_expiration();
@@ -128,7 +196,7 @@ code address_worker::update(const incoming& request, send_handler handler)
     binary prefix;
     subscribe_type type;
 
-    if (!deserialize_address(prefix, type, request.data))
+    if (!deserialize(prefix, type, request.data))
         return error::bad_stream;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -318,8 +386,8 @@ ptime address_worker::now()
     return second_clock::universal_time();
 };
 
-bool address_worker::deserialize_address(binary& address,
-    chain::subscribe_type& type, const data_chunk& data)
+bool address_worker::deserialize(binary& address, chain::subscribe_type& type,
+    const data_chunk& data)
 {
     if (data.size() < 2)
         return false;

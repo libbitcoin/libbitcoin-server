@@ -30,8 +30,10 @@ using namespace bc::config;
 using namespace bc::protocol;
 
 static const auto domain = "query";
-const config::endpoint query_service::public_worker("inproc://public_query");
-const config::endpoint query_service::secure_worker("inproc://secure_query");
+const config::endpoint query_service::public_query("inproc://public_query");
+const config::endpoint query_service::secure_query("inproc://secure_query");
+const config::endpoint query_service::public_notify("inproc://public_notify");
+const config::endpoint query_service::secure_notify("inproc://secure_notify");
 
 query_service::query_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
@@ -49,74 +51,94 @@ void query_service::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
     zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
+    zmq::socket pair(authenticator_, zmq::socket::role::pair);
 
     // Bind sockets to the service and worker endpoints.
-    if (!started(bind(router, dealer)))
+    if (!started(bind(router, dealer, pair)))
         return;
 
+    // TODO: integrate notification (pair) socket into relay.
     // TODO: tap in to failure conditions, such as high water.
     // Relay messages between router and dealer (blocks on context).
     relay(router, dealer);
 
     // Unbind the sockets and exit this thread.
-    finished(unbind(router, dealer));
+    finished(unbind(router, dealer, pair));
 }
 
 // Bind/Unbind.
 //-----------------------------------------------------------------------------
 
-bool query_service::bind(zmq::socket& router, zmq::socket& dealer)
+bool query_service::bind(zmq::socket& router, zmq::socket& dealer,
+    zmq::socket& pair)
 {
     const auto security = secure_ ? "secure" : "public";
-    const auto& worker = secure_ ? secure_worker : public_worker;
-    const auto& service = secure_ ? settings_.secure_query_endpoint :
+    const auto& query_worker = secure_ ? secure_query : public_query;
+    const auto& notify_worker = secure_ ? secure_notify : public_notify;
+    const auto& query_service = secure_ ? settings_.secure_query_endpoint :
         settings_.public_query_endpoint;
 
     if (!authenticator_.apply(router, domain, secure_))
         return false;
 
-    auto ec = router.bind(service);
+    auto ec = router.bind(query_service);
 
     if (ec)
     {
         log::error(LOG_SERVER)
             << "Failed to bind " << security << " query service to "
-            << service << " : " << ec.message();
+            << query_service << " : " << ec.message();
         return false;
     }
 
-    ec = dealer.bind(worker);
+    ec = dealer.bind(query_worker);
 
     if (ec)
     {
         log::error(LOG_SERVER)
             << "Failed to bind " << security << " query workers to "
-            << worker << " : " << ec.message();
+            << query_worker << " : " << ec.message();
+        return false;
+    }
+
+    ec = pair.bind(notify_worker);
+
+    if (ec)
+    {
+        log::error(LOG_SERVER)
+            << "Failed to bind " << security << " notify workers to "
+            << notify_worker << " : " << ec.message();
         return false;
     }
 
     log::info(LOG_SERVER)
-        << "Bound " << security << " query service to " << service;
+        << "Bound " << security << " query service to " << query_service;
     return true;
 }
 
-bool query_service::unbind(zmq::socket& router, zmq::socket& dealer)
+bool query_service::unbind(zmq::socket& router, zmq::socket& dealer,
+    zmq::socket& pair)
 {
-    // Stop both even if one fails.
+    // Stop all even if one fails.
     const auto service_stop = router.stop();
-    const auto worker_stop = dealer.stop();
+    const auto query_stop = dealer.stop();
+    const auto notify_stop = pair.stop();
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " query service.";
 
-    if (!worker_stop)
+    if (!query_stop)
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " query workers.";
 
+    if (!notify_stop)
+        log::error(LOG_SERVER)
+            << "Failed to unbind " << security << " notify workers.";
+
     // Don't log stop success.
-    return service_stop && worker_stop;
+    return service_stop && query_stop && notify_stop;
 }
 
 } // namespace server
