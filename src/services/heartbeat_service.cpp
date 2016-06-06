@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/services/heart_service.hpp>
+#include <bitcoin/server/services/heartbeat_service.hpp>
 
 #include <algorithm>
 #include <cstdint>
@@ -40,7 +40,7 @@ static uint32_t to_milliseconds(uint16_t seconds)
 };
 
 // Heartbeat is capped at ~ 25 days by signed/millsecond conversions.
-heart_service::heart_service(zmq::authenticator& authenticator,
+heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
     settings_(node.server_settings()),
@@ -52,7 +52,7 @@ heart_service::heart_service(zmq::authenticator& authenticator,
 
 // Implement service as a publisher.
 // The publisher does not block if there are no subscribers or at high water.
-void heart_service::work()
+void heartbeat_service::work()
 {
     zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
 
@@ -80,7 +80,7 @@ void heart_service::work()
 // Bind/Unbind.
 //-----------------------------------------------------------------------------
 
-bool heart_service::bind(zmq::socket& publisher)
+bool heartbeat_service::bind(zmq::socket& publisher)
 {
     const auto security = secure_ ? "secure" : "public";
     const auto& endpoint = secure_ ? settings_.secure_heartbeat_endpoint :
@@ -104,7 +104,7 @@ bool heart_service::bind(zmq::socket& publisher)
     return true;
 }
 
-bool heart_service::unbind(zmq::socket& publisher)
+bool heartbeat_service::unbind(zmq::socket& publisher)
 {
     const auto security = secure_ ? "secure" : "public";
 
@@ -120,7 +120,7 @@ bool heart_service::unbind(zmq::socket& publisher)
 // Publish Execution (integral worker).
 //-----------------------------------------------------------------------------
 
-void heart_service::publish(uint32_t count, zmq::socket& publisher)
+void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
 {
     if (stopped())
         return;

@@ -92,6 +92,7 @@ void executor::do_version()
         LIBBITCOIN_VERSION << std::endl;
 }
 
+// Emit to the log.
 bool executor::do_initchain()
 {
     initialize_output();
@@ -233,7 +234,7 @@ void executor::handle_stopped(const code& ec)
     stop(ec);
 }
 
-// Stop sequence.
+// Stop signal.
 // ----------------------------------------------------------------------------
 
 void executor::handle_stop(int code)

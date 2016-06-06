@@ -44,7 +44,7 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     secure_(secure),
     settings_(node.server_settings()),
     node_(node),
-    address_notifier_(node),
+    address_worker_(node),
     authenticator_(authenticator)
 {
     // The same interface is attached to the secure and public interfaces.
@@ -213,8 +213,8 @@ void query_worker::attach_interface()
     ATTACH(address, fetch_history2, node_);
 
     // TODO: add renew to client.
-    ATTACH(address, renew, address_notifier_);
-    ATTACH(address, subscribe, address_notifier_);
+    ATTACH(address, renew, address_worker_);
+    ATTACH(address, subscribe, address_worker_);
 }
 
 #undef ATTACH

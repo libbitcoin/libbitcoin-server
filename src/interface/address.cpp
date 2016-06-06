@@ -24,8 +24,8 @@
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
+#include <bitcoin/server/workers/address_worker.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -50,13 +50,13 @@ void address::fetch_history2(server_node& node, const incoming& request,
             _1, _2, request, handler));
 }
 
-void address::subscribe(address_notifier& notifier, const incoming& request,
+void address::subscribe(address_worker& notifier, const incoming& request,
     send_handler handler)
 {
     notifier.subscribe(request, handler);
 }
 
-void address::renew(address_notifier& notifier, const incoming& request,
+void address::renew(address_worker& notifier, const incoming& request,
     send_handler handler)
 {
     notifier.renew(request, handler);

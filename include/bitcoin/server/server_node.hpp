@@ -27,9 +27,9 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/services/block_service.hpp>
-#include <bitcoin/server/services/heart_service.hpp>
+#include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
-#include <bitcoin/server/services/trans_service.hpp>
+#include <bitcoin/server/services/transaction_service.hpp>
 ////#include <bitcoin/server/services/address_worker.hpp>
 #include <bitcoin/server/utility/authenticator.hpp>
 
@@ -48,7 +48,13 @@ public:
     /// Ensure all threads are coalesced.
     virtual ~server_node();
 
-    // Start/Run sequences.
+    // Properties.
+    // ----------------------------------------------------------------------------
+
+    /// Server configuration settings.
+    virtual const settings& server_settings() const;
+
+    // Run sequence.
     // ------------------------------------------------------------------------
 
     /// Synchronize the blockchain and then begin long running sessions,
@@ -67,19 +73,15 @@ public:
     /// This calls stop, and start may be reinvoked after calling this.
     virtual bool close() override;
 
-    // Properties.
-    // ----------------------------------------------------------------------------
-
-    /// Server configuration settings.
-    virtual const settings& server_settings() const;
-
 private:
+    static configuration minimum_threads(const configuration& configuration);
+
     void handle_running(const code& ec, result_handler handler);
 
     bool start_query_services();
-    bool start_heart_services();
+    bool start_heartbeat_services();
     bool start_block_services();
-    bool start_trans_services();
+    bool start_transaction_services();
     bool start_query_workers(bool secure);
 
     const configuration& configuration_;
@@ -88,12 +90,12 @@ private:
     authenticator authenticator_;
     query_service secure_query_service_;
     query_service public_query_service_;
-    heart_service secure_heart_service_;
-    heart_service public_heart_service_;
+    heartbeat_service secure_heartbeat_service_;
+    heartbeat_service public_heartbeat_service_;
     block_service secure_block_service_;
     block_service public_block_service_;
-    trans_service secure_trans_service_;
-    trans_service public_trans_service_;
+    transaction_service secure_transaction_service_;
+    transaction_service public_transaction_service_;
 };
 
 } // namespace server

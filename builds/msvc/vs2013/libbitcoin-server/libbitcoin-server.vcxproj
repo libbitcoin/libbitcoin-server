@@ -83,14 +83,14 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\block_service.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\heart_service.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\heartbeat_service.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\query_service.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\trans_service.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\transaction_service.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\address_notifier.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\authenticator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\fetch_helpers.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\address_worker.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
@@ -105,13 +105,13 @@
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\services\block_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\heart_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp" />
     <ClCompile Include="..\..\..\..\src\services\query_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\trans_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
-    <ClCompile Include="..\..\..\..\src\utility\address_notifier.cpp" />
     <ClCompile Include="..\..\..\..\src\utility\authenticator.cpp" />
     <ClCompile Include="..\..\..\..\src\utility\fetch_helpers.cpp" />
+    <ClCompile Include="..\..\..\..\src\workers\address_worker.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp" />
   </ItemGroup>
   <ItemGroup>

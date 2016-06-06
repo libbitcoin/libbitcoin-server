@@ -36,18 +36,18 @@ namespace server {
 class server_node;
 
 // This class is thread safe.
-class BCS_API address_notifier
-  : public enable_shared_from_base<address_notifier>
+class BCS_API address_worker
+  : public enable_shared_from_base<address_worker>
 {
 public:
-    typedef std::shared_ptr<address_notifier> ptr;
+    typedef std::shared_ptr<address_worker> ptr;
 
     /// Construct an address notifier.
-    address_notifier(server_node& node);
+    address_worker(server_node& node);
 
     /// This class is not copyable.
-    address_notifier(const address_notifier&) = delete;
-    void operator=(const address_notifier&) = delete;
+    address_worker(const address_worker&) = delete;
+    void operator=(const address_worker&) = delete;
 
     /// Subscribe to block and transaction notifications and send messages.
     bool start();
