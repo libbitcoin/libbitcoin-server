@@ -134,16 +134,12 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
-    {
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " block service.";
-    }
 
     if (!worker_stop)
-    {
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " block workers.";
-    }
 
     // Don't log stop success.
     return service_stop && worker_stop;
@@ -152,7 +148,6 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // Publish Execution (integral worker).
 // ----------------------------------------------------------------------------
 
-// A failure here does not prevent future notifications.
 bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
     const block::ptr_list& new_blocks, const block::ptr_list&)
 {
@@ -163,6 +158,8 @@ bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
     {
         log::warning(LOG_SERVER)
             << "Failure handling new block: " << ec.message();
+
+        // Don't let a failure here prevent prevent future notifications.
         return true;
     }
 
@@ -177,6 +174,9 @@ bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
 void block_service::publish_blocks(uint32_t fork_point,
     const block::ptr_list& blocks)
 {
+    if (stopped())
+        return;
+
     const auto security = secure_ ? "secure" : "public";
     const auto& endpoint = secure_ ? block_service::secure_worker :
         block_service::public_worker;
@@ -186,11 +186,15 @@ void block_service::publish_blocks(uint32_t fork_point,
     zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
     const auto ec = publisher.connect(endpoint);
 
+    if (ec == bc::error::service_stopped)
+        return;
+
     if (ec)
     {
         log::warning(LOG_SERVER)
             << "Failed to connect " << security << " block worker: "
             << ec.message();
+        return;
     }
 
     BITCOIN_ASSERT(blocks.size() <= max_uint32);
@@ -204,6 +208,9 @@ void block_service::publish_blocks(uint32_t fork_point,
 void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     const block::ptr block)
 {
+    if (stopped())
+        return;
+
     const auto security = secure_ ? "secure" : "public";
 
     zmq::message respose;
@@ -211,20 +218,22 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     respose.enqueue(block->to_data(false));
     const auto ec = publisher.send(respose);
 
+    if (ec == bc::error::service_stopped)
+        return;
+
     if (ec)
     {
         log::warning(LOG_SERVER)
             << "Failed to publish " << security << " bloc ["
             << encode_hash(block->header.hash()) << "] " << ec.message();
+        return;
     }
 
     // This isn't actually a request, should probably update settings.
-    if (!settings_.log_requests)
-        return;
-
-    log::debug(LOG_SERVER)
-        << "Published " << security << " block ["
-        << encode_hash(block->header.hash()) << "]";
+    if (settings_.log_requests)
+        log::debug(LOG_SERVER)
+            << "Published " << security << " block ["
+            << encode_hash(block->header.hash()) << "]";
 }
 
 } // namespace server

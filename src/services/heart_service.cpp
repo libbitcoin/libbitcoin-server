@@ -108,15 +108,13 @@ bool heart_service::unbind(zmq::socket& publisher)
 {
     const auto security = secure_ ? "secure" : "public";
 
-    if (!publisher.stop())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to disconnect " << security << " heartbeat worker.";
-        return false;
-    }
-
     // Don't log stop success.
-    return true;
+    if (publisher.stop())
+        return true;
+
+    log::error(LOG_SERVER)
+        << "Failed to disconnect " << security << " heartbeat worker.";
+    return false;
 }
 
 // Publish Execution (integral worker).
@@ -124,23 +122,30 @@ bool heart_service::unbind(zmq::socket& publisher)
 
 void heart_service::publish(uint32_t count, zmq::socket& publisher)
 {
+    if (stopped())
+        return;
+
     const auto security = secure_ ? "secure" : "public";
 
     zmq::message message;
     message.enqueue_little_endian(count);
     auto ec = publisher.send(message);
 
-    if (ec && ec != error::service_stopped)
+    if (ec == error::service_stopped)
+        return;
+
+    if (ec)
+    {
         log::warning(LOG_SERVER)
             << "Failed to publish " << security << " heartbeat: "
             << ec.message();
+        return;
+    }
 
     // This isn't actually a request, should probably update settings.
-    if (!settings_.log_requests)
-        return;
-
-    log::debug(LOG_SERVER)
-        << "Published " << security << " heartbeat [" << count << "].";
+    if (settings_.log_requests)
+        log::debug(LOG_SERVER)
+            << "Published " << security << " heartbeat [" << count << "].";
 }
 
 } // namespace server
