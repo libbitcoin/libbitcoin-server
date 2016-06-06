@@ -24,7 +24,7 @@
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/workers/address_worker.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -39,11 +39,11 @@ public:
         const incoming& request, send_handler handler);
 
     /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(address_notifier& notifier,
+    static void subscribe(address_worker& notifier,
         const incoming& request, send_handler handler);
 
     /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(address_notifier& notifier,
+    static void renew(address_worker& notifier,
         const incoming& request, send_handler handler);
 };
 

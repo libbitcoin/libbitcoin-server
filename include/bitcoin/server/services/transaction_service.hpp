@@ -31,18 +31,18 @@ namespace server {
 class server_node;
 
 // Subscribe to transaction acceptances into the transaction memory pool.
-class BCS_API trans_service
+class BCS_API transaction_service
   : public bc::protocol::zmq::worker
 {
 public:
-    typedef std::shared_ptr<trans_service> ptr;
+    typedef std::shared_ptr<transaction_service> ptr;
 
     /// The fixed inprocess worker endpoints.
     static const config::endpoint public_worker;
     static const config::endpoint secure_worker;
 
     /// Construct a transaction service.
-    trans_service(bc::protocol::zmq::authenticator& authenticator,
+    transaction_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
     /// Start the service.

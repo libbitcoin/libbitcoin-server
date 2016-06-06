@@ -29,12 +29,12 @@
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/services/block_service.hpp>
-#include <bitcoin/server/services/heart_service.hpp>
+#include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
-#include <bitcoin/server/services/trans_service.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/services/transaction_service.hpp>
 #include <bitcoin/server/utility/authenticator.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
+#include <bitcoin/server/workers/address_worker.hpp>
 #include <bitcoin/server/workers/query_worker.hpp>
 
 #endif

@@ -31,14 +31,14 @@ namespace server {
 
 class server_node;
 
-class BCS_API heart_service
+class BCS_API heartbeat_service
   : public bc::protocol::zmq::worker
 {
 public:
-    typedef std::shared_ptr<heart_service> ptr;
+    typedef std::shared_ptr<heartbeat_service> ptr;
 
     /// Construct a heartbeat endpoint.
-    heart_service(bc::protocol::zmq::authenticator& authenticator,
+    heartbeat_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
 protected:

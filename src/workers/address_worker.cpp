@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/workers/address_worker.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -39,7 +39,7 @@ using namespace bc::chain;
 using namespace bc::wallet;
 using namespace boost::posix_time;
 
-address_notifier::address_notifier(server_node& node)
+address_worker::address_worker(server_node& node)
   : node_(node),
     settings_(node.server_settings())
 {
@@ -49,16 +49,16 @@ address_notifier::address_notifier(server_node& node)
 // ----------------------------------------------------------------------------
 
 // Subscribe against the node's tx and block publishers.
-bool address_notifier::start()
+bool address_worker::start()
 {
     ////////// This is not a libbitcoin re/subscriber.
     ////////node_.subscribe_blocks(
-    ////////    std::bind(&address_notifier::receive_block,
+    ////////    std::bind(&address_worker::receive_block,
     ////////        this, _1, _2));
 
     ////////// This is not a libbitcoin re/subscriber.
     ////////node_.subscribe_transactions(
-    ////////    std::bind(&address_notifier::receive_transaction,
+    ////////    std::bind(&address_worker::receive_transaction,
     ////////        this, _1));
 
     return true;
@@ -67,7 +67,7 @@ bool address_notifier::start()
 // Subscribe sequence.
 // ----------------------------------------------------------------------------
 
-void address_notifier::subscribe(const incoming& request, send_handler handler)
+void address_worker::subscribe(const incoming& request, send_handler handler)
 {
     const auto ec = create(request, handler);
 
@@ -76,7 +76,7 @@ void address_notifier::subscribe(const incoming& request, send_handler handler)
 }
 
 // Create new subscription entry.
-code address_notifier::create(const incoming& request, send_handler handler)
+code address_worker::create(const incoming& request, send_handler handler)
 {
     subscription_record record;
 
@@ -114,7 +114,7 @@ code address_notifier::create(const incoming& request, send_handler handler)
 // Renew sequence.
 // ----------------------------------------------------------------------------
 
-void address_notifier::renew(const incoming& request, send_handler handler)
+void address_worker::renew(const incoming& request, send_handler handler)
 {
     const auto ec = update(request, handler);
 
@@ -123,7 +123,7 @@ void address_notifier::renew(const incoming& request, send_handler handler)
 }
 
 // Find subscription record and update expiration.
-code address_notifier::update(const incoming& request, send_handler handler)
+code address_worker::update(const incoming& request, send_handler handler)
 {
     binary prefix;
     subscribe_type type;
@@ -165,7 +165,7 @@ code address_notifier::update(const incoming& request, send_handler handler)
 // ----------------------------------------------------------------------------
 
 // Delete entries that have expired.
-size_t address_notifier::prune()
+size_t address_worker::prune()
 {
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
@@ -190,7 +190,7 @@ size_t address_notifier::prune()
 // Scan sequence.
 // ----------------------------------------------------------------------------
 
-void address_notifier::receive_block(uint32_t height, const block::ptr block)
+void address_worker::receive_block(uint32_t height, const block::ptr block)
 {
     const auto hash = block->header.hash();
 
@@ -200,12 +200,12 @@ void address_notifier::receive_block(uint32_t height, const block::ptr block)
     prune();
 }
 
-void address_notifier::receive_transaction(const transaction& transaction)
+void address_worker::receive_transaction(const transaction& transaction)
 {
     scan(0, null_hash, transaction);
 }
 
-void address_notifier::scan(uint32_t height, const hash_digest& block_hash,
+void address_worker::scan(uint32_t height, const hash_digest& block_hash,
     const transaction& tx)
 {
     for (const auto& input: tx.inputs)
@@ -228,7 +228,7 @@ void address_notifier::scan(uint32_t height, const hash_digest& block_hash,
     }
 }
 
-void address_notifier::post_updates(const payment_address& address,
+void address_worker::post_updates(const payment_address& address,
     uint32_t height, const hash_digest& block_hash, const transaction& tx)
 {
     subscription_locators locators;
@@ -270,7 +270,7 @@ void address_notifier::post_updates(const payment_address& address,
     // This is the end of the scan address sequence.
 }
 
-void address_notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
+void address_worker::post_stealth_updates(uint32_t prefix, uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
     subscription_locators locators;
@@ -313,12 +313,12 @@ void address_notifier::post_stealth_updates(uint32_t prefix, uint32_t height,
 // Utilities
 // ----------------------------------------------------------------------------
 
-ptime address_notifier::now()
+ptime address_worker::now()
 {
     return second_clock::universal_time();
 };
 
-bool address_notifier::deserialize_address(binary& address,
+bool address_worker::deserialize_address(binary& address,
     chain::subscribe_type& type, const data_chunk& data)
 {
     if (data.size() < 2)

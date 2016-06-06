@@ -40,12 +40,12 @@ server_node::server_node(const configuration& configuration)
     authenticator_(*this),
     secure_query_service_(authenticator_, *this, true),
     public_query_service_(authenticator_, *this, false),
-    secure_heart_service_(authenticator_, *this, true),
-    public_heart_service_(authenticator_, *this, false),
+    secure_heartbeat_service_(authenticator_, *this, true),
+    public_heartbeat_service_(authenticator_, *this, false),
     secure_block_service_(authenticator_, *this, true),
     public_block_service_(authenticator_, *this, false),
-    secure_trans_service_(authenticator_, *this, true),
-    public_trans_service_(authenticator_, *this, false)
+    secure_transaction_service_(authenticator_, *this, true),
+    public_transaction_service_(authenticator_, *this, false)
 {
 }
 
@@ -54,6 +54,7 @@ server_node::~server_node()
 {
     server_node::close();
 }
+
 // Properties.
 // ----------------------------------------------------------------------------
 
@@ -95,8 +96,8 @@ void server_node::handle_running(const code& ec, result_handler handler)
     }
 
     // Start services and workers.
-    if (!start_query_services() || !start_heart_services() ||
-        !start_block_services() || !start_trans_services())
+    if (!start_query_services() || !start_heartbeat_services() ||
+        !start_block_services() || !start_transaction_services())
     {
         handler(error::operation_failed);
         return;
@@ -118,7 +119,7 @@ bool server_node::stop()
 // This must be called from the thread that constructed this class (see join).
 bool server_node::close()
 {
-    // Invoke own stop to signal work suspension, then close the node.
+    // Invoke own stop to signal work suspension, then close node and join.
     return server_node::stop() && p2p_node::close();
 }
 
@@ -166,7 +167,7 @@ bool server_node::start_query_services()
     return true;
 }
 
-bool server_node::start_heart_services()
+bool server_node::start_heartbeat_services()
 {
     const auto& settings = configuration_.server;
 
@@ -175,11 +176,11 @@ bool server_node::start_heart_services()
         return true;
 
     // Start secure service if enabled.
-    if (settings.server_private_key && !secure_heart_service_.start())
+    if (settings.server_private_key && !secure_heartbeat_service_.start())
         return false;
 
     // Start public service if enabled.
-    if (!settings.secure_only && !public_heart_service_.start())
+    if (!settings.secure_only && !public_heartbeat_service_.start())
         return false;
 
     return true;
@@ -203,7 +204,7 @@ bool server_node::start_block_services()
     return true;
 }
 
-bool server_node::start_trans_services()
+bool server_node::start_transaction_services()
 {
     const auto& settings = configuration_.server;
 
@@ -211,14 +212,15 @@ bool server_node::start_trans_services()
         return true;
 
     // Start secure service if enabled.
-    if (settings.server_private_key && !secure_trans_service_.start())
+    if (settings.server_private_key && !secure_transaction_service_.start())
         return false;
 
     // Start public service if enabled.
-    if (!settings.secure_only && !public_trans_service_.start())
+    if (!settings.secure_only && !public_transaction_service_.start())
         return false;
 
     return true;
 }
+
 } // namespace server
 } // namespace libbitcoin

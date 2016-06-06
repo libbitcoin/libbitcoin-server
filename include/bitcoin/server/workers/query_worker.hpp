@@ -29,7 +29,7 @@
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/address_notifier.hpp>
+#include <bitcoin/server/workers/address_worker.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -68,7 +68,7 @@ private:
 
     // These are thread safe.
     server_node& node_;
-    address_notifier address_notifier_;
+    address_worker address_worker_;
     bc::protocol::zmq::authenticator& authenticator_;
 
     // This is protected by base class mutex.
