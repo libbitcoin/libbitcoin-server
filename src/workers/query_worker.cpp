@@ -103,15 +103,13 @@ bool query_worker::disconnect(zmq::socket& router)
 {
     const auto security = secure_ ? "secure" : "public";
 
-    if (!router.stop())
-    {
-        log::error(LOG_SERVER)
-            << "Failed to disconnect " << security << " query worker.";
-        return false;
-    }
-
     // Don't log stop success.
-    return true;
+    if (router.stop())
+        return true;
+
+    log::error(LOG_SERVER)
+        << "Failed to disconnect " << security << " query worker.";
+    return false;
 }
 
 // Query Execution.
@@ -122,12 +120,15 @@ bool query_worker::disconnect(zmq::socket& router)
 // If we implemented as a replier we would need to always provide a response.
 void query_worker::query(zmq::socket& router)
 {
+    if (stopped())
+        return;
+
     // TODO: rewrite the serial blockchain interface to avoid callbacks.
     const auto sender = [&router](outgoing&& response)
     {
         const auto ec = response.send(router);
 
-        if (ec)
+        if (ec && ec != error::service_stopped)
             log::warning(LOG_SERVER)
                 << "Failed to send query response to " << response.address()
                 << ec.message();
@@ -135,6 +136,9 @@ void query_worker::query(zmq::socket& router)
 
     incoming request;
     const auto ec = request.receive(router);
+
+    if (ec == error::service_stopped)
+        return;
 
     if (ec)
     {
@@ -160,10 +164,8 @@ void query_worker::query(zmq::socket& router)
     }
 
     if (settings_.log_requests)
-    {
         log::info(LOG_SERVER)
             << "Query " << request.command << " from " << request.address();
-    }
 
     // Execute the request and forward result to queue.
     handler->second(request, sender);

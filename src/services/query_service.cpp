@@ -108,16 +108,12 @@ bool query_service::unbind(zmq::socket& router, zmq::socket& dealer)
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
-    {
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " query service.";
-    }
 
     if (!worker_stop)
-    {
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " query workers.";
-    }
 
     // Don't log stop success.
     return service_stop && worker_stop;

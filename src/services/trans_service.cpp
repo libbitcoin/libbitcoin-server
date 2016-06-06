@@ -132,16 +132,12 @@ bool trans_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
-    {
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " transaction service.";
-    }
 
     if (!worker_stop)
-    {
         log::error(LOG_SERVER)
             << "Failed to unbind " << security << " transaction workers.";
-    }
 
     // Don't log stop success.
     return service_stop && worker_stop;
@@ -150,7 +146,6 @@ bool trans_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // Publish Execution (integral worker).
 // ----------------------------------------------------------------------------
 
-// A failure here does not prevent future notifications.
 bool trans_service::handle_transaction(const code& ec,
     const point::indexes&, const transaction& tx)
 {
@@ -161,6 +156,8 @@ bool trans_service::handle_transaction(const code& ec,
     {
         log::warning(LOG_SERVER)
             << "Failure handling new transaction: " << ec.message();
+
+        // Don't let a failure here prevent prevent future notifications.
         return true;
     }
 
@@ -170,6 +167,9 @@ bool trans_service::handle_transaction(const code& ec,
 
 void trans_service::publish_transaction(const transaction& tx)
 {
+    if (stopped())
+        return;
+
     const auto security = secure_ ? "secure" : "public";
     const auto& endpoint = secure_ ? trans_service::secure_worker :
         trans_service::public_worker;
@@ -179,31 +179,40 @@ void trans_service::publish_transaction(const transaction& tx)
     zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
     auto ec = publisher.connect(endpoint);
 
+    if (ec == bc::error::service_stopped)
+        return;
+
     if (ec)
     {
         log::warning(LOG_SERVER)
             << "Failed to connect " << security << " transaction worker: "
             << ec.message();
+        return;
     }
+
+    if (stopped())
+        return;
 
     zmq::message respose;
     respose.enqueue(tx.to_data());
     ec = publisher.send(respose);
+
+    if (ec == bc::error::service_stopped)
+        return;
 
     if (ec)
     {
         log::warning(LOG_SERVER)
             << "Failed to publish " << security << " transaction ["
             << encode_hash(tx.hash()) << "] " << ec.message();
+        return;
     }
 
     // This isn't actually a request, should probably update settings.
-    if (!settings_.log_requests)
-        return;
-
-    log::debug(LOG_SERVER)
-        << "Published " << security << " transaction ["
-        << encode_hash(tx.hash()) << "]";
+    if (settings_.log_requests)
+        log::debug(LOG_SERVER)
+            << "Published " << security << " transaction ["
+            << encode_hash(tx.hash()) << "]";
 }
 
 } // namespace server
