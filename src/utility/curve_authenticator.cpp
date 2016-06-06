@@ -38,7 +38,7 @@ curve_authenticator::curve_authenticator(server_node& node)
 
     for (const auto& address: settings.client_addresses)
     {
-        log::info(LOG_SERVER)
+        log::debug(LOG_SERVER)
             << "Allow client address [" << address
             << (address.port() == 0 ? ":*" : "") << "]";
 
@@ -47,7 +47,7 @@ curve_authenticator::curve_authenticator(server_node& node)
 
     for (const auto& public_key: settings.client_public_keys)
     {
-        log::info(LOG_SERVER)
+        log::debug(LOG_SERVER)
             << "Allow client public key [" << public_key << "]";
 
         allow(public_key);
@@ -68,12 +68,12 @@ bool curve_authenticator::apply(zmq::socket& socket, const std::string& domain,
     if (secure)
     {
         log::debug(LOG_SERVER)
-            << "Applied CURVE to socket [" << domain << "]";
+            << "Applied curve authentication to socket [" << domain << "]";
     }
     else
     {
         log::debug(LOG_SERVER)
-            << "Applied NULL to socket [" << domain << "]";
+            << "Applied address authentication to socket [" << domain << "]";
     }
 
     return true;

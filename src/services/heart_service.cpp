@@ -86,12 +86,8 @@ bool heart_service::bind(zmq::socket& publisher)
     const auto& endpoint = secure_ ? settings_.secure_heartbeat_endpoint :
         settings_.public_heartbeat_endpoint;
 
-    if (secure_ && !authenticator_.apply(publisher, domain, true))
-    {
-        log::error(LOG_SERVER)
-            << "Failed to apply authenticator to secure heartbeat service.";
+    if (!authenticator_.apply(publisher, domain, secure_))
         return false;
-    }
 
     const auto ec = publisher.bind(endpoint);
 
