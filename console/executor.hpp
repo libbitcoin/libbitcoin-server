@@ -74,7 +74,9 @@ private:
     "Runs a full bitcoin node in the global peer-to-peer network."
 
 #define BS_UNINITIALIZED_CHAIN \
-    "The %1% directory is not initialized."
+    "The %1% directory is not initialized. " \
+    "If this is your first time running bs, then please run:" \
+    " bs --initchain"
 #define BS_INITIALIZING_CHAIN \
     "Please wait while initializing %1% directory..."
 #define BS_INITCHAIN_NEW \
