@@ -112,6 +112,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\fetch_helpers.hpp">
       <Filter>include\bitcoin\server\utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\notifications.hpp">
+      <Filter>include\bitcoin\server\utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
@@ -167,6 +170,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp">
       <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utility\notifications.cpp">
+      <Filter>src\utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

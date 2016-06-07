@@ -17,36 +17,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_ADDRESS_HPP
-#define LIBBITCOIN_SERVER_ADDRESS_HPP
+#include <bitcoin/server/utility/notifications.hpp>
 
-#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Address interface.
-/// Class and method names are published and mapped to the zeromq interface.
-class BCS_API address
+notifications::notifications()
 {
-public:
-    /// Fetch the blockchain and transaction pool history of a payment address.
-    static void fetch_history2(server_node& node,
-        const incoming& request, send_handler handler);
+}
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(server_node& node,
-        const incoming& request, send_handler handler);
+void notifications::subscribe(const incoming& request, send_handler handler)
+{
+}
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(server_node& node,
-        const incoming& request, send_handler handler);
-};
+void notifications::renew(const incoming& request, send_handler handler)
+{
+}
 
 } // namespace server
 } // namespace libbitcoin
-
-#endif

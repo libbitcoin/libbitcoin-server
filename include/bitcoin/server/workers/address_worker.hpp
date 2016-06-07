@@ -29,6 +29,8 @@
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/authenticator.hpp>
+#include <bitcoin/server/utility/notifications.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -36,27 +38,31 @@ namespace server {
 class server_node;
 
 // This class is thread safe.
+// Provide address and stealth notifications to the query service.
 class BCS_API address_worker
-  : public enable_shared_from_base<address_worker>
+  : public bc::protocol::zmq::worker
 {
 public:
     typedef std::shared_ptr<address_worker> ptr;
 
-    /// Construct an address notifier.
-    address_worker(server_node& node);
+    /// Construct an address worker.
+    address_worker(bc::protocol::zmq::authenticator& authenticator,
+        server_node& node, bool secure);
 
-    /// This class is not copyable.
-    address_worker(const address_worker&) = delete;
-    void operator=(const address_worker&) = delete;
+    /// Start the worker.
+    bool start() override;
 
-    /// Subscribe to block and transaction notifications and send messages.
-    bool start();
+    /// Stop the worker.
+    bool stop() override;
 
-    /// Subscribe addresses to the notifier.
-    void subscribe(const incoming& request, send_handler handler);
+protected:
+    typedef bc::protocol::zmq::socket socket;
 
-    /// Renew an existing subscription to the notifier.
-    void renew(const incoming& request, send_handler handler);
+    virtual bool connect(socket& pair);
+    virtual bool disconnect(socket& pair);
+
+    // Implement the service.
+    virtual void work();
 
 private:
     struct subscription_locator
@@ -75,37 +81,46 @@ private:
         subscription_locator locator;
     };
 
-
     ////typedef resubscriber<const chain::transaction&> block_subscriber;
     ////typedef resubscriber<const chain::transaction&> tx_subscriber;
 
     typedef std::vector<subscription_record> subscription_records;
     typedef std::vector<subscription_locator> subscription_locators;
 
+    static boost::posix_time::ptime now();
+
     void receive_block(uint32_t height, const chain::block::ptr block);
     void receive_transaction(const chain::transaction& transaction);
+
     void scan(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
+
     void post_updates(const wallet::payment_address& address,
         uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
     void post_stealth_updates(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
 
+    virtual void subscribe(const incoming& request, send_handler handler);
+    virtual void renew(const incoming& request, send_handler handler);
+
     size_t prune();
-    boost::posix_time::ptime now();
     code create(const incoming& request, send_handler handler);
     code update(const incoming& request, send_handler handler);
-    bool deserialize_address(binary& address, chain::subscribe_type& type,
+    bool deserialize(binary& address, chain::subscribe_type& type,
         const data_chunk& data);
 
-    // This is protected by mutex;
-    subscription_records subscriptions_;
-    upgrade_mutex mutex_;
+    const bool secure_;
+    const server::settings& settings_;
 
     // This is thread safe.
     server_node& node_;
-    const settings& settings_;
+    bc::protocol::zmq::authenticator& authenticator_;
+
+    // TODO: move to notifications.
+    // This is protected by mutex;
+    subscription_records subscriptions_;
+    upgrade_mutex mutex_;
 };
 
 } // namespace server

@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_HEART_SERVICE_HPP
-#define LIBBITCOIN_SERVER_HEART_SERVICE_HPP
+#ifndef LIBBITCOIN_SERVER_HEARTBEAT_SERVICE_HPP
+#define LIBBITCOIN_SERVER_HEARTBEAT_SERVICE_HPP
 
 #include <cstdint>
 #include <memory>
@@ -31,6 +31,8 @@ namespace server {
 
 class server_node;
 
+// This class is thread safe.
+// Subscribe to a pulse from a dedicated service endpoint.
 class BCS_API heartbeat_service
   : public bc::protocol::zmq::worker
 {

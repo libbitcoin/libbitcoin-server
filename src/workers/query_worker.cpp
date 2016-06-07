@@ -44,7 +44,6 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     secure_(secure),
     settings_(node.server_settings()),
     node_(node),
-    address_worker_(node),
     authenticator_(authenticator)
 {
     // The same interface is attached to the secure and public interfaces.
@@ -81,8 +80,8 @@ void query_worker::work()
 bool query_worker::connect(zmq::socket& router)
 {
     const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_worker :
-        query_service::public_worker;
+    const auto& endpoint = secure_ ? query_service::secure_query :
+        query_service::public_query;
 
     const auto ec = router.connect(endpoint);
 
@@ -175,10 +174,10 @@ void query_worker::query(zmq::socket& router)
 // ----------------------------------------------------------------------------
 
 // Class and method names must match protocol expectations (do not change).
-#define ATTACH(class_name, method_name, instance) \
+#define ATTACH(class_name, method_name, node) \
     attach(#class_name "." #method_name, \
         std::bind(&bc::server::class_name::method_name, \
-            std::ref(instance), _1, _2));
+            std::ref(node), _1, _2));
 
 void query_worker::attach(const std::string& command,
     command_handler handler)
@@ -213,8 +212,8 @@ void query_worker::attach_interface()
     ATTACH(address, fetch_history2, node_);
 
     // TODO: add renew to client.
-    ATTACH(address, renew, address_worker_);
-    ATTACH(address, subscribe, address_worker_);
+    ATTACH(address, renew, node_);
+    ATTACH(address, subscribe, node_);
 }
 
 #undef ATTACH
