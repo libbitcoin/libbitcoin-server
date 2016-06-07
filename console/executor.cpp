@@ -19,6 +19,7 @@
  */
 #include "executor.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <csignal>
 #include <functional>
@@ -170,6 +171,9 @@ bool executor::run()
     if (!verify_directory())
         return false;
 
+    // Ensure all configured services can function.
+    set_minimum_threadpool_size();
+
     // Now that the directory is verified we can create the node for it.
     node_ = std::make_shared<server_node>(metadata_.configured);
 
@@ -295,6 +299,14 @@ bool executor::verify_directory()
     const auto message = ec.message();
     log::error(LOG_SERVER) << format(BS_INITCHAIN_TRY) % directory % message;
     return false;
+}
+
+// Increase the configured minomum as required to operate the service.
+void executor::set_minimum_threadpool_size()
+{
+    metadata_.configured.network.threads =
+        std::max(metadata_.configured.network.threads,
+            server_node::threads_required(metadata_.configured));
 }
 
 } // namespace server

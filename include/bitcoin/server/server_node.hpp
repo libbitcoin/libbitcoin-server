@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_SERVER_SERVER_NODE_HPP
 #define LIBBITCOIN_SERVER_SERVER_NODE_HPP
 
+#include <cstdint>
 #include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
@@ -41,6 +42,9 @@ class BCS_API server_node
 {
 public:
     typedef std::shared_ptr<server_node> ptr;
+
+    /// Compute the minimum threadpool size required to run the server.
+    static uint32_t threads_required(const configuration& configuration);
 
     /// Construct a server node.
     server_node(const configuration& configuration);
@@ -77,10 +81,11 @@ public:
     virtual bool close() override;
 
 private:
-    static configuration minimum_threads(const configuration& configuration);
 
     void handle_running(const code& ec, result_handler handler);
 
+    bool start_services();
+    bool start_authenticator();
     bool start_query_services();
     bool start_heartbeat_services();
     bool start_block_services();

@@ -55,6 +55,7 @@ private:
 
     void initialize_output();
     bool verify_directory();
+    void set_minimum_threadpool_size();
     bool run();
 
     // Termination state.

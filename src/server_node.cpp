@@ -19,6 +19,7 @@
  */
 #include <bitcoin/server/server_node.hpp>
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <bitcoin/node.hpp>
@@ -95,16 +96,7 @@ void server_node::handle_running(const code& ec, result_handler handler)
         return;
     }
 
-    // Start authenticated context.
-    if (!authenticator_.start())
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // Start services and workers.
-    if (!start_query_services() || !start_heartbeat_services() ||
-        !start_block_services() || !start_transaction_services())
+    if (!start_services())
     {
         handler(error::operation_failed);
         return;
@@ -133,25 +125,27 @@ bool server_node::close()
 // Services.
 // ----------------------------------------------------------------------------
 
-// The number of threads available in the thread pool must be sufficient
-// to allocate the workers. This will wait forever on thread availability.
-bool server_node::start_query_workers(bool secure)
+bool server_node::start_services()
 {
-    auto& server = *this;
+    return
+        start_authenticator() && start_query_services() &&
+        start_heartbeat_services() && start_block_services() &&
+        start_transaction_services();
+}
+
+bool server_node::start_authenticator()
+{
     const auto& settings = configuration_.server;
+    const auto heartbeat_interval = settings.heartbeat_interval_seconds;
 
-    for (auto count = 0; count < settings.query_workers; ++count)
-    {
-        auto worker = std::make_shared<query_worker>(authenticator_,
-            server, secure);
+    if ((!settings.server_private_key && settings.secure_only) ||
+        ((!settings.query_service_enabled || settings.query_workers == 0) &&
+        (!settings.heartbeat_service_enabled || heartbeat_interval == 0) &&
+        (!settings.block_service_enabled) &&
+        (!settings.transaction_service_enabled)))
+        return true;
 
-        if (!worker->start())
-            return false;
-
-        subscribe_stop([=](const code&) { worker->stop(); });
-    }
-
-    return true;
+    return authenticator_.start();
 }
 
 bool server_node::start_query_services()
@@ -229,6 +223,75 @@ bool server_node::start_transaction_services()
         return false;
 
     return true;
+}
+
+// Called from start_query_services.
+bool server_node::start_query_workers(bool secure)
+{
+    auto& server = *this;
+    const auto& settings = configuration_.server;
+
+    for (auto count = 0; count < settings.query_workers; ++count)
+    {
+        auto worker = std::make_shared<query_worker>(authenticator_,
+            server, secure);
+
+        if (!worker->start())
+            return false;
+
+        subscribe_stop([=](const code&) { worker->stop(); });
+    }
+
+    return true;
+}
+
+// static
+uint32_t server_node::threads_required(const configuration& configuration)
+{
+    const auto& settings = configuration.server;
+    const auto threads = configuration.network.threads;
+    const auto heartbeat_interval = settings.heartbeat_interval_seconds;
+
+    // The network/node requires a minimum of one thread.
+    uint32_t required = 1;
+
+    if (settings.query_service_enabled && settings.query_workers > 0)
+    {
+        if (settings.server_private_key)
+        {
+            ++required;
+            required += settings.query_workers;
+            required += (settings.subscription_limit > 0 ? 1 : 0);
+        }
+
+        if (!settings.secure_only)
+        {
+            ++required;
+            required += settings.query_workers;
+            required += (settings.subscription_limit > 0 ? 1 : 0);
+        }
+    }
+
+    if (settings.heartbeat_service_enabled && heartbeat_interval > 0)
+    {
+        required += (settings.server_private_key ? 1 : 0);
+        required += (settings.secure_only ? 0 : 1);
+    }
+
+    if (settings.block_service_enabled)
+    {
+        required += (settings.server_private_key ? 1 : 0);
+        required += (settings.secure_only ? 0 : 1);
+    }
+
+    if (settings.transaction_service_enabled)
+    {
+        required += (settings.server_private_key ? 1 : 0);
+        required += (settings.secure_only ? 0 : 1);
+    }
+
+    // If any services are enabled increment for the authenticator.
+    return required == 1 ? required : required + 1;
 }
 
 } // namespace server
