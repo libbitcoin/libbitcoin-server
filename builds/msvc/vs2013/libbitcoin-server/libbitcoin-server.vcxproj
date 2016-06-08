@@ -89,9 +89,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\authenticator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\fetch_helpers.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\notifications.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\notifier.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\address_worker.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
@@ -112,8 +112,8 @@
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\utility\authenticator.cpp" />
     <ClCompile Include="..\..\..\..\src\utility\fetch_helpers.cpp" />
-    <ClCompile Include="..\..\..\..\src\utility\notifications.cpp" />
-    <ClCompile Include="..\..\..\..\src\workers\address_worker.cpp" />
+    <ClCompile Include="..\..\..\..\src\utility\notifier.cpp" />
+    <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp" />
   </ItemGroup>
   <ItemGroup>

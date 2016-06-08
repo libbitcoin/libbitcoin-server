@@ -23,9 +23,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
 #include <bitcoin/node.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/settings.hpp>
 

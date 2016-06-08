@@ -51,8 +51,10 @@ public:
 protected:
     typedef bc::protocol::zmq::socket socket;
 
-    virtual bool bind(socket& router, socket& dealer, socket& pair);
-    virtual bool unbind(socket& router, socket& dealer, socket& pair);
+    virtual bool bind(socket& router, socket& query_dealer,
+        socket& notify_dealer);
+    virtual bool unbind(socket& router, socket& query_dealer,
+        socket& notify_dealer);
 
     // Implement the service.
     virtual void work();

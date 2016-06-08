@@ -21,7 +21,9 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <boost/iostreams/stream.hpp>
+#include <functional>
+#include <bitcoin/blockchain.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -30,12 +32,10 @@
 namespace libbitcoin {
 namespace server {
 
+using namespace std::placeholders;
 using namespace bc::blockchain;
 using namespace bc::chain;
 using namespace bc::wallet;
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
 
 void blockchain::fetch_history(server_node& node,
     const incoming& request, send_handler handler)

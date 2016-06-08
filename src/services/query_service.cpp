@@ -50,27 +50,27 @@ query_service::query_service(zmq::authenticator& authenticator,
 void query_service::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
-    zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
-    zmq::socket pair(authenticator_, zmq::socket::role::pair);
+    zmq::socket query_dealer(authenticator_, zmq::socket::role::dealer);
+    zmq::socket notify_dealer(authenticator_, zmq::socket::role::dealer);
 
     // Bind sockets to the service and worker endpoints.
-    if (!started(bind(router, dealer, pair)))
+    if (!started(bind(router, query_dealer, notify_dealer)))
         return;
 
-    // TODO: integrate notification (pair) socket into relay.
+    // TODO: integrate notify_dealer into relay.
     // TODO: tap in to failure conditions, such as high water.
     // Relay messages between router and dealer (blocks on context).
-    relay(router, dealer);
+    relay(router, query_dealer);
 
     // Unbind the sockets and exit this thread.
-    finished(unbind(router, dealer, pair));
+    finished(unbind(router, query_dealer, notify_dealer));
 }
 
 // Bind/Unbind.
 //-----------------------------------------------------------------------------
 
-bool query_service::bind(zmq::socket& router, zmq::socket& dealer,
-    zmq::socket& pair)
+bool query_service::bind(zmq::socket& router, zmq::socket& query_dealer,
+    zmq::socket& notify_dealer)
 {
     const auto security = secure_ ? "secure" : "public";
     const auto& query_worker = secure_ ? secure_query : public_query;
@@ -91,7 +91,7 @@ bool query_service::bind(zmq::socket& router, zmq::socket& dealer,
         return false;
     }
 
-    ec = dealer.bind(query_worker);
+    ec = query_dealer.bind(query_worker);
 
     if (ec)
     {
@@ -101,7 +101,7 @@ bool query_service::bind(zmq::socket& router, zmq::socket& dealer,
         return false;
     }
 
-    ec = pair.bind(notify_worker);
+    ec = notify_dealer.bind(notify_worker);
 
     if (ec)
     {
@@ -116,13 +116,13 @@ bool query_service::bind(zmq::socket& router, zmq::socket& dealer,
     return true;
 }
 
-bool query_service::unbind(zmq::socket& router, zmq::socket& dealer,
-    zmq::socket& pair)
+bool query_service::unbind(zmq::socket& router, zmq::socket& query_dealer,
+    zmq::socket& notify_dealer)
 {
     // Stop all even if one fails.
     const auto service_stop = router.stop();
-    const auto query_stop = dealer.stop();
-    const auto notify_stop = pair.stop();
+    const auto query_stop = query_dealer.stop();
+    const auto notify_stop = notify_dealer.stop();
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)

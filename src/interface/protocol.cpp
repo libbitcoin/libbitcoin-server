@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <functional>
 #include <bitcoin/server.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -29,7 +30,7 @@
 namespace libbitcoin {
 namespace server {
 
-using std::placeholders::_1;
+using namespace std::placeholders;
 
 // This does NOT save to our memory pool.
 // The transaction will hit our memory pool when it is picked up from a peer.

@@ -37,8 +37,8 @@ namespace libbitcoin {
 namespace server {
 
 using boost::format;
-using std::placeholders::_1;
 using namespace std::chrono;
+using namespace std::placeholders;
 using namespace std::this_thread;
 using namespace boost::system;
 using namespace bc::config;

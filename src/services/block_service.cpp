@@ -30,10 +30,7 @@
 namespace libbitcoin {
 namespace server {
 
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
-using std::placeholders::_4;
+using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::protocol;
 
@@ -144,7 +141,7 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
     return service_stop && worker_stop;
 }
 
-// Publish Execution (integral worker).
+// Publish (integral worker).
 // ----------------------------------------------------------------------------
 
 bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
@@ -180,7 +177,7 @@ void block_service::publish_blocks(uint32_t fork_point,
     const auto& endpoint = secure_ ? block_service::secure_worker :
         block_service::public_worker;
 
-    // Notifications are off the pub-sub thread so this must connect back.
+    // Subscriptions are off the pub-sub thread so this must connect back.
     // This could be optimized by caching the socket as thread static.
     zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
     const auto ec = publisher.connect(endpoint);

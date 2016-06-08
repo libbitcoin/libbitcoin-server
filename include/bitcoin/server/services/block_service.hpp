@@ -54,7 +54,6 @@ public:
     bool stop() override;
 
 protected:
-    typedef chain::block::ptr_list block_list;
     typedef bc::protocol::zmq::socket socket;
 
     virtual bool bind(socket& xpub, socket& xsub);
@@ -64,6 +63,8 @@ protected:
     virtual void work();
 
 private:
+    typedef chain::block::ptr_list block_list;
+
     bool handle_reorganization(const code& ec, uint64_t fork_point,
         const block_list& new_blocks, const block_list&);
     void publish_blocks(uint32_t fork_point, const block_list& blocks);

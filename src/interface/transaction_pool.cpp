@@ -21,18 +21,16 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <functional>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
-    
-using namespace chain;
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
-using std::placeholders::_4;
+
+using namespace std::placeholders;
+using namespace bc::chain;
 
 void transaction_pool::fetch_transaction(server_node& node,
     const incoming& request, send_handler handler)

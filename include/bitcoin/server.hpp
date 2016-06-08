@@ -34,8 +34,8 @@
 #include <bitcoin/server/services/transaction_service.hpp>
 #include <bitcoin/server/utility/authenticator.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
-#include <bitcoin/server/utility/notifications.hpp>
-#include <bitcoin/server/workers/address_worker.hpp>
+#include <bitcoin/server/utility/notifier.hpp>
+#include <bitcoin/server/workers/notification_worker.hpp>
 #include <bitcoin/server/workers/query_worker.hpp>
 
 #endif
