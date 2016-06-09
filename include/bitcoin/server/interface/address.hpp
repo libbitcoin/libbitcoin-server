@@ -28,6 +28,14 @@
 namespace libbitcoin {
 namespace server {
 
+// TODO: move to bc::protocol and integrate with zmq::message.
+class BCS_API route
+{
+    bool secure;
+    bool delimited;
+    data_queue identities;
+};
+
 /// Address interface.
 /// Class and method names are published and mapped to the zeromq interface.
 class BCS_API address
@@ -38,12 +46,19 @@ public:
         const incoming& request, send_handler handler);
 
     /// Subscribe to payment and stealth address notifications by prefix.
-    static void subscribe(server_node& node,
-        const incoming& request, send_handler handler);
+    static void subscribe(server_node& node, const incoming& request,
+        send_handler handler);
 
-    /// Subscribe to payment and stealth address notifications by prefix.
-    static void renew(server_node& node,
-        const incoming& request, send_handler handler);
+    static bool unwrap_subscribe_args(route& reply_to, binary& prefix_filter,
+        chain::subscribe_type& type, const incoming& request);
+
+    // TODO: can't we just call subscribe again? This would prevent duplicates.
+    /////// Subscribe to payment and stealth address notifications by prefix.
+    ////static void renew(server_node& node,
+    ////    const incoming& request, send_handler handler);
+    ////
+    ////static bool unwrap_renew_args(route& reply_to, binary& prefix_filter,
+    ////    chain::subscribe_type& type, const incoming& request);
 };
 
 } // namespace server

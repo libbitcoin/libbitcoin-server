@@ -31,6 +31,7 @@ namespace libbitcoin {
 namespace server {
 
 using namespace std::placeholders;
+using namespace bc::chain;
 using namespace bc::wallet;
 
 void address::fetch_history2(server_node& node, const incoming& request,
@@ -41,7 +42,10 @@ void address::fetch_history2(server_node& node, const incoming& request,
     payment_address address;
 
     if (!unwrap_fetch_history_args(address, from_height, request))
+    {
+        handler(outgoing(request, error::bad_stream));
         return;
+    }
 
     // Obtain payment address history from the transaction pool and blockchain.
     node.pool().fetch_history(address, limit, from_height,
@@ -52,14 +56,76 @@ void address::fetch_history2(server_node& node, const incoming& request,
 void address::subscribe(server_node& node, const incoming& request,
     send_handler handler)
 {
-    ////node.notifier().subscribe(request, handler);
+    route reply_to;
+    binary prefix_filter;
+    subscribe_type type;
+
+    if (!unwrap_subscribe_args(reply_to, prefix_filter, type, request))
+    {
+        handler(outgoing(request, error::bad_stream));
+        return;
+    }
+
+    // TODO: reenable.
+    ////node.subscribe_address(reply_to, prefix_filter, type);
+
+    handler(outgoing(request, error::success));
 }
 
-void address::renew(server_node& node, const incoming& request,
-    send_handler handler)
+bool address::unwrap_subscribe_args(route& reply_to, binary& prefix_filter, 
+    subscribe_type& type, const incoming& request)
 {
-    ////node.notifier().renew(request, handler);
+    // [ type:1 ] (0 = address prefix, 1 = stealth prefix)
+    // [ prefix_bitsize:1 ]
+    // [ prefix_blocks:...  ]
+    const auto& data = request.data;
+
+    if (data.size() < 2)
+        return false;
+
+    // First byte is the subscribe_type enumeration.
+    if (data[0] != static_cast<uint8_t>(subscribe_type::address) &&
+        data[0] != static_cast<uint8_t>(subscribe_type::stealth))
+        return false;
+
+    type = static_cast<subscribe_type>(data[0]);
+
+    // Second byte is the number of bits.
+    const auto bit_length = data[1];
+
+    // Convert the bit length to byte length.
+    const auto byte_length = binary::blocks_size(bit_length);
+
+    if (data.size() != byte_length + 2)
+        return false;
+
+    const data_chunk bytes({ data.begin() + 2, data.end() });
+    prefix_filter = binary(bit_length, bytes);
+    return true;
 }
+
+////void address::renew(server_node& node, const incoming& request,
+////    send_handler handler)
+////{
+////    route reply_to;
+////    binary prefix_filter;
+////    subscribe_type type;
+////
+////    if (!unwrap_subscribe_args(reply_to, prefix_filter, type, request))
+////    {
+////        handler(outgoing(request, error::bad_stream));
+////        return;
+////    }
+////
+////    node.renew(reply_to, prefix_filter, type);
+////}
+////
+////bool address::unwrap_renew_args(route& reply_to, binary& prefix_filter,
+////    subscribe_type& type, const incoming& request)
+////{
+////    // These are currently isomorphic.
+////    return unwrap_subscribe_args(reply_to, prefix_filter, type, request);
+////}
 
 } // namespace server
 } // namespace libbitcoin

@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/services/query_service.hpp>
@@ -28,6 +29,8 @@
 
 namespace libbitcoin {
 namespace server {
+
+#define NAME "notification_worker"
 
 using namespace std::placeholders;
 using namespace bc::chain;
@@ -50,13 +53,23 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
     secure_(secure),
     settings_(node.server_settings()),
     node_(node),
-    authenticator_(authenticator)
+    authenticator_(authenticator),
+    address_subscriber_(std::make_shared<address_subscriber>(
+        node.thread_pool(), NAME "_address")),
+    inventory_subscriber_(std::make_shared<inventory_subscriber>(
+        node.thread_pool(), NAME "_inventory")),
+    stealth_subscriber_(std::make_shared<stealth_subscriber>(
+        node.thread_pool(), NAME "_stealth"))
 {
 }
 
 // There is no unsubscribe so this class shouldn't be restarted.
 bool notification_worker::start()
 {
+    address_subscriber_->start();
+    inventory_subscriber_->start();
+    stealth_subscriber_->start();
+
     // Subscribe to blockchain reorganizations.
     node_.subscribe_blockchain(
         std::bind(&notification_worker::handle_blockchain_reorganization,
@@ -78,6 +91,10 @@ bool notification_worker::start()
 // No unsubscribe so must be kept in scope until subscriber stop complete.
 bool notification_worker::stop()
 {
+    address_subscriber_->stop();
+    inventory_subscriber_->stop();
+    stealth_subscriber_->stop();
+
     return zmq::worker::stop();
 }
 
@@ -215,8 +232,8 @@ void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
     {
         const auto tx_hash = tx.hash();
 
-        notify_radar(height, block_hash, tx_hash);
         notify_transaction(height, block_hash, tx);
+        notify_inventory(height, block_hash, tx_hash);
     }
 }
 
@@ -240,7 +257,7 @@ bool notification_worker::handle_inventory(const code& ec,
 
     //*************************************************************************
     // TODO: loop inventories and extract transaction hashes.
-    notify_radar(0, null_hash, packet->inventories.front().hash);
+    notify_inventory(0, null_hash, packet->inventories.front().hash);
     //*************************************************************************
 
     return true;
@@ -287,6 +304,7 @@ void notification_worker::notify_transaction(uint32_t height,
     //*************************************************************************
 }
 
+// TODO: add a sequence value to reply so client can detect dropped message.
 void notification_worker::notify_address(const payment_address& address,
     uint32_t height, const hash_digest& block_hash, const transaction& tx)
 {
@@ -295,9 +313,10 @@ void notification_worker::notify_address(const payment_address& address,
     // [ height:4 ]
     // [ block_hash:32 ]
     // [ tx:... ]
-    ////address_notifier_.relay(address, height, block_hash, tx);
+    address_subscriber_->relay(address, height, block_hash, tx);
 }
 
+// TODO: add a sequence value to reply so client can detect dropped message.
 void notification_worker::notify_stealth(uint32_t prefix, uint32_t height,
     const hash_digest& block_hash, const transaction& tx)
 {
@@ -305,10 +324,11 @@ void notification_worker::notify_stealth(uint32_t prefix, uint32_t height,
     // [ height:4 ]
     // [ block_hash:32 ]
     // [ tx:... ]
-    ////stealth_notifier_.relay(prefix, height, block_hash, tx);
+    stealth_subscriber_->relay(prefix, height, block_hash, tx);
 }
 
-void notification_worker::notify_radar(uint32_t height,
+// No sequence is required as penetration is monotonically increasing.
+void notification_worker::notify_inventory(uint32_t height,
     const hash_digest& block_hash, const hash_digest& tx_hash)
 {
     // Only provide height and hash if chained.
@@ -319,10 +339,33 @@ void notification_worker::notify_radar(uint32_t height,
     // [ penetration:1 ]
     // [ height:4 ]
     // [ block_hash:32 ]
-    ////radar_notifier_.relay(height, block_hash, tx.hash());
+    inventory_subscriber_->relay(height, block_hash, tx_hash);
 }
 
-// Subscribe sequence.
+// Subscribers.
+// ----------------------------------------------------------------------------
+
+/////// Subscribe to address and stealth prefix notifications.
+////void notification_worker::subscribe_address(route& reply_to,
+////    binary& prefix_filter, subscribe_type& type)
+////{
+////    // Provide delegate that binds the above parameters and parameterizes
+////    // the appropriate subscriber args.
+////    address_subscriber_->subscribe();
+////    stealth_subscriber_->subscribe();
+////}
+////
+/////// Subscribe to address and stealth prefix notifications.
+////void notification_worker::subscribe_radar(route& reply_to,
+////    hash_digest& tx_hash)
+////{
+////    // Provide delegate that binds the above parameters and parameterizes
+////    // the subsciber args.
+////    inventory_subscriber_->subscribe();
+////}
+
+
+// reference
 // ----------------------------------------------------------------------------
 
 ////void notification_worker::subscribe(const incoming& request, send_handler handler)

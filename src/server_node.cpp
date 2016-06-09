@@ -122,6 +122,30 @@ bool server_node::close()
     return server_node::stop() && p2p_node::close();
 }
 
+// Notification.
+// ----------------------------------------------------------------------------
+
+////// Subscribe to address and stealth prefix notifications.
+////void server_node::subscribe_address(route& reply_to, binary& prefix_filter,
+////    subscribe_type& type)
+////{
+////    if (true)
+////        secure_notification_worker_
+////            .subscribe_address(reply_to, prefix_filter, type);
+////    else
+////        public_notification_worker_
+////            .subscribe_address(reply_to, prefix_filter, type);
+////}
+////
+////// Subscribe to transaction radar notifications.
+////void server_node::subscribe_radar(route& reply_to, hash_digest& tx_hash)
+////{
+////    if (true)
+////        secure_notification_worker_.subscribe_radar(reply_to, tx_hash);
+////    else
+////        public_notification_worker_.subscribe_radar(reply_to, tx_hash);
+////}
+
 // Services.
 // ----------------------------------------------------------------------------
 
