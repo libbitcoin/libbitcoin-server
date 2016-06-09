@@ -191,13 +191,16 @@ void query_worker::attach(const std::string& command,
 }
 
 // TODO: add to client:
-//------------------------------------------
 // protocol.total_connections
 // blockchain.fetch_spend
 // blockchain.fetch_block_transaction_hashes
-// transaction_radar.subscribe
 //------------------------------------------
-// TODO: remove protocol.total_connections (administrative)
+// TODO: add to server:
+// transaction_radar.subscribe
+// electrum.subscribe
+// electrum.fetch_history
+//------------------------------------------
+// TODO: remove protocol.total_connections (administrative) and
 // create administrative query channel (secure only).
 // This will require that client public keys be associated to a ZAP domain.
 //------------------------------------------
@@ -206,10 +209,11 @@ void query_worker::attach(const std::string& command,
 // address.renew was present in v2 (server) and dropped in v3
 // address.subscribe performs renewal (as necessary) in v3
 //------------------------------------------
-// Class and method names must match protocol expectations (do not change).
+// Interface class.method names must match protocol (do not change).
 void query_worker::attach_interface()
 {
     // Queries (request-response).
+    ////ATTACH(electrum, fetch_history, node_);
     ATTACH(address, fetch_history2, node_);
     ATTACH(blockchain, fetch_history, node_);
     ATTACH(blockchain, fetch_block_header, node_);
@@ -227,6 +231,7 @@ void query_worker::attach_interface()
 
     // Notifications (subscription response with subsequent notifications).
     ATTACH(address, subscribe, node_);
+    ////ATTACH(electrum, subscribe, node_);
     ////ATTACH(transaction_radar, subscribe, node_);
 }
 

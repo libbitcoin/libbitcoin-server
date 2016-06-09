@@ -350,17 +350,19 @@ void notification_worker::notify_inventory(uint32_t height,
 ////    binary& prefix_filter, subscribe_type& type)
 ////{
 ////    // Provide delegate that binds the above parameters and parameterizes
-////    // the appropriate subscriber args.
+////    // the appropriate subscriber args, sending the notification,
+////    // The delegate must connect back to a query notification endpoint.
 ////    address_subscriber_->subscribe();
 ////    stealth_subscriber_->subscribe();
 ////}
 ////
-/////// Subscribe to address and stealth prefix notifications.
+/////// Subscribe to transaction radar notifications.
 ////void notification_worker::subscribe_radar(route& reply_to,
 ////    hash_digest& tx_hash)
 ////{
 ////    // Provide delegate that binds the above parameters and parameterizes
-////    // the subsciber args.
+////    // the subsciber args, sending the notification and updating state.
+////    // The delegate must connect back to a query notification endpoint.
 ////    inventory_subscriber_->subscribe();
 ////}
 
@@ -566,7 +568,7 @@ void notification_worker::notify_inventory(uint32_t height,
 ////    // Send the result to everyone interested.
 ////    for (const auto& locator: locators)
 ////        locator.handler(outgoing("address.update", data, locator.address1,
-////                locator.address2, locator.delimited));
+////            locator.address2, locator.delimited));
 ////
 ////    // This is the end of the scan address sequence.
 ////}
@@ -618,29 +620,7 @@ void notification_worker::notify_inventory(uint32_t height,
 ////{
 ////    return second_clock::universal_time();
 ////};
-////
-////bool notification_worker::deserialize(binary& address, chain::subscribe_type& type,
-////    const data_chunk& data)
-////{
-////    if (data.size() < 2)
-////        return false;
-////
-////    // First byte is the subscribe_type enumeration.
-////    type = static_cast<chain::subscribe_type>(data[0]);
-////
-////    // Second byte is the number of bits.
-////    const auto bit_length = data[1];
-////
-////    // Convert the bit length to byte length.
-////    const auto byte_length = binary::blocks_size(bit_length);
-////
-////    if (data.size() != byte_length + 2)
-////        return false;
-////    
-////    const data_chunk bytes({ data.begin() + 2, data.end() });
-////    address = binary(bit_length, bytes);
-////    return true;
-////}
+
 
 } // namespace server
 } // namespace libbitcoin
