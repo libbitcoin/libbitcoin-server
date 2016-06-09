@@ -37,16 +37,11 @@ using namespace std::placeholders;
 void protocol::broadcast_transaction(server_node& node,
     const incoming& request, send_handler handler)
 {
-    const data_chunk& raw_tx = request.data;
     chain::transaction tx;
-    data_chunk result(code_size);
-    auto serial = make_serializer(result.begin());
 
-    if (!tx.from_data(raw_tx))
+    if (!tx.from_data(request.data))
     {
-        // error
-        serial.write_error_code(error::bad_stream);
-        handler(outgoing(request, result));
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 
@@ -57,14 +52,18 @@ void protocol::broadcast_transaction(server_node& node,
     node.broadcast(tx, ignore_send, ignore_complete);
 
     // Tell the user everything is fine.
-    serial.write_error_code(error::success);
-
-    handler(outgoing(request, result));
+    handler(outgoing(request, error::success));
 }
 
 void protocol::total_connections(server_node& node, const incoming& request,
     send_handler handler)
 {
+    if (!request.data.empty())
+    {
+        handler(outgoing(request, error::bad_stream));
+        return;
+    }
+
     node.connected_count(
         std::bind(&protocol::handle_total_connections,
             _1, request, handler));

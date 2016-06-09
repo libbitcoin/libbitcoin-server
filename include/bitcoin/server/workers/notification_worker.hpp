@@ -24,16 +24,30 @@
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/notifier.hpp>
-////#include <bitcoin/server/utility/address_notifier.hpp>
-////#include <bitcoin/server/utility/radar_notifier.hpp>
-////#include <bitcoin/server/utility/stealth_notifier.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
+
+////struct subscription_locator
+////{
+////    send_handler handler;
+////    data_chunk address1;
+////    data_chunk address2;
+////    bool delimited;
+////};
+////
+////struct subscription_record
+////{
+////    binary prefix;
+////    chain::subscribe_type type;
+////    boost::posix_time::ptime expiry_time;
+////    subscription_locator locator;
+////};
 
 // This class is thread safe.
 // Provide address and stealth notifications to the query service.
@@ -53,6 +67,13 @@ public:
     /// Stop the worker.
     bool stop() override;
 
+    /////// Subscribe to address and stealth prefix notifications.
+    ////virtual void subscribe_address(route& reply_to, binary& prefix_filter,
+    ////    chain::subscribe_type& type);
+
+    /////// Subscribe to address and stealth prefix notifications.
+    ////virtual void subscribe_radar(route& reply_to, hash_digest& tx_hash);
+
 protected:
     typedef bc::protocol::zmq::socket socket;
 
@@ -64,7 +85,14 @@ protected:
 
 private:
     typedef chain::block::ptr_list block_list;
-    typedef bc::chain::point::indexes index_list;
+    typedef chain::point::indexes index_list;
+
+    typedef resubscriber<const wallet::payment_address&, uint32_t,
+        const hash_digest&, const chain::transaction&> address_subscriber;
+    typedef resubscriber<uint32_t, const hash_digest&, const hash_digest&>
+        inventory_subscriber;
+    typedef resubscriber<uint32_t, uint32_t, const hash_digest&,
+        const chain::transaction&> stealth_subscriber;
 
     bool handle_blockchain_reorganization(const code& ec, uint64_t fork_point,
         const block_list& new_blocks, const block_list&);
@@ -83,7 +111,7 @@ private:
         const chain::transaction& tx);
     void notify_stealth(uint32_t prefix, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx);
-    void notify_radar(uint32_t height, const hash_digest& block_hash,
+    void notify_inventory(uint32_t height, const hash_digest& block_hash,
         const hash_digest& tx_hash);
 
     ////static boost::posix_time::ptime now();
@@ -106,12 +134,12 @@ private:
     const bool secure_;
     const server::settings& settings_;
 
-    // This is thread safe.
+    // These are thread safe.
     server_node& node_;
-    ////address_notifier& address_notifier_;
-    ////inventory_notifier& inventory_notifier_;
-    ////stealth_notifier& stealth_notifier_;
     bc::protocol::zmq::authenticator& authenticator_;
+    address_subscriber::ptr address_subscriber_;
+    inventory_subscriber::ptr inventory_subscriber_;
+    stealth_subscriber::ptr stealth_subscriber_;
 };
 
 } // namespace server

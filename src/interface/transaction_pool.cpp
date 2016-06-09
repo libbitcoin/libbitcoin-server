@@ -36,12 +36,15 @@ void transaction_pool::fetch_transaction(server_node& node,
     const incoming& request, send_handler handler)
 {
     hash_digest hash;
+
     if (!unwrap_fetch_transaction_args(hash, request))
+    {
+        handler(outgoing(request, error::bad_stream));
         return;
+    }
 
     log::debug(LOG_SERVER)
-        << "transaction_pool.fetch_transaction(" << encode_hash(hash)
-        << ")";
+        << "transaction_pool.fetch_transaction(" << encode_hash(hash) << ")";
 
     node.pool().fetch(hash,
         std::bind(transaction_fetched,
@@ -52,9 +55,12 @@ void transaction_pool::validate(server_node& node, const incoming& request,
     send_handler handler)
 {
     transaction tx;
+
     if (!tx.from_data(request.data))
     {
-        handle_validated(error::bad_stream, {}, {}, {}, request, handler);
+        // NOTE: the format of this response changed in v3 (send only code).
+        // This is our standard behavior and should not break clients.
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 

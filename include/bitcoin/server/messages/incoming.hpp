@@ -35,14 +35,17 @@ public:
     std::string address();
 
     /// Send a message from the socket.
-    code receive(bc::protocol::zmq::socket& socket);
+    code receive(bc::protocol::zmq::socket& socket, bool secure=false);
 
     /// The message route as seen at workers.
     data_chunk address1;
     data_chunk address2;
     bool delimited;
 
-    /// Query command (returned to caller).
+    /// For deferred work, directs worker to respond on secure endpoint.
+    bool secure;
+
+    /// Query command (used for subscription, always returned to caller).
     std::string command;
 
     /// Structure is little-endian.

@@ -47,7 +47,7 @@ std::string incoming::address()
 // of expected payload length for parsing undelimited addressing.
 // BUGBUG: current implementation assumes client has not added any addresses.
 // This probably prevents the use of generalized zeromq routing to the server.
-code incoming::receive(zmq::socket& socket)
+code incoming::receive(zmq::socket& socket, bool secure)
 {
     zmq::message message;
     auto ec = socket.receive(message);
@@ -81,6 +81,9 @@ code incoming::receive(zmq::socket& socket)
 
     // Serialized query.
     data = message.dequeue_data();
+
+    // For deferred work, directs worker to respond on secure endpoint.
+    this->secure = secure;
     return error::success;
 }
 

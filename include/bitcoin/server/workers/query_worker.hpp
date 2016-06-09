@@ -28,7 +28,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

@@ -26,6 +26,8 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/outgoing.hpp>
 #include <bitcoin/server/services/block_service.hpp>
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
@@ -35,6 +37,8 @@
 
 namespace libbitcoin {
 namespace server {
+
+class notification_worker;
 
 class BCS_API server_node
   : public node::p2p_node
@@ -53,9 +57,6 @@ public:
 
     // Properties.
     // ----------------------------------------------------------------------------
-
-    /////// Address worker notification subscription.
-    ////virtual notifications& notifier();
 
     /// Server configuration settings.
     virtual const settings& server_settings() const;
@@ -78,6 +79,16 @@ public:
     /// Call from thread that constructed this class, or don't call at all.
     /// This calls stop, and start may be reinvoked after calling this.
     virtual bool close() override;
+
+    // Notification.
+    // ------------------------------------------------------------------------
+
+    /////// Subscribe to address and stealth prefix notifications.
+    ////virtual void subscribe_address(route& reply_to, binary& prefix_filter,
+    ////    chain::subscribe_type& type);
+
+    /////// Subscribe to transaction radar notifications.
+    ////virtual void subscribe_radar(route& reply_to, hash_digest& tx_hash);
 
 private:
 

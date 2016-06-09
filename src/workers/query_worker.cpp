@@ -191,24 +191,26 @@ void query_worker::attach(const std::string& command,
 }
 
 // TODO: add to client:
+//------------------------------------------
 // protocol.total_connections
 // blockchain.fetch_spend
 // blockchain.fetch_block_transaction_hashes
-// address.renew
-//
+// transaction_radar.subscribe
+//------------------------------------------
 // TODO: remove protocol.total_connections (administrative)
-// TODO: create administrative query channel (secure only).
+// create administrative query channel (secure only).
 // This will require that client public keys be associated to a ZAP domain.
-//
+//------------------------------------------
 // address.fetch_history was present in v1 (obelisk) and v2 (server).
 // address.fetch_history was called by client v1 (sx) and v2 (bx).
-//
+// address.renew was present in v2 (server) and dropped in v3
+// address.subscribe performs renewal (as necessary) in v3
+//------------------------------------------
 // Class and method names must match protocol expectations (do not change).
 void query_worker::attach_interface()
 {
+    // Queries (request-response).
     ATTACH(address, fetch_history2, node_);
-    ATTACH(address, renew, node_);
-    ATTACH(address, subscribe, node_);
     ATTACH(blockchain, fetch_history, node_);
     ATTACH(blockchain, fetch_block_header, node_);
     ATTACH(blockchain, fetch_block_height, node_);
@@ -218,13 +220,13 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_transaction_index, node_);
     ATTACH(blockchain, fetch_spend, node_);
     ATTACH(blockchain, fetch_stealth, node_);
-    ATTACH(protocol, broadcast_transaction, node_);
-    ATTACH(protocol, total_connections, node_);
     ATTACH(transaction_pool, fetch_transaction, node_);
     ATTACH(transaction_pool, validate, node_);
-    ////ATTACH(stealth, renew, node_);
-    ////ATTACH(stealth, subscribe, node_);
-    ////ATTACH(transaction_radar, renew, node_);
+    ATTACH(protocol, total_connections, node_);
+    ATTACH(protocol, broadcast_transaction, node_);
+
+    // Notifications (subscription response with subsequent notifications).
+    ATTACH(address, subscribe, node_);
     ////ATTACH(transaction_radar, subscribe, node_);
 }
 

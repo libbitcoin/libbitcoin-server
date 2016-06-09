@@ -45,7 +45,10 @@ void blockchain::fetch_history(server_node& node,
     payment_address address;
 
     if (!unwrap_fetch_history_args(address, from_height, request))
+    {
+        handler(outgoing(request, error::bad_stream));
         return;
+    }
 
     log::debug(LOG_SERVER)
         << "blockchain.fetch_history(" << address.encoded()
@@ -62,7 +65,10 @@ void blockchain::fetch_transaction(server_node& node,
     hash_digest tx_hash;
 
     if (!unwrap_fetch_transaction_args(tx_hash, request))
+    {
+        handler(outgoing(request, error::bad_stream));
         return;
+    }
 
     log::debug(LOG_SERVER)
         << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
@@ -79,8 +85,7 @@ void blockchain::fetch_last_height(server_node& node,
 
     if (!request.data.empty())
     {
-        log::error(LOG_SERVER)
-            << "Incorrect data size for blockchain.fetch_last_height";
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 
@@ -116,8 +121,7 @@ void blockchain::fetch_block_header(server_node& node,
     else if (data.size() == sizeof(uint32_t))
         blockchain::fetch_block_header_by_height(node, request, handler);
     else
-        log::error(LOG_SERVER)
-            << "Incorrect data size for blockchain.fetch_block_header";
+        handler(outgoing(request, error::bad_stream));
 }
 
 void blockchain::fetch_block_header_by_hash(server_node& node,
@@ -177,12 +181,7 @@ void blockchain::fetch_block_transaction_hashes(server_node& node,
     else if (data.size() == sizeof(uint32_t))
         fetch_block_transaction_hashes_by_height(node, request, handler);
     else
-    {
-        log::error(LOG_SERVER)
-            << "Incorrect data size for "
-            "blockchain.fetch_block_transaction_hashes_by_height";
-        return;
-    }
+        handler(outgoing(request, error::bad_stream));
 }
 
 void blockchain::fetch_block_transaction_hashes_by_hash(server_node& node,
@@ -235,8 +234,7 @@ void blockchain::fetch_transaction_index(server_node& node,
 
     if (data.size() != hash_size)
     {
-        log::error(LOG_SERVER)
-            << "Incorrect data size for blockchain.fetch_transaction_index";
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 
@@ -276,8 +274,7 @@ void blockchain::fetch_spend(server_node& node, const incoming& request,
 
     if (data.size() != point_size)
     {
-        log::error(LOG_SERVER)
-            << "Incorrect data size for blockchain.fetch_spend";
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 
@@ -319,8 +316,7 @@ void blockchain::fetch_block_height(server_node& node,
 
     if (data.size() != hash_size)
     {
-        log::error(LOG_SERVER)
-            << "Incorrect data size for blockchain.fetch_block_height";
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 
@@ -355,8 +351,7 @@ void blockchain::fetch_stealth(server_node& node, const incoming& request,
 
     if (data.empty())
     {
-        log::error(LOG_SERVER)
-            << "Incorrect data size (empty) for blockchain.fetch_stealth";
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 
@@ -368,9 +363,7 @@ void blockchain::fetch_stealth(server_node& node, const incoming& request,
     if (data.size() != sizeof(uint8_t) + binary::blocks_size(bitsize) +
         sizeof(uint32_t))
     {
-        log::error(LOG_SERVER)
-            << "Incorrect data size (" << data.size()
-            << ") for blockchain.fetch_stealth";
+        handler(outgoing(request, error::bad_stream));
         return;
     }
 
