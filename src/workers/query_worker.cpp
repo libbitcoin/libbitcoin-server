@@ -21,8 +21,8 @@
 
 #include <functional>
 #include <string>
-#include <boost/thread.hpp>
 #include <bitcoin/protocol.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interface/address.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>
 #include <bitcoin/server/interface/protocol.hpp>
@@ -34,8 +34,7 @@
 namespace libbitcoin {
 namespace server {
 
-using std::placeholders::_1;
-using std::placeholders::_2;
+using namespace std::placeholders;
 using namespace bc::protocol;
 
 query_worker::query_worker(zmq::authenticator& authenticator,
@@ -50,14 +49,14 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     attach_interface();
 }
 
-// Implement worker as a router.
+// Implement worker as a router to the query service.
 // v2 libbitcoin-client DEALER does not add delimiter frame.
 // The router drops messages for lost peers (query service) and high water.
 void query_worker::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
 
-    // Connect socket to the worker endpoint.
+    // Connect socket to the service endpoint.
     if (!started(connect(router)))
         return;
 
@@ -123,6 +122,7 @@ void query_worker::query(zmq::socket& router)
         return;
 
     // TODO: rewrite the serial blockchain interface to avoid callbacks.
+    // We are using a closure vs. bind to take advantage of move arg syntax.
     const auto sender = [&router](outgoing&& response)
     {
         const auto ec = response.send(router);
@@ -166,8 +166,13 @@ void query_worker::query(zmq::socket& router)
         log::info(LOG_SERVER)
             << "Query " << request.command << " from " << request.address();
 
+    // The query executor is the delegate bound by the attach method.
+    const auto& query_execute = handler->second;
+
     // Execute the request and forward result to queue.
-    handler->second(request, sender);
+    // Example: address.renew(node_, request, sender);
+    // Example: blockchain.fetch_history(node_, request, sender);
+    query_execute(request, sender);
 }
 
 // Query Interface.
@@ -185,35 +190,42 @@ void query_worker::attach(const std::string& command,
     command_handlers_[command] = handler;
 }
 
+// TODO: add to client:
+// protocol.total_connections
+// blockchain.fetch_spend
+// blockchain.fetch_block_transaction_hashes
+// address.renew
+//
+// TODO: remove protocol.total_connections (administrative)
+// TODO: create administrative query channel (secure only).
+// This will require that client public keys be associated to a ZAP domain.
+//
+// address.fetch_history was present in v1 (obelisk) and v2 (server).
+// address.fetch_history was called by client v1 (sx) and v2 (bx).
+//
 // Class and method names must match protocol expectations (do not change).
 void query_worker::attach_interface()
 {
-    // TODO: add total_connections to client.
-    ATTACH(protocol, total_connections, node_);
-    ATTACH(protocol, broadcast_transaction, node_);
-    ATTACH(transaction_pool, validate, node_);
-    ATTACH(transaction_pool, fetch_transaction, node_);
-
-    // TODO: add fetch_spend to client.
-    // TODO: add fetch_block_transaction_hashes to client.
-    ATTACH(blockchain, fetch_spend, node_);
-    ATTACH(blockchain, fetch_transaction, node_);
-    ATTACH(blockchain, fetch_last_height, node_);
-    ATTACH(blockchain, fetch_block_header, node_);
-    ATTACH(blockchain, fetch_block_height, node_);
-    ATTACH(blockchain, fetch_transaction_index, node_);
-    ATTACH(blockchain, fetch_stealth, node_);
-    ATTACH(blockchain, fetch_history, node_);
-    ATTACH(blockchain, fetch_block_transaction_hashes, node_);
-
-    // address.fetch_history was present in v1 (obelisk) and v2 (server).
-    // address.fetch_history was called by client v1 (sx) and v2 (bx).
-    ////ATTACH(endpoint, address, fetch_history, node_);
     ATTACH(address, fetch_history2, node_);
-
-    // TODO: add renew to client.
     ATTACH(address, renew, node_);
     ATTACH(address, subscribe, node_);
+    ATTACH(blockchain, fetch_history, node_);
+    ATTACH(blockchain, fetch_block_header, node_);
+    ATTACH(blockchain, fetch_block_height, node_);
+    ATTACH(blockchain, fetch_block_transaction_hashes, node_);
+    ATTACH(blockchain, fetch_last_height, node_);
+    ATTACH(blockchain, fetch_transaction, node_);
+    ATTACH(blockchain, fetch_transaction_index, node_);
+    ATTACH(blockchain, fetch_spend, node_);
+    ATTACH(blockchain, fetch_stealth, node_);
+    ATTACH(protocol, broadcast_transaction, node_);
+    ATTACH(protocol, total_connections, node_);
+    ATTACH(transaction_pool, fetch_transaction, node_);
+    ATTACH(transaction_pool, validate, node_);
+    ////ATTACH(stealth, renew, node_);
+    ////ATTACH(stealth, subscribe, node_);
+    ////ATTACH(transaction_radar, renew, node_);
+    ////ATTACH(transaction_radar, subscribe, node_);
 }
 
 #undef ATTACH

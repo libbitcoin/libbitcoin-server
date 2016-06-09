@@ -17,49 +17,60 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/interface/address.hpp>
+#include <bitcoin/server/utility/notifier.hpp>
 
 #include <cstdint>
-#include <functional>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/messages/incoming.hpp>
 #include <bitcoin/server/messages/outgoing.hpp>
-#include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-using namespace std::placeholders;
-using namespace bc::wallet;
+using namespace bc::chain;
 
-void address::fetch_history2(server_node& node, const incoming& request,
-    send_handler handler)
+notifier::notifier()
 {
-    static constexpr uint64_t limit = 0;
-    uint32_t from_height;
-    payment_address address;
+    // TODO: connect subscriptions: work in progress.
 
-    if (!unwrap_fetch_history_args(address, from_height, request))
-        return;
-
-    // Obtain payment address history from the transaction pool and blockchain.
-    node.pool().fetch_history(address, limit, from_height,
-        std::bind(send_history_result,
-            _1, _2, request, handler));
+    ////// Subscribe to blockchain reorganizations.
+    ////node_.subscribe_blockchain(
+    ////    std::bind(&block_service::handle_reorganization,
+    ////        this, _1, _2, _3, _4));
 }
 
-void address::subscribe(server_node& node, const incoming& request,
-    send_handler handler)
+void notifier::subscribe(const incoming& request, send_handler handler)
 {
-    ////node.notifier().subscribe(request, handler);
 }
 
-void address::renew(server_node& node, const incoming& request,
-    send_handler handler)
+void notifier::renew(const incoming& request, send_handler handler)
 {
-    ////node.notifier().renew(request, handler);
 }
+
+bool notifier::handle_reorganization(const code& ec, uint64_t fork_point,
+    const block_list& new_blocks, const block_list&)
+{
+    if (ec == bc::error::service_stopped)
+        return false;
+
+    if (ec)
+    {
+        log::warning(LOG_SERVER)
+            << "Failure handling new block: " << ec.message();
+
+        // Don't let a failure here prevent prevent future notifications.
+        return true;
+    }
+
+    // TODO: publish_blocks
+
+    return true;
+}
+
+void notifier::publish_blocks(uint32_t fork_point, const block_list& blocks)
+{
+}
+
 
 } // namespace server
 } // namespace libbitcoin

@@ -100,9 +100,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\authenticator.hpp">
       <Filter>include\bitcoin\server\utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\address_worker.hpp">
-      <Filter>include\bitcoin\server\workers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\heartbeat_service.hpp">
       <Filter>include\bitcoin\server\services</Filter>
     </ClInclude>
@@ -112,7 +109,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\fetch_helpers.hpp">
       <Filter>include\bitcoin\server\utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\notifications.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp">
+      <Filter>include\bitcoin\server\workers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\notifier.hpp">
       <Filter>include\bitcoin\server\utility</Filter>
     </ClInclude>
   </ItemGroup>
@@ -162,16 +162,16 @@
     <ClCompile Include="..\..\..\..\src\utility\authenticator.cpp">
       <Filter>src\utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\workers\address_worker.cpp">
-      <Filter>src\workers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp">
       <Filter>src\services</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp">
       <Filter>src\services</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\utility\notifications.cpp">
+    <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp">
+      <Filter>src\workers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utility\notifier.cpp">
       <Filter>src\utility</Filter>
     </ClCompile>
   </ItemGroup>

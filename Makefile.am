@@ -51,8 +51,8 @@ src_libbitcoin_server_la_SOURCES = \
     src/services/transaction_service.cpp \
     src/utility/authenticator.cpp \
     src/utility/fetch_helpers.cpp \
-    src/utility/notifications.cpp \
-    src/workers/address_worker.cpp \
+    src/utility/notifier.cpp \
+    src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
 
 # local: test/libbitcoin_server_test
@@ -123,11 +123,11 @@ include_bitcoin_server_utilitydir = ${includedir}/bitcoin/server/utility
 include_bitcoin_server_utility_HEADERS = \
     include/bitcoin/server/utility/authenticator.hpp \
     include/bitcoin/server/utility/fetch_helpers.hpp \
-    include/bitcoin/server/utility/notifications.hpp
+    include/bitcoin/server/utility/notifier.hpp
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \
-    include/bitcoin/server/workers/address_worker.hpp \
+    include/bitcoin/server/workers/notification_worker.hpp \
     include/bitcoin/server/workers/query_worker.hpp
 
 # files => ${bash_completiondir}

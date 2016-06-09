@@ -29,7 +29,7 @@
 namespace libbitcoin {
 namespace server {
 
-using std::placeholders::_1;
+using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::node;
 using namespace bc::protocol;
@@ -47,8 +47,8 @@ server_node::server_node(const configuration& configuration)
     public_block_service_(authenticator_, *this, false),
     secure_transaction_service_(authenticator_, *this, true),
     public_transaction_service_(authenticator_, *this, false),
-    secure_address_worker_(authenticator_, *this, true),
-    public_address_worker_(authenticator_, *this, true)
+    secure_notification_worker_(authenticator_, *this, true),
+    public_notification_worker_(authenticator_, *this, true)
 {
 }
 
@@ -61,10 +61,10 @@ server_node::~server_node()
 // Properties.
 // ----------------------------------------------------------------------------
 
-notifications& server_node::notifier()
-{
-    return notifications_;
-}
+////notifications& server_node::notifier()
+////{
+////    return notifications_;
+////}
 
 const settings& server_node::server_settings() const
 {
@@ -157,13 +157,13 @@ bool server_node::start_query_services()
 
     // Start secure service, query workers and address workers if enabled.
     if (settings.server_private_key && (!secure_query_service_.start() ||
-        (settings.subscription_limit > 0 && !secure_address_worker_.start()) ||
+        (settings.subscription_limit > 0 && !secure_notification_worker_.start()) ||
         !start_query_workers(true)))
             return false;
 
     // Start public service, query workers and address workers if enabled.
     if (!settings.secure_only && (!public_query_service_.start() ||
-        (settings.subscription_limit > 0 && !public_address_worker_.start()) ||
+        (settings.subscription_limit > 0 && !public_notification_worker_.start()) ||
         !start_query_workers(false)))
             return false;
     

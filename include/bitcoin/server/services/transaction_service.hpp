@@ -54,7 +54,6 @@ public:
 
 protected:
     typedef bc::protocol::zmq::socket socket;
-    typedef bc::chain::point::indexes index_list;
 
     virtual bool bind(socket& xpub, socket& xsub);
     virtual bool unbind(socket& xpub, socket& xsub);
@@ -63,6 +62,8 @@ protected:
     virtual void work();
 
 private:
+    typedef bc::chain::point::indexes index_list;
+
     bool handle_transaction(const code& ec, const index_list&,
         const chain::transaction& tx);
     void publish_transaction(const chain::transaction& tx);

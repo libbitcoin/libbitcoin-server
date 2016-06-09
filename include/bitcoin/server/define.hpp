@@ -41,4 +41,13 @@
 // Log name.
 #define LOG_SERVER "server"
 
+// Avoid namespace conflict between boost::placeholders and std::placeholders. 
+#define BOOST_BIND_NO_PLACEHOLDERS
+
+// Include boost only here, so placeholders exclusion works.
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/program_options.hpp>
+#include <boost/thread.hpp>
+
 #endif

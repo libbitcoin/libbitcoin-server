@@ -31,8 +31,7 @@
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/transaction_service.hpp>
 #include <bitcoin/server/utility/authenticator.hpp>
-#include <bitcoin/server/utility/notifications.hpp>
-#include <bitcoin/server/workers/address_worker.hpp>
+#include <bitcoin/server/workers/notification_worker.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -55,8 +54,8 @@ public:
     // Properties.
     // ----------------------------------------------------------------------------
 
-    /// Address worker notification subscription.
-    virtual notifications& notifier();
+    /////// Address worker notification subscription.
+    ////virtual notifications& notifier();
 
     /// Server configuration settings.
     virtual const settings& server_settings() const;
@@ -96,7 +95,7 @@ private:
 
     // These are thread safe.
     authenticator authenticator_;
-    notifications notifications_;
+    ////notifications notifications_;
     query_service secure_query_service_;
     query_service public_query_service_;
     heartbeat_service secure_heartbeat_service_;
@@ -105,8 +104,8 @@ private:
     block_service public_block_service_;
     transaction_service secure_transaction_service_;
     transaction_service public_transaction_service_;
-    address_worker secure_address_worker_;
-    address_worker public_address_worker_;
+    notification_worker secure_notification_worker_;
+    notification_worker public_notification_worker_;
 };
 
 } // namespace server
