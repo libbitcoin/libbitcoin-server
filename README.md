@@ -46,7 +46,75 @@ Detailed instructions are provided below.
 
 ### Debian/Ubuntu
 
-Libbitcoin requires a C++11 compiler, currently minimum [GCC 4.8.0](https://gcc.gnu.org/projects/cxx0x.html) or Clang based on [LLVM 3.5](http://llvm.org/releases/3.5.0/docs/ReleaseNotes.html).
+#### Debian packages for libbitcoin
+
+Experimental libbitcoin packages are available for Debian and Ubuntu for the current unstable master, which includes testnet support.
+
+##### Ubuntu Xenial (16.04)
+
+Add the official libbitcoin repository to your sources:
+```sh
+$ sudo echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
+```
+Download and add the public key to the APT keyring:
+```sh
+$ wget https://libbitcoin.org/ubuntu/Release.key
+$ sudo apt-key add Release.key
+$ sudo apt-get update
+```
+You can now install any of the libbitcoin packages:
+```sh
+$ sudo apt-get install libbitcoin-server
+```
+
+##### Debian Jessie (8.0)
+
+Add the extra package apt-transport-https:
+```sh
+$ sudo apt-get install apt-transport-https
+```
+Add the official libbitcoin repository to your sources:
+```sh
+$ sudo echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
+```
+Download and add the public key to the APT keyring:
+```sh
+$ wget https://libbitcoin.org/public/Release.key
+$ sudo apt-key add Release.key
+$ sudo apt-get update 
+```
+You can now install any of the libbitcoin packages:
+```sh
+$ sudo apt-get install libbitcoin-server
+```
+
+#### Compiler script for Debian/Ubuntu
+
+Next install the [build system](http://wikipedia.org/wiki/GNU_build_system) and [Boost](http://www.boost.org) (minimum 1.56.0) development package:
+
+```sh
+$ sudo apt-get install build-essential autoconf automake libtool pkg-config libboost-all-dev
+```
+
+Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version2/install.sh) and enable execution:
+```sh
+$ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version2/install.sh
+$ chmod +x install.sh
+```
+If you prefer the unstable master with the newest features such as dynamic testnet support, then instead run:
+```sh
+$ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/master/install.sh
+$ chmod +x install.sh
+```
+Finally install Libbitcoin Server:
+```sh
+$ sudo ./install.sh
+```
+Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
+
+#### Troubleshooting Debian/Ubuntu
+
+On older installations, Libbitcoin requires a C++11 compiler, currently minimum [GCC 4.8.0](https://gcc.gnu.org/projects/cxx0x.html) or Clang based on [LLVM 3.5](http://llvm.org/releases/3.5.0/docs/ReleaseNotes.html).
 
 To see your GCC version:
 ```sh
@@ -64,24 +132,6 @@ $ sudo apt-get install g++-4.8
 $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 50
 $ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50
 ```
-Next install the [build system](http://wikipedia.org/wiki/GNU_build_system):
-```sh
-$ sudo apt-get install build-essential autoconf automake libtool pkg-config
-```
-Next install the [Boost](http://www.boost.org) (minimum 1.56.0) development package:
-```sh
-$ sudo apt-get install libboost-all-dev
-```
-Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version2/install.sh) and enable execution:
-```sh
-$ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version2/install.sh
-$ chmod +x install.sh
-```
-Finally install Libbitcoin Server:
-```sh
-$ sudo ./install.sh
-```
-Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
 
 ### Macintosh
 
