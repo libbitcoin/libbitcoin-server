@@ -35,8 +35,8 @@ On Linux and Macintosh Libbitcoin Server is built using Autotools as follows.
 $ ./autogen.sh
 $ ./configure
 $ make
-$ sudo make install # optional
-$ sudo ldconfig     # optional
+> sudo make install # optional
+> sudo ldconfig     # optional
 ```
 
 Detailed instructions are provided below.
@@ -55,7 +55,7 @@ Experimental libbitcoin packages are available for Debian and Ubuntu for the cur
 Add the official libbitcoin repository to your sources:
 ```sh
 $ sudo su
-# echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
+> echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
 ```
 Download and add the public key to the APT keyring:
 ```sh
@@ -77,7 +77,7 @@ $ sudo apt-get install apt-transport-https
 Add the official libbitcoin repository to your sources:
 ```sh
 $ sudo su
-# echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
+> echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
 ```
 Download and add the public key to the APT keyring:
 ```sh
