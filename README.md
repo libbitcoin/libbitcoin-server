@@ -54,7 +54,8 @@ Experimental libbitcoin packages are available for Debian and Ubuntu for the cur
 
 Add the official libbitcoin repository to your sources:
 ```sh
-$ sudo echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
+$ sudo su
+# echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
 ```
 Download and add the public key to the APT keyring:
 ```sh
@@ -75,7 +76,8 @@ $ sudo apt-get install apt-transport-https
 ```
 Add the official libbitcoin repository to your sources:
 ```sh
-$ sudo echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
+$ sudo su
+# echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
 ```
 Download and add the public key to the APT keyring:
 ```sh
