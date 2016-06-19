@@ -60,11 +60,11 @@ Download and add the public key to the APT keyring:
 ```sh
 $ wget https://libbitcoin.org/ubuntu/Release.key
 $ sudo apt-key add Release.key
-$ sudo apt-get update
+$ sudo apt update
 ```
 You can now install any of the libbitcoin packages:
 ```sh
-$ sudo apt-get install libbitcoin-server
+$ sudo apt install libbitcoin-server
 ```
 
 ##### Debian Jessie (8.0)
