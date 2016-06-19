@@ -31,12 +31,12 @@ The API is backward compatible with its predecessor [Obelisk](https://github.com
 Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS).
 
 On Linux and Macintosh Libbitcoin Server is built using Autotools as follows.
-```sh
+```
 $ ./autogen.sh
 $ ./configure
 $ make
-> sudo make install # optional
-> sudo ldconfig     # optional
+# sudo make install  # Optional
+# sudo ldconfig      # Optional
 ```
 
 Detailed instructions are provided below.
@@ -53,9 +53,9 @@ Experimental libbitcoin packages are available for Debian and Ubuntu for the cur
 ##### Ubuntu Xenial (16.04)
 
 Add the official libbitcoin repository to your sources:
-```sh
+```
 $ sudo su
-> echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
+# echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
 ```
 Download and add the public key to the APT keyring:
 ```sh
@@ -75,9 +75,9 @@ Add the extra package apt-transport-https:
 $ sudo apt-get install apt-transport-https
 ```
 Add the official libbitcoin repository to your sources:
-```sh
+```
 $ sudo su
-> echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
+# echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
 ```
 Download and add the public key to the APT keyring:
 ```sh
