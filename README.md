@@ -26,6 +26,10 @@ Libbitcoin Server exposes a custom query TCP API built based on the [ZeroMQ](htt
 
 The API is backward compatible with its predecessor [Obelisk](https://github.com/spesmilo/obelisk) and supports simple and advanced scenarios, including stealth payment queries. The [libbitcoin-client](https://github.com/libbitcoin/libbitcoin-client) library provides a calling API for building client applications. The server is complimented by [libbitcoin-explorer (BX)](https://github.com/libbitcoin/libbitcoin-explorer), the Bitcoin command line tool and successor to [SX](https://github.com/spesmilo/sx).
 
+## Requirements.
+
+You should have at least 200 Gb file storage (preferably SSD), and a sizable amount of swap enabled. You will need at least 2 cores to compile the software and 4+ Gb RAM is good. More is always better of course.
+
 ## Installation
 
 Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS).
@@ -48,51 +52,13 @@ Detailed instructions are provided below.
 
 #### Debian packages for libbitcoin
 
-Experimental libbitcoin packages are available for Debian and Ubuntu for the current unstable master, which includes testnet support.
+Unsupported new libbitcoin packages are available for Debian and Ubuntu for the current unstable master, which includes testnet support. We are working on these and you are welcome to test them: [Debian/Ubuntu packages](https://github.com/libbitcoin/libbitcoin-server/wiki/Debian).
 
-##### Ubuntu Xenial (16.04)
-
-Add the official libbitcoin repository to your sources:
-```
-$ sudo su
-# echo "deb http://libbitcoin.org/ubuntu xenial main" >> /etc/apt/sources.list
-```
-Download and add the public key to the APT keyring:
-```sh
-$ wget https://libbitcoin.org/ubuntu/Release.key
-$ sudo apt-key add Release.key
-$ sudo apt update
-```
-You can now install any of the libbitcoin packages:
-```sh
-$ sudo apt install libbitcoin-server
-```
-
-##### Debian Jessie (8.0)
-
-Add the extra package apt-transport-https:
-```sh
-$ sudo apt-get install apt-transport-https
-```
-Add the official libbitcoin repository to your sources:
-```
-$ sudo su
-# echo "deb http://libbitcoin.org/public jessie main" >> /etc/apt/sources.list
-```
-Download and add the public key to the APT keyring:
-```sh
-$ wget https://libbitcoin.org/public/Release.key
-$ sudo apt-key add Release.key
-$ sudo apt-get update 
-```
-You can now install any of the libbitcoin packages:
-```sh
-$ sudo apt-get install libbitcoin-server
-```
+The recommended form of installation is using the compiler script (see next section).
 
 #### Compiler script for Debian/Ubuntu
 
-Next install the [build system](http://wikipedia.org/wiki/GNU_build_system) and [Boost](http://www.boost.org) (minimum 1.56.0) development package:
+Install the [build system](http://wikipedia.org/wiki/GNU_build_system) and [Boost](http://www.boost.org) (minimum 1.56.0) development package:
 
 ```sh
 $ sudo apt-get install build-essential autoconf automake libtool pkg-config libboost-all-dev
