@@ -26,6 +26,10 @@ Libbitcoin Server exposes a custom query TCP API built based on the [ZeroMQ](htt
 
 The API is backward compatible with its predecessor [Obelisk](https://github.com/spesmilo/obelisk) and supports simple and advanced scenarios, including stealth payment queries. The [libbitcoin-client](https://github.com/libbitcoin/libbitcoin-client) library provides a calling API for building client applications. The server is complimented by [libbitcoin-explorer (BX)](https://github.com/libbitcoin/libbitcoin-explorer), the Bitcoin command line tool and successor to [SX](https://github.com/spesmilo/sx).
 
+## Requirements.
+
+At least 100 Gb file storage (SSD preferred), with swap enabled and at least 4Gb RAM (8Gb preferred).
+
 ## Installation
 
 Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS).
@@ -45,6 +49,8 @@ Detailed instructions are provided below.
 * [Windows](#windows)
 
 ### Debian/Ubuntu
+
+The install script is recommended for installation, however preliminary [version2 packages](https://github.com/libbitcoin/libbitcoin-server/wiki/Debian-Packages) are available for testing.
 
 Libbitcoin requires a C++11 compiler, currently minimum [GCC 4.8.0](https://gcc.gnu.org/projects/cxx0x.html) or Clang based on [LLVM 3.5](http://llvm.org/releases/3.5.0/docs/ReleaseNotes.html).
 
