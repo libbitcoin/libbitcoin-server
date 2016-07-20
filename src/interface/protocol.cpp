@@ -76,13 +76,13 @@ void protocol::handle_total_connections(size_t count, const message& request,
     BITCOIN_ASSERT(count <= max_uint32);
     const auto total_connections = static_cast<uint32_t>(count);
 
-    data_chunk result(code_size + sizeof(uint32_t));
-    auto serial = make_serializer(result.begin());
-    serial.write_error_code(error::success);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
-
-    serial.write_4_bytes_little_endian(total_connections);
-    BITCOIN_ASSERT(serial.iterator() == result.end());
+    // [ code:4 ]
+    // [ connections:4 ]
+    const auto result = build_chunk(
+    {
+        message::to_bytes(error::success),
+        to_little_endian(total_connections)
+    });
 
     handler(message(request, result));
 }

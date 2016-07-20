@@ -108,18 +108,11 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
 void transaction_fetched(const code& ec, const chain::transaction& tx,
     const message& request, send_handler handler)
 {
-    const auto tx_size64 = tx.serialized_size();
-    BITCOIN_ASSERT(tx_size64 <= max_size_t);
-    const auto tx_size = static_cast<size_t>(tx_size64);
-
-    data_chunk result(code_size + tx_size);
-    auto serial = make_serializer(result.begin());
-    serial.write_error_code(ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
-
-    data_chunk tx_data = tx.to_data();
-    serial.write_data(tx_data);
-    BITCOIN_ASSERT(serial.iterator() == result.end());
+    const auto result = build_chunk(
+    {
+        message::to_bytes(ec),
+        tx.to_data()
+    });
 
     handler(message(request, result));
 }

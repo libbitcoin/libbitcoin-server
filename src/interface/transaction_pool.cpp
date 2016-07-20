@@ -56,10 +56,20 @@ void transaction_pool::fetch_transaction(server_node& node,
 void transaction_pool::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
+    transaction tx;
+
+    if (!tx.from_data(request.data()))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
     // TODO: conditionally subscribe to penetration notifications.
     // TODO: broadcast transaction to receiving peers.
+    handler(message(request, error::operation_failed));
 }
 
+// NOTE: the format of this response changed in v3 (send only code on error).
 void transaction_pool::validate(server_node& node, const message& request,
     send_handler handler)
 {
@@ -67,8 +77,6 @@ void transaction_pool::validate(server_node& node, const message& request,
 
     if (!tx.from_data(request.data()))
     {
-        // NOTE: the format of this response changed in v3 (send only code).
-        // This is our standard behavior and should not break clients.
         handler(message(request, error::bad_stream));
         return;
     }
@@ -82,10 +90,11 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
     const hash_digest& tx_hash, const point::indexes& unconfirmed,
     const message& request, send_handler handler)
 {
+    // [ code:4 ]
+    // [[ unconfirmed_index:4 ]...]
     data_chunk result(code_size + unconfirmed.size() * index_size);
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     for (const auto unconfirmed_index: unconfirmed)
     {
@@ -93,8 +102,6 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
         const auto index32 = static_cast<uint32_t>(unconfirmed_index);
         serial.write_4_bytes_little_endian(index32);
     }
-
-    BITCOIN_ASSERT(serial.iterator() == result.end());
 
     handler(message(request, result));
 }
