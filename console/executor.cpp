@@ -20,7 +20,6 @@
 #include "executor.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <csignal>
 #include <functional>
 #include <future>
@@ -28,7 +27,6 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <thread>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <bitcoin/server.hpp>
@@ -37,9 +35,7 @@ namespace libbitcoin {
 namespace server {
 
 using boost::format;
-using namespace std::chrono;
 using namespace std::placeholders;
-using namespace std::this_thread;
 using namespace boost::system;
 using namespace bc::config;
 using namespace bc::database;
