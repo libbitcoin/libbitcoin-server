@@ -24,6 +24,7 @@
 #include <functional>
 #include <bitcoin/server.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
 
@@ -34,14 +35,14 @@ using namespace std::placeholders;
 
 // This does NOT save to our memory pool.
 // The transaction will hit our memory pool when it is picked up from a peer.
-void protocol::broadcast_transaction(server_node& node,
-    const incoming& request, send_handler handler)
+void protocol::broadcast_transaction(server_node& node, const message& request,
+    send_handler handler)
 {
     chain::transaction tx;
 
-    if (!tx.from_data(request.data))
+    if (!tx.from_data(request.data()))
     {
-        handler(outgoing(request, error::bad_stream));
+        handler(message(request, error::bad_stream));
         return;
     }
 
@@ -52,15 +53,15 @@ void protocol::broadcast_transaction(server_node& node,
     node.broadcast(tx, ignore_send, ignore_complete);
 
     // Tell the user everything is fine.
-    handler(outgoing(request, error::success));
+    handler(message(request, error::success));
 }
 
-void protocol::total_connections(server_node& node, const incoming& request,
+void protocol::total_connections(server_node& node, const message& request,
     send_handler handler)
 {
-    if (!request.data.empty())
+    if (!request.data().empty())
     {
-        handler(outgoing(request, error::bad_stream));
+        handler(message(request, error::bad_stream));
         return;
     }
 
@@ -69,7 +70,7 @@ void protocol::total_connections(server_node& node, const incoming& request,
             _1, request, handler));
 }
 
-void protocol::handle_total_connections(size_t count, const incoming& request,
+void protocol::handle_total_connections(size_t count, const message& request,
     send_handler handler)
 {
     BITCOIN_ASSERT(count <= max_uint32);
@@ -83,7 +84,7 @@ void protocol::handle_total_connections(size_t count, const incoming& request,
     serial.write_4_bytes_little_endian(total_connections);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    handler(outgoing(request, result));
+    handler(message(request, result));
 }
 
 } // namespace server

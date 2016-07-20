@@ -26,8 +26,8 @@
 #include <bitcoin/server/interface/blockchain.hpp>
 #include <bitcoin/server/interface/protocol.hpp>
 #include <bitcoin/server/interface/transaction_pool.hpp>
-#include <bitcoin/server/messages/incoming.hpp>
-#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/messages/message.hpp>
+#include <bitcoin/server/messages/route.hpp>
 #include <bitcoin/server/services/block_service.hpp>
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>

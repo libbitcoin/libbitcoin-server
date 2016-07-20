@@ -26,8 +26,7 @@
 #include <unordered_map>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messages/incoming.hpp>
-#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -50,7 +49,7 @@ public:
 protected:
     typedef bc::protocol::zmq::socket socket;
 
-    typedef std::function<void(const incoming&, send_handler)> command_handler;
+    typedef std::function<void(const message&, send_handler)> command_handler;
     typedef std::unordered_map<std::string, command_handler> command_map;
 
     virtual void attach_interface();

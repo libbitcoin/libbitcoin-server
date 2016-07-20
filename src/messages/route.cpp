@@ -17,36 +17,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOL_HPP
-#define LIBBITCOIN_SERVER_PROTOCOL_HPP
+#include <bitcoin/server/messages/route.hpp>
 
-#include <cstddef>
-#include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messages/message.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <string>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
-    
-/// Protocol interface.
-/// Class and method names are published and mapped to the zeromq interface.
-class BCS_API protocol
+
+route::route()
+  : secure(false), delimited(false)
 {
-public:
-    /// Broadcast a transaction to all connected peers.
-    static void broadcast_transaction(server_node& node,
-        const message& request, send_handler handler);
+}
 
-    /// Determine the count of all connected peers.
-    static void total_connections(server_node& node,
-        const message& request, send_handler handler);
-
-private:
-    static void handle_total_connections(size_t count,
-        const message& request, send_handler handler);
-};
+std::string route::display() const
+{
+    return "[" + encode_base16(address1) + ":" + encode_base16(address2) + "]";
+}
 
 } // namespace server
 } // namespace libbitcoin
-
-#endif

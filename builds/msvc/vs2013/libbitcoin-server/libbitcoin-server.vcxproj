@@ -78,8 +78,8 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\transaction_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\incoming.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\outgoing.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\route.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\block_service.hpp" />
@@ -100,8 +100,8 @@
     <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\protocol.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\incoming.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\outgoing.cpp" />
+    <ClCompile Include="..\..\..\..\src\messages\message.cpp" />
+    <ClCompile Include="..\..\..\..\src\messages\route.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\services\block_service.cpp" />

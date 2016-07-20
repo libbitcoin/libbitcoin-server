@@ -26,8 +26,8 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messages/incoming.hpp>
-#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/messages/message.hpp>
+#include <bitcoin/server/messages/route.hpp>
 #include <bitcoin/server/services/block_service.hpp>
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
@@ -83,15 +83,16 @@ public:
     // Notification.
     // ------------------------------------------------------------------------
 
-    /////// Subscribe to address and stealth prefix notifications.
-    ////virtual void subscribe_address(route& reply_to, binary& prefix_filter,
-    ////    chain::subscribe_type& type);
+    /// Subscribe to address (including stealth) prefix notifications.
+    /// Stealth prefix is limited to 32 bits, address prefix to 256 bits.
+    virtual void subscribe_address(const route& reply_to,
+        const binary& prefix_filter, chain::subscribe_type type);
 
-    /////// Subscribe to transaction radar notifications.
-    ////virtual void subscribe_radar(route& reply_to, hash_digest& tx_hash);
+    /// Subscribe to transaction penetration notifications.
+    virtual void subscribe_penetration(const route& reply_to,
+        const hash_digest& tx_hash);
 
 private:
-
     void handle_running(const code& ec, result_handler handler);
 
     bool start_services();
@@ -106,7 +107,6 @@ private:
 
     // These are thread safe.
     authenticator authenticator_;
-    ////notifications notifications_;
     query_service secure_query_service_;
     query_service public_query_service_;
     heartbeat_service secure_heartbeat_service_;

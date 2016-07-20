@@ -24,6 +24,7 @@
 #include <memory>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/messages/route.hpp>
 #include <bitcoin/server/workers/query_worker.hpp>
 
 namespace libbitcoin {
@@ -38,7 +39,6 @@ server_node::server_node(const configuration& configuration)
   : p2p_node(configuration),
     configuration_(configuration),
     authenticator_(*this),
-    ////notifications_();
     secure_query_service_(authenticator_, *this, true),
     public_query_service_(authenticator_, *this, false),
     secure_heartbeat_service_(authenticator_, *this, true),
@@ -60,11 +60,6 @@ server_node::~server_node()
 
 // Properties.
 // ----------------------------------------------------------------------------
-
-////notifications& server_node::notifier()
-////{
-////    return notifications_;
-////}
 
 const settings& server_node::server_settings() const
 {
@@ -125,26 +120,27 @@ bool server_node::close()
 // Notification.
 // ----------------------------------------------------------------------------
 
-////// Subscribe to address and stealth prefix notifications.
-////void server_node::subscribe_address(route& reply_to, binary& prefix_filter,
-////    subscribe_type& type)
-////{
-////    if (true)
-////        secure_notification_worker_
-////            .subscribe_address(reply_to, prefix_filter, type);
-////    else
-////        public_notification_worker_
-////            .subscribe_address(reply_to, prefix_filter, type);
-////}
-////
-////// Subscribe to transaction radar notifications.
-////void server_node::subscribe_radar(route& reply_to, hash_digest& tx_hash)
-////{
-////    if (true)
-////        secure_notification_worker_.subscribe_radar(reply_to, tx_hash);
-////    else
-////        public_notification_worker_.subscribe_radar(reply_to, tx_hash);
-////}
+// Subscribe to address (including stealth) prefix notifications.
+void server_node::subscribe_address(const route& reply_to,
+    const binary& prefix_filter, subscribe_type type)
+{
+    if (reply_to.secure)
+        secure_notification_worker_
+            .subscribe_address(reply_to, prefix_filter, type);
+    else
+        public_notification_worker_
+            .subscribe_address(reply_to, prefix_filter, type);
+}
+
+// Subscribe to transaction penetration notifications.
+void server_node::subscribe_penetration(const route& reply_to,
+    const hash_digest& tx_hash)
+{
+    if (reply_to.secure)
+        secure_notification_worker_.subscribe_penetration(reply_to, tx_hash);
+    else
+        public_notification_worker_.subscribe_penetration(reply_to, tx_hash);
+}
 
 // Services.
 // ----------------------------------------------------------------------------
@@ -179,13 +175,13 @@ bool server_node::start_query_services()
     if (!settings.query_service_enabled || settings.query_workers == 0)
         return true;
 
-    // Start secure service, query workers and address workers if enabled.
+    // Start secure service, query workers and notification workers if enabled.
     if (settings.server_private_key && (!secure_query_service_.start() ||
         (settings.subscription_limit > 0 && !secure_notification_worker_.start()) ||
         !start_query_workers(true)))
             return false;
 
-    // Start public service, query workers and address workers if enabled.
+    // Start public service, query workers and notification workers if enabled.
     if (!settings.secure_only && (!public_query_service_.start() ||
         (settings.subscription_limit > 0 && !public_notification_worker_.start()) ||
         !start_query_workers(false)))
@@ -285,14 +281,14 @@ uint32_t server_node::threads_required(const configuration& configuration)
         {
             ++required;
             required += settings.query_workers;
-            required += (settings.subscription_limit > 0 ? 1 : 0);
+            required += (settings.subscription_limit > 0 ? 4 : 0);
         }
 
         if (!settings.secure_only)
         {
             ++required;
             required += settings.query_workers;
-            required += (settings.subscription_limit > 0 ? 1 : 0);
+            required += (settings.subscription_limit > 0 ? 4 : 0);
         }
     }
 

@@ -163,6 +163,7 @@ bool transaction_service::handle_transaction(const code& ec,
     return true;
 }
 
+// [ tx... ]
 void transaction_service::publish_transaction(const transaction& tx)
 {
     if (stopped())
@@ -191,9 +192,9 @@ void transaction_service::publish_transaction(const transaction& tx)
     if (stopped())
         return;
 
-    zmq::message respose;
-    respose.enqueue(tx.to_data());
-    ec = publisher.send(respose);
+    zmq::message broadcast;
+    broadcast.enqueue(tx.to_data());
+    ec = publisher.send(broadcast);
 
     if (ec == bc::error::service_stopped)
         return;

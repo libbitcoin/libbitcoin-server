@@ -17,43 +17,37 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_INCOMING
-#define LIBBITCOIN_SERVER_INCOMING
+#ifndef LIBBITCOIN_SERVER_ROUTE
+#define LIBBITCOIN_SERVER_ROUTE
 
-#include <cstdint>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class BCS_API incoming
+/// This class is not thread safe.
+/// The route is fixed in compliance with v2/v3 limitations.
+class BCS_API route
 {
 public:
+    /// Construct a route.
+    route();
+
     /// A printable address for logging only.
-    std::string address();
+    std::string display() const;
 
-    /// Send a message from the socket.
-    code receive(bc::protocol::zmq::socket& socket, bool secure=false);
-
-    /// The message route as seen at workers.
-    data_chunk address1;
-    data_chunk address2;
-    bool delimited;
-
-    /// For deferred work, directs worker to respond on secure endpoint.
+    /// The message requires a secure port.
     bool secure;
 
-    /// Query command (used for subscription, always returned to caller).
-    std::string command;
+    /// The message route is delimited using an empty frame.
+    bool delimited;
 
-    /// Structure is little-endian.
-    /// Arbitrary caller data (returned to caller for correlation).
-    uint32_t id;
+    /// The first address.
+    data_chunk address1;
 
-    /// Serialized query (structure defined in relation to command).
-    data_chunk data;
+    /// The second address.
+    data_chunk address2;
 };
 
 } // namespace server

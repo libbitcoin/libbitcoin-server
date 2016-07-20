@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/messages/incoming.hpp>
+#include <bitcoin/server/messages/message.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -36,12 +36,12 @@ using namespace bc::wallet;
 // ----------------------------------------------------------------------------
 
 bool unwrap_fetch_history_args(payment_address& address,
-    uint32_t& from_height, const incoming& request)
+    uint32_t& from_height, const message& request)
 {
     static constexpr size_t history_args_size = sizeof(uint8_t) +
         short_hash_size + sizeof(uint32_t);
 
-    const auto& data = request.data;
+    const auto& data = request.data();
 
     if (data.size() != history_args_size)
     {
@@ -61,7 +61,7 @@ bool unwrap_fetch_history_args(payment_address& address,
 }
 
 void send_history_result(const code& ec, const history_compact::list& history,
-    const incoming& request, send_handler handler)
+    const message& request, send_handler handler)
 {
     static constexpr size_t row_size = sizeof(uint8_t) + point_size +
         sizeof(uint32_t) + sizeof(uint64_t);
@@ -82,16 +82,16 @@ void send_history_result(const code& ec, const history_compact::list& history,
 
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    handler(outgoing(request, result));
+    handler(message(request, result));
 }
 
 // fetch_transaction stuff
 // ----------------------------------------------------------------------------
 
 bool unwrap_fetch_transaction_args(hash_digest& hash,
-    const incoming& request)
+    const message& request)
 {
-    const auto& data = request.data;
+    const auto& data = request.data();
 
     if (data.size() != hash_size)
     {
@@ -106,7 +106,7 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
 }
 
 void transaction_fetched(const code& ec, const chain::transaction& tx,
-    const incoming& request, send_handler handler)
+    const message& request, send_handler handler)
 {
     const auto tx_size64 = tx.serialized_size();
     BITCOIN_ASSERT(tx_size64 <= max_size_t);
@@ -121,7 +121,7 @@ void transaction_fetched(const code& ec, const chain::transaction& tx,
     serial.write_data(tx_data);
     BITCOIN_ASSERT(serial.iterator() == result.end());
 
-    handler(outgoing(request, result));
+    handler(message(request, result));
 }
 
 } // namespace server

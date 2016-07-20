@@ -27,8 +27,7 @@
 #include <bitcoin/server/interface/blockchain.hpp>
 #include <bitcoin/server/interface/protocol.hpp>
 #include <bitcoin/server/interface/transaction_pool.hpp>
-#include <bitcoin/server/messages/incoming.hpp>
-#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
@@ -123,17 +122,17 @@ void query_worker::query(zmq::socket& router)
 
     // TODO: rewrite the serial blockchain interface to avoid callbacks.
     // We are using a closure vs. bind to take advantage of move arg syntax.
-    const auto sender = [&router](outgoing&& response)
+    const auto sender = [&router](message&& response)
     {
         const auto ec = response.send(router);
 
         if (ec && ec != error::service_stopped)
             log::warning(LOG_SERVER)
-                << "Failed to send query response to " << response.address()
-                << ec.message();
+                << "Failed to send query response to "
+                << response.route().display() << " " << ec.message();
     };
 
-    incoming request;
+    message request(secure_);
     const auto ec = request.receive(router);
 
     if (ec == error::service_stopped)
@@ -142,29 +141,30 @@ void query_worker::query(zmq::socket& router)
     if (ec)
     {
         log::debug(LOG_SERVER)
-            << "Failed to receive query from " << request.address()
-            << ec.message();
+            << "Failed to receive query from " << request.route().display()
+            << " " << ec.message();
 
         // Because the query did not parse this is likely to be misaddressed.
-        sender(outgoing(request, ec));
+        sender(message(request, ec));
         return;
     }
 
     // Locate the request handler for this command.
-    const auto handler = command_handlers_.find(request.command);
+    const auto handler = command_handlers_.find(request.command());
 
     if (handler == command_handlers_.end())
     {
         log::debug(LOG_SERVER)
-            << "Invalid query command from " << request.address();
+            << "Invalid query command from " << request.route().display();
 
-        sender(outgoing(request, error::not_found));
+        sender(message(request, error::not_found));
         return;
     }
 
     if (settings_.log_requests)
         log::info(LOG_SERVER)
-            << "Query " << request.command << " from " << request.address();
+            << "Query " << request.command() << " from "
+            << request.route().display();
 
     // The query executor is the delegate bound by the attach method.
     const auto& query_execute = handler->second;
@@ -190,30 +190,27 @@ void query_worker::attach(const std::string& command,
     command_handlers_[command] = handler;
 }
 
+//=============================================================================
 // TODO: add to client:
-// protocol.total_connections
 // blockchain.fetch_spend
 // blockchain.fetch_block_transaction_hashes
-//------------------------------------------
-// TODO: add to server:
-// transaction_radar.subscribe
-// electrum.subscribe
-// electrum.fetch_history
-//------------------------------------------
-// TODO: remove protocol.total_connections (administrative) and
-// create administrative query channel (secure only).
-// This will require that client public keys be associated to a ZAP domain.
-//------------------------------------------
+//=============================================================================
 // address.fetch_history was present in v1 (obelisk) and v2 (server).
 // address.fetch_history was called by client v1 (sx) and v2 (bx).
-// address.renew was present in v2 (server) and dropped in v3
-// address.subscribe performs renewal (as necessary) in v3
-//------------------------------------------
+//-----------------------------------------------------------------------------
+// address.renew is deprecated in v3.
+// address.subscribe is deprecated in v3.
+// address.subscribe2 is new in v3, also call for renew.
+//-----------------------------------------------------------------------------
+//// protocol.broadcast_transaction is deprecated in v3 (deferred).
+//// transaction_pool.broadcast (with radar) is new in v3 (deferred).
+//=============================================================================
 // Interface class.method names must match protocol (do not change).
 void query_worker::attach_interface()
 {
-    // Queries (request-response).
-    ////ATTACH(electrum, fetch_history, node_);
+    ATTACH(address, renew, node_);
+    ATTACH(address, subscribe, node_);
+    ATTACH(address, subscribe2, node_);
     ATTACH(address, fetch_history2, node_);
     ATTACH(blockchain, fetch_history, node_);
     ATTACH(blockchain, fetch_block_header, node_);
@@ -226,13 +223,9 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_stealth, node_);
     ATTACH(transaction_pool, fetch_transaction, node_);
     ATTACH(transaction_pool, validate, node_);
-    ATTACH(protocol, total_connections, node_);
+    ////ATTACH(transaction_pool, broadcast, node_);
     ATTACH(protocol, broadcast_transaction, node_);
-
-    // Notifications (subscription response with subsequent notifications).
-    ATTACH(address, subscribe, node_);
-    ////ATTACH(electrum, subscribe, node_);
-    ////ATTACH(transaction_radar, subscribe, node_);
+    ATTACH(protocol, total_connections, node_);
 }
 
 #undef ATTACH

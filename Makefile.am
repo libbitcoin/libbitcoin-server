@@ -43,8 +43,8 @@ src_libbitcoin_server_la_SOURCES = \
     src/interface/blockchain.cpp \
     src/interface/protocol.cpp \
     src/interface/transaction_pool.cpp \
-    src/messages/incoming.cpp \
-    src/messages/outgoing.cpp \
+    src/messages/message.cpp \
+    src/messages/route.cpp \
     src/services/block_service.cpp \
     src/services/heartbeat_service.cpp \
     src/services/query_service.cpp \
@@ -108,8 +108,8 @@ include_bitcoin_server_interface_HEADERS = \
 
 include_bitcoin_server_messagesdir = ${includedir}/bitcoin/server/messages
 include_bitcoin_server_messages_HEADERS = \
-    include/bitcoin/server/messages/incoming.hpp \
-    include/bitcoin/server/messages/outgoing.hpp
+    include/bitcoin/server/messages/message.hpp \
+    include/bitcoin/server/messages/route.hpp
 
 include_bitcoin_server_servicesdir = ${includedir}/bitcoin/server/services
 include_bitcoin_server_services_HEADERS = \

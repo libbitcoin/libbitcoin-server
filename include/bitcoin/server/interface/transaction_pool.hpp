@@ -22,8 +22,7 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messages/incoming.hpp>
-#include <bitcoin/server/messages/outgoing.hpp>
+#include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
@@ -35,17 +34,21 @@ class BCS_API transaction_pool
 {
 public:
     /// Fetch a transaction from the transaction pool (only), by its hash.
-    static void fetch_transaction(server_node& node, const incoming& request,
+    static void fetch_transaction(server_node& node, const message& request,
+        send_handler handler);
+
+    /// Broadcast a transaction with penetration subscription.
+    static void broadcast(server_node& node, const message& request,
         send_handler handler);
 
     /// Validate a transaction against the transaction pool and blockchain.
-    static void validate(server_node& node, const incoming& request,
+    static void validate(server_node& node, const message& request,
         send_handler handler);
 
 private:
     static void handle_validated(const code& ec, const chain::transaction& tx,
         const hash_digest& tx_hash, const chain::point::indexes& unconfirmed,
-        const incoming& request, send_handler handler);
+        const message& request, send_handler handler);
 };
 
 } // namespace server

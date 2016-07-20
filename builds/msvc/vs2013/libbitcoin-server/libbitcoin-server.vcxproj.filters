@@ -82,12 +82,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp">
       <Filter>include\bitcoin\server\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\outgoing.hpp">
-      <Filter>include\bitcoin\server\messages</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\incoming.hpp">
-      <Filter>include\bitcoin\server\messages</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp">
       <Filter>include\bitcoin\server\workers</Filter>
     </ClInclude>
@@ -111,6 +105,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp">
       <Filter>include\bitcoin\server\workers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\route.hpp">
+      <Filter>include\bitcoin\server\messages</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp">
+      <Filter>include\bitcoin\server\messages</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -138,12 +138,6 @@
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\messages\incoming.cpp">
-      <Filter>src\messages</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\messages\outgoing.cpp">
-      <Filter>src\messages</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utility\fetch_helpers.cpp">
       <Filter>src\utility</Filter>
     </ClCompile>
@@ -167,6 +161,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp">
       <Filter>src\workers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\messages\route.cpp">
+      <Filter>src\messages</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\messages\message.cpp">
+      <Filter>src\messages</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
