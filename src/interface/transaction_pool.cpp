@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <functional>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
 
@@ -33,13 +34,13 @@ using namespace std::placeholders;
 using namespace bc::chain;
 
 void transaction_pool::fetch_transaction(server_node& node,
-    const incoming& request, send_handler handler)
+    const message& request, send_handler handler)
 {
     hash_digest hash;
 
     if (!unwrap_fetch_transaction_args(hash, request))
     {
-        handler(outgoing(request, error::bad_stream));
+        handler(message(request, error::bad_stream));
         return;
     }
 
@@ -51,16 +52,32 @@ void transaction_pool::fetch_transaction(server_node& node,
             _1, _2, request, handler));
 }
 
-void transaction_pool::validate(server_node& node, const incoming& request,
+// Broadcast a transaction with penetration subscription.
+void transaction_pool::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
     transaction tx;
 
-    if (!tx.from_data(request.data))
+    if (!tx.from_data(request.data()))
     {
-        // NOTE: the format of this response changed in v3 (send only code).
-        // This is our standard behavior and should not break clients.
-        handler(outgoing(request, error::bad_stream));
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    // TODO: conditionally subscribe to penetration notifications.
+    // TODO: broadcast transaction to receiving peers.
+    handler(message(request, error::operation_failed));
+}
+
+// NOTE: the format of this response changed in v3 (send only code on error).
+void transaction_pool::validate(server_node& node, const message& request,
+    send_handler handler)
+{
+    transaction tx;
+
+    if (!tx.from_data(request.data()))
+    {
+        handler(message(request, error::bad_stream));
         return;
     }
 
@@ -71,12 +88,13 @@ void transaction_pool::validate(server_node& node, const incoming& request,
 
 void transaction_pool::handle_validated(const code& ec, const transaction& tx,
     const hash_digest& tx_hash, const point::indexes& unconfirmed,
-    const incoming& request, send_handler handler)
+    const message& request, send_handler handler)
 {
+    // [ code:4 ]
+    // [[ unconfirmed_index:4 ]...]
     data_chunk result(code_size + unconfirmed.size() * index_size);
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     for (const auto unconfirmed_index: unconfirmed)
     {
@@ -85,9 +103,7 @@ void transaction_pool::handle_validated(const code& ec, const transaction& tx,
         serial.write_4_bytes_little_endian(index32);
     }
 
-    BITCOIN_ASSERT(serial.iterator() == result.end());
-
-    handler(outgoing(request, result));
+    handler(message(request, result));
 }
 
 } // namespace server

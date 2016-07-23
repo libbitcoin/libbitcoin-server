@@ -17,36 +17,35 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOL_HPP
-#define LIBBITCOIN_SERVER_PROTOCOL_HPP
+#include <bitcoin/server/utility/address_key.hpp>
 
-#include <cstddef>
-#include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messages/message.hpp>
-#include <bitcoin/server/server_node.hpp>
+#include <string>
+#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/messages/route.hpp>
 
 namespace libbitcoin {
 namespace server {
-    
-/// Protocol interface.
-/// Class and method names are published and mapped to the zeromq interface.
-class BCS_API protocol
+
+address_key::address_key(const route& reply_to, const binary& prefix_filter)
+  : reply_to_(reply_to), prefix_filter_(prefix_filter)
 {
-public:
-    /// Broadcast a transaction to all connected peers.
-    static void broadcast_transaction(server_node& node,
-        const message& request, send_handler handler);
+}
 
-    /// Determine the count of all connected peers.
-    static void total_connections(server_node& node,
-        const message& request, send_handler handler);
+bool address_key::operator==(const address_key& other) const
+{
+    return reply_to_ == other.reply_to_ &&
+        prefix_filter_ == other.prefix_filter_;
+}
 
-private:
-    static void handle_total_connections(size_t count,
-        const message& request, send_handler handler);
-};
+const route& address_key::reply_to() const
+{
+    return reply_to_;
+}
+
+const binary& address_key::prefix_filter() const
+{
+    return prefix_filter_;
+}
 
 } // namespace server
 } // namespace libbitcoin
-
-#endif

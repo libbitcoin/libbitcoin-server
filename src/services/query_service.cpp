@@ -57,10 +57,12 @@ void query_service::work()
     if (!started(bind(router, query_dealer, notify_dealer)))
         return;
 
-    // TODO: integrate notify_dealer into relay.
     // TODO: tap in to failure conditions, such as high water.
     // Relay messages between router and dealer (blocks on context).
+    //*************************************************************************
+    // TODO: integrate notify_dealer into relay.
     relay(router, query_dealer);
+    //*************************************************************************
 
     // Unbind the sockets and exit this thread.
     finished(unbind(router, query_dealer, notify_dealer));

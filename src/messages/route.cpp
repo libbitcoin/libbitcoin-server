@@ -17,46 +17,30 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_INCOMING
-#define LIBBITCOIN_SERVER_INCOMING
+#include <bitcoin/server/messages/route.hpp>
 
-#include <cstdint>
 #include <string>
-#include <bitcoin/protocol.hpp>
-#include <bitcoin/server/define.hpp>
+#include <boost/functional/hash_fwd.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class BCS_API incoming
+route::route()
+  : secure(false), delimited(false)
 {
-public:
-    /// A printable address for logging only.
-    std::string address();
+}
 
-    /// Send a message from the socket.
-    code receive(bc::protocol::zmq::socket& socket, bool secure=false);
+std::string route::display() const
+{
+    return "[" + encode_base16(address1) + ":" + encode_base16(address2) + "]";
+}
 
-    /// The message route as seen at workers.
-    data_chunk address1;
-    data_chunk address2;
-    bool delimited;
-
-    /// For deferred work, directs worker to respond on secure endpoint.
-    bool secure;
-
-    /// Query command (used for subscription, always returned to caller).
-    std::string command;
-
-    /// Structure is little-endian.
-    /// Arbitrary caller data (returned to caller for correlation).
-    uint32_t id;
-
-    /// Serialized query (structure defined in relation to command).
-    data_chunk data;
-};
+bool route::operator==(const route& other) const
+{
+    return secure == other.secure && delimited == other.delimited &&
+        address1 == other.address1 && address2 == other.address2;
+}
 
 } // namespace server
 } // namespace libbitcoin
-
-#endif
