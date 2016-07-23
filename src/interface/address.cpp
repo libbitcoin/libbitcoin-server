@@ -72,7 +72,7 @@ void address::subscribe(server_node& node, const message& request,
         return;
     }
 
-    node.subscribe_address(request.route(), prefix_filter, type);
+    node.subscribe_address(request.route(), request.id(), prefix_filter, type);
     handler(message(request, error::success));
 }
 
@@ -128,7 +128,7 @@ void address::subscribe2(server_node& node, const message& request,
         return;
     }
 
-    node.subscribe_address(request.route(), prefix_filter, type);
+    node.subscribe_address(request.route(), request.id(), prefix_filter, type);
     handler(message(request, error::success));
 }
 

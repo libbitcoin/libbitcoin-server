@@ -17,29 +17,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/messages/route.hpp>
+#include <bitcoin/server/utility/address_key.hpp>
 
 #include <string>
-#include <boost/functional/hash_fwd.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/messages/route.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-route::route()
-  : secure(false), delimited(false)
+address_key::address_key(const route& reply_to, const binary& prefix_filter)
+  : reply_to_(reply_to), prefix_filter_(prefix_filter)
 {
 }
 
-std::string route::display() const
+bool address_key::operator==(const address_key& other) const
 {
-    return "[" + encode_base16(address1) + ":" + encode_base16(address2) + "]";
+    return reply_to_ == other.reply_to_ &&
+        prefix_filter_ == other.prefix_filter_;
 }
 
-bool route::operator==(const route& other) const
+const route& address_key::reply_to() const
 {
-    return secure == other.secure && delimited == other.delimited &&
-        address1 == other.address1 && address2 == other.address2;
+    return reply_to_;
+}
+
+const binary& address_key::prefix_filter() const
+{
+    return prefix_filter_;
 }
 
 } // namespace server

@@ -32,6 +32,7 @@
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/transaction_service.hpp>
+#include <bitcoin/server/utility/address_key.hpp>
 #include <bitcoin/server/utility/authenticator.hpp>
 #include <bitcoin/server/utility/fetch_helpers.hpp>
 #include <bitcoin/server/workers/notification_worker.hpp>

@@ -121,25 +121,27 @@ bool server_node::close()
 // ----------------------------------------------------------------------------
 
 // Subscribe to address (including stealth) prefix notifications.
-void server_node::subscribe_address(const route& reply_to,
+void server_node::subscribe_address(const route& reply_to, uint32_t id,
     const binary& prefix_filter, subscribe_type type)
 {
     if (reply_to.secure)
         secure_notification_worker_
-            .subscribe_address(reply_to, prefix_filter, type);
+            .subscribe_address(reply_to, id, prefix_filter, type);
     else
         public_notification_worker_
-            .subscribe_address(reply_to, prefix_filter, type);
+            .subscribe_address(reply_to, id, prefix_filter, type);
 }
 
 // Subscribe to transaction penetration notifications.
-void server_node::subscribe_penetration(const route& reply_to,
+void server_node::subscribe_penetration(const route& reply_to, uint32_t id,
     const hash_digest& tx_hash)
 {
     if (reply_to.secure)
-        secure_notification_worker_.subscribe_penetration(reply_to, tx_hash);
+        secure_notification_worker_
+            .subscribe_penetration(reply_to, id, tx_hash);
     else
-        public_notification_worker_.subscribe_penetration(reply_to, tx_hash);
+        public_notification_worker_
+            .subscribe_penetration(reply_to, id, tx_hash);
 }
 
 // Services.

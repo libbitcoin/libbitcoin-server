@@ -112,6 +112,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp">
       <Filter>include\bitcoin\server\messages</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\address_key.hpp">
+      <Filter>include\bitcoin\server\utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
@@ -167,6 +170,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\messages\message.cpp">
       <Filter>src\messages</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\address_key.cpp">
+      <Filter>src\utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

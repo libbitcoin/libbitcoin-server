@@ -17,43 +17,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_ROUTE
-#define LIBBITCOIN_SERVER_ROUTE
+#ifndef LIBBITCOIN_SERVER_ADDRESS_KEY_HPP
+#define LIBBITCOIN_SERVER_ADDRESS_KEY_HPP
 
 #include <cstddef>
-#include <string>
 #include <boost/functional/hash_fwd.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/messages/route.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// This class is not thread safe.
-/// The route is fixed in compliance with v2/v3 limitations.
-class BCS_API route
+class BCS_API address_key
 {
 public:
-    /// Construct a route.
-    route();
+    address_key(const route& reply_to, const binary& prefix_filter);
+    bool operator==(const address_key& other) const;
+    const route& reply_to() const;
+    const binary& prefix_filter() const;
 
-    /// A printable address for logging only.
-    std::string display() const;
-
-    /// Equality operator.
-    bool operator==(const route& other) const;
-
-    /// The message requires a secure port.
-    bool secure;
-
-    /// The message route is delimited using an empty frame.
-    bool delimited;
-
-    /// The first address.
-    data_chunk address1;
-
-    /// The second address.
-    data_chunk address2;
+private:
+    const route& reply_to_;
+    const binary& prefix_filter_;
 };
 
 } // namespace server
@@ -62,15 +48,19 @@ public:
 namespace std
 {
     template<>
-    struct hash<bc::server::route>
+    struct hash<bc::server::address_key>
     {
-        size_t operator()(const bc::server::route& value) const
+        size_t operator()(const bc::server::address_key& value) const
         {
+            // boost::hash_combine uses boost::hash declarations., but these
+            // are defined as std::hash (for use with std::map). So we must
+            // explicity perform the hash operation before combining.
+            const auto to = std::hash<bc::server::route>()(value.reply_to());
+            const auto filter = std::hash<bc::binary>()(value.prefix_filter());
+
             size_t seed = 0;
-            boost::hash_combine(seed, value.secure);
-            boost::hash_combine(seed, value.delimited);
-            boost::hash_combine(seed, value.address1);
-            boost::hash_combine(seed, value.address2);
+            boost::hash_combine(seed, to);
+            boost::hash_combine(seed, filter);
             return seed;
         }
     };

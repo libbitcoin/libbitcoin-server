@@ -85,11 +85,11 @@ public:
 
     /// Subscribe to address (including stealth) prefix notifications.
     /// Stealth prefix is limited to 32 bits, address prefix to 256 bits.
-    virtual void subscribe_address(const route& reply_to,
+    virtual void subscribe_address(const route& reply_to, uint32_t id,
         const binary& prefix_filter, chain::subscribe_type type);
 
     /// Subscribe to transaction penetration notifications.
-    virtual void subscribe_penetration(const route& reply_to,
+    virtual void subscribe_penetration(const route& reply_to, uint32_t id,
         const hash_digest& tx_hash);
 
 private:

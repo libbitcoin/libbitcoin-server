@@ -19,6 +19,7 @@
  */
 #include <bitcoin/server/workers/notification_worker.hpp>
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -41,9 +42,14 @@ using namespace bc::chain;
 using namespace bc::protocol;
 using namespace bc::wallet;
 
-static const std::string address_update = "address.update";
-static const std::string address_update2 = "address.update2";
-static const std::string address_stealth = "address.stealth_update";
+// Purge subscriptions at 10% of the expiration period.
+static constexpr int64_t purge_interval_ratio = 10;
+
+// Notifications respond with commands that are distinct from the subscription.
+static const std::string address_update("address.update");
+static const std::string address_stealth("address.stealth_update");
+static const std::string address_update2("address.update2");
+static const std::string penetration_update("penetration.update");
 
 notification_worker::notification_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
@@ -99,17 +105,17 @@ bool notification_worker::stop()
 
     // v2/v3 (deprecated)
     payment_subscriber_->stop();
-    payment_subscriber_->do_relay(code, {}, 0, {}, {});
+    payment_subscriber_->invoke(code, {}, 0, {}, {});
 
     stealth_subscriber_->stop();
-    stealth_subscriber_->do_relay(code, 0, 0, {}, {});
+    stealth_subscriber_->invoke(code, 0, 0, {}, {});
 
     // v3
     address_subscriber_->stop();
-    address_subscriber_->do_relay(code, {}, 0, {}, {});
+    address_subscriber_->invoke(code, {}, 0, {}, {});
 
     penetration_subscriber_->stop();
-    penetration_subscriber_->do_relay(code, 0, {}, {});
+    penetration_subscriber_->invoke(code, 0, {}, {});
 
     return zmq::worker::stop();
 }
@@ -126,17 +132,26 @@ void notification_worker::work()
 
     zmq::poller poller;
     poller.add(router);
+    const auto interval = purge_interval_milliseconds();
 
     // We do not send/receive on the poller, we use its timer and context stop.
     // Other threads connect and disconnect dynamically to send updates.
     while (!poller.terminated() && !stopped())
     {
-        poller.wait();
-        prune();
+        poller.wait(interval);
+        purge();
     }
 
     // Disconnect the socket and exit this thread.
     finished(disconnect(router));
+}
+
+int32_t notification_worker::purge_interval_milliseconds() const
+{
+    const int64_t minutes = settings_.subscription_expiration_minutes;
+    const int64_t milliseconds = minutes * 60 * 1000 / purge_interval_ratio;
+    const auto capped = std::max(milliseconds, static_cast<int64_t>(max_int32));
+    return static_cast<int32_t>(capped);
 }
 
 // Connect/Disconnect.
@@ -180,25 +195,22 @@ bool notification_worker::disconnect(socket& router)
 // ----------------------------------------------------------------------------
 
 // Signal expired subscriptions to self-remove.
-void notification_worker::prune()
+void notification_worker::purge()
 {
     static const auto code = error::channel_timeout;
 
     // v2/v3 (deprecated)
-    payment_subscriber_->relay(code, {}, 0, {}, {});
-    stealth_subscriber_->relay(code, 0, 0, {}, {});
+    payment_subscriber_->purge(code, {}, 0, {}, {});
+    stealth_subscriber_->purge(code, 0, 0, {}, {});
 
     // v3
-    address_subscriber_->relay(code, {}, 0, {}, {});
-    penetration_subscriber_->relay(code, 0, {}, {});
+    address_subscriber_->purge(code, {}, 0, {}, {});
+    penetration_subscriber_->purge(code, 0, {}, {});
 }
 
 // Sending.
 // ----------------------------------------------------------------------------
 
-//*****************************************************************************
-// TODO: the notify_dealer must be connected to the query_service router.
-//*****************************************************************************
 void notification_worker::send(const route& reply_to,
     const std::string& command, uint32_t id, const data_chunk& payload)
 {
@@ -299,11 +311,6 @@ bool notification_worker::handle_payment(const code& ec,
     const hash_digest& block_hash, const chain::transaction& tx,
     const route& reply_to, uint32_t id, const binary& prefix_filter)
 {
-    if (ec == error::channel_timeout && true /* not expired */)
-    {
-        return true;
-    }
-
     if (ec)
     {
         send(reply_to, address_update, id, message::to_bytes(ec));
@@ -321,11 +328,6 @@ bool notification_worker::handle_stealth(const code& ec,
     const chain::transaction& tx, const route& reply_to, uint32_t id,
     const binary& prefix_filter)
 {
-    if (ec == error::channel_timeout && true /* not expired */)
-    {
-        return true;
-    }
-
     if (ec)
     {
         send(reply_to, address_stealth, id, message::to_bytes(ec));
@@ -341,13 +343,8 @@ bool notification_worker::handle_stealth(const code& ec,
 bool notification_worker::handle_address(const code& ec,
     const binary& field, uint32_t height, const hash_digest& block_hash,
     const chain::transaction& tx, const route& reply_to, uint32_t id,
-    const binary& prefix_filter, std::shared_ptr<uint8_t> sequence)
+    const binary& prefix_filter, sequence_ptr sequence)
 {
-    if (ec == error::channel_timeout && true /* not expired */)
-    {
-        return true;
-    }
-
     if (ec)
     {
         send(reply_to, address_update2, id, message::to_bytes(ec));
@@ -355,7 +352,10 @@ bool notification_worker::handle_address(const code& ec,
     }
 
     if (prefix_filter.is_prefix_of(field))
+    {
         send_address(reply_to, id, *sequence, height, block_hash, tx);
+        ++(*sequence);
+    }
 
     return true;
 }
@@ -365,32 +365,38 @@ bool notification_worker::handle_address(const code& ec,
 
 // Subscribe to address and stealth prefix notifications.
 // Each delegate must connect to the appropriate query notification endpoint.
-void notification_worker::subscribe_address(const route& reply_to,
+void notification_worker::subscribe_address(const route& reply_to, uint32_t id,
     const binary& prefix_filter, subscribe_type type)
 {
-    static const auto code = error::channel_stopped;
+    static const auto error_code = error::channel_stopped;
+    const auto& duration = settings_.subscription_expiration();
+    const address_key key(reply_to, prefix_filter);
 
     switch (type)
     {
         // v2/v3 (deprecated)
         case subscribe_type::payment:
         {
+            // This class must be kept in scope until work is terminated.
             const auto handler =
                 std::bind(&notification_worker::handle_payment,
-                    this, _1, _2, _3, _4, _5, reply_to, 0, prefix_filter);
+                    this, _1, _2, _3, _4, _5, reply_to, id, prefix_filter);
 
-            payment_subscriber_->subscribe(handler, code, {}, 0, {}, {});
+            payment_subscriber_->subscribe(handler, key, duration, error_code,
+                {}, 0, {}, {});
             break;
         }
 
         // v2/v3 (deprecated)
         case subscribe_type::stealth:
         {
+            // This class must be kept in scope until work is terminated.
             const auto handler =
                 std::bind(&notification_worker::handle_stealth,
-                    this, _1, _2, _3, _4, _5, reply_to, 0, prefix_filter);
+                    this, _1, _2, _3, _4, _5, reply_to, id, prefix_filter);
 
-            stealth_subscriber_->subscribe(handler, code, 0, 0, {}, {});
+            stealth_subscriber_->subscribe(handler, key, duration, error_code,
+                0, 0, {}, {});
             break;
         }
 
@@ -401,13 +407,15 @@ void notification_worker::subscribe_address(const route& reply_to,
             // The sequence enables the client to detect dropped messages.
             const auto sequence = std::make_shared<uint8_t>(0);
 
+            // This class must be kept in scope until work is terminated.
             const auto handler =
                 std::bind(&notification_worker::handle_address,
-                    this, _1, _2, _3, _4, _5, reply_to, 0, prefix_filter,
+                    this, _1, _2, _3, _4, _5, reply_to, id, prefix_filter,
                     sequence);
 
             // v3
-            address_subscriber_->subscribe(handler, code, {}, 0, {}, {});
+            address_subscriber_->subscribe(handler, key, duration, error_code,
+                {}, 0, {}, {});
             break;
         }
     }
@@ -416,7 +424,7 @@ void notification_worker::subscribe_address(const route& reply_to,
 // Subscribe to transaction penetration notifications.
 // Each delegate must connect to the appropriate query notification endpoint.
 void notification_worker::subscribe_penetration(const route& reply_to,
-    const hash_digest& tx_hash)
+    uint32_t id, const hash_digest& tx_hash)
 {
     // TODO:
     // Height and hash are zeroized if tx is not chained (inv/mempool).
@@ -649,260 +657,6 @@ void notification_worker::notify_penetration(uint32_t height,
     static const auto code = error::success;
     penetration_subscriber_->relay(code, height, block_hash, tx_hash);
 }
-
-// reference
-// ----------------------------------------------------------------------------
-
-////void notification_worker::subscribe(const incoming& request, send_handler handler)
-////{
-////    const auto ec = create(request, handler);
-////
-////    // Send response.
-////    handler(outgoing(request, ec));
-////}
-////
-////// Create new subscription entry.
-////code notification_worker::create(const incoming& request, send_handler handler)
-////{
-////    subscription_record record;
-////
-////    if (!deserialize(record.prefix, record.type, request.data))
-////        return error::bad_stream;
-////
-////    record.expiry_time = now() + settings_.subscription_expiration();
-////    record.locator.handler = std::move(handler);
-////    record.locator.address1 = request.address1;
-////    record.locator.address2 = request.address2;
-////    record.locator.delimited = request.delimited;
-////
-////    ///////////////////////////////////////////////////////////////////////////
-////    // Critical Section
-////    mutex_.lock_upgrade();
-////
-////    if (subscriptions_.size() >= settings_.subscription_limit)
-////    {
-////        mutex_.unlock_upgrade();
-////        //---------------------------------------------------------------------
-////        return error::pool_filled;
-////    }
-////
-////    mutex_.unlock_upgrade_and_lock();
-////    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-////    subscriptions_.emplace_back(record);
-////
-////    mutex_.unlock();
-////    ///////////////////////////////////////////////////////////////////////////
-////
-////    // This is the end of the subscribe sequence.
-////    return error::success;
-////}
-////
-////// Renew sequence.
-////// ----------------------------------------------------------------------------
-////
-////void notification_worker::renew(const incoming& request, send_handler handler)
-////{
-////    const auto ec = update(request, handler);
-////
-////    // Send response.
-////    handler(outgoing(request, error::success));
-////}
-////
-////// Find subscription record and update expiration.
-////code notification_worker::update(const incoming& request, send_handler handler)
-////{
-////    binary prefix;
-////    subscribe_type type;
-////
-////    if (!deserialize(prefix, type, request.data))
-////        return error::bad_stream;
-////
-////    ///////////////////////////////////////////////////////////////////////////
-////    // Critical Section
-////    mutex_.lock_upgrade();
-////
-////    const auto expiry_time = now() + settings_.subscription_expiration();
-////
-////    for (auto& subscription: subscriptions_)
-////    {
-////        // TODO: is address1 correct and sufficient?
-////        if (subscription.type != type ||
-////            subscription.locator.address1 != request.address1 ||
-////            !subscription.prefix.is_prefix_of(prefix))
-////        {
-////            continue;
-////        }
-////
-////        mutex_.unlock_upgrade_and_lock();
-////        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-////        subscription.expiry_time = expiry_time;
-////        //---------------------------------------------------------------------
-////        mutex_.unlock_and_lock_upgrade();
-////    }
-////
-////    mutex_.unlock_upgrade();
-////    ///////////////////////////////////////////////////////////////////////////
-////
-////    // This is the end of the renew sequence.
-////    return error::success;
-////}
-////
-////// Pruning sequence.
-////// ----------------------------------------------------------------------------
-////
-////// Delete entries that have expired.
-////size_t notification_worker::prune()
-////{
-////    ///////////////////////////////////////////////////////////////////////////
-////    // Critical Section
-////    unique_lock(mutex_);
-////
-////    const auto current_time = now();
-////    const auto start_size = subscriptions_.size();
-////
-////    for (auto it = subscriptions_.begin(); it != subscriptions_.end();)
-////    {
-////        if (current_time < it->expiry_time)
-////            ++it;
-////        else
-////            it = subscriptions_.erase(it);
-////    }
-////
-////    // This is the end of the pruning sequence.
-////    return start_size - subscriptions_.size();
-////    ///////////////////////////////////////////////////////////////////////////
-////}
-////
-////// Scan sequence.
-////// ----------------------------------------------------------------------------
-////
-////void notification_worker::receive_block(uint32_t height, const block::ptr block)
-////{
-////    const auto hash = block->header.hash();
-////
-////    for (const auto& transaction: block->transactions)
-////        scan(height, hash, transaction);
-////
-////    prune();
-////}
-////
-////void notification_worker::receive_transaction(const transaction& transaction)
-////{
-////    scan(0, null_hash, transaction);
-////}
-////
-////void notification_worker::scan(uint32_t height, const hash_digest& block_hash,
-////    const transaction& tx)
-////{
-////    for (const auto& input: tx.inputs)
-////    {
-////        const auto address = payment_address::extract(input.script);
-////
-////        if (address)
-////            post_updates(address, height, block_hash, tx);
-////    }
-////
-////    uint32_t prefix;
-////    for (const auto& output: tx.outputs)
-////    {
-////        const auto address = payment_address::extract(output.script);
-////
-////        if (address)
-////            post_updates(address, height, block_hash, tx);
-////        else if (to_stealth_prefix(prefix, output.script))
-////            post_stealth_updates(prefix, height, block_hash, tx);
-////    }
-////}
-////
-////void notification_worker::post_updates(const payment_address& address,
-////    uint32_t height, const hash_digest& block_hash, const transaction& tx)
-////{
-////    subscription_locators locators;
-////
-////    ///////////////////////////////////////////////////////////////////////////
-////    // Critical Section
-////    mutex_.lock_shared();
-////
-////    for (const auto& subscription: subscriptions_)
-////        if (subscription.type == subscribe_type::address &&
-////            subscription.prefix.is_prefix_of(address.hash()))
-////                locators.push_back(subscription.locator);
-////
-////    mutex_.unlock_shared();
-////    ///////////////////////////////////////////////////////////////////////////
-////
-////    if (locators.empty())
-////        return;
-////
-////    // [ address.version:1 ]
-////    // [ address.hash:20 ]
-////    // [ height:4 ]
-////    // [ block_hash:32 ]
-////    // [ tx ]
-////    const auto data = build_chunk(
-////    {
-////        to_array(address.version()),
-////        address.hash(),
-////        to_little_endian(height),
-////        block_hash,
-////        tx.to_data()
-////    });
-////
-////    // Send the result to everyone interested.
-////    for (const auto& locator: locators)
-////        locator.handler(outgoing("address.update", data, locator.address1,
-////            locator.address2, locator.delimited));
-////
-////    // This is the end of the scan address sequence.
-////}
-////
-////void notification_worker::post_stealth_updates(uint32_t prefix, uint32_t height,
-////    const hash_digest& block_hash, const transaction& tx)
-////{
-////    subscription_locators locators;
-////
-////    ///////////////////////////////////////////////////////////////////////////
-////    // Critical Section
-////    mutex_.lock_shared();
-////
-////    for (const auto& subscription: subscriptions_)
-////        if (subscription.type == subscribe_type::stealth &&
-////            subscription.prefix.is_prefix_of(prefix))
-////                locators.push_back(subscription.locator);
-////
-////    mutex_.unlock_shared();
-////    ///////////////////////////////////////////////////////////////////////////
-////
-////    if (locators.empty())
-////        return;
-////
-////    // [ prefix:4 ]
-////    // [ height:4 ] 
-////    // [ block_hash:32 ]
-////    // [ tx ]
-////    const auto data = build_chunk(
-////    {
-////        to_little_endian(prefix),
-////        to_little_endian(height),
-////        block_hash,
-////        tx.to_data()
-////    });
-////
-////    // Send the result to everyone interested.
-////    for (const auto& locator: locators)
-////        locator.handler(outgoing("address.stealth_update", data,
-////            locator.address1, locator.address2, locator.delimited));
-////
-////    // This is the end of the scan stealth sequence.
-////}
-////
-////// Utilities
-////// ----------------------------------------------------------------------------
-////
-////ptime notification_worker::now()
-////{
-////    return second_clock::universal_time();
-////};
 
 } // namespace server
 } // namespace libbitcoin

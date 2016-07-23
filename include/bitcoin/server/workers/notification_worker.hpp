@@ -27,6 +27,7 @@
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/messages/route.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utility/address_key.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -52,11 +53,11 @@ public:
     bool stop() override;
 
     /// Subscribe to address and stealth prefix notifications.
-    virtual void subscribe_address(const route& reply_to,
+    virtual void subscribe_address(const route& reply_to, uint32_t id,
         const binary& prefix_filter, chain::subscribe_type type);
 
     /// Subscribe to transaction penetration notifications.
-    virtual void subscribe_penetration(const route& reply_to,
+    virtual void subscribe_penetration(const route& reply_to, uint32_t id,
         const hash_digest& tx_hash);
 
 protected:
@@ -71,18 +72,21 @@ protected:
 private:
     typedef chain::block::ptr_list block_list;
     typedef chain::point::indexes index_list;
+    typedef std::shared_ptr<uint8_t> sequence_ptr;
 
-    typedef resubscriber<const code&, const wallet::payment_address&, uint32_t,
-        const hash_digest&, const chain::transaction&> payment_subscriber;
-    typedef resubscriber<const code&, uint32_t, uint32_t, const hash_digest&,
-        const chain::transaction&> stealth_subscriber;
-    typedef resubscriber<const code&, const binary&, uint32_t,
+    typedef notifier<address_key, const code&,
+        const wallet::payment_address&, int32_t, const hash_digest&,
+        const chain::transaction&> payment_subscriber;
+    typedef notifier<address_key, const code&, uint32_t, uint32_t,
+        const hash_digest&, const chain::transaction&> stealth_subscriber;
+    typedef notifier<address_key, const code&, const binary&, uint32_t,
         const hash_digest&, const chain::transaction&> address_subscriber;
-    typedef resubscriber<const code&, uint32_t, const hash_digest&,
-        const hash_digest&> penetration_subscriber;
+    typedef notifier<address_key, const code&, uint32_t,
+        const hash_digest&, const hash_digest&> penetration_subscriber;
 
     // Remove expired subscriptions.
-    void prune();
+    void purge();
+    int32_t purge_interval_milliseconds() const;
 
     bool handle_blockchain_reorganization(const code& ec, uint64_t fork_point,
         const block_list& new_blocks, const block_list&);
@@ -133,7 +137,7 @@ private:
     bool handle_address(const code& ec, const binary& field, uint32_t height,
         const hash_digest& block_hash, const chain::transaction& tx,
         const route& reply_to, uint32_t id, const binary& prefix_filter,
-        std::shared_ptr<uint8_t> sequence);
+        sequence_ptr sequence);
 
     const bool secure_;
     const server::settings& settings_;
