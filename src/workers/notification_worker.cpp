@@ -59,13 +59,13 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
     node_(node),
     authenticator_(authenticator),
     payment_subscriber_(std::make_shared<payment_subscriber>(
-        node.thread_pool(), NAME "_payment")),
+        node.thread_pool(), settings_.subscription_limit, NAME "_payment")),
     stealth_subscriber_(std::make_shared<stealth_subscriber>(
-        node.thread_pool(), NAME "_stealth")),
+        node.thread_pool(), settings_.subscription_limit, NAME "_stealth")),
     address_subscriber_(std::make_shared<address_subscriber>(
-        node.thread_pool(), NAME "_address")),
+        node.thread_pool(), settings_.subscription_limit, NAME "_address")),
     penetration_subscriber_(std::make_shared<penetration_subscriber>(
-        node.thread_pool(), NAME "_penetration"))
+        node.thread_pool(), settings_.subscription_limit, NAME "_penetration"))
 {
 }
 
