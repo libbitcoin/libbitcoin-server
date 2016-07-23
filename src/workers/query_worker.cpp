@@ -201,6 +201,7 @@ void query_worker::attach(const std::string& command,
 // address.renew is deprecated in v3.
 // address.subscribe is deprecated in v3.
 // address.subscribe2 is new in v3, also call for renew.
+// address.unsubscribe2 is new in v3 (there was never an address.unsubscribe).
 //-----------------------------------------------------------------------------
 //// protocol.broadcast_transaction is deprecated in v3 (deferred).
 //// transaction_pool.broadcast (with radar) is new in v3 (deferred).
@@ -211,6 +212,7 @@ void query_worker::attach_interface()
     ATTACH(address, renew, node_);
     ATTACH(address, subscribe, node_);
     ATTACH(address, subscribe2, node_);
+    ATTACH(address, unsubscribe2, node_);
     ATTACH(address, fetch_history2, node_);
     ATTACH(blockchain, fetch_history, node_);
     ATTACH(blockchain, fetch_block_header, node_);

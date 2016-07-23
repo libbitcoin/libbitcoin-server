@@ -132,6 +132,24 @@ void address::subscribe2(server_node& node, const message& request,
     handler(message(request, error::success));
 }
 
+// v3 adds unsubscribe2, which we map to subscription_type 'unsubscribe'.
+void address::unsubscribe2(server_node& node, const message& request,
+    send_handler handler)
+{
+    static constexpr auto type = subscribe_type::unsubscribe;
+
+    binary prefix_filter;
+
+    if (!unwrap_subscribe2_args(prefix_filter, request))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    node.subscribe_address(request.route(), request.id(), prefix_filter, type);
+    handler(message(request, error::success));
+}
+
 bool address::unwrap_subscribe2_args(binary& prefix_filter,
     const message& request)
 {

@@ -48,6 +48,10 @@ public:
     static void subscribe2(server_node& node, const message& request,
         send_handler handler);
 
+    /// Unsubscribe to payment and stealth address notifications by prefix.
+    static void unsubscribe2(server_node& node, const message& request,
+        send_handler handler);
+
 private:
     static bool unwrap_subscribe_args(binary& prefix_filter,
         chain::subscribe_type& type, const message& request);

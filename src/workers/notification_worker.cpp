@@ -401,7 +401,6 @@ void notification_worker::subscribe_address(const route& reply_to, uint32_t id,
         }
 
         // v3
-        default:
         case subscribe_type::unspecified:
         {
             // The sequence enables the client to detect dropped messages.
@@ -416,6 +415,20 @@ void notification_worker::subscribe_address(const route& reply_to, uint32_t id,
             // v3
             address_subscriber_->subscribe(handler, key, duration, error_code,
                 {}, 0, {}, {});
+            break;
+        }
+
+        // v3
+        default:
+        case subscribe_type::unsubscribe:
+        {
+            // Just as with an expiration (purge) this will cause the stored
+            // handler (notification_worker::handle_address) to be invoked but
+            // with the specified error code (error::channel_stopped) as
+            // opposed to error::channel_timeout.
+
+            // v3
+            address_subscriber_->unsubscribe(key, error_code, {}, 0, {}, {});
             break;
         }
     }
