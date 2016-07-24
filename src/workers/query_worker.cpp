@@ -203,8 +203,11 @@ void query_worker::attach(const std::string& command,
 // address.subscribe2 is new in v3, also call for renew.
 // address.unsubscribe2 is new in v3 (there was never an address.unsubscribe).
 //-----------------------------------------------------------------------------
-//// protocol.broadcast_transaction is deprecated in v3 (deferred).
-//// transaction_pool.broadcast (with radar) is new in v3 (deferred).
+///protocol.fetch_stealth is deprecated in v3.
+// protocol.fetch_stealth2 is new in v3.
+//-----------------------------------------------------------------------------
+// blockchain.broadcast_transaction is deprecated in v3 (deferred).
+// transaction_pool.broadcast (with radar) is new in v3 (deferred).
 //=============================================================================
 // Interface class.method names must match protocol (do not change).
 void query_worker::attach_interface()
@@ -223,6 +226,7 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_transaction_index, node_);
     ATTACH(blockchain, fetch_spend, node_);
     ATTACH(blockchain, fetch_stealth, node_);
+    ATTACH(blockchain, fetch_stealth2, node_);
     ATTACH(transaction_pool, fetch_transaction, node_);
     ATTACH(transaction_pool, validate, node_);
     ////ATTACH(transaction_pool, broadcast, node_);

@@ -67,8 +67,12 @@ public:
     static void fetch_block_height(server_node& node,
         const message& request, send_handler handler);
 
-    /// Fetch the blockchain history of a stealth address by its prefix filter.
+    /// Fetch the history of a stealth address by its prefix filter.
     static void fetch_stealth(server_node& node,
+        const message& request, send_handler handler);
+
+    /// Fetch the transactions of a stealth address by its prefix filter.
+    static void fetch_stealth2(server_node& node,
         const message& request, send_handler handler);
 
 private:
@@ -106,6 +110,10 @@ private:
         const message& request, send_handler handler);
 
     static void stealth_fetched(const code& ec,
+        const chain::stealth_compact::list& stealth_results,
+        const message& request, send_handler handler);
+
+    static void stealth_fetched2(const code& ec,
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
 };
