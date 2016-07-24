@@ -68,9 +68,9 @@ namespace std
         {
             size_t seed = 0;
             boost::hash_combine(seed, value.secure);
-            boost::hash_combine(seed, value.delimited);
+            ////boost::hash_combine(seed, value.delimited);
             boost::hash_combine(seed, value.address1);
-            boost::hash_combine(seed, value.address2);
+            ////boost::hash_combine(seed, value.address2);
             return seed;
         }
     };
