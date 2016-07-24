@@ -390,5 +390,56 @@ void blockchain::stealth_fetched(const code& ec,
     handler(message(request, result));
 }
 
+void blockchain::fetch_stealth2(server_node& node, const message& request,
+    send_handler handler)
+{
+    const auto& data = request.data();
+
+    if (data.empty())
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    auto deserial = make_deserializer(data.begin(), data.end());
+
+    // number_bits
+    const auto bitsize = deserial.read_byte();
+
+    if (data.size() != sizeof(uint8_t) + binary::blocks_size(bitsize) +
+        sizeof(uint32_t))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    // actual bitfield data
+    const auto blocks = deserial.read_data(binary::blocks_size(bitsize));
+    const binary prefix(bitsize, blocks);
+
+    // from_height
+    const uint64_t from_height = deserial.read_4_bytes_little_endian();
+
+    node.chain().fetch_stealth(prefix, from_height,
+        std::bind(&blockchain::stealth_fetched2,
+            _1, _2, request, handler));
+}
+
+void blockchain::stealth_fetched2(const code& ec,
+    const stealth_compact::list& stealth_results, const message& request,
+    send_handler handler)
+{
+    // [ code:4 ]
+    // [[ tx_hash:32 ]...]
+    data_chunk result(code_size + hash_size * stealth_results.size());
+    auto serial = make_serializer(result.begin());
+    serial.write_error_code(ec);
+
+    for (const auto& row: stealth_results)
+        serial.write_hash(row.transaction_hash);
+
+    handler(message(request, result));
+}
+
 } // namespace server
 } // namespace libbitcoin
