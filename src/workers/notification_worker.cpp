@@ -138,6 +138,7 @@ void notification_worker::work()
     // Other threads connect and disconnect dynamically to send updates.
     while (!poller.terminated() && !stopped())
     {
+        // BUGBUG: this can fail on some platforms if interval is > 1000.
         poller.wait(interval);
         purge();
     }
