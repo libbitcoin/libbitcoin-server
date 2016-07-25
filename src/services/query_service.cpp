@@ -62,7 +62,6 @@ void query_service::work()
     poller.add(query_dealer);
     poller.add(notify_dealer);
 
-    // TODO: tap in to failure conditions, such as high water.
     while (!poller.terminated() && !stopped())
     {
         const auto signaled = poller.wait();
