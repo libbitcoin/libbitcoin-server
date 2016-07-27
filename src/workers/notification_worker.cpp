@@ -222,7 +222,7 @@ void notification_worker::send(const route& reply_to,
     zmq::socket notifier(authenticator_, zmq::socket::role::router);
     auto ec = notifier.connect(endpoint);
 
-    if (ec == bc::error::service_stopped)
+    if (ec == error::service_stopped)
         return;
 
     if (ec)
@@ -460,7 +460,7 @@ void notification_worker::subscribe_penetration(const route& reply_to,
 bool notification_worker::handle_blockchain_reorganization(const code& ec,
     uint64_t fork_point, const block_list& new_blocks, const block_list&)
 {
-    if (stopped() || ec == bc::error::service_stopped)
+    if (stopped() || ec == error::service_stopped)
         return false;
 
     if (ec)
@@ -495,7 +495,7 @@ void notification_worker::notify_blocks(uint32_t fork_point,
     zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
     const auto ec = publisher.connect(endpoint);
 
-    if (ec == bc::error::service_stopped)
+    if (ec == error::service_stopped)
         return;
 
     if (ec)
@@ -538,7 +538,7 @@ void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
 bool notification_worker::handle_inventory(const code& ec,
     const bc::message::inventory::ptr packet)
 {
-    if (stopped() || ec == bc::error::service_stopped)
+    if (stopped() || ec == error::service_stopped)
         return false;
 
     if (ec)
@@ -564,7 +564,7 @@ bool notification_worker::handle_inventory(const code& ec,
 bool notification_worker::handle_transaction_pool(const code& ec,
     const point::indexes&, const transaction& tx)
 {
-    if (stopped() || ec == bc::error::service_stopped)
+    if (stopped() || ec == error::service_stopped)
         return false;
 
     if (ec)
