@@ -219,6 +219,11 @@ options_metadata parser::load_settings()
         "IP address to disallow as a peer, multiple entries allowed."
     )
     (
+        "network.peer",
+        value<config::endpoint::list>(&configured.network.peers),
+        "Persistent host:port channels, multiple entries allowed."
+    )
+    (
         "network.seed",
         value<config::endpoint::list>(&configured.network.seeds),
         "A seed node for initializing the host pool, multiple entries allowed."
@@ -278,11 +283,6 @@ options_metadata parser::load_settings()
         "node.download_connections",
         value<uint32_t>(&configured.node.download_connections),
         "The maximum number of connections for initial block download, defaults to 8."
-    )
-    (
-        "node.peer",
-        value<config::endpoint::list>(&configured.node.peers),
-        "Persistent host:port to augment discovered hosts, multiple entries allowed."
     )
 
     /* [server] */

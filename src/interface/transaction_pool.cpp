@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -32,6 +33,7 @@ namespace server {
 
 using namespace std::placeholders;
 using namespace bc::chain;
+using namespace bc::message;
 
 void transaction_pool::fetch_transaction(server_node& node,
     const message& request, send_handler handler)
@@ -48,7 +50,7 @@ void transaction_pool::fetch_transaction(server_node& node,
         << "transaction_pool.fetch_transaction(" << encode_hash(hash) << ")";
 
     node.pool().fetch(hash,
-        std::bind(transaction_fetched,
+        std::bind(pool_transaction_fetched,
             _1, _2, request, handler));
 }
 
@@ -73,9 +75,9 @@ void transaction_pool::broadcast(server_node& node, const message& request,
 void transaction_pool::validate(server_node& node, const message& request,
     send_handler handler)
 {
-    transaction tx;
+    const auto tx = std::make_shared<transaction_message>();
 
-    if (!tx.from_data(request.data()))
+    if (!tx->from_data(request.data()))
     {
         handler(message(request, error::bad_stream));
         return;
@@ -83,11 +85,11 @@ void transaction_pool::validate(server_node& node, const message& request,
 
     node.pool().validate(tx,
         std::bind(&transaction_pool::handle_validated,
-            _1, _2, _3, _4, request, handler));
+            _1, _2, _3, request, handler));
 }
 
-void transaction_pool::handle_validated(const code& ec, const transaction& tx,
-    const hash_digest& tx_hash, const point::indexes& unconfirmed,
+void transaction_pool::handle_validated(const code& ec,
+    transaction_message::ptr, const point::indexes& unconfirmed,
     const message& request, send_handler handler)
 {
     // [ code:4 ]

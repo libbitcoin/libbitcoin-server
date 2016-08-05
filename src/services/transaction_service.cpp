@@ -31,6 +31,7 @@ namespace server {
 
 using namespace std::placeholders;
 using namespace bc::chain;
+using namespace bc::message;
 using namespace bc::protocol;
 
 static const auto domain = "transaction";
@@ -144,8 +145,8 @@ bool transaction_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // Publish (integral worker).
 // ----------------------------------------------------------------------------
 
-bool transaction_service::handle_transaction(const code& ec,
-    const point::indexes&, const transaction& tx)
+bool transaction_service::handle_transaction(const code& ec, const index_list&,
+    transaction_message::ptr tx)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -159,7 +160,7 @@ bool transaction_service::handle_transaction(const code& ec,
         return true;
     }
 
-    publish_transaction(tx);
+    publish_transaction(*tx);
     return true;
 }
 

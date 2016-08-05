@@ -46,9 +46,10 @@ public:
         send_handler handler);
 
 private:
-    static void handle_validated(const code& ec, const chain::transaction& tx,
-        const hash_digest& tx_hash, const chain::point::indexes& unconfirmed,
-        const message& request, send_handler handler);
+    static void handle_validated(const code& ec,
+        bc::message::transaction_message::ptr tx,
+        const chain::point::indexes& unconfirmed, const message& request,
+        send_handler handler);
 };
 
 } // namespace server

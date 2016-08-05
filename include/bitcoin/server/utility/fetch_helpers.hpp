@@ -48,8 +48,13 @@ void BCS_API send_history_result(const code& ec,
 bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
     const message& request);
 
-void BCS_API transaction_fetched(const code& ec, const chain::transaction& tx,
-    const message& request, send_handler handler);
+void BCS_API chain_transaction_fetched(const code& ec,
+    const chain::transaction& tx, const message& request,
+    send_handler handler);
+
+void BCS_API pool_transaction_fetched(const code& ec,
+    bc::message::transaction_message::ptr tx, const message& request,
+    send_handler handler);
 
 } // namespace server
 } // namespace libbitcoin

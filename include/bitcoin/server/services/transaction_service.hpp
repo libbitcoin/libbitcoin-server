@@ -65,7 +65,7 @@ private:
     typedef bc::chain::point::indexes index_list;
 
     bool handle_transaction(const code& ec, const index_list&,
-        const chain::transaction& tx);
+        bc::message::transaction_message::ptr tx);
     void publish_transaction(const chain::transaction& tx);
 
     const bool secure_;

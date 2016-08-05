@@ -63,13 +63,14 @@ protected:
     virtual void work();
 
 private:
-    typedef chain::block::ptr_list block_list;
+    typedef bc::message::block_message::ptr block_ptr;
+    typedef bc::message::block_message::ptr_list block_list;
 
     bool handle_reorganization(const code& ec, uint64_t fork_point,
         const block_list& new_blocks, const block_list&);
     void publish_blocks(uint32_t fork_point, const block_list& blocks);
     void publish_block(socket& publisher, uint32_t height,
-        const chain::block::ptr block);
+        const block_ptr block);
 
     const bool secure_;
     const server::settings& settings_;
