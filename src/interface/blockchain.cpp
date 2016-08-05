@@ -73,7 +73,7 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
         << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
 
     node.chain().fetch_transaction(tx_hash,
-        std::bind(transaction_fetched,
+        std::bind(chain_transaction_fetched,
             _1, _2, request, handler));
 }
 

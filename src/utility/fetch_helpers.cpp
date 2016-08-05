@@ -30,6 +30,7 @@ namespace server {
 
 using namespace bc::blockchain;
 using namespace bc::chain;
+using namespace bc::message;
 using namespace bc::wallet;
 
 // fetch_history stuff
@@ -105,7 +106,7 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
     return true;
 }
 
-void transaction_fetched(const code& ec, const chain::transaction& tx,
+void chain_transaction_fetched(const code& ec, const chain::transaction& tx,
     const message& request, send_handler handler)
 {
     const auto result = build_chunk(
@@ -115,6 +116,12 @@ void transaction_fetched(const code& ec, const chain::transaction& tx,
     });
 
     handler(message(request, result));
+}
+
+void pool_transaction_fetched(const code& ec, transaction_message::ptr tx,
+    const message& request, send_handler handler)
+{
+    chain_transaction_fetched(ec, *tx, request, handler);
 }
 
 } // namespace server

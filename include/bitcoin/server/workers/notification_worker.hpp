@@ -91,7 +91,7 @@ private:
     bool handle_blockchain_reorganization(const code& ec, uint64_t fork_point,
         const block_list& new_blocks, const block_list&);
     bool handle_transaction_pool(const code& ec, const index_list&,
-        const chain::transaction& tx);
+        bc::message::transaction_message::ptr tx);
     bool handle_inventory(const code& ec,
         const bc::message::inventory::ptr packet);
 
