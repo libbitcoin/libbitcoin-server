@@ -145,7 +145,7 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // ----------------------------------------------------------------------------
 
 bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
-    const block::ptr_list& new_blocks, const block::ptr_list&)
+    const block_list& new_blocks, const block_list&)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -168,7 +168,7 @@ bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
 }
 
 void block_service::publish_blocks(uint32_t fork_point,
-    const block::ptr_list& blocks)
+    const block_list& blocks)
 {
     if (stopped())
         return;
@@ -207,7 +207,7 @@ void block_service::publish_blocks(uint32_t fork_point,
 // The payload for block publication is delimited within the zeromq message.
 // This is required for compatability and inconsistent with query payloads.
 void block_service::publish_block(zmq::socket& publisher, uint32_t height,
-    const block::ptr block)
+    const block_ptr block)
 {
     if (stopped())
         return;
