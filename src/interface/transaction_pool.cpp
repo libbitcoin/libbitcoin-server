@@ -77,7 +77,7 @@ void transaction_pool::validate(server_node& node, const message& request,
 {
     const auto tx = std::make_shared<transaction_message>();
 
-    if (!tx->from_data(request.data()))
+    if (!tx->from_data(protocol_version, request.data()))
     {
         handler(message(request, error::bad_stream));
         return;

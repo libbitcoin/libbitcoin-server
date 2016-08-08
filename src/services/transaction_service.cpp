@@ -194,7 +194,8 @@ void transaction_service::publish_transaction(const transaction& tx)
         return;
 
     zmq::message broadcast;
-    broadcast.enqueue(tx.to_data());
+    bc::message::transaction_message tx_msg(tx);
+    broadcast.enqueue(tx_msg.to_data(protocol_version));
     ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)
@@ -204,7 +205,7 @@ void transaction_service::publish_transaction(const transaction& tx)
     {
         log::warning(LOG_SERVER)
             << "Failed to publish " << security << " transaction ["
-            << encode_hash(tx.hash()) << "] " << ec.message();
+            << encode_hash(tx_msg.hash()) << "] " << ec.message();
         return;
     }
 
@@ -212,7 +213,7 @@ void transaction_service::publish_transaction(const transaction& tx)
     if (settings_.log_requests)
         log::debug(LOG_SERVER)
             << "Published " << security << " transaction ["
-            << encode_hash(tx.hash()) << "]";
+            << encode_hash(tx_msg.hash()) << "]";
 }
 
 } // namespace server
