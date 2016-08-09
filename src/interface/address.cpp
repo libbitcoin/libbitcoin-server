@@ -79,7 +79,7 @@ void address::subscribe(server_node& node, const message& request,
 bool address::unwrap_subscribe_args(binary& prefix_filter,
     subscribe_type& type, const message& request)
 {
-    static constexpr auto address_bits = hash_size * byte_bits;
+    static constexpr auto address_bits = short_hash_size * byte_bits;
     static constexpr auto stealth_bits = sizeof(uint32_t) * byte_bits;
 
     // [ type:1 ] (0 = address prefix, 1 = stealth prefix)
