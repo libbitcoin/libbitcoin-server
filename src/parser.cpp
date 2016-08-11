@@ -124,6 +124,11 @@ options_metadata parser::load_settings()
         "The minimum number of threads in the application threadpool, defaults to 50."
     )
     (
+        "network.protocol",
+        value<uint32_t>(&configured.network.protocol),
+        "The network protocol version, defaults to 70012."
+    )
+    (
         "network.identifier",
         value<uint32_t>(&configured.network.identifier),
         "The magic number for message headers, defaults to 3652501241."
