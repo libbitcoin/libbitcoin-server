@@ -38,9 +38,10 @@ using namespace std::placeholders;
 void protocol::broadcast_transaction(server_node& node, const message& request,
     send_handler handler)
 {
+    static const auto version = bc::message::version::level::maximum;
     bc::message::transaction_message tx;
 
-    if (!tx.from_data(protocol_version, request.data()))
+    if (!tx.from_data(version, request.data()))
     {
         handler(message(request, error::bad_stream));
         return;

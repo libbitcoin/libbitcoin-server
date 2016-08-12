@@ -552,7 +552,7 @@ bool notification_worker::handle_inventory(const code& ec,
 
     // Loop inventories and extract transaction hashes.
     for (const auto& inventory: packet->inventories)
-        if (inventory.type == bc::message::inventory_type_id::transaction)
+        if (inventory.is_transaction_type())
             notify_penetration(0, null_hash, inventory.hash);
 
     return true;
