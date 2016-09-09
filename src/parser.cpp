@@ -60,7 +60,7 @@ parser::parser(const bc::settings& context)
     configured.network.relay_transactions = true;
 
     // A server/node exposes full node (1) network services by default.
-    configured.network.services = message::version::services::node_network;
+    configured.network.services = message::version::service::node_network;
 }
 
 options_metadata parser::load_options()
