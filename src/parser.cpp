@@ -50,6 +50,15 @@ parser::parser(const configuration& defaults)
 parser::parser(const bc::settings& context)
   : configured(context)
 {
+    // A server/node allows 8 inbound connections by default.
+    configured.network.inbound_connections = 8;
+
+    // A server/node allows 1000 host names by default.
+    configured.network.host_pool_capacity = 1000;
+
+    // A server/node requests transaction relay by default.
+    configured.network.relay_transactions = true;
+
     // A server/node exposes full node (1) network services by default.
     configured.network.services = message::version::services::node_network;
 }
@@ -126,9 +135,14 @@ options_metadata parser::load_settings()
         "The minimum number of threads in the application threadpool, defaults to 50."
     )
     (
-        "network.protocol",
-        value<uint32_t>(&configured.network.protocol),
-        "The network protocol version, defaults to 70012."
+        "network.protocol_maximum",
+        value<uint32_t>(&configured.network.protocol_maximum),
+        "The maximum network protocol version, defaults to 70012."
+    )
+    (
+        "network.protocol_minimum",
+        value<uint32_t>(&configured.network.protocol_minimum),
+        "The minimum network protocol version, defaults to 31402."
     )
     (
         "network.services",
