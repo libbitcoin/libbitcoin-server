@@ -501,7 +501,7 @@ void notification_worker::notify_blocks(uint32_t fork_point,
     if (ec)
     {
         log::warning(LOG_SERVER)
-            << "Failed to connect " << security << " block worker: "
+            << "Failed to connect " << security << " notification worker: "
             << ec.message();
         return;
     }
