@@ -177,7 +177,7 @@ options_metadata parser::load_settings()
     (
         "network.connect_batch_size",
         value<uint32_t>(&configured.network.connect_batch_size),
-        "The number of concurrent attempts to estalish one connection, defaults to 5."
+        "The number of concurrent attempts to establish one connection, defaults to 5."
     )
     (
         "network.connect_timeout_seconds",
