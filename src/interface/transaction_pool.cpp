@@ -86,12 +86,12 @@ void transaction_pool::validate(server_node& node, const message& request,
 
     node.pool().validate(tx,
         std::bind(&transaction_pool::handle_validated,
-            _1, _2, _3, request, handler));
+            _1, _2, request, handler));
 }
 
 void transaction_pool::handle_validated(const code& ec,
-    transaction_message::ptr, const point::indexes& unconfirmed,
-    const message& request, send_handler handler)
+    const point::indexes& unconfirmed, const message& request,
+    send_handler handler)
 {
     // [ code:4 ]
     // [[ unconfirmed_index:4 ]...]
