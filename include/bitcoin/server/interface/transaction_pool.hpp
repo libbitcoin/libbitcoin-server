@@ -47,7 +47,6 @@ public:
 
 private:
     static void handle_validated(const code& ec,
-        bc::message::transaction_message::ptr tx,
         const chain::point::indexes& unconfirmed, const message& request,
         send_handler handler);
 };
