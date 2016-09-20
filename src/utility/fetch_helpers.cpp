@@ -118,6 +118,12 @@ void chain_transaction_fetched(const code& ec, const chain::transaction& tx,
     handler(message(request, result));
 }
 
+void block_transaction_fetched(const code& ec, transaction_message::ptr tx,
+    uint64_t, const message& request, send_handler handler)
+{
+    chain_transaction_fetched(ec, *tx, request, handler);
+}
+
 void pool_transaction_fetched(const code& ec, transaction_message::ptr tx,
     const message& request, send_handler handler)
 {

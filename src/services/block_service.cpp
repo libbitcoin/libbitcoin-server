@@ -144,8 +144,8 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // Publish (integral worker).
 // ----------------------------------------------------------------------------
 
-bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
-    const block_list& new_blocks, const block_list&)
+bool block_service::handle_reorganization(const code& ec, size_t fork_height,
+    const block_const_ptr_list& new_blocks, const block_const_ptr_list&)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -160,15 +160,15 @@ bool block_service::handle_reorganization(const code& ec, uint64_t fork_point,
     }
 
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
-    BITCOIN_ASSERT(fork_point <= max_uint32);
-    const auto fork_point32 = static_cast<uint32_t>(fork_point);
+    BITCOIN_ASSERT(fork_height <= max_uint32);
+    const auto fork_height32 = static_cast<uint32_t>(fork_height);
 
-    publish_blocks(fork_point32, new_blocks);
+    publish_blocks(fork_height32, new_blocks);
     return true;
 }
 
-void block_service::publish_blocks(uint32_t fork_point,
-    const block_list& blocks)
+void block_service::publish_blocks(uint32_t fork_height,
+    const block_const_ptr_list& blocks)
 {
     if (stopped())
         return;
@@ -194,8 +194,8 @@ void block_service::publish_blocks(uint32_t fork_point,
     }
 
     BITCOIN_ASSERT(blocks.size() <= max_uint32);
-    BITCOIN_ASSERT(fork_point < max_uint32 - blocks.size());
-    auto height = fork_point;
+    BITCOIN_ASSERT(fork_height < max_uint32 - blocks.size());
+    auto height = fork_height;
 
     for (const auto block: blocks)
         publish_block(publisher, height++, block);
@@ -207,7 +207,7 @@ void block_service::publish_blocks(uint32_t fork_point,
 // The payload for block publication is delimited within the zeromq message.
 // This is required for compatability and inconsistent with query payloads.
 void block_service::publish_block(zmq::socket& publisher, uint32_t height,
-    const block_ptr block)
+    block_const_ptr block)
 {
     if (stopped())
         return;

@@ -52,6 +52,10 @@ void BCS_API chain_transaction_fetched(const code& ec,
     const chain::transaction& tx, const message& request,
     send_handler handler);
 
+void BCS_API block_transaction_fetched(const code& ec,
+    bc::message::transaction_message::ptr tx, uint64_t height,
+    const message& request, send_handler handler);
+
 void BCS_API pool_transaction_fetched(const code& ec,
     bc::message::transaction_message::ptr tx, const message& request,
     send_handler handler);

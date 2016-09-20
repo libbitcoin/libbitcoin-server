@@ -86,7 +86,7 @@ private:
         const message& request, send_handler handler);
 
     static void block_header_fetched(const code& ec,
-        const chain::header& block, const message& request,
+        header_const_ptr header, const message& request,
         send_handler handler);
 
     static void fetch_block_transaction_hashes_by_hash(server_node& node,
@@ -95,9 +95,8 @@ private:
     static void fetch_block_transaction_hashes_by_height(server_node& node,
         const message& request, send_handler handler);
 
-    static void block_transaction_hashes_fetched(const code& ec,
-        const hash_list& hashes, const message& request,
-        send_handler handler);
+    static void merkle_block_fetched(const code& ec, merkle_block_ptr block,
+        uint64_t height, const message& request, send_handler handler);
 
     static void transaction_index_fetched(const code& ec, size_t block_height,
         size_t index, const message& request, send_handler handler);

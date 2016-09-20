@@ -46,10 +46,11 @@ void address::fetch_history2(server_node& node, const message& request,
         return;
     }
 
-    // Obtain payment address history from the transaction pool and blockchain.
-    node.pool().fetch_history(address, limit, from_height,
-        std::bind(send_history_result,
-            _1, _2, request, handler));
+    // TODO: implement query on blockchain interface.
+    //////////// Obtain payment address history from the transaction pool and blockchain.
+    //////////node.chain().fetch_full_history(address, limit, from_height,
+    //////////    std::bind(send_history_result,
+    //////////        _1, _2, request, handler));
 }
 
 // v2/v3 (deprecated), used for resubscription, alias for subscribe in v3.
