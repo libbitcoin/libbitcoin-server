@@ -223,7 +223,7 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_block_transaction_hashes, node_);
     ATTACH(blockchain, fetch_last_height, node_);
     ATTACH(blockchain, fetch_transaction, node_);
-    ATTACH(blockchain, fetch_transaction_index, node_);
+    ATTACH(blockchain, fetch_transaction_position, node_);
     ATTACH(blockchain, fetch_spend, node_);
     ATTACH(blockchain, fetch_stealth, node_);
     ATTACH(blockchain, fetch_stealth2, node_);
