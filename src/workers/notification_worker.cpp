@@ -86,7 +86,7 @@ bool notification_worker::start()
             this, _1, _2, _3, _4));
 
     // Subscribe to transaction pool acceptances.
-    node_.subscribe_transaction_pool(
+    node_.subscribe_transaction(
         std::bind(&notification_worker::handle_transaction_pool,
             this, _1, _2, _3));
 
@@ -245,7 +245,7 @@ void notification_worker::send(const route& reply_to,
 
 void notification_worker::send_payment(const route& reply_to, uint32_t id,
     const wallet::payment_address& address, uint32_t height,
-    const hash_digest& block_hash, const chain::transaction& tx)
+    const hash_digest& block_hash, const transaction& tx)
 {
     // [ address.version:1 ]
     // [ address.hash:20 ]
@@ -266,7 +266,7 @@ void notification_worker::send_payment(const route& reply_to, uint32_t id,
 
 void notification_worker::send_stealth(const route& reply_to, uint32_t id,
     uint32_t prefix, uint32_t height, const hash_digest& block_hash,
-    const chain::transaction& tx)
+    const transaction& tx)
 {
     // [ prefix:4 ]
     // [ height:4 ]
@@ -285,7 +285,7 @@ void notification_worker::send_stealth(const route& reply_to, uint32_t id,
 
 void notification_worker::send_address(const route& reply_to, uint32_t id,
     uint8_t sequence, uint32_t height, const hash_digest& block_hash,
-    const chain::transaction& tx)
+    const transaction& tx)
 {
     // [ code:4 ]
     // [ sequence:1 ]
@@ -309,7 +309,7 @@ void notification_worker::send_address(const route& reply_to, uint32_t id,
 
 bool notification_worker::handle_payment(const code& ec,
     const payment_address& address, uint32_t height,
-    const hash_digest& block_hash, const chain::transaction& tx,
+    const hash_digest& block_hash, const transaction& tx,
     const route& reply_to, uint32_t id, const binary& prefix_filter)
 {
     if (ec)
@@ -326,7 +326,7 @@ bool notification_worker::handle_payment(const code& ec,
 
 bool notification_worker::handle_stealth(const code& ec,
     uint32_t prefix, uint32_t height, const hash_digest& block_hash,
-    const chain::transaction& tx, const route& reply_to, uint32_t id,
+    const transaction& tx, const route& reply_to, uint32_t id,
     const binary& prefix_filter)
 {
     if (ec)
@@ -343,7 +343,7 @@ bool notification_worker::handle_stealth(const code& ec,
 
 bool notification_worker::handle_address(const code& ec,
     const binary& field, uint32_t height, const hash_digest& block_hash,
-    const chain::transaction& tx, const route& reply_to, uint32_t id,
+    const transaction& tx, const route& reply_to, uint32_t id,
     const binary& prefix_filter, sequence_ptr sequence)
 {
     if (ec)
@@ -458,7 +458,8 @@ void notification_worker::subscribe_penetration(const route& reply_to,
 // ----------------------------------------------------------------------------
 
 bool notification_worker::handle_blockchain_reorganization(const code& ec,
-    uint64_t fork_point, const block_list& new_blocks, const block_list&)
+    size_t fork_height, const block_const_ptr_list& new_blocks,
+    const block_const_ptr_list&)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -473,15 +474,15 @@ bool notification_worker::handle_blockchain_reorganization(const code& ec,
     }
 
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
-    BITCOIN_ASSERT(fork_point <= max_uint32);
-    const auto fork_point32 = static_cast<uint32_t>(fork_point);
+    BITCOIN_ASSERT(fork_height <= max_uint32);
+    const auto fork_height32 = static_cast<uint32_t>(fork_height);
 
-    notify_blocks(fork_point32, new_blocks);
+    notify_blocks(fork_height32, new_blocks);
     return true;
 }
 
-void notification_worker::notify_blocks(uint32_t fork_point,
-    const block_list& blocks)
+void notification_worker::notify_blocks(uint32_t fork_height,
+    const block_const_ptr_list& blocks)
 {
     if (stopped())
         return;
@@ -507,15 +508,15 @@ void notification_worker::notify_blocks(uint32_t fork_point,
     }
 
     BITCOIN_ASSERT(blocks.size() <= max_uint32);
-    BITCOIN_ASSERT(fork_point < max_uint32 - blocks.size());
-    auto height = fork_point;
+    BITCOIN_ASSERT(fork_height < max_uint32 - blocks.size());
+    auto height = fork_height;
 
     for (const auto block: blocks)
         notify_block(publisher, height++, block);
 }
 
 void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
-    const block::ptr block)
+    block_const_ptr block)
 {
     if (stopped())
         return;
@@ -536,7 +537,7 @@ void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
 // This relies on peers always notifying us of new txs via inv messages.
 
 bool notification_worker::handle_inventory(const code& ec,
-    const bc::message::inventory::ptr packet)
+    inventory_const_ptr packet)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -558,11 +559,11 @@ bool notification_worker::handle_inventory(const code& ec,
     return true;
 }
 
-// Notification (via mempool).
+// Notification (via mempool and blockchain).
 // ----------------------------------------------------------------------------
 
 bool notification_worker::handle_transaction_pool(const code& ec,
-    const point::indexes&, bc::message::transaction_message::ptr tx)
+    const point::indexes&, transaction_const_ptr tx)
 {
     if (stopped() || ec == error::service_stopped)
         return false;

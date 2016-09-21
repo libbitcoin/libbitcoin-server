@@ -52,7 +52,7 @@ transaction_service::transaction_service(zmq::authenticator& authenticator,
 bool transaction_service::start()
 {
     // Subscribe to transaction pool acceptances.
-    node_.subscribe_transaction_pool(
+    node_.subscribe_transaction(
         std::bind(&transaction_service::handle_transaction,
             this, _1, _2, _3));
 
@@ -145,8 +145,8 @@ bool transaction_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // Publish (integral worker).
 // ----------------------------------------------------------------------------
 
-bool transaction_service::handle_transaction(const code& ec, const index_list&,
-    transaction_message::ptr tx)
+bool transaction_service::handle_transaction(const code& ec,
+    const point::indexes&, transaction_const_ptr tx)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -160,12 +160,12 @@ bool transaction_service::handle_transaction(const code& ec, const index_list&,
         return true;
     }
 
-    publish_transaction(*tx);
+    publish_transaction(tx);
     return true;
 }
 
 // [ tx... ]
-void transaction_service::publish_transaction(const transaction& tx)
+void transaction_service::publish_transaction(transaction_const_ptr tx)
 {
     if (stopped())
         return;
@@ -194,8 +194,7 @@ void transaction_service::publish_transaction(const transaction& tx)
         return;
 
     zmq::message broadcast;
-    bc::message::transaction_message tx_msg(tx);
-    broadcast.enqueue(tx_msg.to_data(bc::message::version::level::maximum));
+    broadcast.enqueue(tx->to_data(bc::message::version::level::maximum));
     ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)
@@ -205,7 +204,7 @@ void transaction_service::publish_transaction(const transaction& tx)
     {
         log::warning(LOG_SERVER)
             << "Failed to publish " << security << " transaction ["
-            << encode_hash(tx_msg.hash()) << "] " << ec.message();
+            << encode_hash(tx->hash()) << "] " << ec.message();
         return;
     }
 
@@ -213,7 +212,7 @@ void transaction_service::publish_transaction(const transaction& tx)
     if (settings_.log_requests)
         log::debug(LOG_SERVER)
             << "Published " << security << " transaction ["
-            << encode_hash(tx_msg.hash()) << "]";
+            << encode_hash(tx->hash()) << "]";
 }
 
 } // namespace server

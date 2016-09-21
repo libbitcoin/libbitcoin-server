@@ -73,8 +73,8 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
         << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
 
     node.chain().fetch_transaction(tx_hash,
-        std::bind(chain_transaction_fetched,
-            _1, _2, request, handler));
+        std::bind(block_transaction_fetched,
+            _1, _2, _3, request, handler));
 }
 
 void blockchain::fetch_last_height(server_node& node, const message& request,
@@ -151,15 +151,15 @@ void blockchain::fetch_block_header_by_height(server_node& node,
             _1, _2, request, handler));
 }
 
-void blockchain::block_header_fetched(const code& ec,
-    const chain::header& block, const message& request, send_handler handler)
+void blockchain::block_header_fetched(const code& ec, header_const_ptr header,
+    const message& request, send_handler handler)
 {
     // [ code:4 ]
     // [ block... ]
     const auto result = build_chunk(
     {
         message::to_bytes(ec),
-        block.to_data(false)
+        header->to_data(false)
     });
 
     handler(message(request, result));
@@ -186,9 +186,9 @@ void blockchain::fetch_block_transaction_hashes_by_hash(server_node& node,
 
     auto deserial = make_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
-    node.chain().fetch_block_transaction_hashes(block_hash,
-        std::bind(&blockchain::block_transaction_hashes_fetched,
-            _1, _2, request, handler));
+    node.chain().fetch_merkle_block(block_hash,
+        std::bind(&blockchain::merkle_block_fetched,
+            _1, _2, _3, request, handler));
 }
 
 void blockchain::fetch_block_transaction_hashes_by_height(server_node& node,
@@ -199,27 +199,27 @@ void blockchain::fetch_block_transaction_hashes_by_height(server_node& node,
 
     auto deserial = make_deserializer(data.begin(), data.end());
     const size_t block_height = deserial.read_4_bytes_little_endian();
-    node.chain().fetch_block_transaction_hashes(block_height,
-        std::bind(&blockchain::block_transaction_hashes_fetched,
-            _1, _2, request, handler));
+    node.chain().fetch_merkle_block(block_height,
+        std::bind(&blockchain::merkle_block_fetched,
+            _1, _2, _3, request, handler));
 }
 
-void blockchain::block_transaction_hashes_fetched(const code& ec,
-    const hash_list& hashes, const message& request, send_handler handler)
+void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
+    uint64_t, const message& request, send_handler handler)
 {
     // [ code:4 ]
     // [[ hash:32 ]...]
-    data_chunk result(code_size + hash_size * hashes.size());
+    data_chunk result(code_size + hash_size * block->hashes.size());
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
 
-    for (const auto& tx_hash: hashes)
+    for (const auto& tx_hash: block->hashes)
         serial.write_hash(tx_hash);
 
     handler(message(request, result));
 }
 
-void blockchain::fetch_transaction_index(server_node& node,
+void blockchain::fetch_transaction_position(server_node& node,
     const message& request, send_handler handler)
 {
     const auto& data = request.data();
@@ -233,28 +233,29 @@ void blockchain::fetch_transaction_index(server_node& node,
     auto deserial = make_deserializer(data.begin(), data.end());
     const auto tx_hash = deserial.read_hash();
 
-    node.chain().fetch_transaction_index(tx_hash,
-        std::bind(&blockchain::transaction_index_fetched,
+    node.chain().fetch_transaction_position(tx_hash,
+        std::bind(&blockchain::transaction_position_fetched,
             _1, _2, _3, request, handler));
 }
 
-void blockchain::transaction_index_fetched(const code& ec, size_t block_height,
-    size_t index, const message& request, send_handler handler)
+void blockchain::transaction_position_fetched(const code& ec,
+    size_t tx_position, size_t block_height, const message& request,
+    send_handler handler)
 {
-    BITCOIN_ASSERT(index <= max_uint32);
+    BITCOIN_ASSERT(tx_position <= max_uint32);
     BITCOIN_ASSERT(block_height <= max_uint32);
 
-    auto index32 = static_cast<uint32_t>(index);
+    auto tx_position32 = static_cast<uint32_t>(tx_position);
     auto block_height32 = static_cast<uint32_t>(block_height);
 
     // [ code:4 ]
-    // [ block_height:32 ]
-    // [ tx_index:4 ]
+    // [ block_height:4 ]
+    // [ tx_position:4 ]
     const auto result = build_chunk(
     {
         message::to_bytes(ec),
         to_little_endian(block_height32),
-        to_little_endian(index32)
+        to_little_endian(tx_position32)
     });
 
     handler(message(request, result));

@@ -70,9 +70,7 @@ protected:
     virtual void work();
 
 private:
-    typedef chain::point::indexes index_list;
     typedef std::shared_ptr<uint8_t> sequence_ptr;
-    typedef bc::message::block_message::ptr_list block_list;
 
     typedef notifier<address_key, const code&,
         const wallet::payment_address&, int32_t, const hash_digest&,
@@ -88,16 +86,15 @@ private:
     void purge();
     int32_t purge_interval_milliseconds() const;
 
-    bool handle_blockchain_reorganization(const code& ec, uint64_t fork_point,
-        const block_list& new_blocks, const block_list&);
-    bool handle_transaction_pool(const code& ec, const index_list&,
-        bc::message::transaction_message::ptr tx);
-    bool handle_inventory(const code& ec,
-        const bc::message::inventory::ptr packet);
+    bool handle_blockchain_reorganization(const code& ec, size_t fork_height,
+        const block_const_ptr_list& new_blocks, const block_const_ptr_list&);
+    bool handle_transaction_pool(const code& ec, const chain::point::indexes&,
+        transaction_const_ptr tx);
+    bool handle_inventory(const code& ec, inventory_const_ptr packet);
 
-    void notify_blocks(uint32_t fork_point, const block_list& blocks);
-    void notify_block(socket& peer, uint32_t height,
-        const chain::block::ptr block);
+    void notify_blocks(uint32_t fork_height,
+        const block_const_ptr_list& blocks);
+    void notify_block(socket& peer, uint32_t height, block_const_ptr block);
     void notify_transaction(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
 

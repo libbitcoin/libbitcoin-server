@@ -62,11 +62,9 @@ protected:
     virtual void work();
 
 private:
-    typedef bc::chain::point::indexes index_list;
-
-    bool handle_transaction(const code& ec, const index_list&,
-        bc::message::transaction_message::ptr tx);
-    void publish_transaction(const chain::transaction& tx);
+    bool handle_transaction(const code& ec, const chain::point::indexes&,
+        transaction_const_ptr tx);
+    void publish_transaction(transaction_const_ptr tx);
 
     const bool secure_;
     const server::settings& settings_;

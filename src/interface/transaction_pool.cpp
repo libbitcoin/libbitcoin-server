@@ -49,9 +49,10 @@ void transaction_pool::fetch_transaction(server_node& node,
     log::debug(LOG_SERVER)
         << "transaction_pool.fetch_transaction(" << encode_hash(hash) << ")";
 
-    node.pool().fetch(hash,
-        std::bind(pool_transaction_fetched,
-            _1, _2, request, handler));
+    // TODO: implement query on blockchain interface.
+    ////////////node.chain().fetch_pool_transaction(hash,
+    ////////////    std::bind(pool_transaction_fetched,
+    ////////////        _1, _2, request, handler));
 }
 
 // Broadcast a transaction with penetration subscription.
@@ -84,9 +85,10 @@ void transaction_pool::validate(server_node& node, const message& request,
         return;
     }
 
-    node.pool().validate(tx,
-        std::bind(&transaction_pool::handle_validated,
-            _1, _2, request, handler));
+    // TODO: implement query on blockchain interface.
+    //////////node.chain().validate(tx,
+    //////////    std::bind(&transaction_pool::handle_validated,
+    //////////        _1, _2, request, handler));
 }
 
 void transaction_pool::handle_validated(const code& ec,
