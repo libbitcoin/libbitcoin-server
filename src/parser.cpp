@@ -294,6 +294,11 @@ options_metadata parser::load_settings()
         "Use testnet rules for determination of work required, defaults to false."
     )
     (
+        "blockchain.use_libconsensus",
+        value<bool>(&configured.chain.use_libconsensus),
+        "Use libconsensus for script validation if integrated, defaults to false."
+    )
+    (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&configured.chain.checkpoints),
         "A hash:height checkpoint, multiple entries allowed."
