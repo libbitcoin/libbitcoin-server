@@ -41,7 +41,7 @@ namespace server {
 class notification_worker;
 
 class BCS_API server_node
-  : public node::p2p_node
+  : public node::full_node
 {
 public:
     typedef std::shared_ptr<server_node> ptr;

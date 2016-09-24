@@ -36,7 +36,7 @@ using namespace bc::node;
 using namespace bc::protocol;
 
 server_node::server_node(const configuration& configuration)
-  : p2p_node(configuration),
+  : full_node(configuration),
     configuration_(configuration),
     authenticator_(*this),
     secure_query_service_(authenticator_, *this, true),
@@ -78,7 +78,7 @@ void server_node::run(result_handler handler)
     }
 
     // The handler is invoked on a new thread.
-    p2p_node::run(
+    full_node::run(
         std::bind(&server_node::handle_running,
             this, _1, handler));
 }
@@ -107,14 +107,14 @@ void server_node::handle_running(const code& ec, result_handler handler)
 bool server_node::stop()
 {
     // Suspend new work last so we can use work to clear subscribers.
-    return authenticator_.stop() && p2p_node::stop();
+    return authenticator_.stop() && full_node::stop();
 }
 
 // This must be called from the thread that constructed this class (see join).
 bool server_node::close()
 {
     // Invoke own stop to signal work suspension, then close node and join.
-    return server_node::stop() && p2p_node::close();
+    return server_node::stop() && full_node::close();
 }
 
 // Notification.
