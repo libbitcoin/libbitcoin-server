@@ -96,7 +96,7 @@ private:
         const message& request, send_handler handler);
 
     static void merkle_block_fetched(const code& ec, merkle_block_ptr block,
-        uint64_t height, const message& request, send_handler handler);
+        size_t height, const message& request, send_handler handler);
 
     static void transaction_position_fetched(const code& ec,
         size_t tx_position, size_t block_height, const message& request,

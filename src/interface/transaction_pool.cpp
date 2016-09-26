@@ -102,11 +102,7 @@ void transaction_pool::handle_validated(const code& ec,
     serial.write_error_code(ec);
 
     for (const auto unconfirmed_index: unconfirmed)
-    {
-        BITCOIN_ASSERT(unconfirmed_index <= max_uint32);
-        const auto index32 = static_cast<uint32_t>(unconfirmed_index);
-        serial.write_4_bytes_little_endian(index32);
-    }
+        serial.write_4_bytes_little_endian(unconfirmed_index);
 
     handler(message(request, result));
 }

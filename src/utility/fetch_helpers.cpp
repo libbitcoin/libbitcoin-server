@@ -37,7 +37,7 @@ using namespace bc::wallet;
 // ----------------------------------------------------------------------------
 
 bool unwrap_fetch_history_args(payment_address& address,
-    uint32_t& from_height, const message& request)
+    size_t& from_height, const message& request)
 {
     static constexpr size_t history_args_size = sizeof(uint8_t) +
         short_hash_size + sizeof(uint32_t);
@@ -51,10 +51,11 @@ bool unwrap_fetch_history_args(payment_address& address,
         return false;
     }
 
+    // TODO: add serialization to history_compact.
     auto deserial = make_deserializer(data.begin(), data.end());
     const auto version_byte = deserial.read_byte();
     const auto hash = deserial.read_short_hash();
-    from_height = deserial.read_4_bytes_little_endian();
+    from_height = static_cast<size_t>(deserial.read_4_bytes_little_endian());
     BITCOIN_ASSERT(deserial.iterator() == data.end());
 
     address = payment_address(hash, version_byte);
@@ -72,12 +73,13 @@ void send_history_result(const code& ec, const history_compact::list& history,
     serial.write_error_code(ec);
     BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
+    // TODO: add serialization to history_compact.
     for (const auto& row: history)
     {
         BITCOIN_ASSERT(row.height <= max_uint32);
         serial.write_byte(static_cast<uint8_t>(row.kind));
         serial.write_data(row.point.to_data());
-        serial.write_4_bytes_little_endian(static_cast<uint32_t>(row.height));
+        serial.write_4_bytes_little_endian(row.height);
         serial.write_8_bytes_little_endian(row.value);
     }
 

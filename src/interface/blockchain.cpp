@@ -39,8 +39,8 @@ using namespace bc::wallet;
 void blockchain::fetch_history(server_node& node, const message& request,
     send_handler handler)
 {
-    static constexpr uint64_t limit = 0;
-    uint32_t from_height;
+    static constexpr size_t limit = 0;
+    size_t from_height;
     payment_address address;
 
     if (!unwrap_fetch_history_args(address, from_height, request))
@@ -205,7 +205,7 @@ void blockchain::fetch_block_transaction_hashes_by_height(server_node& node,
 }
 
 void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
-    uint64_t, const message& request, send_handler handler)
+    size_t, const message& request, send_handler handler)
 {
     // [ code:4 ]
     // [[ hash:32 ]...]
@@ -362,7 +362,7 @@ void blockchain::fetch_stealth(server_node& node, const message& request,
     const binary prefix(bit_size, blocks);
 
     // from_height
-    const uint64_t from_height = deserial.read_4_bytes_little_endian();
+    const size_t from_height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_stealth(prefix, from_height,
         std::bind(&blockchain::stealth_fetched,
@@ -419,7 +419,7 @@ void blockchain::fetch_stealth2(server_node& node, const message& request,
     const binary prefix(bit_size, blocks);
 
     // from_height
-    const uint64_t from_height = deserial.read_4_bytes_little_endian();
+    const size_t from_height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_stealth(prefix, from_height,
         std::bind(&blockchain::stealth_fetched2,
