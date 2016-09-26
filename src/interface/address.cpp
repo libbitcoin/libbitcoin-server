@@ -36,8 +36,8 @@ using namespace bc::wallet;
 void address::fetch_history2(server_node& node, const message& request,
     send_handler handler)
 {
-    static constexpr uint64_t limit = 0;
-    uint32_t from_height;
+    static constexpr size_t limit = 0;
+    size_t from_height;
     payment_address address;
 
     if (!unwrap_fetch_history_args(address, from_height, request))
