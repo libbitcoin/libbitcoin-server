@@ -47,7 +47,7 @@ parser::parser(const configuration& defaults)
 }
 
 // Initialize configuration using defaults of the given context.
-parser::parser(const bc::settings& context)
+parser::parser(const bc::config::settings& context)
   : configured(context)
 {
     // A server/node allows 8 inbound connections by default.

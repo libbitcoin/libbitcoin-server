@@ -43,7 +43,7 @@ class BCS_API configuration
   : public node::configuration
 {
 public:
-    configuration(bc::settings context);
+    configuration(bc::config::settings context);
     configuration(const configuration& other);
 
     /// Settings.

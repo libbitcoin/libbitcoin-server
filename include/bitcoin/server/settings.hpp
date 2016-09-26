@@ -36,7 +36,7 @@ class BCS_API settings
 {
 public:
     settings();
-    settings(bc::settings context);
+    settings(bc::config::settings context);
 
     /// Properties.
     uint16_t query_workers;
