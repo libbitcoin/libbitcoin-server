@@ -521,9 +521,9 @@ void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
     if (stopped())
         return;
 
-    const auto block_hash = block->header.hash();
+    const auto block_hash = block->header().hash();
 
-    for (const auto& tx: block->transactions)
+    for (const auto& tx: block->transactions())
     {
         const auto tx_hash = tx.hash();
 
@@ -552,9 +552,9 @@ bool notification_worker::handle_inventory(const code& ec,
     }
 
     // Loop inventories and extract transaction hashes.
-    for (const auto& inventory: packet->inventories)
+    for (const auto& inventory: packet->inventories())
         if (inventory.is_transaction_type())
-            notify_penetration(0, null_hash, inventory.hash);
+            notify_penetration(0, null_hash, inventory.hash());
 
     return true;
 }
@@ -591,14 +591,14 @@ void notification_worker::notify_transaction(uint32_t height,
     static constexpr size_t prefix_bits = sizeof(prefix) * byte_bits;
     static constexpr size_t address_bits = short_hash_size * byte_bits;
 
-    if (stopped() || tx.outputs.empty())
+    if (stopped() || tx.outputs().empty())
         return;
 
     // see data_base::push_inputs
     // Loop inputs and extract payment addresses.
-    for (const auto& input: tx.inputs)
+    for (const auto& input: tx.inputs())
     {
-        const auto address = payment_address::extract(input.script);
+        const auto address = payment_address::extract(input.script());
 
         if (address)
         {
@@ -610,9 +610,9 @@ void notification_worker::notify_transaction(uint32_t height,
 
     // see data_base::push_outputs
     // Loop outputs and extract payment addresses.
-    for (const auto& output: tx.outputs)
+    for (const auto& output: tx.outputs())
     {
-        const auto address = payment_address::extract(output.script);
+        const auto address = payment_address::extract(output.script());
 
         if (address)
         {
@@ -624,10 +624,10 @@ void notification_worker::notify_transaction(uint32_t height,
 
     // see data_base::push_stealth
     // Loop output pairs and extract stealth payments.
-    for (size_t index = 0; index < (tx.outputs.size() - 1); ++index)
+    for (size_t index = 0; index < (tx.outputs().size() - 1); ++index)
     {
-        const auto& ephemeral_script = tx.outputs[index].script;
-        const auto& payment_script = tx.outputs[index + 1].script;
+        const auto& ephemeral_script = tx.outputs()[index].script();
+        const auto& payment_script = tx.outputs()[index + 1].script();
 
         // Try to extract a stealth prefix from the first output.
         // Try to extract the payment address from the second output.

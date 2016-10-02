@@ -226,7 +226,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     {
         log::warning(LOG_SERVER)
             << "Failed to publish " << security << " bloc ["
-            << encode_hash(block->header.hash()) << "] " << ec.message();
+            << encode_hash(block->header().hash()) << "] " << ec.message();
         return;
     }
 
@@ -234,7 +234,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     if (settings_.log_requests)
         log::debug(LOG_SERVER)
             << "Published " << security << " block ["
-            << encode_hash(block->header.hash()) << "]";
+            << encode_hash(block->header().hash()) << "]";
 }
 
 } // namespace server

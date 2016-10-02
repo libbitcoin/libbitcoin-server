@@ -209,11 +209,11 @@ void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
 {
     // [ code:4 ]
     // [[ hash:32 ]...]
-    data_chunk result(code_size + hash_size * block->hashes.size());
+    data_chunk result(code_size + hash_size * block->hashes().size());
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
 
-    for (const auto& tx_hash: block->hashes)
+    for (const auto& tx_hash: block->hashes())
         serial.write_hash(tx_hash);
 
     handler(message(request, result));
