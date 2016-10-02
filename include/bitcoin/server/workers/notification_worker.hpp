@@ -67,7 +67,7 @@ protected:
     virtual bool disconnect(socket& router);
 
     // Implement the service.
-    virtual void work();
+    virtual void work() override;
 
 private:
     typedef std::shared_ptr<uint8_t> sequence_ptr;

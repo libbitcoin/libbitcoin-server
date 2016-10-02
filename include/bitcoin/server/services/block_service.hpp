@@ -60,7 +60,7 @@ protected:
     virtual bool unbind(socket& xpub, socket& xsub);
 
     // Implement the service.
-    virtual void work();
+    virtual void work() override;
 
 private:
     bool handle_reorganization(const code& ec, size_t fork_height,

@@ -59,7 +59,7 @@ protected:
     virtual bool unbind(socket& xpub, socket& xsub);
 
     // Implement the service.
-    virtual void work();
+    virtual void work() override;
 
 private:
     bool handle_transaction(const code& ec, const chain::point::indexes&,
