@@ -132,7 +132,7 @@ options_metadata parser::load_settings()
     (
         "network.threads",
         value<uint32_t>(&configured.network.threads),
-        "The minimum number of threads in the application threadpool, defaults to 50."
+        "The minimum number of threads in the network threadpool, defaults to 50."
     )
     (
         "network.protocol_maximum",
@@ -274,19 +274,19 @@ options_metadata parser::load_settings()
 
     /* [blockchain] */
     (
-        "blockchain.block_pool_capacity",
-        value<uint32_t>(&configured.chain.block_pool_capacity),
-        "The maximum number of orphan blocks in the pool, defaults to 50."
+        "blockchain.threads",
+        value<uint32_t>(&configured.chain.threads),
+        "The number of threads dedicated to block validation, defaults to 8."
     )
     (
-        "blockchain.transaction_pool_capacity",
-        value<uint32_t>(&configured.chain.transaction_pool_capacity),
-        "The maximum number of transactions in the pool, defaults to 2000."
+        "blockchain.priority",
+        value<bool>(&configured.chain.priority),
+        "The number of threads used for block validation, defaults to 8."
     )
     (
-        "blockchain.transaction_pool_consistency",
-        value<bool>(&configured.chain.transaction_pool_consistency),
-        "Enforce consistency between the pool and the blockchain, defaults to false."
+        "blockchain.use_libconsensus",
+        value<bool>(&configured.chain.use_libconsensus),
+        "Use libconsensus for script validation if integrated, defaults to false."
     )
     (
         "blockchain.use_testnet_rules",
@@ -294,9 +294,19 @@ options_metadata parser::load_settings()
         "Use testnet rules for determination of work required, defaults to false."
     )
     (
-        "blockchain.use_libconsensus",
-        value<bool>(&configured.chain.use_libconsensus),
-        "Use libconsensus for script validation if integrated, defaults to false."
+        "blockchain.transaction_pool_consistency",
+        value<bool>(&configured.chain.transaction_pool_consistency),
+        "Enforce consistency between the pool and the blockchain, defaults to false."
+    )
+    (
+        "blockchain.transaction_pool_capacity",
+        value<uint32_t>(&configured.chain.transaction_pool_capacity),
+        "The maximum number of transactions in the pool, defaults to 2000."
+    )
+    (
+        "blockchain.block_pool_capacity",
+        value<uint32_t>(&configured.chain.block_pool_capacity),
+        "The maximum number of orphan blocks in the pool, defaults to 50."
     )
     (
         "blockchain.checkpoint",
