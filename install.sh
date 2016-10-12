@@ -711,14 +711,14 @@ build_all()
     build_from_tarball_boost $BOOST_URL $BOOST_ARCHIVE bzip2 . $PARALLEL "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     build_from_github zeromq libzmq master $PARALLEL ${ZMQ_OPTIONS[@]} "$@"
     build_from_github libbitcoin secp256k1 version4 $PARALLEL ${SECP256K1_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin master $PARALLEL ${BITCOIN_OPTIONS[@]} "$@"
+    build_from_github pmienk libbitcoin logging $PARALLEL ${BITCOIN_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin-consensus version2 $PARALLEL ${BITCOIN_CONSENSUS_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-database master $PARALLEL ${BITCOIN_DATABASE_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-blockchain master $PARALLEL ${BITCOIN_BLOCKCHAIN_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-network master $PARALLEL ${BITCOIN_NETWORK_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-node master $PARALLEL ${BITCOIN_NODE_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-protocol master $PARALLEL ${BITCOIN_PROTOCOL_OPTIONS[@]} "$@"
-    build_from_travis libbitcoin libbitcoin-server master $PARALLEL ${BITCOIN_SERVER_OPTIONS[@]} "$@"
+    build_from_github pmienk libbitcoin-database logging $PARALLEL ${BITCOIN_DATABASE_OPTIONS[@]} "$@"
+    build_from_github pmienk libbitcoin-blockchain logging $PARALLEL ${BITCOIN_BLOCKCHAIN_OPTIONS[@]} "$@"
+    build_from_github pmienk libbitcoin-network logging $PARALLEL ${BITCOIN_NETWORK_OPTIONS[@]} "$@"
+    build_from_github pmienk libbitcoin-node logging $PARALLEL ${BITCOIN_NODE_OPTIONS[@]} "$@"
+    build_from_github pmienk libbitcoin-protocol logging $PARALLEL ${BITCOIN_PROTOCOL_OPTIONS[@]} "$@"
+    build_from_travis pmienk libbitcoin-server logging $PARALLEL ${BITCOIN_SERVER_OPTIONS[@]} "$@"
 }
 
 
