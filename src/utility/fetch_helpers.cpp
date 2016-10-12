@@ -56,7 +56,7 @@ bool unwrap_fetch_history_args(payment_address& address,
     const auto version_byte = deserial.read_byte();
     const auto hash = deserial.read_short_hash();
     from_height = static_cast<size_t>(deserial.read_4_bytes_little_endian());
-    BITCOIN_ASSERT(deserial.iterator() == data.end());
+    ////BITCOIN_ASSERT(deserial.iterator() == data.end());
 
     address = payment_address(hash, version_byte);
     return true;
@@ -71,7 +71,7 @@ void send_history_result(const code& ec, const history_compact::list& history,
     data_chunk result(code_size + row_size * history.size());
     auto serial = make_serializer(result.begin());
     serial.write_error_code(ec);
-    BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
+    ////BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
     // TODO: add serialization to history_compact.
     for (const auto& row: history)
@@ -83,7 +83,7 @@ void send_history_result(const code& ec, const history_compact::list& history,
         serial.write_8_bytes_little_endian(row.value);
     }
 
-    BITCOIN_ASSERT(serial.iterator() == result.end());
+    ////BITCOIN_ASSERT(serial.iterator() == result.end());
 
     handler(message(request, result));
 }

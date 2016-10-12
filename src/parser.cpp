@@ -202,12 +202,12 @@ options_metadata parser::load_settings()
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&configured.network.channel_expiration_minutes),
-        "The maximum age limit for an outbound connection, defaults to 1440."
+        "The age limit for an outbound connection, defaults to 1440."
     )
     (
         "network.channel_germination_seconds",
         value<uint32_t>(&configured.network.channel_germination_seconds),
-        "The maximum time limit for obtaining seed addresses, defaults to 30."
+        "The time limit for obtaining seed addresses, defaults to 30."
     )
     (
         "network.host_pool_capacity",
