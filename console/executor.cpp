@@ -29,6 +29,16 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
+#include <boost/core/null_deleter.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/common.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks.hpp>
+#include <boost/log/support/date_time.hpp>
+#include <boost/smart_ptr/make_shared.hpp>
 #include <bitcoin/server.hpp>
 
 namespace libbitcoin {
@@ -41,6 +51,13 @@ using namespace bc::config;
 using namespace bc::database;
 using namespace bc::network;
 
+namespace logging = boost::log;
+namespace expr = boost::log::expressions;
+namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+
+typedef sinks::synchronous_sink<sinks::text_ostream_backend> text_sink;
+
 static constexpr int initialize_stop = 0;
 static constexpr int directory_exists = 0;
 static constexpr int directory_not_found = 2;
@@ -50,11 +67,22 @@ std::promise<code> executor::stopping_;
 
 executor::executor(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
-  : metadata_(metadata), output_(output),
-    debug_file_(metadata_.configured.network.debug_file.string(), log::append),
-    error_file_(metadata_.configured.network.error_file.string(), log::append)
+  : metadata_(metadata), output_stream_(output), error_stream_(error),
+    debug_file_(metadata_.configured.network.debug_file.string(),
+        std::ofstream::out | std::ofstream::app),
+    error_file_(metadata_.configured.network.error_file.string(),
+        std::ofstream::out | std::ofstream::app)
 {
-    initialize_logging(debug_file_, error_file_, output, error);
+    boost::shared_ptr<std::ostream> console_out(&output_stream_,
+        boost::null_deleter());
+    boost::shared_ptr<std::ostream> console_err(&error_stream_,
+        boost::null_deleter());
+    boost::shared_ptr<bc::ofstream> debug_log(&debug_file_,
+        boost::null_deleter());
+    boost::shared_ptr<bc::ofstream> error_log(&error_file_,
+        boost::null_deleter());
+
+    initialize_logging(debug_log, error_log, console_out, console_err);
     handle_stop(initialize_stop);
 }
 
@@ -67,7 +95,7 @@ void executor::do_help()
     const auto options = metadata_.load_options();
     printer help(options, application_name, BS_INFORMATION_MESSAGE);
     help.initialize();
-    help.commandline(output_);
+    help.commandline(output_stream_);
 }
 
 void executor::do_settings()
@@ -75,12 +103,12 @@ void executor::do_settings()
     const auto settings = metadata_.load_settings();
     printer print(settings, application_name, BS_SETTINGS_MESSAGE);
     print.initialize();
-    print.settings(output_);
+    print.settings(output_stream_);
 }
 
 void executor::do_version()
 {
-    output_ << format(BS_VERSION_MESSAGE) %
+    output_stream_ << format(BS_VERSION_MESSAGE) %
         LIBBITCOIN_SERVER_VERSION %
         LIBBITCOIN_PROTOCOL_VERSION %
         LIBBITCOIN_NODE_VERSION %
@@ -98,7 +126,7 @@ bool executor::do_initchain()
 
     if (create_directories(directory, ec))
     {
-        log::info(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
+        LOG_INFO(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
         // Unfortunately we are still limited to a choice of hardcoded chains.
         const auto genesis = metadata_.configured.chain.use_testnet_rules ?
@@ -106,17 +134,17 @@ bool executor::do_initchain()
 
         const auto result = data_base::initialize(directory, genesis);
 
-        log::info(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
+        LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
         return result;
     }
 
     if (ec.value() == directory_exists)
     {
-        log::error(LOG_SERVER) << format(BS_INITCHAIN_EXISTS) % directory;
+        LOG_ERROR(LOG_SERVER) << format(BS_INITCHAIN_EXISTS) % directory;
         return false;
     }
 
-    log::error(LOG_SERVER) << format(BS_INITCHAIN_NEW) % directory % ec.message();
+    LOG_ERROR(LOG_SERVER) << format(BS_INITCHAIN_NEW) % directory % ec.message();
     return false;
 }
 
@@ -161,7 +189,7 @@ bool executor::run()
 {
     initialize_output();
 
-    log::info(LOG_SERVER) << BS_NODE_STARTING;
+    LOG_INFO(LOG_SERVER) << BS_NODE_STARTING;
 
     if (!verify_directory())
         return false;
@@ -180,13 +208,13 @@ bool executor::run()
     // Wait for stop.
     stopping_.get_future().wait();
 
-    log::info(LOG_SERVER) << BS_NODE_STOPPING;
+    LOG_INFO(LOG_SERVER) << BS_NODE_STOPPING;
 
     // Close must be called from main thread.
     if (node_->close())
-        log::info(LOG_NODE) << BS_NODE_STOPPED;
+        LOG_INFO(LOG_NODE) << BS_NODE_STOPPED;
     else
-        log::info(LOG_NODE) << BS_NODE_STOP_FAIL;
+        LOG_INFO(LOG_NODE) << BS_NODE_STOP_FAIL;
 
     return true;
 }
@@ -196,12 +224,12 @@ void executor::handle_started(const code& ec)
 {
     if (ec)
     {
-        log::error(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
+        LOG_ERROR(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
         stop(ec);
         return;
     }
 
-    log::info(LOG_SERVER) << BS_NODE_SEEDED;
+    LOG_INFO(LOG_SERVER) << BS_NODE_SEEDED;
 
     // This is the beginning of the stop sequence.
     node_->subscribe_stop(
@@ -219,12 +247,12 @@ void executor::handle_running(const code& ec)
 {
     if (ec)
     {
-        log::info(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
+        LOG_INFO(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
         stop(ec);
         return;
     }
 
-    log::info(LOG_SERVER) << BS_NODE_STARTED;
+    LOG_INFO(LOG_SERVER) << BS_NODE_STARTED;
 }
 
 // This is the end of the stop sequence.
@@ -246,7 +274,7 @@ void executor::handle_stop(int code)
     if (code == initialize_stop)
         return;
 
-    log::info(LOG_SERVER) << format(BS_NODE_SIGNALED) % code;
+    LOG_INFO(LOG_SERVER) << format(BS_NODE_SIGNALED) % code;
     stop(error::success);
 }
 
@@ -262,18 +290,18 @@ void executor::stop(const code& ec)
 // Set up logging.
 void executor::initialize_output()
 {
-    log::debug(LOG_SERVER) << BS_LOG_HEADER;
-    log::info(LOG_SERVER) << BS_LOG_HEADER;
-    log::warning(LOG_SERVER) << BS_LOG_HEADER;
-    log::error(LOG_SERVER) << BS_LOG_HEADER;
-    log::fatal(LOG_SERVER) << BS_LOG_HEADER;
+    LOG_DEBUG(LOG_SERVER) << BS_LOG_HEADER;
+    LOG_INFO(LOG_SERVER) << BS_LOG_HEADER;
+    LOG_WARNING(LOG_SERVER) << BS_LOG_HEADER;
+    LOG_ERROR(LOG_SERVER) << BS_LOG_HEADER;
+    LOG_FATAL(LOG_SERVER) << BS_LOG_HEADER;
 
     const auto& file = metadata_.configured.file;
 
     if (file.empty())
-        log::info(LOG_SERVER) << BS_USING_DEFAULT_CONFIG;
+        LOG_INFO(LOG_SERVER) << BS_USING_DEFAULT_CONFIG;
     else
-        log::info(LOG_SERVER) << format(BS_USING_CONFIG_FILE) % file;
+        LOG_INFO(LOG_SERVER) << format(BS_USING_CONFIG_FILE) % file;
 }
 
 // Use missing directory as a sentinel indicating lack of initialization.
@@ -287,12 +315,12 @@ bool executor::verify_directory()
 
     if (ec.value() == directory_not_found)
     {
-        log::error(LOG_SERVER) << format(BS_UNINITIALIZED_CHAIN) % directory;
+        LOG_ERROR(LOG_SERVER) << format(BS_UNINITIALIZED_CHAIN) % directory;
         return false;
     }
 
     const auto message = ec.message();
-    log::error(LOG_SERVER) << format(BS_INITCHAIN_TRY) % directory % message;
+    LOG_ERROR(LOG_SERVER) << format(BS_INITCHAIN_TRY) % directory % message;
     return false;
 }
 
@@ -302,6 +330,66 @@ void executor::set_minimum_threadpool_size()
     metadata_.configured.network.threads =
         std::max(metadata_.configured.network.threads,
             server_node::threads_required(metadata_.configured));
+}
+
+template<typename Stream>
+void executor::add_text_sink(boost::shared_ptr<Stream>& stream)
+{
+    // Construct the sink
+    boost::shared_ptr<text_sink> sink = boost::make_shared<text_sink>();
+
+    // Add a stream to write log to
+    sink->locked_backend()->add_stream(stream);
+
+    sink->set_formatter(expr::stream << "["
+        << expr::format_date_time<boost::posix_time::ptime, char>(
+            log::attributes::timestamp.get_name(), "%Y-%m-%d %H:%M:%S")
+        << "][" << log::attributes::channel
+        << "][" << log::attributes::severity
+        << "]: " << expr::smessage);
+
+    // Register the sink in the logging core
+    logging::core::get()->add_sink(sink);
+}
+
+template<typename Stream, typename FunT>
+void executor::add_text_sink(boost::shared_ptr<Stream>& stream,
+    FunT const& filter)
+{
+    // Construct the sink
+    boost::shared_ptr<text_sink> sink = boost::make_shared<text_sink>();
+
+    // Add a stream to write log to
+    sink->locked_backend()->add_stream(stream);
+
+    sink->set_filter(filter);
+
+    sink->set_formatter(expr::stream << "["
+        << expr::format_date_time<boost::posix_time::ptime, char>(
+            log::attributes::timestamp.get_name(), "%Y-%m-%d %H:%M:%S")
+        << "][" << log::attributes::channel
+        << "][" << log::attributes::severity
+        << "]: " << expr::smessage);
+
+    // Register the sink in the logging core
+    logging::core::get()->add_sink(sink);
+}
+
+void executor::initialize_logging(boost::shared_ptr<bc::ofstream>& debug,
+    boost::shared_ptr<bc::ofstream>& error,
+    boost::shared_ptr<std::ostream>& output_stream,
+    boost::shared_ptr<std::ostream>& error_stream)
+{
+    auto error_filter = (log::attributes::severity == log::severity::warning)
+        || (log::attributes::severity == log::severity::error)
+        || (log::attributes::severity == log::severity::fatal);
+
+    auto info_filter = (log::attributes::severity == log::severity::info);
+
+    add_text_sink(debug);
+    add_text_sink(error, error_filter);
+    add_text_sink(output_stream, info_filter);
+    add_text_sink(output_stream, error_filter);
 }
 
 } // namespace server

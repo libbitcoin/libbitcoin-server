@@ -69,21 +69,21 @@ void query_service::work()
         if (signaled.contains(router.id()) &&
             !forward(router, query_dealer))
         {
-            log::warning(LOG_SERVER)
+            LOG_WARNING(LOG_SERVER)
                 << "Failed to forward from router to query_dealer.";
         }
 
         if (signaled.contains(query_dealer.id()) &&
             !forward(query_dealer, router))
         {
-            log::warning(LOG_SERVER)
+            LOG_WARNING(LOG_SERVER)
                 << "Failed to forward from query_dealer to router.";
         }
 
         if (signaled.contains(notify_dealer.id()) &&
             !forward(notify_dealer, router))
         {
-            log::warning(LOG_SERVER)
+            LOG_WARNING(LOG_SERVER)
                 << "Failed to forward from notify_dealer to router.";
         }
     }
@@ -111,7 +111,7 @@ bool query_service::bind(zmq::socket& router, zmq::socket& query_dealer,
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " query service to "
             << query_service << " : " << ec.message();
         return false;
@@ -121,7 +121,7 @@ bool query_service::bind(zmq::socket& router, zmq::socket& query_dealer,
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " query workers to "
             << query_worker << " : " << ec.message();
         return false;
@@ -131,13 +131,13 @@ bool query_service::bind(zmq::socket& router, zmq::socket& query_dealer,
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " notify workers to "
             << notify_worker << " : " << ec.message();
         return false;
     }
 
-    log::info(LOG_SERVER)
+    LOG_INFO(LOG_SERVER)
         << "Bound " << security << " query service to " << query_service;
     return true;
 }
@@ -152,15 +152,15 @@ bool query_service::unbind(zmq::socket& router, zmq::socket& query_dealer,
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to unbind " << security << " query service.";
 
     if (!query_stop)
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to unbind " << security << " query workers.";
 
     if (!notify_stop)
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to unbind " << security << " notify workers.";
 
     // Don't log stop success.

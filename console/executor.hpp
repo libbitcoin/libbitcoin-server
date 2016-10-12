@@ -22,6 +22,7 @@
 
 #include <future>
 #include <iostream>
+#include <boost/smart_ptr.hpp>
 #include <bitcoin/server.hpp>
 
 namespace libbitcoin {
@@ -41,6 +42,18 @@ public:
     bool menu();
 
 private:
+    static void initialize_logging(boost::shared_ptr<bc::ofstream>& debug,
+        boost::shared_ptr<bc::ofstream>& error,
+        boost::shared_ptr<std::ostream>& output_stream,
+        boost::shared_ptr<std::ostream>& error_stream);
+
+    template<typename Stream>
+    static void add_text_sink(boost::shared_ptr<Stream>& stream);
+
+    template<typename Stream, typename FunT>
+    static void add_text_sink(boost::shared_ptr<Stream>& stream,
+        FunT const& filter);
+
     static void stop(const code& ec);
     static void handle_stop(int code);
 
@@ -62,7 +75,8 @@ private:
     static std::promise<code> stopping_;
 
     parser& metadata_;
-    std::ostream& output_;
+    std::ostream& output_stream_;
+    std::ostream& error_stream_;
     bc::ofstream debug_file_;
     bc::ofstream error_file_;
     server_node::ptr node_;

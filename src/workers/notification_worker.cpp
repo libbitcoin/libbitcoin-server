@@ -168,13 +168,13 @@ bool notification_worker::connect(socket& router)
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to connect " << security << " notification worker to "
             << endpoint << " : " << ec.message();
         return false;
     }
 
-    log::debug(LOG_SERVER)
+    LOG_DEBUG(LOG_SERVER)
         << "Connected " << security << " notification worker to " << endpoint;
     return true;
 }
@@ -187,7 +187,7 @@ bool notification_worker::disconnect(socket& router)
     if (router.stop())
         return true;
 
-    log::error(LOG_SERVER)
+    LOG_ERROR(LOG_SERVER)
         << "Failed to disconnect " << security << " notification worker.";
     return false;
 }
@@ -227,7 +227,7 @@ void notification_worker::send(const route& reply_to,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to connect " << security << " notification worker: "
             << ec.message();
         return;
@@ -238,7 +238,7 @@ void notification_worker::send(const route& reply_to,
     ec = notification.send(notifier);
 
     if (ec && ec != error::service_stopped)
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to send notification to "
             << notification.route().display() << " " << ec.message();
 }
@@ -466,7 +466,7 @@ bool notification_worker::handle_blockchain_reorganization(const code& ec,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failure handling new block: " << ec.message();
 
         // Don't let a failure here prevent prevent future notifications.
@@ -501,7 +501,7 @@ void notification_worker::notify_blocks(uint32_t fork_height,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to connect " << security << " notification worker: "
             << ec.message();
         return;
@@ -544,7 +544,7 @@ bool notification_worker::handle_inventory(const code& ec,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failure handling inventory: " << ec.message();
 
         // Don't let a failure here prevent prevent future notifications.
@@ -570,7 +570,7 @@ bool notification_worker::handle_transaction_pool(const code& ec,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failure handling new transaction: " << ec.message();
 
         // Don't let a failure here prevent future notifications.

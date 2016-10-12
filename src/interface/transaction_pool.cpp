@@ -46,7 +46,7 @@ void transaction_pool::fetch_transaction(server_node& node,
         return;
     }
 
-    log::debug(LOG_SERVER)
+    LOG_DEBUG(LOG_SERVER)
         << "transaction_pool.fetch_transaction(" << encode_hash(hash) << ")";
 
     // TODO: implement query on blockchain interface.

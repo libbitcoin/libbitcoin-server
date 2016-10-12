@@ -102,7 +102,7 @@ bool transaction_service::bind(zmq::socket& xpub, zmq::socket& xsub)
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " transaction service to "
             << service << " : " << ec.message();
         return false;
@@ -112,13 +112,13 @@ bool transaction_service::bind(zmq::socket& xpub, zmq::socket& xsub)
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " transaction workers to "
             << worker << " : " << ec.message();
         return false;
     }
 
-    log::info(LOG_SERVER)
+    LOG_INFO(LOG_SERVER)
         << "Bound " << security << " transaction service to " << service;
     return true;
 }
@@ -131,11 +131,11 @@ bool transaction_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to unbind " << security << " transaction service.";
 
     if (!worker_stop)
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to unbind " << security << " transaction workers.";
 
     // Don't log stop success.
@@ -153,7 +153,7 @@ bool transaction_service::handle_transaction(const code& ec,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failure handling new transaction: " << ec.message();
 
         // Don't let a failure here prevent prevent future notifications.
@@ -184,7 +184,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to connect " << security << " transaction worker: "
             << ec.message();
         return;
@@ -202,7 +202,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to publish " << security << " transaction ["
             << encode_hash(tx->hash()) << "] " << ec.message();
         return;
@@ -210,7 +210,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
 
     // This isn't actually a request, should probably update settings.
     if (settings_.log_requests)
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " transaction ["
             << encode_hash(tx->hash()) << "]";
 }

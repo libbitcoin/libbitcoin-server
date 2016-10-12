@@ -49,7 +49,7 @@ void blockchain::fetch_history(server_node& node, const message& request,
         return;
     }
 
-    log::debug(LOG_SERVER)
+    LOG_DEBUG(LOG_SERVER)
         << "blockchain.fetch_history(" << address.encoded()
         << ", from_height=" << from_height << ")";
 
@@ -69,7 +69,7 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
         return;
     }
 
-    log::debug(LOG_SERVER)
+    LOG_DEBUG(LOG_SERVER)
         << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
 
     node.chain().fetch_transaction(tx_hash,

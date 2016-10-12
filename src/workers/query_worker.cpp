@@ -85,13 +85,13 @@ bool query_worker::connect(zmq::socket& router)
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to connect " << security << " query worker to "
             << endpoint << " : " << ec.message();
         return false;
     }
 
-    log::debug(LOG_SERVER)
+    LOG_DEBUG(LOG_SERVER)
         << "Connected " << security << " query worker to " << endpoint;
     return true;
 }
@@ -104,7 +104,7 @@ bool query_worker::disconnect(zmq::socket& router)
     if (router.stop())
         return true;
 
-    log::error(LOG_SERVER)
+    LOG_ERROR(LOG_SERVER)
         << "Failed to disconnect " << security << " query worker.";
     return false;
 }
@@ -127,7 +127,7 @@ void query_worker::query(zmq::socket& router)
         const auto ec = response.send(router);
 
         if (ec && ec != error::service_stopped)
-            log::warning(LOG_SERVER)
+            LOG_WARNING(LOG_SERVER)
                 << "Failed to send query response to "
                 << response.route().display() << " " << ec.message();
     };
@@ -140,7 +140,7 @@ void query_worker::query(zmq::socket& router)
 
     if (ec)
     {
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Failed to receive query from " << request.route().display()
             << " " << ec.message();
 
@@ -154,7 +154,7 @@ void query_worker::query(zmq::socket& router)
 
     if (handler == command_handlers_.end())
     {
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Invalid query command from " << request.route().display();
 
         sender(message(request, error::not_found));
@@ -162,7 +162,7 @@ void query_worker::query(zmq::socket& router)
     }
 
     if (settings_.log_requests)
-        log::info(LOG_SERVER)
+        LOG_INFO(LOG_SERVER)
             << "Query " << request.command() << " from "
             << request.route().display();
 
