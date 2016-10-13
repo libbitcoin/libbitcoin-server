@@ -93,13 +93,13 @@ bool heartbeat_service::bind(zmq::socket& publisher)
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " heartbeat service to "
             << endpoint << " : " << ec.message();
         return false;
     }
 
-    log::info(LOG_SERVER)
+    LOG_INFO(LOG_SERVER)
         << "Bound " << security << " heartbeat service to " << endpoint;
     return true;
 }
@@ -112,7 +112,7 @@ bool heartbeat_service::unbind(zmq::socket& publisher)
     if (publisher.stop())
         return true;
 
-    log::error(LOG_SERVER)
+    LOG_ERROR(LOG_SERVER)
         << "Failed to disconnect " << security << " heartbeat worker.";
     return false;
 }
@@ -136,7 +136,7 @@ void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to publish " << security << " heartbeat: "
             << ec.message();
         return;
@@ -144,7 +144,7 @@ void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
 
     // This isn't actually a request, should probably update settings.
     if (settings_.log_requests)
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " heartbeat [" << count << "].";
 }
 

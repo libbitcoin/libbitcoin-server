@@ -38,7 +38,7 @@ authenticator::authenticator(server_node& node)
 
     for (const auto& address: settings.client_addresses)
     {
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Allow client address [" << address
             << (address.port() == 0 ? ":*" : "") << "]";
 
@@ -47,7 +47,7 @@ authenticator::authenticator(server_node& node)
 
     for (const auto& public_key: settings.client_public_keys)
     {
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Allow client public key [" << public_key << "]";
 
         allow(public_key);
@@ -60,19 +60,19 @@ bool authenticator::apply(zmq::socket& socket, const std::string& domain,
     // This will fail if there are client keys but no server key.
     if (!zmq::authenticator::apply(socket, domain, secure))
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to apply authentication to socket [" << domain << "]";
         return false;
     }
 
     if (secure)
     {
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Applied curve authentication to socket [" << domain << "]";
     }
     else
     {
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Applied address authentication to socket [" << domain << "]";
     }
 

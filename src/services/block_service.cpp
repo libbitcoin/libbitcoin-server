@@ -101,7 +101,7 @@ bool block_service::bind(zmq::socket& xpub, zmq::socket& xsub)
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " block service to "
             << service << " : " << ec.message();
         return false;
@@ -111,13 +111,13 @@ bool block_service::bind(zmq::socket& xpub, zmq::socket& xsub)
 
     if (ec)
     {
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to bind " << security << " block workers to "
             << worker << " : " << ec.message();
         return false;
     }
 
-    log::info(LOG_SERVER)
+    LOG_INFO(LOG_SERVER)
         << "Bound " << security << " block service to " << service;
     return true;
 }
@@ -130,11 +130,11 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
     const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to unbind " << security << " block service.";
 
     if (!worker_stop)
-        log::error(LOG_SERVER)
+        LOG_ERROR(LOG_SERVER)
             << "Failed to unbind " << security << " block workers.";
 
     // Don't log stop success.
@@ -152,7 +152,7 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failure handling new block: " << ec.message();
 
         // Don't let a failure here prevent prevent future notifications.
@@ -187,7 +187,7 @@ void block_service::publish_blocks(uint32_t fork_height,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to connect " << security << " block worker: "
             << ec.message();
         return;
@@ -224,7 +224,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
 
     if (ec)
     {
-        log::warning(LOG_SERVER)
+        LOG_WARNING(LOG_SERVER)
             << "Failed to publish " << security << " bloc ["
             << encode_hash(block->header().hash()) << "] " << ec.message();
         return;
@@ -232,7 +232,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
 
     // This isn't actually a request, should probably update settings.
     if (settings_.log_requests)
-        log::debug(LOG_SERVER)
+        LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " block ["
             << encode_hash(block->header().hash()) << "]";
 }
