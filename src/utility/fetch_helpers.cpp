@@ -52,7 +52,7 @@ bool unwrap_fetch_history_args(payment_address& address,
     }
 
     // TODO: add serialization to history_compact.
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto version_byte = deserial.read_byte();
     const auto hash = deserial.read_short_hash();
     from_height = static_cast<size_t>(deserial.read_4_bytes_little_endian());
@@ -69,7 +69,7 @@ void send_history_result(const code& ec, const history_compact::list& history,
         sizeof(uint32_t) + sizeof(uint64_t);
 
     data_chunk result(code_size + row_size * history.size());
-    auto serial = make_serializer(result.begin());
+    auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
     ////BITCOIN_ASSERT(serial.iterator() == result.begin() + code_size);
 
@@ -78,7 +78,7 @@ void send_history_result(const code& ec, const history_compact::list& history,
     {
         BITCOIN_ASSERT(row.height <= max_uint32);
         serial.write_byte(static_cast<uint8_t>(row.kind));
-        serial.write_data(row.point.to_data());
+        serial.write_bytes(row.point.to_data());
         serial.write_4_bytes_little_endian(row.height);
         serial.write_8_bytes_little_endian(row.value);
     }
@@ -103,7 +103,7 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
         return false;
     }
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     hash = deserial.read_hash();
     return true;
 }
