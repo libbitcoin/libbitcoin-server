@@ -129,7 +129,7 @@ void blockchain::fetch_block_header_by_hash(server_node& node,
     const auto& data = request.data();
     BITCOIN_ASSERT(data.size() == hash_size);
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
 
     node.chain().fetch_block_header(block_hash,
@@ -143,7 +143,7 @@ void blockchain::fetch_block_header_by_height(server_node& node,
     const auto& data = request.data();
     BITCOIN_ASSERT(data.size() == sizeof(uint32_t));
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     const uint64_t height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_block_header(height,
@@ -184,7 +184,7 @@ void blockchain::fetch_block_transaction_hashes_by_hash(server_node& node,
     const auto& data = request.data();
     BITCOIN_ASSERT(data.size() == hash_size);
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
     node.chain().fetch_merkle_block(block_hash,
         std::bind(&blockchain::merkle_block_fetched,
@@ -197,7 +197,7 @@ void blockchain::fetch_block_transaction_hashes_by_height(server_node& node,
     const auto& data = request.data();
     BITCOIN_ASSERT(data.size() == sizeof(uint32_t));
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     const size_t block_height = deserial.read_4_bytes_little_endian();
     node.chain().fetch_merkle_block(block_height,
         std::bind(&blockchain::merkle_block_fetched,
@@ -210,7 +210,7 @@ void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
     // [ code:4 ]
     // [[ hash:32 ]...]
     data_chunk result(code_size + hash_size * block->hashes().size());
-    auto serial = make_serializer(result.begin());
+    auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
     for (const auto& tx_hash: block->hashes())
@@ -230,7 +230,7 @@ void blockchain::fetch_transaction_position(server_node& node,
         return;
     }
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto tx_hash = deserial.read_hash();
 
     node.chain().fetch_transaction_position(tx_hash,
@@ -310,7 +310,7 @@ void blockchain::fetch_block_height(server_node& node,
         return;
     }
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
     node.chain().fetch_block_height(block_hash,
         std::bind(&blockchain::block_height_fetched,
@@ -345,7 +345,7 @@ void blockchain::fetch_stealth(server_node& node, const message& request,
         return;
     }
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
 
     // number_bits
     const auto bit_size = deserial.read_byte();
@@ -358,7 +358,7 @@ void blockchain::fetch_stealth(server_node& node, const message& request,
     }
 
     // actual bitfield data
-    const auto blocks = deserial.read_data(binary::blocks_size(bit_size));
+    const auto blocks = deserial.read_bytes(binary::blocks_size(bit_size));
     const binary prefix(bit_size, blocks);
 
     // from_height
@@ -378,7 +378,7 @@ void blockchain::stealth_fetched(const code& ec,
     // [ code:4 ]
     // [[ ephemeral_key_hash:32 ][ address_hash:20 ][ tx_hash:32 ]...]
     data_chunk result(code_size + row_size * stealth_results.size());
-    auto serial = make_serializer(result.begin());
+    auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
     for (const auto& row: stealth_results)
@@ -402,7 +402,7 @@ void blockchain::fetch_stealth2(server_node& node, const message& request,
         return;
     }
 
-    auto deserial = make_deserializer(data.begin(), data.end());
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
 
     // number_bits
     const auto bit_size = deserial.read_byte();
@@ -415,7 +415,7 @@ void blockchain::fetch_stealth2(server_node& node, const message& request,
     }
 
     // actual bitfield data
-    const auto blocks = deserial.read_data(binary::blocks_size(bit_size));
+    const auto blocks = deserial.read_bytes(binary::blocks_size(bit_size));
     const binary prefix(bit_size, blocks);
 
     // from_height
@@ -433,7 +433,7 @@ void blockchain::stealth_fetched2(const code& ec,
     // [ code:4 ]
     // [[ tx_hash:32 ]...]
     data_chunk result(code_size + hash_size * stealth_results.size());
-    auto serial = make_serializer(result.begin());
+    auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
     for (const auto& row: stealth_results)

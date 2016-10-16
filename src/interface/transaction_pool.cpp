@@ -98,7 +98,7 @@ void transaction_pool::handle_validated(const code& ec,
     // [ code:4 ]
     // [[ unconfirmed_index:4 ]...]
     data_chunk result(code_size + unconfirmed.size() * index_size);
-    auto serial = make_serializer(result.begin());
+    auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
     for (const auto unconfirmed_index: unconfirmed)
