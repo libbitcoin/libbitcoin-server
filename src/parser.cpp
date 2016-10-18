@@ -257,14 +257,9 @@ options_metadata parser::load_settings()
 
     /* [database] */
     (
-        "database.history_start_height",
-        value<uint32_t>(&configured.database.history_start_height),
-        "The lower limit of spend indexing, defaults to 0."
-    )
-    (
-        "database.stealth_start_height",
-        value<uint32_t>(&configured.database.stealth_start_height),
-        "The lower limit of stealth indexing, defaults to 350000."
+        "database.index_start_height",
+        value<uint32_t>(&configured.database.index_start_height),
+        "The lower limit of address and spend indexing, defaults to 0."
     )
     (
         "database.directory",
