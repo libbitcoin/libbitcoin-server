@@ -35,6 +35,7 @@ namespace server {
 using boost::format;
 using namespace boost;
 using namespace boost::system;
+using namespace bc::chain;
 using namespace bc::config;
 using namespace bc::database;
 using namespace bc::network;
@@ -109,9 +110,10 @@ bool executor::do_initchain()
 
         // Unfortunately we are still limited to a choice of hardcoded chains.
         const auto genesis = metadata_.configured.chain.use_testnet_rules ?
-            chain::block::genesis_testnet() : chain::block::genesis_mainnet();
+            block::genesis_testnet() : block::genesis_mainnet();
 
-        const auto result = data_base::initialize(directory, genesis);
+        auto index_height = metadata_.configured.database.index_start_height;
+        const auto result = data_base(directory, index_height).create(genesis);
 
         LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
         return result;
