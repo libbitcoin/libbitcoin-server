@@ -326,11 +326,6 @@ options_metadata parser::load_settings()
         "The maximum number of connections for initial block download, defaults to 8."
     )
     (
-        "node.initial_flush_size",
-        value<uint32_t>(&configured.node.initial_flush_size),
-        "Flush to disk after this number of blocks during initial block download, defaults to 0 (disabled)."
-    )
-    (
         "node.transaction_pool_refresh",
         value<bool>(&configured.node.transaction_pool_refresh),
         "Refresh the transaction pool on reorganization and channel start, defaults to true."
