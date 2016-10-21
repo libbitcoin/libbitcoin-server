@@ -41,6 +41,8 @@ using namespace bc::database;
 using namespace bc::network;
 using namespace std::placeholders;
 
+namespace keywords = boost::log::keywords;
+
 static const auto application_name = "bs";
 static constexpr int initialize_stop = 0;
 static constexpr int directory_exists = 0;
@@ -53,16 +55,28 @@ executor::executor(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
   : metadata_(metadata), output_(output), error_(error)
 {
-    const auto debug_file = metadata_.configured.network.debug_file.string();
-    const auto error_file = metadata_.configured.network.error_file.string();
+    const log::file_sink_configuration debug_file = {
+        metadata_.configured.network.debug_file.string(),
+        metadata_.configured.network.logs_path.string(),
+        metadata_.configured.network.log_rotation_size,
+        metadata_.configured.network.log_max_files,
+        metadata_.configured.network.log_max_files_size,
+        metadata_.configured.network.log_min_free_space
+    };
 
-    auto debug_log = boost::make_shared<bc::ofstream>(debug_file, mode);
-    auto error_log = boost::make_shared<bc::ofstream>(error_file, mode);
+    const log::file_sink_configuration error_file = {
+        metadata_.configured.network.error_file.string(),
+        metadata_.configured.network.logs_path.string(),
+        metadata_.configured.network.log_rotation_size,
+        metadata_.configured.network.log_max_files,
+        metadata_.configured.network.log_max_files_size,
+        metadata_.configured.network.log_min_free_space
+    };
 
     log::stream console_out(&output_, null_deleter());
     log::stream console_err(&error_, null_deleter());
 
-    log::initialize(debug_log, error_log, console_out, console_err);
+    log::initialize(debug_file, error_file, console_out, console_err);
     handle_stop(initialize_stop);
 }
 
