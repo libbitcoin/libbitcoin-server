@@ -289,6 +289,11 @@ options_metadata parser::load_settings()
         "Use testnet rules for determination of work required, defaults to false."
     )
     (
+        "blockchain.flush_reorganizations",
+        value<bool>(&configured.chain.flush_reorganizations),
+        "Flush each reorganization to disk, defaults to false."
+    )
+    (
         "blockchain.transaction_pool_consistency",
         value<bool>(&configured.chain.transaction_pool_consistency),
         "Enforce consistency between the pool and the blockchain, defaults to false."
@@ -316,9 +321,14 @@ options_metadata parser::load_settings()
         "The time limit for block receipt during initial block download, defaults to 5."
     )
     (
-        "node.download_connections",
-        value<uint32_t>(&configured.node.download_connections),
+        "node.initial_connections",
+        value<uint32_t>(&configured.node.initial_connections),
         "The maximum number of connections for initial block download, defaults to 8."
+    )
+    (
+        "node.initial_flush_size",
+        value<uint32_t>(&configured.node.initial_flush_size),
+        "Flush to disk after this number of blocks during initial block download, defaults to 0 (disabled)."
     )
     (
         "node.transaction_pool_refresh",
