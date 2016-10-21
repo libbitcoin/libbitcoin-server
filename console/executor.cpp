@@ -59,7 +59,7 @@ executor::executor(parser& metadata, std::istream& input,
         metadata_.configured.network.debug_file.string(),
         metadata_.configured.network.logs_path.string(),
         metadata_.configured.network.log_rotation_size,
-        metadata_.configured.network.log_max_files,
+//        metadata_.configured.network.log_max_files,
         metadata_.configured.network.log_max_files_size,
         metadata_.configured.network.log_min_free_space
     };
@@ -68,7 +68,7 @@ executor::executor(parser& metadata, std::istream& input,
         metadata_.configured.network.error_file.string(),
         metadata_.configured.network.logs_path.string(),
         metadata_.configured.network.log_rotation_size,
-        metadata_.configured.network.log_max_files,
+//        metadata_.configured.network.log_max_files,
         metadata_.configured.network.log_max_files_size,
         metadata_.configured.network.log_min_free_space
     };
