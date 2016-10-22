@@ -112,8 +112,8 @@ bool executor::do_initchain()
         const auto genesis = metadata_.configured.chain.use_testnet_rules ?
             block::genesis_testnet() : block::genesis_mainnet();
 
-        auto index_height = metadata_.configured.database.index_start_height;
-        const auto result = data_base(directory, index_height).create(genesis);
+        const auto& settings = metadata_.configured.database;
+        const auto result = data_base(settings).create(genesis);
 
         LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
         return result;
