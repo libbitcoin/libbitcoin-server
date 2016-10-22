@@ -64,7 +64,7 @@ void heartbeat_service::work()
     poller.add(publisher);
 
     // Pick a random counter start, will wrap around at overflow.
-    auto count = static_cast<uint32_t>(pseudo_random());
+    auto count = static_cast<uint32_t>(pseudo_random(0, max_uint32));
 
     // We will not receive on the poller, we use its timer and context stop.
     while (!poller.terminated() && !stopped())
