@@ -235,6 +235,31 @@ options_metadata parser::load_settings()
         "The error log file path, defaults to 'error.log'."
     )
     (
+        "network.logs_path",
+        value<path>(&configured.network.logs_path),
+        "The path to log files not including name, defaults to 'logs'."
+    )
+    (
+        "network.log_rotation_size",
+        value<uintmax_t>(&configured.network.log_rotation_size),
+        "The size at which logs are to be rotated, defaults to 'maximum'."
+    )
+//    (
+//        "network.log_max_files",
+//        value<uintmax_t>(&configured.network.log_max_files),
+//        "The maximum number of logs to persist, defaults to 'maximum'."
+//    )
+    (
+        "network.log_max_files_size",
+        value<uintmax_t>(&configured.network.log_max_files_size),
+        "The cumulative maximum size in bytes of logs, defaults to 'maximum'."
+    )
+    (
+        "network.log_min_free_space",
+        value<uintmax_t>(&configured.network.log_min_free_space),
+        "The minimum free space in bytes to be maintained in the logs_path, defaults to '0'."
+    )
+    (
         "network.self",
         value<config::authority>(&configured.network.self),
         "The advertised public address of this node, defaults to none."
