@@ -55,22 +55,26 @@ executor::executor(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
   : metadata_(metadata), output_(output), error_(error)
 {
-    const log::file_sink_configuration debug_file = {
-        metadata_.configured.network.debug_file.string(),
-        metadata_.configured.network.logs_path.string(),
-        metadata_.configured.network.log_rotation_size,
-//        metadata_.configured.network.log_max_files,
-        metadata_.configured.network.log_max_files_size,
-        metadata_.configured.network.log_min_free_space
+    const auto& network = metadata_.configured.network;
+
+    const log::rotable_file debug_file
+    {
+        network.debug_file,
+        network.archive_directory,
+        network.rotation_size,
+        network.maximum_archive_size,
+        network.minimum_free_space
+        ////network.maximum_archive_files
     };
 
-    const log::file_sink_configuration error_file = {
-        metadata_.configured.network.error_file.string(),
-        metadata_.configured.network.logs_path.string(),
-        metadata_.configured.network.log_rotation_size,
-//        metadata_.configured.network.log_max_files,
-        metadata_.configured.network.log_max_files_size,
-        metadata_.configured.network.log_min_free_space
+    const log::rotable_file error_file
+    {
+        network.error_file,
+        network.archive_directory,
+        network.rotation_size,
+        network.maximum_archive_size,
+        network.minimum_free_space
+        ////network.maximum_archive_files
     };
 
     log::stream console_out(&output_, null_deleter());
