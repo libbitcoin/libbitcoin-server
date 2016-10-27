@@ -63,8 +63,8 @@ executor::executor(parser& metadata, std::istream& input,
         network.archive_directory,
         network.rotation_size,
         network.maximum_archive_size,
-        network.minimum_free_space
-        ////network.maximum_archive_files
+        network.minimum_free_space,
+        network.maximum_archive_files
     };
 
     const log::rotable_file error_file
@@ -73,8 +73,8 @@ executor::executor(parser& metadata, std::istream& input,
         network.archive_directory,
         network.rotation_size,
         network.maximum_archive_size,
-        network.minimum_free_space
-        ////network.maximum_archive_files
+        network.minimum_free_space,
+        network.maximum_archive_files
     };
 
     log::stream console_out(&output_, null_deleter());

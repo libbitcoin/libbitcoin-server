@@ -159,6 +159,11 @@ options_metadata parser::load_settings()
         value<size_t>(&configured.network.minimum_free_space),
         "The minimum free space required in the archive directory, defaults to 0."
     )
+    (
+        "log.maximum_archive_files",
+        value<size_t>(&configured.network.maximum_archive_files),
+        "The maximum number of logs to persist, defaults to 'maximum'."
+    )
     /* [network] */
     (
         "network.threads",
