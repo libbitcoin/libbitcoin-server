@@ -39,7 +39,7 @@ void protocol::broadcast_transaction(server_node& node, const message& request,
     send_handler handler)
 {
     static const auto version = bc::message::version::level::maximum;
-    bc::message::transaction_message tx;
+    bc::message::transaction tx;
 
     if (!tx.from_data(version, request.data()))
     {

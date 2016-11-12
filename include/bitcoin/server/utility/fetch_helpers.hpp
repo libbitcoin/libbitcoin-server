@@ -53,11 +53,11 @@ void BCS_API chain_transaction_fetched(const code& ec,
     send_handler handler);
 
 void BCS_API block_transaction_fetched(const code& ec,
-    bc::message::transaction_message::ptr tx, uint64_t height,
+    bc::message::transaction::ptr tx, uint64_t height,
     const message& request, send_handler handler);
 
 void BCS_API pool_transaction_fetched(const code& ec,
-    bc::message::transaction_message::ptr tx, const message& request,
+    bc::message::transaction::ptr tx, const message& request,
     send_handler handler);
 
 } // namespace server

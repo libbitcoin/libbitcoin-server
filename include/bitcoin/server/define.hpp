@@ -62,13 +62,13 @@ typedef bc::message::inventory::const_ptr inventory_const_ptr;
 typedef bc::message::merkle_block::ptr merkle_block_ptr;
 typedef bc::message::merkle_block::const_ptr merkle_block_const_ptr;
 
-typedef bc::message::block_message::ptr block_ptr;
-typedef bc::message::block_message::const_ptr block_const_ptr;
-typedef bc::message::block_message::ptr_list block_ptr_list;
-typedef bc::message::block_message::const_ptr_list block_const_ptr_list;
+typedef bc::message::block::ptr block_ptr;
+typedef bc::message::block::const_ptr block_const_ptr;
+typedef bc::message::block::ptr_list block_ptr_list;
+typedef bc::message::block::const_ptr_list block_const_ptr_list;
 
-typedef bc::message::transaction_message::ptr transaction_ptr;
-typedef bc::message::transaction_message::const_ptr transaction_const_ptr;
+typedef bc::message::transaction::ptr transaction_ptr;
+typedef bc::message::transaction::const_ptr transaction_const_ptr;
 
 
 } // namespace server
