@@ -164,6 +164,11 @@ options_metadata parser::load_settings()
         value<size_t>(&configured.network.maximum_archive_files),
         "The maximum number of logs to persist, defaults to 'maximum'."
     )
+    (
+        "log.statsd_server",
+        value<config::authority>(&configured.network.statsd_server),
+        "The server to whom statsd statistics are to be sent, defaults to none."
+    )
     /* [network] */
     (
         "network.threads",
