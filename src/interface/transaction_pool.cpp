@@ -32,8 +32,6 @@ namespace libbitcoin {
 namespace server {
 
 using namespace std::placeholders;
-using namespace bc::chain;
-using namespace bc::message;
 
 void transaction_pool::fetch_transaction(server_node& node,
     const message& request, send_handler handler)
@@ -59,7 +57,7 @@ void transaction_pool::fetch_transaction(server_node& node,
 void transaction_pool::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    transaction tx;
+    chain::transaction tx;
 
     if (!tx.from_data(request.data()))
     {
@@ -77,7 +75,7 @@ void transaction_pool::validate(server_node& node, const message& request,
     send_handler handler)
 {
     static const auto version = bc::message::version::level::maximum;
-    const auto tx = std::make_shared<transaction_message>();
+    const auto tx = std::make_shared<bc::message::transaction>();
 
     if (!tx->from_data(version, request.data()))
     {
@@ -92,7 +90,7 @@ void transaction_pool::validate(server_node& node, const message& request,
 }
 
 void transaction_pool::handle_validated(const code& ec,
-    const point::indexes& unconfirmed, const message& request,
+    const chain::point::indexes& unconfirmed, const message& request,
     send_handler handler)
 {
     // [ code:4 ]

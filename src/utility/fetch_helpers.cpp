@@ -29,7 +29,6 @@ namespace libbitcoin {
 namespace server {
 
 using namespace bc::blockchain;
-using namespace bc::chain;
 using namespace bc::message;
 using namespace bc::wallet;
 
@@ -62,8 +61,9 @@ bool unwrap_fetch_history_args(payment_address& address,
     return true;
 }
 
-void send_history_result(const code& ec, const history_compact::list& history,
-    const message& request, send_handler handler)
+void send_history_result(const code& ec,
+    const chain::history_compact::list& history, const message& request,
+    send_handler handler)
 {
     static constexpr size_t row_size = sizeof(uint8_t) + point_size +
         sizeof(uint32_t) + sizeof(uint64_t);
@@ -120,13 +120,13 @@ void chain_transaction_fetched(const code& ec, const chain::transaction& tx,
     handler(message(request, result));
 }
 
-void block_transaction_fetched(const code& ec, transaction_message::ptr tx,
+void block_transaction_fetched(const code& ec, transaction::ptr tx,
     uint64_t, const message& request, send_handler handler)
 {
     chain_transaction_fetched(ec, *tx, request, handler);
 }
 
-void pool_transaction_fetched(const code& ec, transaction_message::ptr tx,
+void pool_transaction_fetched(const code& ec, transaction::ptr tx,
     const message& request, send_handler handler)
 {
     chain_transaction_fetched(ec, *tx, request, handler);
