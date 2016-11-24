@@ -340,11 +340,6 @@ options_metadata parser::load_settings()
         "Use libconsensus for script validation if integrated, defaults to false."
     )
     (
-        "blockchain.use_testnet_rules",
-        value<bool>(&configured.chain.use_testnet_rules),
-        "Use testnet rules for determination of work required, defaults to false."
-    )
-    (
         "blockchain.flush_reorganizations",
         value<bool>(&configured.chain.flush_reorganizations),
         "Flush each reorganization to disk, defaults to false."
@@ -363,6 +358,11 @@ options_metadata parser::load_settings()
         "blockchain.block_pool_capacity",
         value<uint32_t>(&configured.chain.block_pool_capacity),
         "The maximum number of orphan blocks in the pool, defaults to 50."
+    )
+    (
+        "blockchain.enabled_forks",
+        value<uint32_t>(&configured.chain.enabled_forks),
+        "The set of implemented rule forks enabled, defaults to 62 (63 for testnet)."
     )
     (
         "blockchain.checkpoint",
