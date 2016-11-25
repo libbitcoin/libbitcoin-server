@@ -126,9 +126,13 @@ bool executor::do_initchain()
     {
         LOG_INFO(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
-        // Unfortunately we are still limited to a choice of hardcoded chains.
-        const auto genesis = metadata_.configured.chain.use_testnet_rules ?
-            block::genesis_testnet() : block::genesis_mainnet();
+        const auto testnet = script::is_enabled(
+            metadata_.configured.chain.enabled_forks,
+            machine::rule_fork::easy_blocks);
+
+        // Unfortunately we are limited to a choice of hardcoded chains.
+        const auto genesis = testnet ? block::genesis_testnet() :
+            block::genesis_mainnet();
 
         const auto& settings = metadata_.configured.database;
         const auto result = data_base(settings).create(genesis);
