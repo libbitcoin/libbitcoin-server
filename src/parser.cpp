@@ -327,12 +327,12 @@ options_metadata parser::load_settings()
     (
         "blockchain.threads",
         value<uint32_t>(&configured.chain.threads),
-        "The number of threads dedicated to block validation, defaults to 8."
+        "The number of threads dedicated to block validation, defaults to 0 (physical cores)."
     )
     (
         "blockchain.priority",
         value<bool>(&configured.chain.priority),
-        "The number of threads used for block validation, defaults to 8."
+        "Use high thread priority for block validation, defaults to true."
     )
     (
         "blockchain.use_libconsensus",
