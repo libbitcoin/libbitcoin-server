@@ -66,23 +66,15 @@ void protocol::total_connections(server_node& node, const message& request,
         return;
     }
 
-    node.connected_count(
-        std::bind(&protocol::handle_total_connections,
-            _1, request, handler));
-}
-
-void protocol::handle_total_connections(size_t count, const message& request,
-    send_handler handler)
-{
+    const auto count = node.connection_count();
     BITCOIN_ASSERT(count <= max_uint32);
-    const auto total_connections = static_cast<uint32_t>(count);
 
     // [ code:4 ]
     // [ connections:4 ]
     const auto result = build_chunk(
     {
         message::to_bytes(error::success),
-        to_little_endian(total_connections)
+        to_little_endian(static_cast<uint32_t>(count))
     });
 
     handler(message(request, result));

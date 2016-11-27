@@ -40,10 +40,6 @@ public:
     /// Determine the count of all connected peers.
     static void total_connections(server_node& node,
         const message& request, send_handler handler);
-
-private:
-    static void handle_total_connections(size_t count,
-        const message& request, send_handler handler);
 };
 
 } // namespace server
