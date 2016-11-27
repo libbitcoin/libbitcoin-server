@@ -327,22 +327,17 @@ options_metadata parser::load_settings()
     (
         "blockchain.threads",
         value<uint32_t>(&configured.chain.threads),
-        "The number of threads dedicated to block validation, defaults to 8."
+        "The number of threads dedicated to block validation, defaults to 0 (physical cores)."
     )
     (
         "blockchain.priority",
         value<bool>(&configured.chain.priority),
-        "The number of threads used for block validation, defaults to 8."
+        "Use high thread priority for block validation, defaults to true."
     )
     (
         "blockchain.use_libconsensus",
         value<bool>(&configured.chain.use_libconsensus),
         "Use libconsensus for script validation if integrated, defaults to false."
-    )
-    (
-        "blockchain.use_testnet_rules",
-        value<bool>(&configured.chain.use_testnet_rules),
-        "Use testnet rules for determination of work required, defaults to false."
     )
     (
         "blockchain.flush_reorganizations",
@@ -363,6 +358,11 @@ options_metadata parser::load_settings()
         "blockchain.block_pool_capacity",
         value<uint32_t>(&configured.chain.block_pool_capacity),
         "The maximum number of orphan blocks in the pool, defaults to 50."
+    )
+    (
+        "blockchain.enabled_forks",
+        value<uint32_t>(&configured.chain.enabled_forks),
+        "The set of implemented rule forks enabled, defaults to 62 (63 for testnet)."
     )
     (
         "blockchain.checkpoint",
