@@ -90,10 +90,11 @@ bool notification_worker::start()
         std::bind(&notification_worker::handle_transaction_pool,
             this, _1, _2, _3));
 
-    // Subscribe to all inventory messages from all peers.
-    node_.subscribe<bc::message::inventory>(
-        std::bind(&notification_worker::handle_inventory,
-            this, _1, _2));
+    /////// BUGBUG: this API was removed as could not adapt to changing peers.
+    ////// Subscribe to all inventory messages from all peers.
+    ////node_.subscribe<bc::message::inventory>(
+    ////    std::bind(&notification_worker::handle_inventory,
+    ////        this, _1, _2));
 
     return zmq::worker::start();
 }
@@ -536,6 +537,7 @@ void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
 // ----------------------------------------------------------------------------
 // This relies on peers always notifying us of new txs via inv messages.
 
+// BUGBUG: this is disconnected from subscription.
 bool notification_worker::handle_inventory(const code& ec,
     inventory_const_ptr packet)
 {
