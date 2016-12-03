@@ -549,7 +549,7 @@ bool notification_worker::handle_inventory(const code& ec,
         LOG_WARNING(LOG_SERVER)
             << "Failure handling inventory: " << ec.message();
 
-        // Don't let a failure here prevent prevent future notifications.
+        // Don't let a failure here prevent future notifications.
         return true;
     }
 
