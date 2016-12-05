@@ -66,10 +66,16 @@ typedef bc::message::block::ptr block_ptr;
 typedef bc::message::block::const_ptr block_const_ptr;
 typedef bc::message::block::ptr_list block_ptr_list;
 typedef bc::message::block::const_ptr_list block_const_ptr_list;
+typedef bc::message::block::const_ptr_list_ptr block_const_ptr_list_ptr;
+typedef bc::message::block::const_ptr_list_const_ptr
+    block_const_ptr_list_const_ptr;
 
 typedef bc::message::transaction::ptr transaction_ptr;
 typedef bc::message::transaction::const_ptr transaction_const_ptr;
-
+////typedef bc::message::transaction::const_ptr_list_ptr
+////    transaction_const_ptr_list_ptr;
+////typedef bc::message::transaction::const_ptr_list_const_ptr
+////    transaction_const_ptr_list_const_ptr;
 
 } // namespace server
 } // namespace libbitcoin

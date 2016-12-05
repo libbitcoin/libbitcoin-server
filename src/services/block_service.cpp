@@ -24,6 +24,7 @@
 #include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 
@@ -145,7 +146,7 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // ----------------------------------------------------------------------------
 
 bool block_service::handle_reorganization(const code& ec, size_t fork_height,
-    const block_const_ptr_list& new_blocks, const block_const_ptr_list&)
+    block_const_ptr_list_const_ptr new_blocks, block_const_ptr_list_const_ptr)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -168,7 +169,7 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
 }
 
 void block_service::publish_blocks(uint32_t fork_height,
-    const block_const_ptr_list& blocks)
+    block_const_ptr_list_const_ptr blocks)
 {
     if (stopped())
         return;
@@ -193,11 +194,11 @@ void block_service::publish_blocks(uint32_t fork_height,
         return;
     }
 
-    BITCOIN_ASSERT(blocks.size() <= max_uint32);
-    BITCOIN_ASSERT(fork_height < max_uint32 - blocks.size());
+    BITCOIN_ASSERT(blocks->size() <= max_uint32);
+    BITCOIN_ASSERT(fork_height < max_uint32 - blocks->size());
     auto height = fork_height;
 
-    for (const auto block: blocks)
+    for (const auto block: *blocks)
         publish_block(publisher, height++, block);
 }
 

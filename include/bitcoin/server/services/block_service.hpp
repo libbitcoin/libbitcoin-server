@@ -64,9 +64,11 @@ protected:
 
 private:
     bool handle_reorganization(const code& ec, size_t fork_height,
-        const block_const_ptr_list& new_blocks, const block_const_ptr_list&);
+        block_const_ptr_list_const_ptr new_blocks,
+        block_const_ptr_list_const_ptr old_blocks);
+
     void publish_blocks(uint32_t fork_height,
-        const block_const_ptr_list& blocks);
+        block_const_ptr_list_const_ptr blocks);
     void publish_block(socket& publisher, uint32_t height,
         block_const_ptr block);
 
