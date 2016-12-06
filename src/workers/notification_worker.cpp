@@ -25,6 +25,7 @@
 #include <memory>
 #include <string>
 #include <bitcoin/protocol.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/messages/route.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -459,8 +460,8 @@ void notification_worker::subscribe_penetration(const route& reply_to,
 // ----------------------------------------------------------------------------
 
 bool notification_worker::handle_blockchain_reorganization(const code& ec,
-    size_t fork_height, const block_const_ptr_list& new_blocks,
-    const block_const_ptr_list&)
+    size_t fork_height, block_const_ptr_list_const_ptr new_blocks,
+    block_const_ptr_list_const_ptr)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -483,7 +484,7 @@ bool notification_worker::handle_blockchain_reorganization(const code& ec,
 }
 
 void notification_worker::notify_blocks(uint32_t fork_height,
-    const block_const_ptr_list& blocks)
+    block_const_ptr_list_const_ptr blocks)
 {
     if (stopped())
         return;
@@ -508,11 +509,11 @@ void notification_worker::notify_blocks(uint32_t fork_height,
         return;
     }
 
-    BITCOIN_ASSERT(blocks.size() <= max_uint32);
-    BITCOIN_ASSERT(fork_height < max_uint32 - blocks.size());
+    BITCOIN_ASSERT(blocks->size() <= max_uint32);
+    BITCOIN_ASSERT(fork_height < max_uint32 - blocks->size());
     auto height = fork_height;
 
-    for (const auto block: blocks)
+    for (const auto block: *blocks)
         notify_block(publisher, height++, block);
 }
 
