@@ -419,7 +419,7 @@ options_metadata parser::load_settings()
     (
         "server.subscription_limit",
         value<uint32_t>(&configured.server.subscription_limit),
-        "The maximum number of subscriptions, defaults to 100000000."
+        "The maximum number of subscriptions, defaults to 0 (disabled)."
     )
     (
         "server.subscription_expiration_minutes",

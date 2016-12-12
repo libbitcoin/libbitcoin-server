@@ -30,7 +30,7 @@ settings::settings()
   : query_workers(1),
     heartbeat_interval_seconds(5),
     subscription_expiration_minutes(10),
-    subscription_limit(100000000),
+    subscription_limit(0 /*100000000*/),
     log_requests(false),
     secure_only(false),
     block_service_enabled(true),
