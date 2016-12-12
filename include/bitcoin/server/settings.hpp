@@ -39,15 +39,13 @@ public:
     settings(bc::config::settings context);
 
     /// Properties.
-    uint16_t query_workers;
-    uint32_t heartbeat_interval_seconds;
-    uint32_t subscription_expiration_minutes;
-    uint32_t subscription_limit;
     bool log_requests;
     bool secure_only;
 
-    bool query_service_enabled;
-    bool heartbeat_service_enabled;
+    uint16_t query_workers;
+    uint32_t subscription_limit;
+    uint32_t subscription_expiration_minutes;
+    uint32_t heartbeat_interval_seconds;
     bool block_service_enabled;
     bool transaction_service_enabled;
 

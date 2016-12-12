@@ -161,10 +161,7 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
     }
 
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
-    BITCOIN_ASSERT(fork_height <= max_uint32);
-    const auto fork_height32 = static_cast<uint32_t>(fork_height);
-
-    publish_blocks(fork_height32, new_blocks);
+    publish_blocks(safe_unsigned<uint32_t>(fork_height), new_blocks);
     return true;
 }
 
@@ -188,9 +185,10 @@ void block_service::publish_blocks(uint32_t fork_height,
 
     if (ec)
     {
-        LOG_WARNING(LOG_SERVER)
-            << "Failed to connect " << security << " block worker: "
-            << ec.message();
+        // TODO: fix socket so that it can detect context stopped.
+        ////LOG_WARNING(LOG_SERVER)
+        ////    << "Failed to connect " << security << " block worker: "
+        ////    << ec.message();
         return;
     }
 
