@@ -33,7 +33,7 @@ static const auto domain = "heartbeat";
 using namespace bc::config;
 using namespace bc::protocol;
 
-static uint32_t to_milliseconds(uint16_t seconds)
+static inline uint32_t to_milliseconds(uint16_t seconds)
 {
     const auto milliseconds = static_cast<uint32_t>(seconds) * 1000;
     return std::min(milliseconds, max_uint32);

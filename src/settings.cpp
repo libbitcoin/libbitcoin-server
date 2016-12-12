@@ -33,8 +33,6 @@ settings::settings()
     subscription_limit(100000000),
     log_requests(false),
     secure_only(false),
-    query_service_enabled(true),
-    heartbeat_service_enabled(false),
     block_service_enabled(false),
     transaction_service_enabled(false),
     public_query_endpoint("tcp://*:9091"),

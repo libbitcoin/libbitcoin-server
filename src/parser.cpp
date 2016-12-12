@@ -389,26 +389,6 @@ options_metadata parser::load_settings()
 
     /* [server] */
     (
-        "server.query_workers",
-        value<uint16_t>(&configured.server.query_workers),
-        "The number of query worker threads per endpoint, defaults to 1."
-    )
-    (
-        "server.heartbeat_interval_seconds",
-        value<uint32_t>(&configured.server.heartbeat_interval_seconds),
-        "The heartbeat interval, defaults to 5."
-    )
-    (
-        "server.subscription_expiration_minutes",
-        value<uint32_t>(&configured.server.subscription_expiration_minutes),
-        "The subscription expiration time, defaults to 10."
-    )
-    (
-        "server.subscription_limit",
-        value<uint32_t>(&configured.server.subscription_limit),
-        "The maximum number of subscriptions, defaults to 100000000."
-    )
-    (
         "server.log_requests",
         value<bool>(&configured.server.log_requests),
         "Write service requests to the log, defaults to false."
@@ -419,14 +399,24 @@ options_metadata parser::load_settings()
         "Disable public endpoints, defaults to false."
     )
     (
-        "server.query_service_enabled",
-        value<bool>(&configured.server.query_service_enabled),
-        "Enable the query service, defaults to true."
+        "server.query_workers",
+        value<uint16_t>(&configured.server.query_workers),
+        "The number of query worker threads per endpoint, defaults to 1."
     )
     (
-        "server.heartbeat_service_enabled",
-        value<bool>(&configured.server.heartbeat_service_enabled),
-        "Enable the heartbeat service, defaults to false."
+        "server.subscription_limit",
+        value<uint32_t>(&configured.server.subscription_limit),
+        "The maximum number of subscriptions, defaults to 100000000."
+    )
+    (
+        "server.subscription_expiration_minutes",
+        value<uint32_t>(&configured.server.subscription_expiration_minutes),
+        "The subscription expiration time, defaults to 10."
+    )
+    (
+        "server.heartbeat_interval_seconds",
+        value<uint32_t>(&configured.server.heartbeat_interval_seconds),
+        "The heartbeat interval, zero disables service, defaults to 5."
     )
     (
         "server.block_service_enabled",

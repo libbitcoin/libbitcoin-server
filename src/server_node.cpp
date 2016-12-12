@@ -48,7 +48,7 @@ server_node::server_node(const configuration& configuration)
     secure_transaction_service_(authenticator_, *this, true),
     public_transaction_service_(authenticator_, *this, false),
     secure_notification_worker_(authenticator_, *this, true),
-    public_notification_worker_(authenticator_, *this, true)
+    public_notification_worker_(authenticator_, *this, false)
 {
 }
 
@@ -158,11 +158,11 @@ bool server_node::start_services()
 bool server_node::start_authenticator()
 {
     const auto& settings = configuration_.server;
-    const auto heartbeat_interval = settings.heartbeat_interval_seconds;
 
+    // Subscriptions require the query service.
     if ((!settings.server_private_key && settings.secure_only) ||
-        ((!settings.query_service_enabled || settings.query_workers == 0) &&
-        (!settings.heartbeat_service_enabled || heartbeat_interval == 0) &&
+        ((settings.query_workers == 0) &&
+        (settings.heartbeat_interval_seconds == 0) &&
         (!settings.block_service_enabled) &&
         (!settings.transaction_service_enabled)))
         return true;
@@ -174,7 +174,8 @@ bool server_node::start_query_services()
 {
     const auto& settings = configuration_.server;
 
-    if (!settings.query_service_enabled || settings.query_workers == 0)
+    // Subscriptions require the query service.
+    if (settings.query_workers == 0)
         return true;
 
     // Start secure service, query workers and notification workers if enabled.
@@ -196,8 +197,7 @@ bool server_node::start_heartbeat_services()
 {
     const auto& settings = configuration_.server;
 
-    if (!settings.heartbeat_service_enabled ||
-        settings.heartbeat_interval_seconds == 0)
+    if (settings.heartbeat_interval_seconds == 0)
         return true;
 
     // Start secure service if enabled.
@@ -271,43 +271,54 @@ bool server_node::start_query_workers(bool secure)
 uint32_t server_node::threads_required(const configuration& configuration)
 {
     const auto& settings = configuration.server;
-    const auto threads = configuration.network.threads;
-    const auto heartbeat_interval = settings.heartbeat_interval_seconds;
 
     // The network/node requires a minimum of one thread.
     uint32_t required = 1;
 
-    if (settings.query_service_enabled && settings.query_workers > 0)
+    if (settings.query_workers > 0)
     {
         if (settings.server_private_key)
         {
+            // Secure query service.
             ++required;
+
+            // Secure query worker.
             required += settings.query_workers;
-            required += (settings.subscription_limit > 0 ? 4 : 0);
+
+            // Secure notification worker.
+            required += (settings.subscription_limit > 0 ? 1 : 0);
         }
 
         if (!settings.secure_only)
         {
+            // Public query service.
             ++required;
+
+            // Public query worker.
             required += settings.query_workers;
-            required += (settings.subscription_limit > 0 ? 4 : 0);
+
+            // Public notification worker.
+            required += (settings.subscription_limit > 0 ? 1 : 0);
         }
     }
 
-    if (settings.heartbeat_service_enabled && heartbeat_interval > 0)
+    if (settings.heartbeat_interval_seconds > 0)
     {
+        // Secure and/or public heartbeat service.
         required += (settings.server_private_key ? 1 : 0);
         required += (settings.secure_only ? 0 : 1);
     }
 
     if (settings.block_service_enabled)
     {
+        // Secure and/or block publish service.
         required += (settings.server_private_key ? 1 : 0);
         required += (settings.secure_only ? 0 : 1);
     }
 
     if (settings.transaction_service_enabled)
     {
+        // Secure and/or transaction publish service.
         required += (settings.server_private_key ? 1 : 0);
         required += (settings.secure_only ? 0 : 1);
     }

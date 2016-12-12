@@ -86,16 +86,15 @@ private:
     void purge();
     int32_t purge_interval_milliseconds() const;
 
-    bool handle_blockchain_reorganization(const code& ec, size_t fork_height,
+    bool handle_inventories(const code& ec, inventory_const_ptr packet);
+    bool handle_reorganization(const code& ec, size_t fork_height,
         block_const_ptr_list_const_ptr new_blocks,
         block_const_ptr_list_const_ptr old_blocks);
     bool handle_transaction_pool(const code& ec,
         const chain::point::indexes& indexes, transaction_const_ptr tx);
-    bool handle_inventory(const code& ec, inventory_const_ptr packet);
 
-    void notify_blocks(uint32_t fork_height,
-        block_const_ptr_list_const_ptr blocks);
-    void notify_block(socket& peer, uint32_t height, block_const_ptr block);
+    void notify_inventory(const bc::message::inventory_vector& inventory);
+    void notify_block(uint32_t height, block_const_ptr block);
     void notify_transaction(uint32_t height, const hash_digest& block_hash,
         const chain::transaction& tx);
 

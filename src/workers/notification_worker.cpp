@@ -83,7 +83,7 @@ bool notification_worker::start()
 
     // Subscribe to blockchain reorganizations.
     node_.subscribe_blockchain(
-        std::bind(&notification_worker::handle_blockchain_reorganization,
+        std::bind(&notification_worker::handle_reorganization,
             this, _1, _2, _3, _4));
 
     // Subscribe to transaction pool acceptances.
@@ -91,10 +91,10 @@ bool notification_worker::start()
         std::bind(&notification_worker::handle_transaction_pool,
             this, _1, _2, _3));
 
-    /////// BUGBUG: this API was removed as could not adapt to changing peers.
+    ////// BUGBUG: this API was removed as could not adapt to changing peers.
     ////// Subscribe to all inventory messages from all peers.
     ////node_.subscribe<bc::message::inventory>(
-    ////    std::bind(&notification_worker::handle_inventory,
+    ////    std::bind(&notification_worker::handle_inventories,
     ////        this, _1, _2));
 
     return zmq::worker::start();
@@ -153,7 +153,7 @@ int32_t notification_worker::purge_interval_milliseconds() const
 {
     const int64_t minutes = settings_.subscription_expiration_minutes;
     const int64_t milliseconds = minutes * 60 * 1000 / purge_interval_ratio;
-    const auto capped = std::max(milliseconds, static_cast<int64_t>(max_int32));
+    const auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
     return static_cast<int32_t>(capped);
 }
 
@@ -176,7 +176,7 @@ bool notification_worker::connect(socket& router)
         return false;
     }
 
-    LOG_DEBUG(LOG_SERVER)
+    LOG_INFO(LOG_SERVER)
         << "Connected " << security << " notification worker to " << endpoint;
     return true;
 }
@@ -459,7 +459,7 @@ void notification_worker::subscribe_penetration(const route& reply_to,
 // Notification (via blockchain).
 // ----------------------------------------------------------------------------
 
-bool notification_worker::handle_blockchain_reorganization(const code& ec,
+bool notification_worker::handle_reorganization(const code& ec,
     size_t fork_height, block_const_ptr_list_const_ptr new_blocks,
     block_const_ptr_list_const_ptr)
 {
@@ -476,48 +476,15 @@ bool notification_worker::handle_blockchain_reorganization(const code& ec,
     }
 
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
-    BITCOIN_ASSERT(fork_height <= max_uint32);
-    const auto fork_height32 = static_cast<uint32_t>(fork_height);
+    auto fork_height32 = safe_unsigned<uint32_t>(fork_height);
 
-    notify_blocks(fork_height32, new_blocks);
+    for (const auto block: *new_blocks)
+        notify_block(safe_increment(fork_height32), block);
+
     return true;
 }
 
-void notification_worker::notify_blocks(uint32_t fork_height,
-    block_const_ptr_list_const_ptr blocks)
-{
-    if (stopped())
-        return;
-
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? block_service::secure_worker :
-        block_service::public_worker;
-
-    // Notifications are off the pub-sub thread so this must connect back.
-    // This could be optimized by caching the socket as thread static.
-    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
-    const auto ec = publisher.connect(endpoint);
-
-    if (ec == error::service_stopped)
-        return;
-
-    if (ec)
-    {
-        LOG_WARNING(LOG_SERVER)
-            << "Failed to connect " << security << " notification worker: "
-            << ec.message();
-        return;
-    }
-
-    BITCOIN_ASSERT(blocks->size() <= max_uint32);
-    BITCOIN_ASSERT(fork_height < max_uint32 - blocks->size());
-    auto height = fork_height;
-
-    for (const auto block: *blocks)
-        notify_block(publisher, height++, block);
-}
-
-void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
+void notification_worker::notify_block(uint32_t height,
     block_const_ptr block)
 {
     if (stopped())
@@ -528,7 +495,6 @@ void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
     for (const auto& tx: block->transactions())
     {
         const auto tx_hash = tx.hash();
-
         notify_transaction(height, block_hash, tx);
         notify_penetration(height, block_hash, tx_hash);
     }
@@ -539,7 +505,7 @@ void notification_worker::notify_block(zmq::socket& publisher, uint32_t height,
 // This relies on peers always notifying us of new txs via inv messages.
 
 // BUGBUG: this is disconnected from subscription.
-bool notification_worker::handle_inventory(const code& ec,
+bool notification_worker::handle_inventories(const code& ec,
     inventory_const_ptr packet)
 {
     if (stopped() || ec == error::service_stopped)
@@ -557,9 +523,15 @@ bool notification_worker::handle_inventory(const code& ec,
     // Loop inventories and extract transaction hashes.
     for (const auto& inventory: packet->inventories())
         if (inventory.is_transaction_type())
-            notify_penetration(0, null_hash, inventory.hash());
+            notify_inventory(inventory);
 
     return true;
+}
+
+void notification_worker::notify_inventory(
+    const bc::message::inventory_vector& inventory)
+{
+    notify_penetration(0, null_hash, inventory.hash());
 }
 
 // Notification (via mempool and blockchain).
@@ -593,8 +565,9 @@ void notification_worker::notify_transaction(uint32_t height,
     // TODO: move full integer and array constructors into binary.
     static constexpr size_t prefix_bits = sizeof(prefix) * byte_bits;
     static constexpr size_t address_bits = short_hash_size * byte_bits;
+    const auto& outputs = tx.outputs();
 
-    if (stopped() || tx.outputs().empty())
+    if (stopped() || outputs.empty())
         return;
 
     // see data_base::push_inputs
@@ -613,7 +586,7 @@ void notification_worker::notify_transaction(uint32_t height,
 
     // see data_base::push_outputs
     // Loop outputs and extract payment addresses.
-    for (const auto& output: tx.outputs())
+    for (const auto& output: outputs)
     {
         const auto address = payment_address::extract(output.script());
 
@@ -627,10 +600,10 @@ void notification_worker::notify_transaction(uint32_t height,
 
     // see data_base::push_stealth
     // Loop output pairs and extract stealth payments.
-    for (size_t index = 0; index < (tx.outputs().size() - 1); ++index)
+    for (size_t index = 0; index < (outputs.size() - 1); ++index)
     {
-        const auto& ephemeral_script = tx.outputs()[index].script();
-        const auto& payment_script = tx.outputs()[index + 1].script();
+        const auto& ephemeral_script = outputs[index].script();
+        const auto& payment_script = outputs[index + 1].script();
 
         // Try to extract a stealth prefix from the first output.
         // Try to extract the payment address from the second output.

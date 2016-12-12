@@ -91,7 +91,7 @@ bool query_worker::connect(zmq::socket& router)
         return false;
     }
 
-    LOG_DEBUG(LOG_SERVER)
+    LOG_INFO(LOG_SERVER)
         << "Connected " << security << " query worker to " << endpoint;
     return true;
 }
