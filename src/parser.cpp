@@ -256,11 +256,6 @@ options_metadata parser::load_settings()
         "The maximum number of peer hosts in the pool, defaults to 1000."
     )
     (
-        "network.relay_transactions",
-        value<bool>(&configured.network.relay_transactions),
-        "Request that peers relay transactions, defaults to true."
-    )
-    (
         "network.hosts_file",
         value<path>(&configured.network.hosts_file),
         "The peer hosts cache file path, defaults to 'hosts.cache'."
@@ -375,6 +370,12 @@ options_metadata parser::load_settings()
         "node.initial_connections",
         value<uint32_t>(&configured.node.initial_connections),
         "The maximum number of connections for initial block download, defaults to 8."
+    )
+    (
+        /* Internally this network, but it is conceptually a node setting.*/
+        "node.relay_transactions",
+        value<bool>(&configured.network.relay_transactions),
+        "Request that peers relay transactions, defaults to true."
     )
     (
         "node.transaction_pool_refresh",
