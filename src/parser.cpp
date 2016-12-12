@@ -350,6 +350,11 @@ options_metadata parser::load_settings()
         "The maximum number of orphan blocks in the pool, defaults to 50."
     )
     (
+        "blockchain.cache_capacity",
+        value<uint32_t>(&configured.chain.cache_capacity),
+        "The maximum number of entries in the unspent outputs cache, defaults to 0."
+    )
+    (
         "blockchain.enabled_forks",
         value<uint32_t>(&configured.chain.enabled_forks),
         "The set of implemented rule forks enabled, defaults to 62 (63 for testnet)."
