@@ -59,7 +59,6 @@ bool transaction_service::start()
     return zmq::worker::start();
 }
 
-
 // No unsubscribe so must be kept in scope until subscriber stop complete.
 bool transaction_service::stop()
 {
