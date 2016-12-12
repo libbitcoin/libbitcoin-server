@@ -81,15 +81,17 @@ bool notification_worker::start()
     address_subscriber_->start();
     penetration_subscriber_->start();
 
-    // Subscribe to blockchain reorganizations.
-    node_.subscribe_blockchain(
-        std::bind(&notification_worker::handle_reorganization,
-            this, _1, _2, _3, _4));
+    // BUGBUG: this is too costly during sync.
+    ////// Subscribe to blockchain reorganizations.
+    ////node_.subscribe_blockchain(
+    ////    std::bind(&notification_worker::handle_reorganization,
+    ////        this, _1, _2, _3, _4));
 
-    // Subscribe to transaction pool acceptances.
-    node_.subscribe_transaction(
-        std::bind(&notification_worker::handle_transaction_pool,
-            this, _1, _2, _3));
+    // BUGBUG: the transaction pool is not yet connected.
+    ////// Subscribe to transaction pool acceptances.
+    ////node_.subscribe_transaction(
+    ////    std::bind(&notification_worker::handle_transaction_pool,
+    ////        this, _1, _2, _3));
 
     ////// BUGBUG: this API was removed as could not adapt to changing peers.
     ////// Subscribe to all inventory messages from all peers.
