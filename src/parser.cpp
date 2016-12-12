@@ -298,11 +298,6 @@ options_metadata parser::load_settings()
         "Full database files increase by this percentage, defaults to 50."
     )
     (
-        "database.index_start_height",
-        value<uint32_t>(&configured.database.index_start_height),
-        "The lower limit of address and spend indexing, defaults to 0."
-    )
-    (
         "database.block_table_buckets",
         value<uint32_t>(&configured.database.block_table_buckets),
         "Block hash table size, defaults to 650000."
@@ -397,6 +392,12 @@ options_metadata parser::load_settings()
         "server.secure_only",
         value<bool>(&configured.server.secure_only),
         "Disable public endpoints, defaults to false."
+    )
+    (
+        /* Internally this database, but it applies to server and not node.*/
+        "server.index_start_height",
+        value<uint32_t>(&configured.database.index_start_height),
+        "The lower limit of address and spend indexing, defaults to 0."
     )
     (
         "server.query_workers",
