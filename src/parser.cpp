@@ -61,6 +61,12 @@ parser::parser(const bc::config::settings& context)
 
     // A server/node exposes full node (1) network services by default.
     configured.network.services = message::version::service::node_network;
+
+    // A server prioritizes notification memory consumption over block speed.
+    configured.chain.priority = false;
+
+    // A server prioritizes restart after hard shutdown over block speed.
+    configured.chain.flush_reorganizations = true;
 }
 
 options_metadata parser::load_options()
@@ -322,7 +328,7 @@ options_metadata parser::load_settings()
     (
         "blockchain.priority",
         value<bool>(&configured.chain.priority),
-        "Use high thread priority for block validation, defaults to true."
+        "Use high thread priority for block validation, defaults to false."
     )
     (
         "blockchain.use_libconsensus",
@@ -332,7 +338,7 @@ options_metadata parser::load_settings()
     (
         "blockchain.flush_reorganizations",
         value<bool>(&configured.chain.flush_reorganizations),
-        "Flush each reorganization to disk, defaults to false."
+        "Flush each reorganization to disk, defaults to true."
     )
     (
         "blockchain.transaction_pool_consistency",
@@ -428,12 +434,12 @@ options_metadata parser::load_settings()
     (
         "server.block_service_enabled",
         value<bool>(&configured.server.block_service_enabled),
-        "Enable the block publishing service, defaults to false."
+        "Enable the block publishing service, defaults to true."
     )
     (
         "server.transaction_service_enabled",
         value<bool>(&configured.server.transaction_service_enabled),
-        "Enable the transaction publishing service, defaults to false."
+        "Enable the transaction publishing service, defaults to true."
     )
     (
         "server.public_query_endpoint",
