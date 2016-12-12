@@ -390,15 +390,15 @@ options_metadata parser::load_settings()
         "Write service requests to the log, defaults to false."
     )
     (
-        "server.secure_only",
-        value<bool>(&configured.server.secure_only),
-        "Disable public endpoints, defaults to false."
-    )
-    (
         /* Internally this database, but it applies to server and not node.*/
         "server.index_start_height",
         value<uint32_t>(&configured.database.index_start_height),
         "The lower limit of address and spend indexing, defaults to 0."
+    )
+    (
+        "server.secure_only",
+        value<bool>(&configured.server.secure_only),
+        "Disable public endpoints, defaults to false."
     )
     (
         "server.query_workers",
