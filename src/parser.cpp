@@ -318,6 +318,11 @@ options_metadata parser::load_settings()
         value<uint32_t>(&configured.database.history_table_buckets),
         "History hash table size, defaults to 107000000."
     )
+    (
+        "database.cache_capacity",
+        value<uint32_t>(&configured.database.cache_capacity),
+        "The maximum number of entries in the unspent outputs cache, defaults to 0."
+    )
 
     /* [blockchain] */
     (
@@ -354,11 +359,6 @@ options_metadata parser::load_settings()
         "blockchain.block_pool_capacity",
         value<uint32_t>(&configured.chain.block_pool_capacity),
         "The maximum number of orphan blocks in the pool, defaults to 50."
-    )
-    (
-        "blockchain.cache_capacity",
-        value<uint32_t>(&configured.chain.cache_capacity),
-        "The maximum number of entries in the unspent outputs cache, defaults to 0."
     )
     (
         "blockchain.enabled_forks",
