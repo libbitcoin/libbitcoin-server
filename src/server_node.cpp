@@ -132,17 +132,17 @@ void server_node::subscribe_address(const route& reply_to, uint32_t id,
             .subscribe_address(reply_to, id, prefix_filter, type);
 }
 
-// Subscribe to transaction penetration notifications.
-void server_node::subscribe_penetration(const route& reply_to, uint32_t id,
-    const hash_digest& tx_hash)
-{
-    if (reply_to.secure)
-        secure_notification_worker_
-            .subscribe_penetration(reply_to, id, tx_hash);
-    else
-        public_notification_worker_
-            .subscribe_penetration(reply_to, id, tx_hash);
-}
+////// Subscribe to transaction penetration notifications.
+////void server_node::subscribe_penetration(const route& reply_to, uint32_t id,
+////    const hash_digest& tx_hash)
+////{
+////    if (reply_to.secure)
+////        secure_notification_worker_
+////            .subscribe_penetration(reply_to, id, tx_hash);
+////    else
+////        public_notification_worker_
+////            .subscribe_penetration(reply_to, id, tx_hash);
+////}
 
 // Services.
 // ----------------------------------------------------------------------------

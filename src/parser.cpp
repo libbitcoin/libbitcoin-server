@@ -61,6 +61,12 @@ parser::parser(const bc::config::settings& context)
 
     // A server/node exposes full node (1) network services by default.
     configured.network.services = message::version::service::node_network;
+
+    // A server prioritizes notification memory consumption over block speed.
+    configured.chain.priority = false;
+
+    // A server prioritizes restart after hard shutdown over block speed.
+    configured.chain.flush_reorganizations = true;
 }
 
 options_metadata parser::load_options()
@@ -322,7 +328,7 @@ options_metadata parser::load_settings()
     (
         "blockchain.priority",
         value<bool>(&configured.chain.priority),
-        "Use high thread priority for block validation, defaults to true."
+        "Use high thread priority for block validation, defaults to false."
     )
     (
         "blockchain.use_libconsensus",
@@ -332,7 +338,7 @@ options_metadata parser::load_settings()
     (
         "blockchain.flush_reorganizations",
         value<bool>(&configured.chain.flush_reorganizations),
-        "Flush each reorganization to disk, defaults to false."
+        "Flush each reorganization to disk, defaults to true."
     )
     (
         "blockchain.transaction_pool_consistency",
@@ -348,6 +354,11 @@ options_metadata parser::load_settings()
         "blockchain.block_pool_capacity",
         value<uint32_t>(&configured.chain.block_pool_capacity),
         "The maximum number of orphan blocks in the pool, defaults to 50."
+    )
+    (
+        "blockchain.cache_capacity",
+        value<uint32_t>(&configured.chain.cache_capacity),
+        "The maximum number of entries in the unspent outputs cache, defaults to 0."
     )
     (
         "blockchain.enabled_forks",
@@ -390,15 +401,15 @@ options_metadata parser::load_settings()
         "Write service requests to the log, defaults to false."
     )
     (
-        "server.secure_only",
-        value<bool>(&configured.server.secure_only),
-        "Disable public endpoints, defaults to false."
-    )
-    (
         /* Internally this database, but it applies to server and not node.*/
         "server.index_start_height",
         value<uint32_t>(&configured.database.index_start_height),
         "The lower limit of address and spend indexing, defaults to 0."
+    )
+    (
+        "server.secure_only",
+        value<bool>(&configured.server.secure_only),
+        "Disable public endpoints, defaults to false."
     )
     (
         "server.query_workers",
@@ -408,7 +419,7 @@ options_metadata parser::load_settings()
     (
         "server.subscription_limit",
         value<uint32_t>(&configured.server.subscription_limit),
-        "The maximum number of subscriptions, defaults to 100000000."
+        "The maximum number of subscriptions, defaults to 0 (disabled)."
     )
     (
         "server.subscription_expiration_minutes",
@@ -423,12 +434,12 @@ options_metadata parser::load_settings()
     (
         "server.block_service_enabled",
         value<bool>(&configured.server.block_service_enabled),
-        "Enable the block publishing service, defaults to false."
+        "Enable the block publishing service, defaults to true."
     )
     (
         "server.transaction_service_enabled",
         value<bool>(&configured.server.transaction_service_enabled),
-        "Enable the transaction publishing service, defaults to false."
+        "Enable the transaction publishing service, defaults to true."
     )
     (
         "server.public_query_endpoint",

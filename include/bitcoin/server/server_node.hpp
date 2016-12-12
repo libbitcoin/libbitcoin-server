@@ -88,9 +88,9 @@ public:
     virtual void subscribe_address(const route& reply_to, uint32_t id,
         const binary& prefix_filter, chain::subscribe_type type);
 
-    /// Subscribe to transaction penetration notifications.
-    virtual void subscribe_penetration(const route& reply_to, uint32_t id,
-        const hash_digest& tx_hash);
+    /////// Subscribe to transaction penetration notifications.
+    ////virtual void subscribe_penetration(const route& reply_to, uint32_t id,
+    ////    const hash_digest& tx_hash);
 
 private:
     void handle_running(const code& ec, result_handler handler);

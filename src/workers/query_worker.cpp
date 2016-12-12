@@ -122,7 +122,7 @@ void query_worker::query(zmq::socket& router)
 
     // TODO: rewrite the serial blockchain interface to avoid callbacks.
     // We are using a closure vs. bind to take advantage of move arg syntax.
-    const auto sender = [&router](message&& response)
+    const auto sender = [&router](message& response)
     {
         const auto ec = response.send(router);
 
@@ -212,8 +212,8 @@ void query_worker::attach(const std::string& command,
 // Interface class.method names must match protocol (do not change).
 void query_worker::attach_interface()
 {
-    ATTACH(address, renew, node_);
-    ATTACH(address, subscribe, node_);
+    ////ATTACH(address, renew, node_);
+    ////ATTACH(address, subscribe, node_);
     ATTACH(address, subscribe2, node_);
     ATTACH(address, unsubscribe2, node_);
     ATTACH(address, fetch_history2, node_);
