@@ -315,9 +315,9 @@ options_metadata parser::load_settings()
 
     /* [blockchain] */
     (
-        "blockchain.threads",
-        value<uint32_t>(&configured.chain.threads),
-        "The number of threads dedicated to block validation, defaults to 0 (physical cores)."
+        "blockchain.cores",
+        value<uint32_t>(&configured.chain.cores),
+        "The number of cores dedicated to block validation, defaults to 0 (physical cores)."
     )
     (
         "blockchain.priority",
