@@ -574,7 +574,7 @@ void notification_worker::notify_transaction(uint32_t height,
     // Loop inputs and extract payment addresses.
     for (const auto& input: tx.inputs())
     {
-        const auto address = payment_address::extract(input.script());
+        const auto address = input.address();
 
         if (address)
         {
@@ -588,7 +588,7 @@ void notification_worker::notify_transaction(uint32_t height,
     // Loop outputs and extract payment addresses.
     for (const auto& output: outputs)
     {
-        const auto address = payment_address::extract(output.script());
+        const auto address = output.address();
 
         if (address)
         {
@@ -603,12 +603,12 @@ void notification_worker::notify_transaction(uint32_t height,
     for (size_t index = 0; index < (outputs.size() - 1); ++index)
     {
         const auto& ephemeral_script = outputs[index].script();
-        const auto& payment_script = outputs[index + 1].script();
+        const auto& payment_output = outputs[index + 1];
 
         // Try to extract a stealth prefix from the first output.
         // Try to extract the payment address from the second output.
-        if (to_stealth_prefix(prefix, ephemeral_script) &&
-            payment_address::extract(payment_script))
+        if (payment_output.address() && 
+            to_stealth_prefix(prefix, ephemeral_script))
         {
             const binary field(prefix_bits, to_little_endian(prefix));
             notify_address(field, height, block_hash, tx);
