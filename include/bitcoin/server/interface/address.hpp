@@ -36,14 +36,6 @@ public:
     static void fetch_history2(server_node& node,
         const message& request, send_handler handler);
 
-    /// Alias for subscribe, preserved for backward compatability.
-    static void renew(server_node& node, const message& request,
-        send_handler handler);
-
-    /// Subscribe to payment or stealth address notifications by prefix.
-    static void subscribe(server_node& node, const message& request,
-        send_handler handler);
-
     /// Subscribe to payment and stealth address notifications by prefix.
     static void subscribe2(server_node& node, const message& request,
         send_handler handler);
@@ -53,9 +45,6 @@ public:
         send_handler handler);
 
 private:
-    static bool unwrap_subscribe_args(binary& prefix_filter,
-        chain::subscribe_type& type, const message& request);
-
     static bool unwrap_subscribe2_args(binary& prefix_filter,
         const message& request);
 };
