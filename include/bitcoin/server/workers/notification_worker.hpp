@@ -54,7 +54,7 @@ public:
 
     /// Subscribe to address and stealth prefix notifications.
     virtual void subscribe_address(const route& reply_to, uint32_t id,
-        const binary& prefix_filter, chain::subscribe_type type);
+        const binary& prefix_filter, bool unsubscribe);
 
     /////// Subscribe to transaction penetration notifications.
     ////virtual void subscribe_penetration(const route& reply_to, uint32_t id,

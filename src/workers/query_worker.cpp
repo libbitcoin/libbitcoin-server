@@ -198,8 +198,8 @@ void query_worker::attach(const std::string& command,
 // address.fetch_history was present in v1 (obelisk) and v2 (server).
 // address.fetch_history was called by client v1 (sx) and v2 (bx).
 //-----------------------------------------------------------------------------
-// address.renew is deprecated in v3.
-// address.subscribe is deprecated in v3.
+// address.renew is obsoleted in v3.
+// address.subscribe is obsoleted in v3.
 // address.subscribe2 is new in v3, also call for renew.
 // address.unsubscribe2 is new in v3 (there was never an address.unsubscribe).
 //-----------------------------------------------------------------------------
