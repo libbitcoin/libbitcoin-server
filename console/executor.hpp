@@ -118,7 +118,7 @@ private:
     "libbitcoin-blockchain: %4%\n" \
     "libbitcoin:            %5%"
 #define BS_LOG_HEADER \
-    "================= startup =================="
+    "================= startup %1% =================="
 
 } // namespace server
 } // namespace libbitcoin
