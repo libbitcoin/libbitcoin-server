@@ -299,11 +299,17 @@ void executor::stop(const code& ec)
 // Set up logging.
 void executor::initialize_output()
 {
-    // TODO: move to bc utility.
-    const auto time = std::time(nullptr);
-    const auto local = std::put_time(std::localtime(&time), "%c");
+    // TODO: move to bc::log.
+    // std::strftime is required because gcc doesn't implement std::put_time.
+    const auto local_time = []()
+    {
+        char buffer[24];
+        const auto time = std::time(nullptr);
+        std::strftime(buffer, sizeof(buffer), "%c", std::localtime(&time));
+        return std::string(buffer);
+    };
 
-    const auto header = format(BS_LOG_HEADER) % local;
+    const auto header = format(BS_LOG_HEADER) % local_time();
     LOG_DEBUG(LOG_SERVER) << header;
     LOG_INFO(LOG_SERVER) << header;
     LOG_WARNING(LOG_SERVER) << header;
