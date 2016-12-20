@@ -20,14 +20,11 @@
 #include "executor.hpp"
 
 #include <csignal>
-#include <ctime>
 #include <functional>
 #include <future>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <string>
 #include <boost/core/null_deleter.hpp>
 #include <bitcoin/server.hpp>
 
@@ -299,16 +296,6 @@ void executor::stop(const code& ec)
 // Set up logging.
 void executor::initialize_output()
 {
-    // TODO: move to bc::log.
-    // std::strftime is required because gcc doesn't implement std::put_time.
-    const auto local_time = []()
-    {
-        char buffer[24];
-        const auto time = std::time(nullptr);
-        std::strftime(buffer, sizeof(buffer), "%c", std::localtime(&time));
-        return std::string(buffer);
-    };
-
     const auto header = format(BS_LOG_HEADER) % local_time();
     LOG_DEBUG(LOG_SERVER) << header;
     LOG_INFO(LOG_SERVER) << header;
