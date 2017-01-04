@@ -346,11 +346,6 @@ options_metadata parser::load_settings()
         "Flush each reorganization to disk, defaults to true."
     )
     (
-        "blockchain.transaction_pool_consistency",
-        value<bool>(&configured.chain.transaction_pool_consistency),
-        "Enforce consistency between the pool and the blockchain, defaults to false."
-    )
-    (
         "blockchain.transaction_pool_capacity",
         value<uint32_t>(&configured.chain.transaction_pool_capacity),
         "The maximum number of transactions in the pool, defaults to 2000."
@@ -358,7 +353,12 @@ options_metadata parser::load_settings()
     (
         "blockchain.block_pool_capacity",
         value<uint32_t>(&configured.chain.block_pool_capacity),
-        "The maximum number of orphan blocks in the pool, defaults to 50."
+        "The maximum number of blocks in the pool, defaults to 50."
+    )
+    (
+        "blockchain.block_version",
+        value<uint32_t>(&configured.chain.block_version),
+        "The block version for block creation and transaction pool validation, defaults to 4."
     )
     (
         "blockchain.enabled_forks",
