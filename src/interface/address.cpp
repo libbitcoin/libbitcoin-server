@@ -33,6 +33,7 @@ using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::wallet;
 
+// BUGBUG: requires tx pool query combination.
 void address::fetch_history2(server_node& node, const message& request,
     send_handler handler)
 {
@@ -46,11 +47,10 @@ void address::fetch_history2(server_node& node, const message& request,
         return;
     }
 
-    // TODO: implement query on blockchain interface.
-    //////////// Obtain payment address history from the transaction pool and blockchain.
-    //////////node.chain().fetch_full_history(address, limit, from_height,
-    //////////    std::bind(send_history_result,
-    //////////        _1, _2, request, handler));
+    // Obtain payment address history from the transaction pool and blockchain.
+    node.chain().fetch_history(address, limit, from_height,
+        std::bind(send_history_result,
+            _1, _2, request, handler));
 }
 
 // v3 eliminates the subscription type, which we map to 'unspecified'.
