@@ -90,8 +90,7 @@ private:
     bool handle_reorganization(const code& ec, size_t fork_height,
         block_const_ptr_list_const_ptr new_blocks,
         block_const_ptr_list_const_ptr old_blocks);
-    bool handle_transaction_pool(const code& ec,
-        const chain::point::indexes& indexes, transaction_const_ptr tx);
+    bool handle_transaction_pool(const code& ec, transaction_const_ptr tx);
 
     ////void notify_inventory(const bc::message::inventory_vector& inventory);
     void notify_block(uint32_t height, block_const_ptr block);

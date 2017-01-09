@@ -206,8 +206,10 @@ void query_worker::attach(const std::string& command,
 ///protocol.fetch_stealth is deprecated in v3.
 // protocol.fetch_stealth2 is new in v3.
 //-----------------------------------------------------------------------------
-// blockchain.broadcast_transaction is deprecated in v3 (deferred).
-// transaction_pool.broadcast (with radar) is new in v3 (deferred).
+// transaction_pool.validate is obsoleted in v3.
+// transaction_pool.validate2 is new in v3.
+// blockchain.broadcast_transaction is deprecated in v3.
+// transaction_pool.broadcast (with radar) is new in v3.x (not implemented).
 //=============================================================================
 // Interface class.method names must match protocol (do not change).
 void query_worker::attach_interface()
@@ -228,7 +230,8 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_stealth, node_);
     ATTACH(blockchain, fetch_stealth2, node_);
     ATTACH(transaction_pool, fetch_transaction, node_);
-    ATTACH(transaction_pool, validate, node_);
+    ////ATTACH(transaction_pool, validate, node_);
+    ATTACH(transaction_pool, validate2, node_);
     ////ATTACH(transaction_pool, broadcast, node_);
     ATTACH(protocol, broadcast_transaction, node_);
     ATTACH(protocol, total_connections, node_);

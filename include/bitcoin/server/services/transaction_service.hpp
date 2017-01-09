@@ -62,8 +62,7 @@ protected:
     virtual void work() override;
 
 private:
-    bool handle_transaction(const code& ec, const chain::point::indexes&,
-        transaction_const_ptr tx);
+    bool handle_transaction(const code& ec, transaction_const_ptr tx);
     void publish_transaction(transaction_const_ptr tx);
 
     const bool secure_;

@@ -54,7 +54,7 @@ bool transaction_service::start()
     // Subscribe to transaction pool acceptances.
     node_.subscribe_transaction(
         std::bind(&transaction_service::handle_transaction,
-            this, _1, _2, _3));
+            this, _1, _2));
 
     return zmq::worker::start();
 }
@@ -145,7 +145,7 @@ bool transaction_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // ----------------------------------------------------------------------------
 
 bool transaction_service::handle_transaction(const code& ec,
-    const point::indexes&, transaction_const_ptr tx)
+    transaction_const_ptr tx)
 {
     if (stopped() || ec == error::service_stopped)
         return false;

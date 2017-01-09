@@ -82,7 +82,7 @@ bool notification_worker::start()
     // Subscribe to transaction pool acceptances.
     node_.subscribe_transaction(
         std::bind(&notification_worker::handle_transaction_pool,
-            this, _1, _2, _3));
+            this, _1, _2));
 
     ////// BUGBUG: this API was removed as could not adapt to changing peers.
     ////// Subscribe to all inventory messages from all peers.
@@ -407,7 +407,7 @@ void notification_worker::notify_block(uint32_t height,
 // ----------------------------------------------------------------------------
 
 bool notification_worker::handle_transaction_pool(const code& ec,
-    const point::indexes&, transaction_const_ptr tx)
+    transaction_const_ptr tx)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
