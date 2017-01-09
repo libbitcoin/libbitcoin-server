@@ -42,12 +42,11 @@ public:
         send_handler handler);
 
     /// Validate a transaction against the transaction pool and blockchain.
-    static void validate(server_node& node, const message& request,
+    static void validate2(server_node& node, const message& request,
         send_handler handler);
 
 private:
-    static void handle_validated(const code& ec,
-        const chain::point::indexes& unconfirmed, const message& request,
+    static void handle_validated2(const code& ec, const message& request,
         send_handler handler);
 };
 

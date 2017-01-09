@@ -74,8 +74,7 @@ void transaction_pool::broadcast(server_node& node, const message& request,
 }
 
 // BUGBUG: reconnect to tx pool when complete.
-// NOTE: the format of this response changed in v3 (send only code on error).
-void transaction_pool::validate(server_node& node, const message& request,
+void transaction_pool::validate2(server_node& node, const message& request,
     send_handler handler)
 {
     static const auto version = bc::message::version::level::maximum;
@@ -90,24 +89,16 @@ void transaction_pool::validate(server_node& node, const message& request,
     // TODO: implement query on blockchain interface.
     //////////node.chain().validate(tx,
     //////////    std::bind(&transaction_pool::handle_validated,
-    //////////        _1, _2, request, handler));
+    //////////        _1, request, handler));
     handler(message(request, error::not_implemented));
 }
 
-void transaction_pool::handle_validated(const code& ec,
-    const chain::point::indexes& unconfirmed, const message& request,
-    send_handler handler)
+// TODO: update client and explorer.
+void transaction_pool::handle_validated2(const code& ec,
+    const message& request, send_handler handler)
 {
-    // [ code:4 ]
-    // [[ unconfirmed_index:4 ]...]
-    data_chunk result(code_size + unconfirmed.size() * index_size);
-    auto serial = make_unsafe_serializer(result.begin());
-    serial.write_error_code(ec);
-
-    for (const auto unconfirmed_index: unconfirmed)
-        serial.write_4_bytes_little_endian(unconfirmed_index);
-
-    handler(message(request, result));
+    // Returns validation error or error::success.
+    handler(message(request, ec));
 }
 
 } // namespace server
