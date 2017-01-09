@@ -33,6 +33,7 @@ namespace server {
 
 using namespace std::placeholders;
 
+// BUGBUG: reconnect to tx pool when complete.
 void transaction_pool::fetch_transaction(server_node& node,
     const message& request, send_handler handler)
 {
@@ -51,8 +52,10 @@ void transaction_pool::fetch_transaction(server_node& node,
     ////////////node.chain().fetch_pool_transaction(hash,
     ////////////    std::bind(pool_transaction_fetched,
     ////////////        _1, _2, request, handler));
+    handler(message(request, error::not_implemented));
 }
 
+// BUGBUG: reconnect to tx pool when complete.
 // Broadcast a transaction with penetration subscription.
 void transaction_pool::broadcast(server_node& node, const message& request,
     send_handler handler)
@@ -65,11 +68,12 @@ void transaction_pool::broadcast(server_node& node, const message& request,
         return;
     }
 
-    // TODO: conditionally subscribe to penetration notifications.
     // TODO: broadcast transaction to receiving peers.
-    handler(message(request, error::operation_failed));
+    // TODO: conditionally subscribe to penetration notifications.
+    handler(message(request, error::not_implemented));
 }
 
+// BUGBUG: reconnect to tx pool when complete.
 // NOTE: the format of this response changed in v3 (send only code on error).
 void transaction_pool::validate(server_node& node, const message& request,
     send_handler handler)
@@ -87,6 +91,7 @@ void transaction_pool::validate(server_node& node, const message& request,
     //////////node.chain().validate(tx,
     //////////    std::bind(&transaction_pool::handle_validated,
     //////////        _1, _2, request, handler));
+    handler(message(request, error::not_implemented));
 }
 
 void transaction_pool::handle_validated(const code& ec,
