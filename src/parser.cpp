@@ -156,24 +156,24 @@ options_metadata parser::load_settings()
         "The size at which a log is archived, defaults to 0 (disabled)."
     )
     (
-        "log.maximum_archive_size",
-        value<size_t>(&configured.network.maximum_archive_size),
-        "The maximum combined size of archived logs, defaults to 4294967296."
-    )
-    (
         "log.minimum_free_space",
         value<size_t>(&configured.network.minimum_free_space),
         "The minimum free space required in the archive directory, defaults to 0."
     )
     (
-        "log.maximum_archive_files",
-        value<size_t>(&configured.network.maximum_archive_files),
-        "The maximum number of logs to persist, defaults to 'maximum'."
+        "log.maximum_archive_size",
+        value<size_t>(&configured.network.maximum_archive_size),
+        "The maximum combined size of archived logs, defaults to 0 (maximum)."
     )
     (
-        "log.statsd_server",
-        value<config::authority>(&configured.network.statsd_server),
-        "The server to whom statsd statistics are to be sent, defaults to none."
+        "log.maximum_archive_files",
+        value<size_t>(&configured.network.maximum_archive_files),
+        "The maximum number of logs to archive, defaults to 0 (maximum)."
+    )
+    (
+        "log.statistics_server",
+        value<config::authority>(&configured.network.statistics_server),
+        "The address of the statistics collection server, defaults to none."
     )
     /* [network] */
     (
@@ -351,9 +351,9 @@ options_metadata parser::load_settings()
         "The maximum number of transactions in the pool, defaults to 2000."
     )
     (
-        "blockchain.block_pool_capacity",
-        value<uint32_t>(&configured.chain.block_pool_capacity),
-        "The maximum number of blocks in the pool, defaults to 50."
+        "blockchain.reorganization_limit",
+        value<uint32_t>(&configured.chain.reorganization_limit),
+        "The maximum reorganization depth, defaults to 0 (unlimited)."
     )
     (
         "blockchain.block_version",
