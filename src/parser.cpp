@@ -353,7 +353,7 @@ options_metadata parser::load_settings()
     (
         "blockchain.reorganization_limit",
         value<uint32_t>(&configured.chain.reorganization_limit),
-        "The maximum reorganization depth, defaults to 0 (unlimited)."
+        "The maximum reorganization depth, defaults to 256 (0 for unlimited)."
     )
     (
         "blockchain.block_version",
