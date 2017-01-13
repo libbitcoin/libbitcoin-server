@@ -410,14 +410,19 @@ options_metadata parser::load_settings()
 
     /* [node] */
     (
-        "node.block_timeout_seconds",
-        value<uint32_t>(&configured.node.block_timeout_seconds),
-        "The time limit for block receipt during initial block download, defaults to 5."
+        "node.sync_peers",
+        value<uint32_t>(&configured.node.sync_peers),
+        "The maximum number of initial block download peers, defaults to 0 (physical cores)."
     )
     (
-        "node.initial_connections",
-        value<uint32_t>(&configured.node.initial_connections),
-        "The maximum number of connections for initial block download, defaults to 8."
+        "node.sync_timeout_seconds",
+        value<uint32_t>(&configured.node.sync_timeout_seconds),
+        "The time limit for block response during initial block download, defaults to 5."
+    )
+    (
+        "node.minimum_fee_satoshis",
+        value<uint64_t>(&configured.node.minimum_fee_satoshis),
+        "The minimum fee required for transaction acceptance, defaults to 0."
     )
     (
         /* Internally this network, but it is conceptually a node setting.*/
@@ -426,9 +431,9 @@ options_metadata parser::load_settings()
         "Request that peers relay transactions, defaults to true."
     )
     (
-        "node.transaction_pool_refresh",
-        value<bool>(&configured.node.transaction_pool_refresh),
-        "Refresh the transaction pool on reorganization and channel start, defaults to true."
+        "node.refresh_transactions",
+        value<bool>(&configured.node.refresh_transactions),
+        "Request transactions on each channel start, defaults to true."
     )
 
     /* [server] */
