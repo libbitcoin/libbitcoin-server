@@ -204,7 +204,7 @@ bool executor::run()
 
     // Initialize broadcast to statistics server if configured.
     log::initialize_statsd(node_->thread_pool(),
-        metadata_.configured.network.statsd_server);
+        metadata_.configured.network.statistics_server);
 
     // The callback may be returned on the same thread.
     node_->start(
