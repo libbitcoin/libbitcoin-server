@@ -361,14 +361,51 @@ options_metadata parser::load_settings()
         "The block version for block creation and transaction pool validation, defaults to 4."
     )
     (
-        "blockchain.enabled_forks",
-        value<uint32_t>(&configured.chain.enabled_forks),
-        "The set of implemented rule forks enabled, defaults to 62 (63 for testnet)."
-    )
-    (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&configured.chain.checkpoints),
         "A hash:height checkpoint, multiple entries allowed."
+    )
+
+    /* [fork] */
+    (
+        "fork.easy_blocks",
+        value<bool>(&configured.chain.easy_blocks),
+        "Allow minimum difficulty blocks, defaults to false (use true for testnet)."
+    )
+    (
+        "fork.bip16",
+        value<bool>(&configured.chain.bip16),
+        "Add pay-to-script-hash processing, defaults to true (soft fork)."
+    )
+    (
+        "fork.bip30",
+        value<bool>(&configured.chain.bip30),
+        "Disallow collision of unspent transaction hashes, defaults to true (hard fork)."
+    )
+    (
+        "fork.bip34",
+        value<bool>(&configured.chain.bip34),
+        "Coinbase input must include block height, defaults to true (soft fork)."
+    )
+    (
+        "fork.bip66",
+        value<bool>(&configured.chain.bip66),
+        "Require strict signature encoding, defaults to true (soft fork)."
+    )
+    (
+        "fork.bip65",
+        value<bool>(&configured.chain.bip65),
+        "Add check locktime verify op code, defaults to true (soft fork)."
+    )
+    (
+        "fork.allow_collisions",
+        value<bool>(&configured.chain.allow_collisions),
+        "Assume transaction hash collisions cannot happen, defaults to false (hard fork)."
+    )
+    (
+        "fork.deep_freeze",
+        value<bool>(&configured.chain.deep_freeze),
+        "Assume bip34, bip65, and bip66 activation if enabled, defaults to false (hard fork)."
     )
 
     /* [node] */
