@@ -125,9 +125,7 @@ bool executor::do_initchain()
     {
         LOG_INFO(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
-        const auto testnet = script::is_enabled(
-            metadata_.configured.chain.enabled_forks,
-            machine::rule_fork::easy_blocks);
+        const auto testnet = metadata_.configured.chain.easy_blocks;
 
         // Unfortunately we are limited to a choice of hardcoded chains.
         const auto genesis = testnet ? block::genesis_testnet() :
