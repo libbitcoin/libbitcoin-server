@@ -271,9 +271,10 @@ void executor::handle_stopped(const code& ec)
 void executor::handle_stop(int code)
 {
     // Reinitialize after each capture to prevent hard shutdown.
+    // Do not capture failure signals as calling stop can cause flush lock file
+    // to clear due to the aborted thread dropping the flush lock mutex.
     std::signal(SIGINT, handle_stop);
     std::signal(SIGTERM, handle_stop);
-    std::signal(SIGABRT, handle_stop);
 
     if (code == initialize_stop)
         return;
