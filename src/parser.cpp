@@ -415,9 +415,16 @@ options_metadata parser::load_settings()
         "The time limit for block response during initial block download, defaults to 5."
     )
     (
+        /* Internally this blockchain, but it is conceptually a node setting.*/
         "node.minimum_fee_satoshis",
-        value<uint64_t>(&configured.node.minimum_fee_satoshis),
-        "The minimum fee required for transaction acceptance, defaults to 0."
+        value<uint64_t>(&configured.chain.minimum_fee_satoshis),
+        "The minimum fee required for transaction acceptance, defaults to 1."
+    )
+    (
+        /* Internally this blockchain, but it is conceptually a node setting.*/
+        "node.reject_conflicts",
+        value<bool>(&configured.chain.reject_conflicts),
+        "Retain only the first seen of conflicting transactions, defaults to true."
     )
     (
         /* Internally this network, but it is conceptually a node setting.*/
