@@ -53,8 +53,8 @@
 namespace libbitcoin {
 namespace server {
 
-typedef bc::message::header_message::ptr header_ptr;
-typedef bc::message::header_message::const_ptr header_const_ptr;
+typedef bc::message::header::ptr header_ptr;
+typedef bc::message::header::const_ptr header_const_ptr;
 
 typedef bc::message::inventory::ptr inventory_ptr;
 typedef bc::message::inventory::const_ptr inventory_const_ptr;
