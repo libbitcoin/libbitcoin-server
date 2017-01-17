@@ -50,34 +50,4 @@
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 
-namespace libbitcoin {
-namespace server {
-
-typedef bc::message::header::ptr header_ptr;
-typedef bc::message::header::const_ptr header_const_ptr;
-
-typedef bc::message::inventory::ptr inventory_ptr;
-typedef bc::message::inventory::const_ptr inventory_const_ptr;
-
-typedef bc::message::merkle_block::ptr merkle_block_ptr;
-typedef bc::message::merkle_block::const_ptr merkle_block_const_ptr;
-
-typedef bc::message::block::ptr block_ptr;
-typedef bc::message::block::const_ptr block_const_ptr;
-typedef bc::message::block::ptr_list block_ptr_list;
-typedef bc::message::block::const_ptr_list block_const_ptr_list;
-typedef bc::message::block::const_ptr_list_ptr block_const_ptr_list_ptr;
-typedef bc::message::block::const_ptr_list_const_ptr
-    block_const_ptr_list_const_ptr;
-
-typedef bc::message::transaction::ptr transaction_ptr;
-typedef bc::message::transaction::const_ptr transaction_const_ptr;
-////typedef bc::message::transaction::const_ptr_list_ptr
-////    transaction_const_ptr_list_ptr;
-////typedef bc::message::transaction::const_ptr_list_const_ptr
-////    transaction_const_ptr_list_const_ptr;
-
-} // namespace server
-} // namespace libbitcoin
-
 #endif
