@@ -398,9 +398,9 @@ options_metadata parser::load_settings()
         "Assume transaction hash collisions cannot happen, defaults to false (hard fork)."
     )
     (
-        "fork.deep_freeze",
-        value<bool>(&configured.chain.deep_freeze),
-        "Assume bip34, bip65, and bip66 activation if enabled, defaults to false (hard fork)."
+        "fork.bip90",
+        value<bool>(&configured.chain.bip90),
+        "Assume bip34, bip65, and bip66 activation if enabled, defaults to true (hard fork)."
     )
 
     /* [node] */
