@@ -415,6 +415,11 @@ options_metadata parser::load_settings()
         "The time limit for block response during initial block download, defaults to 5."
     )
     (
+        "node.block_poll_seconds",
+        value<uint32_t>(&configured.node.block_poll_seconds),
+        "The time period for block polling after initial block download, defaults to 1."
+    )
+    (
         /* Internally this blockchain, but it is conceptually a node setting.*/
         "node.minimum_fee_satoshis",
         value<uint64_t>(&configured.chain.minimum_fee_satoshis),
