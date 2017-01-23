@@ -66,7 +66,7 @@ parser::parser(const bc::config::settings& context)
     configured.chain.priority = false;
 
     // A server prioritizes restart after hard shutdown over block speed.
-    configured.chain.flush_reorganizations = true;
+    configured.chain.flush_writes = true;
 }
 
 options_metadata parser::load_options()
@@ -341,9 +341,9 @@ options_metadata parser::load_settings()
         "Use libconsensus for script validation if integrated, defaults to false."
     )
     (
-        "blockchain.flush_reorganizations",
-        value<bool>(&configured.chain.flush_reorganizations),
-        "Flush each reorganization to disk, defaults to true."
+        "blockchain.flush_writes",
+        value<bool>(&configured.chain.flush_writes),
+        "Flush each write to disk, defaults to true."
     )
     (
         "blockchain.reorganization_limit",
