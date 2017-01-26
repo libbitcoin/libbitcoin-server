@@ -66,7 +66,7 @@ parser::parser(const bc::config::settings& context)
     configured.chain.priority = false;
 
     // A server prioritizes restart after hard shutdown over block speed.
-    configured.chain.flush_writes = true;
+    configured.database.flush_writes = true;
 }
 
 options_metadata parser::load_options()
@@ -294,6 +294,11 @@ options_metadata parser::load_settings()
         "The blockchain database directory, defaults to 'blockchain'."
     )
     (
+        "database.flush_writes",
+        value<bool>(&configured.database.flush_writes),
+        "Flush each write to disk, defaults to true."
+    )
+    (
         "database.file_growth_rate",
         value<uint16_t>(&configured.database.file_growth_rate),
         "Full database files increase by this percentage, defaults to 50."
@@ -339,11 +344,6 @@ options_metadata parser::load_settings()
         "blockchain.use_libconsensus",
         value<bool>(&configured.chain.use_libconsensus),
         "Use libconsensus for script validation if integrated, defaults to false."
-    )
-    (
-        "blockchain.flush_writes",
-        value<bool>(&configured.chain.flush_writes),
-        "Flush each write to disk, defaults to true."
     )
     (
         "blockchain.reorganization_limit",
