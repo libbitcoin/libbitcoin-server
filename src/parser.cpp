@@ -417,7 +417,7 @@ options_metadata parser::load_settings()
     (
         "node.block_poll_seconds",
         value<uint32_t>(&configured.node.block_poll_seconds),
-        "The time period for block polling after initial block download, defaults to 1."
+        "The time period for block polling after initial block download, defaults to 10 (0 disables)."
     )
     (
         /* Internally this blockchain, but it is conceptually a node setting.*/
