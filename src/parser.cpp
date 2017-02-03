@@ -249,7 +249,7 @@ options_metadata parser::load_settings()
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&configured.network.channel_expiration_minutes),
-        "The age limit for an outbound connection, defaults to 1440."
+        "The age limit for any connection, defaults to 1440."
     )
     (
         "network.channel_germination_seconds",
