@@ -393,11 +393,6 @@ options_metadata parser::load_settings()
         "Add check locktime verify op code, defaults to true (soft fork)."
     )
     (
-        "fork.allow_collisions",
-        value<bool>(&configured.chain.allow_collisions),
-        "Assume transaction hash collisions cannot happen, defaults to false (hard fork)."
-    )
-    (
         "fork.bip90",
         value<bool>(&configured.chain.bip90),
         "Assume bip34, bip65, and bip66 activation if enabled, defaults to true (hard fork)."
