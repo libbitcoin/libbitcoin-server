@@ -72,7 +72,8 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
     LOG_DEBUG(LOG_SERVER)
         << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
 
-    node.chain().fetch_transaction(tx_hash,
+    // The response is restricted to confirmed transactions (backward compat).
+    node.chain().fetch_transaction(tx_hash, true,
         std::bind(block_transaction_fetched,
             _1, _2, _3, request, handler));
 }
@@ -233,7 +234,8 @@ void blockchain::fetch_transaction_position(server_node& node,
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto tx_hash = deserial.read_hash();
 
-    node.chain().fetch_transaction_position(tx_hash,
+    // The response is restricted to confirmed transactions (backward compat).
+    node.chain().fetch_transaction_position(tx_hash, false,
         std::bind(&blockchain::transaction_position_fetched,
             _1, _2, _3, request, handler));
 }

@@ -249,7 +249,7 @@ options_metadata parser::load_settings()
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&configured.network.channel_expiration_minutes),
-        "The age limit for an outbound connection, defaults to 1440."
+        "The age limit for any connection, defaults to 1440."
     )
     (
         "network.channel_germination_seconds",
@@ -393,11 +393,6 @@ options_metadata parser::load_settings()
         "Add check locktime verify op code, defaults to true (soft fork)."
     )
     (
-        "fork.allow_collisions",
-        value<bool>(&configured.chain.allow_collisions),
-        "Assume transaction hash collisions cannot happen, defaults to false (hard fork)."
-    )
-    (
         "fork.bip90",
         value<bool>(&configured.chain.bip90),
         "Assume bip34, bip65, and bip66 activation if enabled, defaults to true (hard fork)."
@@ -417,7 +412,7 @@ options_metadata parser::load_settings()
     (
         "node.block_poll_seconds",
         value<uint32_t>(&configured.node.block_poll_seconds),
-        "The time period for block polling after initial block download, defaults to 10 (0 disables)."
+        "The time period for block polling after initial block download, defaults to 1 (0 disables)."
     )
     (
         /* Internally this blockchain, but it is conceptually a node setting.*/
@@ -425,12 +420,12 @@ options_metadata parser::load_settings()
         value<uint64_t>(&configured.chain.minimum_fee_satoshis),
         "The minimum fee required for transaction acceptance, defaults to 1."
     )
-    (
-        /* Internally this blockchain, but it is conceptually a node setting.*/
-        "node.reject_conflicts",
-        value<bool>(&configured.chain.reject_conflicts),
-        "Retain only the first seen of conflicting transactions, defaults to true."
-    )
+    ////(
+    ////    /* Internally this blockchain, but it is conceptually a node setting.*/
+    ////    "node.reject_conflicts",
+    ////    value<bool>(&configured.chain.reject_conflicts),
+    ////    "Retain only the first seen of conflicting transactions, defaults to true."
+    ////)
     (
         /* Internally this network, but it is conceptually a node setting.*/
         "node.relay_transactions",
