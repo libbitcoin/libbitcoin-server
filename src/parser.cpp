@@ -412,7 +412,7 @@ options_metadata parser::load_settings()
     (
         "node.block_poll_seconds",
         value<uint32_t>(&configured.node.block_poll_seconds),
-        "The time period for block polling after initial block download, defaults to 10 (0 disables)."
+        "The time period for block polling after initial block download, defaults to 1 (0 disables)."
     )
     (
         /* Internally this blockchain, but it is conceptually a node setting.*/
@@ -420,12 +420,12 @@ options_metadata parser::load_settings()
         value<uint64_t>(&configured.chain.minimum_fee_satoshis),
         "The minimum fee required for transaction acceptance, defaults to 1."
     )
-    (
-        /* Internally this blockchain, but it is conceptually a node setting.*/
-        "node.reject_conflicts",
-        value<bool>(&configured.chain.reject_conflicts),
-        "Retain only the first seen of conflicting transactions, defaults to true."
-    )
+    ////(
+    ////    /* Internally this blockchain, but it is conceptually a node setting.*/
+    ////    "node.reject_conflicts",
+    ////    value<bool>(&configured.chain.reject_conflicts),
+    ////    "Retain only the first seen of conflicting transactions, defaults to true."
+    ////)
     (
         /* Internally this network, but it is conceptually a node setting.*/
         "node.relay_transactions",
