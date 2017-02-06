@@ -48,10 +48,10 @@ using namespace bc::wallet;
 static constexpr int64_t purge_interval_ratio = 10;
 
 // Notifications respond with commands that are distinct from the subscription.
-static const std::string address_update("address.update");
-static const std::string address_stealth("address.stealth_update");
+////static const std::string penetration_update("penetration.update");
+////static const std::string address_stealth("address.stealth_update");
+////static const std::string address_update("address.update");
 static const std::string address_update2("address.update2");
-static const std::string penetration_update("penetration.update");
 
 notification_worker::notification_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
@@ -443,6 +443,7 @@ void notification_worker::notify_transaction(uint32_t height,
     // Loop inputs and extract payment addresses.
     for (const auto& input: tx.inputs())
     {
+        // This is cached by database extraction (if indexed).
         const auto address = input.address();
 
         if (address)
@@ -456,6 +457,7 @@ void notification_worker::notify_transaction(uint32_t height,
     // Loop outputs and extract payment addresses.
     for (const auto& output: outputs)
     {
+        // This is cached by database extraction (if indexed).
         const auto address = output.address();
 
         if (address)
@@ -474,6 +476,7 @@ void notification_worker::notify_transaction(uint32_t height,
 
         // Try to extract a stealth prefix from the first output.
         // Try to extract the payment address from the second output.
+        // The address is cached by database extraction (if indexed).
         if (payment_output.address() && 
             to_stealth_prefix(prefix, ephemeral_script))
         {

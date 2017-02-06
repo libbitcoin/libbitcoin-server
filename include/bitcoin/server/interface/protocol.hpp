@@ -33,13 +33,13 @@ namespace server {
 class BCS_API protocol
 {
 public:
-    /// Broadcast a transaction to all connected peers.
-    static void broadcast_transaction(server_node& node,
-        const message& request, send_handler handler);
-
     /// Determine the count of all connected peers.
     static void total_connections(server_node& node,
         const message& request, send_handler handler);
+
+    /////// Broadcast a transaction to all connected peers.
+    ////static void broadcast_transaction(server_node& node,
+    ////    const message& request, send_handler handler);
 };
 
 } // namespace server

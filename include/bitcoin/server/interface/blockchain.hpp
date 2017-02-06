@@ -56,7 +56,7 @@ public:
         const message& request, send_handler handler);
 
     /// Fetch the block index of a transaction and the height of its block.
-    static void fetch_transaction_position(server_node& node,
+    static void fetch_transaction_index(server_node& node,
         const message& request, send_handler handler);
 
     /// Fetch the inpoint which is spent by the specified output.
@@ -98,7 +98,7 @@ private:
     static void merkle_block_fetched(const code& ec, merkle_block_ptr block,
         size_t height, const message& request, send_handler handler);
 
-    static void transaction_position_fetched(const code& ec,
+    static void transaction_index_fetched(const code& ec,
         size_t tx_position, size_t block_height, const message& request,
         send_handler handler);
 

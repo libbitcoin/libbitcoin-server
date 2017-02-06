@@ -33,7 +33,36 @@ namespace server {
 
 using namespace std::placeholders;
 
-// BUGBUG: reconnect to tx pool when complete.
+// Save to tx pool and announce to all connected peers.
+// FUTURE: conditionally subscribe to penetration notifications.
+void transaction_pool::broadcast(server_node& node, const message& request,
+    send_handler handler)
+{
+    const auto tx = std::make_shared<bc::message::transaction>();
+    static const auto version = bc::message::version::level::canonical;
+
+    if (!tx->from_data(version, request.data()))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    // Organize into our chain.
+    tx->validation.simulate = false;
+
+    // This call is async but blocks on other organizations until started.
+    // Subscribed channels will pick up and announce via tx inventory to peers.
+    node.chain().organize(tx,
+        std::bind(handle_broadcast, _1, request, handler));
+}
+
+void transaction_pool::handle_broadcast(const code& ec, const message& request,
+    send_handler handler)
+{
+    // Returns validation error or error::success.
+    handler(message(request, ec));
+}
+
 void transaction_pool::fetch_transaction(server_node& node,
     const message& request, send_handler handler)
 {
@@ -45,35 +74,12 @@ void transaction_pool::fetch_transaction(server_node& node,
         return;
     }
 
-    LOG_DEBUG(LOG_SERVER)
-        << "transaction_pool.fetch_transaction(" << encode_hash(hash) << ")";
-
-    // TODO: implement query on blockchain interface.
-    ////////////node.chain().fetch_pool_transaction(hash,
-    ////////////    std::bind(pool_transaction_fetched,
-    ////////////        _1, _2, request, handler));
-    handler(message(request, error::not_implemented));
+    // The response allows confirmed and unconfirmed transactions.
+    node.chain().fetch_transaction(hash, true,
+        std::bind(transaction_fetched,
+            _1, _2, _3, _4, request, handler));
 }
 
-// BUGBUG: reconnect to tx pool when complete.
-// Broadcast a transaction with penetration subscription.
-void transaction_pool::broadcast(server_node& node, const message& request,
-    send_handler handler)
-{
-    chain::transaction tx;
-
-    if (!tx.from_data(request.data()))
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
-
-    // TODO: broadcast transaction to receiving peers.
-    // TODO: conditionally subscribe to penetration notifications.
-    handler(message(request, error::not_implemented));
-}
-
-// BUGBUG: reconnect to tx pool when complete.
 void transaction_pool::validate2(server_node& node, const message& request,
     send_handler handler)
 {
@@ -86,14 +92,14 @@ void transaction_pool::validate2(server_node& node, const message& request,
         return;
     }
 
-    // TODO: implement query on blockchain interface.
-    //////////node.chain().validate(tx,
-    //////////    std::bind(&transaction_pool::handle_validated,
-    //////////        _1, request, handler));
-    handler(message(request, error::not_implemented));
+    // Simulate organization into our chain.
+    tx->validation.simulate = true;
+
+    // This call is async but blocks on other organizations until started.
+    node.chain().organize(tx,
+        std::bind(handle_validated2, _1, request, handler));
 }
 
-// TODO: update client and explorer.
 void transaction_pool::handle_validated2(const code& ec,
     const message& request, send_handler handler)
 {
