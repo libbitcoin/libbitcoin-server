@@ -330,7 +330,7 @@ bool executor::verify_directory()
     return false;
 }
 
-// Increase the configured minomum as required to operate the service.
+// Increase the configured minimum as required to operate the service.
 void executor::set_minimum_threadpool_size()
 {
     metadata_.configured.network.threads =
