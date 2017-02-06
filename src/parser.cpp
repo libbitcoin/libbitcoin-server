@@ -315,7 +315,7 @@ options_metadata parser::load_settings()
     )
     (
         "database.spend_table_buckets",
-        value<uint32_t>(&configured.database.block_table_buckets),
+        value<uint32_t>(&configured.database.spend_table_buckets),
         "Spend hash table size, defaults to 250000000."
     )
     (
