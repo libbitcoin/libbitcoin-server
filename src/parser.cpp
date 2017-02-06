@@ -315,7 +315,7 @@ options_metadata parser::load_settings()
     )
     (
         "database.spend_table_buckets",
-        value<uint32_t>(&configured.database.block_table_buckets),
+        value<uint32_t>(&configured.database.spend_table_buckets),
         "Spend hash table size, defaults to 250000000."
     )
     (
@@ -458,7 +458,7 @@ options_metadata parser::load_settings()
     (
         "server.query_workers",
         value<uint16_t>(&configured.server.query_workers),
-        "The number of query worker threads per endpoint, defaults to 1."
+        "The number of query worker threads per endpoint, defaults to 1 (0 disables service)."
     )
     (
         "server.subscription_limit",
@@ -473,7 +473,7 @@ options_metadata parser::load_settings()
     (
         "server.heartbeat_interval_seconds",
         value<uint32_t>(&configured.server.heartbeat_interval_seconds),
-        "The heartbeat interval, zero disables service, defaults to 5."
+        "The heartbeat interval, defaults to 5 (0 disables service)."
     )
     (
         "server.block_service_enabled",
