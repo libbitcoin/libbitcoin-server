@@ -20,8 +20,6 @@
 #include <bitcoin/server/interface/protocol.hpp>
 
 #include <cstdint>
-#include <cstddef>
-#include <functional>
 #include <bitcoin/server.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>
@@ -32,30 +30,6 @@ namespace libbitcoin {
 namespace server {
 
 using namespace std::placeholders;
-
-// This does NOT save to our memory pool.
-// The transaction will hit our memory pool when it is picked up from a peer.
-void protocol::broadcast_transaction(server_node& node, const message& request,
-    send_handler handler)
-{
-    static const auto version = bc::message::version::level::maximum;
-    bc::message::transaction tx;
-
-    if (!tx.from_data(version, request.data()))
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
-
-    const auto ignore_complete = [](const code&) {};
-    const auto ignore_send = [](const code&, network::channel::ptr) {};
-
-    // Send and hope for the best!
-    node.broadcast(tx, ignore_send, ignore_complete);
-
-    // Tell the user everything is fine.
-    handler(message(request, error::success));
-}
 
 void protocol::total_connections(server_node& node, const message& request,
     send_handler handler)
@@ -79,6 +53,30 @@ void protocol::total_connections(server_node& node, const message& request,
 
     handler(message(request, result));
 }
+
+////// This does NOT save to our tx pool.
+////// The transaction will hit our memory pool when it is picked up from a peer.
+////void protocol::broadcast_transaction(server_node& node, const message& request,
+////    send_handler handler)
+////{
+////    static const auto version = bc::message::version::level::canonical;
+////    bc::message::transaction tx;
+////
+////    if (!tx.from_data(version, request.data()))
+////    {
+////        handler(message(request, error::bad_stream));
+////        return;
+////    }
+////
+////    const auto ignore_complete = [](const code&) {};
+////    const auto ignore_send = [](const code&, network::channel::ptr) {};
+////
+////    // Send and hope for the best!
+////    node.broadcast(tx, ignore_send, ignore_complete);
+////
+////    // Tell the user everything is fine.
+////    handler(message(request, error::success));
+////}
 
 } // namespace server
 } // namespace libbitcoin

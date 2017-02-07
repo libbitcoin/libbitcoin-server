@@ -184,7 +184,7 @@ options_metadata parser::load_settings()
     (
         "network.protocol_maximum",
         value<uint32_t>(&configured.network.protocol_maximum),
-        "The maximum network protocol version, defaults to 70012."
+        "The maximum network protocol version, defaults to 70013."
     )
     (
         "network.protocol_minimum",

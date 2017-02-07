@@ -61,21 +61,21 @@ void blockchain::fetch_history(server_node& node, const message& request,
 void blockchain::fetch_transaction(server_node& node, const message& request,
     send_handler handler)
 {
-    hash_digest tx_hash;
+    hash_digest hash;
 
-    if (!unwrap_fetch_transaction_args(tx_hash, request))
+    if (!unwrap_fetch_transaction_args(hash, request))
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
     LOG_DEBUG(LOG_SERVER)
-        << "blockchain.fetch_transaction(" << encode_hash(tx_hash) << ")";
+        << "blockchain.fetch_transaction(" << encode_hash(hash) << ")";
 
-    // The response is restricted to confirmed transactions (backward compat).
-    node.chain().fetch_transaction(tx_hash, true,
-        std::bind(block_transaction_fetched,
-            _1, _2, _3, request, handler));
+    // The response is restricted to confirmed transactions.
+    node.chain().fetch_transaction(hash, true,
+        std::bind(transaction_fetched,
+            _1, _2, _3, _4, request, handler));
 }
 
 void blockchain::fetch_last_height(server_node& node, const message& request,
@@ -214,13 +214,13 @@ void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
     auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
-    for (const auto& tx_hash: block->hashes())
-        serial.write_hash(tx_hash);
+    for (const auto& hash: block->hashes())
+        serial.write_hash(hash);
 
     handler(message(request, result));
 }
 
-void blockchain::fetch_transaction_position(server_node& node,
+void blockchain::fetch_transaction_index(server_node& node,
     const message& request, send_handler handler)
 {
     const auto& data = request.data();
@@ -232,15 +232,15 @@ void blockchain::fetch_transaction_position(server_node& node,
     }
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
-    const auto tx_hash = deserial.read_hash();
+    const auto hash = deserial.read_hash();
 
     // The response is restricted to confirmed transactions (backward compat).
-    node.chain().fetch_transaction_position(tx_hash, false,
-        std::bind(&blockchain::transaction_position_fetched,
+    node.chain().fetch_transaction_position(hash, false,
+        std::bind(&blockchain::transaction_index_fetched,
             _1, _2, _3, request, handler));
 }
 
-void blockchain::transaction_position_fetched(const code& ec,
+void blockchain::transaction_index_fetched(const code& ec,
     size_t tx_position, size_t block_height, const message& request,
     send_handler handler)
 {

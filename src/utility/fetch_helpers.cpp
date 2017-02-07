@@ -19,8 +19,8 @@
  */
 #include <bitcoin/server/utility/fetch_helpers.hpp>
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>
@@ -91,8 +91,7 @@ void send_history_result(const code& ec,
 // fetch_transaction stuff
 // ----------------------------------------------------------------------------
 
-bool unwrap_fetch_transaction_args(hash_digest& hash,
-    const message& request)
+bool unwrap_fetch_transaction_args(hash_digest& hash, const message& request)
 {
     const auto& data = request.data();
 
@@ -108,28 +107,16 @@ bool unwrap_fetch_transaction_args(hash_digest& hash,
     return true;
 }
 
-void chain_transaction_fetched(const code& ec, const chain::transaction& tx,
+void transaction_fetched(const code& ec, transaction_ptr tx, size_t, size_t,
     const message& request, send_handler handler)
 {
     const auto result = build_chunk(
     {
         message::to_bytes(ec),
-        tx.to_data()
+        tx->to_data()
     });
 
     handler(message(request, result));
-}
-
-void block_transaction_fetched(const code& ec, transaction::ptr tx,
-    uint64_t, const message& request, send_handler handler)
-{
-    chain_transaction_fetched(ec, *tx, request, handler);
-}
-
-void pool_transaction_fetched(const code& ec, transaction::ptr tx,
-    const message& request, send_handler handler)
-{
-    chain_transaction_fetched(ec, *tx, request, handler);
 }
 
 } // namespace server
