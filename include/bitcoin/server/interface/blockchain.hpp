@@ -1,21 +1,20 @@
 /**
- * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
  *
- * This file is part of libbitcoin-server.
+ * This file is part of libbitcoin.
  *
- * libbitcoin-server is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Affero General Public License with
- * additional permissions to the one published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version. For more information see LICENSE.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 #define LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
@@ -28,7 +27,7 @@
 
 namespace libbitcoin {
 namespace server {
-    
+
 /// Blockchain interface.
 /// These queries results do NOT include transaction pool information.
 /// Class and method names are published and mapped to the zeromq interface.
@@ -102,7 +101,7 @@ private:
         size_t tx_position, size_t block_height, const message& request,
         send_handler handler);
 
-    static void spend_fetched(const code& ec, 
+    static void spend_fetched(const code& ec,
         const chain::input_point& inpoint, const message& request,
         send_handler handler);
 
