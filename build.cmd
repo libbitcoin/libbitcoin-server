@@ -25,9 +25,9 @@ IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-consensus version2
+call :init libbitcoin libbitcoin-consensus master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-consensus version2 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-consensus master failed."
   exit /b 1
 )
 call :init libbitcoin libbitcoin-database master
