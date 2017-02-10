@@ -414,10 +414,16 @@ options_metadata parser::load_settings()
         "The time period for block polling after initial block download, defaults to 1 (0 disables)."
     )
     (
-        /* Internally this blockchain, but it is conceptually a node setting.*/
-        "node.minimum_fee_satoshis",
-        value<uint64_t>(&configured.chain.minimum_fee_satoshis),
-        "The minimum fee required for transaction acceptance, defaults to 1."
+        /* Internally this is blockchain, but it is conceptually a node setting.*/
+        "node.minimum_byte_fee_satoshis",
+        value<float>(&configured.chain.minimum_byte_fee_satoshis),
+        "The minimum fee per byte required for transaction acceptance, defaults to 1."
+    )
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting.*/
+        "node.minimum_relay_fee_satoshis",
+        value<uint64_t>(&configured.chain.minimum_relay_fee_satoshis),
+        "The minimum fee required for transaction relay from peers, defaults to 1."
     )
     ////(
     ////    /* Internally this blockchain, but it is conceptually a node setting.*/
