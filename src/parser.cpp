@@ -278,7 +278,7 @@ options_metadata parser::load_settings()
     (
         "network.peer",
         value<config::endpoint::list>(&configured.network.peers),
-        "Persistent host:port channels, multiple entries allowed."
+        "A persistent peer node, multiple entries allowed."
     )
     (
         "network.seed",
