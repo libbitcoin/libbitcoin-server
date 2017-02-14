@@ -196,6 +196,11 @@ options_metadata parser::load_settings()
         "The services exposed by network connections, defaults to 1 (full node)."
     )
     (
+        "network.validate_checksum",
+        value<bool>(&configured.network.validate_checksum),
+        "Validate the checksum of network messages, defaults to false."
+    )
+    (
         "network.identifier",
         value<uint32_t>(&configured.network.identifier),
         "The magic number for message headers, defaults to 3652501241."
