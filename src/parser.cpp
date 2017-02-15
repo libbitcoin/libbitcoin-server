@@ -174,6 +174,11 @@ options_metadata parser::load_settings()
         value<config::authority>(&configured.network.statistics_server),
         "The address of the statistics collection server, defaults to none."
     )
+    (
+        "log.verbose",
+        value<bool>(&configured.network.verbose),
+        "Enable verbose logging, defaults to false."
+    )
     /* [network] */
     (
         "network.threads",
