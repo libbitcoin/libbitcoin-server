@@ -65,6 +65,7 @@ private:
     void publish_transaction(transaction_const_ptr tx);
 
     const bool secure_;
+    const bool verbose_;
     const server::settings& settings_;
 
     // These are thread safe.

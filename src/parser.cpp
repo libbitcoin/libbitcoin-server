@@ -449,11 +449,6 @@ options_metadata parser::load_settings()
 
     /* [server] */
     (
-        "server.log_requests",
-        value<bool>(&configured.server.log_requests),
-        "Write service requests to the log, defaults to false."
-    )
-    (
         /* Internally this database, but it applies to server and not node.*/
         "server.index_start_height",
         value<uint32_t>(&configured.database.index_start_height),

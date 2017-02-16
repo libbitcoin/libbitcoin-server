@@ -41,6 +41,7 @@ transaction_service::transaction_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
     secure_(secure),
+    verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
     authenticator_(authenticator),
     node_(node)
@@ -208,7 +209,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     }
 
     // This isn't actually a request, should probably update settings.
-    if (settings_.log_requests)
+    if (verbose_)
         LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " transaction ["
             << encode_hash(tx->hash()) << "]";

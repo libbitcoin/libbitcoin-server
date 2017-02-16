@@ -39,6 +39,7 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
     secure_(secure),
+    verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
     node_(node),
     authenticator_(authenticator)
@@ -160,7 +161,7 @@ void query_worker::query(zmq::socket& router)
         return;
     }
 
-    if (settings_.log_requests)
+    if (verbose_)
         LOG_INFO(LOG_SERVER)
             << "Query " << request.command() << " from "
             << request.route().display();

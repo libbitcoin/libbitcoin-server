@@ -55,9 +55,10 @@ protected:
     void publish(uint32_t count, socket& socket);
 
 private:
+    const bool secure_;
+    const bool verbose_;
     const server::settings& settings_;
     const int32_t period_;
-    const bool secure_;
 
     // This is thread safe.
     bc::protocol::zmq::authenticator& authenticator_;
