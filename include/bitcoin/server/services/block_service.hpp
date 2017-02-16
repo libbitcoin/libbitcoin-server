@@ -72,6 +72,7 @@ private:
         block_const_ptr block);
 
     const bool secure_;
+    const bool verbose_;
     const server::settings& settings_;
 
     // These are thread safe.

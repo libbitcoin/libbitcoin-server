@@ -42,10 +42,11 @@ static inline uint32_t to_milliseconds(uint16_t seconds)
 heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
+    secure_(secure),
+    verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
     period_(to_milliseconds(settings_.heartbeat_interval_seconds)),
-    authenticator_(authenticator),
-    secure_(secure)
+    authenticator_(authenticator)
 {
 }
 
@@ -142,7 +143,7 @@ void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
     }
 
     // This isn't actually a request, should probably update settings.
-    if (settings_.log_requests)
+    if (verbose_)
         LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " heartbeat [" << count << "].";
 }

@@ -42,6 +42,7 @@ block_service::block_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(node.thread_pool()),
     secure_(secure),
+    verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
     authenticator_(authenticator),
     node_(node)
@@ -229,7 +230,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     }
 
     // This isn't actually a request, should probably update settings.
-    if (settings_.log_requests)
+    if (verbose_)
         LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " block ["
             << encode_hash(block->header().hash()) << "]";
