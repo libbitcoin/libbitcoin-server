@@ -124,9 +124,8 @@ bool executor::do_initchain()
     {
         LOG_INFO(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
-        const auto testnet = metadata_.configured.chain.easy_blocks;
-
         // Unfortunately we are limited to a choice of hardcoded chains.
+        auto testnet = (metadata_.configured.network.identifier == 118034699u);
         const auto genesis = testnet ? block::genesis_testnet() :
             block::genesis_mainnet();
 
