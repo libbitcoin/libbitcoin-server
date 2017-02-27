@@ -73,11 +73,11 @@ private:
 
     ////typedef notifier<address_key, const code&,
     ////    const wallet::payment_address&, int32_t, const hash_digest&,
-    ////    const chain::transaction&> payment_subscriber;
+    ////    transaction_const_ptr> payment_subscriber;
     ////typedef notifier<address_key, const code&, uint32_t, uint32_t,
-    ////    const hash_digest&, const chain::transaction&> stealth_subscriber;
+    ////    const hash_digest&, transaction_const_ptr> stealth_subscriber;
     typedef notifier<address_key, const code&, const binary&, uint32_t,
-        const hash_digest&, const chain::transaction&> address_subscriber;
+        const hash_digest&, transaction_const_ptr> address_subscriber;
     ////typedef notifier<address_key, const code&, uint32_t,
     ////    const hash_digest&, const hash_digest&> penetration_subscriber;
 
@@ -94,18 +94,18 @@ private:
     ////void notify_inventory(const bc::message::inventory_vector& inventory);
     void notify_block(uint32_t height, block_const_ptr block);
     void notify_transaction(uint32_t height, const hash_digest& block_hash,
-        const chain::transaction& tx);
+        transaction_const_ptr tx);
 
     ////// v2/v3 (deprecated)
     ////void notify_payment(const wallet::payment_address& address,
     ////    uint32_t height, const hash_digest& block_hash,
-    ////    const chain::transaction& tx);
+    ////    transaction_const_ptr tx);
     ////void notify_stealth(uint32_t prefix, uint32_t height,
-    ////    const hash_digest& block_hash, const chain::transaction& tx);
+    ////    const hash_digest& block_hash, transaction_const_ptr tx);
 
     // v3
     void notify_address(const binary& field, uint32_t height,
-        const hash_digest& block_hash, const chain::transaction& tx);
+        const hash_digest& block_hash, transaction_const_ptr tx);
     ////void notify_penetration(uint32_t height, const hash_digest& block_hash,
     ////    const hash_digest& tx_hash);
 
@@ -114,23 +114,23 @@ private:
         uint32_t id, const data_chunk& payload);
     ////void send_payment(const route& reply_to, uint32_t id,
     ////    const wallet::payment_address& address, uint32_t height,
-    ////    const hash_digest& block_hash, const chain::transaction& tx);
+    ////    const hash_digest& block_hash, transaction_const_ptr tx);
     ////void send_stealth(const route& reply_to, uint32_t id, uint32_t prefix,
     ////    uint32_t height, const hash_digest& block_hash,
-    ////    const chain::transaction& tx);
+    ////    transaction_const_ptr tx);
     void send_address(const route& reply_to, uint32_t id, uint8_t sequence,
         uint32_t height, const hash_digest& block_hash,
-        const chain::transaction& tx);
+        transaction_const_ptr tx);
 
     ////bool handle_payment(const code& ec, const wallet::payment_address& address,
     ////    uint32_t height, const hash_digest& block_hash,
-    ////    const chain::transaction& tx, const route& reply_to, uint32_t id,
+    ////    transaction_const_ptr tx, const route& reply_to, uint32_t id,
     ////    const binary& prefix_filter);
     ////bool handle_stealth(const code& ec, uint32_t prefix, uint32_t height,
-    ////    const hash_digest& block_hash, const chain::transaction& tx,
+    ////    const hash_digest& block_hash, transaction_const_ptr tx,
     ////    const route& reply_to, uint32_t id, const binary& prefix_filter);
     bool handle_address(const code& ec, const binary& field, uint32_t height,
-        const hash_digest& block_hash, const chain::transaction& tx,
+        const hash_digest& block_hash, transaction_const_ptr tx,
         const route& reply_to, uint32_t id, const binary& prefix_filter,
         sequence_ptr sequence);
 

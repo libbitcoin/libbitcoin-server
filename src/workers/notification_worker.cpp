@@ -228,7 +228,7 @@ void notification_worker::send(const route& reply_to,
 
 void notification_worker::send_address(const route& reply_to, uint32_t id,
     uint8_t sequence, uint32_t height, const hash_digest& block_hash,
-    const transaction& tx)
+    transaction_const_ptr tx)
 {
     // [ code:4 ]
     // [ sequence:1 ]
@@ -241,7 +241,7 @@ void notification_worker::send_address(const route& reply_to, uint32_t id,
         to_array(sequence),
         to_little_endian(height),
         block_hash,
-        tx.to_data()
+        tx->to_data()
     });
 
     send(reply_to, address_update2, id, payload);
@@ -252,7 +252,7 @@ void notification_worker::send_address(const route& reply_to, uint32_t id,
 
 bool notification_worker::handle_address(const code& ec,
     const binary& field, uint32_t height, const hash_digest& block_hash,
-    const transaction& tx, const route& reply_to, uint32_t id,
+    transaction_const_ptr tx, const route& reply_to, uint32_t id,
     const binary& prefix_filter, sequence_ptr sequence)
 {
     if (ec)
@@ -362,8 +362,11 @@ void notification_worker::notify_block(uint32_t height,
 
     for (const auto& tx: block->transactions())
     {
-        ////const auto tx_hash = tx.hash();
-        notify_transaction(height, block_hash, tx);
+        // TODO: use shared pointers for block members to avoid copying.
+        auto pointer = std::make_shared<const bc::message::transaction>(tx);
+
+        ////const auto tx_hash = tx->hash();
+        notify_transaction(height, block_hash, pointer);
         ////notify_penetration(height, block_hash, tx_hash);
     }
 }
@@ -420,27 +423,27 @@ bool notification_worker::handle_transaction_pool(const code& ec,
         return true;
     }
 
-    notify_transaction(0, null_hash, *tx);
+    notify_transaction(0, null_hash, tx);
     return true;
 }
 
 // This parsing is duplicated by bc::database::data_base.
 void notification_worker::notify_transaction(uint32_t height,
-    const hash_digest& block_hash, const transaction& tx)
+    const hash_digest& block_hash, transaction_const_ptr tx)
 {
     uint32_t prefix;
 
     // TODO: move full integer and array constructors into binary.
     static constexpr size_t prefix_bits = sizeof(prefix) * byte_bits;
     static constexpr size_t address_bits = short_hash_size * byte_bits;
-    const auto& outputs = tx.outputs();
+    const auto& outputs = tx->outputs();
 
     if (stopped() || outputs.empty())
         return;
 
     // see data_base::push_inputs
     // Loop inputs and extract payment addresses.
-    for (const auto& input: tx.inputs())
+    for (const auto& input: tx->inputs())
     {
         // This is cached by database extraction (if indexed).
         const auto address = input.address();
@@ -487,7 +490,7 @@ void notification_worker::notify_transaction(uint32_t height,
 
 // v3
 void notification_worker::notify_address(const binary& field, uint32_t height,
-    const hash_digest& block_hash, const transaction& tx)
+    const hash_digest& block_hash, transaction_const_ptr tx)
 {
     static const auto code = error::success;
     address_subscriber_->relay(code, field, height, block_hash, tx);
