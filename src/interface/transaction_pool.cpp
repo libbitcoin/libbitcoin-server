@@ -32,6 +32,23 @@ namespace server {
 
 using namespace std::placeholders;
 
+void transaction_pool::fetch_transaction(server_node& node,
+    const message& request, send_handler handler)
+{
+    hash_digest hash;
+
+    if (!unwrap_fetch_transaction_args(hash, request))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    // The response allows confirmed and unconfirmed transactions.
+    node.chain().fetch_transaction(hash, true,
+        std::bind(transaction_fetched,
+            _1, _2, _3, _4, request, handler));
+}
+
 // Save to tx pool and announce to all connected peers.
 // FUTURE: conditionally subscribe to penetration notifications.
 void transaction_pool::broadcast(server_node& node, const message& request,
@@ -60,23 +77,6 @@ void transaction_pool::handle_broadcast(const code& ec, const message& request,
 {
     // Returns validation error or error::success.
     handler(message(request, ec));
-}
-
-void transaction_pool::fetch_transaction(server_node& node,
-    const message& request, send_handler handler)
-{
-    hash_digest hash;
-
-    if (!unwrap_fetch_transaction_args(hash, request))
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
-
-    // The response allows confirmed and unconfirmed transactions.
-    node.chain().fetch_transaction(hash, true,
-        std::bind(transaction_fetched,
-            _1, _2, _3, _4, request, handler));
 }
 
 void transaction_pool::validate2(server_node& node, const message& request,

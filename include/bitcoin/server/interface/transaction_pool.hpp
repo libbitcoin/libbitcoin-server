@@ -32,12 +32,12 @@ namespace server {
 class BCS_API transaction_pool
 {
 public:
-    /// Save to tx pool and announce to all connected peers.
-    static void broadcast(server_node& node, const message& request,
-        send_handler handler);
-
     /// Fetch a transaction from the transaction pool (or chain), by its hash.
     static void fetch_transaction(server_node& node, const message& request,
+        send_handler handler);
+
+    /// Save to tx pool and announce to all connected peers.
+    static void broadcast(server_node& node, const message& request,
         send_handler handler);
 
     /// Validate a transaction against the transaction pool and blockchain.
