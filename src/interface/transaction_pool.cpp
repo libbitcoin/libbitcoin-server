@@ -37,8 +37,8 @@ using namespace std::placeholders;
 void transaction_pool::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto tx = std::make_shared<bc::message::transaction>();
     static const auto version = bc::message::version::level::canonical;
+    const auto tx = std::make_shared<bc::message::transaction>();
 
     if (!tx->from_data(version, request.data()))
     {
@@ -82,7 +82,7 @@ void transaction_pool::fetch_transaction(server_node& node,
 void transaction_pool::validate2(server_node& node, const message& request,
     send_handler handler)
 {
-    static const auto version = bc::message::version::level::maximum;
+    static const auto version = bc::message::version::level::canonical;
     const auto tx = std::make_shared<bc::message::transaction>();
 
     if (!tx->from_data(version, request.data()))

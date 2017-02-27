@@ -194,7 +194,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
         return;
 
     zmq::message broadcast;
-    broadcast.enqueue(tx->to_data(bc::message::version::level::maximum));
+    broadcast.enqueue(tx->to_data(bc::message::version::level::canonical));
     ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)

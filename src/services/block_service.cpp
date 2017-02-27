@@ -215,7 +215,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
 
     zmq::message broadcast;
     broadcast.enqueue_little_endian(height);
-    broadcast.enqueue(block->to_data(bc::message::version::level::maximum));
+    broadcast.enqueue(block->to_data(bc::message::version::level::canonical));
     const auto ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)
