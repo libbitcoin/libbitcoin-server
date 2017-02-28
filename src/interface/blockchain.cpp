@@ -35,7 +35,7 @@ using namespace bc::blockchain;
 using namespace bc::chain;
 using namespace bc::wallet;
 
-void blockchain::fetch_history(server_node& node, const message& request,
+void blockchain::fetch_history2(server_node& node, const message& request,
     send_handler handler)
 {
     static constexpr size_t limit = 0;
@@ -49,7 +49,7 @@ void blockchain::fetch_history(server_node& node, const message& request,
     }
 
     LOG_DEBUG(LOG_SERVER)
-        << "blockchain.fetch_history(" << address.encoded()
+        << "blockchain.fetch_history2(" << address.encoded()
         << ", from_height=" << from_height << ")";
 
     node.chain().fetch_history(address, limit, from_height,
@@ -441,6 +441,62 @@ void blockchain::stealth_fetched2(const code& ec,
         serial.write_hash(row.transaction_hash);
 
     handler(message(request, result));
+}
+
+// Save to blockchain and announce to all connected peers.
+void blockchain::broadcast(server_node& node, const message& request,
+    send_handler handler)
+{
+    static const auto version = bc::message::version::level::canonical;
+    const auto block = std::make_shared<bc::message::block>();
+
+    if (!block->from_data(version, request.data()))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    // Organize into our chain.
+    block->validation.simulate = false;
+
+    // This call is async but blocks on other organizations until started.
+    // Subscribed channels will pick up and announce via inventory to peers.
+    node.chain().organize(block,
+        std::bind(handle_broadcast, _1, request, handler));
+}
+
+void blockchain::handle_broadcast(const code& ec, const message& request,
+    send_handler handler)
+{
+    // Returns validation error or error::success.
+    handler(message(request, ec));
+}
+
+void blockchain::validate(server_node& node, const message& request,
+    send_handler handler)
+{
+    static const auto version = bc::message::version::level::canonical;
+    const auto block = std::make_shared<bc::message::block>();
+
+    if (!block->from_data(version, request.data()))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    // Simulate organization into our chain.
+    block->validation.simulate = true;
+
+    // This call is async but blocks on other organizations until started.
+    node.chain().organize(block,
+        std::bind(handle_validated, _1, request, handler));
+}
+
+void blockchain::handle_validated(const code& ec, const message& request,
+    send_handler handler)
+{
+    // Returns validation error or error::success.
+    handler(message(request, ec));
 }
 
 } // namespace server

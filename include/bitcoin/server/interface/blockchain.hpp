@@ -35,7 +35,7 @@ class BCS_API blockchain
 {
 public:
     /// Fetch the blockchain history of a payment address.
-    static void fetch_history(server_node& node,
+    static void fetch_history2(server_node& node,
         const message& request, send_handler handler);
 
     /// Fetch a transaction from the blockchain by its hash.
@@ -73,6 +73,14 @@ public:
     /// Fetch the transactions of a stealth address by its prefix filter.
     static void fetch_stealth2(server_node& node,
         const message& request, send_handler handler);
+
+    /// Save to blockchain and announce to all connected peers.
+    static void broadcast(server_node& node, const message& request,
+        send_handler handler);
+
+    /// Validate a block against the blockchain.
+    static void validate(server_node& node, const message& request,
+        send_handler handler);
 
 private:
     static void last_height_fetched(const code& ec, size_t last_height,
@@ -115,6 +123,12 @@ private:
     static void stealth_fetched2(const code& ec,
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
+
+    static void handle_broadcast(const code& ec, const message& request,
+        send_handler handler);
+
+    static void handle_validated(const code& ec, const message& request,
+        send_handler handler);
 };
 
 } // namespace server

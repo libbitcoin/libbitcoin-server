@@ -171,7 +171,7 @@ void query_worker::query(zmq::socket& router)
 
     // Execute the request and forward result to queue.
     // Example: address.renew(node_, request, sender);
-    // Example: blockchain.fetch_history(node_, request, sender);
+    // Example: blockchain.fetch_history2(node_, request, sender);
     query_execute(request, sender);
 }
 
@@ -207,8 +207,12 @@ void query_worker::attach(const std::string& command,
 // address.subscribe2 is new in v3, also call for renew.
 // address.unsubscribe2 is new in v3 (there was never an address.unsubscribe).
 //-----------------------------------------------------------------------------
-// blockchain.fetch_stealth is deprecated in v3 (unsafe, use fetch_stealth2).
+// blockchain.validate is new in v3.
+// blockchain.broadcast is new in v3.
+// blockchain.fetch_history2 is new in v3.
 // blockchain.fetch_stealth2 is new in v3.
+// blockchain.fetch_history is obsoleted in v3 (hash reversal).
+// blockchain.fetch_stealth is deprecated in v3 (unsafe and has hash reversal).
 //-----------------------------------------------------------------------------
 // transaction_pool.validate is obsoleted in v3 (use validate2).
 // transaction_pool.validate2 is new in v3.
@@ -227,7 +231,8 @@ void query_worker::attach_interface()
     ATTACH(address, subscribe2, node_);                         // new
     ATTACH(address, unsubscribe2, node_);                       // new
 
-    ATTACH(blockchain, fetch_history, node_);                   // original
+    ////ATTACH(blockchain, fetch_history, node_);               // obsoleted
+    ATTACH(blockchain, fetch_history2, node_);                  // new
     ATTACH(blockchain, fetch_block_header, node_);              // original
     ATTACH(blockchain, fetch_block_height, node_);              // original
     ATTACH(blockchain, fetch_block_transaction_hashes, node_);  // original
@@ -237,9 +242,11 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_spend, node_);                     // original
     ATTACH(blockchain, fetch_stealth, node_);                   // deprecated
     ATTACH(blockchain, fetch_stealth2, node_);                  // new
+    ATTACH(blockchain, broadcast, node_);                       // new
+    ATTACH(blockchain, validate, node_);                        // new
 
-    ATTACH(transaction_pool, broadcast, node_);                 // new
     ATTACH(transaction_pool, fetch_transaction, node_);         // updated
+    ATTACH(transaction_pool, broadcast, node_);                 // new
     ATTACH(transaction_pool, validate2, node_);                 // new
     ////ATTACH(transaction_pool, validate, node_);              // obsoleted
 
