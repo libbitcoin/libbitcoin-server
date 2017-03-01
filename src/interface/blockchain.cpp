@@ -35,6 +35,8 @@ using namespace bc::blockchain;
 using namespace bc::chain;
 using namespace bc::wallet;
 
+static const auto canonical_version = bc::message::version::level::canonical;
+
 void blockchain::fetch_history2(server_node& node, const message& request,
     send_handler handler)
 {
@@ -159,7 +161,7 @@ void blockchain::block_header_fetched(const code& ec, header_const_ptr header,
     const auto result = build_chunk(
     {
         message::to_bytes(ec),
-        header->to_data(false)
+        header->to_data(canonical_version)
     });
 
     handler(message(request, result));
@@ -447,10 +449,9 @@ void blockchain::stealth_fetched2(const code& ec,
 void blockchain::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    static const auto version = bc::message::version::level::canonical;
     const auto block = std::make_shared<bc::message::block>();
 
-    if (!block->from_data(version, request.data()))
+    if (!block->from_data(canonical_version, request.data()))
     {
         handler(message(request, error::bad_stream));
         return;
@@ -475,10 +476,9 @@ void blockchain::handle_broadcast(const code& ec, const message& request,
 void blockchain::validate(server_node& node, const message& request,
     send_handler handler)
 {
-    static const auto version = bc::message::version::level::canonical;
     const auto block = std::make_shared<bc::message::block>();
 
-    if (!block->from_data(version, request.data()))
+    if (!block->from_data(canonical_version, request.data()))
     {
         handler(message(request, error::bad_stream));
         return;
