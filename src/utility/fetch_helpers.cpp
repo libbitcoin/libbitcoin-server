@@ -112,7 +112,7 @@ void transaction_fetched(const code& ec, transaction_ptr tx, size_t, size_t,
     const auto result = build_chunk(
     {
         message::to_bytes(ec),
-        tx->to_data()
+        tx->to_data(version::level::canonical)
     });
 
     handler(message(request, result));
