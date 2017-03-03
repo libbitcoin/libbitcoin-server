@@ -32,26 +32,6 @@ using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::wallet;
 
-// Transaction pool address history is not indexed.
-////void address::fetch_history2(server_node& node, const message& request,
-////    send_handler handler)
-////{
-////    static constexpr size_t limit = 0;
-////    size_t from_height;
-////    payment_address address;
-////
-////    if (!unwrap_fetch_history_args(address, from_height, request))
-////    {
-////        handler(message(request, error::bad_stream));
-////        return;
-////    }
-////
-////    // Obtain payment address history from the transaction pool and blockchain.
-////    node.chain().fetch_history(address, limit, from_height,
-////        std::bind(send_history_result,
-////            _1, _2, request, handler));
-////}
-
 // v3 eliminates the subscription type, which we map to 'unspecified'.
 void address::subscribe2(server_node& node, const message& request,
     send_handler handler)
