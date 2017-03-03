@@ -196,43 +196,41 @@ void query_worker::attach(const std::string& command,
 // blockchain.fetch_spend
 // blockchain.fetch_block_height
 // blockchain.fetch_block_transaction_hashes
-// blockchain.fetch_stealth2
+// blockchain.fetch_stealth_transaction
 // protocol.total_connections
 //=============================================================================
-// address.fetch_history was present in v1 (obelisk) and v2 (server).
-// address.fetch_history was called by client v1 (sx) and v2 (bx).
-// address.fetch_history2 is not yet implemented in v3 (no pool address index).
+// address.fetch_history is obsoleted in v3 (no unonfirmed tx indexing).
 // address.renew is obsoleted in v3.
 // address.subscribe is obsoleted in v3.
 // address.subscribe2 is new in v3, also call for renew.
 // address.unsubscribe2 is new in v3 (there was never an address.unsubscribe).
 //-----------------------------------------------------------------------------
-// blockchain.validate is new in v3.
-// blockchain.broadcast is new in v3.
-// blockchain.fetch_history2 is new in v3.
-// blockchain.fetch_stealth2 is new in v3.
+// blockchain.validate is new in v3 (blocks).
+// blockchain.broadcast is new in v3 (blocks).
 // blockchain.fetch_history is obsoleted in v3 (hash reversal).
-// blockchain.fetch_stealth is deprecated in v3 (unsafe and has hash reversal).
+// blockchain.fetch_history2 is new in v3.
+// blockchain.fetch_stealth is obsoleted in v3 (hash reversal).
+// blockchain.fetch_stealth2 is new in v3.
+// blockchain.fetch_stealth_transaction is new in v3 (safe version).
 //-----------------------------------------------------------------------------
-// transaction_pool.validate is obsoleted in v3 (use validate2).
+// transaction_pool.validate is obsoleted in v3 (reason?).
 // transaction_pool.validate2 is new in v3.
-// transaction_pool.broadcast is new in v3.
-// transaction_pool.fetch_transaction includes chain transactions in v3.
+// transaction_pool.broadcast is new in v3 (rename).
+// transaction_pool.fetch_transaction is enhanced in v3 (adds confirmed txs).
 //-----------------------------------------------------------------------------
-// protocol.broadcast_transaction is obsoleted in v3 (use transaction_pool).
+// protocol.broadcast_transaction is obsoleted in v3 (renamed).
 //=============================================================================
 // Interface class.method names must match protocol (do not change).
 void query_worker::attach_interface()
 {
-    ////ATTACH(address, fetch_history, node_);                  // obsoleted
-    ////ATTACH(address, fetch_history2, node_);                 // planned
     ////ATTACH(address, renew, node_);                          // obsoleted
     ////ATTACH(address, subscribe, node_);                      // obsoleted
+    ////ATTACH(address, fetch_history, node_);                  // obsoleted
     ATTACH(address, subscribe2, node_);                         // new
     ATTACH(address, unsubscribe2, node_);                       // new
 
+    ////ATTACH(blockchain, fetch_stealth, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history, node_);               // obsoleted
-    ATTACH(blockchain, fetch_history2, node_);                  // new
     ATTACH(blockchain, fetch_block_header, node_);              // original
     ATTACH(blockchain, fetch_block_height, node_);              // original
     ATTACH(blockchain, fetch_block_transaction_hashes, node_);  // original
@@ -240,18 +238,19 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_transaction, node_);               // original
     ATTACH(blockchain, fetch_transaction_index, node_);         // original
     ATTACH(blockchain, fetch_spend, node_);                     // original
-    ATTACH(blockchain, fetch_stealth, node_);                   // deprecated
+    ATTACH(blockchain, fetch_history2, node_);                  // new
     ATTACH(blockchain, fetch_stealth2, node_);                  // new
+    ATTACH(blockchain, fetch_stealth_transaction, node_);       // new
     ATTACH(blockchain, broadcast, node_);                       // new
     ATTACH(blockchain, validate, node_);                        // new
 
-    ATTACH(transaction_pool, fetch_transaction, node_);         // updated
+    ////ATTACH(transaction_pool, validate, node_);              // obsoleted
+    ATTACH(transaction_pool, fetch_transaction, node_);         // enhanced
     ATTACH(transaction_pool, broadcast, node_);                 // new
     ATTACH(transaction_pool, validate2, node_);                 // new
-    ////ATTACH(transaction_pool, validate, node_);              // obsoleted
 
+    //// ATTACH(protocol, broadcast_transaction, node_);        // obsoleted
     ATTACH(protocol, total_connections, node_);                 // original
-   //// ATTACH(protocol, broadcast_transaction, node_);         // obsoleted
 }
 
 #undef ATTACH

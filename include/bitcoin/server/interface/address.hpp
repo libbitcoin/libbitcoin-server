@@ -31,10 +31,6 @@ namespace server {
 class BCS_API address
 {
 public:
-    /////// Fetch the blockchain and transaction pool history of a payment address.
-    ////static void fetch_history2(server_node& node,
-    ////    const message& request, send_handler handler);
-
     /// Subscribe to payment and stealth address notifications by prefix.
     static void subscribe2(server_node& node, const message& request,
         send_handler handler);

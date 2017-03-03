@@ -241,7 +241,7 @@ void notification_worker::send_address(const route& reply_to, uint32_t id,
         to_array(sequence),
         to_little_endian(height),
         block_hash,
-        tx->to_data()
+        tx->to_data(bc::message::version::level::canonical)
     });
 
     send(reply_to, address_update2, id, payload);
