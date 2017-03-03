@@ -67,11 +67,11 @@ public:
         const message& request, send_handler handler);
 
     /// Fetch the history of a stealth address by its prefix filter.
-    static void fetch_stealth(server_node& node,
+    static void fetch_stealth2(server_node& node,
         const message& request, send_handler handler);
 
     /// Fetch the transactions of a stealth address by its prefix filter.
-    static void fetch_stealth2(server_node& node,
+    static void fetch_stealth_transaction(server_node& node,
         const message& request, send_handler handler);
 
     /// Save to blockchain and announce to all connected peers.

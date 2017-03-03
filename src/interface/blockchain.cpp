@@ -337,7 +337,7 @@ void blockchain::block_height_fetched(const code& ec, size_t block_height,
     handler(message(request, result));
 }
 
-void blockchain::fetch_stealth(server_node& node, const message& request,
+void blockchain::fetch_stealth2(server_node& node, const message& request,
     send_handler handler)
 {
     const auto& data = request.data();
@@ -394,8 +394,8 @@ void blockchain::stealth_fetched(const code& ec,
     handler(message(request, result));
 }
 
-void blockchain::fetch_stealth2(server_node& node, const message& request,
-    send_handler handler)
+void blockchain::fetch_stealth_transaction(server_node& node,
+    const message& request, send_handler handler)
 {
     const auto& data = request.data();
 
