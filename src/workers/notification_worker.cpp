@@ -63,11 +63,6 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
 {
 }
 
-notification_worker::~notification_worker()
-{
-    stop();
-}
-
 // There is no unsubscribe so this class shouldn't be restarted.
 bool notification_worker::start()
 {
@@ -95,12 +90,15 @@ bool notification_worker::start()
 }
 
 // No unsubscribe so must be kept in scope until subscriber stop complete.
+// Because of closures in subscriber, must call stop from node stop handler.
 bool notification_worker::stop()
 {
     static const auto code = error::channel_stopped;
 
     // v3
     address_subscriber_->stop();
+
+    // Unlike purge, stop will not propagate, since the context closes.
     address_subscriber_->invoke(code, {}, 0, {}, {});
 
     ////penetration_subscriber_->stop();
@@ -156,6 +154,9 @@ bool notification_worker::connect(socket& router)
         query_service::public_notify;
 
     const auto ec = router.connect(endpoint);
+
+    if (ec == error::service_stopped)
+        return false;
 
     if (ec)
     {

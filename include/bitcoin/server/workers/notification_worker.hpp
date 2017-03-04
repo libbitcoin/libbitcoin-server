@@ -45,9 +45,6 @@ public:
     notification_worker(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
-    /// Stop the worker.
-    virtual ~notification_worker();
-
     /// Start the worker.
     bool start() override;
 

@@ -101,6 +101,7 @@ private:
     bool start_block_services();
     bool start_transaction_services();
     bool start_query_workers(bool secure);
+    bool start_notification_workers(bool secure);
 
     const configuration& configuration_;
 
