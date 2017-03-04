@@ -249,7 +249,7 @@ void query_worker::attach_interface()
     ATTACH(transaction_pool, broadcast, node_);                 // new
     ATTACH(transaction_pool, validate2, node_);                 // new
 
-    //// ATTACH(protocol, broadcast_transaction, node_);        // obsoleted
+    ////ATTACH(protocol, broadcast_transaction, node_);         // obsoleted
     ATTACH(protocol, total_connections, node_);                 // original
 }
 

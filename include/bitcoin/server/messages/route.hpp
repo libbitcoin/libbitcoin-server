@@ -60,19 +60,21 @@ public:
 
 namespace std
 {
-    template<>
-    struct hash<bc::server::route>
+
+template<>
+struct hash<bc::server::route>
+{
+    size_t operator()(const bc::server::route& value) const
     {
-        size_t operator()(const bc::server::route& value) const
-        {
-            size_t seed = 0;
-            boost::hash_combine(seed, value.secure);
-            ////boost::hash_combine(seed, value.delimited);
-            boost::hash_combine(seed, value.address1);
-            ////boost::hash_combine(seed, value.address2);
-            return seed;
-        }
-    };
+        size_t seed = 0;
+        boost::hash_combine(seed, value.secure);
+        ////boost::hash_combine(seed, value.delimited);
+        boost::hash_combine(seed, value.address1);
+        ////boost::hash_combine(seed, value.address2);
+        return seed;
+    }
+};
+
 } // namespace std
 
 #endif
