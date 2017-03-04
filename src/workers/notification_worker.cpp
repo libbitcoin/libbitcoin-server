@@ -43,9 +43,6 @@ using namespace bc::chain;
 using namespace bc::protocol;
 using namespace bc::wallet;
 
-// Purge subscriptions at 10% of the expiration period.
-static constexpr int64_t purge_interval_ratio = 10;
-
 // Notifications respond with commands that are distinct from the subscription.
 ////static const std::string penetration_update("penetration.update");
 ////static const std::string address_stealth("address.stealth_update");
@@ -64,6 +61,11 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
     ////penetration_subscriber_(std::make_shared<penetration_subscriber>(
     ////    node.thread_pool(), settings_.subscription_limit, NAME "_penetration"))
 {
+}
+
+notification_worker::~notification_worker()
+{
+    stop();
 }
 
 // There is no unsubscribe so this class shouldn't be restarted.
@@ -127,6 +129,8 @@ void notification_worker::work()
     {
         // BUGBUG: this can fail on some platforms if interval is > 1000.
         poller.wait(interval);
+
+        // BUGBUG: this results in double calls when both secure and public.
         purge();
     }
 
@@ -137,8 +141,8 @@ void notification_worker::work()
 int32_t notification_worker::purge_interval_milliseconds() const
 {
     const int64_t minutes = settings_.subscription_expiration_minutes;
-    const int64_t milliseconds = minutes * 60 * 1000 / purge_interval_ratio;
-    const auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
+    const int64_t milliseconds = minutes * 60 * 1000;
+    auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
     return static_cast<int32_t>(capped);
 }
 
