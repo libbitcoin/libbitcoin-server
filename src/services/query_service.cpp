@@ -131,7 +131,7 @@ bool query_service::bind(zmq::socket& router, zmq::socket& query_dealer,
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " notify workers to "
+            << "Failed to bind " << security << " notify worker to "
             << notify_worker << " : " << ec.message();
         return false;
     }
