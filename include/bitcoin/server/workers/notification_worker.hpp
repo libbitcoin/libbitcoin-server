@@ -52,7 +52,7 @@ public:
     bool stop() override;
 
     /// Subscribe to address and stealth prefix notifications.
-    virtual void subscribe_address(const route& reply_to, uint32_t id,
+    virtual code subscribe_address(const route& reply_to, uint32_t id,
         const binary& prefix_filter, bool unsubscribe);
 
     /////// Subscribe to transaction penetration notifications.

@@ -57,9 +57,9 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
     node_(node),
     authenticator_(authenticator),
     address_subscriber_(std::make_shared<address_subscriber>(
-        node.thread_pool(), settings_.subscription_limit, NAME "_address"))
+        node.thread_pool(), NAME "_address"))
     ////penetration_subscriber_(std::make_shared<penetration_subscriber>(
-    ////    node.thread_pool(), settings_.subscription_limit, NAME "_penetration"))
+    ////    node.thread_pool(), NAME "_penetration"))
 {
 }
 
@@ -93,16 +93,13 @@ bool notification_worker::start()
 // Because of closures in subscriber, must call stop from node stop handler.
 bool notification_worker::stop()
 {
-    static const auto code = error::channel_stopped;
-
-    // v3
     address_subscriber_->stop();
 
-    // Unlike purge, stop will not propagate, since the context closes.
-    address_subscriber_->invoke(code, {}, 0, {}, {});
+    // Unlike purge, stop will not propagate, since the context is closed.
+    address_subscriber_->invoke(error::channel_stopped, {}, 0, {}, {});
 
     ////penetration_subscriber_->stop();
-    ////penetration_subscriber_->invoke(code, 0, {}, {});
+    ////penetration_subscriber_->invoke(error::channel_stopped, 0, {}, {});
 
     return zmq::worker::stop();
 }
@@ -127,8 +124,6 @@ void notification_worker::work()
     {
         // BUGBUG: this can fail on some platforms if interval is > 1000.
         poller.wait(interval);
-
-        // BUGBUG: this results in double calls when both secure and public.
         purge();
     }
 
@@ -280,34 +275,36 @@ bool notification_worker::handle_address(const code& ec,
 
 // Subscribe to address and stealth prefix notifications.
 // Each delegate must connect to the appropriate query notification endpoint.
-void notification_worker::subscribe_address(const route& reply_to, uint32_t id,
+code notification_worker::subscribe_address(const route& reply_to, uint32_t id,
     const binary& prefix_filter, bool unsubscribe)
 {
-    static const auto error_code = error::channel_stopped;
     const address_key key(reply_to, prefix_filter);
 
     if (unsubscribe)
     {
-        // Just as with an expiration (purge) this will cause the stored
-        // handler (notification_worker::handle_address) to be invoked but
-        // with the specified error code (error::channel_stopped) as
-        // opposed to error::channel_timeout.
-        address_subscriber_->unsubscribe(key, error_code, {}, 0, {}, {});
-        return;
+        // Cause stored handler to be invoked but with specified error code.
+        address_subscriber_->unsubscribe(key, error::channel_stopped, {}, 0,
+            {}, {});
+        return error::success;
     }
+
+    // This allows resubscriptions at the service limit.
+    if (address_subscriber_->limited(key, settings_.subscription_limit))
+        return error::oversubscribed;
 
     // The sequence enables the client to detect dropped messages.
     const auto sequence = std::make_shared<uint8_t>(0);
     const auto& duration = settings_.subscription_expiration();
 
-    // This class must be kept in scope until work is terminated.
     auto handler =
         std::bind(&notification_worker::handle_address,
             this, _1, _2, _3, _4, _5, reply_to, id, prefix_filter,
                 sequence);
 
-    address_subscriber_->subscribe(std::move(handler), key, duration,
-        error_code, {}, 0, {}, {});
+    // If the service is stopped a notification will result.
+    address_subscriber_->subscribe(std::move(handler),
+        key, duration, error::channel_stopped, {}, 0, {}, {});
+    return error::success;
 }
 
 ////// Subscribe to transaction penetration notifications.

@@ -120,15 +120,14 @@ bool server_node::close()
 // ----------------------------------------------------------------------------
 
 // Subscribe (or unsubscribe) to address/stealth prefix notifications.
-void server_node::subscribe_address(const route& reply_to, uint32_t id,
+code server_node::subscribe_address(const route& reply_to, uint32_t id,
     const binary& prefix_filter, bool unsubscribe)
 {
-    if (reply_to.secure)
-        secure_notification_worker_
-            .subscribe_address(reply_to, id, prefix_filter, unsubscribe);
-    else
-        public_notification_worker_
-            .subscribe_address(reply_to, id, prefix_filter, unsubscribe);
+    return reply_to.secure ?
+        secure_notification_worker_.subscribe_address(reply_to, id,
+            prefix_filter, unsubscribe) :
+        public_notification_worker_.subscribe_address(reply_to, id,
+            prefix_filter, unsubscribe);
 }
 
 ////// Subscribe to transaction penetration notifications.
