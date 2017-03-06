@@ -55,10 +55,6 @@ public:
     virtual code subscribe_address(const route& reply_to, uint32_t id,
         const binary& prefix_filter, bool unsubscribe);
 
-    /////// Subscribe to transaction penetration notifications.
-    ////virtual void subscribe_penetration(const route& reply_to, uint32_t id,
-    ////    const hash_digest& tx_hash);
-
 protected:
     typedef bc::protocol::zmq::socket socket;
 
@@ -69,66 +65,30 @@ protected:
     virtual void work() override;
 
 private:
-    typedef std::shared_ptr<uint8_t> sequence_ptr;
-
-    ////typedef notifier<address_key, const code&,
-    ////    const wallet::payment_address&, int32_t, const hash_digest&,
-    ////    transaction_const_ptr> payment_subscriber;
-    ////typedef notifier<address_key, const code&, uint32_t, uint32_t,
-    ////    const hash_digest&, transaction_const_ptr> stealth_subscriber;
+    typedef std::shared_ptr<uint16_t> sequence_ptr;
     typedef notifier<address_key, const code&, const binary&, uint32_t,
         const hash_digest&, transaction_const_ptr> address_subscriber;
-    ////typedef notifier<address_key, const code&, uint32_t,
-    ////    const hash_digest&, const hash_digest&> penetration_subscriber;
 
     // Remove expired subscriptions.
     void purge();
     int32_t purge_interval_milliseconds() const;
 
-    ////bool handle_inventories(const code& ec, inventory_const_ptr packet);
     bool handle_reorganization(const code& ec, size_t fork_height,
         block_const_ptr_list_const_ptr new_blocks,
         block_const_ptr_list_const_ptr old_blocks);
     bool handle_transaction_pool(const code& ec, transaction_const_ptr tx);
 
-    ////void notify_inventory(const bc::message::inventory_vector& inventory);
     void notify_block(uint32_t height, block_const_ptr block);
     void notify_transaction(uint32_t height, const hash_digest& block_hash,
         transaction_const_ptr tx);
 
-    ////// v2/v3 (deprecated)
-    ////void notify_payment(const wallet::payment_address& address,
-    ////    uint32_t height, const hash_digest& block_hash,
-    ////    transaction_const_ptr tx);
-    ////void notify_stealth(uint32_t prefix, uint32_t height,
-    ////    const hash_digest& block_hash, transaction_const_ptr tx);
-
-    // v3
     void notify_address(const binary& field, uint32_t height,
         const hash_digest& block_hash, transaction_const_ptr tx);
-    ////void notify_penetration(uint32_t height, const hash_digest& block_hash,
-    ////    const hash_digest& tx_hash);
 
     // Send a notification to the subscriber.
     void send(const route& reply_to, const std::string& command,
         uint32_t id, const data_chunk& payload);
-    ////void send_payment(const route& reply_to, uint32_t id,
-    ////    const wallet::payment_address& address, uint32_t height,
-    ////    const hash_digest& block_hash, transaction_const_ptr tx);
-    ////void send_stealth(const route& reply_to, uint32_t id, uint32_t prefix,
-    ////    uint32_t height, const hash_digest& block_hash,
-    ////    transaction_const_ptr tx);
-    void send_address(const route& reply_to, uint32_t id, uint8_t sequence,
-        uint32_t height, const hash_digest& block_hash,
-        transaction_const_ptr tx);
 
-    ////bool handle_payment(const code& ec, const wallet::payment_address& address,
-    ////    uint32_t height, const hash_digest& block_hash,
-    ////    transaction_const_ptr tx, const route& reply_to, uint32_t id,
-    ////    const binary& prefix_filter);
-    ////bool handle_stealth(const code& ec, uint32_t prefix, uint32_t height,
-    ////    const hash_digest& block_hash, transaction_const_ptr tx,
-    ////    const route& reply_to, uint32_t id, const binary& prefix_filter);
     bool handle_address(const code& ec, const binary& field, uint32_t height,
         const hash_digest& block_hash, transaction_const_ptr tx,
         const route& reply_to, uint32_t id, const binary& prefix_filter,
@@ -141,9 +101,6 @@ private:
     server_node& node_;
     bc::protocol::zmq::authenticator& authenticator_;
     address_subscriber::ptr address_subscriber_;
-    ////payment_subscriber::ptr payment_subscriber_;
-    ////stealth_subscriber::ptr stealth_subscriber_;
-    ////penetration_subscriber::ptr penetration_subscriber_;
 };
 
 } // namespace server

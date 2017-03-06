@@ -66,7 +66,6 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
 // There is no unsubscribe so this class shouldn't be restarted.
 bool notification_worker::start()
 {
-    // v3
     address_subscriber_->start();
     ////penetration_subscriber_->start();
 
@@ -96,10 +95,10 @@ bool notification_worker::stop()
     address_subscriber_->stop();
 
     // Unlike purge, stop will not propagate, since the context is closed.
-    address_subscriber_->invoke(error::channel_stopped, {}, 0, {}, {});
+    address_subscriber_->invoke(error::service_stopped, {}, 0, {}, {});
 
     ////penetration_subscriber_->stop();
-    ////penetration_subscriber_->invoke(error::channel_stopped, 0, {}, {});
+    ////penetration_subscriber_->invoke(error::service_stopped, 0, {}, {});
 
     return zmq::worker::stop();
 }
@@ -187,7 +186,6 @@ void notification_worker::purge()
 {
     static const auto code = error::channel_timeout;
 
-    // v3
     address_subscriber_->purge(code, {}, 0, {}, {});
     ////penetration_subscriber_->purge(code, 0, {}, {});
 }
@@ -226,27 +224,6 @@ void notification_worker::send(const route& reply_to,
             << notification.route().display() << " " << ec.message();
 }
 
-void notification_worker::send_address(const route& reply_to, uint32_t id,
-    uint8_t sequence, uint32_t height, const hash_digest& block_hash,
-    transaction_const_ptr tx)
-{
-    // [ code:4 ]
-    // [ sequence:1 ]
-    // [ height:4 ]
-    // [ block_hash:32 ]
-    // [ tx:... ]
-    const auto payload = build_chunk(
-    {
-        message::to_bytes(error::success),
-        to_array(sequence),
-        to_little_endian(height),
-        block_hash,
-        tx->to_data(bc::message::version::level::canonical)
-    });
-
-    send(reply_to, address_update2, id, payload);
-}
-
 // Handlers.
 // ----------------------------------------------------------------------------
 
@@ -257,13 +234,27 @@ bool notification_worker::handle_address(const code& ec,
 {
     if (ec)
     {
+        // [ code:4 ]
         send(reply_to, address_update2, id, message::to_bytes(ec));
         return false;
     }
 
     if (prefix_filter.is_prefix_of(field))
     {
-        send_address(reply_to, id, *sequence, height, block_hash, tx);
+        // [ code:4 ]
+        // [ sequence:2 ]
+        // [ height:4 ]
+        // [ block_hash:32 ]
+        // [ tx:... ]
+        send(reply_to, address_update2, id, build_chunk(
+        {
+            message::to_bytes(error::success),
+            to_little_endian(*sequence),
+            to_little_endian(height),
+            block_hash,
+            tx->to_data(bc::message::version::level::canonical)
+        }));
+
         ++(*sequence);
     }
 
@@ -283,7 +274,7 @@ code notification_worker::subscribe_address(const route& reply_to, uint32_t id,
     if (unsubscribe)
     {
         // Cause stored handler to be invoked but with specified error code.
-        address_subscriber_->unsubscribe(key, error::channel_stopped, {}, 0,
+        address_subscriber_->unsubscribe(key, error::service_stopped, {}, 0,
             {}, {});
         return error::success;
     }
@@ -293,7 +284,7 @@ code notification_worker::subscribe_address(const route& reply_to, uint32_t id,
         return error::oversubscribed;
 
     // The sequence enables the client to detect dropped messages.
-    const auto sequence = std::make_shared<uint8_t>(0);
+    const auto sequence = std::make_shared<uint16_t>(0);
     const auto& duration = settings_.subscription_expiration();
 
     auto handler =
@@ -303,7 +294,7 @@ code notification_worker::subscribe_address(const route& reply_to, uint32_t id,
 
     // If the service is stopped a notification will result.
     address_subscriber_->subscribe(std::move(handler),
-        key, duration, error::channel_stopped, {}, 0, {}, {});
+        key, duration, error::service_stopped, {}, 0, {}, {});
     return error::success;
 }
 
@@ -490,7 +481,6 @@ void notification_worker::notify_transaction(uint32_t height,
     }
 }
 
-// v3
 void notification_worker::notify_address(const binary& field, uint32_t height,
     const hash_digest& block_hash, transaction_const_ptr tx)
 {
