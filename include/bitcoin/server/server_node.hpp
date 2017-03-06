@@ -84,7 +84,7 @@ public:
 
     /// Subscribe to address (including stealth) prefix notifications.
     /// Stealth prefix is limited to 32 bits, address prefix to 256 bits.
-    virtual void subscribe_address(const route& reply_to, uint32_t id,
+    virtual code subscribe_address(const route& reply_to, uint32_t id,
         const binary& prefix_filter, bool unsubscribe);
 
     /////// Subscribe to transaction penetration notifications.
@@ -101,6 +101,7 @@ private:
     bool start_block_services();
     bool start_transaction_services();
     bool start_query_workers(bool secure);
+    bool start_notification_workers(bool secure);
 
     const configuration& configuration_;
 

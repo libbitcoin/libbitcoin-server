@@ -32,7 +32,6 @@ using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::wallet;
 
-// v3 eliminates the subscription type, which we map to 'unspecified'.
 void address::subscribe2(server_node& node, const message& request,
     send_handler handler)
 {
@@ -44,11 +43,13 @@ void address::subscribe2(server_node& node, const message& request,
         return;
     }
 
-    node.subscribe_address(request.route(), request.id(), prefix_filter, false);
-    handler(message(request, error::success));
+    // May cause a notification to fire in addition to the response below.
+    const auto ec = node.subscribe_address(request.route(), request.id(),
+        prefix_filter, false);
+
+    handler(message(request, ec));
 }
 
-// v3 adds unsubscribe2, which we map to subscription_type 'unsubscribe'.
 void address::unsubscribe2(server_node& node, const message& request,
     send_handler handler)
 {
@@ -60,8 +61,11 @@ void address::unsubscribe2(server_node& node, const message& request,
         return;
     }
 
-    node.subscribe_address(request.route(), request.id(), prefix_filter, true);
-    handler(message(request, error::success));
+    // May cause a notification to fire in addition to the response below.
+    const auto ec = node.subscribe_address(request.route(), request.id(),
+        prefix_filter, true);
+
+    handler(message(request, ec));
 }
 
 bool address::unwrap_subscribe2_args(binary& prefix_filter,

@@ -43,9 +43,6 @@ using namespace bc::chain;
 using namespace bc::protocol;
 using namespace bc::wallet;
 
-// Purge subscriptions at 10% of the expiration period.
-static constexpr int64_t purge_interval_ratio = 10;
-
 // Notifications respond with commands that are distinct from the subscription.
 ////static const std::string penetration_update("penetration.update");
 ////static const std::string address_stealth("address.stealth_update");
@@ -60,16 +57,15 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
     node_(node),
     authenticator_(authenticator),
     address_subscriber_(std::make_shared<address_subscriber>(
-        node.thread_pool(), settings_.subscription_limit, NAME "_address"))
+        node.thread_pool(), NAME "_address"))
     ////penetration_subscriber_(std::make_shared<penetration_subscriber>(
-    ////    node.thread_pool(), settings_.subscription_limit, NAME "_penetration"))
+    ////    node.thread_pool(), NAME "_penetration"))
 {
 }
 
 // There is no unsubscribe so this class shouldn't be restarted.
 bool notification_worker::start()
 {
-    // v3
     address_subscriber_->start();
     ////penetration_subscriber_->start();
 
@@ -93,16 +89,16 @@ bool notification_worker::start()
 }
 
 // No unsubscribe so must be kept in scope until subscriber stop complete.
+// Because of closures in subscriber, must call stop from node stop handler.
 bool notification_worker::stop()
 {
-    static const auto code = error::channel_stopped;
-
-    // v3
     address_subscriber_->stop();
-    address_subscriber_->invoke(code, {}, 0, {}, {});
+
+    // Unlike purge, stop will not propagate, since the context is closed.
+    address_subscriber_->invoke(error::service_stopped, {}, 0, {}, {});
 
     ////penetration_subscriber_->stop();
-    ////penetration_subscriber_->invoke(code, 0, {}, {});
+    ////penetration_subscriber_->invoke(error::service_stopped, 0, {}, {});
 
     return zmq::worker::stop();
 }
@@ -137,8 +133,8 @@ void notification_worker::work()
 int32_t notification_worker::purge_interval_milliseconds() const
 {
     const int64_t minutes = settings_.subscription_expiration_minutes;
-    const int64_t milliseconds = minutes * 60 * 1000 / purge_interval_ratio;
-    const auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
+    const int64_t milliseconds = minutes * 60 * 1000;
+    auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
     return static_cast<int32_t>(capped);
 }
 
@@ -152,6 +148,9 @@ bool notification_worker::connect(socket& router)
         query_service::public_notify;
 
     const auto ec = router.connect(endpoint);
+
+    if (ec == error::service_stopped)
+        return false;
 
     if (ec)
     {
@@ -187,7 +186,6 @@ void notification_worker::purge()
 {
     static const auto code = error::channel_timeout;
 
-    // v3
     address_subscriber_->purge(code, {}, 0, {}, {});
     ////penetration_subscriber_->purge(code, 0, {}, {});
 }
@@ -226,27 +224,6 @@ void notification_worker::send(const route& reply_to,
             << notification.route().display() << " " << ec.message();
 }
 
-void notification_worker::send_address(const route& reply_to, uint32_t id,
-    uint8_t sequence, uint32_t height, const hash_digest& block_hash,
-    transaction_const_ptr tx)
-{
-    // [ code:4 ]
-    // [ sequence:1 ]
-    // [ height:4 ]
-    // [ block_hash:32 ]
-    // [ tx:... ]
-    const auto payload = build_chunk(
-    {
-        message::to_bytes(error::success),
-        to_array(sequence),
-        to_little_endian(height),
-        block_hash,
-        tx->to_data(bc::message::version::level::canonical)
-    });
-
-    send(reply_to, address_update2, id, payload);
-}
-
 // Handlers.
 // ----------------------------------------------------------------------------
 
@@ -257,13 +234,27 @@ bool notification_worker::handle_address(const code& ec,
 {
     if (ec)
     {
+        // [ code:4 ]
         send(reply_to, address_update2, id, message::to_bytes(ec));
         return false;
     }
 
     if (prefix_filter.is_prefix_of(field))
     {
-        send_address(reply_to, id, *sequence, height, block_hash, tx);
+        // [ code:4 ]
+        // [ sequence:2 ]
+        // [ height:4 ]
+        // [ block_hash:32 ]
+        // [ tx:... ]
+        send(reply_to, address_update2, id, build_chunk(
+        {
+            message::to_bytes(error::success),
+            to_little_endian(*sequence),
+            to_little_endian(height),
+            block_hash,
+            tx->to_data(bc::message::version::level::canonical)
+        }));
+
         ++(*sequence);
     }
 
@@ -275,34 +266,36 @@ bool notification_worker::handle_address(const code& ec,
 
 // Subscribe to address and stealth prefix notifications.
 // Each delegate must connect to the appropriate query notification endpoint.
-void notification_worker::subscribe_address(const route& reply_to, uint32_t id,
+code notification_worker::subscribe_address(const route& reply_to, uint32_t id,
     const binary& prefix_filter, bool unsubscribe)
 {
-    static const auto error_code = error::channel_stopped;
     const address_key key(reply_to, prefix_filter);
 
     if (unsubscribe)
     {
-        // Just as with an expiration (purge) this will cause the stored
-        // handler (notification_worker::handle_address) to be invoked but
-        // with the specified error code (error::channel_stopped) as
-        // opposed to error::channel_timeout.
-        address_subscriber_->unsubscribe(key, error_code, {}, 0, {}, {});
-        return;
+        // Cause stored handler to be invoked but with specified error code.
+        address_subscriber_->unsubscribe(key, error::service_stopped, {}, 0,
+            {}, {});
+        return error::success;
     }
 
+    // This allows resubscriptions at the service limit.
+    if (address_subscriber_->limited(key, settings_.subscription_limit))
+        return error::oversubscribed;
+
     // The sequence enables the client to detect dropped messages.
-    const auto sequence = std::make_shared<uint8_t>(0);
+    const auto sequence = std::make_shared<uint16_t>(0);
     const auto& duration = settings_.subscription_expiration();
 
-    // This class must be kept in scope until work is terminated.
     auto handler =
         std::bind(&notification_worker::handle_address,
             this, _1, _2, _3, _4, _5, reply_to, id, prefix_filter,
                 sequence);
 
-    address_subscriber_->subscribe(std::move(handler), key, duration,
-        error_code, {}, 0, {}, {});
+    // If the service is stopped a notification will result.
+    address_subscriber_->subscribe(std::move(handler),
+        key, duration, error::service_stopped, {}, 0, {}, {});
+    return error::success;
 }
 
 ////// Subscribe to transaction penetration notifications.
@@ -488,7 +481,6 @@ void notification_worker::notify_transaction(uint32_t height,
     }
 }
 
-// v3
 void notification_worker::notify_address(const binary& field, uint32_t height,
     const hash_digest& block_hash, transaction_const_ptr tx)
 {

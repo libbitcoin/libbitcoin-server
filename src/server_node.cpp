@@ -120,15 +120,14 @@ bool server_node::close()
 // ----------------------------------------------------------------------------
 
 // Subscribe (or unsubscribe) to address/stealth prefix notifications.
-void server_node::subscribe_address(const route& reply_to, uint32_t id,
+code server_node::subscribe_address(const route& reply_to, uint32_t id,
     const binary& prefix_filter, bool unsubscribe)
 {
-    if (reply_to.secure)
-        secure_notification_worker_
-            .subscribe_address(reply_to, id, prefix_filter, unsubscribe);
-    else
-        public_notification_worker_
-            .subscribe_address(reply_to, id, prefix_filter, unsubscribe);
+    return reply_to.secure ?
+        secure_notification_worker_.subscribe_address(reply_to, id,
+            prefix_filter, unsubscribe) :
+        public_notification_worker_.subscribe_address(reply_to, id,
+            prefix_filter, unsubscribe);
 }
 
 ////// Subscribe to transaction penetration notifications.
@@ -178,15 +177,15 @@ bool server_node::start_query_services()
         return true;
 
     // Start secure service, query workers and notification workers if enabled.
-    if (settings.server_private_key && (!secure_query_service_.start() ||
-        (settings.subscription_limit > 0 && !secure_notification_worker_.start()) ||
-        !start_query_workers(true)))
+    if (settings.server_private_key &&
+        (!secure_query_service_.start() || !start_query_workers(true) ||
+        (settings.subscription_limit > 0 && !start_notification_workers(true))))
             return false;
 
     // Start public service, query workers and notification workers if enabled.
-    if (!settings.secure_only && (!public_query_service_.start() ||
-        (settings.subscription_limit > 0 && !public_notification_worker_.start()) ||
-        !start_query_workers(false)))
+    if (!settings.secure_only && 
+        (!public_query_service_.start() || !start_query_workers(false) ||
+        (settings.subscription_limit > 0 && !start_notification_workers(false))))
             return false;
 
     return true;
@@ -254,13 +253,46 @@ bool server_node::start_query_workers(bool secure)
 
     for (auto count = 0; count < settings.query_workers; ++count)
     {
-        auto worker = std::make_shared<query_worker>(authenticator_,
+        const auto worker = std::make_shared<query_worker>(authenticator_,
             server, secure);
 
         if (!worker->start())
             return false;
 
+        // Workers register with stop handler just to keep them in scope.
         subscribe_stop([=](const code&) { worker->stop(); });
+    }
+
+    return true;
+}
+
+// Called from start_query_services.
+bool server_node::start_notification_workers(bool secure)
+{
+    auto& server = *this;
+    const auto& settings = configuration_.server;
+
+    if (secure)
+    {
+        if (!secure_notification_worker_.start())
+            return false;
+
+        // Becuase the notification worker holds closures must stop early.
+        subscribe_stop([=](const code&)
+        {
+            secure_notification_worker_.stop();
+        });
+    }
+    else
+    {
+        if (!public_notification_worker_.start())
+            return false;
+
+        // Becuase the notification worker holds closures must stop early.
+        subscribe_stop([=](const code&)
+        {
+            public_notification_worker_.stop();
+        });
     }
 
     return true;
