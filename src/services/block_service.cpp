@@ -185,10 +185,9 @@ void block_service::publish_blocks(uint32_t fork_height,
 
     if (ec)
     {
-        // TODO: fix socket so that it can detect context stopped.
-        ////LOG_WARNING(LOG_SERVER)
-        ////    << "Failed to connect " << security << " block worker: "
-        ////    << ec.message();
+        LOG_WARNING(LOG_SERVER)
+            << "Failed to connect " << security << " block worker: "
+            << ec.message();
         return;
     }
 

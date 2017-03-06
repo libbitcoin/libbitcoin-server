@@ -183,10 +183,9 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
 
     if (ec)
     {
-        // TODO: fix socket so that it can detect context stopped.
-        ////LOG_WARNING(LOG_SERVER)
-        ////    << "Failed to connect " << security << " transaction worker: "
-        ////    << ec.message();
+        LOG_WARNING(LOG_SERVER)
+            << "Failed to connect " << security << " transaction worker: "
+            << ec.message();
         return;
     }
 
