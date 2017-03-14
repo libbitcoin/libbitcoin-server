@@ -68,7 +68,7 @@ private:
 
 // Localizable messages.
 #define BS_SETTINGS_MESSAGE \
-    "These are the configuration settings that can be set."
+    "Configuration Settings:"
 #define BS_INFORMATION_MESSAGE \
     "Runs a full bitcoin node and query server in the global network."
 
