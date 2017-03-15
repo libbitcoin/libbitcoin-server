@@ -23,7 +23,6 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -58,10 +57,10 @@ void protocol::total_connections(server_node& node, const message& request,
 ////void protocol::broadcast_transaction(server_node& node, const message& request,
 ////    send_handler handler)
 ////{
-////    static const auto version = bc::message::version::level::canonical;
+////    static const auto canonical = bc::message::version::level::canonical;
 ////    bc::message::transaction tx;
 ////
-////    if (!tx.from_data(version, request.data()))
+////    if (!tx.from_data(canonical, request.data()))
 ////    {
 ////        handler(message(request, error::bad_stream));
 ////        return;

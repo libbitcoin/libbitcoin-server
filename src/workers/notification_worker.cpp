@@ -31,7 +31,6 @@
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {

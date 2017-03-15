@@ -45,6 +45,9 @@ public:
         send_handler handler);
 
 private:
+    static void transaction_fetched(const code& ec, transaction_ptr tx,
+        size_t, size_t, const message& request, send_handler handler);
+
     static void handle_broadcast(const code& ec, const message& request,
         send_handler handler);
 
