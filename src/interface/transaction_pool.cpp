@@ -49,7 +49,7 @@ void transaction_pool::fetch_transaction(server_node& node,
 
     // The response allows confirmed and unconfirmed transactions.
     node.chain().fetch_transaction(hash, false,
-        std::bind(transaction_fetched,
+        std::bind(&transaction_pool::transaction_fetched,
             _1, _2, _3, _4, request, handler));
 }
 
