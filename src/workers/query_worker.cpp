@@ -213,7 +213,7 @@ void query_worker::attach(const std::string& command,
 // blockchain.fetch_stealth2 is new in v3.
 // blockchain.fetch_stealth_transaction is new in v3 (safe version).
 //-----------------------------------------------------------------------------
-// transaction_pool.validate is obsoleted in v3 (reason?).
+// transaction_pool.validate is obsoleted in v3 (sends unconfirmed outputs).
 // transaction_pool.validate2 is new in v3.
 // transaction_pool.broadcast is new in v3 (rename).
 // transaction_pool.fetch_transaction is enhanced in v3 (adds confirmed txs).

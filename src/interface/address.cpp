@@ -23,7 +23,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
