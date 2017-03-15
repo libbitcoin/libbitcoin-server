@@ -320,19 +320,15 @@ void blockchain::fetch_spend(server_node& node, const message& request,
         return;
     }
 
-    using namespace boost::iostreams;
-    static const auto fail_bit = stream<byte_source<data_chunk>>::failbit;
-    stream<byte_source<data_chunk>> istream(data);
-    istream.exceptions(fail_bit);
-    chain::output_point outpoint;
-    outpoint.from_data(istream);
+    output_point outpoint;
+    outpoint.from_data(data);
 
     node.chain().fetch_spend(outpoint,
         std::bind(&blockchain::spend_fetched,
             _1, _2, request, handler));
 }
 
-void blockchain::spend_fetched(const code& ec, const chain::input_point& inpoint,
+void blockchain::spend_fetched(const code& ec, const input_point& inpoint,
     const message& request, send_handler handler)
 {
     // [ code:4 ]
