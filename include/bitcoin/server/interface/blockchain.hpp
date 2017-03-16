@@ -128,7 +128,7 @@ private:
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
 
-    static void stealth_fetched2(const code& ec,
+    static void stealth_transaction_fetched(const code& ec,
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
 
