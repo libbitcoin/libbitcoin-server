@@ -35,7 +35,6 @@ lib_LTLIBRARIES = src/libbitcoin-server.la
 src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_protocol_CPPFLAGS} ${bitcoin_node_CPPFLAGS}
 src_libbitcoin_server_la_LIBADD = ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
 src_libbitcoin_server_la_SOURCES = \
-    src/address_key.cpp \
     src/configuration.cpp \
     src/parser.cpp \
     src/server_node.cpp \
@@ -50,8 +49,8 @@ src_libbitcoin_server_la_SOURCES = \
     src/services/heartbeat_service.cpp \
     src/services/query_service.cpp \
     src/services/transaction_service.cpp \
+    src/utility/address_key.cpp \
     src/utility/authenticator.cpp \
-    src/utility/fetch_helpers.cpp \
     src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
 
@@ -122,8 +121,7 @@ include_bitcoin_server_services_HEADERS = \
 include_bitcoin_server_utilitydir = ${includedir}/bitcoin/server/utility
 include_bitcoin_server_utility_HEADERS = \
     include/bitcoin/server/utility/address_key.hpp \
-    include/bitcoin/server/utility/authenticator.hpp \
-    include/bitcoin/server/utility/fetch_helpers.hpp
+    include/bitcoin/server/utility/authenticator.hpp
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \

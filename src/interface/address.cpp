@@ -23,7 +23,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -78,18 +77,10 @@ bool address::unwrap_subscribe2_args(binary& prefix_filter,
     if (data.empty())
         return false;
 
-    // First byte is the number of bits.
-    auto bit_length = data[0];
-
-    //// The max byte value is 255, so this is unnecessary.
-    ////static constexpr size_t address_bits = hash_size * byte_bits;
-    ////if (bit_length > address_bits)
-    ////    return false;
-
-    // Convert the bit length to byte length.
+    const auto bit_length = data[0];
     const auto byte_length = binary::blocks_size(bit_length);
 
-    if (data.size() - 1 != byte_length)
+    if (byte_length > short_hash_size || (data.size() - 1) != byte_length)
         return false;
 
     const data_chunk bytes({ data.begin() + 1, data.end() });

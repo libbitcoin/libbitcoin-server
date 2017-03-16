@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
@@ -83,6 +84,13 @@ public:
         send_handler handler);
 
 private:
+    static void history_fetched(const code& ec,
+        const chain::history_compact::list& history, const message& request,
+        send_handler handler);
+
+    static void transaction_fetched(const code& ec, transaction_ptr tx, size_t,
+        size_t, const message& request, send_handler handler);
+
     static void last_height_fetched(const code& ec, size_t last_height,
         const message& request, send_handler handler);
 
@@ -120,7 +128,7 @@ private:
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
 
-    static void stealth_fetched2(const code& ec,
+    static void stealth_transaction_fetched(const code& ec,
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
 
