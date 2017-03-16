@@ -390,22 +390,23 @@ void blockchain::fetch_stealth2(server_node& node, const message& request,
     }
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const auto bit_length = deserial.read_byte();
+    const auto byte_length = binary::blocks_size(bit_length);
 
-    // number_bits
-    const auto bit_size = deserial.read_byte();
-
-    if (data.size() != sizeof(uint8_t) + binary::blocks_size(bit_size) +
-        sizeof(uint32_t))
+    if (byte_length > sizeof(uint32_t))
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
-    // actual bitfield data
-    const auto blocks = deserial.read_bytes(binary::blocks_size(bit_size));
-    const binary prefix(bit_size, blocks);
+    if (data.size() != sizeof(uint8_t) + byte_length + sizeof(uint32_t))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
 
-    // from_height
+    const auto blocks = deserial.read_bytes(byte_length);
+    const binary prefix(bit_length, blocks);
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_stealth(prefix, from_height,
@@ -447,30 +448,33 @@ void blockchain::fetch_stealth_transaction(server_node& node,
     }
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const auto bit_length = deserial.read_byte();
+    const auto byte_length = binary::blocks_size(bit_length);
 
-    // number_bits
-    const auto bit_size = deserial.read_byte();
-
-    if (data.size() != sizeof(uint8_t) + binary::blocks_size(bit_size) +
-        sizeof(uint32_t))
+    // Disallow bit length greater than 32.
+    if (bit_length > sizeof(uint32_t))
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
-    // actual bitfield data
-    const auto blocks = deserial.read_bytes(binary::blocks_size(bit_size));
-    const binary prefix(bit_size, blocks);
 
-    // from_height
+    if (data.size() != sizeof(uint8_t) + byte_length + sizeof(uint32_t))
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    const auto blocks = deserial.read_bytes(byte_length);
+    const binary prefix(bit_length, blocks);
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_stealth(prefix, from_height,
-        std::bind(&blockchain::stealth_fetched2,
+        std::bind(&blockchain::stealth_transaction_fetched,
             _1, _2, request, handler));
 }
 
-void blockchain::stealth_fetched2(const code& ec,
+void blockchain::stealth_transaction_fetched(const code& ec,
     const stealth_compact::list& stealth_results, const message& request,
     send_handler handler)
 {

@@ -70,8 +70,6 @@ void address::unsubscribe2(server_node& node, const message& request,
 bool address::unwrap_subscribe2_args(binary& prefix_filter,
     const message& request)
 {
-    static constexpr size_t address_bits = short_hash_size * byte_bits;
-
     // [ prefix_bitsize:1 ]
     // [ prefix_blocks:...]
     const auto& data = request.data();
@@ -79,17 +77,10 @@ bool address::unwrap_subscribe2_args(binary& prefix_filter,
     if (data.empty())
         return false;
 
-    // First byte is the number of bits.
-    auto bit_length = data[0];
-
-    // Disallow bit length greater than address hash.
-    if (bit_length > address_bits)
-        return false;
-
-    // Convert the bit length to byte length.
+    const auto bit_length = data[0];
     const auto byte_length = binary::blocks_size(bit_length);
 
-    if (data.size() - 1 != byte_length)
+    if (byte_length > short_hash_size || (data.size() - 1) != byte_length)
         return false;
 
     const data_chunk bytes({ data.begin() + 1, data.end() });
