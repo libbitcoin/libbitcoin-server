@@ -236,7 +236,7 @@ void blockchain::fetch_transaction_index(server_node& node,
     const auto hash = deserial.read_hash();
 
     // The response is restricted to confirmed transactions (backward compat).
-    node.chain().fetch_transaction_position(hash, false,
+    node.chain().fetch_transaction_position(hash, true,
         std::bind(&blockchain::transaction_index_fetched,
             _1, _2, _3, request, handler));
 }
