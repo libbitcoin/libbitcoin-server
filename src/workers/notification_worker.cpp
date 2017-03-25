@@ -335,7 +335,10 @@ bool notification_worker::handle_reorganization(const code& ec,
         return true;
     }
 
-    // Blockchain height is 64 bit but obelisk protocol is 32 bit.
+    if (address_subscriber_->empty())
+        return true;
+
+    // Blockchain height is size_t but obelisk protocol is 32 bit.
     auto fork_height32 = safe_unsigned<uint32_t>(fork_height);
 
     for (const auto block: *new_blocks)
@@ -414,6 +417,9 @@ bool notification_worker::handle_transaction_pool(const code& ec,
         // Don't let a failure here prevent future notifications.
         return true;
     }
+
+    if (address_subscriber_->empty())
+        return true;
 
     notify_transaction(0, null_hash, tx);
     return true;
