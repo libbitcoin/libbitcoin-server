@@ -50,7 +50,7 @@ static const std::string address_update2("address.update2");
 
 notification_worker::notification_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     settings_(node.server_settings()),
     node_(node),

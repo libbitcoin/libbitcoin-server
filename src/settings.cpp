@@ -30,6 +30,7 @@ settings::settings()
     heartbeat_interval_seconds(5),
     subscription_expiration_minutes(10),
     subscription_limit(0 /*100000000*/),
+    priority(false),
     secure_only(false),
     block_service_enabled(true),
     transaction_service_enabled(true),

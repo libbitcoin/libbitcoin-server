@@ -45,9 +45,6 @@ class BCS_API server_node
 public:
     typedef std::shared_ptr<server_node> ptr;
 
-    /// Compute the minimum threadpool size required to run the server.
-    static uint32_t threads_required(const configuration& configuration);
-
     /// Construct a server node.
     server_node(const configuration& configuration);
 
