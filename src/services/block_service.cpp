@@ -40,7 +40,7 @@ const config::endpoint block_service::secure_worker("inproc://secure_block");
 
 block_service::block_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
