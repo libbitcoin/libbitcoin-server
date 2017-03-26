@@ -41,7 +41,7 @@ static inline uint32_t to_milliseconds(uint16_t seconds)
 // Heartbeat is capped at ~ 25 days by signed/millsecond conversions.
 heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),

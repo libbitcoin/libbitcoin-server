@@ -38,10 +38,6 @@ public:
     /// Construct an instance of the authenticator.
     authenticator(server_node& node);
 
-    /// This class is not copyable.
-    authenticator(const authenticator&) = delete;
-    void operator=(const authenticator&) = delete;
-
     /// Apply authentication to the socket.
     bool apply(bc::protocol::zmq::socket& socket, const std::string& domain,
         bool secure);

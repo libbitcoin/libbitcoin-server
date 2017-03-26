@@ -37,7 +37,7 @@ using namespace bc::protocol;
 
 query_worker::query_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),

@@ -36,7 +36,7 @@ const config::endpoint query_service::secure_notify("inproc://secure_notify");
 
 query_service::query_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     settings_(node.server_settings()),
     authenticator_(authenticator)
@@ -65,25 +65,31 @@ void query_service::work()
     {
         const auto signaled = poller.wait();
 
-        if (signaled.contains(router.id()) &&
-            !forward(router, query_dealer))
+        if (signaled.contains(router.id()))
         {
-            LOG_WARNING(LOG_SERVER)
-                << "Failed to forward from router to query_dealer.";
+            if (!forward(router, query_dealer))
+            {
+                LOG_WARNING(LOG_SERVER)
+                    << "Failed to forward from router to query_dealer.";
+            }
         }
 
-        if (signaled.contains(query_dealer.id()) &&
-            !forward(query_dealer, router))
+        if (signaled.contains(query_dealer.id()))
         {
-            LOG_WARNING(LOG_SERVER)
-                << "Failed to forward from query_dealer to router.";
+            if (!forward(query_dealer, router))
+            {
+                LOG_WARNING(LOG_SERVER)
+                    << "Failed to forward from query_dealer to router.";
+            }
         }
 
-        if (signaled.contains(notify_dealer.id()) &&
-            !forward(notify_dealer, router))
+        if (signaled.contains(notify_dealer.id()))
         {
-            LOG_WARNING(LOG_SERVER)
-                << "Failed to forward from notify_dealer to router.";
+            if (!forward(notify_dealer, router))
+            {
+                LOG_WARNING(LOG_SERVER)
+                    << "Failed to forward from notify_dealer to router.";
+            }
         }
     }
 

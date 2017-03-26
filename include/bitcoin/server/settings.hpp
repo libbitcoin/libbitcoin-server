@@ -38,6 +38,7 @@ public:
     settings(bc::config::settings context);
 
     /// Properties.
+    bool priority;
     bool secure_only;
 
     uint16_t query_workers;

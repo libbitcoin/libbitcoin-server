@@ -29,7 +29,7 @@ namespace server {
 using namespace bc::protocol;
 
 authenticator::authenticator(server_node& node)
-  : zmq::authenticator(node.thread_pool())
+  : zmq::authenticator(priority(node.server_settings().priority))
 {
     const auto& settings = node.server_settings();
 
