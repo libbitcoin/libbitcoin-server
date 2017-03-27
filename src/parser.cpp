@@ -543,6 +543,11 @@ options_metadata parser::load_settings()
         "server.client_address",
         value<config::authority::list>(&configured.server.client_addresses),
         "Allowed client IP address, multiple entries allowed."
+    )
+    (
+        "server.blacklist",
+        value<config::authority::list>(&configured.server.blacklists),
+        "Blocked client IP address, multiple entries allowed."
     );
 
     return description;
