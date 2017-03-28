@@ -61,6 +61,7 @@ public:
     config::sodium server_private_key;
     config::sodium::list client_public_keys;
     config::authority::list client_addresses;
+    config::authority::list blacklists;
 
     /// Helpers.
     asio::duration heartbeat_interval() const;
