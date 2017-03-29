@@ -20,7 +20,7 @@ The libbitcoin toolkit is a set of cross platform C++ libraries for building bit
 
 **About Libbitcoin Server**
 
-A full Bitcoin peer-to-peer node, Libbitcoin Server is also a high performance blockchain query server. It can be built as a single portable executable for Linux, OSX or Windows and is available for download as a signed single executable for each. It is trivial to deploy, just run the single process and allow it about two days to synchronize the Bitcoin blockchain.
+A full Bitcoin peer-to-peer node, Libbitcoin Server is also a high performance blockchain query server. It can be built as a single portable executable for Linux, macOS or Windows and is available for download as a signed single executable for each. It is trivial to deploy, just run the single process and allow it about two days to synchronize the Bitcoin blockchain.
 
 Libbitcoin Server exposes a custom query TCP API built based on the [ZeroMQ](http://zeromq.org) networking stack. It supports server, and optionally client, identity certificates and wire encryption via [CurveZMQ](http://curvezmq.org) and the [Sodium](http://libsodium.org) cryptographic library.
 
@@ -83,7 +83,7 @@ Next download the [install script](https://github.com/libbitcoin/libbitcoin-serv
 $ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version3/install.sh
 $ chmod +x install.sh
 ```
-Finally install Libbitcoin Server:
+Finally install Libbitcoin Server with default [build options](#build-notes-for-linux--macos):
 ```sh
 $ sudo ./install.sh
 ```
@@ -91,9 +91,9 @@ Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ 
 
 ### Macintosh
 
-The OSX installation differs from Linux in the installation of the compiler and packaged dependencies. Libbitcoin Server supports both [Homebrew](http://brew.sh) and [MacPorts](https://www.macports.org) package managers. Both require Apple's [Xcode](https://developer.apple.com/xcode) command line tools. Neither requires Xcode as the tools may be installed independently.
+The macOS installation differs from Linux in the installation of the compiler and packaged dependencies. Libbitcoin Server supports both [Homebrew](http://brew.sh) and [MacPorts](https://www.macports.org) package managers. Both require Apple's [Xcode](https://developer.apple.com/xcode) command line tools. Neither requires Xcode as the tools may be installed independently.
 
-Libbitcoin Server compiles with Clang on OSX and requires C++11 support. Installation has been verified using Clang based on [LLVM 3.5](http://llvm.org/releases/3.5.0/docs/ReleaseNotes.html). This version or newer should be installed as part of the Xcode command line tools.
+Libbitcoin Server compiles with Clang on macOS and requires C++11 support. Installation has been verified using Clang based on [LLVM 3.5](http://llvm.org/releases/3.5.0/docs/ReleaseNotes.html). This version or newer should be installed as part of the Xcode command line tools.
 
 To see your Clang/LLVM  version:
 ```sh
@@ -112,7 +112,7 @@ $ xcode-select --install
 
 #### Using Homebrew
 
-First install Homebrew. Installation requires [Ruby](https://www.ruby-lang.org/en) and [cURL](http://curl.haxx.se), which are pre-installed on OSX.
+First install [Homebrew](https://brew.sh).
 ```sh
 $ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
@@ -129,7 +129,7 @@ Next download the [install script](https://github.com/libbitcoin/libbitcoin-serv
 $ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version3/install.sh
 $ chmod +x install.sh
 ```
-Finally install Libbitcoin Server:
+Finally install Libbitcoin Server with default [build options](#build-notes-for-linux--macos):
 ```sh
 $ ./install.sh
 ```
@@ -152,13 +152,13 @@ Next download the [install script](https://github.com/libbitcoin/libbitcoin-serv
 $ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version3/install.sh
 $ chmod +x install.sh
 ```
-Finally install Libbitcoin Server:
+Finally install Libbitcoin Server with default [build options](#build-notes-for-linux--macos):
 ```sh
 $ ./install.sh
 ```
 Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
 
-### Configuration Options
+### Build Notes for Linux / macOS
 
 Any set of `./configure` options can be passed via the build script, several examples follow.
 
