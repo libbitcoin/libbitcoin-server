@@ -156,11 +156,17 @@ void blockchain::fetch_block_header_by_height(server_node& node,
 void blockchain::block_header_fetched(const code& ec, header_const_ptr header,
     const message& request, send_handler handler)
 {
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
     // [ code:4 ]
     // [ block... ]
     const auto result = build_chunk(
     {
-        message::to_bytes(ec),
+        message::to_bytes(error::success),
         header->to_data(canonical_version)
     });
 
