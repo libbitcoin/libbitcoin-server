@@ -56,9 +56,15 @@ void transaction_pool::fetch_transaction(server_node& node,
 void transaction_pool::transaction_fetched(const code& ec, transaction_ptr tx,
     size_t, size_t, const message& request, send_handler handler)
 {
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
     const auto result = build_chunk(
     {
-        message::to_bytes(ec),
+        message::to_bytes(error::success),
         tx->to_data(canonical)
     });
 
