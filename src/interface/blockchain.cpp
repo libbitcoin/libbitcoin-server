@@ -80,7 +80,7 @@ void blockchain::history_fetched(const code& ec,
     serial.write_error_code(ec);
 
     // TODO: add serialization to history_compact.
-    for (const auto& row : history)
+    for (const auto& row: history)
     {
         BITCOIN_ASSERT(row.height <= max_uint32);
         serial.write_byte(static_cast<uint8_t>(row.kind));
@@ -115,9 +115,15 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
 void blockchain::transaction_fetched(const code& ec, transaction_ptr tx,
     size_t, size_t, const message& request, send_handler handler)
 {
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
     const auto result = build_chunk(
     {
-        message::to_bytes(ec),
+        message::to_bytes(error::success),
         tx->to_data(canonical)
     });
 
@@ -201,11 +207,17 @@ void blockchain::fetch_block_header_by_height(server_node& node,
 void blockchain::block_header_fetched(const code& ec, header_const_ptr header,
     const message& request, send_handler handler)
 {
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
     // [ code:4 ]
     // [ block... ]
     const auto result = build_chunk(
     {
-        message::to_bytes(ec),
+        message::to_bytes(error::success),
         header->to_data(canonical)
     });
 
