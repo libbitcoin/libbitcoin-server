@@ -109,9 +109,15 @@ bool unwrap_fetch_transaction_args(hash_digest& hash, const message& request)
 void transaction_fetched(const code& ec, transaction_ptr tx, size_t, size_t,
     const message& request, send_handler handler)
 {
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
     const auto result = build_chunk(
     {
-        message::to_bytes(ec),
+        message::to_bytes(error::success),
         tx->to_data(version::level::canonical)
     });
 
