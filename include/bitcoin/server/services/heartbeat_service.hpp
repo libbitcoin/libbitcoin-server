@@ -51,8 +51,8 @@ protected:
     // Implement the service.
     virtual void work();
 
-    // Publish the heartbeat (integrated worker).
-    void publish(uint32_t count, socket& socket);
+    // Publish the heartbeat (no worker).
+    void publish(uint32_t sequence, socket& socket);
 
 private:
     const bool secure_;

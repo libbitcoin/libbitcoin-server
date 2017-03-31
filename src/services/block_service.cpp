@@ -200,8 +200,7 @@ void block_service::publish_blocks(uint32_t fork_height,
 }
 
 // [ height:4 ]
-// [ header:80 ]
-// [ txs... ]
+// [ block ]
 // The payload for block publication is delimited within the zeromq message.
 // This is required for compatability and inconsistent with query payloads.
 void block_service::publish_block(zmq::socket& publisher, uint32_t height,
@@ -212,7 +211,9 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
 
     const auto security = secure_ ? "secure" : "public";
 
+    // TODO: add a message sequence count using member with random init.
     zmq::message broadcast;
+    ////broadcast.enqueue_little_endian(++sequence_);
     broadcast.enqueue_little_endian(height);
     broadcast.enqueue(block->to_data(bc::message::version::level::canonical));
     const auto ec = publisher.send(broadcast);

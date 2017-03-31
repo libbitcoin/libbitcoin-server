@@ -192,7 +192,9 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (stopped())
         return;
 
+    // TODO: add a message sequence count using member with random init.
     zmq::message broadcast;
+    ////broadcast.enqueue_little_endian(++sequence_);
     broadcast.enqueue(tx->to_data(bc::message::version::level::canonical));
     ec = publisher.send(broadcast);
 

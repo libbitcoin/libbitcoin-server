@@ -56,7 +56,7 @@ void heartbeat_service::work()
 {
     zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
 
-    // Bind socket to the worker endpoint.
+    // Bind socket to the service endpoint.
     if (!started(bind(publisher)))
         return;
 
@@ -64,13 +64,14 @@ void heartbeat_service::work()
     poller.add(publisher);
 
     // Pick a random counter start, will wrap around at overflow.
-    auto count = static_cast<uint32_t>(pseudo_random(0, max_uint32));
+    auto sequence = static_cast<uint32_t>(pseudo_random(0, max_uint32));
 
+    // TODO: make member, see tx/block publishers.
     // We will not receive on the poller, we use its timer and context stop.
     while (!poller.terminated() && !stopped())
     {
         poller.wait(period_);
-        publish(count++, publisher);
+        publish(sequence++, publisher);
     }
 
     // Unbind the socket and exit this thread.
@@ -120,7 +121,7 @@ bool heartbeat_service::unbind(zmq::socket& publisher)
 // Publish Execution (integral worker).
 //-----------------------------------------------------------------------------
 
-void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
+void heartbeat_service::publish(uint32_t sequence, zmq::socket& publisher)
 {
     if (stopped())
         return;
@@ -128,7 +129,7 @@ void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
     const auto security = secure_ ? "secure" : "public";
 
     zmq::message message;
-    message.enqueue_little_endian(count);
+    message.enqueue_little_endian(sequence);
     auto ec = publisher.send(message);
 
     if (ec == error::service_stopped)
@@ -145,7 +146,7 @@ void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
     // This isn't actually a request, should probably update settings.
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
-            << "Published " << security << " heartbeat [" << count << "].";
+        << "Published " << security << " heartbeat [" << sequence << "].";
 }
 
 } // namespace server
