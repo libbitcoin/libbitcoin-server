@@ -120,8 +120,7 @@ void query_worker::query(zmq::socket& router)
     if (stopped())
         return;
 
-    // TODO: rewrite the serial blockchain interface to avoid callbacks.
-    // We are using a closure vs. bind to take advantage of move arg syntax.
+    // TODO: move to std::bind of member function.
     const auto sender = [&router](message&& response)
     {
         const auto ec = response.send(router);
