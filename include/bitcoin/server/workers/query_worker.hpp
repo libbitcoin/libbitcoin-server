@@ -62,6 +62,9 @@ protected:
     virtual void work();
 
 private:
+    static void send(const message& response,
+        bc::protocol::zmq::socket& socket);
+
     const bool secure_;
     const bool verbose_;
     const server::settings& settings_;

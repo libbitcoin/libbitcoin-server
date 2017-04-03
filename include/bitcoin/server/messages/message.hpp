@@ -66,7 +66,7 @@ public:
     code receive(bc::protocol::zmq::socket& socket);
 
     /// Send the message via the socket.
-    code send(bc::protocol::zmq::socket& socket);
+    code send(bc::protocol::zmq::socket& socket) const;
 
 private:
     uint32_t id_;
@@ -75,7 +75,7 @@ private:
     std::string command_;
 };
 
-typedef std::function<void(message&&)> send_handler;
+typedef std::function<void(const message&)> send_handler;
 
 } // namespace server
 } // namespace libbitcoin
