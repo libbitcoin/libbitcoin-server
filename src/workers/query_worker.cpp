@@ -48,40 +48,44 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     attach_interface();
 }
 
-// Implement worker as a router to the query service.
+// Implement worker as a dealer to the query service.
 // v2 libbitcoin-client DEALER does not add delimiter frame.
-// The router drops messages for lost peers (query service) and high water.
+// The dealer drops messages for lost peers (query service) and high water.
 void query_worker::work()
 {
-    zmq::socket router(authenticator_, zmq::socket::role::router);
+    // Use a dealer for this synchronous response because notifications are
+    // sent asynchronously to the same identity via the same dealer. Using a
+    // router is okay but it adds an additional address to the envelope that
+    // would have to be stripped by the notification dealer so this is simpler.
+    zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
 
     // Connect socket to the service endpoint.
-    if (!started(connect(router)))
+    if (!started(connect(dealer)))
         return;
 
     zmq::poller poller;
-    poller.add(router);
+    poller.add(dealer);
 
     while (!poller.terminated() && !stopped())
     {
-        if (poller.wait().contains(router.id()))
-            query(router);
+        if (poller.wait().contains(dealer.id()))
+            query(dealer);
     }
 
     // Disconnect the socket and exit this thread.
-    finished(disconnect(router));
+    finished(disconnect(dealer));
 }
 
 // Connect/Disconnect.
 //-----------------------------------------------------------------------------
 
-bool query_worker::connect(zmq::socket& router)
+bool query_worker::connect(zmq::socket& dealer)
 {
     const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_query :
-        query_service::public_query;
+    const auto& endpoint = secure_ ? query_service::secure_worker :
+        query_service::public_worker;
 
-    const auto ec = router.connect(endpoint);
+    const auto ec = dealer.connect(endpoint);
 
     if (ec)
     {
@@ -96,12 +100,12 @@ bool query_worker::connect(zmq::socket& router)
     return true;
 }
 
-bool query_worker::disconnect(zmq::socket& router)
+bool query_worker::disconnect(zmq::socket& dealer)
 {
     const auto security = secure_ ? "secure" : "public";
 
     // Don't log stop success.
-    if (router.stop())
+    if (dealer.stop())
         return true;
 
     LOG_ERROR(LOG_SERVER)
@@ -112,28 +116,27 @@ bool query_worker::disconnect(zmq::socket& router)
 // Query Execution.
 //-----------------------------------------------------------------------------
 
+// private/static
+void query_worker::send(const message& response, zmq::socket& socket)
+{
+    const auto ec = response.send(socket);
+
+    if (ec && ec != error::service_stopped)
+        LOG_WARNING(LOG_SERVER)
+            << "Failed to send query response to "
+            << response.route().display() << " " << ec.message();
+}
+
 // Because the socket is a router we may simply drop invalid queries.
 // As a single thread worker this router should not reach high water.
 // If we implemented as a replier we would need to always provide a response.
-void query_worker::query(zmq::socket& router)
+void query_worker::query(zmq::socket& dealer)
 {
     if (stopped())
         return;
 
-    // TODO: rewrite the serial blockchain interface to avoid callbacks.
-    // We are using a closure vs. bind to take advantage of move arg syntax.
-    const auto sender = [&router](message&& response)
-    {
-        const auto ec = response.send(router);
-
-        if (ec && ec != error::service_stopped)
-            LOG_WARNING(LOG_SERVER)
-                << "Failed to send query response to "
-                << response.route().display() << " " << ec.message();
-    };
-
     message request(secure_);
-    const auto ec = request.receive(router);
+    const auto ec = request.receive(dealer);
 
     if (ec == error::service_stopped)
         return;
@@ -145,7 +148,7 @@ void query_worker::query(zmq::socket& router)
             << " " << ec.message();
 
         // Because the query did not parse this is likely to be misaddressed.
-        sender(message(request, ec));
+        send(message(request, ec), dealer);
         return;
     }
 
@@ -157,7 +160,7 @@ void query_worker::query(zmq::socket& router)
         LOG_DEBUG(LOG_SERVER)
             << "Invalid query command from " << request.route().display();
 
-        sender(message(request, error::not_found));
+        send(message(request, error::not_found), dealer);
         return;
     }
 
@@ -169,10 +172,12 @@ void query_worker::query(zmq::socket& router)
     // The query executor is the delegate bound by the attach method.
     const auto& query_execute = handler->second;
 
-    // Execute the request and forward result to queue.
+    // Execute the request and send the result.
     // Example: address.renew(node_, request, sender);
     // Example: blockchain.fetch_history2(node_, request, sender);
-    query_execute(request, sender);
+    query_execute(request,
+        std::bind(&query_worker::send,
+            _1, std::ref(dealer)));
 }
 
 // Query Interface.

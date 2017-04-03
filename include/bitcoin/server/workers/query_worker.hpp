@@ -54,14 +54,17 @@ protected:
     virtual void attach_interface();
     virtual void attach(const std::string& command, command_handler handler);
 
-    virtual bool connect(socket& router);
-    virtual bool disconnect(socket& router);
-    virtual void query(socket& router);
+    virtual bool connect(socket& dealer);
+    virtual bool disconnect(socket& dealer);
+    virtual void query(socket& dealer);
 
     // Implement the worker.
     virtual void work();
 
 private:
+    static void send(const message& response,
+        bc::protocol::zmq::socket& socket);
+
     const bool secure_;
     const bool verbose_;
     const server::settings& settings_;

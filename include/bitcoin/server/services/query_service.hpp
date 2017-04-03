@@ -37,11 +37,9 @@ class BCS_API query_service
 public:
     typedef std::shared_ptr<query_service> ptr;
 
-    /// The fixed inprocess query and notify worker endpoints.
-    static const config::endpoint public_query;
-    static const config::endpoint secure_query;
-    static const config::endpoint public_notify;
-    static const config::endpoint secure_notify;
+    /// The fixed inprocess worker endpoints.
+    static const config::endpoint public_worker;
+    static const config::endpoint secure_worker;
 
     /// Construct a query service.
     query_service(bc::protocol::zmq::authenticator& authenticator,
@@ -50,10 +48,8 @@ public:
 protected:
     typedef bc::protocol::zmq::socket socket;
 
-    virtual bool bind(socket& router, socket& query_dealer,
-        socket& notify_dealer);
-    virtual bool unbind(socket& router, socket& query_dealer,
-        socket& notify_dealer);
+    virtual bool bind(socket& router, socket& dealer);
+    virtual bool unbind(socket& router, socket& dealer);
 
     // Implement the service.
     virtual void work();
