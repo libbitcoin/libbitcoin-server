@@ -51,7 +51,7 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
 }
 
 // Implement service as a publisher.
-// The publisher does not block if there are no subscribers or at high water.
+// The publisher drops messages for lost peers (clients) and high water.
 void heartbeat_service::work()
 {
     zmq::socket publisher(authenticator_, zmq::socket::role::publisher);

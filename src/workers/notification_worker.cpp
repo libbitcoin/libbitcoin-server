@@ -43,9 +43,6 @@ using namespace bc::protocol;
 using namespace bc::wallet;
 
 // Notifications respond with commands that are distinct from the subscription.
-////static const std::string penetration_update("penetration.update");
-////static const std::string address_stealth("address.stealth_update");
-////static const std::string address_update("address.update");
 static const std::string address_update2("address.update2");
 
 notification_worker::notification_worker(zmq::authenticator& authenticator,
@@ -57,8 +54,6 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
     authenticator_(authenticator),
     address_subscriber_(std::make_shared<address_subscriber>(
         node.thread_pool(), NAME "_address"))
-    ////penetration_subscriber_(std::make_shared<penetration_subscriber>(
-    ////    node.thread_pool(), NAME "_penetration"))
 {
 }
 
@@ -66,7 +61,6 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
 bool notification_worker::start()
 {
     address_subscriber_->start();
-    ////penetration_subscriber_->start();
 
     // Subscribe to blockchain reorganizations.
     node_.subscribe_blockchain(
@@ -77,12 +71,6 @@ bool notification_worker::start()
     node_.subscribe_transaction(
         std::bind(&notification_worker::handle_transaction_pool,
             this, _1, _2));
-
-    ////// BUGBUG: this API was removed as could not adapt to changing peers.
-    ////// Subscribe to all inventory messages from all peers.
-    ////node_.subscribe<bc::message::inventory>(
-    ////    std::bind(&notification_worker::handle_inventories,
-    ////        this, _1, _2));
 
     return zmq::worker::start();
 }
@@ -96,9 +84,6 @@ bool notification_worker::stop()
     // Unlike purge, stop will not propagate, since the context is closed.
     address_subscriber_->invoke(error::service_stopped, {}, 0, {}, {});
 
-    ////penetration_subscriber_->stop();
-    ////penetration_subscriber_->invoke(error::service_stopped, 0, {}, {});
-
     return zmq::worker::stop();
 }
 
@@ -110,18 +95,21 @@ void notification_worker::work()
     if (!started(dummy))
         return;
 
+    const auto interval = purge_interval_milliseconds();
     zmq::poller poller;
     poller.add(dummy);
 
-    // We do not send/receive on the poller, we use it for context stop.
+    // We do not send/receive on poller, we use it for purge and context stop.
     // Other threads connect dynamically to query service to send notifcation.
     while (!poller.terminated() && !stopped())
-        poller.wait();
+    {
+        poller.wait(interval);
+        purge();
+    }
 
     finished(dummy.stop());
 }
 
-// TODO: call purge() on purge_interval_milliseconds.
 int32_t notification_worker::purge_interval_milliseconds() const
 {
     const int64_t minutes = settings_.subscription_expiration_minutes;
@@ -136,15 +124,14 @@ int32_t notification_worker::purge_interval_milliseconds() const
 // Signal expired subscriptions to self-remove.
 void notification_worker::purge()
 {
-    static const auto code = error::channel_timeout;
-
-    address_subscriber_->purge(code, {}, 0, {}, {});
-    ////penetration_subscriber_->purge(code, 0, {}, {});
+    address_subscriber_->purge(error::channel_timeout, {}, 0, {}, {});
 }
 
 // Sending.
+// The dealer blocks until the query service dealer is available.
 // ----------------------------------------------------------------------------
 
+// This cannot invoke any method of the subscriber or it will deadlock.
 void notification_worker::send(const route& reply_to,
     const std::string& command, uint32_t id, const data_chunk& payload)
 {
@@ -154,6 +141,8 @@ void notification_worker::send(const route& reply_to,
 
     // This must be a dealer, since the response is asynchronous.
     zmq::socket notifier(authenticator_, zmq::socket::role::dealer);
+
+    // This must not block if endpoint has been stopped (or would deadlock).
     auto ec = notifier.connect(endpoint);
 
     if (ec == error::service_stopped)
@@ -180,6 +169,7 @@ void notification_worker::send(const route& reply_to,
 // Handlers.
 // ----------------------------------------------------------------------------
 
+// This cannot invoke any method of the subscriber or it will deadlock.
 bool notification_worker::handle_address(const code& ec,
     const binary& field, uint32_t height, const hash_digest& block_hash,
     transaction_const_ptr tx, const route& reply_to, uint32_t id,
@@ -246,29 +236,10 @@ code notification_worker::subscribe_address(const route& reply_to, uint32_t id,
                 sequence);
 
     // If the service is stopped a notification will result.
-    address_subscriber_->subscribe(std::move(handler),
-        key, duration, error::service_stopped, {}, 0, {}, {});
+    address_subscriber_->subscribe(std::move(handler), key, duration,
+        error::service_stopped, {}, 0, {}, {});
     return error::success;
 }
-
-////// Subscribe to transaction penetration notifications.
-////// Each delegate must connect to the appropriate query notification endpoint.
-////void notification_worker::subscribe_penetration(const route& reply_to,
-////    uint32_t id, const hash_digest& tx_hash)
-////{
-////    // TODO:
-////    // Height and hash are zeroized if tx is not chained (inv/mempool).
-////    // If chained or penetration is 100 (percent) drop subscription.
-////    // Only send messages at configured thresholds (e.g. 20/40/60/80/100%).
-////    // Thresholding allows the server to mask its peer count.
-////    // Penetration is computed by the relay handler.
-////    // No sequence is required because gaps are okay.
-////    // [ tx_hash:32 ]
-////    // [ penetration:1 ]
-////    // [ height:4 ]
-////    // [ block_hash:32 ]
-////    ////penetration_subscriber_->subscribe();
-////}
 
 // Notification (via blockchain).
 // ----------------------------------------------------------------------------
@@ -313,46 +284,9 @@ void notification_worker::notify_block(uint32_t height,
     {
         // TODO: use shared pointers for block members to avoid copying.
         auto pointer = std::make_shared<const bc::message::transaction>(tx);
-
-        ////const auto tx_hash = tx->hash();
         notify_transaction(height, block_hash, pointer);
-        ////notify_penetration(height, block_hash, tx_hash);
     }
 }
-
-// Notification (via transaction inventory).
-// ----------------------------------------------------------------------------
-// This relies on peers always notifying us of new txs via inv messages.
-
-////// BUGBUG: this is disconnected from subscription.
-////bool notification_worker::handle_inventories(const code& ec,
-////    inventory_const_ptr packet)
-////{
-////    if (stopped() || ec == error::service_stopped)
-////        return false;
-////
-////    if (ec)
-////    {
-////        LOG_WARNING(LOG_SERVER)
-////            << "Failure handling inventory: " << ec.message();
-////
-////        // Don't let a failure here prevent future notifications.
-////        return true;
-////    }
-////
-////    // Loop inventories and extract transaction hashes.
-////    for (const auto& inventory: packet->inventories())
-////        if (inventory.is_transaction_type())
-////            notify_inventory(inventory);
-////
-////    return true;
-////}
-////
-////void notification_worker::notify_inventory(
-////    const bc::message::inventory_vector& inventory)
-////{
-////    notify_penetration(0, null_hash, inventory.hash());
-////}
 
 // Notification (via mempool and blockchain).
 // ----------------------------------------------------------------------------
@@ -443,17 +377,8 @@ void notification_worker::notify_transaction(uint32_t height,
 void notification_worker::notify_address(const binary& field, uint32_t height,
     const hash_digest& block_hash, transaction_const_ptr tx)
 {
-    static const auto code = error::success;
-    address_subscriber_->relay(code, field, height, block_hash, tx);
+    address_subscriber_->relay(error::success, field, height, block_hash, tx);
 }
-
-////// v3.x
-////void notification_worker::notify_penetration(uint32_t height,
-////    const hash_digest& block_hash, const hash_digest& tx_hash)
-////{
-////    static const auto code = error::success;
-////    penetration_subscriber_->relay(code, height, block_hash, tx_hash);
-////}
 
 } // namespace server
 } // namespace libbitcoin
