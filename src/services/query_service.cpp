@@ -107,7 +107,7 @@ bool query_service::bind(zmq::socket& router, zmq::socket& dealer)
 
 bool query_service::unbind(zmq::socket& router, zmq::socket& dealer)
 {
-    // Stop all even if one fails.
+    // Stop both even if one fails.
     const auto service_stop = router.stop();
     const auto worker_stop = dealer.stop();
     const auto security = secure_ ? "secure" : "public";
