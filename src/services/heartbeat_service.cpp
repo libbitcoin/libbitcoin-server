@@ -46,7 +46,10 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
     period_(to_milliseconds(settings_.heartbeat_interval_seconds)),
-    authenticator_(authenticator)
+    authenticator_(authenticator),
+
+    // Pick a random sequence counter start, will wrap around at overflow.
+    sequence_(pseudo_random(0, max_uint16))
 {
 }
 
@@ -63,15 +66,12 @@ void heartbeat_service::work()
     zmq::poller poller;
     poller.add(publisher);
 
-    // Pick a random counter start, will wrap around at overflow.
-    auto sequence = static_cast<uint32_t>(pseudo_random(0, max_uint32));
-
     // TODO: make member, see tx/block publishers.
     // We will not receive on the poller, we use its timer and context stop.
     while (!poller.terminated() && !stopped())
     {
         poller.wait(period_);
-        publish(sequence++, publisher);
+        publish(publisher);
     }
 
     // Unbind the socket and exit this thread.
@@ -121,15 +121,17 @@ bool heartbeat_service::unbind(zmq::socket& publisher)
 // Publish Execution (integral worker).
 //-----------------------------------------------------------------------------
 
-void heartbeat_service::publish(uint32_t sequence, zmq::socket& publisher)
+void heartbeat_service::publish(zmq::socket& publisher)
 {
     if (stopped())
         return;
 
     const auto security = secure_ ? "secure" : "public";
 
+    // [ sequence:2 ]
     zmq::message message;
-    message.enqueue_little_endian(sequence);
+    message.enqueue_little_endian<uint16_t>(++sequence_);
+
     auto ec = publisher.send(message);
 
     if (ec == error::service_stopped)
@@ -146,7 +148,7 @@ void heartbeat_service::publish(uint32_t sequence, zmq::socket& publisher)
     // This isn't actually a request, should probably update settings.
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
-        << "Published " << security << " heartbeat [" << sequence << "].";
+        << "Published " << security << " heartbeat [" << sequence_ << "].";
 }
 
 } // namespace server

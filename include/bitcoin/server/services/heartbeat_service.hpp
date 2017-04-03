@@ -52,7 +52,7 @@ protected:
     virtual void work();
 
     // Publish the heartbeat (no worker).
-    void publish(uint32_t sequence, socket& socket);
+    void publish(socket& socket);
 
 private:
     const bool secure_;
@@ -62,6 +62,9 @@ private:
 
     // This is thread safe.
     bc::protocol::zmq::authenticator& authenticator_;
+
+    // This is protected by mutex.
+    uint16_t sequence_;
 };
 
 } // namespace server

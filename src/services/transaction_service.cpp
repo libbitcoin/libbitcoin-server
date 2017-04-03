@@ -44,7 +44,10 @@ transaction_service::transaction_service(zmq::authenticator& authenticator,
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
     authenticator_(authenticator),
-    node_(node)
+    node_(node),
+
+    // Pick a random sequence counter start, will wrap around at overflow.
+    sequence_(pseudo_random(0, max_uint16))
 {
 }
 
@@ -192,10 +195,12 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (stopped())
         return;
 
-    // TODO: add a message sequence count using member with random init.
+    // [ sequence:2 ]
+    // [ tx:... ]
     zmq::message broadcast;
-    ////broadcast.enqueue_little_endian(++sequence_);
+    broadcast.enqueue_little_endian<uint16_t>(++sequence_);
     broadcast.enqueue(tx->to_data(bc::message::version::level::canonical));
+
     ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)
@@ -213,7 +218,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " transaction ["
-            << encode_hash(tx->hash()) << "]";
+            << encode_hash(tx->hash()) << "] (" << sequence_ << ").";
 }
 
 } // namespace server
