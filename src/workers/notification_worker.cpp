@@ -143,8 +143,8 @@ int32_t notification_worker::purge_interval_milliseconds() const
 bool notification_worker::connect(socket& router)
 {
     const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_notify :
-        query_service::public_notify;
+    const auto& endpoint = secure_ ? query_service::secure_worker :
+        query_service::public_worker;
 
     const auto ec = router.connect(endpoint);
 
@@ -196,10 +196,11 @@ void notification_worker::send(const route& reply_to,
     const std::string& command, uint32_t id, const data_chunk& payload)
 {
     const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_notify :
-        query_service::public_notify;
+    const auto& endpoint = secure_ ? query_service::secure_worker :
+        query_service::public_worker;
 
-    zmq::socket notifier(authenticator_, zmq::socket::role::router);
+    // This must be a dealer, since the response is asynchronous.
+    zmq::socket notifier(authenticator_, zmq::socket::role::dealer);
     auto ec = notifier.connect(endpoint);
 
     if (ec == error::service_stopped)

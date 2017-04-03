@@ -29,10 +29,25 @@ namespace libbitcoin {
 namespace server {
 
 /// This class is not thread safe.
-/// The route is fixed in compliance with v2/v3 limitations.
+/// This simple route is limited in accordance with v2/v3 design.
+/// It allows for only one address, optionally delimited for support of REQ
+/// (delimited) and DEALER clients (with or without a delimiter). A REQ client
+/// is synchronous so cannot receive notifications. A DEALER is asynchronous
+/// and can be delimited or otherwise. We must match the delimiter so that the
+/// undelimited DEALER (vs) will not fail.
 class BCS_API route
 {
 public:
+    /// A zeromq route identifier is always this size.
+    static const size_t identifier_size = 5;
+
+    /// A zeromq route identifier.
+    ////typedef byte_array<identifier_size> identifier;
+
+    // TODO: change to byte_array
+    /// A zeromq route identifier.
+    typedef data_chunk identifier;
+
     /// Construct a route.
     route();
 
@@ -48,11 +63,8 @@ public:
     /// The message route is delimited using an empty frame.
     bool delimited;
 
-    /// The first address.
-    data_chunk address1;
-
-    /// The second address.
-    data_chunk address2;
+    /// The simple route supports only one address.
+    identifier address;
 };
 
 } // namespace server
@@ -68,9 +80,8 @@ struct hash<bc::server::route>
     {
         size_t seed = 0;
         boost::hash_combine(seed, value.secure);
-        ////boost::hash_combine(seed, value.delimited);
-        boost::hash_combine(seed, value.address1);
-        ////boost::hash_combine(seed, value.address2);
+        boost::hash_combine(seed, value.address);
+        boost::hash_combine(seed, value.delimited);
         return seed;
     }
 };

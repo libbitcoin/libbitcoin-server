@@ -116,27 +116,32 @@ const server::route& message::route() const
 code message::receive(zmq::socket& socket)
 {
     zmq::message message;
-    auto ec = socket.receive(message);
+    const auto ec = socket.receive(message);
 
     if (ec)
         return ec;
 
-    if (message.size() < 5 || message.size() > 6)
+    if (message.size() < 4 || message.size() > 5)
         return error::bad_stream;
 
     // Decode the routing information (TODO: generalize in route).
     //-------------------------------------------------------------------------
 
-    // Client is undelimited DEALER -> 2 addresses with no delimiter.
-    // Client is REQ or delimited DEALER -> 2 addresses with delimiter.
-    route_.address1 = message.dequeue_data();
-    route_.address2 = message.dequeue_data();
+    // Client is undelimited DEALER -> 1 addresses with 0 delimiter (4), or
+    // client is REQ or delimited DEALER -> 1 addresses with 1 delimiter (5).
+    route_.address = message.dequeue_data();
+
+    // TODO: incorporate indentifier into zmq::route and zmq::message.
+    if (route_.address.size() != route::identifier_size)
+        return error::bad_stream;
 
     // In the reply we echo the delimited-ness of the original request.
-    route_.delimited = message.size() == 4;
+    // If there are three frames left the message must be undelimited.
+    route_.delimited = (message.size() == 4);
 
-    if (route_.delimited)
-        message.dequeue();
+    // Drop the delimiter so that there are always (3) frames remaining.
+    if (route_.delimited && !message.dequeue_data().empty())
+        return error::bad_stream;
 
     // All libbitcoin queries and responses have these three frames.
     //-------------------------------------------------------------------------
@@ -161,10 +166,9 @@ code message::send(zmq::socket& socket) const
     // Encode the routing information (TODO: generalize in route).
     //-------------------------------------------------------------------------
 
-    // Client is undelimited DEALER -> 2 addresses with no delimiter.
-    // Client is REQ or delimited DEALER -> 2 addresses with delimiter.
-    message.enqueue(route_.address1);
-    message.enqueue(route_.address2);
+    // Client is undelimited DEALER -> 1 address with 0 delimiter (4).
+    // Client is REQ or delimited DEALER -> 1 address with 1 delimiter (5).
+    message.enqueue(route_.address);
 
     // In the reply we echo the delimited-ness of the original request.
     if (route_.delimited)

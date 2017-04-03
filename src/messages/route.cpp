@@ -32,14 +32,15 @@ route::route()
 
 std::string route::display() const
 {
-    return "[" + encode_base16(address1) +
-        /*":" + encode_base16(address2) +*/ "]";
+    return "[" + encode_base16(address) + "]" +
+        (delimited ? "[]" : "") + (secure ? " (secure)" : "");
 }
 
 bool route::operator==(const route& other) const
 {
-    return secure == other.secure && /*delimited == other.delimited &&*/
-        address1 == other.address1 /*&& address2 == other.address2*/;
+    return secure == other.secure
+        && delimited == other.delimited
+        && address == other.address;
 }
 
 } // namespace server
