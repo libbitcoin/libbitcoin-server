@@ -63,7 +63,7 @@ protected:
 
 private:
     static void send(const message& response,
-        bc::protocol::zmq::socket& socket);
+        bc::protocol::zmq::socket& dealer);
 
     const bool secure_;
     const bool verbose_;
