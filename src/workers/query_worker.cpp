@@ -48,43 +48,44 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     attach_interface();
 }
 
-// Implement worker as a router to the query service.
+// Implement worker as a dealer to the query service.
 // v2 libbitcoin-client DEALER does not add delimiter frame.
-// The router drops messages for lost peers (query service) and high water.
+// The dealer drops messages for lost peers (query service) and high water.
 void query_worker::work()
 {
-    // Use a router for this synchronous response because notifications are
-    // sent asynchronously to the same identity via the same dealer.
-    // This also gives us full addressing information for send logging.
-    zmq::socket router(authenticator_, zmq::socket::role::router);
+    // Use a dealer for this synchronous response because notifications are
+    // sent asynchronously to the same identity via the same dealer. Using a
+    // router is okay but it adds an additional address to the envelope that
+    // would have to be stripped by the notification dealer so this is simpler.
+    zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
 
     // Connect socket to the service endpoint.
-    if (!started(connect(router)))
+    if (!started(connect(dealer)))
         return;
 
     zmq::poller poller;
-    poller.add(router);
+    poller.add(dealer);
 
     while (!poller.terminated() && !stopped())
     {
-        if (poller.wait().contains(router.id()))
-            query(router);
+        if (poller.wait().contains(dealer.id()))
+            query(dealer);
     }
 
     // Disconnect the socket and exit this thread.
-    finished(disconnect(router));
+    finished(disconnect(dealer));
 }
 
 // Connect/Disconnect.
 //-----------------------------------------------------------------------------
 
-bool query_worker::connect(zmq::socket& router)
+bool query_worker::connect(zmq::socket& dealer)
 {
     const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_query :
-        query_service::public_query;
+    const auto& endpoint = secure_ ? query_service::secure_worker :
+        query_service::public_worker;
 
-    const auto ec = router.connect(endpoint);
+    const auto ec = dealer.connect(endpoint);
 
     if (ec)
     {
@@ -99,12 +100,12 @@ bool query_worker::connect(zmq::socket& router)
     return true;
 }
 
-bool query_worker::disconnect(zmq::socket& router)
+bool query_worker::disconnect(zmq::socket& dealer)
 {
     const auto security = secure_ ? "secure" : "public";
 
     // Don't log stop success.
-    if (router.stop())
+    if (dealer.stop())
         return true;
 
     LOG_ERROR(LOG_SERVER)
@@ -129,13 +130,13 @@ void query_worker::send(const message& response, zmq::socket& socket)
 // Because the socket is a router we may simply drop invalid queries.
 // As a single thread worker this router should not reach high water.
 // If we implemented as a replier we would need to always provide a response.
-void query_worker::query(zmq::socket& router)
+void query_worker::query(zmq::socket& dealer)
 {
     if (stopped())
         return;
 
     message request(secure_);
-    const auto ec = request.receive(router);
+    const auto ec = request.receive(dealer);
 
     if (ec == error::service_stopped)
         return;
