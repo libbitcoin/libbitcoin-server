@@ -154,7 +154,7 @@ code message::receive(zmq::socket& socket)
     return error::success;
 }
 
-code message::send(zmq::socket& socket)
+code message::send(zmq::socket& socket) const
 {
     zmq::message message;
 
