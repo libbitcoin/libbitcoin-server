@@ -102,79 +102,32 @@ bool notification_worker::stop()
     return zmq::worker::stop();
 }
 
-// Implement worker as a router to the query service.
-// The notification worker receives no messages from the query service.
+// Implement worker as a dummy socket, for uniform stop implementation.
 void notification_worker::work()
 {
-    zmq::socket router(authenticator_, zmq::socket::role::router);
+    zmq::socket dummy(authenticator_, zmq::socket::role::pair);
 
-    // Connect socket to the service endpoint.
-    if (!started(connect(router)))
+    if (!started(dummy))
         return;
 
     zmq::poller poller;
-    poller.add(router);
-    const auto interval = purge_interval_milliseconds();
+    poller.add(dummy);
 
-    // We do not send/receive on the poller, we use its timer and context stop.
-    // Other threads connect and disconnect dynamically to send updates.
+    // We do not send/receive on the poller, we use it for context stop.
+    // Other threads connect dynamically to query service to send notifcation.
     while (!poller.terminated() && !stopped())
-    {
-        // BUGBUG: this can fail on some platforms if interval is > 1000.
-        poller.wait(interval);
-        purge();
-    }
+        poller.wait();
 
-    // Disconnect the socket and exit this thread.
-    finished(disconnect(router));
+    finished(dummy.stop());
 }
 
+// TODO: call purge() on purge_interval_milliseconds.
 int32_t notification_worker::purge_interval_milliseconds() const
 {
     const int64_t minutes = settings_.subscription_expiration_minutes;
     const int64_t milliseconds = minutes * 60 * 1000;
     auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
     return static_cast<int32_t>(capped);
-}
-
-// Connect/Disconnect.
-//-----------------------------------------------------------------------------
-
-bool notification_worker::connect(socket& router)
-{
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_worker :
-        query_service::public_worker;
-
-    const auto ec = router.connect(endpoint);
-
-    if (ec == error::service_stopped)
-        return false;
-
-    if (ec)
-    {
-        LOG_ERROR(LOG_SERVER)
-            << "Failed to connect " << security << " notification worker to "
-            << endpoint << " : " << ec.message();
-        return false;
-    }
-
-    LOG_INFO(LOG_SERVER)
-        << "Connected " << security << " notification worker to " << endpoint;
-    return true;
-}
-
-bool notification_worker::disconnect(socket& router)
-{
-    const auto security = secure_ ? "secure" : "public";
-
-    // Don't log stop success.
-    if (router.stop())
-        return true;
-
-    LOG_ERROR(LOG_SERVER)
-        << "Failed to disconnect " << security << " notification worker.";
-    return false;
 }
 
 // Pruning.

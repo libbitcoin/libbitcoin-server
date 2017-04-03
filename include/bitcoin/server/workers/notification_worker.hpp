@@ -56,10 +56,6 @@ public:
         const binary& prefix_filter, bool unsubscribe);
 
 protected:
-    typedef bc::protocol::zmq::socket socket;
-
-    virtual bool connect(socket& router);
-    virtual bool disconnect(socket& router);
 
     // Implement the service.
     virtual void work() override;
