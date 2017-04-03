@@ -39,6 +39,8 @@ static constexpr size_t index_size = sizeof(uint32_t);
 static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 static constexpr auto canonical = bc::message::version::level::canonical;
 
+// TODO: make configurable.
+static const uint8_t minimum_filter_bits = 8;
 
 void blockchain::fetch_history2(server_node& node, const message& request,
     send_handler handler)
@@ -413,6 +415,13 @@ void blockchain::fetch_stealth2(server_node& node, const message& request,
 
     const auto blocks = deserial.read_bytes(byte_length);
     const binary prefix(bit_length, blocks);
+
+    if (prefix.size() < minimum_filter_bits)
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_stealth(prefix, from_height,

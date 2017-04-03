@@ -31,6 +31,9 @@ using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::wallet;
 
+// TODO: make configurable or require full address and remove stealth.
+static const uint8_t minimum_filter_bits = 8;
+
 void address::subscribe2(server_node& node, const message& request,
     send_handler handler)
 {
@@ -80,7 +83,8 @@ bool address::unwrap_subscribe2_args(binary& prefix_filter,
     const auto bit_length = data[0];
     const auto byte_length = binary::blocks_size(bit_length);
 
-    if (byte_length > short_hash_size || (data.size() - 1) != byte_length)
+    if (byte_length > short_hash_size || bit_length < minimum_filter_bits ||
+        (data.size() - 1) != byte_length)
         return false;
 
     const data_chunk bytes({ data.begin() + 1, data.end() });
