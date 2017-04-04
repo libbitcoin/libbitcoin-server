@@ -90,6 +90,15 @@ void server_node::handle_running(const code& ec, result_handler handler)
         return;
     }
 
+    // BUGBUG: start/stop race condition.
+    // This can invoke just after close calls stop.
+    // The stop handler is already stopped but the authenticator context gets
+    // started, allowing services to stop. The registration of services with
+    // the stop handler invokes the registered handlers immediately, invoking
+    // stop o nthe services. The services are running and don't stop...
+    // notification_worker, query_service and authenticator service.
+    // The authenticator is already stopped (before it started) so there will
+    // be no context stop to stop the services, specifically the relays.
     if (!start_services())
     {
         handler(error::operation_failed);
@@ -265,7 +274,7 @@ bool server_node::start_notification_workers(bool secure)
         if (!secure_notification_worker_.start())
             return false;
 
-        // Becuase the notification worker holds closures must stop early.
+        // Because the notification worker holds closures must stop early.
         subscribe_stop([=](const code&)
         {
             secure_notification_worker_.stop();
@@ -276,7 +285,7 @@ bool server_node::start_notification_workers(bool secure)
         if (!public_notification_worker_.start())
             return false;
 
-        // Becuase the notification worker holds closures must stop early.
+        // Because the notification worker holds closures must stop early.
         subscribe_stop([=](const code&)
         {
             public_notification_worker_.stop();

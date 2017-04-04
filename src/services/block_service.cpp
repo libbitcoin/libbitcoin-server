@@ -63,12 +63,6 @@ bool block_service::start()
     return zmq::worker::start();
 }
 
-// No unsubscribe so must be kept in scope until subscriber stop complete.
-bool block_service::stop()
-{
-    return zmq::worker::stop();
-}
-
 // Implement worker as extended pub-sub.
 // The publisher drops messages for lost peers (clients) and high water.
 void block_service::work()
@@ -81,6 +75,7 @@ void block_service::work()
         return;
 
     // TODO: tap in to failure conditions, such as high water.
+    // BUGBUG: stop is insufficient to stop the worker, because of relay().
     // Relay messages between subscriber and publisher (blocks on context).
     relay(xpub, xsub);
 

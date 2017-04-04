@@ -67,6 +67,7 @@ void heartbeat_service::work()
     poller.add(publisher);
 
     // TODO: make member, see tx/block publishers.
+    // BUGBUG: stop is insufficient to stop worker, because of long period.
     // We will not receive on the poller, we use its timer and context stop.
     while (!poller.terminated() && !stopped())
     {

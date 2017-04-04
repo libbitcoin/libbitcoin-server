@@ -95,15 +95,16 @@ void notification_worker::work()
     if (!started(dummy))
         return;
 
-    const auto interval = purge_interval_milliseconds();
+    const auto period = purge_interval_milliseconds();
     zmq::poller poller;
     poller.add(dummy);
 
     // We do not send/receive on poller, we use it for purge and context stop.
     // Other threads connect dynamically to query service to send notifcation.
+    // BUGBUG: stop is insufficient to stop worker, because of long period.
     while (!poller.terminated() && !stopped())
     {
-        poller.wait(interval);
+        poller.wait(period);
         purge();
     }
 
