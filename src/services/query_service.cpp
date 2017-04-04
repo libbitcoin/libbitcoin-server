@@ -60,6 +60,7 @@ void query_service::work()
         return;
 
     // TODO: tap in to failure conditions, such as high water.
+    // BUGBUG: stop is insufficient to stop the worker, because of relay().
     // Relay messages between router and dealer (blocks on context).
     relay(router, dealer);
 

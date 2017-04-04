@@ -49,9 +49,6 @@ public:
     /// Start the service.
     bool start() override;
 
-    /// Stop the service.
-    bool stop() override;
-
 protected:
     typedef bc::protocol::zmq::socket socket;
 
