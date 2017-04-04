@@ -111,6 +111,9 @@ void notification_worker::work()
     finished(dummy.stop());
 }
 
+// Pruning.
+// ----------------------------------------------------------------------------
+
 int32_t notification_worker::purge_interval_milliseconds() const
 {
     const int64_t minutes = settings_.subscription_expiration_minutes;
@@ -118,9 +121,6 @@ int32_t notification_worker::purge_interval_milliseconds() const
     auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
     return static_cast<int32_t>(capped);
 }
-
-// Pruning.
-// ----------------------------------------------------------------------------
 
 // Signal expired subscriptions to self-remove.
 void notification_worker::purge()
@@ -318,11 +318,10 @@ bool notification_worker::handle_transaction_pool(const code& ec,
 void notification_worker::notify_transaction(uint32_t height,
     const hash_digest& block_hash, transaction_const_ptr tx)
 {
-    uint32_t prefix;
-
     // TODO: move full integer and array constructors into binary.
-    static constexpr size_t prefix_bits = sizeof(prefix) * byte_bits;
+    static constexpr size_t prefix_bits = sizeof(uint32_t) * byte_bits;
     static constexpr size_t address_bits = short_hash_size * byte_bits;
+
     const auto& outputs = tx->outputs();
 
     if (stopped() || outputs.empty())
@@ -360,14 +359,15 @@ void notification_worker::notify_transaction(uint32_t height,
     // Loop output pairs and extract stealth payments.
     for (size_t index = 0; index < (outputs.size() - 1); ++index)
     {
-        const auto& ephemeral_script = outputs[index].script();
-        const auto& payment_output = outputs[index + 1];
+        uint32_t prefix;
+        const auto& even_output = outputs[index + 0];
+        const auto& odd_output = outputs[index + 1];
 
         // Try to extract a stealth prefix from the first output.
         // Try to extract the payment address from the second output.
         // The address is cached by database extraction (if indexed).
-        if (payment_output.address() &&
-            to_stealth_prefix(prefix, ephemeral_script))
+        if (odd_output.address() &&
+            to_stealth_prefix(prefix, even_output.script()))
         {
             const binary field(prefix_bits, to_little_endian(prefix));
             notify_address(field, height, block_hash, tx);
