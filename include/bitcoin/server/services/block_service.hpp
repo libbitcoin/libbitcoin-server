@@ -78,6 +78,9 @@ private:
     // These are thread safe.
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
+
+    // This is protected by mutex.
+    uint16_t sequence_;
 };
 
 } // namespace server

@@ -44,6 +44,12 @@ query_service::query_service(zmq::authenticator& authenticator,
 // Implement worker as a broker.
 // The dealer blocks until there are available workers.
 // The router drops messages for lost peers (clients) and high water.
+// ............................................................................
+// When a ZMQ_ROUTER socket enters the mute state due to having reached
+// the high water mark for all peers, then any messages sent to the socket
+// shall be dropped until the mute state ends.Likewise, any messages routed
+// to a peer for which the individual high water mark has been reached shall
+// also be dropped. api.zeromq.org/4-2:zmq-socket
 void query_service::work()
 {
     zmq::socket router(authenticator_, zmq::socket::role::router);
@@ -101,7 +107,7 @@ bool query_service::bind(zmq::socket& router, zmq::socket& dealer)
 
 bool query_service::unbind(zmq::socket& router, zmq::socket& dealer)
 {
-    // Stop all even if one fails.
+    // Stop both even if one fails.
     const auto service_stop = router.stop();
     const auto worker_stop = dealer.stop();
     const auto security = secure_ ? "secure" : "public";

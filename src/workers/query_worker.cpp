@@ -114,12 +114,13 @@ bool query_worker::disconnect(zmq::socket& dealer)
 }
 
 // Query Execution.
+// The dealer send blocks until the query service dealer is available.
 //-----------------------------------------------------------------------------
 
 // private/static
-void query_worker::send(const message& response, zmq::socket& socket)
+void query_worker::send(const message& response, zmq::socket& dealer)
 {
-    const auto ec = response.send(socket);
+    const auto ec = response.send(dealer);
 
     if (ec && ec != error::service_stopped)
         LOG_WARNING(LOG_SERVER)
@@ -147,7 +148,6 @@ void query_worker::query(zmq::socket& dealer)
             << "Failed to receive query from " << request.route().display()
             << " " << ec.message();
 
-        // Because the query did not parse this is likely to be misaddressed.
         send(message(request, ec), dealer);
         return;
     }

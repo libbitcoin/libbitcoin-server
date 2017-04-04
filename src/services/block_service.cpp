@@ -45,7 +45,10 @@ block_service::block_service(zmq::authenticator& authenticator,
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
     authenticator_(authenticator),
-    node_(node)
+    node_(node),
+
+    // Pick a random sequence counter start, will wrap around at overflow.
+    sequence_(static_cast<uint16_t>(pseudo_random(0, max_uint16)))
 {
 }
 
@@ -211,11 +214,14 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
 
     const auto security = secure_ ? "secure" : "public";
 
-    // TODO: add a message sequence count using member with random init.
+    // [ sequence:2 ]
+    // [ height:4 ]
+    // [ block:... ]
     zmq::message broadcast;
-    ////broadcast.enqueue_little_endian(++sequence_);
-    broadcast.enqueue_little_endian(height);
+    broadcast.enqueue_little_endian<uint16_t>(++sequence_);
+    broadcast.enqueue_little_endian<uint32_t>(height);
     broadcast.enqueue(block->to_data(bc::message::version::level::canonical));
+
     const auto ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)
@@ -225,7 +231,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     {
         LOG_WARNING(LOG_SERVER)
             << "Failed to publish " << security << " bloc ["
-            << encode_hash(block->header().hash()) << "] " << ec.message();
+            << encode_hash(block->hash()) << "] " << ec.message();
         return;
     }
 
@@ -233,7 +239,7 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
             << "Published " << security << " block ["
-            << encode_hash(block->header().hash()) << "]";
+            << encode_hash(block->hash()) << "] (" << sequence_ << ").";
 }
 
 } // namespace server
