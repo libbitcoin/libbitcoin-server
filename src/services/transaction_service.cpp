@@ -47,7 +47,7 @@ transaction_service::transaction_service(zmq::authenticator& authenticator,
     node_(node),
 
     // Pick a random sequence counter start, will wrap around at overflow.
-    sequence_(pseudo_random(0, max_uint16))
+    sequence_(static_cast<uint16_t>(pseudo_random(0, max_uint16)))
 {
 }
 

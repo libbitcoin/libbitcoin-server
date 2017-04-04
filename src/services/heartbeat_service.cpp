@@ -49,7 +49,7 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     authenticator_(authenticator),
 
     // Pick a random sequence counter start, will wrap around at overflow.
-    sequence_(pseudo_random(0, max_uint16))
+    sequence_(static_cast<uint16_t>(pseudo_random(0, max_uint16)))
 {
 }
 
