@@ -23,6 +23,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
@@ -95,20 +96,24 @@ void notification_worker::work()
     if (!started(dummy))
         return;
 
-    const auto interval = purge_interval_milliseconds();
+    const auto period = purge_interval_milliseconds();
     zmq::poller poller;
     poller.add(dummy);
 
     // We do not send/receive on poller, we use it for purge and context stop.
     // Other threads connect dynamically to query service to send notifcation.
+    // BUGBUG: stop is insufficient to stop worker, because of long period.
     while (!poller.terminated() && !stopped())
     {
-        poller.wait(interval);
+        poller.wait(period);
         purge();
     }
 
     finished(dummy.stop());
 }
+
+// Pruning.
+// ----------------------------------------------------------------------------
 
 int32_t notification_worker::purge_interval_milliseconds() const
 {
@@ -117,9 +122,6 @@ int32_t notification_worker::purge_interval_milliseconds() const
     auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
     return static_cast<int32_t>(capped);
 }
-
-// Pruning.
-// ----------------------------------------------------------------------------
 
 // Signal expired subscriptions to self-remove.
 void notification_worker::purge()
@@ -317,11 +319,12 @@ bool notification_worker::handle_transaction_pool(const code& ec,
 void notification_worker::notify_transaction(uint32_t height,
     const hash_digest& block_hash, transaction_const_ptr tx)
 {
-    uint32_t prefix;
-
     // TODO: move full integer and array constructors into binary.
-    static constexpr size_t prefix_bits = sizeof(prefix) * byte_bits;
+    static constexpr size_t prefix_bits = sizeof(uint32_t) * byte_bits;
     static constexpr size_t address_bits = short_hash_size * byte_bits;
+
+    // Gather unique prefixes, eliminating duplicate notifications per tx.
+    std::unordered_set<binary> prefixes;
     const auto& outputs = tx->outputs();
 
     if (stopped() || outputs.empty())
@@ -333,12 +336,8 @@ void notification_worker::notify_transaction(uint32_t height,
     {
         // This is cached by database extraction (if indexed).
         const auto address = input.address();
-
         if (address)
-        {
-            const binary field(address_bits, address.hash());
-            notify_address(field, height, block_hash, tx);
-        }
+            prefixes.emplace(address_bits, address.hash());
     }
 
     // see data_base::push_outputs
@@ -347,31 +346,26 @@ void notification_worker::notify_transaction(uint32_t height,
     {
         // This is cached by database extraction (if indexed).
         const auto address = output.address();
-
         if (address)
-        {
-            const binary field(address_bits, address.hash());
-            notify_address(field, height, block_hash, tx);
-        }
+            prefixes.emplace(address_bits, address.hash());
     }
 
     // see data_base::push_stealth
     // Loop output pairs and extract stealth payments.
     for (size_t index = 0; index < (outputs.size() - 1); ++index)
     {
-        const auto& ephemeral_script = outputs[index].script();
-        const auto& payment_output = outputs[index + 1];
+        uint32_t prefix;
+        const auto& even_script = outputs[index + 0].script();
+        const auto& odd_output = outputs[index + 1];
 
-        // Try to extract a stealth prefix from the first output.
-        // Try to extract the payment address from the second output.
         // The address is cached by database extraction (if indexed).
-        if (payment_output.address() &&
-            to_stealth_prefix(prefix, ephemeral_script))
-        {
-            const binary field(prefix_bits, to_little_endian(prefix));
-            notify_address(field, height, block_hash, tx);
-        }
+        if (odd_output.address() && to_stealth_prefix(prefix, even_script))
+            prefixes.emplace(prefix_bits, to_little_endian(prefix));
     }
+
+    // Relay the prefixes to all subscribers for filtering.
+    for (const auto& prefix: prefixes)
+        notify_address(prefix, height, block_hash, tx);
 }
 
 void notification_worker::notify_address(const binary& field, uint32_t height,

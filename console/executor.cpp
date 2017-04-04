@@ -221,6 +221,9 @@ bool executor::run()
 // Handle the completion of the start sequence and begin the run sequence.
 void executor::handle_started(const code& ec)
 {
+    // TEMP: use to repro start/stop deadlock race.
+    ////auto thread = std::thread([this]() { stop(error::service_stopped); });
+
     if (ec)
     {
         LOG_ERROR(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
@@ -239,6 +242,9 @@ void executor::handle_started(const code& ec)
     node_->run(
         std::bind(&executor::handle_running,
             this, _1));
+
+    // TEMP: see above.
+    ////thread.join();
 }
 
 // This is the end of the run sequence.
