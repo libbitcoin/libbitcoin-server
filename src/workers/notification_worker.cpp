@@ -48,8 +48,6 @@ using namespace bc::chain;
 using namespace bc::protocol;
 using namespace bc::wallet;
 
-static const size_t minimum_filter = 8;
-static const size_t maximum_filter = sizeof(uint32_t);
 static const auto notification_address = "notification.address";
 static const auto notification_stealth = "notification.stealth";
 
@@ -343,7 +341,8 @@ void notification_worker::notify(zmq::socket& dealer,
 
         for (const auto& prefix: prefixes)
         {
-            for (auto bits = minimum_filter; bits <= maximum_filter; ++bits)
+            for (auto bits = stealth_address::min_filter_bits;
+                bits <= stealth_address::max_filter_bits; ++bits)
             {
 #ifdef HIGH_VOLUME_NOTIFICATION_TESTING
                 for (auto it = left.begin(); it != left.end(); ++it)
