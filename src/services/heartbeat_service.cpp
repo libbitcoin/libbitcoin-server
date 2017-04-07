@@ -32,12 +32,6 @@ static const auto domain = "heartbeat";
 using namespace bc::config;
 using namespace bc::protocol;
 
-static inline uint32_t to_milliseconds(uint16_t seconds)
-{
-    const auto milliseconds = static_cast<uint32_t>(seconds) * 1000;
-    return std::min(milliseconds, max_uint32);
-};
-
 // Heartbeat is capped at ~ 25 days by signed/millsecond conversions.
 heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
@@ -45,8 +39,8 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     secure_(secure),
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
-    period_(to_milliseconds(settings_.heartbeat_interval_seconds)),
     authenticator_(authenticator),
+    node_(node),
 
     // Pick a random sequence counter start, will wrap around at overflow.
     sequence_(static_cast<uint16_t>(pseudo_random(0, max_uint16)))
@@ -63,6 +57,7 @@ void heartbeat_service::work()
     if (!started(bind(publisher)))
         return;
 
+    const auto period = pulse_milliseconds();
     zmq::poller poller;
     poller.add(publisher);
 
@@ -71,12 +66,20 @@ void heartbeat_service::work()
     // We will not receive on the poller, we use its timer and context stop.
     while (!poller.terminated() && !stopped())
     {
-        poller.wait(period_);
+        poller.wait(period);
         publish(publisher);
     }
 
     // Unbind the socket and exit this thread.
     finished(unbind(publisher));
+}
+
+int32_t heartbeat_service::pulse_milliseconds() const
+{
+    const int64_t seconds = settings_.heartbeat_interval_seconds;
+    const int64_t milliseconds = seconds * 1000;
+    auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
+    return static_cast<int32_t>(capped);
 }
 
 // Bind/Unbind.
@@ -130,8 +133,10 @@ void heartbeat_service::publish(zmq::socket& publisher)
     const auto security = secure_ ? "secure" : "public";
 
     // [ sequence:2 ]
+    // [ height:4 ]
     zmq::message message;
-    message.enqueue_little_endian<uint16_t>(++sequence_);
+    message.enqueue_little_endian(++sequence_);
+    message.enqueue_little_endian(node_.top_block().height());
 
     auto ec = publisher.send(message);
 

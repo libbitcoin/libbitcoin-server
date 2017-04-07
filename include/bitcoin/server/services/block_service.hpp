@@ -65,7 +65,7 @@ private:
 
     void publish_blocks(uint32_t fork_height,
         block_const_ptr_list_const_ptr blocks);
-    void publish_block(socket& publisher, uint32_t height,
+    void publish_block(socket& publisher, size_t height,
         block_const_ptr block);
 
     const bool secure_;
