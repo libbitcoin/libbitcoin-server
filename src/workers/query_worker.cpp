@@ -201,10 +201,13 @@ void query_worker::attach(const std::string& command,
 // blockchain.fetch_block_height
 // blockchain.fetch_block_transaction_hashes
 // blockchain.fetch_stealth_transaction_hashes [document name change]
+// subscribe.block (pub-sub)
+// subscribe.transaction (pub-sub)
 // subscribe.address
 // subscribe.stealth
 // unsubscribe.address
 // unsubscribe.stealth
+// TODO: add fetch_block (full)
 //=============================================================================
 // address.fetch_history is obsoleted in v3 (no unconfirmed tx indexing).
 // address.renew is obsoleted in v3.
