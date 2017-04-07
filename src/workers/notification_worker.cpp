@@ -19,11 +19,11 @@
 #include <bitcoin/server/workers/notification_worker.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
@@ -38,31 +38,36 @@ namespace server {
 
 #define NAME "notification_worker"
 
+// This causes addresses to match each subscription and stealth prefixes
+// to match each subscription 24 times [minimum_filter..maximum_filter].
+////#define HIGH_VOLUME_NOTIFICATION_TESTING
+
+using namespace std::chrono;
 using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::protocol;
 using namespace bc::wallet;
 
-// Notifications respond with commands that are distinct from the subscription.
-static const std::string address_update2("address.update2");
+static const size_t minimum_filter = 8;
+static const size_t maximum_filter = sizeof(uint32_t);
+static const auto notification_address = "notification.address";
+static const auto notification_stealth = "notification.stealth";
 
 notification_worker::notification_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(priority(node.server_settings().priority)),
     secure_(secure),
     settings_(node.server_settings()),
-    node_(node),
     authenticator_(authenticator),
-    address_subscriber_(std::make_shared<address_subscriber>(
-        node.thread_pool(), NAME "_address"))
+    node_(node)
 {
 }
 
 // There is no unsubscribe so this class shouldn't be restarted.
+// Notifications are ordered by validation in node but thread safety is still
+// required so that purge can run on a seperate time thread.
 bool notification_worker::start()
 {
-    address_subscriber_->start();
-
     // Subscribe to blockchain reorganizations.
     node_.subscribe_blockchain(
         std::bind(&notification_worker::handle_reorganization,
@@ -76,18 +81,6 @@ bool notification_worker::start()
     return zmq::worker::start();
 }
 
-// No unsubscribe so must be kept in scope until subscriber stop complete.
-// Because of closures in subscriber, must call stop from node stop handler.
-bool notification_worker::stop()
-{
-    address_subscriber_->stop();
-
-    // Unlike purge, stop will not propagate, since the context is closed.
-    address_subscriber_->invoke(error::service_stopped, {}, 0, {}, {});
-
-    return zmq::worker::stop();
-}
-
 // Implement worker as a dummy socket, for uniform stop implementation.
 void notification_worker::work()
 {
@@ -96,7 +89,7 @@ void notification_worker::work()
     if (!started(dummy))
         return;
 
-    const auto period = purge_interval_milliseconds();
+    const auto period = purge_milliseconds();
     zmq::poller poller;
     poller.add(dummy);
 
@@ -112,135 +105,60 @@ void notification_worker::work()
     finished(dummy.stop());
 }
 
-// Pruning.
-// ----------------------------------------------------------------------------
-
-int32_t notification_worker::purge_interval_milliseconds() const
-{
-    const int64_t minutes = settings_.subscription_expiration_minutes;
-    const int64_t milliseconds = minutes * 60 * 1000;
-    auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
-    return static_cast<int32_t>(capped);
-}
-
-// Signal expired subscriptions to self-remove.
-void notification_worker::purge()
-{
-    address_subscriber_->purge(error::channel_timeout, {}, 0, {}, {});
-}
-
 // Sending.
 // The dealer blocks until the query service dealer is available.
 // ----------------------------------------------------------------------------
 
-// This cannot invoke any method of the subscriber or it will deadlock.
-void notification_worker::send(const route& reply_to,
-    const std::string& command, uint32_t id, const data_chunk& payload)
+zmq::socket::ptr notification_worker::connect()
 {
     const auto security = secure_ ? "secure" : "public";
     const auto& endpoint = secure_ ? query_service::secure_worker :
         query_service::public_worker;
 
     // This must be a dealer, since the response is asynchronous.
-    zmq::socket notifier(authenticator_, zmq::socket::role::dealer);
+    const auto dealer = std::make_shared<zmq::socket>(authenticator_,
+        zmq::socket::role::dealer);
 
-    // This must not block if endpoint has been stopped (or would deadlock).
-    auto ec = notifier.connect(endpoint);
+    // Connect to the query service worker endpoint.
+    auto ec = dealer->connect(endpoint);
 
-    if (ec == error::service_stopped)
-        return;
-
-    if (ec)
-    {
+    if (ec && ec != error::service_stopped)
         LOG_WARNING(LOG_SERVER)
-            << "Failed to connect " << security << " notification worker: "
-            << ec.message();
-        return;
-    }
+        << "Failed to connect " << security << " notification worker: "
+        << ec.message();
 
+    // Using shared pointer because sockets cannot be copied.
+    return dealer;
+}
+
+bool notification_worker::send(zmq::socket& dealer,
+    const subscription& routing, const std::string& command,
+    const code& status, size_t height, const hash_digest& tx_hash)
+{
+    // [ code:4 ]
+    // [ sequence:2 ]
+    // [ height:4 ]
+    // [ tx hash:32 ]
     // Notifications are formatted as query response messages.
-    message notification(reply_to, command, id, payload);
-    ec = notification.send(notifier);
+    ///////////////////////////////////////////////////////////////////////////
+    message reply(routing, command, build_chunk(
+    {
+        message::to_bytes(status),
+        to_little_endian(routing.sequence()),
+        to_little_endian(static_cast<uint32_t>(height)),
+        tx_hash
+    }));
+    ///////////////////////////////////////////////////////////////////////////
+
+    const auto ec = reply.send(dealer);
 
     if (ec && ec != error::service_stopped)
         LOG_WARNING(LOG_SERVER)
             << "Failed to send notification to "
-            << notification.route().display() << " " << ec.message();
-}
+            << reply.route().display() << " " << ec.message();
 
-// Handlers.
-// ----------------------------------------------------------------------------
-
-// This cannot invoke any method of the subscriber or it will deadlock.
-bool notification_worker::handle_address(const code& ec,
-    const binary& field, uint32_t height, const hash_digest& block_hash,
-    transaction_const_ptr tx, const route& reply_to, uint32_t id,
-    const binary& prefix_filter, sequence_ptr sequence)
-{
-    if (ec)
-    {
-        // [ code:4 ]
-        send(reply_to, address_update2, id, message::to_bytes(ec));
-        return false;
-    }
-
-    if (prefix_filter.is_prefix_of(field))
-    {
-        // [ code:4 ]
-        // [ sequence:2 ]
-        // [ height:4 ]
-        // [ block_hash:32 ]
-        // [ tx:... ]
-        send(reply_to, address_update2, id, build_chunk(
-        {
-            message::to_bytes(error::success),
-            to_little_endian(*sequence),
-            to_little_endian(height),
-            block_hash,
-            tx->to_data(bc::message::version::level::canonical)
-        }));
-
-        ++(*sequence);
-    }
-
-    return true;
-}
-
-// Subscribers.
-// ----------------------------------------------------------------------------
-
-// Subscribe to address and stealth prefix notifications.
-// Each delegate must connect to the appropriate query notification endpoint.
-code notification_worker::subscribe_address(const route& reply_to, uint32_t id,
-    const binary& prefix_filter, bool unsubscribe)
-{
-    const address_key key(reply_to, prefix_filter);
-
-    if (unsubscribe)
-    {
-        // Cause stored handler to be invoked but with specified error code.
-        address_subscriber_->unsubscribe(key, error::service_stopped, {}, 0,
-            {}, {});
-        return error::success;
-    }
-
-    // This allows resubscriptions at the service limit.
-    if (address_subscriber_->limited(key, settings_.subscription_limit))
-        return error::oversubscribed;
-
-    // The sequence enables the client to detect dropped messages.
-    const auto sequence = std::make_shared<uint16_t>(0);
-    const auto& duration = settings_.subscription_expiration();
-
-    auto handler =
-        std::bind(&notification_worker::handle_address,
-            this, _1, _2, _3, _4, _5, reply_to, id, prefix_filter,
-                sequence);
-
-    // If the service is stopped a notification will result.
-    address_subscriber_->subscribe(std::move(handler), key, duration,
-        error::service_stopped, {}, 0, {}, {});
-    return error::success;
+    // Failure could create large number of warnings so return false to stop.
+    return ec == error::success;
 }
 
 // Notification (via blockchain).
@@ -262,32 +180,29 @@ bool notification_worker::handle_reorganization(const code& ec,
         return true;
     }
 
-    if (address_subscriber_->empty())
+    if (address_subscriptions_empty() && stealth_subscriptions_empty())
         return true;
 
-    // Blockchain height is size_t but obelisk protocol is 32 bit.
-    auto fork_height32 = safe_unsigned<uint32_t>(fork_height);
+    // Connect failure is logged in connect, nothing else to do on fail.
+    auto dealer = connect();
+
+    if (!dealer)
+        return true;
 
     for (const auto block: *new_blocks)
-        notify_block(safe_increment(fork_height32), block);
+        notify_block(*dealer, safe_increment(fork_height), block);
 
     return true;
 }
 
-void notification_worker::notify_block(uint32_t height,
+void notification_worker::notify_block(zmq::socket& dealer, size_t height,
     block_const_ptr block)
 {
     if (stopped())
         return;
 
-    const auto block_hash = block->header().hash();
-
     for (const auto& tx: block->transactions())
-    {
-        // TODO: use shared pointers for block members to avoid copying.
-        auto pointer = std::make_shared<const bc::message::transaction>(tx);
-        notify_transaction(height, block_hash, pointer);
-    }
+        notify_transaction(dealer, height, tx);
 }
 
 // Notification (via mempool and blockchain).
@@ -308,70 +223,360 @@ bool notification_worker::handle_transaction_pool(const code& ec,
         return true;
     }
 
-    if (address_subscriber_->empty())
+    if (address_subscriptions_empty() && stealth_subscriptions_empty())
         return true;
 
-    notify_transaction(0, null_hash, tx);
+    // Connect failure is logged in connect, nothing else to do on fail.
+    auto dealer = connect();
+
+    if (!dealer)
+        return true;
+
+    // Use zero height as sentinel for unconfirmed transaction.
+    notify_transaction(*dealer, 0, *tx);
     return true;
 }
 
+// All payment addresses are cached on the transaction.
 // This parsing is duplicated by bc::database::data_base.
-void notification_worker::notify_transaction(uint32_t height,
-    const hash_digest& block_hash, transaction_const_ptr tx)
+void notification_worker::notify_transaction(zmq::socket& dealer,
+    size_t height, const transaction& tx)
 {
-    // TODO: move full integer and array constructors into binary.
-    static constexpr size_t prefix_bits = sizeof(uint32_t) * byte_bits;
-    static constexpr size_t address_bits = short_hash_size * byte_bits;
-
-    // Gather unique prefixes, eliminating duplicate notifications per tx.
-    std::unordered_set<binary> prefixes;
-    const auto& outputs = tx->outputs();
-
-    if (stopped() || outputs.empty())
+    if (stopped())
         return;
 
-    // see data_base::push_inputs
-    // Loop inputs and extract payment addresses.
-    for (const auto& input: tx->inputs())
+    const auto& outputs = tx.outputs();
+
+    if (outputs.empty())
+        return;
+
+    // Gather unique values, eliminating duplicate notifications per tx.
+    stealth_set prefixes;
+    address_set addresses;
+
+    if (!address_subscriptions_empty())
     {
-        // This is cached by database extraction (if indexed).
-        const auto address = input.address();
-        if (address)
-            prefixes.emplace(address_bits, address.hash());
+        for (const auto& input: tx.inputs())
+        {
+            const auto address = input.address();
+            if (address)
+                addresses.insert(address.hash());
+        }
+
+        for (const auto& output: outputs)
+        {
+            const auto address = output.address();
+            if (address)
+                addresses.insert(address.hash());
+        }
     }
 
-    // see data_base::push_outputs
-    // Loop outputs and extract payment addresses.
-    for (const auto& output: outputs)
+    if (!stealth_subscriptions_empty())
     {
-        // This is cached by database extraction (if indexed).
-        const auto address = output.address();
-        if (address)
-            prefixes.emplace(address_bits, address.hash());
+        for (size_t index = 0; index < (outputs.size() - 1); ++index)
+        {
+            uint32_t prefix;
+            const auto& even_script = outputs[index + 0].script();
+            const auto& odd_output = outputs[index + 1];
+
+            if (odd_output.address() && to_stealth_prefix(prefix, even_script))
+                prefixes.insert(prefix);
+        }
     }
 
-    // see data_base::push_stealth
-    // Loop output pairs and extract stealth payments.
-    for (size_t index = 0; index < (outputs.size() - 1); ++index)
-    {
-        uint32_t prefix;
-        const auto& even_script = outputs[index + 0].script();
-        const auto& odd_output = outputs[index + 1];
-
-        // The address is cached by database extraction (if indexed).
-        if (odd_output.address() && to_stealth_prefix(prefix, even_script))
-            prefixes.emplace(prefix_bits, to_little_endian(prefix));
-    }
-
-    // Relay the prefixes to all subscribers for filtering.
-    for (const auto& prefix: prefixes)
-        notify_address(prefix, height, block_hash, tx);
+    // Send both sets of notifications on the same worker connection.
+    notify(dealer, addresses, prefixes, height, tx.hash());
 }
 
-void notification_worker::notify_address(const binary& field, uint32_t height,
-    const hash_digest& block_hash, transaction_const_ptr tx)
+void notification_worker::notify(zmq::socket& dealer,
+    const address_set& hashes, const stealth_set& prefixes, size_t height,
+    const hash_digest& tx_hash)
 {
-    address_subscriber_->relay(error::success, field, height, block_hash, tx);
+    static const code ok = error::success;
+
+    if (stopped())
+        return;
+
+    // Accumulate updates, send notifications outside locks.
+    std::vector<subscription> notifies;
+
+    // Notify address subscribers, O(N + M).
+    if (!hashes.empty())
+    {
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        shared_lock lock(address_mutex_);
+
+        const auto& left = address_subscriptions_.left;
+
+        for (const auto& hash: hashes)
+        {
+#ifdef HIGH_VOLUME_NOTIFICATION_TESTING
+            for (auto it = left.begin(); it != left.end(); ++it)
+#else
+            auto range = left.equal_range(hash);
+            for (auto it = range.first; it != range.second; ++it)
+#endif
+            {
+                it->second.increment();
+                notifies.push_back(it->second);
+            }
+        }
+        ///////////////////////////////////////////////////////////////////////
+    }
+
+    // Send failure is logged in send.
+    for (auto& notify: notifies)
+        if (!send(dealer, notify, notification_address, ok, height, tx_hash))
+            break;
+
+    notifies.clear();
+
+    // Notify stealth subscribers, O(24 * (N + M)).
+    if (!prefixes.empty())
+    {
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        shared_lock lock(stealth_mutex_);
+
+        const auto& left = stealth_subscriptions_.left;
+
+        for (const auto& prefix: prefixes)
+        {
+            for (auto bits = minimum_filter; bits <= maximum_filter; ++bits)
+            {
+#ifdef HIGH_VOLUME_NOTIFICATION_TESTING
+                for (auto it = left.begin(); it != left.end(); ++it)
+#else
+                auto range = left.equal_range(binary{ bits, prefix });
+                for (auto it = range.first; it != range.second; ++it)
+#endif
+                {
+                    it->second.increment();
+                    notifies.push_back(it->second);
+                }
+            }
+        }
+        ///////////////////////////////////////////////////////////////////////
+    }
+
+    // Send failure is logged in send.
+    for (auto& notify: notifies)
+        if (!send(dealer, notify, notification_stealth, ok, height, tx_hash))
+            break;
+}
+
+// Subscription.
+// ----------------------------------------------------------------------------
+
+time_t notification_worker::current_time()
+{
+    // use system_clock to ensure to_time_t is defined.
+    const auto now = system_clock::now();
+    return system_clock::to_time_t(system_clock::now());
+}
+
+time_t notification_worker::cutoff_time() const
+{
+    // use system_clock to ensure to_time_t is defined.
+    const auto now = system_clock::now();
+    const auto period = minutes(settings_.subscription_expiration_minutes);
+    return system_clock::to_time_t(now - period);
+}
+
+int32_t notification_worker::purge_milliseconds() const
+{
+    const int64_t minutes = settings_.subscription_expiration_minutes;
+    const int64_t milliseconds = minutes * 60 * 1000;
+    auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
+    return static_cast<int32_t>(capped);
+}
+
+void notification_worker::purge()
+{
+    static const code to = error::channel_timeout;
+
+    // Connect failure is logged in connect (purge regardless).
+    auto dealer = connect();
+
+    // Purge any subscription with an update time earlier than this.
+    const auto cutoff = cutoff_time();
+
+    // Accumulate removals, send expiration notifications outside locks.
+    std::vector<subscription> expires;
+
+    if (true)
+    {
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        unique_lock lock(address_mutex_);
+
+        auto& right = address_subscriptions_.right;
+
+        for (auto it = right.begin(); it != right.end() &&
+            it->first.updated() < cutoff; it = right.erase(it))
+        {
+            it->first.increment();
+            expires.push_back(it->first);
+        }
+        ///////////////////////////////////////////////////////////////////////
+    }
+
+    // Send failure is logged in send.
+    if (dealer)
+        for (auto& expire: expires)
+            if (!send(*dealer, expire, notification_address, to, 0, null_hash))
+                break;
+
+    expires.clear();
+
+    if (true)
+    {
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        unique_lock lock(stealth_mutex_);
+
+        auto& right = stealth_subscriptions_.right;
+
+        for (auto it = right.begin(); it != right.end() &&
+            it->first.updated() < cutoff; it = right.erase(it))
+        {
+            it->first.increment();
+            expires.push_back(it->first);
+        }
+        ///////////////////////////////////////////////////////////////////////
+    }
+
+    // Send failure is logged in send.
+    if (dealer)
+        for (auto& expire: expires)
+            if (!send(*dealer, expire, notification_stealth, to, 0, null_hash))
+                break;
+}
+
+bool notification_worker::address_subscriptions_empty() const
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    shared_lock lock(address_mutex_);
+
+    return address_subscriptions_.empty();
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+bool notification_worker::stealth_subscriptions_empty() const
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    shared_lock lock(stealth_mutex_);
+
+    return stealth_subscriptions_.empty();
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+code notification_worker::subscribe_address(const message& request,
+    short_hash&& address_hash, bool unsubscribe)
+{
+    if (stopped())
+        return error::service_stopped;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    address_mutex_.lock_upgrade();
+
+    auto& left = address_subscriptions_.left;
+    auto range = left.equal_range(address_hash);
+
+    // Check each subscription for the given address hash.
+    // A change to the id is not considered (caller should not change).
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        if (it->second == request.route())
+        {
+            address_mutex_.unlock_upgrade_and_lock();
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+            if (unsubscribe)
+                left.erase(it);
+            else
+                it->second.set_updated(current_time());
+
+            //-----------------------------------------------------------------
+            address_mutex_.unlock();
+            return error::success;
+        }
+    }
+
+    // TODO: add independent limits for stealth and address.
+    if (address_subscriptions_.size() >= settings_.subscription_limit)
+    {
+        address_mutex_.unlock_upgrade();
+        //---------------------------------------------------------------------
+        return error::oversubscribed;
+    }
+
+    address_mutex_.unlock_upgrade_and_lock();
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    address_subscriptions_.insert({
+        std::move(address_hash),
+        subscription{ request.route(), request.id(), current_time() }
+    });
+
+    address_mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
+    return error::success;
+}
+
+code notification_worker::subscribe_stealth(const message& request,
+    binary&& prefix_filter, bool unsubscribe)
+{
+    if (stopped())
+        return error::service_stopped;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    stealth_mutex_.lock_upgrade();
+
+    auto& left = stealth_subscriptions_.left;
+    auto range = left.equal_range(prefix_filter);
+
+    // Check each subscription for the given prefix filter.
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        if (it->second == request.route())
+        {
+            stealth_mutex_.unlock_upgrade_and_lock();
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+            if (unsubscribe)
+                left.erase(it);
+            else
+                it->second.set_updated(current_time());
+
+            //-----------------------------------------------------------------
+            stealth_mutex_.unlock();
+            return error::success;
+        }
+    }
+
+    // TODO: add independent limits for stealth and address.
+    if (stealth_subscriptions_.size() >= settings_.subscription_limit)
+    {
+        stealth_mutex_.unlock_upgrade();
+        //---------------------------------------------------------------------
+        return error::oversubscribed;
+    }
+
+    stealth_mutex_.unlock_upgrade_and_lock();
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    stealth_subscriptions_.insert({
+        std::move(prefix_filter),
+        subscription{ request.route(), request.id(), current_time() }
+    });
+
+    stealth_mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
+    return error::success;
 }
 
 } // namespace server

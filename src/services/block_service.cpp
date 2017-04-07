@@ -189,19 +189,15 @@ void block_service::publish_blocks(uint32_t fork_height,
         return;
     }
 
-    BITCOIN_ASSERT(blocks->size() <= max_uint32);
-    BITCOIN_ASSERT(fork_height < max_uint32 - blocks->size());
-    auto height = fork_height;
-
     for (const auto block: *blocks)
-        publish_block(publisher, height++, block);
+        publish_block(publisher, fork_height++, block);
 }
 
 // [ height:4 ]
 // [ block ]
 // The payload for block publication is delimited within the zeromq message.
 // This is required for compatability and inconsistent with query payloads.
-void block_service::publish_block(zmq::socket& publisher, uint32_t height,
+void block_service::publish_block(zmq::socket& publisher, size_t height,
     block_const_ptr block)
 {
     if (stopped())
@@ -213,8 +209,8 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     // [ height:4 ]
     // [ block:... ]
     zmq::message broadcast;
-    broadcast.enqueue_little_endian<uint16_t>(++sequence_);
-    broadcast.enqueue_little_endian<uint32_t>(height);
+    broadcast.enqueue_little_endian(++sequence_);
+    broadcast.enqueue_little_endian(static_cast<uint32_t>(height));
     broadcast.enqueue(block->to_data(bc::message::version::level::canonical));
 
     const auto ec = publisher.send(broadcast);

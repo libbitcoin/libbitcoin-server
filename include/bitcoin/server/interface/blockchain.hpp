@@ -36,7 +36,7 @@ class BCS_API blockchain
 {
 public:
     /// Fetch the blockchain history of a payment address.
-    static void fetch_history2(server_node& node,
+    static void fetch_history3(server_node& node,
         const message& request, send_handler handler);
 
     /// Fetch a transaction from the blockchain by its hash.
@@ -72,7 +72,7 @@ public:
         const message& request, send_handler handler);
 
     /// Fetch the transactions of a stealth address by its prefix filter.
-    static void fetch_stealth_transaction(server_node& node,
+    static void fetch_stealth_transaction_hashes(server_node& node,
         const message& request, send_handler handler);
 
     /// Save to blockchain and announce to all connected peers.

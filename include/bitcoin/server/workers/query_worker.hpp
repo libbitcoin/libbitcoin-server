@@ -70,8 +70,8 @@ private:
     const server::settings& settings_;
 
     // These are thread safe.
-    server_node& node_;
     bc::protocol::zmq::authenticator& authenticator_;
+    server_node& node_;
 
     // This is protected by base class mutex.
     command_map command_handlers_;

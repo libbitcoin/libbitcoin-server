@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/route.hpp>
@@ -128,15 +129,24 @@ bool server_node::close()
 // Notification.
 // ----------------------------------------------------------------------------
 
-// Subscribe (or unsubscribe) to address/stealth prefix notifications.
-code server_node::subscribe_address(const route& reply_to, uint32_t id,
-    const binary& prefix_filter, bool unsubscribe)
+code server_node::subscribe_address(const message& request,
+    short_hash&& address_hash, bool unsubscribe)
 {
-    return reply_to.secure ?
-        secure_notification_worker_.subscribe_address(reply_to, id,
-            prefix_filter, unsubscribe) :
-        public_notification_worker_.subscribe_address(reply_to, id,
-            prefix_filter, unsubscribe);
+    return request.secure() ?
+        secure_notification_worker_.subscribe_address(request,
+            std::move(address_hash), unsubscribe) :
+        public_notification_worker_.subscribe_address(request,
+            std::move(address_hash), unsubscribe);
+}
+
+code server_node::subscribe_stealth(const message& request,
+    binary&& prefix_filter, bool unsubscribe)
+{
+    return request.secure() ?
+        secure_notification_worker_.subscribe_stealth(request,
+            std::move(prefix_filter), unsubscribe) :
+        public_notification_worker_.subscribe_stealth(request,
+            std::move(prefix_filter), unsubscribe);
 }
 
 // Services.

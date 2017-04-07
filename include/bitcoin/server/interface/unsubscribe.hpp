@@ -16,35 +16,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/utility/address_key.hpp>
+#ifndef LIBBITCOIN_SERVER_UNSUBSCRIBE_HPP
+#define LIBBITCOIN_SERVER_UNSUBSCRIBE_HPP
 
-#include <string>
-#include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/messages/route.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/messages/message.hpp>
+#include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-address_key::address_key(const route& reply_to, const binary& prefix_filter)
-  : reply_to_(reply_to), prefix_filter_(prefix_filter)
+/// Unsubscribe interface.
+/// Class and method names are published and mapped to the zeromq interface.
+class BCS_API unsubscribe
 {
-}
+public:
+    /// Unsubscribe to payment address notifications by address hash.
+    static void address(server_node& node, const message& request,
+        send_handler handler);
 
-bool address_key::operator==(const address_key& other) const
-{
-    return reply_to_ == other.reply_to_ &&
-        prefix_filter_ == other.prefix_filter_;
-}
-
-const route& address_key::reply_to() const
-{
-    return reply_to_;
-}
-
-const binary& address_key::prefix_filter() const
-{
-    return prefix_filter_;
-}
+    /// Unsubscribe to stealth address notifications by prefix.
+    static void stealth(server_node& node, const message& request,
+        send_handler handler);
+};
 
 } // namespace server
 } // namespace libbitcoin
+
+#endif

@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <functional>
+#include <utility>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
@@ -39,15 +40,12 @@ static constexpr size_t index_size = sizeof(uint32_t);
 static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 static constexpr auto canonical = bc::message::version::level::canonical;
 
-// TODO: make configurable.
-static const uint8_t minimum_filter_bits = 8;
-
-void blockchain::fetch_history2(server_node& node, const message& request,
+void blockchain::fetch_history3(server_node& node, const message& request,
     send_handler handler)
 {
     static constexpr size_t limit = 0;
-    static constexpr size_t history_args_size = sizeof(uint8_t) +
-        short_hash_size + sizeof(uint32_t);
+    static constexpr size_t history_args_size = short_hash_size +
+        sizeof(uint32_t);
 
     const auto& data = request.data();
 
@@ -57,15 +55,12 @@ void blockchain::fetch_history2(server_node& node, const message& request,
         return;
     }
 
-    // The version byte is not used.
     // TODO: add serialization to history_compact.
     auto deserial = make_safe_deserializer(data.begin(), data.end());
-    const auto version_byte = deserial.read_byte();
-    const auto hash = deserial.read_short_hash();
+    const auto address_hash = deserial.read_short_hash();
     const size_t from_height = deserial.read_4_bytes_little_endian();
-    const payment_address address(hash, version_byte);
 
-    node.chain().fetch_history(address, limit, from_height,
+    node.chain().fetch_history(address_hash, limit, from_height,
         std::bind(&blockchain::history_fetched,
             _1, _2, request, handler));
 }
@@ -91,7 +86,7 @@ void blockchain::history_fetched(const code& ec,
         serial.write_8_bytes_little_endian(row.value);
     }
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_transaction(server_node& node, const message& request,
@@ -117,13 +112,19 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
 void blockchain::transaction_fetched(const code& ec, transaction_ptr tx,
     size_t, size_t, const message& request, send_handler handler)
 {
-    const auto result = build_chunk(
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
+    auto result = build_chunk(
     {
         message::to_bytes(ec),
         tx->to_data(canonical)
     });
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_last_height(server_node& node, const message& request,
@@ -150,13 +151,13 @@ void blockchain::last_height_fetched(const code& ec, size_t last_height,
 
     // [ code:4 ]
     // [ heigh:4 ]
-    const auto result = build_chunk(
+    auto result = build_chunk(
     {
         message::to_bytes(ec),
         to_little_endian(last_height32)
     });
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_block_header(server_node& node, const message& request,
@@ -211,13 +212,13 @@ void blockchain::block_header_fetched(const code& ec, header_const_ptr header,
 
     // [ code:4 ]
     // [ block... ]
-    const auto result = build_chunk(
+    auto result = build_chunk(
     {
         message::to_bytes(error::success),
         header->to_data(canonical_version)
     });
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_block_transaction_hashes(server_node& node,
@@ -271,7 +272,7 @@ void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
     for (const auto& hash: block->hashes())
         serial.write_hash(hash);
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_transaction_index(server_node& node,
@@ -307,14 +308,14 @@ void blockchain::transaction_index_fetched(const code& ec,
     // [ code:4 ]
     // [ block_height:4 ]
     // [ tx_position:4 ]
-    const auto result = build_chunk(
+    auto result = build_chunk(
     {
         message::to_bytes(ec),
         to_little_endian(block_height32),
         to_little_endian(tx_position32)
     });
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_spend(server_node& node, const message& request,
@@ -342,13 +343,13 @@ void blockchain::spend_fetched(const code& ec, const input_point& inpoint,
     // [ code:4 ]
     // [ hash:32 ]
     // [ index:4 ]
-    const auto result = build_chunk(
+    auto result = build_chunk(
     {
         message::to_bytes(ec),
         inpoint.to_data()
     });
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_block_height(server_node& node,
@@ -377,13 +378,13 @@ void blockchain::block_height_fetched(const code& ec, size_t block_height,
 
     // [ code:4 ]
     // [ height:4 ]
-    const auto result = build_chunk(
+    auto result = build_chunk(
     {
         message::to_bytes(ec),
         to_little_endian(block_height32)
     });
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::fetch_stealth2(server_node& node, const message& request,
@@ -397,34 +398,31 @@ void blockchain::fetch_stealth2(server_node& node, const message& request,
         return;
     }
 
+    // [ prefix_bitsize:1 ]
+    // [ prefix_blocks:1..4 ]
+    // [ from_height:4 ]
     auto deserial = make_safe_deserializer(data.begin(), data.end());
-    const auto bit_length = deserial.read_byte();
-    const auto byte_length = binary::blocks_size(bit_length);
+    const auto bits = deserial.read_byte();
 
-    if (byte_length > sizeof(uint32_t))
+    if (bits < stealth_address::min_filter_bits ||
+        bits > stealth_address::max_filter_bits)
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
-    if (data.size() != sizeof(uint8_t) + byte_length + sizeof(uint32_t))
+    const auto bytes = binary::blocks_size(bits);
+
+    if (data.size() != sizeof(uint8_t) + bytes + sizeof(uint32_t))
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
-    const auto blocks = deserial.read_bytes(byte_length);
-    const binary prefix(bit_length, blocks);
-
-    if (prefix.size() < minimum_filter_bits)
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
-
+    const auto blocks = deserial.read_bytes(bytes);
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
-    node.chain().fetch_stealth(prefix, from_height,
+    node.chain().fetch_stealth(binary{ bits, blocks }, from_height,
         std::bind(&blockchain::stealth_fetched,
             _1, _2, request, handler));
 }
@@ -448,10 +446,10 @@ void blockchain::stealth_fetched(const code& ec,
         serial.write_hash(row.transaction_hash);
     }
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
-void blockchain::fetch_stealth_transaction(server_node& node,
+void blockchain::fetch_stealth_transaction_hashes(server_node& node,
     const message& request, send_handler handler)
 {
     const auto& data = request.data();
@@ -462,29 +460,31 @@ void blockchain::fetch_stealth_transaction(server_node& node,
         return;
     }
 
+    // [ prefix_bitsize:1 ]
+    // [ prefix_blocks:1..4 ]
+    // [ from_height:4 ]
     auto deserial = make_safe_deserializer(data.begin(), data.end());
-    const auto bit_length = deserial.read_byte();
-    const auto byte_length = binary::blocks_size(bit_length);
+    const auto bits = deserial.read_byte();
 
-    // Disallow bit length greater than 32.
-    if (bit_length > sizeof(uint32_t))
+    if (bits < stealth_address::min_filter_bits ||
+        bits > stealth_address::max_filter_bits)
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
+    const auto bytes = binary::blocks_size(bits);
 
-    if (data.size() != sizeof(uint8_t) + byte_length + sizeof(uint32_t))
+    if (data.size() != sizeof(uint8_t) + bytes + sizeof(uint32_t))
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
-    const auto blocks = deserial.read_bytes(byte_length);
-    const binary prefix(bit_length, blocks);
+    const auto blocks = deserial.read_bytes(bytes);
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
-    node.chain().fetch_stealth(prefix, from_height,
+    node.chain().fetch_stealth(binary{ bits, blocks }, from_height,
         std::bind(&blockchain::stealth_transaction_fetched,
             _1, _2, request, handler));
 }
@@ -502,7 +502,7 @@ void blockchain::stealth_transaction_fetched(const code& ec,
     for (const auto& row: stealth_results)
         serial.write_hash(row.transaction_hash);
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 // Save to blockchain and announce to all connected peers.

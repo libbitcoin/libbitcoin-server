@@ -21,8 +21,7 @@
 
 #include <cstddef>
 #include <string>
-#include <boost/functional/hash_fwd.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -38,54 +37,30 @@ namespace server {
 class BCS_API route
 {
 public:
-    /// A zeromq route identifier is always this size.
-    static const size_t identifier_size = 5;
-
-    /// A zeromq route identifier.
-    ////typedef byte_array<identifier_size> identifier;
-
-    // TODO: change to byte_array
-    /// A zeromq route identifier.
-    typedef data_chunk identifier;
-
-    /// Construct a route.
+    /// Construct a default route.
     route();
 
     /// A printable address for logging only.
     std::string display() const;
 
-    /// Equality operator.
-    bool operator==(const route& other) const;
-
-    /// The message requires a secure port.
-    bool secure;
-
     /// The message route is delimited using an empty frame.
-    bool delimited;
+    bool delimited() const;
+
+    /// Set whether the address is delimited.
+    void set_delimited(bool value);
 
     /// The simple route supports only one address.
-    identifier address;
+    bc::protocol::zmq::message::address address() const;
+
+    /// Set the address.
+    void set_address(const bc::protocol::zmq::message::address& value);
+
+protected:
+    bool delimited_;
+    bc::protocol::zmq::message::address address_;
 };
 
 } // namespace server
 } // namespace libbitcoin
-
-namespace std
-{
-
-template<>
-struct hash<bc::server::route>
-{
-    size_t operator()(const bc::server::route& value) const
-    {
-        size_t seed = 0;
-        boost::hash_combine(seed, value.secure);
-        boost::hash_combine(seed, value.address);
-        boost::hash_combine(seed, value.delimited);
-        return seed;
-    }
-};
-
-} // namespace std
 
 #endif

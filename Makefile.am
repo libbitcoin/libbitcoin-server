@@ -39,18 +39,18 @@ src_libbitcoin_server_la_SOURCES = \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
-    src/interface/address.cpp \
     src/interface/blockchain.cpp \
-    src/interface/protocol.cpp \
+    src/interface/subscribe.cpp \
     src/interface/transaction_pool.cpp \
+    src/interface/unsubscribe.cpp \
     src/messages/message.cpp \
     src/messages/route.cpp \
+    src/messages/subscription.cpp \
     src/services/block_service.cpp \
     src/services/heartbeat_service.cpp \
     src/services/query_service.cpp \
     src/services/transaction_service.cpp \
-    src/utility/address_key.cpp \
-    src/utility/authenticator.cpp \
+    src/workers/authenticator.cpp \
     src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
 
@@ -101,15 +101,16 @@ include_bitcoin_server_HEADERS = \
 
 include_bitcoin_server_interfacedir = ${includedir}/bitcoin/server/interface
 include_bitcoin_server_interface_HEADERS = \
-    include/bitcoin/server/interface/address.hpp \
     include/bitcoin/server/interface/blockchain.hpp \
-    include/bitcoin/server/interface/protocol.hpp \
-    include/bitcoin/server/interface/transaction_pool.hpp
+    include/bitcoin/server/interface/subscribe.hpp \
+    include/bitcoin/server/interface/transaction_pool.hpp \
+    include/bitcoin/server/interface/unsubscribe.hpp
 
 include_bitcoin_server_messagesdir = ${includedir}/bitcoin/server/messages
 include_bitcoin_server_messages_HEADERS = \
     include/bitcoin/server/messages/message.hpp \
-    include/bitcoin/server/messages/route.hpp
+    include/bitcoin/server/messages/route.hpp \
+    include/bitcoin/server/messages/subscription.hpp
 
 include_bitcoin_server_servicesdir = ${includedir}/bitcoin/server/services
 include_bitcoin_server_services_HEADERS = \
@@ -118,13 +119,9 @@ include_bitcoin_server_services_HEADERS = \
     include/bitcoin/server/services/query_service.hpp \
     include/bitcoin/server/services/transaction_service.hpp
 
-include_bitcoin_server_utilitydir = ${includedir}/bitcoin/server/utility
-include_bitcoin_server_utility_HEADERS = \
-    include/bitcoin/server/utility/address_key.hpp \
-    include/bitcoin/server/utility/authenticator.hpp
-
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \
+    include/bitcoin/server/workers/authenticator.hpp \
     include/bitcoin/server/workers/notification_worker.hpp \
     include/bitcoin/server/workers/query_worker.hpp
 

@@ -22,10 +22,10 @@
 #include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/interface/address.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>
-#include <bitcoin/server/interface/protocol.hpp>
+#include <bitcoin/server/interface/subscribe.hpp>
 #include <bitcoin/server/interface/transaction_pool.hpp>
+#include <bitcoin/server/interface/unsubscribe.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 
@@ -41,8 +41,8 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     secure_(secure),
     verbose_(node.network_settings().verbose),
     settings_(node.server_settings()),
-    node_(node),
-    authenticator_(authenticator)
+    authenticator_(authenticator),
+    node_(node)
 {
     // The same interface is attached to the secure and public interfaces.
     attach_interface();
@@ -174,7 +174,7 @@ void query_worker::query(zmq::socket& dealer)
 
     // Execute the request and send the result.
     // Example: address.renew(node_, request, sender);
-    // Example: blockchain.fetch_history2(node_, request, sender);
+    // Example: blockchain.fetch_history3(node_, request, sender);
     query_execute(request,
         std::bind(&query_worker::send,
             _1, std::ref(dealer)));
@@ -196,46 +196,60 @@ void query_worker::attach(const std::string& command,
 }
 
 //=============================================================================
-// TODO: add to client:
-// address.unsubscribe2
+// TODO: add to client and bx:
 // blockchain.fetch_spend
 // blockchain.fetch_block_height
 // blockchain.fetch_block_transaction_hashes
-// blockchain.fetch_stealth_transaction
-// protocol.total_connections
+// blockchain.fetch_stealth_transaction_hashes [document name change]
+// subscribe.address
+// subscribe.stealth
+// unsubscribe.address
+// unsubscribe.stealth
 //=============================================================================
-// address.fetch_history is obsoleted in v3 (no unonfirmed tx indexing).
+// address.fetch_history is obsoleted in v3 (no unconfirmed tx indexing).
 // address.renew is obsoleted in v3.
 // address.subscribe is obsoleted in v3.
-// address.subscribe2 is new in v3, also call for renew.
-// address.unsubscribe2 is new in v3 (there was never an address.unsubscribe).
 //-----------------------------------------------------------------------------
 // blockchain.validate is new in v3 (blocks).
 // blockchain.broadcast is new in v3 (blocks).
 // blockchain.fetch_history is obsoleted in v3 (hash reversal).
-// blockchain.fetch_history2 is new in v3.
+// blockchain.fetch_history2 was new in v3.
+// blockchain.fetch_history2 is obsoleted in v3.1 (version byte unused)
+// blockchain.fetch_history3 is new in v3.1 (no version byte)
 // blockchain.fetch_stealth is obsoleted in v3 (hash reversal).
 // blockchain.fetch_stealth2 is new in v3.
-// blockchain.fetch_stealth_transaction is new in v3 (safe version).
+// blockchain.fetch_stealth_transaction_hashes is new in v3 (safe version).
 //-----------------------------------------------------------------------------
-// transaction_pool.validate is obsoleted in v3 (sends unconfirmed outputs).
+// transaction_pool.validate is obsoleted in v3 (unconfirmed outputs).
 // transaction_pool.validate2 is new in v3.
 // transaction_pool.broadcast is new in v3 (rename).
 // transaction_pool.fetch_transaction is enhanced in v3 (adds confirmed txs).
 //-----------------------------------------------------------------------------
 // protocol.broadcast_transaction is obsoleted in v3 (renamed).
+// protocol.total_connections is obsoleted in v3 (administrative).
+//-----------------------------------------------------------------------------
+// subscribe.address is new in v3, also call for renew.
+// subscribe.stealth is new in v3, also call for renew.
+//-----------------------------------------------------------------------------
+// unsubscribe.address is new in v3 (there was never address.unsubscribe).
+// unsubscribe.stealth is new in v3 (there was never stealth.unsubscribe).
 //=============================================================================
-// Interface class.method names must match protocol (do not change).
+// Interface class.method names must match protocol names.
 void query_worker::attach_interface()
 {
-    ////ATTACH(address, renew, node_);                          // obsoleted
-    ////ATTACH(address, subscribe, node_);                      // obsoleted
-    ////ATTACH(address, fetch_history, node_);                  // obsoleted
-    ATTACH(address, subscribe2, node_);                         // new
-    ATTACH(address, unsubscribe2, node_);                       // new
+    // Subscription was not operational in version 3.0.
+    ////ATTACH(address, renew, node_);                    // obsoleted (3.0)
+    ////ATTACH(address, subscribe, node_);                // obsoleted (3.0)
+    ////ATTACH(address, fetch_history, node_);            // obsoleted (3.0)
+
+    ATTACH(subscribe, address, node_);                          // new (3.1)
+    ATTACH(subscribe, stealth, node_);                          // new (3.1)
+    ATTACH(unsubscribe, address, node_);                        // new (3.1)
+    ATTACH(unsubscribe, stealth, node_);                        // new (3.1)
 
     ////ATTACH(blockchain, fetch_stealth, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history, node_);               // obsoleted
+    ////ATTACH(blockchain, fetch_history2, node_);              // obsoleted
     ATTACH(blockchain, fetch_block_header, node_);              // original
     ATTACH(blockchain, fetch_block_height, node_);              // original
     ATTACH(blockchain, fetch_block_transaction_hashes, node_);  // original
@@ -243,19 +257,19 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_transaction, node_);               // original
     ATTACH(blockchain, fetch_transaction_index, node_);         // original
     ATTACH(blockchain, fetch_spend, node_);                     // original
-    ATTACH(blockchain, fetch_history2, node_);                  // new
-    ATTACH(blockchain, fetch_stealth2, node_);                  // new
-    ATTACH(blockchain, fetch_stealth_transaction, node_);       // new
-    ATTACH(blockchain, broadcast, node_);                       // new
-    ATTACH(blockchain, validate, node_);                        // new
+    ATTACH(blockchain, fetch_history3, node_);                  // new (3.1)
+    ATTACH(blockchain, fetch_stealth2, node_);                  // new (3.0)
+    ATTACH(blockchain, fetch_stealth_transaction_hashes, node_);// new (3.0)
+    ATTACH(blockchain, broadcast, node_);                       // new (3.0)
+    ATTACH(blockchain, validate, node_);                        // new (3.0)
 
     ////ATTACH(transaction_pool, validate, node_);              // obsoleted
     ATTACH(transaction_pool, fetch_transaction, node_);         // enhanced
-    ATTACH(transaction_pool, broadcast, node_);                 // new
-    ATTACH(transaction_pool, validate2, node_);                 // new
+    ATTACH(transaction_pool, broadcast, node_);                 // new (3.0)
+    ATTACH(transaction_pool, validate2, node_);                 // new (3.0)
 
     ////ATTACH(protocol, broadcast_transaction, node_);         // obsoleted
-    ATTACH(protocol, total_connections, node_);                 // original
+    ////ATTACH(protocol, total_connections, node_);             // obsoleted
 }
 
 #undef ATTACH

@@ -55,15 +55,16 @@ protected:
     void publish(socket& socket);
 
 private:
+    int32_t pulse_milliseconds() const;
+
+    // These are thread safe.
     const bool secure_;
     const bool verbose_;
     const server::settings& settings_;
-    const int32_t period_;
-
-    // This is thread safe.
     bc::protocol::zmq::authenticator& authenticator_;
+    server_node& node_;
 
-    // This is protected by mutex.
+    // This is protected by limit to single worker thread.
     uint16_t sequence_;
 };
 
