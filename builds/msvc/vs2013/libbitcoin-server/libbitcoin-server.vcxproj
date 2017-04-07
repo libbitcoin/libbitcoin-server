@@ -74,11 +74,12 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\address.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\subscribe.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\unsubscribe.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\subscription.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\route.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
@@ -87,20 +88,20 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\query_service.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\transaction_service.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\address_key.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\utility\authenticator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\authenticator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\address.cpp" />
+    <ClCompile Include="..\..\..\..\src\interface\subscribe.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\protocol.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\interface\unsubscribe.cpp" />
     <ClCompile Include="..\..\..\..\src\messages\message.cpp" />
+    <ClCompile Include="..\..\..\..\src\messages\subscription.cpp" />
     <ClCompile Include="..\..\..\..\src\messages\route.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
@@ -109,8 +110,7 @@
     <ClCompile Include="..\..\..\..\src\services\query_service.cpp" />
     <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
-    <ClCompile Include="..\..\..\..\src\utility\address_key.cpp" />
-    <ClCompile Include="..\..\..\..\src\utility\authenticator.cpp" />
+    <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp" />
   </ItemGroup>

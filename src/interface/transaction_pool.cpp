@@ -62,13 +62,15 @@ void transaction_pool::transaction_fetched(const code& ec, transaction_ptr tx,
         return;
     }
 
-    const auto result = build_chunk(
+    // [ code:4 ]
+    // [ tx:... ]
+    auto result = build_chunk(
     {
         message::to_bytes(error::success),
         tx->to_data(canonical)
     });
 
-    handler(message(request, result));
+    handler(message(request, std::move(result)));
 }
 
 // Save to tx pool and announce to all connected peers.

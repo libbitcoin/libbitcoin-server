@@ -193,7 +193,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     // [ sequence:2 ]
     // [ tx:... ]
     zmq::message broadcast;
-    broadcast.enqueue_little_endian<uint16_t>(++sequence_);
+    broadcast.enqueue_little_endian(++sequence_);
     broadcast.enqueue(tx->to_data(bc::message::version::level::canonical));
 
     ec = publisher.send(broadcast);
