@@ -178,6 +178,10 @@ bool notification_worker::handle_reorganization(const code& ec,
         return true;
     }
 
+    // Nothing to do here.
+    if (!new_blocks || new_blocks->empty())
+        return true;
+
     if (address_subscriptions_empty() && stealth_subscriptions_empty())
         return true;
 
@@ -220,6 +224,10 @@ bool notification_worker::handle_transaction_pool(const code& ec,
         // Don't let a failure here prevent future notifications.
         return true;
     }
+
+    // Nothing to do here.
+    if (!tx)
+        return true;
 
     if (address_subscriptions_empty() && stealth_subscriptions_empty())
         return true;

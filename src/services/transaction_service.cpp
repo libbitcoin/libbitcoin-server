@@ -157,6 +157,10 @@ bool transaction_service::handle_transaction(const code& ec,
         return true;
     }
 
+    // Nothing to do here.
+    if (!tx)
+        return true;
+
     publish_transaction(tx);
     return true;
 }
