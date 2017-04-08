@@ -158,6 +158,10 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
         return true;
     }
 
+    // Nothing to do here.
+    if (!new_blocks || new_blocks->empty())
+        return true;
+
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
     publish_blocks(safe_unsigned<uint32_t>(fork_height), new_blocks);
     return true;
