@@ -66,6 +66,9 @@ parser::parser(const bc::config::settings& context)
 
     // A server prioritizes restart after hard shutdown over block speed.
     configured.database.flush_writes = true;
+
+    // TODO: set this independently on each public endpoint.
+    configured.protocol.message_size_limit = max_block_size + 100;
 }
 
 options_metadata parser::load_options()
@@ -424,19 +427,19 @@ options_metadata parser::load_settings()
         "The time period for block polling after initial block download, defaults to 1 (0 disables)."
     )
     (
-        /* Internally this is blockchain, but it is conceptually a node setting.*/
+        /* Internally this is blockchain, but it is conceptually a node setting. */
         "node.minimum_byte_fee_satoshis",
         value<float>(&configured.chain.minimum_byte_fee_satoshis),
         "The minimum fee per byte required for transaction acceptance, defaults to 1."
     )
     ////(
-    ////    /* Internally this blockchain, but it is conceptually a node setting.*/
+    ////    /* Internally this is blockchain, but it is conceptually a node setting. */
     ////    "node.reject_conflicts",
     ////    value<bool>(&configured.chain.reject_conflicts),
     ////    "Retain only the first seen of conflicting transactions, defaults to true."
     ////)
     (
-        /* Internally this network, but it is conceptually a node setting.*/
+        /* Internally this is network, but it is conceptually a node setting. */
         "node.relay_transactions",
         value<bool>(&configured.network.relay_transactions),
         "Request that peers relay transactions, defaults to true."
@@ -449,10 +452,28 @@ options_metadata parser::load_settings()
 
     /* [server] */
     (
-        /* Internally this database, but it applies to server and not node.*/
+        /* Internally this is database, but it applies to server and not node. */
         "server.index_start_height",
         value<uint32_t>(&configured.database.index_start_height),
         "The lower limit of address and spend indexing, defaults to 0."
+    )
+    /* Internally this is protocol, but application to server is more intuitive. */
+    (
+        "server.send_high_water",
+        value<uint32_t>(&configured.protocol.send_high_water),
+        "Drop messages at this outgoing backlog level, defaults to 100."
+    )
+    /* Internally this is protocol, but application to server is more intuitive. */
+    (
+        "server.receive_high_water",
+        value<uint32_t>(&configured.protocol.receive_high_water),
+        "Drop messages at this incoming backlog level, defaults to 100."
+    )
+    /* Internally this is protocol, but application to server is more intuitive. */
+    (
+        "server.handshake_seconds",
+        value<uint32_t>(&configured.protocol.handshake_seconds),
+        "The time limit to complete the connection handshake, defaults to 30."
     )
     (
         "server.secure_only",
@@ -467,7 +488,7 @@ options_metadata parser::load_settings()
     (
         "server.subscription_limit",
         value<uint32_t>(&configured.server.subscription_limit),
-        "The maximum number of subscriptions, defaults to 0 (disabled)."
+        "The maximum number of query subscriptions, defaults to 10000 (0 disables subscribe)."
     )
     (
         "server.subscription_expiration_minutes",
@@ -475,9 +496,9 @@ options_metadata parser::load_settings()
         "The subscription expiration time, defaults to 10."
     )
     (
-        "server.heartbeat_interval_seconds",
-        value<uint32_t>(&configured.server.heartbeat_interval_seconds),
-        "The heartbeat interval, defaults to 5 (0 disables service)."
+        "server.heartbeat_service_seconds",
+        value<uint32_t>(&configured.server.heartbeat_service_seconds),
+        "The heartbeat service interval, defaults to 5 (0 disables service)."
     )
     (
         "server.block_service_enabled",
@@ -488,26 +509,6 @@ options_metadata parser::load_settings()
         "server.transaction_service_enabled",
         value<bool>(&configured.server.transaction_service_enabled),
         "Enable the transaction publishing service, defaults to true."
-    )
-    (
-        "server.public_query_endpoint",
-        value<endpoint>(&configured.server.public_query_endpoint),
-        "The public query endpoint, defaults to 'tcp://*:9091'."
-    )
-    (
-        "server.public_heartbeat_endpoint",
-        value<endpoint>(&configured.server.public_heartbeat_endpoint),
-        "The public heartbeat endpoint, defaults to 'tcp://*:9092'."
-    )
-    (
-        "server.public_block_endpoint",
-        value<endpoint>(&configured.server.public_block_endpoint),
-        "The public block publishing endpoint, defaults to 'tcp://*:9093'."
-    )
-    (
-        "server.public_transaction_endpoint",
-        value<endpoint>(&configured.server.public_transaction_endpoint),
-        "The public transaction publishing endpoint, defaults to 'tcp://*:9094'."
     )
     (
         "server.secure_query_endpoint",
@@ -528,6 +529,26 @@ options_metadata parser::load_settings()
         "server.secure_transaction_endpoint",
         value<endpoint>(&configured.server.secure_transaction_endpoint),
         "The secure transaction publishing endpoint, defaults to 'tcp://*:9084'."
+    )
+    (
+        "server.public_query_endpoint",
+        value<endpoint>(&configured.server.public_query_endpoint),
+        "The public query endpoint, defaults to 'tcp://*:9091'."
+    )
+    (
+        "server.public_heartbeat_endpoint",
+        value<endpoint>(&configured.server.public_heartbeat_endpoint),
+        "The public heartbeat endpoint, defaults to 'tcp://*:9092'."
+    )
+    (
+        "server.public_block_endpoint",
+        value<endpoint>(&configured.server.public_block_endpoint),
+        "The public block publishing endpoint, defaults to 'tcp://*:9093'."
+    )
+    (
+        "server.public_transaction_endpoint",
+        value<endpoint>(&configured.server.public_transaction_endpoint),
+        "The public transaction publishing endpoint, defaults to 'tcp://*:9094'."
     )
     (
         "server.server_private_key",

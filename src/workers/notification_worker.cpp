@@ -36,8 +36,6 @@
 namespace libbitcoin {
 namespace server {
 
-#define NAME "notification_worker"
-
 // This causes addresses to match each subscription and stealth prefixes
 // to match each subscription 24 times [minimum_filter..maximum_filter].
 ////#define HIGH_VOLUME_NOTIFICATION_TESTING
@@ -47,6 +45,7 @@ using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::protocol;
 using namespace bc::wallet;
+using role = zmq::socket::role;
 
 static const auto notification_address = "notification.address";
 static const auto notification_stealth = "notification.stealth";
@@ -55,7 +54,11 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(priority(node.server_settings().priority)),
     secure_(secure),
+    security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
+    external_(node.protocol_settings()),
+    internal_(external_.send_high_water, external_.receive_high_water),
+    worker_(query_service::worker_endpoint(secure)),
     authenticator_(authenticator),
     node_(node)
 {
@@ -82,7 +85,7 @@ bool notification_worker::start()
 // Implement worker as a dummy socket, for uniform stop implementation.
 void notification_worker::work()
 {
-    zmq::socket dummy(authenticator_, zmq::socket::role::pair);
+    zmq::socket dummy(authenticator_, role::pair);
 
     if (!started(dummy))
         return;
@@ -109,21 +112,16 @@ void notification_worker::work()
 
 zmq::socket::ptr notification_worker::connect()
 {
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_worker :
-        query_service::public_worker;
-
-    // This must be a dealer, since the response is asynchronous.
-    const auto dealer = std::make_shared<zmq::socket>(authenticator_,
-        zmq::socket::role::dealer);
+    auto dealer = std::make_shared<zmq::socket>(authenticator_, role::dealer);
 
     // Connect to the query service worker endpoint.
-    auto ec = dealer->connect(endpoint);
+    // This must be a dealer, since the response is asynchronous.
+    auto ec = dealer->connect(worker_);
 
     if (ec && ec != error::service_stopped)
         LOG_WARNING(LOG_SERVER)
-        << "Failed to connect " << security << " notification worker: "
-        << ec.message();
+            << "Failed to connect " << security_ << " notification worker to "
+            << worker_ << " : " << ec.message();
 
     // Using shared pointer because sockets cannot be copied.
     return dealer;

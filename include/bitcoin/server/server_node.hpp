@@ -55,7 +55,10 @@ public:
     // ----------------------------------------------------------------------------
 
     /// Server configuration settings.
-    virtual const settings& server_settings() const;
+    virtual const bc::protocol::settings& protocol_settings() const;
+
+    /// Server configuration settings.
+    virtual const bc::server::settings& server_settings() const;
 
     // Run sequence.
     // ------------------------------------------------------------------------

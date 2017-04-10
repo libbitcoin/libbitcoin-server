@@ -19,8 +19,10 @@
 #ifndef LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
 #define LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -37,10 +39,6 @@ class BCS_API block_service
 {
 public:
     typedef std::shared_ptr<block_service> ptr;
-
-    /// The fixed inprocess worker endpoints.
-    static const config::endpoint public_worker;
-    static const config::endpoint secure_worker;
 
     /// Construct a block service.
     block_service(bc::protocol::zmq::authenticator& authenticator,
@@ -68,15 +66,19 @@ private:
     void publish_block(socket& publisher, size_t height,
         block_const_ptr block);
 
+    // These are thread safe.
     const bool secure_;
     const bool verbose_;
-    const server::settings& settings_;
-
-    // These are thread safe.
+    const std::string security_;
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& external_;
+    const bc::protocol::settings internal_;
+    const config::endpoint service_;
+    const config::endpoint worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 
-    // This is protected by mutex.
+    // This is protected by reorganization non-concurrency.
     uint16_t sequence_;
 };
 
