@@ -34,13 +34,18 @@ namespace server {
 
 using namespace std::placeholders;
 using namespace bc::protocol;
+using role = zmq::socket::role;
 
 query_worker::query_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
+    security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
+    external_(node.protocol_settings()),
+    internal_(external_.send_high_water, external_.receive_high_water),
+    worker_(query_service::worker_endpoint(secure)),
     authenticator_(authenticator),
     node_(node)
 {
@@ -57,7 +62,7 @@ void query_worker::work()
     // sent asynchronously to the same identity via the same dealer. Using a
     // router is okay but it adds an additional address to the envelope that
     // would have to be stripped by the notification dealer so this is simpler.
-    zmq::socket dealer(authenticator_, zmq::socket::role::dealer);
+    zmq::socket dealer(authenticator_, role::dealer, internal_);
 
     // Connect socket to the service endpoint.
     if (!started(connect(dealer)))
@@ -81,35 +86,29 @@ void query_worker::work()
 
 bool query_worker::connect(zmq::socket& dealer)
 {
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? query_service::secure_worker :
-        query_service::public_worker;
-
-    const auto ec = dealer.connect(endpoint);
+    const auto ec = dealer.connect(worker_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to connect " << security << " query worker to "
-            << endpoint << " : " << ec.message();
+            << "Failed to connect " << security_ << " query worker to "
+            << worker_ << " : " << ec.message();
         return false;
     }
 
     LOG_DEBUG(LOG_SERVER)
-        << "Connected " << security << " query worker to " << endpoint;
+        << "Connected " << security_ << " query worker to " << worker_;
     return true;
 }
 
 bool query_worker::disconnect(zmq::socket& dealer)
 {
-    const auto security = secure_ ? "secure" : "public";
-
     // Don't log stop success.
     if (dealer.stop())
         return true;
 
     LOG_ERROR(LOG_SERVER)
-        << "Failed to disconnect " << security << " query worker.";
+        << "Failed to disconnect " << security_ << " query worker.";
     return false;
 }
 

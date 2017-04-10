@@ -30,12 +30,5 @@ configuration::configuration(bc::config::settings context)
 {
 }
 
-// Copy constructor.
-configuration::configuration(const configuration& other)
-  : node::configuration(other),
-    server(other.server)
-{
-}
-
 } // namespace server
 } // namespace libbitcoin

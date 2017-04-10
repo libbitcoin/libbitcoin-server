@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_QUERY_SERVICE_HPP
 
 #include <memory>
+#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -37,9 +38,8 @@ class BCS_API query_service
 public:
     typedef std::shared_ptr<query_service> ptr;
 
-    /// The fixed inprocess worker endpoints.
-    static const config::endpoint public_worker;
-    static const config::endpoint secure_worker;
+    /// A reference to each inprocess worker endpoint.
+    static const config::endpoint& worker_endpoint(bool secure);
 
     /// Construct a query service.
     query_service(bc::protocol::zmq::authenticator& authenticator,
@@ -55,10 +55,14 @@ protected:
     virtual void work();
 
 private:
+    // These are thread safe.
     const bool secure_;
-    const server::settings& settings_;
-
-    // This is thread safe.
+    const std::string security_;
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& external_;
+    const bc::protocol::settings internal_;
+    const config::endpoint& service_;
+    const config::endpoint& worker_;
     bc::protocol::zmq::authenticator& authenticator_;
 };
 

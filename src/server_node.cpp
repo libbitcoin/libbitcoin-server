@@ -61,7 +61,12 @@ server_node::~server_node()
 // Properties.
 // ----------------------------------------------------------------------------
 
-const settings& server_node::server_settings() const
+const bc::protocol::settings& server_node::protocol_settings() const
+{
+    return configuration_.protocol;
+}
+
+const bc::server::settings& server_node::server_settings() const
 {
     return configuration_.server;
 }
@@ -167,7 +172,7 @@ bool server_node::start_authenticator()
     // Subscriptions require the query service.
     if ((!settings.server_private_key && settings.secure_only) ||
         ((settings.query_workers == 0) &&
-        (settings.heartbeat_interval_seconds == 0) &&
+        (settings.heartbeat_service_seconds == 0) &&
         (!settings.block_service_enabled) &&
         (!settings.transaction_service_enabled)))
         return true;
@@ -202,7 +207,7 @@ bool server_node::start_heartbeat_services()
 {
     const auto& settings = configuration_.server;
 
-    if (settings.heartbeat_interval_seconds == 0)
+    if (settings.heartbeat_service_seconds == 0)
         return true;
 
     // Start secure service if enabled.
