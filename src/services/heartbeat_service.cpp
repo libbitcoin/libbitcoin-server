@@ -31,6 +31,7 @@ static const auto domain = "heartbeat";
 
 using namespace bc::config;
 using namespace bc::protocol;
+using role = zmq::socket::role;
 
 // Heartbeat is capped at ~ 25 days by signed/millsecond conversions.
 heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
@@ -38,7 +39,10 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
   : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
+    security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
+    external_(node.protocol_settings()),
+    service_(settings_.heartbeat_endpoint(secure)),
     authenticator_(authenticator),
     node_(node),
 
@@ -51,7 +55,7 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
 // The publisher drops messages for lost peers (clients) and high water.
 void heartbeat_service::work()
 {
-    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
+    zmq::socket publisher(authenticator_, role::publisher, external_);
 
     // Bind socket to the service endpoint.
     if (!started(bind(publisher)))
@@ -76,7 +80,7 @@ void heartbeat_service::work()
 
 int32_t heartbeat_service::pulse_milliseconds() const
 {
-    const int64_t seconds = settings_.heartbeat_interval_seconds;
+    const int64_t seconds = settings_.heartbeat_service_seconds;
     const int64_t milliseconds = seconds * 1000;
     auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
     return static_cast<int32_t>(capped);
@@ -87,38 +91,32 @@ int32_t heartbeat_service::pulse_milliseconds() const
 
 bool heartbeat_service::bind(zmq::socket& publisher)
 {
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? settings_.secure_heartbeat_endpoint :
-        settings_.public_heartbeat_endpoint;
-
     if (!authenticator_.apply(publisher, domain, secure_))
         return false;
 
-    const auto ec = publisher.bind(endpoint);
+    const auto ec = publisher.bind(service_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " heartbeat service to "
-            << endpoint << " : " << ec.message();
+            << "Failed to bind " << security_ << " heartbeat service to "
+            << service_ << " : " << ec.message();
         return false;
     }
 
     LOG_INFO(LOG_SERVER)
-        << "Bound " << security << " heartbeat service to " << endpoint;
+        << "Bound " << security_ << " heartbeat service to " << service_;
     return true;
 }
 
 bool heartbeat_service::unbind(zmq::socket& publisher)
 {
-    const auto security = secure_ ? "secure" : "public";
-
     // Don't log stop success.
     if (publisher.stop())
         return true;
 
     LOG_ERROR(LOG_SERVER)
-        << "Failed to disconnect " << security << " heartbeat worker.";
+        << "Failed to disconnect " << security_ << " heartbeat worker.";
     return false;
 }
 
@@ -129,8 +127,6 @@ void heartbeat_service::publish(zmq::socket& publisher)
 {
     if (stopped())
         return;
-
-    const auto security = secure_ ? "secure" : "public";
 
     // [ sequence:2 ]
     // [ height:4 ]
@@ -146,7 +142,7 @@ void heartbeat_service::publish(zmq::socket& publisher)
     if (ec)
     {
         LOG_WARNING(LOG_SERVER)
-            << "Failed to publish " << security << " heartbeat: "
+            << "Failed to publish " << security_ << " heartbeat: "
             << ec.message();
         return;
     }
@@ -154,7 +150,7 @@ void heartbeat_service::publish(zmq::socket& publisher)
     // This isn't actually a request, should probably update settings.
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
-        << "Published " << security << " heartbeat [" << sequence_ << "].";
+        << "Published " << security_ << " heartbeat [" << sequence_ << "].";
 }
 
 } // namespace server

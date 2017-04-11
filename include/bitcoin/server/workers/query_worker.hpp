@@ -65,15 +65,18 @@ private:
     static void send(const message& response,
         bc::protocol::zmq::socket& dealer);
 
+    // These are thread safe.
     const bool secure_;
     const bool verbose_;
-    const server::settings& settings_;
-
-    // These are thread safe.
+    const std::string security_;
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& external_;
+    const bc::protocol::settings internal_;
+    const config::endpoint& worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 
-    // This is protected by base class mutex.
+    // This is protected by worker base class mutex.
     command_map command_handlers_;
 };
 
