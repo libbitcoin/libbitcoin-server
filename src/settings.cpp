@@ -27,13 +27,13 @@ using namespace asio;
 
 settings::settings()
   : query_workers(1),
-    heartbeat_service_seconds(5),
+    heartbeat_service_seconds(0),
+    subscription_limit(0),
     subscription_expiration_minutes(10),
-    subscription_limit(10000),
     priority(false),
     secure_only(false),
-    block_service_enabled(true),
-    transaction_service_enabled(true),
+    block_service_enabled(false),
+    transaction_service_enabled(false),
 
     secure_query_endpoint("tcp://*:9081"),
     secure_heartbeat_endpoint("tcp://*:9082"),

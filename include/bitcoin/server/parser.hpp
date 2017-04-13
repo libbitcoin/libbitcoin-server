@@ -33,7 +33,7 @@ class BCS_API parser
   : public config::parser
 {
 public:
-    parser(const bc::config::settings& context);
+    parser(bc::config::settings context);
     parser(const configuration& defaults);
 
     /// Parse all configuration into member settings.
