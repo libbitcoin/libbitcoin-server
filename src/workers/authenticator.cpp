@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/utility/authenticator.hpp>
+#include <bitcoin/server/workers/authenticator.hpp>
 
 #include <string>
 #include <bitcoin/protocol.hpp>
@@ -29,27 +29,39 @@ namespace server {
 using namespace bc::protocol;
 
 authenticator::authenticator(server_node& node)
-  : zmq::authenticator(node.thread_pool())
+  : zmq::authenticator(priority(node.server_settings().priority))
 {
     const auto& settings = node.server_settings();
 
     set_private_key(settings.server_private_key);
 
-    for (const auto& address: settings.client_addresses)
-    {
-        LOG_DEBUG(LOG_SERVER)
-            << "Allow client address [" << address
-            << (address.port() == 0 ? ":*" : "") << "]";
-
-        allow(address);
-    }
-
+    // Secure clients are also affected by address restrictions.
     for (const auto& public_key: settings.client_public_keys)
     {
         LOG_DEBUG(LOG_SERVER)
             << "Allow client public key [" << public_key << "]";
 
         allow(public_key);
+    }
+
+    // Allow wins in case of conflict with deny (first writer).
+    for (const auto& address: settings.client_addresses)
+    {
+        LOG_DEBUG(LOG_SERVER)
+            << "Allow client address [" << address.to_hostname() << "]";
+
+        // The port is ignored.
+        allow(address);
+    }
+
+    // Allow wins in case of conflict with deny (first writer).
+    for (const auto& address: settings.blacklists)
+    {
+        LOG_DEBUG(LOG_SERVER)
+            << "Block client address [" << address.to_hostname() << "]";
+
+        // The port is ignored.
+        deny(address);
     }
 }
 

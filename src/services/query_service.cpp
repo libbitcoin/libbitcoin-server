@@ -27,18 +27,28 @@ namespace server {
 
 using namespace bc::config;
 using namespace bc::protocol;
+using role = zmq::socket::role;
 
 static const auto domain = "query";
-const config::endpoint query_service::public_query("inproc://public_query");
-const config::endpoint query_service::secure_query("inproc://secure_query");
-const config::endpoint query_service::public_notify("inproc://public_notify");
-const config::endpoint query_service::secure_notify("inproc://secure_notify");
+static const config::endpoint public_worker("inproc://public_query");
+static const config::endpoint secure_worker("inproc://secure_query");
+
+// static
+const config::endpoint& query_service::worker_endpoint(bool secure)
+{
+    return secure ? secure_worker : public_worker;
+}
 
 query_service::query_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
+    security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
+    external_(node.protocol_settings()),
+    internal_(external_.send_high_water, external_.receive_high_water),
+    service_(settings_.query_endpoint(secure)),
+    worker_(secure ? secure_worker : public_worker),
     authenticator_(authenticator)
 {
 }
@@ -46,124 +56,79 @@ query_service::query_service(zmq::authenticator& authenticator,
 // Implement worker as a broker.
 // The dealer blocks until there are available workers.
 // The router drops messages for lost peers (clients) and high water.
+// ............................................................................
+// When a ZMQ_ROUTER socket enters the mute state due to having reached
+// the high water mark for all peers, then any messages sent to the socket
+// shall be dropped until the mute state ends.Likewise, any messages routed
+// to a peer for which the individual high water mark has been reached shall
+// also be dropped. api.zeromq.org/4-2:zmq-socket
 void query_service::work()
 {
-    zmq::socket router(authenticator_, zmq::socket::role::router);
-    zmq::socket query_dealer(authenticator_, zmq::socket::role::dealer);
-    zmq::socket notify_dealer(authenticator_, zmq::socket::role::dealer);
+    zmq::socket router(authenticator_, role::router, external_);
+    zmq::socket dealer(authenticator_, role::dealer, internal_);
 
     // Bind sockets to the service and worker endpoints.
-    if (!started(bind(router, query_dealer, notify_dealer)))
+    if (!started(bind(router, dealer)))
         return;
 
-    zmq::poller poller;
-    poller.add(router);
-    poller.add(query_dealer);
-    poller.add(notify_dealer);
-
-    while (!poller.terminated() && !stopped())
-    {
-        const auto signaled = poller.wait();
-
-        if (signaled.contains(router.id()) &&
-            !forward(router, query_dealer))
-        {
-            LOG_WARNING(LOG_SERVER)
-                << "Failed to forward from router to query_dealer.";
-        }
-
-        if (signaled.contains(query_dealer.id()) &&
-            !forward(query_dealer, router))
-        {
-            LOG_WARNING(LOG_SERVER)
-                << "Failed to forward from query_dealer to router.";
-        }
-
-        if (signaled.contains(notify_dealer.id()) &&
-            !forward(notify_dealer, router))
-        {
-            LOG_WARNING(LOG_SERVER)
-                << "Failed to forward from notify_dealer to router.";
-        }
-    }
+    // TODO: tap in to failure conditions, such as high water.
+    // BUGBUG: stop is insufficient to stop the worker, because of relay().
+    // Relay messages between router and dealer (blocks on context).
+    relay(router, dealer);
 
     // Unbind the sockets and exit this thread.
-    finished(unbind(router, query_dealer, notify_dealer));
+    finished(unbind(router, dealer));
 }
 
 // Bind/Unbind.
 //-----------------------------------------------------------------------------
 
-bool query_service::bind(zmq::socket& router, zmq::socket& query_dealer,
-    zmq::socket& notify_dealer)
+bool query_service::bind(zmq::socket& router, zmq::socket& dealer)
 {
-    const auto security = secure_ ? "secure" : "public";
-    const auto& query_worker = secure_ ? secure_query : public_query;
-    const auto& notify_worker = secure_ ? secure_notify : public_notify;
-    const auto& query_service = secure_ ? settings_.secure_query_endpoint :
-        settings_.public_query_endpoint;
-
     if (!authenticator_.apply(router, domain, secure_))
         return false;
 
-    auto ec = router.bind(query_service);
+    auto ec = router.bind(service_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " query service to "
-            << query_service << " : " << ec.message();
+            << "Failed to bind " << security_ << " query service to "
+            << service_ << " : " << ec.message();
         return false;
     }
 
-    ec = query_dealer.bind(query_worker);
+    ec = dealer.bind(worker_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " query workers to "
-            << query_worker << " : " << ec.message();
-        return false;
-    }
-
-    ec = notify_dealer.bind(notify_worker);
-
-    if (ec)
-    {
-        LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " notify worker to "
-            << notify_worker << " : " << ec.message();
+            << "Failed to bind " << security_ << " query workers to "
+            << worker_ << " : " << ec.message();
         return false;
     }
 
     LOG_INFO(LOG_SERVER)
-        << "Bound " << security << " query service to " << query_service;
+        << "Bound " << security_ << " query service to " << service_;
     return true;
 }
 
-bool query_service::unbind(zmq::socket& router, zmq::socket& query_dealer,
-    zmq::socket& notify_dealer)
+bool query_service::unbind(zmq::socket& router, zmq::socket& dealer)
 {
-    // Stop all even if one fails.
+    // Stop both even if one fails.
     const auto service_stop = router.stop();
-    const auto query_stop = query_dealer.stop();
-    const auto notify_stop = notify_dealer.stop();
-    const auto security = secure_ ? "secure" : "public";
+    const auto worker_stop = dealer.stop();
 
     if (!service_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to unbind " << security << " query service.";
+            << "Failed to unbind " << security_ << " query service.";
 
-    if (!query_stop)
+    if (!worker_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to unbind " << security << " query workers.";
-
-    if (!notify_stop)
-        LOG_ERROR(LOG_SERVER)
-            << "Failed to unbind " << security << " notify workers.";
+            << "Failed to unbind " << security_ << " query workers.";
 
     // Don't log stop success.
-    return service_stop && query_stop && notify_stop;
+    return service_stop && worker_stop;
 }
 
 } // namespace server

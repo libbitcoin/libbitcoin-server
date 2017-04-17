@@ -37,33 +37,39 @@ public:
     settings();
     settings(bc::config::settings context);
 
+    /// Helpers.
+    asio::duration heartbeat_interval() const;
+    asio::duration subscription_expiration() const;
+    const config::endpoint& query_endpoint(bool secure) const;
+    const config::endpoint& heartbeat_endpoint(bool secure) const;
+    const config::endpoint& block_endpoint(bool secure) const;
+    const config::endpoint& transaction_endpoint(bool secure) const;
+
     /// Properties.
+    bool priority;
     bool secure_only;
 
     uint16_t query_workers;
     uint32_t subscription_limit;
     uint32_t subscription_expiration_minutes;
-    uint32_t heartbeat_interval_seconds;
+    uint32_t heartbeat_service_seconds;
     bool block_service_enabled;
     bool transaction_service_enabled;
-
-    config::endpoint public_query_endpoint;
-    config::endpoint public_heartbeat_endpoint;
-    config::endpoint public_block_endpoint;
-    config::endpoint public_transaction_endpoint;
 
     config::endpoint secure_query_endpoint;
     config::endpoint secure_heartbeat_endpoint;
     config::endpoint secure_block_endpoint;
     config::endpoint secure_transaction_endpoint;
 
+    config::endpoint public_query_endpoint;
+    config::endpoint public_heartbeat_endpoint;
+    config::endpoint public_block_endpoint;
+    config::endpoint public_transaction_endpoint;
+
     config::sodium server_private_key;
     config::sodium::list client_public_keys;
     config::authority::list client_addresses;
-
-    /// Helpers.
-    asio::duration heartbeat_interval() const;
-    asio::duration subscription_expiration() const;
+    config::authority::list blacklists;
 };
 
 } // namespace server

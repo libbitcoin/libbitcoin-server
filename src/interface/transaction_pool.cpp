@@ -25,28 +25,52 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/utility/fetch_helpers.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 using namespace std::placeholders;
 
+static constexpr auto canonical = bc::message::version::level::canonical;
+
 void transaction_pool::fetch_transaction(server_node& node,
     const message& request, send_handler handler)
 {
-    hash_digest hash;
+    const auto& data = request.data();
 
-    if (!unwrap_fetch_transaction_args(hash, request))
+    if (data.size() != hash_size)
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const auto hash = deserial.read_hash();
+
     // The response allows confirmed and unconfirmed transactions.
     node.chain().fetch_transaction(hash, false,
-        std::bind(transaction_fetched,
+        std::bind(&transaction_pool::transaction_fetched,
             _1, _2, _3, _4, request, handler));
+}
+
+void transaction_pool::transaction_fetched(const code& ec, transaction_ptr tx,
+    size_t, size_t, const message& request, send_handler handler)
+{
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
+    // [ code:4 ]
+    // [ tx:... ]
+    auto result = build_chunk(
+    {
+        message::to_bytes(error::success),
+        tx->to_data(canonical)
+    });
+
+    handler(message(request, std::move(result)));
 }
 
 // Save to tx pool and announce to all connected peers.
@@ -54,10 +78,9 @@ void transaction_pool::fetch_transaction(server_node& node,
 void transaction_pool::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    static const auto version = bc::message::version::level::canonical;
     const auto tx = std::make_shared<bc::message::transaction>();
 
-    if (!tx->from_data(version, request.data()))
+    if (!tx->from_data(canonical, request.data()))
     {
         handler(message(request, error::bad_stream));
         return;
@@ -82,10 +105,9 @@ void transaction_pool::handle_broadcast(const code& ec, const message& request,
 void transaction_pool::validate2(server_node& node, const message& request,
     send_handler handler)
 {
-    static const auto version = bc::message::version::level::canonical;
     const auto tx = std::make_shared<bc::message::transaction>();
 
-    if (!tx->from_data(version, request.data()))
+    if (!tx->from_data(canonical, request.data()))
     {
         handler(message(request, error::bad_stream));
         return;

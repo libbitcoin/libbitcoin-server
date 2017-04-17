@@ -26,12 +26,12 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
-#include <bitcoin/server/messages/route.hpp>
+#include <bitcoin/server/messages/subscription.hpp>
 #include <bitcoin/server/services/block_service.hpp>
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/transaction_service.hpp>
-#include <bitcoin/server/utility/authenticator.hpp>
+#include <bitcoin/server/workers/authenticator.hpp>
 #include <bitcoin/server/workers/notification_worker.hpp>
 
 namespace libbitcoin {
@@ -45,9 +45,6 @@ class BCS_API server_node
 public:
     typedef std::shared_ptr<server_node> ptr;
 
-    /// Compute the minimum threadpool size required to run the server.
-    static uint32_t threads_required(const configuration& configuration);
-
     /// Construct a server node.
     server_node(const configuration& configuration);
 
@@ -58,7 +55,10 @@ public:
     // ----------------------------------------------------------------------------
 
     /// Server configuration settings.
-    virtual const settings& server_settings() const;
+    virtual const bc::protocol::settings& protocol_settings() const;
+
+    /// Server configuration settings.
+    virtual const bc::server::settings& server_settings() const;
 
     // Run sequence.
     // ------------------------------------------------------------------------
@@ -82,14 +82,11 @@ public:
     // Notification.
     // ------------------------------------------------------------------------
 
-    /// Subscribe to address (including stealth) prefix notifications.
-    /// Stealth prefix is limited to 32 bits, address prefix to 256 bits.
-    virtual code subscribe_address(const route& reply_to, uint32_t id,
-        const binary& prefix_filter, bool unsubscribe);
+    virtual code subscribe_address(const message& request,
+        short_hash&& address_hash, bool unsubscribe);
 
-    /////// Subscribe to transaction penetration notifications.
-    ////virtual void subscribe_penetration(const route& reply_to, uint32_t id,
-    ////    const hash_digest& tx_hash);
+    virtual code subscribe_stealth(const message& request,
+        binary&& prefix_filter, bool unsubscribe);
 
 private:
     void handle_running(const code& ec, result_handler handler);

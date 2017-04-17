@@ -192,9 +192,6 @@ bool executor::run()
     if (!verify_directory())
         return false;
 
-    // Ensure all configured services can function.
-    set_minimum_threadpool_size();
-
     // Now that the directory is verified we can create the node for it.
     node_ = std::make_shared<server_node>(metadata_.configured);
 
@@ -224,6 +221,9 @@ bool executor::run()
 // Handle the completion of the start sequence and begin the run sequence.
 void executor::handle_started(const code& ec)
 {
+    // TEMP: use to repro start/stop deadlock race.
+    ////auto thread = std::thread([this]() { stop(error::service_stopped); });
+
     if (ec)
     {
         LOG_ERROR(LOG_SERVER) << format(BS_NODE_START_FAIL) % ec.message();
@@ -242,6 +242,9 @@ void executor::handle_started(const code& ec)
     node_->run(
         std::bind(&executor::handle_running,
             this, _1));
+
+    // TEMP: see above.
+    ////thread.join();
 }
 
 // This is the end of the run sequence.
@@ -326,14 +329,6 @@ bool executor::verify_directory()
     const auto message = ec.message();
     LOG_ERROR(LOG_SERVER) << format(BS_INITCHAIN_TRY) % directory % message;
     return false;
-}
-
-// Increase the configured minimum as required to operate the service.
-void executor::set_minimum_threadpool_size()
-{
-    metadata_.configured.network.threads =
-        std::max(metadata_.configured.network.threads,
-            server_node::threads_required(metadata_.configured));
 }
 
 } // namespace server

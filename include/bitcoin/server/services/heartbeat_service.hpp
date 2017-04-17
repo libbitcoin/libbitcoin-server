@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -51,17 +52,24 @@ protected:
     // Implement the service.
     virtual void work();
 
-    // Publish the heartbeat (integrated worker).
-    void publish(uint32_t count, socket& socket);
+    // Publish the heartbeat (no worker).
+    void publish(socket& socket);
 
 private:
+    int32_t pulse_milliseconds() const;
+
+    // These are thread safe.
     const bool secure_;
     const bool verbose_;
-    const server::settings& settings_;
-    const int32_t period_;
-
-    // This is thread safe.
+    const std::string security_;
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& external_;
+    const config::endpoint service_;
     bc::protocol::zmq::authenticator& authenticator_;
+    server_node& node_;
+
+    // This is protected by limit to single worker thread.
+    uint16_t sequence_;
 };
 
 } // namespace server

@@ -19,7 +19,9 @@
 #ifndef LIBBITCOIN_SERVER_TRANSACTION_SERVICE_HPP
 #define LIBBITCOIN_SERVER_TRANSACTION_SERVICE_HPP
 
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -37,19 +39,12 @@ class BCS_API transaction_service
 public:
     typedef std::shared_ptr<transaction_service> ptr;
 
-    /// The fixed inprocess worker endpoints.
-    static const config::endpoint public_worker;
-    static const config::endpoint secure_worker;
-
     /// Construct a transaction service.
     transaction_service(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
     /// Start the service.
     bool start() override;
-
-    /// Stop the service.
-    bool stop() override;
 
 protected:
     typedef bc::protocol::zmq::socket socket;
@@ -64,13 +59,20 @@ private:
     bool handle_transaction(const code& ec, transaction_const_ptr tx);
     void publish_transaction(transaction_const_ptr tx);
 
+    // These are thread safe.
     const bool secure_;
     const bool verbose_;
-    const server::settings& settings_;
-
-    // These are thread safe.
+    const std::string security_;
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& external_;
+    const bc::protocol::settings internal_;
+    const config::endpoint service_;
+    const config::endpoint worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
+
+    // This is protected by tx notification non-concurrency.
+    uint16_t sequence_;
 };
 
 } // namespace server

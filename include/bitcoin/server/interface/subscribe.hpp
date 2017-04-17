@@ -16,12 +16,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_FETCH_HELPERS_HPP
-#define LIBBITCOIN_SERVER_FETCH_HELPERS_HPP
+#ifndef LIBBITCOIN_SERVER_SUBSCRIBE_HPP
+#define LIBBITCOIN_SERVER_SUBSCRIBE_HPP
 
-#include <cstddef>
-#include <cstdint>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -29,30 +26,21 @@
 namespace libbitcoin {
 namespace server {
 
-static BC_CONSTEXPR size_t code_size = sizeof(uint32_t);
-static BC_CONSTEXPR size_t index_size = sizeof(uint32_t);
-static BC_CONSTEXPR size_t point_size = hash_size + sizeof(uint32_t);
+/// Subscribe interface.
+/// Class and method names are published and mapped to the zeromq interface.
+class BCS_API subscribe
+{
+public:
+    /// Subscribe to payment address notifications by address hash.
+    static void address(server_node& node, const message& request,
+        send_handler handler);
 
-// fetch_history stuff
-
-bool BCS_API unwrap_fetch_history_args(wallet::payment_address& address,
-    size_t& from_height, const message& request);
-
-void BCS_API send_history_result(const code& ec,
-    const chain::history_compact::list& history, const message& request,
-    send_handler handler);
-
-// fetch_transaction stuff
-
-bool BCS_API unwrap_fetch_transaction_args(hash_digest& hash,
-    const message& request);
-
-void BCS_API transaction_fetched(const code& ec, transaction_ptr tx,
-    size_t height, size_t position, const message& request,
-    send_handler handler);
+    /// Subscribe to stealth address notifications by prefix.
+    static void stealth(server_node& node, const message& request,
+        send_handler handler);
+};
 
 } // namespace server
 } // namespace libbitcoin
 
 #endif
-

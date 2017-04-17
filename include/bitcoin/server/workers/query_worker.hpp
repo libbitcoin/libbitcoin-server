@@ -54,23 +54,29 @@ protected:
     virtual void attach_interface();
     virtual void attach(const std::string& command, command_handler handler);
 
-    virtual bool connect(socket& router);
-    virtual bool disconnect(socket& router);
-    virtual void query(socket& router);
+    virtual bool connect(socket& dealer);
+    virtual bool disconnect(socket& dealer);
+    virtual void query(socket& dealer);
 
     // Implement the worker.
     virtual void work();
 
 private:
-    const bool secure_;
-    const bool verbose_;
-    const server::settings& settings_;
+    static void send(const message& response,
+        bc::protocol::zmq::socket& dealer);
 
     // These are thread safe.
-    server_node& node_;
+    const bool secure_;
+    const bool verbose_;
+    const std::string security_;
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& external_;
+    const bc::protocol::settings internal_;
+    const config::endpoint& worker_;
     bc::protocol::zmq::authenticator& authenticator_;
+    server_node& node_;
 
-    // This is protected by base class mutex.
+    // This is protected by worker base class mutex.
     command_map command_handlers_;
 };
 

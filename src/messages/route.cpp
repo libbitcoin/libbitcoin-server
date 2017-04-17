@@ -19,27 +19,47 @@
 #include <bitcoin/server/messages/route.hpp>
 
 #include <string>
-#include <boost/functional/hash_fwd.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/protocol.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-route::route()
-  : secure(false), delimited(false)
+using namespace bc:: protocol;
+
+static const zmq::message::address default_address
 {
+    { 0x00, 0x00, 0x00, 0x00, 0x00 }
+};
+
+route::route()
+  : delimited_(false),
+    address_(default_address)
+{
+}
+
+bool route::delimited() const
+{
+    return delimited_;
+}
+
+zmq::message::address route::address() const
+{
+    return address_;
+}
+
+void route::set_delimited(bool value)
+{
+    delimited_ = value;
+}
+
+void route::set_address(const zmq::message::address& value)
+{
+    address_ = value;
 }
 
 std::string route::display() const
 {
-    return "[" + encode_base16(address1) +
-        /*":" + encode_base16(address2) +*/ "]";
-}
-
-bool route::operator==(const route& other) const
-{
-    return secure == other.secure && /*delimited == other.delimited &&*/
-        address1 == other.address1 /*&& address2 == other.address2*/;
+    return "[" + encode_base16(address_) + "]" + (delimited_ ? "[]" : "");
 }
 
 } // namespace server

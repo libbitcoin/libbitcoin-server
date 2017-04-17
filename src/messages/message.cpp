@@ -20,8 +20,10 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/messages/route.hpp>
+#include <bitcoin/server/messages/subscription.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -48,66 +50,70 @@ data_chunk message::to_bytes(const code& ec)
 }
 
 // Constructors.
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-// Construct an empty message with security routing context.
+// Incoming messages pass their route security.
 message::message(bool secure)
+  : id_(0), secure_(secure)
 {
-    // For subscriptions, directs notifier to respond on secure endpoint.
-    route_.secure = secure;
 }
 
-// Construct a response for the request (response code only).
 message::message(const message& request, const code& ec)
   : message(request, to_bytes(ec))
 {
 }
 
-// Construct a response for the request (response data with code).
-message::message(const message& request, const data_chunk& data)
-  : message(request.route(), request.command(), request.id(), data)
+message::message(const message& request, data_chunk&& data)
+  : command_(request.command_),
+    id_(request.id_),
+    data_(std::move(data)),
+    route_(request.route_),
+    secure_(false)
 {
 }
 
-// Construct a response for the route (subscription code only).
-message::message(const server::route& route, const std::string& command,
-    uint32_t id, const code& ec)
-  : message(route, command, id, to_bytes(ec))
+message::message(const subscription& route, const std::string& command,
+    const code& ec)
+  : message(route, command, to_bytes(ec))
 {
 }
 
-// Construct a response for the route (subscription data with code).
-message::message(const server::route& route, const std::string& command,
-    uint32_t id, const data_chunk& data)
-  : route_(route), command_(command), id_(id), data_(data)
+message::message(const subscription& route, const std::string& command,
+    data_chunk&& data)
+  : command_(command),
+    id_(route.id()),
+    data_(std::move(data)),
+    route_(route),
+    secure_(false)
 {
 }
 
 // Properties.
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-/// Arbitrary caller data (returned to caller for correlation).
-uint32_t message::id() const
-{
-    return id_;
-}
-
-/// Serialized query or response (defined in relation to command).
-const data_chunk& message::data() const
-{
-    return data_;
-}
-
-/// Query command (used for subscription, always returned to caller).
 const std::string& message::command() const
 {
     return command_;
 }
 
-/// The message route.
+uint32_t message::id() const
+{
+    return id_;
+}
+
+const data_chunk& message::data() const
+{
+    return data_;
+}
+
 const server::route& message::route() const
 {
     return route_;
+}
+
+bool message::secure() const
+{
+    return secure_;
 }
 
 // Transport.
@@ -116,27 +122,34 @@ const server::route& message::route() const
 code message::receive(zmq::socket& socket)
 {
     zmq::message message;
-    auto ec = socket.receive(message);
+    const auto ec = socket.receive(message);
 
     if (ec)
         return ec;
 
-    if (message.size() < 5 || message.size() > 6)
+    if (message.size() < 4 || message.size() > 5)
         return error::bad_stream;
 
-    // Decode the routing information (TODO: generalize in route).
+    // Decode the routing information.
     //-------------------------------------------------------------------------
 
-    // Client is undelimited DEALER -> 2 addresses with no delimiter.
-    // Client is REQ or delimited DEALER -> 2 addresses with delimiter.
-    route_.address1 = message.dequeue_data();
-    route_.address2 = message.dequeue_data();
+    // Client is undelimited DEALER -> 1 addresses with 0 delimiter (4), or
+    // client is REQ or delimited DEALER -> 1 addresses with 1 delimiter (5).
+
+    zmq::message::address address;
+
+    if (!message.dequeue(address))
+        return error::bad_stream;
+
+    route_.set_address(address);
 
     // In the reply we echo the delimited-ness of the original request.
-    route_.delimited = message.size() == 4;
+    // If there are three frames left the message must be undelimited.
+    route_.set_delimited(message.size() == 4);
 
-    if (route_.delimited)
-        message.dequeue();
+    // Drop the delimiter so that there are always (3) frames remaining.
+    if (route_.delimited() && !message.dequeue_data().empty())
+        return error::bad_stream;
 
     // All libbitcoin queries and responses have these three frames.
     //-------------------------------------------------------------------------
@@ -154,20 +167,19 @@ code message::receive(zmq::socket& socket)
     return error::success;
 }
 
-code message::send(zmq::socket& socket)
+code message::send(zmq::socket& socket) const
 {
     zmq::message message;
 
-    // Encode the routing information (TODO: generalize in route).
+    // Encode the routing information.
     //-------------------------------------------------------------------------
 
-    // Client is undelimited DEALER -> 2 addresses with no delimiter.
-    // Client is REQ or delimited DEALER -> 2 addresses with delimiter.
-    message.enqueue(route_.address1);
-    message.enqueue(route_.address2);
+    // Client is undelimited DEALER -> 1 address with 0 delimiter (4).
+    // Client is REQ or delimited DEALER -> 1 address with 1 delimiter (5).
+    message.enqueue(route_.address());
 
     // In the reply we echo the delimited-ness of the original request.
-    if (route_.delimited)
+    if (route_.delimited())
         message.enqueue();
 
     // All libbitcoin queries and responses have these three frames.

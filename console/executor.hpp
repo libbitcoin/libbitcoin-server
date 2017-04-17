@@ -54,7 +54,6 @@ private:
 
     void initialize_output();
     bool verify_directory();
-    void set_minimum_threadpool_size();
     bool run();
 
     // Termination state.
@@ -68,9 +67,9 @@ private:
 
 // Localizable messages.
 #define BS_SETTINGS_MESSAGE \
-    "These are the configuration settings that can be set."
+    "Configuration Settings:"
 #define BS_INFORMATION_MESSAGE \
-    "Runs a full bitcoin node in the global peer-to-peer network."
+    "Runs a full bitcoin node and query server in the global network."
 
 #define BS_UNINITIALIZED_CHAIN \
     "The %1% directory is not initialized, run: bs --initchain"

@@ -33,19 +33,28 @@ namespace server {
 using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::protocol;
+using role = zmq::socket::role;
 
 static const auto domain = "block";
-const config::endpoint block_service::public_worker("inproc://public_block");
-const config::endpoint block_service::secure_worker("inproc://secure_block");
+static const auto public_worker = "inproc://public_block";
+static const auto secure_worker = "inproc://secure_block";
 
 block_service::block_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
+    security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
+    external_(node.protocol_settings()),
+    internal_(external_.send_high_water, external_.receive_high_water),
+    service_(settings_.block_endpoint(secure)),
+    worker_(secure ? secure_worker : public_worker),
     authenticator_(authenticator),
-    node_(node)
+    node_(node),
+
+    // Pick a random sequence counter start, will wrap around at overflow.
+    sequence_(static_cast<uint16_t>(pseudo_random(0, max_uint16)))
 {
 }
 
@@ -60,24 +69,19 @@ bool block_service::start()
     return zmq::worker::start();
 }
 
-// No unsubscribe so must be kept in scope until subscriber stop complete.
-bool block_service::stop()
-{
-    return zmq::worker::stop();
-}
-
 // Implement worker as extended pub-sub.
 // The publisher drops messages for lost peers (clients) and high water.
 void block_service::work()
 {
-    zmq::socket xpub(authenticator_, zmq::socket::role::extended_publisher);
-    zmq::socket xsub(authenticator_, zmq::socket::role::extended_subscriber);
+    zmq::socket xpub(authenticator_, role::extended_publisher, external_);
+    zmq::socket xsub(authenticator_, role::extended_subscriber, internal_);
 
     // Bind sockets to the service and worker endpoints.
     if (!started(bind(xpub, xsub)))
         return;
 
     // TODO: tap in to failure conditions, such as high water.
+    // BUGBUG: stop is insufficient to stop the worker, because of relay().
     // Relay messages between subscriber and publisher (blocks on context).
     relay(xpub, xsub);
 
@@ -90,36 +94,31 @@ void block_service::work()
 
 bool block_service::bind(zmq::socket& xpub, zmq::socket& xsub)
 {
-    const auto security = secure_ ? "secure" : "public";
-    const auto& worker = secure_ ? secure_worker : public_worker;
-    const auto& service = secure_ ? settings_.secure_block_endpoint :
-        settings_.public_block_endpoint;
-
     if (!authenticator_.apply(xpub, domain, secure_))
         return false;
 
-    auto ec = xpub.bind(service);
+    auto ec = xpub.bind(service_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " block service to "
-            << service << " : " << ec.message();
+            << "Failed to bind " << security_ << " block service to "
+            << service_ << " : " << ec.message();
         return false;
     }
 
-    ec = xsub.bind(worker);
+    ec = xsub.bind(worker_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " block workers to "
-            << worker << " : " << ec.message();
+            << "Failed to bind " << security_ << " block workers to "
+            << worker_ << " : " << ec.message();
         return false;
     }
 
     LOG_INFO(LOG_SERVER)
-        << "Bound " << security << " block service to " << service;
+        << "Bound " << security_ << " block service to " << service_;
     return true;
 }
 
@@ -128,15 +127,14 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
     // Stop both even if one fails.
     const auto service_stop = xpub.stop();
     const auto worker_stop = xsub.stop();
-    const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to unbind " << security << " block service.";
+            << "Failed to unbind " << security_ << " block service.";
 
     if (!worker_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to unbind " << security << " block workers.";
+            << "Failed to unbind " << security_ << " block workers.";
 
     // Don't log stop success.
     return service_stop && worker_stop;
@@ -160,6 +158,10 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
         return true;
     }
 
+    // Nothing to do here.
+    if (!new_blocks || new_blocks->empty())
+        return true;
+
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
     publish_blocks(safe_unsigned<uint32_t>(fork_height), new_blocks);
     return true;
@@ -171,14 +173,11 @@ void block_service::publish_blocks(uint32_t fork_height,
     if (stopped())
         return;
 
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? block_service::secure_worker :
-        block_service::public_worker;
+    zmq::socket publisher(authenticator_, role::publisher, internal_);
 
     // Subscriptions are off the pub-sub thread so this must connect back.
     // This could be optimized by caching the socket as thread static.
-    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
-    const auto ec = publisher.connect(endpoint);
+    const auto ec = publisher.connect(worker_);
 
     if (ec == error::service_stopped)
         return;
@@ -186,35 +185,33 @@ void block_service::publish_blocks(uint32_t fork_height,
     if (ec)
     {
         LOG_WARNING(LOG_SERVER)
-            << "Failed to connect " << security << " block worker: "
+            << "Failed to connect " << security_ << " block worker: "
             << ec.message();
         return;
     }
 
-    BITCOIN_ASSERT(blocks->size() <= max_uint32);
-    BITCOIN_ASSERT(fork_height < max_uint32 - blocks->size());
-    auto height = fork_height;
-
     for (const auto block: *blocks)
-        publish_block(publisher, height++, block);
+        publish_block(publisher, fork_height++, block);
 }
 
 // [ height:4 ]
-// [ header:80 ]
-// [ txs... ]
+// [ block ]
 // The payload for block publication is delimited within the zeromq message.
 // This is required for compatability and inconsistent with query payloads.
-void block_service::publish_block(zmq::socket& publisher, uint32_t height,
+void block_service::publish_block(zmq::socket& publisher, size_t height,
     block_const_ptr block)
 {
     if (stopped())
         return;
 
-    const auto security = secure_ ? "secure" : "public";
-
+    // [ sequence:2 ]
+    // [ height:4 ]
+    // [ block:... ]
     zmq::message broadcast;
-    broadcast.enqueue_little_endian(height);
+    broadcast.enqueue_little_endian(++sequence_);
+    broadcast.enqueue_little_endian(static_cast<uint32_t>(height));
     broadcast.enqueue(block->to_data(bc::message::version::level::canonical));
+
     const auto ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)
@@ -223,16 +220,16 @@ void block_service::publish_block(zmq::socket& publisher, uint32_t height,
     if (ec)
     {
         LOG_WARNING(LOG_SERVER)
-            << "Failed to publish " << security << " bloc ["
-            << encode_hash(block->header().hash()) << "] " << ec.message();
+            << "Failed to publish " << security_ << " bloc ["
+            << encode_hash(block->hash()) << "] " << ec.message();
         return;
     }
 
     // This isn't actually a request, should probably update settings.
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
-            << "Published " << security << " block ["
-            << encode_hash(block->header().hash()) << "]";
+            << "Published " << security_ << " block ["
+            << encode_hash(block->hash()) << "] (" << sequence_ << ").";
 }
 
 } // namespace server

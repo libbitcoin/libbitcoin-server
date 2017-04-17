@@ -46,26 +46,23 @@ parser::parser(const configuration& defaults)
 }
 
 // Initialize configuration using defaults of the given context.
-parser::parser(const bc::config::settings& context)
+parser::parser(bc::config::settings context)
   : configured(context)
 {
-    // A server/node allows 8 inbound connections by default.
-    configured.network.inbound_connections = 8;
+    // Logs will slow things if not rotated.
+    configured.network.rotation_size = 10000000;
 
-    // A server/node allows 1000 host names by default.
+    // With block-first sync the count should be low until complete.
+    configured.network.outbound_connections = 2;
+
+    // A node allows 1000 host names by default.
     configured.network.host_pool_capacity = 1000;
 
-    // A server/node requests transaction relay by default.
-    configured.network.relay_transactions = true;
-
-    // A server/node exposes full node (1) network services by default.
+    // A node exposes full node (1) network services by default.
     configured.network.services = message::version::service::node_network;
 
-    // A server prioritizes notification memory consumption over block speed.
-    configured.chain.priority = false;
-
-    // A server prioritizes restart after hard shutdown over block speed.
-    configured.database.flush_writes = true;
+    // TODO: set this independently on each public endpoint.
+    configured.protocol.message_size_limit = max_block_size + 100;
 }
 
 options_metadata parser::load_options()
@@ -152,7 +149,7 @@ options_metadata parser::load_settings()
     (
         "log.rotation_size",
         value<size_t>(&configured.network.rotation_size),
-        "The size at which a log is archived, defaults to 0 (disabled)."
+        "The size at which a log is archived, defaults to 10000000 (0 disables)."
     )
     (
         "log.minimum_free_space",
@@ -218,12 +215,12 @@ options_metadata parser::load_settings()
     (
         "network.inbound_connections",
         value<uint32_t>(&configured.network.inbound_connections),
-        "The target number of incoming network connections, defaults to 8."
+        "The target number of incoming network connections, defaults to 0."
     )
     (
         "network.outbound_connections",
         value<uint32_t>(&configured.network.outbound_connections),
-        "The target number of outgoing network connections, defaults to 8."
+        "The target number of outgoing network connections, defaults to 2."
     )
     (
         "network.manual_attempt_limit",
@@ -258,7 +255,7 @@ options_metadata parser::load_settings()
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&configured.network.channel_expiration_minutes),
-        "The age limit for any connection, defaults to 1440."
+        "The age limit for any connection, defaults to 60."
     )
     (
         "network.channel_germination_seconds",
@@ -305,7 +302,7 @@ options_metadata parser::load_settings()
     (
         "database.flush_writes",
         value<bool>(&configured.database.flush_writes),
-        "Flush each write to disk, defaults to true."
+        "Flush each write to disk, defaults to false."
     )
     (
         "database.file_growth_rate",
@@ -335,7 +332,7 @@ options_metadata parser::load_settings()
     (
         "database.cache_capacity",
         value<uint32_t>(&configured.database.cache_capacity),
-        "The maximum number of entries in the unspent outputs cache, defaults to 0."
+        "The maximum number of entries in the unspent outputs cache, defaults to 10000."
     )
 
     /* [blockchain] */
@@ -347,7 +344,7 @@ options_metadata parser::load_settings()
     (
         "blockchain.priority",
         value<bool>(&configured.chain.priority),
-        "Use high thread priority for block validation, defaults to false."
+        "Use high thread priority for block validation, defaults to true."
     )
     (
         "blockchain.use_libconsensus",
@@ -408,38 +405,38 @@ options_metadata parser::load_settings()
     )
 
     /* [node] */
-    (
-        "node.sync_peers",
-        value<uint32_t>(&configured.node.sync_peers),
-        "The maximum number of initial block download peers, defaults to 0 (physical cores)."
-    )
-    (
-        "node.sync_timeout_seconds",
-        value<uint32_t>(&configured.node.sync_timeout_seconds),
-        "The time limit for block response during initial block download, defaults to 5."
-    )
+    ////(
+    ////    "node.sync_peers",
+    ////    value<uint32_t>(&configured.node.sync_peers),
+    ////    "The maximum number of initial block download peers, defaults to 0 (physical cores)."
+    ////)
+    ////(
+    ////    "node.sync_timeout_seconds",
+    ////    value<uint32_t>(&configured.node.sync_timeout_seconds),
+    ////    "The time limit for block response during initial block download, defaults to 5."
+    ////)
     (
         "node.block_poll_seconds",
         value<uint32_t>(&configured.node.block_poll_seconds),
         "The time period for block polling after initial block download, defaults to 1 (0 disables)."
     )
     (
-        /* Internally this is blockchain, but it is conceptually a node setting.*/
+        /* Internally this is blockchain, but it is conceptually a node setting. */
         "node.minimum_byte_fee_satoshis",
         value<float>(&configured.chain.minimum_byte_fee_satoshis),
         "The minimum fee per byte required for transaction acceptance, defaults to 1."
     )
     ////(
-    ////    /* Internally this blockchain, but it is conceptually a node setting.*/
+    ////    /* Internally this is blockchain, but it is conceptually a node setting. */
     ////    "node.reject_conflicts",
     ////    value<bool>(&configured.chain.reject_conflicts),
     ////    "Retain only the first seen of conflicting transactions, defaults to true."
     ////)
     (
-        /* Internally this network, but it is conceptually a node setting.*/
+        /* Internally this is network, but it is conceptually a node setting. */
         "node.relay_transactions",
         value<bool>(&configured.network.relay_transactions),
-        "Request that peers relay transactions, defaults to true."
+        "Request that peers relay transactions, defaults to false."
     )
     (
         "node.refresh_transactions",
@@ -449,10 +446,28 @@ options_metadata parser::load_settings()
 
     /* [server] */
     (
-        /* Internally this database, but it applies to server and not node.*/
+        /* Internally this is database, but it applies to server and not node. */
         "server.index_start_height",
         value<uint32_t>(&configured.database.index_start_height),
         "The lower limit of address and spend indexing, defaults to 0."
+    )
+    /* Internally this is protocol, but application to server is more intuitive. */
+    (
+        "server.send_high_water",
+        value<uint32_t>(&configured.protocol.send_high_water),
+        "Drop messages at this outgoing backlog level, defaults to 100."
+    )
+    /* Internally this is protocol, but application to server is more intuitive. */
+    (
+        "server.receive_high_water",
+        value<uint32_t>(&configured.protocol.receive_high_water),
+        "Drop messages at this incoming backlog level, defaults to 100."
+    )
+    /* Internally this is protocol, but application to server is more intuitive. */
+    (
+        "server.handshake_seconds",
+        value<uint32_t>(&configured.protocol.handshake_seconds),
+        "The time limit to complete the connection handshake, defaults to 30."
     )
     (
         "server.secure_only",
@@ -467,7 +482,7 @@ options_metadata parser::load_settings()
     (
         "server.subscription_limit",
         value<uint32_t>(&configured.server.subscription_limit),
-        "The maximum number of subscriptions, defaults to 0 (disabled)."
+        "The maximum number of query subscriptions, defaults to 0 (subscription disabled)."
     )
     (
         "server.subscription_expiration_minutes",
@@ -475,39 +490,19 @@ options_metadata parser::load_settings()
         "The subscription expiration time, defaults to 10."
     )
     (
-        "server.heartbeat_interval_seconds",
-        value<uint32_t>(&configured.server.heartbeat_interval_seconds),
-        "The heartbeat interval, defaults to 5 (0 disables service)."
+        "server.heartbeat_service_seconds",
+        value<uint32_t>(&configured.server.heartbeat_service_seconds),
+        "The heartbeat service interval, defaults to 0 (service disabled)."
     )
     (
         "server.block_service_enabled",
         value<bool>(&configured.server.block_service_enabled),
-        "Enable the block publishing service, defaults to true."
+        "Enable the block publishing service, defaults to false."
     )
     (
         "server.transaction_service_enabled",
         value<bool>(&configured.server.transaction_service_enabled),
-        "Enable the transaction publishing service, defaults to true."
-    )
-    (
-        "server.public_query_endpoint",
-        value<endpoint>(&configured.server.public_query_endpoint),
-        "The public query endpoint, defaults to 'tcp://*:9091'."
-    )
-    (
-        "server.public_heartbeat_endpoint",
-        value<endpoint>(&configured.server.public_heartbeat_endpoint),
-        "The public heartbeat endpoint, defaults to 'tcp://*:9092'."
-    )
-    (
-        "server.public_block_endpoint",
-        value<endpoint>(&configured.server.public_block_endpoint),
-        "The public block publishing endpoint, defaults to 'tcp://*:9093'."
-    )
-    (
-        "server.public_transaction_endpoint",
-        value<endpoint>(&configured.server.public_transaction_endpoint),
-        "The public transaction publishing endpoint, defaults to 'tcp://*:9094'."
+        "Enable the transaction publishing service, defaults to false."
     )
     (
         "server.secure_query_endpoint",
@@ -530,6 +525,26 @@ options_metadata parser::load_settings()
         "The secure transaction publishing endpoint, defaults to 'tcp://*:9084'."
     )
     (
+        "server.public_query_endpoint",
+        value<endpoint>(&configured.server.public_query_endpoint),
+        "The public query endpoint, defaults to 'tcp://*:9091'."
+    )
+    (
+        "server.public_heartbeat_endpoint",
+        value<endpoint>(&configured.server.public_heartbeat_endpoint),
+        "The public heartbeat endpoint, defaults to 'tcp://*:9092'."
+    )
+    (
+        "server.public_block_endpoint",
+        value<endpoint>(&configured.server.public_block_endpoint),
+        "The public block publishing endpoint, defaults to 'tcp://*:9093'."
+    )
+    (
+        "server.public_transaction_endpoint",
+        value<endpoint>(&configured.server.public_transaction_endpoint),
+        "The public transaction publishing endpoint, defaults to 'tcp://*:9094'."
+    )
+    (
         "server.server_private_key",
         value<config::sodium>(&configured.server.server_private_key),
         "The Z85-encoded private key of the server, enables secure endpoints."
@@ -543,6 +558,11 @@ options_metadata parser::load_settings()
         "server.client_address",
         value<config::authority::list>(&configured.server.client_addresses),
         "Allowed client IP address, multiple entries allowed."
+    )
+    (
+        "server.blacklist",
+        value<config::authority::list>(&configured.server.blacklists),
+        "Blocked client IP address, multiple entries allowed."
     );
 
     return description;

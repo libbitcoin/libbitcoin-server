@@ -31,50 +31,59 @@ static const auto domain = "heartbeat";
 
 using namespace bc::config;
 using namespace bc::protocol;
-
-static inline uint32_t to_milliseconds(uint16_t seconds)
-{
-    const auto milliseconds = static_cast<uint32_t>(seconds) * 1000;
-    return std::min(milliseconds, max_uint32);
-};
+using role = zmq::socket::role;
 
 // Heartbeat is capped at ~ 25 days by signed/millsecond conversions.
 heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
+    security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
-    period_(to_milliseconds(settings_.heartbeat_interval_seconds)),
-    authenticator_(authenticator)
+    external_(node.protocol_settings()),
+    service_(settings_.heartbeat_endpoint(secure)),
+    authenticator_(authenticator),
+    node_(node),
+
+    // Pick a random sequence counter start, will wrap around at overflow.
+    sequence_(static_cast<uint16_t>(pseudo_random(0, max_uint16)))
 {
 }
 
 // Implement service as a publisher.
-// The publisher does not block if there are no subscribers or at high water.
+// The publisher drops messages for lost peers (clients) and high water.
 void heartbeat_service::work()
 {
-    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
+    zmq::socket publisher(authenticator_, role::publisher, external_);
 
-    // Bind socket to the worker endpoint.
+    // Bind socket to the service endpoint.
     if (!started(bind(publisher)))
         return;
 
+    const auto period = pulse_milliseconds();
     zmq::poller poller;
     poller.add(publisher);
 
-    // Pick a random counter start, will wrap around at overflow.
-    auto count = static_cast<uint32_t>(pseudo_random(0, max_uint32));
-
+    // TODO: make member, see tx/block publishers.
+    // BUGBUG: stop is insufficient to stop worker, because of long period.
     // We will not receive on the poller, we use its timer and context stop.
     while (!poller.terminated() && !stopped())
     {
-        poller.wait(period_);
-        publish(count++, publisher);
+        poller.wait(period);
+        publish(publisher);
     }
 
     // Unbind the socket and exit this thread.
     finished(unbind(publisher));
+}
+
+int32_t heartbeat_service::pulse_milliseconds() const
+{
+    const int64_t seconds = settings_.heartbeat_service_seconds;
+    const int64_t milliseconds = seconds * 1000;
+    auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
+    return static_cast<int32_t>(capped);
 }
 
 // Bind/Unbind.
@@ -82,53 +91,49 @@ void heartbeat_service::work()
 
 bool heartbeat_service::bind(zmq::socket& publisher)
 {
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? settings_.secure_heartbeat_endpoint :
-        settings_.public_heartbeat_endpoint;
-
     if (!authenticator_.apply(publisher, domain, secure_))
         return false;
 
-    const auto ec = publisher.bind(endpoint);
+    const auto ec = publisher.bind(service_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " heartbeat service to "
-            << endpoint << " : " << ec.message();
+            << "Failed to bind " << security_ << " heartbeat service to "
+            << service_ << " : " << ec.message();
         return false;
     }
 
     LOG_INFO(LOG_SERVER)
-        << "Bound " << security << " heartbeat service to " << endpoint;
+        << "Bound " << security_ << " heartbeat service to " << service_;
     return true;
 }
 
 bool heartbeat_service::unbind(zmq::socket& publisher)
 {
-    const auto security = secure_ ? "secure" : "public";
-
     // Don't log stop success.
     if (publisher.stop())
         return true;
 
     LOG_ERROR(LOG_SERVER)
-        << "Failed to disconnect " << security << " heartbeat worker.";
+        << "Failed to disconnect " << security_ << " heartbeat worker.";
     return false;
 }
 
 // Publish Execution (integral worker).
 //-----------------------------------------------------------------------------
 
-void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
+void heartbeat_service::publish(zmq::socket& publisher)
 {
     if (stopped())
         return;
 
-    const auto security = secure_ ? "secure" : "public";
-
+    // [ sequence:2 ]
+    // [ height:4 ]
     zmq::message message;
-    message.enqueue_little_endian(count);
+    message.enqueue_little_endian(++sequence_);
+    message.enqueue_little_endian(node_.top_block().height());
+
     auto ec = publisher.send(message);
 
     if (ec == error::service_stopped)
@@ -137,7 +142,7 @@ void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
     if (ec)
     {
         LOG_WARNING(LOG_SERVER)
-            << "Failed to publish " << security << " heartbeat: "
+            << "Failed to publish " << security_ << " heartbeat: "
             << ec.message();
         return;
     }
@@ -145,7 +150,7 @@ void heartbeat_service::publish(uint32_t count, zmq::socket& publisher)
     // This isn't actually a request, should probably update settings.
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
-            << "Published " << security << " heartbeat [" << count << "].";
+        << "Published " << security_ << " heartbeat [" << sequence_ << "].";
 }
 
 } // namespace server

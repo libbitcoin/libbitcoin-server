@@ -32,19 +32,28 @@ using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::message;
 using namespace bc::protocol;
+using role = zmq::socket::role;
 
 static const auto domain = "transaction";
-const config::endpoint transaction_service::public_worker("inproc://public_tx");
-const config::endpoint transaction_service::secure_worker("inproc://secure_tx");
+static const auto public_worker = "inproc://public_tx";
+static const auto secure_worker = "inproc://secure_tx";
 
 transaction_service::transaction_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : worker(node.thread_pool()),
+  : worker(priority(node.server_settings().priority)),
     secure_(secure),
     verbose_(node.network_settings().verbose),
+    security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
+    external_(node.protocol_settings()),
+    internal_(external_.send_high_water, external_.receive_high_water),
+    service_(settings_.transaction_endpoint(secure)),
+    worker_(secure ? secure_worker : public_worker),
     authenticator_(authenticator),
-    node_(node)
+    node_(node),
+
+    // Pick a random sequence counter start, will wrap around at overflow.
+    sequence_(static_cast<uint16_t>(pseudo_random(0, max_uint16)))
 {
 }
 
@@ -59,24 +68,19 @@ bool transaction_service::start()
     return zmq::worker::start();
 }
 
-// No unsubscribe so must be kept in scope until subscriber stop complete.
-bool transaction_service::stop()
-{
-    return zmq::worker::stop();
-}
-
 // Implement worker as extended pub-sub.
 // The publisher drops messages for lost peers (clients) and high water.
 void transaction_service::work()
 {
-    zmq::socket xpub(authenticator_, zmq::socket::role::extended_publisher);
-    zmq::socket xsub(authenticator_, zmq::socket::role::extended_subscriber);
+    zmq::socket xpub(authenticator_, role::extended_publisher, external_);
+    zmq::socket xsub(authenticator_, role::extended_subscriber, internal_);
 
     // Bind sockets to the service and worker endpoints.
     if (!started(bind(xpub, xsub)))
         return;
 
     // TODO: tap in to failure conditions, such as high water.
+    // BUGBUG: stop is insufficient to stop the worker, because of relay().
     // Relay messages between subscriber and publisher (blocks on context).
     relay(xpub, xsub);
 
@@ -89,36 +93,31 @@ void transaction_service::work()
 
 bool transaction_service::bind(zmq::socket& xpub, zmq::socket& xsub)
 {
-    const auto security = secure_ ? "secure" : "public";
-    const auto& worker = secure_ ? secure_worker : public_worker;
-    const auto& service = secure_ ? settings_.secure_transaction_endpoint :
-        settings_.public_transaction_endpoint;
-
     if (!authenticator_.apply(xpub, domain, secure_))
         return false;
 
-    auto ec = xpub.bind(service);
+    auto ec = xpub.bind(service_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " transaction service to "
-            << service << " : " << ec.message();
+            << "Failed to bind " << security_ << " transaction service to "
+            << service_ << " : " << ec.message();
         return false;
     }
 
-    ec = xsub.bind(worker);
+    ec = xsub.bind(worker_);
 
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to bind " << security << " transaction workers to "
-            << worker << " : " << ec.message();
+            << "Failed to bind " << security_ << " transaction workers to "
+            << worker_ << " : " << ec.message();
         return false;
     }
 
     LOG_INFO(LOG_SERVER)
-        << "Bound " << security << " transaction service to " << service;
+        << "Bound " << security_ << " transaction service to " << service_;
     return true;
 }
 
@@ -127,15 +126,14 @@ bool transaction_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
     // Stop both even if one fails.
     const auto service_stop = xpub.stop();
     const auto worker_stop = xsub.stop();
-    const auto security = secure_ ? "secure" : "public";
 
     if (!service_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to unbind " << security << " transaction service.";
+            << "Failed to unbind " << security_ << " transaction service.";
 
     if (!worker_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to unbind " << security << " transaction workers.";
+            << "Failed to unbind " << security_ << " transaction workers.";
 
     // Don't log stop success.
     return service_stop && worker_stop;
@@ -159,6 +157,10 @@ bool transaction_service::handle_transaction(const code& ec,
         return true;
     }
 
+    // Nothing to do here.
+    if (!tx)
+        return true;
+
     publish_transaction(tx);
     return true;
 }
@@ -169,14 +171,11 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (stopped())
         return;
 
-    const auto security = secure_ ? "secure" : "public";
-    const auto& endpoint = secure_ ? transaction_service::secure_worker :
-        transaction_service::public_worker;
+    zmq::socket publisher(authenticator_, role::publisher, internal_);
 
     // Subscriptions are off the pub-sub thread so this must connect back.
     // This could be optimized by caching the socket as thread static.
-    zmq::socket publisher(authenticator_, zmq::socket::role::publisher);
-    auto ec = publisher.connect(endpoint);
+    auto ec = publisher.connect(worker_);
 
     if (ec == error::service_stopped)
         return;
@@ -184,7 +183,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (ec)
     {
         LOG_WARNING(LOG_SERVER)
-            << "Failed to connect " << security << " transaction worker: "
+            << "Failed to connect " << security_ << " transaction worker: "
             << ec.message();
         return;
     }
@@ -192,8 +191,12 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (stopped())
         return;
 
+    // [ sequence:2 ]
+    // [ tx:... ]
     zmq::message broadcast;
+    broadcast.enqueue_little_endian(++sequence_);
     broadcast.enqueue(tx->to_data(bc::message::version::level::canonical));
+
     ec = publisher.send(broadcast);
 
     if (ec == error::service_stopped)
@@ -202,7 +205,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (ec)
     {
         LOG_WARNING(LOG_SERVER)
-            << "Failed to publish " << security << " transaction ["
+            << "Failed to publish " << security_ << " transaction ["
             << encode_hash(tx->hash()) << "] " << ec.message();
         return;
     }
@@ -210,8 +213,8 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     // This isn't actually a request, should probably update settings.
     if (verbose_)
         LOG_DEBUG(LOG_SERVER)
-            << "Published " << security << " transaction ["
-            << encode_hash(tx->hash()) << "]";
+            << "Published " << security_ << " transaction ["
+            << encode_hash(tx->hash()) << "] (" << sequence_ << ").";
 }
 
 } // namespace server
