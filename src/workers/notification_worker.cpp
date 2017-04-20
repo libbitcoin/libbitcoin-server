@@ -190,7 +190,7 @@ bool notification_worker::handle_reorganization(const code& ec,
         return true;
 
     for (const auto block: *new_blocks)
-        notify_block(*dealer, safe_increment(fork_height), block);
+        notify_block(*dealer, safe_add(fork_height, size_t(1)), block);
 
     return true;
 }
