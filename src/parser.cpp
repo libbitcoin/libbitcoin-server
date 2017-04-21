@@ -416,9 +416,9 @@ options_metadata parser::load_settings()
     ////    "The time limit for block response during initial block download, defaults to 5."
     ////)
     (
-        "node.block_poll_seconds",
-        value<uint32_t>(&configured.node.block_poll_seconds),
-        "The time period for block polling after initial block download, defaults to 1 (0 disables)."
+        "node.block_latency_seconds",
+        value<uint32_t>(&configured.node.block_latency_seconds),
+        "The time to wait for a requested block, defaults to 5."
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
