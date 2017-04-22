@@ -418,7 +418,7 @@ options_metadata parser::load_settings()
     (
         "node.block_latency_seconds",
         value<uint32_t>(&configured.node.block_latency_seconds),
-        "The time to wait for a requested block, defaults to 5."
+        "The time to wait for a requested block, defaults to 60."
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
