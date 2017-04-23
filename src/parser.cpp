@@ -371,7 +371,7 @@ options_metadata parser::load_settings()
     (
         "fork.easy_blocks",
         value<bool>(&configured.chain.easy_blocks),
-        "Allow minimum difficulty blocks, defaults to false (use true for testnet)."
+        "Allow minimum difficulty blocks, defaults to false."
     )
     (
         "fork.bip16",
