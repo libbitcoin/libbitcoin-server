@@ -88,7 +88,7 @@ private:
         const chain::history_compact::list& history, const message& request,
         send_handler handler);
 
-    static void transaction_fetched(const code& ec, transaction_ptr tx, size_t,
+    static void transaction_fetched(const code& ec, transaction_const_ptr tx, size_t,
         size_t, const message& request, send_handler handler);
 
     static void last_height_fetched(const code& ec, size_t last_height,
@@ -128,7 +128,7 @@ private:
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
 
-    static void stealth_transaction_fetched(const code& ec,
+    static void stealth_transaction_hashes_fetched(const code& ec,
         const chain::stealth_compact::list& stealth_results,
         const message& request, send_handler handler);
 

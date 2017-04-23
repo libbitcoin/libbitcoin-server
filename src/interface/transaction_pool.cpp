@@ -53,8 +53,9 @@ void transaction_pool::fetch_transaction(server_node& node,
             _1, _2, _3, _4, request, handler));
 }
 
-void transaction_pool::transaction_fetched(const code& ec, transaction_ptr tx,
-    size_t, size_t, const message& request, send_handler handler)
+void transaction_pool::transaction_fetched(const code& ec,
+    transaction_const_ptr tx, size_t, size_t, const message& request,
+    send_handler handler)
 {
     if (ec)
     {
