@@ -422,6 +422,12 @@ options_metadata parser::load_settings()
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
+        "node.notify_limit_hours",
+        value<uint32_t>(&configured.chain.notify_limit_hours),
+        "Disable notifications when top block older than this, defaults to 24 (0 disables)."
+    )
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting. */
         "node.byte_fee_satoshis",
         value<float>(&configured.chain.byte_fee_satoshis),
         "The minimum fee per byte required for transaction acceptance, defaults to 1."
