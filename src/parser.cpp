@@ -422,16 +422,28 @@ options_metadata parser::load_settings()
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
-        "node.minimum_byte_fee_satoshis",
-        value<float>(&configured.chain.minimum_byte_fee_satoshis),
-        "The minimum fee per byte required for transaction acceptance, defaults to 1."
+        "node.notify_limit_hours",
+        value<uint32_t>(&configured.chain.notify_limit_hours),
+        "Disable relay when top block age exceeds, defaults to 24 (0 disables)."
     )
-    ////(
-    ////    /* Internally this is blockchain, but it is conceptually a node setting. */
-    ////    "node.reject_conflicts",
-    ////    value<bool>(&configured.chain.reject_conflicts),
-    ////    "Retain only the first seen of conflicting transactions, defaults to true."
-    ////)
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting. */
+        "node.byte_fee_satoshis",
+        value<float>(&configured.chain.byte_fee_satoshis),
+        "The minimum fee per byte, cumulative for conflicts, defaults to 1."
+    )
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting. */
+        "node.sigop_fee_satoshis",
+        value<float>(&configured.chain.sigop_fee_satoshis),
+        "The minimum fee per sigop, additional to byte fee, defaults to 100."
+    )
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting. */
+        "node.minimum_output_satoshis",
+        value<uint64_t>(&configured.chain.minimum_output_satoshis),
+        "The minimum output value, defaults to 500."
+    )
     (
         /* Internally this is network, but it is conceptually a node setting. */
         "node.relay_transactions",

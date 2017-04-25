@@ -262,14 +262,19 @@ void notification_worker::notify_transaction(zmq::socket& dealer,
     {
         for (const auto& input: tx.inputs())
         {
+            // TODO: use a vector result to extract sign_multisig.
             const auto address = input.address();
+
             if (address)
                 addresses.insert(address.hash());
         }
 
         for (const auto& output: outputs)
         {
+            // TODO: use a vector result to extract pay_multisig.
+            // TODO: notify all multisig participants using prevout addresses.
             const auto address = output.address();
+
             if (address)
                 addresses.insert(address.hash());
         }
