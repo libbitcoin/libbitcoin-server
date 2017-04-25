@@ -432,12 +432,6 @@ options_metadata parser::load_settings()
         value<float>(&configured.chain.byte_fee_satoshis),
         "The minimum fee per byte required for transaction acceptance, defaults to 1."
     )
-    ////(
-    ////    /* Internally this is blockchain, but it is conceptually a node setting. */
-    ////    "node.reject_conflicts",
-    ////    value<bool>(&configured.chain.reject_conflicts),
-    ////    "Retain only the first seen of conflicting transactions, defaults to true."
-    ////)
     (
         /* Internally this is network, but it is conceptually a node setting. */
         "node.relay_transactions",
