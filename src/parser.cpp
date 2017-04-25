@@ -422,8 +422,8 @@ options_metadata parser::load_settings()
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
-        "node.minimum_byte_fee_satoshis",
-        value<float>(&configured.chain.minimum_byte_fee_satoshis),
+        "node.byte_fee_satoshis",
+        value<float>(&configured.chain.byte_fee_satoshis),
         "The minimum fee per byte required for transaction acceptance, defaults to 1."
     )
     ////(
