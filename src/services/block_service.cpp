@@ -157,8 +157,12 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
         return true;
     }
 
-    // Nothing to do here.
+    // Nothing to do here, a channel is stopping.
     if (!incoming || incoming->empty())
+        return true;
+
+    // Do not announce blocks to clients if too far behind.
+    if (node_.chain().is_stale())
         return true;
 
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
