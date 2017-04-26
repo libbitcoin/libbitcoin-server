@@ -156,8 +156,12 @@ bool transaction_service::handle_transaction(const code& ec,
         return true;
     }
 
-    // Nothing to do here.
+    // Nothing to do here, a channel is stopping.
     if (!tx)
+        return true;
+
+    // Do not announce txs to clients if too far behind.
+    if (node_.chain().is_stale())
         return true;
 
     publish_transaction(tx);

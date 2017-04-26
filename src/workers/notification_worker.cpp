@@ -176,8 +176,12 @@ bool notification_worker::handle_reorganization(const code& ec,
         return true;
     }
 
-    // Nothing to do here.
+    // Nothing to do here, a channel is stopping.
     if (!incoming || incoming->empty())
+        return true;
+
+    // Do not announce addresses to clients if too far behind.
+    if (node_.chain().is_stale())
         return true;
 
     if (address_subscriptions_empty() && stealth_subscriptions_empty())
@@ -225,6 +229,10 @@ bool notification_worker::handle_transaction_pool(const code& ec,
 
     // Nothing to do here.
     if (!tx)
+        return true;
+
+    // Do not announce addresses to clients if too far behind.
+    if (node_.chain().is_stale())
         return true;
 
     if (address_subscriptions_empty() && stealth_subscriptions_empty())
