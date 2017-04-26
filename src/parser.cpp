@@ -489,17 +489,17 @@ options_metadata parser::load_settings()
     (
         "server.subscription_limit",
         value<uint32_t>(&configured.server.subscription_limit),
-        "The maximum number of query subscriptions, defaults to 0 (subscription disabled)."
+        "The maximum number of query subscriptions, defaults to 1000 (0 disables subscribe)."
     )
     (
         "server.subscription_expiration_minutes",
         value<uint32_t>(&configured.server.subscription_expiration_minutes),
-        "The subscription expiration time, defaults to 10."
+        "The query subscription expiration time, defaults to 10 (0 disables expiration)."
     )
     (
         "server.heartbeat_service_seconds",
         value<uint32_t>(&configured.server.heartbeat_service_seconds),
-        "The heartbeat service interval, defaults to 0 (service disabled)."
+        "The heartbeat service interval, defaults to 5 (0 disables service)."
     )
     (
         "server.block_service_enabled",
