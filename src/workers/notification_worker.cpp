@@ -396,6 +396,10 @@ time_t notification_worker::current_time()
 
 time_t notification_worker::cutoff_time() const
 {
+    // In case a purge call is made, nothing will be puged (until rollover).
+    if (settings_.subscription_expiration_minutes == 0)
+        return max_int32;
+
     // use system_clock to ensure to_time_t is defined.
     const auto now = system_clock::now();
     const auto period = minutes(settings_.subscription_expiration_minutes);
@@ -404,6 +408,10 @@ time_t notification_worker::cutoff_time() const
 
 int32_t notification_worker::purge_milliseconds() const
 {
+    // This results in infinite polling and therefore no purge calls.
+    if (settings_.subscription_expiration_minutes == 0)
+        return -1;
+
     const int64_t minutes = settings_.subscription_expiration_minutes;
     const int64_t milliseconds = minutes * 60 * 1000;
     auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));
