@@ -357,11 +357,6 @@ options_metadata parser::load_settings()
         "The maximum reorganization depth, defaults to 256 (0 for unlimited)."
     )
     (
-        "blockchain.block_version",
-        value<uint32_t>(&configured.chain.block_version),
-        "The block version for block creation and transaction pool validation, defaults to 4."
-    )
-    (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&configured.chain.checkpoints),
         "A hash:height checkpoint, multiple entries allowed."
