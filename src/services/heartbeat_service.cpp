@@ -38,7 +38,6 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(priority(node.server_settings().priority)),
     secure_(secure),
-    verbose_(node.network_settings().verbose),
     security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
     external_(node.protocol_settings()),
@@ -148,8 +147,7 @@ void heartbeat_service::publish(zmq::socket& publisher)
     }
 
     // This isn't actually a request, should probably update settings.
-    if (verbose_)
-        LOG_DEBUG(LOG_SERVER)
+    LOG_VERBOSE(LOG_SERVER)
         << "Published " << security_ << " heartbeat [" << sequence_ << "].";
 }
 
