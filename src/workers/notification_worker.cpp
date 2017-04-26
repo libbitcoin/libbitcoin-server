@@ -161,7 +161,7 @@ bool notification_worker::send(zmq::socket& dealer,
 // ----------------------------------------------------------------------------
 
 bool notification_worker::handle_reorganization(const code& ec,
-    size_t fork_height, block_const_ptr_list_const_ptr new_blocks,
+    size_t fork_height, block_const_ptr_list_const_ptr incoming,
     block_const_ptr_list_const_ptr)
 {
     if (stopped() || ec == error::service_stopped)
@@ -177,7 +177,7 @@ bool notification_worker::handle_reorganization(const code& ec,
     }
 
     // Nothing to do here.
-    if (!new_blocks || new_blocks->empty())
+    if (!incoming || incoming->empty())
         return true;
 
     if (address_subscriptions_empty() && stealth_subscriptions_empty())
@@ -189,7 +189,7 @@ bool notification_worker::handle_reorganization(const code& ec,
     if (!dealer)
         return true;
 
-    for (const auto block: *new_blocks)
+    for (const auto block: *incoming)
         notify_block(*dealer, safe_add(fork_height, size_t(1)), block);
 
     return true;
