@@ -106,8 +106,8 @@ private:
     bool stealth_subscriptions_empty() const;
 
     bool handle_reorganization(const code& ec, size_t fork_height,
-        block_const_ptr_list_const_ptr new_blocks,
-        block_const_ptr_list_const_ptr old_blocks);
+        block_const_ptr_list_const_ptr incoming,
+        block_const_ptr_list_const_ptr outgoing);
     bool handle_transaction_pool(const code& ec, transaction_const_ptr tx);
 
     void notify_block(socket& dealer, size_t height, block_const_ptr block);

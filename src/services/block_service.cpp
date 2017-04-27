@@ -143,7 +143,7 @@ bool block_service::unbind(zmq::socket& xpub, zmq::socket& xsub)
 // ----------------------------------------------------------------------------
 
 bool block_service::handle_reorganization(const code& ec, size_t fork_height,
-    block_const_ptr_list_const_ptr new_blocks, block_const_ptr_list_const_ptr)
+    block_const_ptr_list_const_ptr incoming, block_const_ptr_list_const_ptr)
 {
     if (stopped() || ec == error::service_stopped)
         return false;
@@ -157,12 +157,16 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
         return true;
     }
 
-    // Nothing to do here.
-    if (!new_blocks || new_blocks->empty())
+    // Nothing to do here, a channel is stopping.
+    if (!incoming || incoming->empty())
+        return true;
+
+    // Do not announce blocks to clients if too far behind.
+    if (node_.chain().is_stale())
         return true;
 
     // Blockchain height is 64 bit but obelisk protocol is 32 bit.
-    publish_blocks(safe_unsigned<uint32_t>(fork_height), new_blocks);
+    publish_blocks(safe_unsigned<uint32_t>(fork_height), incoming);
     return true;
 }
 
