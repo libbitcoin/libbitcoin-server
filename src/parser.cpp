@@ -357,11 +357,6 @@ options_metadata parser::load_settings()
         "The maximum reorganization depth, defaults to 256 (0 for unlimited)."
     )
     (
-        "blockchain.block_version",
-        value<uint32_t>(&configured.chain.block_version),
-        "The block version for block creation and transaction pool validation, defaults to 4."
-    )
-    (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&configured.chain.checkpoints),
         "A hash:height checkpoint, multiple entries allowed."
@@ -371,7 +366,7 @@ options_metadata parser::load_settings()
     (
         "fork.easy_blocks",
         value<bool>(&configured.chain.easy_blocks),
-        "Allow minimum difficulty blocks, defaults to false (use true for testnet)."
+        "Allow minimum difficulty blocks, defaults to false."
     )
     (
         "fork.bip16",
@@ -416,22 +411,34 @@ options_metadata parser::load_settings()
     ////    "The time limit for block response during initial block download, defaults to 5."
     ////)
     (
-        "node.block_poll_seconds",
-        value<uint32_t>(&configured.node.block_poll_seconds),
-        "The time period for block polling after initial block download, defaults to 1 (0 disables)."
+        "node.block_latency_seconds",
+        value<uint32_t>(&configured.node.block_latency_seconds),
+        "The time to wait for a requested block, defaults to 60."
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
-        "node.minimum_byte_fee_satoshis",
-        value<float>(&configured.chain.minimum_byte_fee_satoshis),
-        "The minimum fee per byte required for transaction acceptance, defaults to 1."
+        "node.notify_limit_hours",
+        value<uint32_t>(&configured.chain.notify_limit_hours),
+        "Disable relay when top block age exceeds, defaults to 24 (0 disables)."
     )
-    ////(
-    ////    /* Internally this is blockchain, but it is conceptually a node setting. */
-    ////    "node.reject_conflicts",
-    ////    value<bool>(&configured.chain.reject_conflicts),
-    ////    "Retain only the first seen of conflicting transactions, defaults to true."
-    ////)
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting. */
+        "node.byte_fee_satoshis",
+        value<float>(&configured.chain.byte_fee_satoshis),
+        "The minimum fee per byte, cumulative for conflicts, defaults to 1."
+    )
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting. */
+        "node.sigop_fee_satoshis",
+        value<float>(&configured.chain.sigop_fee_satoshis),
+        "The minimum fee per sigop, additional to byte fee, defaults to 100."
+    )
+    (
+        /* Internally this is blockchain, but it is conceptually a node setting. */
+        "node.minimum_output_satoshis",
+        value<uint64_t>(&configured.chain.minimum_output_satoshis),
+        "The minimum output value, defaults to 500."
+    )
     (
         /* Internally this is network, but it is conceptually a node setting. */
         "node.relay_transactions",
@@ -482,17 +489,17 @@ options_metadata parser::load_settings()
     (
         "server.subscription_limit",
         value<uint32_t>(&configured.server.subscription_limit),
-        "The maximum number of query subscriptions, defaults to 0 (subscription disabled)."
+        "The maximum number of query subscriptions, defaults to 1000 (0 disables subscribe)."
     )
     (
         "server.subscription_expiration_minutes",
         value<uint32_t>(&configured.server.subscription_expiration_minutes),
-        "The subscription expiration time, defaults to 10."
+        "The query subscription expiration time, defaults to 10 (0 disables expiration)."
     )
     (
         "server.heartbeat_service_seconds",
         value<uint32_t>(&configured.server.heartbeat_service_seconds),
-        "The heartbeat service interval, defaults to 0 (service disabled)."
+        "The heartbeat service interval, defaults to 5 (0 disables service)."
     )
     (
         "server.block_service_enabled",

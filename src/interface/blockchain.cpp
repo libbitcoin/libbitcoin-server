@@ -109,7 +109,7 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
             _1, _2, _3, _4, request, handler));
 }
 
-void blockchain::transaction_fetched(const code& ec, transaction_ptr tx,
+void blockchain::transaction_fetched(const code& ec, transaction_const_ptr tx,
     size_t, size_t, const message& request, send_handler handler)
 {
     if (ec)
@@ -485,11 +485,11 @@ void blockchain::fetch_stealth_transaction_hashes(server_node& node,
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_stealth(binary{ bits, blocks }, from_height,
-        std::bind(&blockchain::stealth_transaction_fetched,
+        std::bind(&blockchain::stealth_transaction_hashes_fetched,
             _1, _2, request, handler));
 }
 
-void blockchain::stealth_transaction_fetched(const code& ec,
+void blockchain::stealth_transaction_hashes_fetched(const code& ec,
     const stealth_compact::list& stealth_results, const message& request,
     send_handler handler)
 {

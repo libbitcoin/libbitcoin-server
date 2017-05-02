@@ -161,7 +161,7 @@ bool notification_worker::send(zmq::socket& dealer,
 // ----------------------------------------------------------------------------
 
 bool notification_worker::handle_reorganization(const code& ec,
-    size_t fork_height, block_const_ptr_list_const_ptr new_blocks,
+    size_t fork_height, block_const_ptr_list_const_ptr incoming,
     block_const_ptr_list_const_ptr)
 {
     if (stopped() || ec == error::service_stopped)
@@ -176,8 +176,12 @@ bool notification_worker::handle_reorganization(const code& ec,
         return true;
     }
 
-    // Nothing to do here.
-    if (!new_blocks || new_blocks->empty())
+    // Nothing to do here, a channel is stopping.
+    if (!incoming || incoming->empty())
+        return true;
+
+    // Do not announce addresses to clients if too far behind.
+    if (node_.chain().is_stale())
         return true;
 
     if (address_subscriptions_empty() && stealth_subscriptions_empty())
@@ -189,8 +193,8 @@ bool notification_worker::handle_reorganization(const code& ec,
     if (!dealer)
         return true;
 
-    for (const auto block: *new_blocks)
-        notify_block(*dealer, safe_increment(fork_height), block);
+    for (const auto block: *incoming)
+        notify_block(*dealer, safe_add(fork_height, size_t(1)), block);
 
     return true;
 }
@@ -225,6 +229,10 @@ bool notification_worker::handle_transaction_pool(const code& ec,
 
     // Nothing to do here.
     if (!tx)
+        return true;
+
+    // Do not announce addresses to clients if too far behind.
+    if (node_.chain().is_stale())
         return true;
 
     if (address_subscriptions_empty() && stealth_subscriptions_empty())
@@ -262,14 +270,19 @@ void notification_worker::notify_transaction(zmq::socket& dealer,
     {
         for (const auto& input: tx.inputs())
         {
+            // TODO: use a vector result to extract sign_multisig.
             const auto address = input.address();
+
             if (address)
                 addresses.insert(address.hash());
         }
 
         for (const auto& output: outputs)
         {
+            // TODO: use a vector result to extract pay_multisig.
+            // TODO: notify all multisig participants using prevout addresses.
             const auto address = output.address();
+
             if (address)
                 addresses.insert(address.hash());
         }
@@ -383,6 +396,10 @@ time_t notification_worker::current_time()
 
 time_t notification_worker::cutoff_time() const
 {
+    // In case a purge call is made, nothing will be puged (until rollover).
+    if (settings_.subscription_expiration_minutes == 0)
+        return max_int32;
+
     // use system_clock to ensure to_time_t is defined.
     const auto now = system_clock::now();
     const auto period = minutes(settings_.subscription_expiration_minutes);
@@ -391,6 +408,10 @@ time_t notification_worker::cutoff_time() const
 
 int32_t notification_worker::purge_milliseconds() const
 {
+    // This results in infinite polling and therefore no purge calls.
+    if (settings_.subscription_expiration_minutes == 0)
+        return -1;
+
     const int64_t minutes = settings_.subscription_expiration_minutes;
     const int64_t milliseconds = minutes * 60 * 1000;
     auto capped = std::min(milliseconds, static_cast<int64_t>(max_int32));

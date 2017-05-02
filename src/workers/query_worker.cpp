@@ -40,7 +40,6 @@ query_worker::query_worker(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : worker(priority(node.server_settings().priority)),
     secure_(secure),
-    verbose_(node.network_settings().verbose),
     security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
     external_(node.protocol_settings()),
@@ -163,10 +162,9 @@ void query_worker::query(zmq::socket& dealer)
         return;
     }
 
-    if (verbose_)
-        LOG_INFO(LOG_SERVER)
-            << "Query " << request.command() << " from "
-            << request.route().display();
+    LOG_VERBOSE(LOG_SERVER)
+        << "Query " << request.command() << " from "
+        << request.route().display();
 
     // The query executor is the delegate bound by the attach method.
     const auto& query_execute = handler->second;

@@ -58,8 +58,8 @@ protected:
 
 private:
     bool handle_reorganization(const code& ec, size_t fork_height,
-        block_const_ptr_list_const_ptr new_blocks,
-        block_const_ptr_list_const_ptr old_blocks);
+        block_const_ptr_list_const_ptr incoming,
+        block_const_ptr_list_const_ptr outgoing);
 
     void publish_blocks(uint32_t fork_height,
         block_const_ptr_list_const_ptr blocks);
@@ -68,7 +68,6 @@ private:
 
     // These are thread safe.
     const bool secure_;
-    const bool verbose_;
     const std::string security_;
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;

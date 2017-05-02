@@ -61,7 +61,6 @@ private:
 
     // These are thread safe.
     const bool secure_;
-    const bool verbose_;
     const std::string security_;
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
