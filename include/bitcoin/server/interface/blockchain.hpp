@@ -85,11 +85,11 @@ public:
 
 private:
     static void history_fetched(const code& ec,
-        const chain::history_compact::list& history, const message& request,
+        const chain::payment_record::list& payments, const message& request,
         send_handler handler);
 
-    static void transaction_fetched(const code& ec, transaction_const_ptr tx, size_t,
-        size_t, const message& request, send_handler handler);
+    static void transaction_fetched(const code& ec, transaction_const_ptr tx,
+        size_t, size_t, const message& request, send_handler handler);
 
     static void last_height_fetched(const code& ec, size_t last_height,
         const message& request, send_handler handler);
@@ -125,12 +125,12 @@ private:
         const message& request, send_handler handler);
 
     static void stealth_fetched(const code& ec,
-        const chain::stealth_compact::list& stealth_results,
+        const chain::stealth_record::list& stealth,
         const message& request, send_handler handler);
 
     static void stealth_transaction_hashes_fetched(const code& ec,
-        const chain::stealth_compact::list& stealth_results,
-        const message& request, send_handler handler);
+        const chain::stealth_record::list& stealth, const message& request,
+        send_handler handler);
 
     static void handle_broadcast(const code& ec, const message& request,
         send_handler handler);
