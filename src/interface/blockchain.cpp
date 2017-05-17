@@ -55,7 +55,6 @@ void blockchain::fetch_history3(server_node& node, const message& request,
         return;
     }
 
-    // TODO: add serialization to history_compact.
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto address_hash = deserial.read_short_hash();
     const size_t from_height = deserial.read_4_bytes_little_endian();
@@ -66,25 +65,16 @@ void blockchain::fetch_history3(server_node& node, const message& request,
 }
 
 void blockchain::history_fetched(const code& ec,
-    const history_compact::list& history, const message& request,
+    const payment_record::list& payments, const message& request,
     send_handler handler)
 {
-    static constexpr size_t row_size = sizeof(uint8_t) + point_size +
-        sizeof(uint32_t) + sizeof(uint64_t);
-
-    data_chunk result(code_size + row_size * history.size());
+    static const auto record_size = payment_record::satoshi_fixed_size(true);
+    data_chunk result(code_size + record_size * payments.size());
     auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
-    // TODO: add serialization to history_compact.
-    for (const auto& row: history)
-    {
-        BITCOIN_ASSERT(row.height <= max_uint32);
-        serial.write_byte(static_cast<uint8_t>(row.kind));
-        serial.write_bytes(row.point.to_data());
-        serial.write_4_bytes_little_endian(row.height);
-        serial.write_8_bytes_little_endian(row.value);
-    }
+    for (const auto& record: payments)
+        record.to_data(serial, true);
 
     handler(message(request, std::move(result)));
 }
@@ -352,8 +342,8 @@ void blockchain::spend_fetched(const code& ec, const input_point& inpoint,
     handler(message(request, std::move(result)));
 }
 
-void blockchain::fetch_block_height(server_node& node,
-    const message& request, send_handler handler)
+void blockchain::fetch_block_height(server_node& node, const message& request,
+    send_handler handler)
 {
     const auto& data = request.data();
 
@@ -428,23 +418,19 @@ void blockchain::fetch_stealth2(server_node& node, const message& request,
 }
 
 void blockchain::stealth_fetched(const code& ec,
-    const stealth_compact::list& stealth_results, const message& request,
+    const stealth_record::list& stealth, const message& request,
     send_handler handler)
 {
-    static constexpr size_t row_size = hash_size + short_hash_size + hash_size;
+    static const auto record_size = stealth_record::satoshi_fixed_size(true);
 
     // [ code:4 ]
     // [[ ephemeral_key_hash:32 ][ address_hash:20 ][ tx_hash:32 ]...]
-    data_chunk result(code_size + row_size * stealth_results.size());
+    data_chunk result(code_size + record_size * stealth.size());
     auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
-    for (const auto& row: stealth_results)
-    {
-        serial.write_hash(row.ephemeral_public_key_hash);
-        serial.write_short_hash(row.public_key_hash);
-        serial.write_hash(row.transaction_hash);
-    }
+    for (const auto& record: stealth)
+        record.to_data(serial, true);
 
     handler(message(request, std::move(result)));
 }
@@ -490,17 +476,17 @@ void blockchain::fetch_stealth_transaction_hashes(server_node& node,
 }
 
 void blockchain::stealth_transaction_hashes_fetched(const code& ec,
-    const stealth_compact::list& stealth_results, const message& request,
+    const stealth_record::list& stealth, const message& request,
     send_handler handler)
 {
     // [ code:4 ]
     // [[ tx_hash:32 ]...]
-    data_chunk result(code_size + hash_size * stealth_results.size());
+    data_chunk result(code_size + hash_size * stealth.size());
     auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
-    for (const auto& row: stealth_results)
-        serial.write_hash(row.transaction_hash);
+    for (const auto& record: stealth)
+        serial.write_hash(record.transaction_hash());
 
     handler(message(request, std::move(result)));
 }
