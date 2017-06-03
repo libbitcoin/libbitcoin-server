@@ -496,9 +496,9 @@ options_metadata parser::load_settings()
     /* [server] */
     (
         /* Internally this is database, but it applies to server and not node. */
-        "server.index_start_height",
-        value<uint32_t>(&configured.database.index_start_height),
-        "The lower limit of address and spend indexing, defaults to 0."
+        "server.index_addresses",
+        value<bool>(&configured.database.index_addresses),
+        "Enable payment and stealth address indexing, defaults to true."
     )
     /* Internally this is protocol, but application to server is more intuitive. */
     (
