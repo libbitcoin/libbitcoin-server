@@ -381,7 +381,7 @@ options_metadata parser::load_settings()
     (
         "fork.bip34",
         value<bool>(&configured.chain.bip34),
-        "Coinbase input must include block height, defaults to true (soft fork)."
+        "Require coinbase input includes block height, defaults to true (soft fork)."
     )
     (
         "fork.bip66",
