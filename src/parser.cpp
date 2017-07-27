@@ -381,7 +381,7 @@ options_metadata parser::load_settings()
     (
         "fork.bip34",
         value<bool>(&configured.chain.bip34),
-        "Coinbase input must include block height, defaults to true (soft fork)."
+        "Require coinbase input includes block height, defaults to true (soft fork)."
     )
     (
         "fork.bip66",
@@ -391,12 +391,27 @@ options_metadata parser::load_settings()
     (
         "fork.bip65",
         value<bool>(&configured.chain.bip65),
-        "Add check locktime verify op code, defaults to true (soft fork)."
+        "Add check-locktime-verify op code, defaults to true (soft fork)."
     )
     (
         "fork.bip90",
         value<bool>(&configured.chain.bip90),
         "Assume bip34, bip65, and bip66 activation if enabled, defaults to true (hard fork)."
+    )
+    (
+        "fork.bip68",
+        value<bool>(&configured.chain.bip68),
+        "Add relative locktime enforcement, defaults to true (soft fork)."
+    )
+    (
+        "fork.bip112",
+        value<bool>(&configured.chain.bip112),
+        "Add check-sequence-verify op code, defaults to true (soft fork)."
+    )
+    (
+        "fork.bip113",
+        value<bool>(&configured.chain.bip113),
+        "Use median time past for locktime, defaults to true (soft fork)."
     )
 
     /* [node] */
