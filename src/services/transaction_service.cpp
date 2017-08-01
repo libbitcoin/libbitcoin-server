@@ -161,7 +161,7 @@ bool transaction_service::handle_transaction(const code& ec,
         return true;
 
     // Do not announce txs to clients if too far behind.
-    if (node_.chain().is_stale())
+    if (node_.chain().is_blocks_stale())
         return true;
 
     publish_transaction(tx);
