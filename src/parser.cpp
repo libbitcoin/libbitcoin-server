@@ -198,6 +198,11 @@ options_metadata parser::load_settings()
         "The services exposed by network connections, defaults to 1 (full node)."
     )
     (
+        "network.invalid_services",
+        value<uint64_t>(&configured.network.invalid_services),
+        "The advertised services that cause a peer to be dropped, defaults to 0 (none)."
+    )
+    (
         "network.validate_checksum",
         value<bool>(&configured.network.validate_checksum),
         "Validate the checksum of network messages, defaults to false."
