@@ -442,16 +442,6 @@ options_metadata parser::load_settings()
     )
 
     /* [node] */
-    ////(
-    ////    "node.sync_peers",
-    ////    value<uint32_t>(&configured.node.sync_peers),
-    ////    "The maximum number of initial block download peers, defaults to 0 (physical cores)."
-    ////)
-    ////(
-    ////    "node.sync_timeout_seconds",
-    ////    value<uint32_t>(&configured.node.sync_timeout_seconds),
-    ////    "The time limit for block response during initial block download, defaults to 5."
-    ////)
     (
         "node.block_latency_seconds",
         value<uint32_t>(&configured.node.block_latency_seconds),
