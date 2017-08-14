@@ -50,7 +50,7 @@ Detailed instructions are provided below.
 
 ### Debian/Ubuntu
 
-The install script is recommended for installation, however preliminary [version2 packages](https://github.com/libbitcoin/libbitcoin-server/wiki/Debian-Packages) are available for testing.
+The install script is recommended for installation.
 
 Libbitcoin requires a C++11 compiler, currently minimum [GCC 4.8.0](https://gcc.gnu.org/projects/cxx0x.html) or Clang based on [LLVM 3.5](http://llvm.org/releases/3.5.0/docs/ReleaseNotes.html).
 
