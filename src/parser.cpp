@@ -446,9 +446,14 @@ options_metadata parser::load_settings()
 
     /* [node] */
     (
+        "node.maximum_deviation",
+        value<float>(&configured.node.maximum_deviation),
+        "The response rate standard deviation below which a peer is dropped, defaults to 2.0."
+    )
+    (
         "node.block_latency_seconds",
         value<uint32_t>(&configured.node.block_latency_seconds),
-        "The time to wait for a requested block, defaults to 5."
+        "The maximum time to wait for a requested block, defaults to 5."
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
