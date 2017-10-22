@@ -141,6 +141,10 @@ Instead of building, libbitcoin-server can be installed from a formula:
 ```sh
 $ brew install libbitcoin-server
 ```
+or
+```sh
+$ brew install bs
+```
 
 #### Using MacPorts
 
