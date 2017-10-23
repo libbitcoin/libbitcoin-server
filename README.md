@@ -135,6 +135,17 @@ $ ./install.sh
 ```
 Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
 
+##### Installing from Formula
+
+Instead of building, libbitcoin-server can be installed from a formula:
+```sh
+$ brew install libbitcoin-server
+```
+or
+```sh
+$ brew install bs
+```
+
 #### Using MacPorts
 
 First install [MacPorts](https://www.macports.org/install.php).
