@@ -423,6 +423,21 @@ options_metadata parser::load_settings()
         value<bool>(&configured.chain.bip113),
         "Use median time past for locktime, defaults to true (soft fork)."
     )
+    (
+        "fork.bip141",
+        value<bool>(&configured.chain.bip141),
+        "Segregated witness consensus layer, defaults to true (soft fork)."
+    )
+    (
+        "fork.bip143",
+        value<bool>(&configured.chain.bip143),
+        "Version 0 transaction digest, defaults to true (soft fork)."
+    )
+    (
+        "fork.bip147",
+        value<bool>(&configured.chain.bip147),
+        "Prevent dummy value malleability, defaults to true (soft fork)."
+    )
 
     /* [node] */
     ////(
