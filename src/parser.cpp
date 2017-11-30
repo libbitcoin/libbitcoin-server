@@ -374,6 +374,11 @@ options_metadata parser::load_settings()
         "Allow minimum difficulty blocks, defaults to false."
     )
     (
+        "fork.retarget",
+        value<bool>(&configured.chain.retarget),
+        "Retarget difficulty, defaults to true."
+    )
+    (
         "fork.bip16",
         value<bool>(&configured.chain.bip16),
         "Add pay-to-script-hash processing, defaults to true (soft fork)."
