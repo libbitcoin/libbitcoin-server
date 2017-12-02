@@ -255,6 +255,7 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_block_transaction_hashes, node_);  // original
     ATTACH(blockchain, fetch_last_height, node_);               // original
     ATTACH(blockchain, fetch_transaction, node_);               // original
+    ATTACH(blockchain, fetch_transaction2, node_);              // new (3.4)
     ATTACH(blockchain, fetch_transaction_index, node_);         // original
     ATTACH(blockchain, fetch_spend, node_);                     // original
     ATTACH(blockchain, fetch_history3, node_);                  // new (3.1)
@@ -264,7 +265,8 @@ void query_worker::attach_interface()
     ATTACH(blockchain, validate, node_);                        // new (3.0)
 
     ////ATTACH(transaction_pool, validate, node_);              // obsoleted
-    ATTACH(transaction_pool, fetch_transaction, node_);         // enhanced
+    ATTACH(transaction_pool, fetch_transaction, node_);         // enhanced (3.0)
+    ATTACH(transaction_pool, fetch_transaction2, node_);        // new (3.4)
     ATTACH(transaction_pool, broadcast, node_);                 // new (3.0)
     ATTACH(transaction_pool, validate2, node_);                 // new (3.0)
 

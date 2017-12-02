@@ -48,7 +48,29 @@ void transaction_pool::fetch_transaction(server_node& node,
     const auto hash = deserial.read_hash();
 
     // The response allows confirmed and unconfirmed transactions.
-    node.chain().fetch_transaction(hash, false,
+    // This response excludes witness data so as not to break old parsers.
+    node.chain().fetch_transaction(hash, false, false,
+        std::bind(&transaction_pool::transaction_fetched,
+            _1, _2, _3, _4, request, handler));
+}
+
+void transaction_pool::fetch_transaction2(server_node& node,
+    const message& request, send_handler handler)
+{
+    const auto& data = request.data();
+
+    if (data.size() != hash_size)
+    {
+        handler(message(request, error::bad_stream));
+        return;
+    }
+
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const auto hash = deserial.read_hash();
+
+    // The response allows confirmed and unconfirmed transactions.
+    // This response includes witness data so may break old parsers.
+    node.chain().fetch_transaction(hash, false, true,
         std::bind(&transaction_pool::transaction_fetched,
             _1, _2, _3, _4, request, handler));
 }
