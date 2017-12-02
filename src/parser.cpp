@@ -49,6 +49,8 @@ parser::parser(const configuration& defaults)
 parser::parser(bc::config::settings context)
   : configured(context)
 {
+    using serve = message::version::service;
+
     // Logs will slow things if not rotated.
     configured.network.rotation_size = 10000000;
 
@@ -58,8 +60,8 @@ parser::parser(bc::config::settings context)
     // A node allows 1000 host names by default.
     configured.network.host_pool_capacity = 1000;
 
-    // A node exposes full node (1) network services by default.
-    configured.network.services = message::version::service::node_network;
+    // Expose full node (1) and witness (8) network services by default.
+    configured.network.services = serve::node_network | serve::node_witness;
 
     // TODO: set this independently on each public endpoint.
     configured.protocol.message_size_limit = max_block_size + 100;
@@ -195,7 +197,7 @@ options_metadata parser::load_settings()
     (
         "network.services",
         value<uint64_t>(&configured.network.services),
-        "The services exposed by network connections, defaults to 1 (full node)."
+        "The services exposed by network connections, defaults to 9 (full node, witness)."
     )
     (
         "network.invalid_services",
