@@ -36,6 +36,10 @@ public:
     static void fetch_transaction(server_node& node, const message& request,
         send_handler handler);
 
+    /// Fetch a transaction with witness from tx pool (or chain), by its hash.
+    static void fetch_transaction2(server_node& node, const message& request,
+        send_handler handler);
+
     /// Save to tx pool and announce to all connected peers.
     static void broadcast(server_node& node, const message& request,
         send_handler handler);

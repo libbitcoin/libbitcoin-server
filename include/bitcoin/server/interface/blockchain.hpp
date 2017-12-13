@@ -43,6 +43,10 @@ public:
     static void fetch_transaction(server_node& node,
         const message& request, send_handler handler);
 
+    /// Fetch a transaction with witness from the blockchain by its hash.
+    static void fetch_transaction2(server_node& node,
+        const message& request, send_handler handler);
+
     /// Fetch the current height of the blockchain.
     static void fetch_last_height(server_node& node,
         const message& request, send_handler handler);
