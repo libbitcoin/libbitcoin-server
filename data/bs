@@ -1,11 +1,11 @@
 #
-#  Command-line completion for bitcoin_server.
+#  Command-line completion for bs.
 #
-_bitcoin_server()
+_bs()
 {
     local current="${COMP_WORDS[COMP_CWORD]}"
-    local options=" --help --initchain --settings --version -h -i -s -v"
+    local options=" --config --help --initchain --settings --version -c -h -i -s -v"
 
     COMPREPLY=( `compgen -W "$options" -- $current` )
 }
-complete -F _bitcoin_server bitcoin_server
+complete -F _bs bs
