@@ -169,6 +169,7 @@ bool transaction_service::handle_transaction(const code& ec,
 }
 
 // [ tx... ]
+// Compatibility: This will send witness transactions starting in v3.4.
 void transaction_service::publish_transaction(transaction_const_ptr tx)
 {
     if (stopped())
