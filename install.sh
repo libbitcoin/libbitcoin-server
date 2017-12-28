@@ -728,7 +728,7 @@ build_all()
 {
     build_from_tarball_boost $BOOST_URL $BOOST_ARCHIVE bzip2 . $PARALLEL "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     build_from_github zeromq libzmq master $PARALLEL ${ZMQ_OPTIONS[@]} "$@"
-    build_from_github libbitcoin secp256k1 version4 $PARALLEL ${SECP256K1_OPTIONS[@]} "$@"
+    build_from_github libbitcoin secp256k1 version5 $PARALLEL ${SECP256K1_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin version3 $PARALLEL ${BITCOIN_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin-consensus version3 $PARALLEL ${BITCOIN_CONSENSUS_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin-database version3 $PARALLEL ${BITCOIN_DATABASE_OPTIONS[@]} "$@"
