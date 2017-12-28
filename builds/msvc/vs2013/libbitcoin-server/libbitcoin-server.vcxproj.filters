@@ -1,80 +1,144 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ |  Copyright (c) 2014-2015 libbitcoin-server developers (see COPYING).
+ |
+ |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+ |
+ -->
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="src">
-      <UniqueIdentifier>{86b385b3-059d-41a9-8455-6e217c481c69}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include">
-      <UniqueIdentifier>{0c78674f-a42d-4615-8d15-07e2c77e20d6}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin">
-      <UniqueIdentifier>{cbeb86c4-9390-4998-9e84-91fd33719265}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server">
-      <UniqueIdentifier>{f1b85926-a0d1-4f86-a380-32ac7c8a8b73}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\interface">
-      <UniqueIdentifier>{ca115887-a19b-48e1-ad59-16400aa7a1de}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\interface">
-      <UniqueIdentifier>{4dac9ec3-0b55-4804-90b2-1825858f8bfd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\messages">
-      <UniqueIdentifier>{ddd6a42d-2582-46b6-b46b-07aa2dddae0a}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\messages">
-      <UniqueIdentifier>{9f17e891-9f2a-4eb0-a2be-65d9ebf5aae1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\server\workers">
-      <UniqueIdentifier>{34c1e606-eb9c-4a7f-a60b-3e903634a9fa}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\workers">
-      <UniqueIdentifier>{db33e05d-a911-44af-9bae-9f224a6254af}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\services">
-      <UniqueIdentifier>{fba31d02-f9f2-4e81-886c-5349084778db}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\workers">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\interface">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\messages">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\services">
-      <UniqueIdentifier>{551d60af-175f-46c0-ab51-344a3ab8c77f}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\workers">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\resource.h" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
+    <ClCompile Include="..\..\..\..\src\configuration.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\subscribe.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\unsubscribe.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\messages\message.cpp">
+      <Filter>src\messages</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\messages\route.cpp">
+      <Filter>src\messages</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\messages\subscription.cpp">
+      <Filter>src\messages</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parser.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\server_node.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\block_service.cpp">
+      <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp">
+      <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\query_service.cpp">
+      <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp">
+      <Filter>src\services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\settings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp">
+      <Filter>src\workers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp">
+      <Filter>src\workers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp">
+      <Filter>src\workers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp">
       <Filter>include\bitcoin</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp">
       <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\transaction_pool.hpp">
-      <Filter>include\bitcoin\server\interface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp">
       <Filter>include\bitcoin\server\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp">
-      <Filter>include\bitcoin\server\workers</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\subscribe.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\query_service.hpp">
-      <Filter>include\bitcoin\server\services</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\transaction_pool.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\unsubscribe.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp">
+      <Filter>include\bitcoin\server\messages</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\route.hpp">
+      <Filter>include\bitcoin\server\messages</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\subscription.hpp">
+      <Filter>include\bitcoin\server\messages</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
+      <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\block_service.hpp">
       <Filter>include\bitcoin\server\services</Filter>
@@ -82,88 +146,37 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\heartbeat_service.hpp">
       <Filter>include\bitcoin\server\services</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\query_service.hpp">
+      <Filter>include\bitcoin\server\services</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\transaction_service.hpp">
       <Filter>include\bitcoin\server\services</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp">
-      <Filter>include\bitcoin\server\workers</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
+      <Filter>include\bitcoin\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\route.hpp">
-      <Filter>include\bitcoin\server\messages</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp">
-      <Filter>include\bitcoin\server\messages</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
+      <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\authenticator.hpp">
       <Filter>include\bitcoin\server\workers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\subscribe.hpp">
-      <Filter>include\bitcoin\server\interface</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp">
+      <Filter>include\bitcoin\server\workers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\unsubscribe.hpp">
-      <Filter>include\bitcoin\server\interface</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp">
+      <Filter>include\bitcoin\server\workers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\subscription.hpp">
-      <Filter>include\bitcoin\server\messages</Filter>
+    <ClInclude Include="..\..\resource.h">
+      <Filter>resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\server_node.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\parser.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp">
-      <Filter>src\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp">
-      <Filter>src\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\configuration.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\settings.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp">
-      <Filter>src\workers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\services\query_service.cpp">
-      <Filter>src\services</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\services\block_service.cpp">
-      <Filter>src\services</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp">
-      <Filter>src\services</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp">
-      <Filter>src\services</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp">
-      <Filter>src\workers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\messages\route.cpp">
-      <Filter>src\messages</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\messages\message.cpp">
-      <Filter>src\messages</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp">
-      <Filter>src\workers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\interface\subscribe.cpp">
-      <Filter>src\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\interface\unsubscribe.cpp">
-      <Filter>src\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\messages\subscription.cpp">
-      <Filter>src\messages</Filter>
-    </ClCompile>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\resource.rc" />
+    <ResourceCompile Include="..\..\resource.rc">
+      <Filter>resource</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

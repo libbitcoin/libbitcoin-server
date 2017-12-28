@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>Bitcoin Server Settings</_PropertySheetDisplayName>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+
+  <!-- Configuration -->
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4290;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <EnablePREfast>false</EnablePREfast>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Dependencies -->
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(SolutionDir)libbitcoin.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-consensus.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-database.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-blockchain.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-network.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-node.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-protocol.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-server.import.props" />
+  </ImportGroup>
+
+  <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
+    <Linkage-libzmq>dynamic</Linkage-libzmq>
+    <Linkage-secp256k1>dynamic</Linkage-secp256k1>
+    <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
+    <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
+    <Linkage-libbitcoin-database>dynamic</Linkage-libbitcoin-database>
+    <Linkage-libbitcoin-blockchain>dynamic</Linkage-libbitcoin-blockchain>
+    <Linkage-libbitcoin-network>dynamic</Linkage-libbitcoin-network>
+    <Linkage-libbitcoin-node>dynamic</Linkage-libbitcoin-node>
+    <Linkage-libbitcoin-protocol>dynamic</Linkage-libbitcoin-protocol>
+    <Linkage-libbitcoin-server>dynamic</Linkage-libbitcoin-server>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
+    <Linkage-libzmq>ltcg</Linkage-libzmq>
+    <Linkage-secp256k1>ltcg</Linkage-secp256k1>
+    <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
+    <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
+    <Linkage-libbitcoin-database>ltcg</Linkage-libbitcoin-database>
+    <Linkage-libbitcoin-blockchain>ltcg</Linkage-libbitcoin-blockchain>
+    <Linkage-libbitcoin-network>ltcg</Linkage-libbitcoin-network>
+    <Linkage-libbitcoin-node>ltcg</Linkage-libbitcoin-node>
+    <Linkage-libbitcoin-protocol>ltcg</Linkage-libbitcoin-protocol>
+    <Linkage-libbitcoin-server>ltcg</Linkage-libbitcoin-server>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
+    <Linkage-libzmq>static</Linkage-libzmq>
+    <Linkage-secp256k1>static</Linkage-secp256k1>
+    <Linkage-libbitcoin>static</Linkage-libbitcoin>
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+    <Linkage-libbitcoin-database>static</Linkage-libbitcoin-database>
+    <Linkage-libbitcoin-blockchain>static</Linkage-libbitcoin-blockchain>
+    <Linkage-libbitcoin-network>static</Linkage-libbitcoin-network>
+    <Linkage-libbitcoin-node>static</Linkage-libbitcoin-node>
+    <Linkage-libbitcoin-protocol>static</Linkage-libbitcoin-protocol>
+    <Linkage-libbitcoin-server>static</Linkage-libbitcoin-server>
+  </PropertyGroup>
+
+  <!-- Messages -->
+
+  <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
+    <Message Text="Linkage-libzmq     : $(Linkage-libzmq)" Importance="high"/>
+    <Message Text="Linkage-secp256k1  : $(Linkage-secp256k1)" Importance="high"/>
+    <Message Text="Linkage-libbitcoin : $(Linkage-libbitcoin)" Importance="high"/>
+    <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
+    <Message Text="Linkage-_database  : $(Linkage-libbitcoin-database)" Importance="high"/>
+    <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
+    <Message Text="Linkage-_node      : $(Linkage-libbitcoin-node)" Importance="high"/>
+    <Message Text="Linkage-_network   : $(Linkage-libbitcoin-network)" Importance="high"/>
+    <Message Text="Linkage-_protocol  : $(Linkage-libbitcoin-protocol)" Importance="high"/>
+    <Message Text="Linkage-_server    : $(Linkage-libbitcoin-server)" Importance="high"/>
+  </Target>
+
+</Project>
+

@@ -1,10 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ |  Copyright (c) 2014-2015 libbitcoin-server developers (see COPYING).
+ |
+ |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+ |
+ -->
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <ProjectGuid>{73CE0AC2-ECB2-4E8D-A136-17840C0371A0}</ProjectGuid>
     <ProjectName>libbitcoin-server</ProjectName>
-    <NuGetPackageImportStamp>6dec6ac3</NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugDLL|Win32">
@@ -68,19 +73,36 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ClCompile Include="..\..\..\..\src\configuration.cpp" />
+    <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
+    <ClCompile Include="..\..\..\..\src\interface\subscribe.cpp" />
+    <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\interface\unsubscribe.cpp" />
+    <ClCompile Include="..\..\..\..\src\messages\message.cpp" />
+    <ClCompile Include="..\..\..\..\src\messages\route.cpp" />
+    <ClCompile Include="..\..\..\..\src\messages\subscription.cpp" />
+    <ClCompile Include="..\..\..\..\src\parser.cpp" />
+    <ClCompile Include="..\..\..\..\src\server_node.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\block_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\query_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp" />
+    <ClCompile Include="..\..\..\..\src\settings.cpp" />
+    <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp" />
+    <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp" />
+    <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\subscribe.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\subscribe.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\unsubscribe.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\subscription.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\route.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\subscription.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\services\block_service.hpp" />
@@ -95,24 +117,7 @@
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\configuration.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\subscribe.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\unsubscribe.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\message.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\subscription.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\route.cpp" />
-    <ClCompile Include="..\..\..\..\src\parser.cpp" />
-    <ClCompile Include="..\..\..\..\src\server_node.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\block_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\query_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\settings.cpp" />
-    <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp" />
-    <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp" />
-    <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resource.rc" />
@@ -124,6 +129,7 @@
     <Import Project="..\..\..\..\..\..\nuget\boost_chrono-vc120.1.57.0.0\build\native\boost_chrono-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_chrono-vc120.1.57.0.0\build\native\boost_chrono-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_date_time-vc120.1.57.0.0\build\native\boost_date_time-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_date_time-vc120.1.57.0.0\build\native\boost_date_time-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_filesystem-vc120.1.57.0.0\build\native\boost_filesystem-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_filesystem-vc120.1.57.0.0\build\native\boost_filesystem-vc120.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_iostreams-vc120.1.57.0.0\build\native\boost_iostreams-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_iostreams-vc120.1.57.0.0\build\native\boost_iostreams-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_locale-vc120.1.57.0.0\build\native\boost_locale-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_locale-vc120.1.57.0.0\build\native\boost_locale-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_log-vc120.1.57.0.0\build\native\boost_log-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_log-vc120.1.57.0.0\build\native\boost_log-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_log_setup-vc120.1.57.0.0\build\native\boost_log_setup-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_log_setup-vc120.1.57.0.0\build\native\boost_log_setup-vc120.targets')" />
@@ -131,8 +137,8 @@
     <Import Project="..\..\..\..\..\..\nuget\boost_regex-vc120.1.57.0.0\build\native\boost_regex-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_regex-vc120.1.57.0.0\build\native\boost_regex-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_system-vc120.1.57.0.0\build\native\boost_system-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_system-vc120.1.57.0.0\build\native\boost_system-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_thread-vc120.1.57.0.0\build\native\boost_thread-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_thread-vc120.1.57.0.0\build\native\boost_thread-vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\libzmq_vc120.4.2.20.1\build\native\libzmq_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\libzmq_vc120.4.2.20.1\build\native\libzmq_vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.14\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.14\build\native\secp256k1_vc120.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\libzmq_vc120.4.2.30\build\native\libzmq_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\libzmq_vc120.4.2.30\build\native\libzmq_vc120.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.16\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.16\build\native\secp256k1_vc120.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -142,6 +148,7 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_chrono-vc120.1.57.0.0\build\native\boost_chrono-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_chrono-vc120.1.57.0.0\build\native\boost_chrono-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_date_time-vc120.1.57.0.0\build\native\boost_date_time-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_date_time-vc120.1.57.0.0\build\native\boost_date_time-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_filesystem-vc120.1.57.0.0\build\native\boost_filesystem-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_filesystem-vc120.1.57.0.0\build\native\boost_filesystem-vc120.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_iostreams-vc120.1.57.0.0\build\native\boost_iostreams-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_iostreams-vc120.1.57.0.0\build\native\boost_iostreams-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_locale-vc120.1.57.0.0\build\native\boost_locale-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_locale-vc120.1.57.0.0\build\native\boost_locale-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_log-vc120.1.57.0.0\build\native\boost_log-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_log-vc120.1.57.0.0\build\native\boost_log-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_log_setup-vc120.1.57.0.0\build\native\boost_log_setup-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_log_setup-vc120.1.57.0.0\build\native\boost_log_setup-vc120.targets'))" />
@@ -149,7 +156,7 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_regex-vc120.1.57.0.0\build\native\boost_regex-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_regex-vc120.1.57.0.0\build\native\boost_regex-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_system-vc120.1.57.0.0\build\native\boost_system-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_system-vc120.1.57.0.0\build\native\boost_system-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_thread-vc120.1.57.0.0\build\native\boost_thread-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_thread-vc120.1.57.0.0\build\native\boost_thread-vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\libzmq_vc120.4.2.20.1\build\native\libzmq_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\libzmq_vc120.4.2.20.1\build\native\libzmq_vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.14\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.14\build\native\secp256k1_vc120.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\libzmq_vc120.4.2.30\build\native\libzmq_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\libzmq_vc120.4.2.30\build\native\libzmq_vc120.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.16\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.16\build\native\secp256k1_vc120.targets'))" />
   </Target>
 </Project>
