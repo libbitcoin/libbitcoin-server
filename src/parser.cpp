@@ -202,7 +202,7 @@ options_metadata parser::load_settings()
     (
         "network.invalid_services",
         value<uint64_t>(&configured.network.invalid_services),
-        "The advertised services that cause a peer to be dropped, defaults to 0 (none)."
+        "The advertised services that cause a peer to be dropped, defaults to 160."
     )
     (
         "network.validate_checksum",
