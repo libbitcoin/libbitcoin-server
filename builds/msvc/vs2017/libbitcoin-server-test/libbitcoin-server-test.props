@@ -22,7 +22,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
-  <!-- Extensions -->
+  <!-- Dependencies -->
   
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)libbitcoin.import.props" />
@@ -34,6 +34,10 @@
     <Import Project="$(SolutionDir)libbitcoin-protocol.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-server.import.props" />
   </ImportGroup>
+
+  <PropertyGroup Condition="'$(NuGetPackageRoot)' == ''">
+    <NuGetPackageRoot>..\..\..\..\..\.nuget\packages\</NuGetPackageRoot>
+  </PropertyGroup>
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
     <Linkage-libzmq>dynamic</Linkage-libzmq>

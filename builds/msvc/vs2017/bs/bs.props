@@ -31,6 +31,10 @@
     <Import Project="$(SolutionDir)libbitcoin-server.import.props" />
   </ImportGroup>
 
+  <PropertyGroup Condition="'$(NuGetPackageRoot)' == ''">
+    <NuGetPackageRoot>..\..\..\..\..\.nuget\packages\</NuGetPackageRoot>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
     <Linkage-libzmq>dynamic</Linkage-libzmq>
     <Linkage-secp256k1>dynamic</Linkage-secp256k1>
