@@ -31,6 +31,10 @@
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/transaction_service.hpp>
+#include <bitcoin/server/web/block_socket.hpp>
+#include <bitcoin/server/web/heartbeat_socket.hpp>
+#include <bitcoin/server/web/query_socket.hpp>
+#include <bitcoin/server/web/transaction_socket.hpp>
 #include <bitcoin/server/workers/authenticator.hpp>
 #include <bitcoin/server/workers/notification_worker.hpp>
 
@@ -109,6 +113,8 @@ private:
     authenticator authenticator_;
     query_service secure_query_service_;
     query_service public_query_service_;
+
+    // Zeromq services
     heartbeat_service secure_heartbeat_service_;
     heartbeat_service public_heartbeat_service_;
     block_service secure_block_service_;
@@ -117,6 +123,18 @@ private:
     transaction_service public_transaction_service_;
     notification_worker secure_notification_worker_;
     notification_worker public_notification_worker_;
+
+    // Websocket services
+#ifdef WITH_MBEDTLS
+    query_socket secure_query_websockets_;
+    heartbeat_socket secure_heartbeat_websockets_;
+    block_socket secure_block_websockets_;
+    transaction_socket secure_transaction_websockets_;
+#endif
+    query_socket public_query_websockets_;
+    heartbeat_socket public_heartbeat_websockets_;
+    block_socket public_block_websockets_;
+    transaction_socket public_transaction_websockets_;
 };
 
 } // namespace server

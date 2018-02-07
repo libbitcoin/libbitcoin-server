@@ -32,8 +32,8 @@ doc_DATA = \
 # src/libbitcoin-server.la => ${libdir}
 #------------------------------------------------------------------------------
 lib_LTLIBRARIES = src/libbitcoin-server.la
-src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS}
-src_libbitcoin_server_la_LIBADD = ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
+src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${mbedtls} ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS} ${mbedtls_BUILD_CPPFLAGS}
+src_libbitcoin_server_la_LIBADD = ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS} ${mbedtls_LIBS}
 src_libbitcoin_server_la_SOURCES = \
     src/configuration.cpp \
     src/parser.cpp \
@@ -50,6 +50,19 @@ src_libbitcoin_server_la_SOURCES = \
     src/services/heartbeat_service.cpp \
     src/services/query_service.cpp \
     src/services/transaction_service.cpp \
+    src/web/block_socket.cpp \
+    src/web/heartbeat_socket.cpp \
+    src/web/json_string.cpp \
+    src/web/query_socket.cpp \
+    src/web/socket.cpp \
+    src/web/transaction_socket.cpp \
+    src/web/http/connection.cpp \
+    src/web/http/connection.hpp \
+    src/web/http/http.hpp \
+    src/web/http/manager.cpp \
+    src/web/http/manager.hpp \
+    src/web/http/utilities.cpp \
+    src/web/http/utilities.hpp \
     src/workers/authenticator.cpp \
     src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
@@ -61,8 +74,8 @@ if WITH_TESTS
 TESTS = libbitcoin-server-test_runner.sh
 
 check_PROGRAMS = test/libbitcoin-server-test
-test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS}
-test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
+test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${mbedtls} ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS} ${mbedtls_BUILD_CPPFLAGS}
+test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS} ${mbedtls_LIBS}
 test_libbitcoin_server_test_SOURCES = \
     test/main.cpp \
     test/server.cpp \
@@ -75,8 +88,8 @@ endif WITH_TESTS
 if WITH_CONSOLE
 
 bin_PROGRAMS = console/bs
-console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS}
-console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
+console_bs_CPPFLAGS = -I${srcdir}/include ${mbedtls} ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS} ${mbedtls_BUILD_CPPFLAGS}
+console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS} ${mbedtls_LIBS}
 console_bs_SOURCES = \
     console/executor.cpp \
     console/executor.hpp \
@@ -118,6 +131,15 @@ include_bitcoin_server_services_HEADERS = \
     include/bitcoin/server/services/heartbeat_service.hpp \
     include/bitcoin/server/services/query_service.hpp \
     include/bitcoin/server/services/transaction_service.hpp
+
+include_bitcoin_server_webdir = ${includedir}/bitcoin/server/web
+include_bitcoin_server_web_HEADERS = \
+    include/bitcoin/server/web/block_socket.hpp \
+    include/bitcoin/server/web/heartbeat_socket.hpp \
+    include/bitcoin/server/web/json_string.hpp \
+    include/bitcoin/server/web/query_socket.hpp \
+    include/bitcoin/server/web/socket.hpp \
+    include/bitcoin/server/web/transaction_socket.hpp
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \

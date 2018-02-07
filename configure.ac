@@ -117,6 +117,17 @@ AC_ARG_WITH([console],
 AC_MSG_RESULT([$with_console])
 AM_CONDITIONAL([WITH_CONSOLE], [test x$with_console != xno])
 
+# Implement --with-mbedtls and output ${mbedtls}.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING([--with-mbedtls option])
+AC_ARG_WITH([mbedtls],
+    AS_HELP_STRING([--with-mbedtls],
+        [Compile with MbedTLS. @<:@default=no@:>@]),
+    [with_mbedtls=$withval],
+    [with_mbedtls=no])
+AC_MSG_RESULT([$with_mbedtls])
+AS_CASE([${with_mbedtls}], [yes], AC_SUBST([mbedtls], [-DWITH_MBEDTLS]))
+
 # Implement --enable-ndebug and define NDEBUG.
 #------------------------------------------------------------------------------
 AC_MSG_CHECKING([--enable-ndebug option])
@@ -244,6 +255,22 @@ AS_CASE([${enable_isystem}],[yes],
     [AC_SUBST([bitcoin_protocol_BUILD_CPPFLAGS], [${bitcoin_protocol_CPPFLAGS}])])
 
 AC_MSG_NOTICE([bitcoin_protocol_BUILD_CPPFLAGS : ${bitcoin_protocol_BUILD_CPPFLAGS}])
+
+# Require mbedtls of at least version 2.12.0 and output ${mbedtls_CPPFLAGS/LIBS/PKG}.
+#------------------------------------------------------------------------------
+AS_CASE([${with_mbedtls}], [yes],
+    [AC_SUBST([mbedtls_INCLUDEDIR], [])
+     AC_SUBST([mbedtls_OTHER_CPPFLAGS], [])
+     AC_SUBST([mbedtls_CPPFLAGS], [])
+     AC_SUBST([mbedtls_ISYS_CPPFLAGS], [])
+     AC_SUBST([mbedtls_LIBS], ["-lmbedtls -lmbedcrypto -lmbedx509"])
+     AC_MSG_NOTICE([mbedtls presumed, not detected - absence of -lmbedtls -lmbedcrypto -lmbedx509 may result in link error.])], [])
+
+AS_CASE([${enable_isystem}],[yes],
+    [AC_SUBST([mbedtls_BUILD_CPPFLAGS], [${mbedtls_ISYS_CPPFLAGS}])],
+    [AC_SUBST([mbedtls_BUILD_CPPFLAGS], [${mbedtls_CPPFLAGS}])])
+
+AC_MSG_NOTICE([mbedtls_BUILD_CPPFLAGS : ${mbedtls_BUILD_CPPFLAGS}])
 
 
 # Set flags.

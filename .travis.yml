@@ -85,9 +85,9 @@ script:
     # Download and build libbitcoin-server and all dependencies.
     - if [[ $OSX   && $CLANG && $STATIC  ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --without-consensus --disable-shared --build-boost --build-zmq --prefix=$TRAVIS_BUILD_DIR/my-prefix; fi
     - if [[ $LINUX && $CLANG && $STATIC  ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --disable-shared --build-boost --build-zmq --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os' CXXFLAGS='-Os'; fi
-    - if [[ $LINUX && $GCC   && $STATIC  ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --build-boost --build-zmq --disable-shared --build-dir=my-build --prefix=$TRAVIS_BUILD_DIR/my-prefix --with-bash-completiondir=$TRAVIS_BUILD_DIR/my-prefix/share/bash-completion/completions CFLAGS='-Og -g --coverage' CXXFLAGS='-Og -g --coverage'; fi
-    - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --build-zmq --disable-static --with-bash-completiondir; fi
-    - if [[ $LINUX && $CLANG && $DYNAMIC ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --build-boost --build-zmq --disable-ndebug --disable-static --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os' CXXFLAGS='-Os'; fi
+    - if [[ $LINUX && $GCC   && $STATIC  ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --build-boost --build-zmq --build-mbedtls --disable-shared --build-dir=my-build --prefix=$TRAVIS_BUILD_DIR/my-prefix --with-bash-completiondir=$TRAVIS_BUILD_DIR/my-prefix/share/bash-completion/completions CFLAGS='-Og -g --coverage' CXXFLAGS='-Og -g --coverage'; fi
+    - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --build-zmq --build-mbedtls --disable-static --with-bash-completiondir; fi
+    - if [[ $LINUX && $CLANG && $DYNAMIC ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --build-boost --build-zmq --build-mbedtls --disable-ndebug --disable-static --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os' CXXFLAGS='-Os'; fi
     - if [[ $LINUX && $GCC   && $DYNAMIC ]]; then CC=$CC CXX=$CXX ./install.sh --enable-isystem --without-consensus --disable-static --build-boost --build-zmq --with-bash-completiondir=$TRAVIS_BUILD_DIR/my-prefix/share/bash-completion/completions --prefix=$TRAVIS_BUILD_DIR/my-prefix CFLAGS='-Os -s' CXXFLAGS='-Os -s'; fi
 
 after_success:
