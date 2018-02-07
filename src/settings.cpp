@@ -36,15 +36,34 @@ settings::settings()
     block_service_enabled(true),
     transaction_service_enabled(true),
 
-    secure_query_endpoint("tcp://*:9081"),
-    secure_heartbeat_endpoint("tcp://*:9082"),
-    secure_block_endpoint("tcp://*:9083"),
-    secure_transaction_endpoint("tcp://*:9084"),
+    // [websockets]
+    websockets_secure_query_endpoint("tcp://*:9061"),
+    websockets_secure_heartbeat_endpoint("tcp://*:9062"),
+    websockets_secure_block_endpoint("tcp://*:9063"),
+    websockets_secure_transaction_endpoint("tcp://*:9064"),
 
-    public_query_endpoint("tcp://*:9091"),
-    public_heartbeat_endpoint("tcp://*:9092"),
-    public_block_endpoint("tcp://*:9093"),
-    public_transaction_endpoint("tcp://*:9094")
+    websockets_public_query_endpoint("tcp://*:9071"),
+    websockets_public_heartbeat_endpoint("tcp://*:9072"),
+    websockets_public_block_endpoint("tcp://*:9073"),
+    websockets_public_transaction_endpoint("tcp://*:9074"),
+
+    websockets_enabled(true),
+    websockets_root("web"),
+    websockets_ca_certificate("ca.pem"),
+    websockets_server_private_key("key.pem"),
+    websockets_server_certificate("server.pem"),
+    websockets_client_certificates("clients"),
+
+    // [zeromq]
+    zeromq_secure_query_endpoint("tcp://*:9081"),
+    zeromq_secure_heartbeat_endpoint("tcp://*:9082"),
+    zeromq_secure_block_endpoint("tcp://*:9083"),
+    zeromq_secure_transaction_endpoint("tcp://*:9084"),
+
+    zeromq_public_query_endpoint("tcp://*:9091"),
+    zeromq_public_heartbeat_endpoint("tcp://*:9092"),
+    zeromq_public_block_endpoint("tcp://*:9093"),
+    zeromq_public_transaction_endpoint("tcp://*:9094")
 {
 }
 
@@ -52,26 +71,6 @@ settings::settings()
 settings::settings(config::settings)
   : settings()
 {
-}
-
-const config::endpoint& settings::query_endpoint(bool secure) const
-{
-    return secure ? secure_query_endpoint : public_query_endpoint;
-}
-
-const config::endpoint& settings::heartbeat_endpoint(bool secure) const
-{
-    return secure ? secure_heartbeat_endpoint : public_heartbeat_endpoint;
-}
-
-const config::endpoint& settings::block_endpoint(bool secure) const
-{
-    return secure ? secure_block_endpoint : public_block_endpoint;
-}
-
-const config::endpoint& settings::transaction_endpoint(bool secure) const
-{
-    return secure ? secure_transaction_endpoint : public_transaction_endpoint;
 }
 
 duration settings::heartbeat_interval() const
@@ -82,6 +81,55 @@ duration settings::heartbeat_interval() const
 duration settings::subscription_expiration() const
 {
     return minutes(subscription_expiration_minutes);
+}
+
+const config::endpoint& settings::websockets_query_endpoint(bool secure) const
+{
+    return secure ? websockets_secure_query_endpoint :
+        websockets_public_query_endpoint;
+}
+
+const config::endpoint& settings::websockets_heartbeat_endpoint(bool secure) const
+{
+    return secure ? websockets_secure_heartbeat_endpoint :
+        websockets_public_heartbeat_endpoint;
+}
+
+const config::endpoint& settings::websockets_block_endpoint(bool secure) const
+{
+    return secure ? websockets_secure_block_endpoint :
+        websockets_public_block_endpoint;
+}
+
+const config::endpoint& settings::websockets_transaction_endpoint(
+    bool secure) const
+{
+    return secure ? websockets_secure_transaction_endpoint :
+        websockets_public_transaction_endpoint;
+}
+
+const config::endpoint& settings::zeromq_query_endpoint(bool secure) const
+{
+    return secure ? zeromq_secure_query_endpoint :
+        zeromq_public_query_endpoint;
+}
+
+const config::endpoint& settings::zeromq_heartbeat_endpoint(bool secure) const
+{
+    return secure ? zeromq_secure_heartbeat_endpoint :
+        zeromq_public_heartbeat_endpoint;
+}
+
+const config::endpoint& settings::zeromq_block_endpoint(bool secure) const
+{
+    return secure ? zeromq_secure_block_endpoint :
+        zeromq_public_block_endpoint;
+}
+
+const config::endpoint& settings::zeromq_transaction_endpoint(bool secure) const
+{
+    return secure ? zeromq_secure_transaction_endpoint :
+        zeromq_public_transaction_endpoint;
 }
 
 } // namespace server

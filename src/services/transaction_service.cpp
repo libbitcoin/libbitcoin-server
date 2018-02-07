@@ -47,7 +47,7 @@ transaction_service::transaction_service(zmq::authenticator& authenticator,
     settings_(node.server_settings()),
     external_(node.protocol_settings()),
     internal_(external_.send_high_water, external_.receive_high_water),
-    service_(settings_.transaction_endpoint(secure)),
+    service_(settings_.zeromq_transaction_endpoint(secure)),
     worker_(secure ? secure_worker : public_worker),
     authenticator_(authenticator),
     node_(node),
@@ -153,7 +153,7 @@ bool transaction_service::handle_transaction(const code& ec,
         LOG_WARNING(LOG_SERVER)
             << "Failure handling new transaction: " << ec.message();
 
-        // Don't let a failure here prevent prevent future notifications.
+        // Don't let a failure here prevent future notifications.
         return true;
     }
 
