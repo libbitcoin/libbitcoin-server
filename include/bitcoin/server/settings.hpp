@@ -30,7 +30,7 @@
 namespace libbitcoin {
 namespace server {
 
-/// Common database configuration settings, properties not thread safe.
+/// Common server configuration settings, properties not thread safe.
 class BCS_API settings
 {
 public:
@@ -40,21 +40,30 @@ public:
     /// Helpers.
     asio::duration heartbeat_interval() const;
     asio::duration subscription_expiration() const;
+
     const config::endpoint& query_endpoint(bool secure) const;
     const config::endpoint& heartbeat_endpoint(bool secure) const;
     const config::endpoint& block_endpoint(bool secure) const;
     const config::endpoint& transaction_endpoint(bool secure) const;
+
+    const config::endpoint& websockets_query_endpoint(bool secure) const;
+    const config::endpoint& websockets_heartbeat_endpoint(bool secure) const;
+    const config::endpoint& websockets_block_endpoint(bool secure) const;
+    const config::endpoint& websockets_transaction_endpoint(bool secure) const;
 
     /// Properties.
     bool priority;
     bool secure_only;
 
     uint16_t query_workers;
+
     uint32_t subscription_limit;
     uint32_t subscription_expiration_minutes;
     uint32_t heartbeat_service_seconds;
+
     bool block_service_enabled;
     bool transaction_service_enabled;
+    bool websockets_enabled;
 
     config::endpoint secure_query_endpoint;
     config::endpoint secure_heartbeat_endpoint;
@@ -70,6 +79,20 @@ public:
     config::sodium::list client_public_keys;
     config::authority::list client_addresses;
     config::authority::list blacklists;
+
+    config::endpoint websockets_secure_query_endpoint;
+    config::endpoint websockets_secure_heartbeat_endpoint;
+    config::endpoint websockets_secure_block_endpoint;
+    config::endpoint websockets_secure_transaction_endpoint;
+
+    config::endpoint websockets_public_query_endpoint;
+    config::endpoint websockets_public_heartbeat_endpoint;
+    config::endpoint websockets_public_block_endpoint;
+    config::endpoint websockets_public_transaction_endpoint;
+
+    std::string websockets_server_certificates;
+    std::string websockets_client_certificates;
+    std::string websockets_root_path;
 };
 
 } // namespace server

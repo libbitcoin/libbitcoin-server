@@ -23,3 +23,7 @@ libobelisk.pc
 
 /src/bitcoin_server
 
+build-libbitcoin-server
+console/bs
+libbitcoin-server.pc
+

@@ -152,7 +152,7 @@ bool transaction_service::handle_transaction(const code& ec,
         LOG_WARNING(LOG_SERVER)
             << "Failure handling new transaction: " << ec.message();
 
-        // Don't let a failure here prevent prevent future notifications.
+        // Don't let a failure here prevent future notifications.
         return true;
     }
 

@@ -66,7 +66,7 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
 
 // There is no unsubscribe so this class shouldn't be restarted.
 // Notifications are ordered by validation in node but thread safety is still
-// required so that purge can run on a seperate time thread.
+// required so that purge can run on a separate time thread.
 bool notification_worker::start()
 {
     // Subscribe to blockchain reorganizations.
@@ -172,7 +172,7 @@ bool notification_worker::handle_reorganization(const code& ec,
         LOG_WARNING(LOG_SERVER)
             << "Failure handling new block: " << ec.message();
 
-        // Don't let a failure here prevent prevent future notifications.
+        // Don't let a failure here prevent future notifications.
         return true;
     }
 

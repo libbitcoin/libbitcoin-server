@@ -48,7 +48,15 @@ server_node::server_node(const configuration& configuration)
     secure_transaction_service_(authenticator_, *this, true),
     public_transaction_service_(authenticator_, *this, false),
     secure_notification_worker_(authenticator_, *this, true),
-    public_notification_worker_(authenticator_, *this, false)
+    public_notification_worker_(authenticator_, *this, false),
+    secure_query_websockets_(authenticator_, *this, true),
+    public_query_websockets_(authenticator_, *this, false),
+    secure_heartbeat_websockets_(authenticator_, *this, true),
+    public_heartbeat_websockets_(authenticator_, *this, false),
+    secure_block_websockets_(authenticator_, *this, true),
+    public_block_websockets_(authenticator_, *this, false),
+    secure_transaction_websockets_(authenticator_, *this, true),
+    public_transaction_websockets_(authenticator_, *this, false)
 {
 }
 
@@ -200,6 +208,17 @@ bool server_node::start_query_services()
         (settings.subscription_limit > 0 && !start_notification_workers(false))))
             return false;
 
+    if (settings.websockets_enabled)
+    {
+        // Start secure service if enabled.
+        if (settings.server_private_key && !secure_query_websockets_.start())
+            return false;
+
+        // Start public service if enabled.
+        if (!settings.secure_only && !public_query_websockets_.start())
+            return false;
+    }
+
     return true;
 }
 
@@ -217,6 +236,18 @@ bool server_node::start_heartbeat_services()
     // Start public service if enabled.
     if (!settings.secure_only && !public_heartbeat_service_.start())
         return false;
+
+    if (settings.websockets_enabled)
+    {
+        // Start secure service if enabled.
+        if (settings.server_private_key &&
+            !secure_heartbeat_websockets_.start())
+            return false;
+
+        // Start public service if enabled.
+        if (!settings.secure_only && !public_heartbeat_websockets_.start())
+            return false;
+    }
 
     return true;
 }
@@ -236,6 +267,17 @@ bool server_node::start_block_services()
     if (!settings.secure_only && !public_block_service_.start())
         return false;
 
+    if (settings.websockets_enabled)
+    {
+        // Start secure service if enabled.
+        if (settings.server_private_key && !secure_block_websockets_.start())
+            return false;
+
+        // Start public service if enabled.
+        if (!settings.secure_only && !public_block_websockets_.start())
+            return false;
+    }
+
     return true;
 }
 
@@ -253,6 +295,18 @@ bool server_node::start_transaction_services()
     // Start public service if enabled.
     if (!settings.secure_only && !public_transaction_service_.start())
         return false;
+
+    if (settings.websockets_enabled)
+    {
+        // Start secure service if enabled.
+        if (settings.server_private_key &&
+            !secure_transaction_websockets_.start())
+            return false;
+
+        // Start public service if enabled.
+        if (!settings.secure_only && !public_transaction_websockets_.start())
+            return false;
+    }
 
     return true;
 }

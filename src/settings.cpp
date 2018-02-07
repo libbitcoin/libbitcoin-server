@@ -34,6 +34,17 @@ settings::settings()
     heartbeat_service_seconds(5),
     block_service_enabled(true),
     transaction_service_enabled(true),
+    websockets_enabled(true),
+
+    websockets_secure_query_endpoint("tcp://*:9061"),
+    websockets_secure_heartbeat_endpoint("tcp://*:9062"),
+    websockets_secure_block_endpoint("tcp://*:9063"),
+    websockets_secure_transaction_endpoint("tcp://*:9064"),
+
+    websockets_public_query_endpoint("tcp://*:9071"),
+    websockets_public_heartbeat_endpoint("tcp://*:9072"),
+    websockets_public_block_endpoint("tcp://*:9073"),
+    websockets_public_transaction_endpoint ("tcp://*:9074"),
 
     secure_query_endpoint("tcp://*:9081"),
     secure_heartbeat_endpoint("tcp://*:9082"),
@@ -71,6 +82,31 @@ const config::endpoint& settings::block_endpoint(bool secure) const
 const config::endpoint& settings::transaction_endpoint(bool secure) const
 {
     return secure ? secure_transaction_endpoint : public_transaction_endpoint;
+}
+
+const config::endpoint& settings::websockets_query_endpoint(bool secure) const
+{
+    return secure ? websockets_secure_query_endpoint :
+        websockets_public_query_endpoint;
+}
+
+const config::endpoint& settings::websockets_heartbeat_endpoint(bool secure) const
+{
+    return secure ? websockets_secure_heartbeat_endpoint :
+        websockets_public_heartbeat_endpoint;
+}
+
+const config::endpoint& settings::websockets_block_endpoint(bool secure) const
+{
+    return secure ? websockets_secure_block_endpoint :
+        websockets_public_block_endpoint;
+}
+
+const config::endpoint& settings::websockets_transaction_endpoint(
+    bool secure) const
+{
+    return secure ? websockets_secure_transaction_endpoint :
+        websockets_public_transaction_endpoint;
 }
 
 duration settings::heartbeat_interval() const

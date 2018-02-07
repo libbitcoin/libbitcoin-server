@@ -153,7 +153,7 @@ bool block_service::handle_reorganization(const code& ec, size_t fork_height,
         LOG_WARNING(LOG_SERVER)
             << "Failure handling new block: " << ec.message();
 
-        // Don't let a failure here prevent prevent future notifications.
+        // Don't let a failure here prevent future notifications.
         return true;
     }
 
