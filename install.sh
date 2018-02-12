@@ -27,6 +27,17 @@
 
 # Define constants.
 #==============================================================================
+# libbitcoin versions.
+SECP256K1="version4"
+LIBBITCOIN="master"
+LIBBITCOIN_CONSENSUS="master"
+LIBBITCOIN_DATABASE="master"
+LIBBITCOIN_BLOCKCHAIN="master"
+LIBBITCOIN_NETWORK="master"
+LIBBITCOIN_NODE="master"
+LIBBITCOIN_PROTOCOL="master"
+LIBBITCOIN_SERVER="master"
+
 # The default build directory.
 #------------------------------------------------------------------------------
 BUILD_DIR="build-libbitcoin-server"
@@ -736,15 +747,15 @@ build_all()
     if [[ ($BUILD_ZMQ) ]]; then
         build_from_github zeromq libzmq $ZMQ_VERSION $PARALLEL ${ZMQ_OPTIONS[@]} "$@"
     fi
-    build_from_github libbitcoin secp256k1 version4 $PARALLEL ${SECP256K1_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin master $PARALLEL ${BITCOIN_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-consensus master $PARALLEL ${BITCOIN_CONSENSUS_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-database master $PARALLEL ${BITCOIN_DATABASE_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-blockchain master $PARALLEL ${BITCOIN_BLOCKCHAIN_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-network master $PARALLEL ${BITCOIN_NETWORK_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-node master $PARALLEL ${BITCOIN_NODE_OPTIONS[@]} "$@"
-    build_from_github libbitcoin libbitcoin-protocol master $PARALLEL ${BITCOIN_PROTOCOL_OPTIONS[@]} "$@"
-    build_from_travis libbitcoin libbitcoin-server master $PARALLEL ${BITCOIN_SERVER_OPTIONS[@]} "$@"
+    build_from_github libbitcoin secp256k1 $SECP256K1 $PARALLEL ${SECP256K1_OPTIONS[@]} "$@"
+    build_from_github libbitcoin libbitcoin $LIBBITCOIN $PARALLEL ${BITCOIN_OPTIONS[@]} "$@"
+    build_from_github libbitcoin libbitcoin-consensus $LIBBITCOIN_CONSENSUS $PARALLEL ${BITCOIN_CONSENSUS_OPTIONS[@]} "$@"
+    build_from_github libbitcoin libbitcoin-database $LIBBITCOIN_DATABASE $PARALLEL ${BITCOIN_DATABASE_OPTIONS[@]} "$@"
+    build_from_github libbitcoin libbitcoin-blockchain $LIBBITCOIN_BLOCKCHAIN $PARALLEL ${BITCOIN_BLOCKCHAIN_OPTIONS[@]} "$@"
+    build_from_github libbitcoin libbitcoin-network $LIBBITCOIN_NETWORK $PARALLEL ${BITCOIN_NETWORK_OPTIONS[@]} "$@"
+    build_from_github libbitcoin libbitcoin-node $LIBBITCOIN_NODE $PARALLEL ${BITCOIN_NODE_OPTIONS[@]} "$@"
+    build_from_github libbitcoin libbitcoin-protocol $LIBBITCOIN_PROTOCOL $PARALLEL ${BITCOIN_PROTOCOL_OPTIONS[@]} "$@"
+    build_from_travis libbitcoin libbitcoin-server $LIBBITCOIN_SERVER $PARALLEL ${BITCOIN_SERVER_OPTIONS[@]} "$@"
 }
 
 
