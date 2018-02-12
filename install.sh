@@ -9,6 +9,7 @@
 #
 # Script options:
 # --build-boost            Builds Boost libraries.
+# --build-zmq              Builds ZeroMQ libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --prefix=<absolute-path> Library install location (defaults to /usr/local).
 # --disable-shared         Disables shared library builds.
@@ -35,6 +36,9 @@ BUILD_DIR="build-libbitcoin-server"
 BOOST_URL="http://downloads.sourceforge.net/project/boost/boost/1.57.0/boost_1_57_0.tar.bz2"
 BOOST_ARCHIVE="boost_1_57_0.tar.bz2"
 
+# ZMQ version.
+#------------------------------------------------------------------------------
+ZMQ_VERSION="v4.2.3"
 
 # Define utility functions.
 #==============================================================================
@@ -213,6 +217,7 @@ for OPTION in "$@"; do
         (--build-png)      BUILD_PNG="yes";;
         (--build-qrencode) BUILD_QRENCODE="yes";;
         (--build-boost)    BUILD_BOOST="yes";;
+        (--build-zmq)      BUILD_ZMQ="yes";;
         (--build-dir=*)    BUILD_DIR="${OPTION#*=}";;
 
         # Standard build options.
@@ -292,6 +297,7 @@ display_message "BUILD_ZLIB            : $BUILD_ZLIB"
 display_message "BUILD_PNG             : $BUILD_PNG"
 display_message "BUILD_QRENCODE        : $BUILD_QRENCODE"
 display_message "BUILD_BOOST           : $BUILD_BOOST"
+display_message "BUILD_ZMQ             : $BUILD_ZMQ"
 display_message "PREFIX                : $PREFIX"
 display_message "BUILD_DIR             : $BUILD_DIR"
 display_message "DISABLE_SHARED        : $DISABLE_SHARED"
@@ -727,7 +733,9 @@ build_from_travis()
 build_all()
 {
     build_from_tarball_boost $BOOST_URL $BOOST_ARCHIVE bzip2 . $PARALLEL "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
-    build_from_github zeromq libzmq master $PARALLEL ${ZMQ_OPTIONS[@]} "$@"
+    if [[ ($BUILD_ZMQ) ]]; then
+        build_from_github zeromq libzmq $ZMQ_VERSION $PARALLEL ${ZMQ_OPTIONS[@]} "$@"
+    fi
     build_from_github libbitcoin secp256k1 version4 $PARALLEL ${SECP256K1_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin master $PARALLEL ${BITCOIN_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin-consensus master $PARALLEL ${BITCOIN_CONSENSUS_OPTIONS[@]} "$@"
