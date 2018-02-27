@@ -317,7 +317,7 @@ options_metadata parser::load_settings()
     (
         "database.file_growth_rate",
         value<uint16_t>(&configured.database.file_growth_rate),
-        "Full database files increase by this percentage, defaults to 50."
+        "Full database files increase by this percentage, defaults to 5."
     )
     (
         "database.block_table_buckets",
