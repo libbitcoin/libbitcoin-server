@@ -25,6 +25,7 @@
 #include <memory>
 #include <mutex>
 #include <boost/core/null_deleter.hpp>
+#include <boost/filesystem.hpp>
 #include <bitcoin/server.hpp>
 
 namespace libbitcoin {
@@ -32,6 +33,7 @@ namespace server {
 
 using boost::format;
 using namespace boost;
+using namespace boost::filesystem;
 using namespace boost::system;
 using namespace bc::chain;
 using namespace bc::config;

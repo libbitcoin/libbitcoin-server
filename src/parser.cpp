@@ -54,11 +54,14 @@ parser::parser(bc::config::settings context)
     // Logs will slow things if not rotated.
     configured.network.rotation_size = 10000000;
 
-    // With block-first sync the count should be low until complete.
-    configured.network.outbound_connections = 2;
+    // It is a public network.
+    configured.network.inbound_connections = 100;
 
-    // A node allows 1000 host names by default.
-    configured.network.host_pool_capacity = 1000;
+    // Optimal for sync and network penetration.
+    configured.network.outbound_connections = 8;
+
+    // A node allows 10000 host names by default.
+    configured.network.host_pool_capacity = 10000;
 
     // Expose full node (1) and witness (8) network services by default.
     configured.network.services = serve::node_network | serve::node_witness;
@@ -250,6 +253,11 @@ options_metadata parser::load_settings()
         "The time limit to complete the connection handshake, defaults to 30."
     )
     (
+        "network.channel_germination_seconds",
+        value<uint32_t>(&configured.network.channel_germination_seconds),
+        "The time limit for obtaining seed addresses, defaults to 30."
+    )
+    (
         "network.channel_heartbeat_minutes",
         value<uint32_t>(&configured.network.channel_heartbeat_minutes),
         "The time between ping messages, defaults to 5."
@@ -262,17 +270,12 @@ options_metadata parser::load_settings()
     (
         "network.channel_expiration_minutes",
         value<uint32_t>(&configured.network.channel_expiration_minutes),
-        "The age limit for any connection, defaults to 60."
-    )
-    (
-        "network.channel_germination_seconds",
-        value<uint32_t>(&configured.network.channel_germination_seconds),
-        "The time limit for obtaining seed addresses, defaults to 30."
+        "The age limit for any connection, defaults to 1440."
     )
     (
         "network.host_pool_capacity",
         value<uint32_t>(&configured.network.host_pool_capacity),
-        "The maximum number of peer hosts in the pool, defaults to 1000."
+        "The maximum number of peer hosts in the pool, defaults to 10000."
     )
     (
         "network.hosts_file",
@@ -328,13 +331,8 @@ options_metadata parser::load_settings()
     )
     (
         "database.history_table_buckets",
-        value<uint32_t>(&configured.database.history_table_buckets),
-        "History hash table size, defaults to 107000000."
-    )
-    (
-        "database.spend_table_buckets",
-        value<uint32_t>(&configured.database.spend_table_buckets),
-        "Spend hash table size, defaults to 250000000."
+        value<uint32_t>(&configured.database.address_table_buckets),
+        "Address hash table size, defaults to 107000000."
     )
     (
         "database.cache_capacity",
@@ -361,7 +359,7 @@ options_metadata parser::load_settings()
     (
         "blockchain.reorganization_limit",
         value<uint32_t>(&configured.chain.reorganization_limit),
-        "The maximum reorganization depth, defaults to 256 (0 for unlimited)."
+        "The maximum reorganization depth, defaults to 0 (unlimited)."
     )
     (
         "blockchain.checkpoint",
@@ -442,20 +440,15 @@ options_metadata parser::load_settings()
     )
 
     /* [node] */
-    ////(
-    ////    "node.sync_peers",
-    ////    value<uint32_t>(&configured.node.sync_peers),
-    ////    "The maximum number of initial block download peers, defaults to 0 (physical cores)."
-    ////)
-    ////(
-    ////    "node.sync_timeout_seconds",
-    ////    value<uint32_t>(&configured.node.sync_timeout_seconds),
-    ////    "The time limit for block response during initial block download, defaults to 5."
-    ////)
+    (
+        "node.maximum_deviation",
+        value<float>(&configured.node.maximum_deviation),
+        "The response rate standard deviation below which a peer is dropped, defaults to 2.0."
+    )
     (
         "node.block_latency_seconds",
         value<uint32_t>(&configured.node.block_latency_seconds),
-        "The time to wait for a requested block, defaults to 60."
+        "The maximum time to wait for a requested block, defaults to 5."
     )
     (
         /* Internally this is blockchain, but it is conceptually a node setting. */
@@ -490,15 +483,15 @@ options_metadata parser::load_settings()
     (
         "node.refresh_transactions",
         value<bool>(&configured.node.refresh_transactions),
-        "Request transactions on each channel start, defaults to true."
+        "Request transactions on each channel start, defaults to false."
     )
 
     /* [server] */
     (
         /* Internally this is database, but it applies to server and not node. */
-        "server.index_start_height",
-        value<uint32_t>(&configured.database.index_start_height),
-        "The lower limit of address and spend indexing, defaults to 0."
+        "server.index_addresses",
+        value<bool>(&configured.database.index_addresses),
+        "Enable payment and stealth address indexing, defaults to true."
     )
     /* Internally this is protocol, but application to server is more intuitive. */
     (
