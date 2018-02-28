@@ -330,7 +330,7 @@ options_metadata parser::load_settings()
         "Transaction hash table size, defaults to 110000000."
     )
     (
-        "database.history_table_buckets",
+        "database.address_table_buckets",
         value<uint32_t>(&configured.database.address_table_buckets),
         "Address hash table size, defaults to 107000000."
     )
