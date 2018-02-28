@@ -443,7 +443,7 @@ options_metadata parser::load_settings()
     (
         "node.maximum_deviation",
         value<float>(&configured.node.maximum_deviation),
-        "The response rate standard deviation below which a peer is dropped, defaults to 2.0."
+        "The response rate standard deviation below which a peer is dropped, defaults to 1.5."
     )
     (
         "node.block_latency_seconds",
