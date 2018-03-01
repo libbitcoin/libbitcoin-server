@@ -369,9 +369,9 @@ options_metadata parser::load_settings()
 
     /* [fork] */
     (
-        "fork.easy_blocks",
-        value<bool>(&configured.chain.easy_blocks),
-        "Allow minimum difficulty blocks, defaults to false."
+        "fork.difficult",
+        value<bool>(&configured.chain.difficult),
+        "Require difficult blocks, defaults to true (use false for testnet)."
     )
     (
         "fork.retarget",
