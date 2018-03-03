@@ -526,7 +526,7 @@ void blockchain::broadcast(server_node& node, const message& request,
     }
 
     // Organize into our chain.
-    block->header().validation.simulate = false;
+    block->header().metadata.simulate = false;
 
     // This call is async but blocks on other organizations until started.
     // Subscribed channels will pick up and announce via inventory to peers.
@@ -553,7 +553,7 @@ void blockchain::validate(server_node& node, const message& request,
     }
 
     // Simulate organization into our chain.
-    block->header().validation.simulate = true;
+    block->header().metadata.simulate = true;
 
     // This call is async but blocks on other organizations until started.
     node.chain().organize(block,
