@@ -9,6 +9,7 @@
 #
 # Script options:
 # --build-boost            Builds Boost libraries.
+# --build-zmq              Build ZeroMQ libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --prefix=<absolute-path> Library install location (defaults to /usr/local).
 # --disable-shared         Disables shared library builds.
@@ -32,8 +33,8 @@ BUILD_DIR="build-libbitcoin-server"
 
 # ZMQ archive.
 #------------------------------------------------------------------------------
-ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.2.3/zeromq-4.2.3.tar.gz"
-ZMQ_ARCHIVE="zeromq-4.2.3.tar.gz"
+ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.2.0/zeromq-4.2.0.tar.gz"
+ZMQ_ARCHIVE="zeromq-4.2.0.tar.gz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
