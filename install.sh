@@ -9,6 +9,7 @@
 #
 # Script options:
 # --build-boost            Builds Boost libraries.
+# --build-zmq              Build ZeroMQ libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --prefix=<absolute-path> Library install location (defaults to /usr/local).
 # --disable-shared         Disables shared library builds.
@@ -32,8 +33,8 @@ BUILD_DIR="build-libbitcoin-server"
 
 # ZMQ archive.
 #------------------------------------------------------------------------------
-ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.2.3/zeromq-4.2.3.tar.gz"
-ZMQ_ARCHIVE="zeromq-4.2.3.tar.gz"
+ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.2.0/zeromq-4.2.0.tar.gz"
+ZMQ_ARCHIVE="zeromq-4.2.0.tar.gz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
@@ -73,23 +74,19 @@ create_directory()
 
 display_heading_message()
 {
-    local MESSAGE="$1"
-
     echo
-    echo "********************** $MESSAGE **********************"
+    echo "********************** $@ **********************"
     echo
 }
 
 display_message()
 {
-    local MESSAGE="$1"
-    echo "$MESSAGE"
+    echo "$@"
 }
 
 display_error()
 {
-    local MESSAGE="$1"
-    >&2 echo "$MESSAGE"
+    >&2 echo "$@"
 }
 
 initialize_git()
@@ -313,6 +310,7 @@ display_message "---------------------------------------------------------------
 # Define boost options.
 #------------------------------------------------------------------------------
 BOOST_OPTIONS=(
+"--with-atomic" \
 "--with-chrono" \
 "--with-date_time" \
 "--with-filesystem" \

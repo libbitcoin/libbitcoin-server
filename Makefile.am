@@ -54,13 +54,13 @@ src_libbitcoin_server_la_SOURCES = \
     src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
 
-# local: test/libbitcoin_server_test
+# local: test/libbitcoin-server-test
 #------------------------------------------------------------------------------
 if WITH_TESTS
 
-TESTS = libbitcoin_server_test_runner.sh
+TESTS = libbitcoin-server-test_runner.sh
 
-check_PROGRAMS = test/libbitcoin_server_test
+check_PROGRAMS = test/libbitcoin-server-test
 test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_CPPFLAGS} ${bitcoin_node_CPPFLAGS}
 test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
 test_libbitcoin_server_test_SOURCES = \
