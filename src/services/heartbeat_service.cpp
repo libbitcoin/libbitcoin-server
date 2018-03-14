@@ -128,7 +128,7 @@ void heartbeat_service::publish(zmq::socket& publisher)
         return;
 
     // [ sequence:2 ]
-    // [ height:4 ]
+    // [ height:8 ]
     zmq::message message;
     message.enqueue_little_endian(++sequence_);
     message.enqueue_little_endian(node_.top_block().height());
