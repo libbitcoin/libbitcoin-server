@@ -78,22 +78,9 @@ Next install the [Boost](http://www.boost.org) (1.57.0 or newer) development pac
 ```sh
 $ sudo apt-get install libboost-all-dev
 ```
-Next install the [ZeroMQ](http://www.zeromq.org) (4.2.0 or newer) development package.
+Next install the [ZeroMQ](http://www.zeromq.org) (4.2.0 or newer) development package (if not available, build with the `--build-zmq` option):
 ```sh
 $ sudo apt-get install libzmq5
-```
-If no satisfying libzmq5 package exists in your chosen environment, the compilation can be performed with the following instructions:
-```sh
-$ mkdir build-zeromq-4.2.0
-$ pushd build-zeromq-4.2.0
-$ wget https://github.com/zeromq/libzmq/releases/download/v4.2.0/zeromq-4.2.0.tar.gz
-$ tar --extract --file zeromq-4.2.0.tar.gz --gz --strip-components=1
-$ ./autogen.sh
-$ ./configure
-$ make
-$ sudo make install
-$ sudo ldconfig
-$ popd
 ```
 Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version3/install.sh) and enable execution:
 ```sh
@@ -179,17 +166,9 @@ Next install the [Boost](http://www.boost.org) (1.57.0 or newer) development pac
 ```sh
 $ sudo port install boost -no_single -no_static -python27
 ```
-Next install the [ZeroMQ](http://www.zeromq.org) (4.2.0 or newer) development package. This package does not appear to be available via MacPorts, and so follows compilation instructions:
+Next install the [ZeroMQ](http://www.zeromq.org) (4.2.0 or newer) development package:
 ```sh
-$ mkdir build-zeromq-4.2.0
-$ pushd build-zeromq-4.2.0
-$ wget https://github.com/zeromq/libzmq/releases/download/v4.2.0/zeromq-4.2.0.tar.gz
-$ tar --extract --file zeromq-4.2.0.tar.gz --gz --strip-components=1
-$ ./autogen.sh
-$ ./configure
-$ make
-$ sudo make install
-$ popd
+$ sudo port install zmq
 ```
 Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version3/install.sh) and enable execution:
 ```sh
