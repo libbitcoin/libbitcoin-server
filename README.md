@@ -34,7 +34,15 @@ At least 100 Gb file storage (SSD preferred), with swap enabled and at least 4Gb
 
 Libbitcoin Server can be built from sources or downloaded as a signed portable [single file executable](https://github.com/libbitcoin/libbitcoin-server/wiki/Download-BS).
 
-On Linux and Macintosh Libbitcoin Server is built using Autotools as follows.
+The master branch is a staging area for the next major release and should be used only by libbitcoin developers. The current release branch is version3. Detailed installation instructions are provided below.
+
+* [Debian/Ubuntu](#debianubuntu)
+* [Macintosh](#macintosh)
+* [Windows](#windows)
+
+### Autotools (advanced users)
+
+On Linux and macOS Libbitcoin Server is built using Autotools as follows.
 ```sh
 $ ./autogen.sh
 $ ./configure
@@ -42,11 +50,6 @@ $ make
 $ sudo make install # optional
 $ sudo ldconfig     # optional
 ```
-
-Detailed instructions are provided below.
-* [Debian/Ubuntu](#debianubuntu)
-* [Macintosh](#macintosh)
-* [Windows](#windows)
 
 ### Debian/Ubuntu
 
