@@ -20,45 +20,40 @@
 #define LIBBITCOIN_SERVER_WEB_MANAGER_HPP
 
 #include <cstdint>
+#include <cstddef>
 #include <memory>
 #include <string>
-
+#include <unordered_map>
+#include <boost/smart_ptr/detail/spinlock.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/messages/message.hpp>
-#include <bitcoin/server/web/external/mongoose/mongoose.h>
 
-#include <boost/smart_ptr/detail/spinlock.hpp>
+// TODO: avoid public exposure of thie header (move types to cpp).
+#include <bitcoin/server/web/external/mongoose/mongoose.h>
 
 namespace libbitcoin {
 namespace server {
-using namespace bc::protocol;
-using role = zmq::socket::role;
-using spinlock = boost::detail::spinlock;
-
-static constexpr auto poll_interval = 100u;
-static constexpr auto websocket_poll_interval = 1u;
-
-typedef struct mg_mgr mg_manager;
-typedef struct mg_connection* mg_connection_ptr;
 
 class server_node;
 
+// TODO: bc::server::manager is ambiguous name.
 class BCS_API manager
   : public bc::protocol::zmq::worker
 {
 public:
-    static constexpr uint32_t websocket_id_mask = (1 << 30);
+    // TODO: avoid exposing a term such as "mg" on public types. 
+    typedef struct mg_mgr mg_manager;
 
-    const std::string server_certificate_suffix = "server.pem";
-    const std::string ca_certificate_suffix = "ca.pem";
-    const std::string server_private_key_suffix = "key.pem";
+    // TODO: Avoid use of dumb pointers.
+    typedef struct mg_connection* mg_connection_ptr;
 
     // Tracks websocket queries via the query_work_map.  Used for
     // matching websocket client requests to zmq query responses.
     struct query_work_item
     {
+        // TODO: is a string really how we want to collect arguments?
         // Constructor provided for in-place construction.
         query_work_item(mg_connection_ptr connection,
             const std::string& command, const std::string& arguments)
@@ -79,8 +74,8 @@ public:
     typedef std::function<void(const data_chunk&, mg_connection_ptr)>
         decode_handler;
 
-    // Handles translation of incoming JSON to zmq protocol methods
-    // and converting the result back to JSON for web clients.
+    // Handles translation of incoming JSON to zmq protocol methods and
+    // converting the result back to JSON for web clients.
     struct handler
     {
         std::string command;
@@ -97,8 +92,6 @@ public:
     manager(bc::protocol::zmq::authenticator& authenticator, server_node& node,
         bool secure, const std::string& domain);
 
-    ~manager();
-
     /// Start the service.
     bool start() override;
 
@@ -112,47 +105,24 @@ public:
 protected:
     typedef bc::protocol::zmq::socket socket;
 
-    // Send a message to the websocket client without taking a lock
-    template <bool lock, typename std::enable_if<!lock>::type* = nullptr>
-    void send_impl(mg_connection_ptr connection, const std::string& data)
-    {
-        mg_send_websocket_frame(connection, WEBSOCKET_OP_TEXT, data.c_str(),
-            data.size());
-    }
-
-    // Send a message to the websocket client while taking a lock
-    template <bool lock, typename std::enable_if<lock>::type* = nullptr>
-    void send_impl(mg_connection_ptr connection, const std::string& data)
-    {
-        ///////////////////////////////////////////////////////////////////////
-        // Critical Section
-        std::lock_guard<boost::detail::spinlock> guard(connection_lock_);
-        // If user data is null, the connection is disconnected but we
-        // haven't received the close event yet.
-        if (connection->user_data != nullptr)
-            mg_send_websocket_frame(connection, WEBSOCKET_OP_TEXT, data.c_str(),
-                data.size());
-        ///////////////////////////////////////////////////////////////////////
-    }
-
     // Initialize the websocket event loop and start a thread to poll events.
     bool start_websocket_handler();
 
     // Terminate the websocket event loop.
     bool stop_websocket_handler();
 
-    // Helper method for endpoint discovery based on domain.  If zeromq is
-    // true, the zmq endpoint is returned.  If zeromq is false, the websocket
-    // endpoint is returned.  If worker is true and the domain is "query", the
+    // Helper method for endpoint discovery based on domain. If zeromq is
+    // true, the zmq endpoint is returned. If zeromq is false, the websocket
+    // endpoint is returned. If worker is true and the domain is "query", the
     // inproc communication endpoint is returned, used for synchronizing
     // communication from websocket clients to the query socket service in order
     // to avoid thread synchronized communication queues.
-    const config::endpoint& retrieve_endpoint(bool zeromq, bool worker = false);
+    const config::endpoint& retrieve_endpoint(bool zeromq, bool worker=false);
 
     // Calls the above method but returns endpoints in a format that
     // can be connected to directly.
     const config::endpoint retrieve_connect_endpoint(bool zeromq,
-        bool worker = false);
+        bool worker=false);
 
     bool handle_block(socket& sub);
     bool handle_heartbeat(socket& sub);
@@ -161,50 +131,64 @@ protected:
 
     std::string to_json(uint32_t height);
     std::string to_json(const std::error_code& code);
-    std::string to_json(const bc::chain::header& header);
-    std::string to_json(const bc::chain::block& block, uint32_t height);
-    std::string to_json(const bc::chain::transaction& transaction);
+    std::string to_json(const chain::header& header);
+    std::string to_json(const chain::block& block, uint32_t height);
+    std::string to_json(const chain::transaction& transaction);
 
-    // Send a message to the websocket client.
-    void send(mg_connection_ptr connection, const std::string& data);
+    // TODO: why is data a string?
+    // Send a message to the websocket client while taking a lock.
+    void send_locked(mg_connection_ptr connection, const std::string& data);  
+    
+    // TODO: why is data a string?
+    // Send a message to the websocket client without taking a lock.
+    void send_unlocked(mg_connection_ptr connection, const std::string& data);
 
+    // TODO: why is data a string?
     // Send a message to every connected websocket client.
     void broadcast(const std::string& data);
 
+    // TODO: why must we poll connections?
     // Poll websocket connections until specified timeout.
     void poll(size_t timeout_milliseconds);
 
-    bc::protocol::zmq::authenticator& authenticator_;
+    // These are protected by?
     mg_manager mg_manager_;
-    const bc::server::settings& settings_;
+    bc::protocol::zmq::authenticator& authenticator_;
 
-    bool websockets_ready_;
-    bool secure_;
+    const bool secure_;
     const std::string security_;
-    const bc::protocol::settings internal_;
+    const bc::server::settings& external_;
+    const bc::protocol::settings& internal_;
 
 private:
-    // Threaded event-loop driver
+    // Threaded event-loop driver.
     void handle_websockets();
-
     void remove_connections();
-    void remove_query_work(mg_connection_ptr connection);
 
+    // BUGBUG: sequence_ is unprotected.
     uint32_t sequence_;
+
+    // TODO: it's not clear to me how this is working.
     connection_set connections_;
-    spinlock connection_lock_;
-    std::mutex query_work_map_lock_;
+    boost::detail::spinlock connection_spinner_;
+
+    // This is protected by mutex.
     query_work_sequence_map query_work_map_;
+    upgrade_mutex query_work_map_mutex_;
 
-    handler_map translator_;
+    // handlers_ is effectively const (safe/okay).
+    handler_map handlers_;
+
+    // BUGBUG: zmq socket (sender_) is spanning threads (unsafe).
+    std::shared_ptr<socket> sender_;
+    std::shared_ptr<asio::thread> thread_;
+
     const std::string domain_;
-
-    std::string server_certificate_;
-    std::string server_private_key_;
-    std::string ca_certificate_;
-
-    std::shared_ptr<socket> query_sender_;
-    std::shared_ptr<std::thread> websocket_thread_;
+    const std::string root_;
+    const std::string ca_certificate_;
+    const std::string server_private_key_;
+    const std::string server_certificate_;
+    const std::string client_certificates_;
 };
 
 } // namespace server

@@ -35,6 +35,7 @@ using namespace bc::protocol;
 using role = zmq::socket::role;
 
 static const auto domain = "transaction";
+static constexpr auto poll_interval_milliseconds = 100u;
 
 transaction_socket::transaction_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
@@ -74,7 +75,7 @@ void transaction_socket::work()
 
     while (!poller.terminated() && !stopped())
     {
-        if (poller.wait(poll_interval).contains(sub.id()) &&
+        if (poller.wait(poll_interval_milliseconds).contains(sub.id()) &&
             !handle_transaction(sub))
             break;
     }

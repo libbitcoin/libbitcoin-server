@@ -33,10 +33,10 @@ authenticator::authenticator(server_node& node)
 {
     const auto& settings = node.server_settings();
 
-    set_private_key(settings.server_private_key);
+    set_private_key(settings.zeromq_server_private_key);
 
     // Secure clients are also affected by address restrictions.
-    for (const auto& public_key: settings.client_public_keys)
+    for (const auto& public_key: settings.zeromq_client_public_keys)
     {
         LOG_DEBUG(LOG_SERVER)
             << "Allow client public key [" << public_key << "]";

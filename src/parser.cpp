@@ -557,58 +557,6 @@ options_metadata parser::load_settings()
         "Blocked client IP address, multiple entries allowed."
     )
 
-    /* [zeromq] */
-    (
-        "zeromq.secure_query_endpoint",
-        value<endpoint>(&configured.server.secure_query_endpoint),
-        "The secure query zeromq endpoint, defaults to 'tcp://*:9081'."
-    )
-    (
-        "zeromq.secure_heartbeat_endpoint",
-        value<endpoint>(&configured.server.secure_heartbeat_endpoint),
-        "The secure heartbeat zeromq endpoint, defaults to 'tcp://*:9082'."
-    )
-    (
-        "zeromq.secure_block_endpoint",
-        value<endpoint>(&configured.server.secure_block_endpoint),
-        "The secure block publishing zeromq endpoint, defaults to 'tcp://*:9083'."
-    )
-    (
-        "zeromq.secure_transaction_endpoint",
-        value<endpoint>(&configured.server.secure_transaction_endpoint),
-        "The secure transaction publishing zeromq endpoint, defaults to 'tcp://*:9084'."
-    )
-    (
-        "zeromq.public_query_endpoint",
-        value<endpoint>(&configured.server.public_query_endpoint),
-        "The public query zeromq endpoint, defaults to 'tcp://*:9091'."
-    )
-    (
-        "zeromq.public_heartbeat_endpoint",
-        value<endpoint>(&configured.server.public_heartbeat_endpoint),
-        "The public heartbeat zeromq endpoint, defaults to 'tcp://*:9092'."
-    )
-    (
-        "zeromq.public_block_endpoint",
-        value<endpoint>(&configured.server.public_block_endpoint),
-        "The public block publishing zeromq endpoint, defaults to 'tcp://*:9093'."
-    )
-    (
-        "zeromq.public_transaction_endpoint",
-        value<endpoint>(&configured.server.public_transaction_endpoint),
-        "The public transaction publishing zeromq endpoint, defaults to 'tcp://*:9094'."
-    )
-    (
-        "zeromq.server_private_key",
-        value<config::sodium>(&configured.server.server_private_key),
-        "The Z85-encoded private key of the server, enables secure endpoints."
-    )
-    (
-        "zeromq.client_public_key",
-        value<config::sodium::list>(&configured.server.client_public_keys),
-        "Allowed Z85-encoded public key of the client, multiple entries allowed."
-    )
-
     /* [websockets] */
     (
         "websockets.secure_query_endpoint",
@@ -656,19 +604,81 @@ options_metadata parser::load_settings()
         "Enable websocket endpoints, defaults to true."
     )
     (
-        "websockets.root_path",
-        value<std::string>(&configured.server.websockets_root_path),
-        "The optional root path for serving files via HTTP/S, defaults to 'web'."
+        "websockets.root",
+        value<path>(&configured.server.websockets_root),
+        "The optional directory for serving files via HTTP/S, defaults to 'web'."
     )
     (
-        "websockets.server_certificates",
-        value<std::string>(&configured.server.websockets_server_certificates),
-        "Directory for server SSL certificates, defaults to 'secure', files enable secure endpoints."
+        "websockets.ca_certificate",
+        value<path>(&configured.server.websockets_ca_certificate),
+        "The SSL certificate authority file, defaults to 'ca.pem', enables secure endpoints."
+    )
+    (
+        "websockets.server_private_key",
+        value<path>(&configured.server.websockets_server_private_key),
+        "The SSL private key file, defaults to 'key.pem', enables secure endpoints."
+    )
+    (
+        "websockets.server_certificate",
+        value<path>(&configured.server.websockets_server_certificate),
+        "The SSL certificate file, defaults to 'server.pem', enables secure endpoints."
     )
     (
         "websockets.client_certificates",
-        value<std::string>(&configured.server.websockets_client_certificates),
-        "Directory of allowed client SSL certificates, defaults to 'clients', multiple entries allowed."
+        value<path>(&configured.server.websockets_client_certificates),
+        "The SSL client certificates directory, defaults to 'clients'."
+    )
+
+    /* [zeromq] */
+    (
+        "zeromq.secure_query_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_query_endpoint),
+        "The secure query zeromq endpoint, defaults to 'tcp://*:9081'."
+    )
+    (
+        "zeromq.secure_heartbeat_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_heartbeat_endpoint),
+        "The secure heartbeat zeromq endpoint, defaults to 'tcp://*:9082'."
+    )
+    (
+        "zeromq.secure_block_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_block_endpoint),
+        "The secure block publishing zeromq endpoint, defaults to 'tcp://*:9083'."
+    )
+    (
+        "zeromq.secure_transaction_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_transaction_endpoint),
+        "The secure transaction publishing zeromq endpoint, defaults to 'tcp://*:9084'."
+    )
+    (
+        "zeromq.public_query_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_query_endpoint),
+        "The public query zeromq endpoint, defaults to 'tcp://*:9091'."
+    )
+    (
+        "zeromq.public_heartbeat_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_heartbeat_endpoint),
+        "The public heartbeat zeromq endpoint, defaults to 'tcp://*:9092'."
+    )
+    (
+        "zeromq.public_block_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_block_endpoint),
+        "The public block publishing zeromq endpoint, defaults to 'tcp://*:9093'."
+    )
+    (
+        "zeromq.public_transaction_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_transaction_endpoint),
+        "The public transaction publishing zeromq endpoint, defaults to 'tcp://*:9094'."
+    )
+    (
+        "zeromq.server_private_key",
+        value<config::sodium>(&configured.server.zeromq_server_private_key),
+        "The Z85-encoded private key of the server, enables secure endpoints."
+    )
+    (
+        "zeromq.client_public_key",
+        value<config::sodium::list>(&configured.server.zeromq_client_public_keys),
+        "Allowed Z85-encoded public key of the client, multiple entries allowed."
     );
 
     return description;

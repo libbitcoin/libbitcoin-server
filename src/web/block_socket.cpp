@@ -36,6 +36,7 @@ using namespace bc::protocol;
 using role = zmq::socket::role;
 
 static const auto domain = "block";
+static constexpr auto poll_interval_milliseconds = 100u;
 
 block_socket::block_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
@@ -74,7 +75,7 @@ void block_socket::work()
 
     while (!poller.terminated() && !stopped())
     {
-        if (poller.wait(poll_interval).contains(sub.id()) &&
+        if (poller.wait(poll_interval_milliseconds).contains(sub.id()) &&
             !handle_block(sub))
             break;
     }

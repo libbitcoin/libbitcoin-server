@@ -29,6 +29,7 @@ using namespace bc::protocol;
 using role = zmq::socket::role;
 
 static const auto domain = "query";
+static constexpr auto poll_interval_milliseconds = 100u;
 
 query_socket::query_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
@@ -76,7 +77,7 @@ void query_socket::work()
 
     while (!poller.terminated() && !stopped())
     {
-        const auto identifiers = poller.wait(poll_interval);
+        const auto identifiers = poller.wait(poll_interval_milliseconds);
 
         if (identifiers.contains(query_receiver.id()) &&
             !forward(query_receiver, dealer))

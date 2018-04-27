@@ -28,6 +28,7 @@ namespace libbitcoin {
 namespace server {
 
 static const auto domain = "heartbeat";
+static constexpr auto poll_interval_milliseconds = 100u;
 
 using namespace bc::config;
 using namespace bc::protocol;
@@ -68,7 +69,7 @@ void heartbeat_socket::work()
 
     while (!poller.terminated() && !stopped())
     {
-        if (poller.wait(poll_interval).contains(sub.id()) &&
+        if (poller.wait(poll_interval_milliseconds).contains(sub.id()) &&
             !handle_heartbeat(sub))
             break;
     }
