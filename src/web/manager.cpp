@@ -186,6 +186,8 @@ void manager::handle_event(connection_ptr connection, int event, void* data)
     }
 }
 
+// TODO: eliminate domain parameter and implement service distinctions in
+// overrides of manager virtual methods.
 manager::manager(zmq::authenticator& authenticator, server_node& node,
     bool secure, const std::string& domain)
   : worker(priority(node.server_settings().priority)),
@@ -317,6 +319,7 @@ bool manager::stop_websocket_handler()
 
 void manager::handle_websockets()
 {
+    // TODO: move to query_socket override of handle_websockets().
     if (domain_ == "query")
     {
         // A zmq socket must remain on its single thread.
@@ -379,6 +382,7 @@ void manager::handle_websockets()
     while (!stopped())
         poll(poll_interval_milliseconds);
 
+    // TODO: move to query_socket override of handle_websockets().
     if (domain_ == "query" && !service_->stop())
     {
         // BUGBUG: This startup failure will not prevent the server startup.
@@ -390,36 +394,44 @@ void manager::handle_websockets()
     mg_mgr_free(&manager_);
 }
 
+// TODO: move to xxxxx_socket overrides of pure virtual methods.
+// TODO: eliminate zeromq/worker parameters in favor of distinct methods.
 const config::endpoint& manager::retrieve_endpoint(bool zeromq, bool worker) const
 {
     static const config::endpoint null_endpoint{};
     static const config::endpoint public_query("inproc://public_query_websockets");
     static const config::endpoint secure_query("inproc://secure_query_websockets");
 
+    // TODO: modfy zeromq_query_endpoint *->localhost here.
     if (domain_ == "query")
     {
         if (zeromq && worker)
             return (secure_ ? secure_query : public_query);
 
-        return (zeromq ? external_.websockets_query_endpoint(secure_) :
+        return (zeromq ? external_.zeromq_query_endpoint(secure_) :
             external_.websockets_query_endpoint(secure_));
     }
 
+    // TODO: modfy zeromq_block_endpoint *->localhost here.
     if (domain_ == "block")
-        return (zeromq ? external_.websockets_block_endpoint(secure_) :
+        return (zeromq ? external_.zeromq_block_endpoint(secure_) :
             external_.websockets_block_endpoint(secure_));
 
+    // TODO: modfy zeromq_heartbeat_endpoint *->localhost here.
     if (domain_ == "heartbeat")
-        return (zeromq ? external_.websockets_heartbeat_endpoint(secure_) :
+        return (zeromq ? external_.zeromq_heartbeat_endpoint(secure_) :
             external_.websockets_heartbeat_endpoint(secure_));
 
+    // TODO: modfy zeromq_transaction_endpoint *->localhost here.
     if (domain_ == "transaction")
-        return (zeromq ? external_.websockets_transaction_endpoint(secure_) :
+        return (zeromq ? external_.zeromq_transaction_endpoint(secure_) :
             external_.websockets_transaction_endpoint(secure_));
 
     return null_endpoint;
 }
 
+// TODO: replace with simple endpoint (not string) modification utility.
+// TODO: Take apart and reconstruct endpoint, if host == "*" then replace.
 config::endpoint manager::retrieve_connect_endpoint(bool zeromq,
     bool worker) const
 {
