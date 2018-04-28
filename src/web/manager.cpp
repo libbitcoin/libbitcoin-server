@@ -201,6 +201,8 @@ manager::manager(zmq::authenticator& authenticator, server_node& node,
     root_(node.server_settings().websockets_root.generic_string()),
     options_({ root_.c_str(), nullptr, nullptr, nullptr, nullptr, "no" })
 {
+    // TODO: move this initialization to derived classes.
+
     // JSON to ZMQ request encoders.
     //-------------------------------------------------------------------------
 
@@ -305,12 +307,16 @@ bool manager::start()
     return zmq::worker::start();
 }
 
+// TODO: invocation should be from start() override, not from work().
+// TODO: see worker::start for technique for startup with result code.
 bool manager::start_websocket_handler()
 {
     thread_ = std::make_shared<asio::thread>(&manager::handle_websockets, this);
     return true;
 }
 
+// TODO: invocation should be from stop() override, not from work().
+// TODO: see worker::start for technique for stop with result code.
 bool manager::stop_websocket_handler()
 {
     thread_->join();
@@ -444,6 +450,11 @@ void manager::poll(size_t timeout_milliseconds)
 {
     auto deadline = steady_clock::now() + milliseconds(timeout_milliseconds);
 
+    // BOOST: In contrast to a mutex, threads will busy-wait and waste CPU
+    // cycles instead of yielding the CPU to another thread.
+    // TODO: why is the boost spinlock preferred to a mutex here?
+    // TODO: why is any lock necessary, asio reads and writes sockets
+    // concurrently with no problems since the OS buffers are independent.
     while (steady_clock::now() < deadline)
     {
         // Critical Section
@@ -527,7 +538,7 @@ void manager::remove_connections()
     ///////////////////////////////////////////////////////////////////////////
 }
 
-// This is called with the connection_lock_ held across the mg_mgr_poll method.
+// This is called with the connection_spinner_ held across mg_mgr_poll method.
 void manager::notify_query_work(connection_ptr connection,
     const std::string& command, const std::string& arguments)
 {

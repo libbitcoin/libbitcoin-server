@@ -50,7 +50,7 @@ public:
     // matching websocket client requests to zmq query responses.
     struct query_work_item
     {
-        // TODO: is a string really how we want to collect arguments?
+        // TODO: why not just accept a zmq::message object here?
         // Constructor provided for in-place construction.
         query_work_item(connection_ptr connection, const std::string& command,
             const std::string& arguments)
@@ -61,6 +61,8 @@ public:
         }
 
         connection_ptr connection;
+
+        // TODO: and store a zmq::message object here?
         std::string command;
         std::string arguments;
     };
