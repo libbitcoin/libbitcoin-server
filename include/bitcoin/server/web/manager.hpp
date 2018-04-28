@@ -179,8 +179,8 @@ private:
     // handlers_ is effectively const (safe/okay).
     handler_map handlers_;
 
-    // BUGBUG: zmq socket (sender_) is spanning threads (unsafe).
-    std::shared_ptr<socket> sender_;
+    // The internal socket must operate on only this one thread.
+    std::shared_ptr<socket> service_;
     std::shared_ptr<asio::thread> thread_;
 
     const std::string domain_;

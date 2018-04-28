@@ -292,43 +292,35 @@ bool manager::start()
 
 bool manager::start_websocket_handler()
 {
-    if (domain_ == "query")
-    {
-        // A zmq socket must remain on its single thread.
-        sender_ = std::make_shared<socket>(authenticator_, role::pair, internal_);
-        const auto ec = sender_->connect(retrieve_endpoint(true, true));
-
-        if (ec)
-        {
-            LOG_ERROR(LOG_SERVER)
-                << "Failed to connect " << security_ << " query sender socket: "
-                << ec.message();
-            return false;
-        }
-    }
-
     thread_ = std::make_shared<asio::thread>(&manager::handle_websockets, this);
     return true;
 }
 
 bool manager::stop_websocket_handler()
 {
-    // A zmq socket is not restartable.
-    const auto success = (domain_ != "query" || sender_->stop());
-
-    if (!success)
-    {
-        LOG_ERROR(LOG_SERVER)
-            << "Failed to disconnect " << security_ << " query sender.";
-    }
-
     thread_->join();
-    return success;
+    return true;
 }
 
 // TODO: external_.websockets_client_certificates not implemented.
 void manager::handle_websockets()
 {
+    if (domain_ == "query")
+    {
+        // A zmq socket must remain on its single thread.
+        service_ = std::make_shared<socket>(authenticator_, role::pair, internal_);
+        const auto ec = service_->connect(retrieve_endpoint(true, true));
+
+        if (ec)
+        {
+            // BUGBUG: This startup failure will not prevent the server startup.
+            LOG_ERROR(LOG_SERVER)
+                << "Failed to connect " << security_ << " query sender socket: "
+                << ec.message();
+            return;
+        }
+    }
+
     mg_bind_opts bind_options{};
     mg_mgr_init(&mg_manager_, nullptr);
     const auto& endpoint = retrieve_endpoint(false);
@@ -353,6 +345,7 @@ void manager::handle_websockets()
 
     if (connection == nullptr)
     {
+        // BUGBUG: This startup failure will not prevent the server startup.
         LOG_ERROR(LOG_SERVER)
             << "Failed to bind listener websocket to port " << port << ": "
             << error;
@@ -366,6 +359,13 @@ void manager::handle_websockets()
 
     while (!stopped())
         poll(poll_interval_milliseconds);
+
+    if (domain_ == "query" && !service_->stop())
+    {
+        // BUGBUG: This startup failure will not prevent the server startup.
+        LOG_ERROR(LOG_SERVER)
+            << "Failed to disconnect " << security_ << " query sender.";
+    }
 
     remove_connections();
     mg_mgr_free(&mg_manager_);
@@ -455,9 +455,9 @@ void manager::remove_connection(mg_connection_ptr connection)
     ///////////////////////////////////////////////////////////////////////////
     query_work_map_mutex_.lock_upgrade();
 
-    for (auto it = query_work_map_.begin(); it != query_work_map_.end(); ++it)
+    // TODO: try to make constant time, under lock makes this worse.
+    for (auto it = query_work_map_.begin(); it != query_work_map_.end();)
     {
-        // TODO: ensure that connection is guaranteed unique.
         if (it->second.connection == connection)
         {
             query_work_map_mutex_.unlock_upgrade_and_lock();
@@ -465,6 +465,10 @@ void manager::remove_connection(mg_connection_ptr connection)
             it = query_work_map_.erase(it);
             //-----------------------------------------------------------------
             query_work_map_mutex_.unlock_and_lock_upgrade();
+        }
+        else
+        {
+            ++it;
         }
     }
 
@@ -474,7 +478,8 @@ void manager::remove_connection(mg_connection_ptr connection)
 
 void manager::remove_connections()
 {
-    for (auto connection : connections_)
+    // TODO: portability??
+    for (auto connection: connections_)
         closesocket(connection->sock);
 
     connections_.clear();
@@ -531,7 +536,7 @@ void manager::notify_query_work(mg_connection_ptr connection,
 
     // BUGBUG: a given socket may only operate on a single thread.
     connection_spinner_.unlock();
-    const auto ec = sender_->send(request);
+    const auto ec = service_->send(request);
     connection_spinner_.lock();
     ///////////////////////////////////////////////////////////////////////////
 
@@ -592,8 +597,8 @@ bool manager::handle_heartbeat(zmq::socket& sub)
 
     zmq::message response;
     sub.receive(response);
-    static constexpr size_t heartbeat_message_size = 2;
 
+    static constexpr size_t heartbeat_message_size = 2;
     if (response.empty() || response.size() != heartbeat_message_size)
     {
         LOG_WARNING(LOG_SERVER)
@@ -611,6 +616,7 @@ bool manager::handle_heartbeat(zmq::socket& sub)
     // TODO: why is there a type mismatch here?
     ////BITCOIN_ASSERT(height < max_int64);
 
+    // BUGBUG: sequence has been lost.
     // Format and send heartbeat to websocket subscribers.
     broadcast(to_json(static_cast<uint32_t>(height)));
 
@@ -627,8 +633,8 @@ bool manager::handle_transaction(zmq::socket& sub)
 
     zmq::message response;
     sub.receive(response);
-    static constexpr size_t transaction_message_size = 2;
 
+    static constexpr size_t transaction_message_size = 2;
     if (response.empty() || response.size() != transaction_message_size)
     {
         LOG_WARNING(LOG_SERVER)
@@ -646,6 +652,7 @@ bool manager::handle_transaction(zmq::socket& sub)
     chain::transaction tx;
     tx.from_data(transaction_data, true, true);
 
+    // BUGBUG: sequence has been lost.
     // Format and send transaction to websocket subscribers.
     broadcast(to_json(tx));
 
@@ -662,8 +669,8 @@ bool manager::handle_block(zmq::socket& sub)
 
     zmq::message response;
     sub.receive(response);
-    static constexpr size_t block_message_size = 3;
 
+    static constexpr size_t block_message_size = 3;
     if (response.empty() || response.size() != block_message_size)
     {
         LOG_WARNING(LOG_SERVER)
@@ -683,6 +690,7 @@ bool manager::handle_block(zmq::socket& sub)
     bc::chain::block block;
     block.from_data(block_data);
 
+    // BUGBUG: sequence has been lost.
     // Format and send transaction to websocket subscribers.
     broadcast(to_json(block, height));
 
