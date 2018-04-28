@@ -20,13 +20,11 @@
 
 #include <exception>
 #include <string>
-
-// TODO: include boost spinlock header.
 #include <boost/algorithm/string.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include <boost/smart_ptr/detail/spinlock.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 extern "C"
@@ -50,14 +48,12 @@ namespace server {
 using namespace asio;
 using namespace bc::chain;
 using namespace bc::protocol;
+using namespace boost::detail;
 using namespace boost::filesystem;
 using namespace boost::iostreams;
 using namespace boost::property_tree;
 
 using role = zmq::socket::role;
-
-// TODO: eliminate use of static state, use mamber and pass by parameter.
-mg_serve_http_opts websocket_options;
 
 // TODO: where does this magic number come from?
 static constexpr auto max_address_length = 32u;
@@ -66,13 +62,15 @@ static constexpr auto poll_interval_milliseconds = 100u;
 static constexpr auto websocket_poll_interval_milliseconds = 1u;
 static constexpr uint32_t websocket_id_mask = (1 << 30);
 
-static int is_websocket(manager::mg_connection_ptr connection)
+static int is_websocket(manager::connection_ptr connection)
 {
+    BITCOIN_ASSERT(connection != nullptr);
     return (connection->flags & MG_F_IS_WEBSOCKET) != 0;
 }
 
-static std::string get_connection_address(manager::mg_connection_ptr connection)
+static std::string get_connection_address(manager::connection_ptr connection)
 {
+    BITCOIN_ASSERT(connection != nullptr);
     std::array<char, max_address_length> address{};
     mg_sock_addr_to_str(&connection->sa, address.data(), address.size() - 1,
         MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
@@ -80,14 +78,18 @@ static std::string get_connection_address(manager::mg_connection_ptr connection)
     return address.data();
 }
 
+// static
 // This is called with the connection_spinner_ held across mg_mgr_poll method.
-void handle(manager::mg_connection_ptr connection, int event, void* data)
+void manager::handle_event(connection_ptr connection, int event, void* data)
 {
     switch (event)
     {
         case MG_EV_WEBSOCKET_HANDSHAKE_DONE:
         {
+            BITCOIN_ASSERT(connection != nullptr);
             auto instance = static_cast<manager*>(connection->user_data);
+
+            BITCOIN_ASSERT(instance != nullptr);
             instance->add_connection(connection);
 
             LOG_VERBOSE(LOG_SERVER)
@@ -99,7 +101,10 @@ void handle(manager::mg_connection_ptr connection, int event, void* data)
 
         case MG_EV_WEBSOCKET_FRAME:
         {
+            BITCOIN_ASSERT(data != nullptr);
             const auto message = static_cast<websocket_message*>(data);
+
+            BITCOIN_ASSERT(message != nullptr);
             const auto input = std::string(reinterpret_cast<char*>(
                 message->data), message->size);
 
@@ -111,7 +116,7 @@ void handle(manager::mg_connection_ptr connection, int event, void* data)
                 stream<array_source> input_stream(input.c_str(), input.size());
                 read_json(input_stream, input_tree);
             }
-            catch (std::exception& error)
+            catch (const std::exception& error)
             {
                 LOG_DEBUG(LOG_SERVER)
                     << "Ignoring invalid incoming data " << error.what();
@@ -127,15 +132,24 @@ void handle(manager::mg_connection_ptr connection, int event, void* data)
             }
 
             const auto arguments = input_tree.get<std::string>("arguments");
+
+            BITCOIN_ASSERT(connection != nullptr);
             auto instance = static_cast<manager*>(connection->user_data);
+
+            BITCOIN_ASSERT(instance != nullptr);
             instance->notify_query_work(connection, command, arguments);
             break;
         }
 
         case MG_EV_HTTP_REQUEST:
         {
-            const auto message = static_cast<struct http_message*>(data);
-            mg_serve_http(connection, message, websocket_options);
+            const auto message = static_cast<http_message*>(data);
+
+            BITCOIN_ASSERT(connection != nullptr);
+            const auto instance = static_cast<manager*>(connection->user_data);
+
+            BITCOIN_ASSERT(instance != nullptr);
+            mg_serve_http(connection, message, instance->options_);
             break;
         }
 
@@ -143,7 +157,10 @@ void handle(manager::mg_connection_ptr connection, int event, void* data)
         {
             if (is_websocket(connection))
             {
+                BITCOIN_ASSERT(connection != nullptr);
                 auto instance = static_cast<manager*>(connection->user_data);
+
+                BITCOIN_ASSERT(instance != nullptr);
                 instance->remove_connection(connection);
 
                 LOG_VERBOSE(LOG_SERVER)
@@ -172,19 +189,15 @@ void handle(manager::mg_connection_ptr connection, int event, void* data)
 manager::manager(zmq::authenticator& authenticator, server_node& node,
     bool secure, const std::string& domain)
   : worker(priority(node.server_settings().priority)),
-    mg_manager_{},
+    sequence_(websocket_id_mask),
     authenticator_(authenticator),
     secure_(secure),
-    security_(secure_ ? "secure" : "public"),
+    security_(secure ? "secure" : "public"),
     external_(node.server_settings()),
     internal_(node.protocol_settings()),
-    sequence_(websocket_id_mask),
     domain_(domain),
-    root_(external_.websockets_root.generic_string()),
-    ca_certificate_(external_.websockets_ca_certificate.generic_string()),
-    server_private_key_(external_.websockets_server_private_key.generic_string()),
-    server_certificate_(external_.websockets_server_certificate.generic_string()),
-    client_certificates_(external_.websockets_client_certificates.generic_string())
+    root_(node.server_settings().websockets_root.generic_string()),
+    options_({ root_.c_str(), nullptr, nullptr, nullptr, nullptr, "no" })
 {
     // JSON to ZMQ request encoders.
     //-------------------------------------------------------------------------
@@ -211,7 +224,7 @@ manager::manager(zmq::authenticator& authenticator, server_node& node,
     // JSON to ZMQ response decoders.
     //-------------------------------------------------------------------------
     const auto decode_height = [this](const data_chunk& data,
-        mg_connection_ptr connection)
+        connection_ptr connection)
     {
         data_source istream(data);
         istream_reader source(istream);
@@ -220,36 +233,36 @@ manager::manager(zmq::authenticator& authenticator, server_node& node,
     };
 
     const auto decode_transaction = [this](const data_chunk& data,
-        mg_connection_ptr connection)
+        connection_ptr connection)
     {
-        bc::chain::transaction transaction;
+        chain::transaction transaction;
         transaction.from_data(data, true, true);
         send_locked(connection, to_json(transaction));
     };
 
     const auto decode_block_header = [this](const data_chunk& data,
-        mg_connection_ptr connection)
+        connection_ptr connection)
     {
-        bc::chain::header header;
+        chain::header header;
         header.from_data(data, true);
         send_locked(connection, to_json(header));
     };
 
-    handlers_["query fetch-height"] = handler
+    handlers_["query fetch-height"] = handlers
     {
         "blockchain.fetch_last_height",
         encode_empty,
         decode_height
     };
 
-    handlers_["query fetch-tx"] = handler
+    handlers_["query fetch-tx"] = handlers
     {
         "transaction_pool.fetch_transaction2",
         encode_hash,
         decode_transaction
     };
 
-    handlers_["query fetch-header"] = handler
+    handlers_["query fetch-header"] = handlers
     {
         "blockchain.fetch_block_header",
         encode_hash,
@@ -302,7 +315,6 @@ bool manager::stop_websocket_handler()
     return true;
 }
 
-// TODO: external_.websockets_client_certificates not implemented.
 void manager::handle_websockets()
 {
     if (domain_ == "query")
@@ -321,27 +333,32 @@ void manager::handle_websockets()
         }
     }
 
+    const char* error;
     mg_bind_opts bind_options{};
-    mg_mgr_init(&mg_manager_, nullptr);
-    const auto& endpoint = retrieve_endpoint(false);
-    const auto port = std::to_string(endpoint.port());
+    bind_options.error_string = &error;
+
+    // These must remain inscope for the mg_bind_opt() call.
+    // TODO: external_.websockets_client_certificates not implemented.
+    ////auto clients = external_.websockets_client_certificates.generic_string();
+    auto ca = external_.websockets_ca_certificate.generic_string();
+    auto key = external_.websockets_server_private_key.generic_string();
+    auto cert = external_.websockets_server_certificate.generic_string();
 
     if (secure_)
     {
-        bind_options.ssl_key = server_private_key_.c_str();
-        bind_options.ssl_cert = server_certificate_.c_str();
+        bind_options.ssl_key = key.c_str();
+        bind_options.ssl_cert = cert.c_str();
 
-        if (!ca_certificate_.empty())
-            bind_options.ssl_ca_cert = ca_certificate_.c_str();
+        if (!ca.empty())
+            bind_options.ssl_ca_cert = ca.c_str();
     }
 
-    LOG_INFO(LOG_SERVER)
-        << "Bound " << security_ << " " << domain_
-        << " websocket to port " << port;
-
-    const char* error;
-    bind_options.error_string = &error;
-    const auto connection = mg_bind_opt(&mg_manager_, port.c_str(), handle, bind_options);
+    // Initialize manager_.
+    mg_mgr_init(&manager_, nullptr);
+    const auto& endpoint = retrieve_endpoint(false);
+    const auto port = std::to_string(endpoint.port());
+    const auto connection = mg_bind_opt(&manager_, port.c_str(), handle_event,
+        bind_options);
 
     if (connection == nullptr)
     {
@@ -352,10 +369,12 @@ void manager::handle_websockets()
         return;
     }
 
+    LOG_INFO(LOG_SERVER)
+        << "Bound " << security_ << " " << domain_ << " websocket to port "
+        << port;
+
     connection->user_data = static_cast<void*>(this);
     mg_set_protocol_http_websocket(connection);
-    websocket_options.document_root = root_.c_str();
-    websocket_options.enable_directory_listing = "no";
 
     while (!stopped())
         poll(poll_interval_milliseconds);
@@ -368,10 +387,10 @@ void manager::handle_websockets()
     }
 
     remove_connections();
-    mg_mgr_free(&mg_manager_);
+    mg_mgr_free(&manager_);
 }
 
-const config::endpoint& manager::retrieve_endpoint(bool zeromq, bool worker)
+const config::endpoint& manager::retrieve_endpoint(bool zeromq, bool worker) const
 {
     static const config::endpoint null_endpoint{};
     static const config::endpoint public_query("inproc://public_query_websockets");
@@ -401,12 +420,12 @@ const config::endpoint& manager::retrieve_endpoint(bool zeromq, bool worker)
     return null_endpoint;
 }
 
-const config::endpoint manager::retrieve_connect_endpoint(bool zeromq,
-    bool worker)
+config::endpoint manager::retrieve_connect_endpoint(bool zeromq,
+    bool worker) const
 {
     auto endpoint_string = retrieve_endpoint(zeromq, worker).to_string();
     boost::replace_all(endpoint_string, "*", "localhost");
-    return config::endpoint(endpoint_string);
+    return endpoint_string;
 }
 
 void manager::poll(size_t timeout_milliseconds)
@@ -418,36 +437,40 @@ void manager::poll(size_t timeout_milliseconds)
         // Critical Section
         ///////////////////////////////////////////////////////////////////////
         connection_spinner_.lock();
-        mg_mgr_poll(&mg_manager_, websocket_poll_interval_milliseconds);
+        mg_mgr_poll(&manager_, websocket_poll_interval_milliseconds);
         connection_spinner_.unlock();
         ///////////////////////////////////////////////////////////////////////
     }
 }
 
-size_t manager::connection_count()
+size_t manager::connection_count() const
 {
+    // BUGBUG: unsafe access?
     return connections_.size();
 }
 
-bool manager::is_websocket_id(uint32_t id)
+bool manager::is_websocket_id(uint32_t id) const
 {
     return (id & websocket_id_mask) != 0;
 }
 
-void manager::add_connection(mg_connection_ptr connection)
+void manager::add_connection(connection_ptr connection)
 {
+    // BUGBUG: unsafe access?
     // TODO: is this id wraparound safe?
     // TODO: C++17, verify with VS2013(CTP).
     connections_.insert(connection);
 }
 
-void manager::remove_connection(mg_connection_ptr connection)
+void manager::remove_connection(connection_ptr connection)
 {
+    // BUGBUG: why is critical section required for query_work_map_ but not for
+    // connections_?
     auto it = connections_.find(connection);
     if (it != connections_.end())
     {
-        // TODO: portability??
-        closesocket(connection->sock);
+        // TODO: portability, result??
+        /* auto result = */ closesocket(connection->sock);
         connections_.erase(it);
     }
 
@@ -478,9 +501,9 @@ void manager::remove_connection(mg_connection_ptr connection)
 
 void manager::remove_connections()
 {
-    // TODO: portability??
+    // TODO: portability, result??
     for (auto connection: connections_)
-        closesocket(connection->sock);
+        /* auto result = */ closesocket(connection->sock);
 
     connections_.clear();
 
@@ -493,13 +516,13 @@ void manager::remove_connections()
 }
 
 // This is called with the connection_lock_ held across the mg_mgr_poll method.
-void manager::notify_query_work(mg_connection_ptr connection,
+void manager::notify_query_work(connection_ptr connection,
     const std::string& command, const std::string& arguments)
 {
     const auto handler = handlers_.find(command);
     if (handler == handlers_.end())
     {
-        static const std::string error = "Unrecognized query command";
+        static const std::string error = "Unrecognized query command.";
         send_unlocked(connection, error);
         return;
     }
@@ -534,7 +557,7 @@ void manager::notify_query_work(mg_connection_ptr connection,
     // mark. To avoid backlogging futher, we drop the connection lock so
     // that the websocket handling can continue during that time.
 
-    // BUGBUG: a given socket may only operate on a single thread.
+    // BUGBUG: a socket may only operate on a single thread, so why lock?
     connection_spinner_.unlock();
     const auto ec = service_->send(request);
     connection_spinner_.lock();
@@ -545,16 +568,20 @@ void manager::notify_query_work(mg_connection_ptr connection,
         LOG_WARNING(LOG_SERVER)
             << "Query send failure: " << ec.message();
 
-        static const std::string error = "Failed to send query to service";
+        static const std::string error = "Failed to send query to service.";
         send_unlocked(connection, error);
     }
 }
 
-void manager::send_locked(mg_connection_ptr connection, const std::string& data)
+void manager::send_unlocked(connection_ptr connection, const std::string& data)
 {
-    using namespace boost::detail;
+    mg_send_websocket_frame(connection, WEBSOCKET_OP_TEXT, data.c_str(),
+        data.size());
+}
 
-    ///////////////////////////////////////////////////////////////////////
+void manager::send_locked(connection_ptr connection, const std::string& data)
+{
+    ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     std::lock_guard<spinlock> guard(connection_spinner_);
 
@@ -562,20 +589,11 @@ void manager::send_locked(mg_connection_ptr connection, const std::string& data)
     // received the close event yet.
     if (connection->user_data != nullptr)
         send_unlocked(connection, data);
-    ///////////////////////////////////////////////////////////////////////
-}
-
-void manager::send_unlocked(mg_connection_ptr connection,
-    const std::string& data)
-{
-    mg_send_websocket_frame(connection, WEBSOCKET_OP_TEXT, data.c_str(),
-        data.size());
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 void manager::broadcast(const std::string& data)
 {
-    using namespace boost::detail;
-
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     std::lock_guard<spinlock> guard(connection_spinner_);
@@ -590,19 +608,19 @@ void manager::broadcast(const std::string& data)
 // ZMQ service publisher handlers.
 //-----------------------------------------------------------------------------
 
-bool manager::handle_heartbeat(zmq::socket& sub)
+bool manager::handle_heartbeat(zmq::socket& subscriber)
 {
     if (stopped())
         return false;
 
     zmq::message response;
-    sub.receive(response);
+    subscriber.receive(response);
 
     static constexpr size_t heartbeat_message_size = 2;
     if (response.empty() || response.size() != heartbeat_message_size)
     {
         LOG_WARNING(LOG_SERVER)
-            << "Failure handling heartbeat notification: invalid data";
+            << "Failure handling heartbeat notification: invalid data.";
 
         // Don't let a failure here prevent future notifications.
         return true;
@@ -626,13 +644,13 @@ bool manager::handle_heartbeat(zmq::socket& sub)
     return true;
 }
 
-bool manager::handle_transaction(zmq::socket& sub)
+bool manager::handle_transaction(zmq::socket& subscriber)
 {
     if (stopped())
         return false;
 
     zmq::message response;
-    sub.receive(response);
+    subscriber.receive(response);
 
     static constexpr size_t transaction_message_size = 2;
     if (response.empty() || response.size() != transaction_message_size)
@@ -662,13 +680,13 @@ bool manager::handle_transaction(zmq::socket& sub)
     return true;
 }
 
-bool manager::handle_block(zmq::socket& sub)
+bool manager::handle_block(zmq::socket& subscriber)
 {
     if (stopped())
         return false;
 
     zmq::message response;
-    sub.receive(response);
+    subscriber.receive(response);
 
     static constexpr size_t block_message_size = 3;
     if (response.empty() || response.size() != block_message_size)
@@ -687,7 +705,7 @@ bool manager::handle_block(zmq::socket& sub)
     response.dequeue<uint32_t>(height);
     response.dequeue(block_data);
 
-    bc::chain::block block;
+    chain::block block;
     block.from_data(block_data);
 
     // BUGBUG: sequence has been lost.

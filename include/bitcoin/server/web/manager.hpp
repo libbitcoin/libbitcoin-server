@@ -43,11 +43,8 @@ class BCS_API manager
   : public bc::protocol::zmq::worker
 {
 public:
-    // TODO: avoid exposing a term such as "mg" on public types. 
-    typedef struct mg_mgr mg_manager;
-
     // TODO: Avoid use of dumb pointers.
-    typedef struct mg_connection* mg_connection_ptr;
+    typedef struct mg_connection* connection_ptr;
 
     // Tracks websocket queries via the query_work_map.  Used for
     // matching websocket client requests to zmq query responses.
@@ -55,15 +52,15 @@ public:
     {
         // TODO: is a string really how we want to collect arguments?
         // Constructor provided for in-place construction.
-        query_work_item(mg_connection_ptr connection,
-            const std::string& command, const std::string& arguments)
+        query_work_item(connection_ptr connection, const std::string& command,
+            const std::string& arguments)
           : command(command),
             arguments(arguments),
             connection(connection)
         {
         }
 
-        mg_connection_ptr connection;
+        connection_ptr connection;
         std::string command;
         std::string arguments;
     };
@@ -71,20 +68,20 @@ public:
     typedef std::function<void(bc::protocol::zmq::message&, const std::string&,
         const std::string&, const uint32_t)> encode_handler;
 
-    typedef std::function<void(const data_chunk&, mg_connection_ptr)>
+    typedef std::function<void(const data_chunk&, connection_ptr)>
         decode_handler;
 
     // Handles translation of incoming JSON to zmq protocol methods and
     // converting the result back to JSON for web clients.
-    struct handler
+    struct handlers
     {
         std::string command;
         encode_handler encode;
         decode_handler decode;
     };
 
-    typedef std::set<mg_connection_ptr> connection_set;
-    typedef std::unordered_map<std::string, handler> handler_map;
+    typedef std::set<connection_ptr> connection_set;
+    typedef std::unordered_map<std::string, handlers> handler_map;
     typedef std::unordered_map<uint32_t, query_work_item>
         query_work_sequence_map;
 
@@ -95,14 +92,15 @@ public:
     /// Start the service.
     bool start() override;
 
-    bool is_websocket_id(uint32_t id);
-    size_t connection_count();
-    void add_connection(mg_connection_ptr connection);
-    void remove_connection(mg_connection_ptr connection);
-    void notify_query_work(mg_connection_ptr connection,
+    size_t connection_count() const;
+    bool is_websocket_id(uint32_t id) const;
+    void add_connection(connection_ptr connection);
+    void remove_connection(connection_ptr connection);
+    void notify_query_work(connection_ptr connection,
         const std::string& command, const std::string& arguments);
 
 protected:
+    typedef struct mg_mgr connection_manager;
     typedef bc::protocol::zmq::socket socket;
 
     // Initialize the websocket event loop and start a thread to poll events.
@@ -117,16 +115,16 @@ protected:
     // inproc communication endpoint is returned, used for synchronizing
     // communication from websocket clients to the query socket service in order
     // to avoid thread synchronized communication queues.
-    const config::endpoint& retrieve_endpoint(bool zeromq, bool worker=false);
+    const config::endpoint& retrieve_endpoint(bool zeromq,
+        bool worker=false) const;
 
-    // Calls the above method but returns endpoints in a format that
-    // can be connected to directly.
-    const config::endpoint retrieve_connect_endpoint(bool zeromq,
-        bool worker=false);
+    // Returns endpoint in a format that can be connected to directly.
+    config::endpoint retrieve_connect_endpoint(bool zeromq,
+        bool worker=false) const;
 
-    bool handle_block(socket& sub);
-    bool handle_heartbeat(socket& sub);
-    bool handle_transaction(socket& sub);
+    bool handle_block(socket& subscriber);
+    bool handle_heartbeat(socket& subscriber);
+    bool handle_transaction(socket& subscriber);
     bool handle_query(socket& dealer);
 
     std::string to_json(uint32_t height);
@@ -135,60 +133,51 @@ protected:
     std::string to_json(const chain::block& block, uint32_t height);
     std::string to_json(const chain::transaction& transaction);
 
-    // TODO: why is data a string?
-    // Send a message to the websocket client while taking a lock.
-    void send_locked(mg_connection_ptr connection, const std::string& data);  
-    
-    // TODO: why is data a string?
     // Send a message to the websocket client without taking a lock.
-    void send_unlocked(mg_connection_ptr connection, const std::string& data);
+    void send_unlocked(connection_ptr connection, const std::string& data);
 
-    // TODO: why is data a string?
+    // Send a message to the websocket client while taking a lock.
+    void send_locked(connection_ptr connection, const std::string& data);
+
     // Send a message to every connected websocket client.
     void broadcast(const std::string& data);
 
-    // TODO: why must we poll connections?
     // Poll websocket connections until specified timeout.
     void poll(size_t timeout_milliseconds);
 
-    // These are protected by?
-    mg_manager mg_manager_;
+    // The socket operates on only this one thread.
     bc::protocol::zmq::authenticator& authenticator_;
-
-    const bool secure_;
     const std::string security_;
-    const bc::server::settings& external_;
     const bc::protocol::settings& internal_;
 
 private:
-    // Threaded event-loop driver.
+    static void handle_event(connection_ptr connection, int event, void* data);
     void handle_websockets();
     void remove_connections();
 
-    // BUGBUG: sequence_ is unprotected.
+    // BUGBUG: these are not fully protected.
     uint32_t sequence_;
-
-    // TODO: it's not clear to me how this is working.
     connection_set connections_;
-    boost::detail::spinlock connection_spinner_;
+
+    // This protected by spin lock.
+    connection_manager manager_;
+    mutable boost::detail::spinlock connection_spinner_;
 
     // This is protected by mutex.
     query_work_sequence_map query_work_map_;
-    upgrade_mutex query_work_map_mutex_;
+    mutable upgrade_mutex query_work_map_mutex_;
 
-    // handlers_ is effectively const (safe/okay).
-    handler_map handlers_;
-
-    // The internal socket must operate on only this one thread.
+    // The socket operates on only this one thread.
     std::shared_ptr<socket> service_;
     std::shared_ptr<asio::thread> thread_;
 
+    // handlers_ is effectively const.
+    handler_map handlers_;
+    const bool secure_;
+    const bc::server::settings& external_;
     const std::string domain_;
     const std::string root_;
-    const std::string ca_certificate_;
-    const std::string server_private_key_;
-    const std::string server_certificate_;
-    const std::string client_certificates_;
+    const mg_serve_http_opts options_;
 };
 
 } // namespace server
