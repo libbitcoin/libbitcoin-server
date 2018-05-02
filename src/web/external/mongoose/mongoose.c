@@ -1425,13 +1425,12 @@ void mbuf_free(struct mbuf *mbuf) {
 void mbuf_resize(struct mbuf *a, size_t new_size) WEAK;
 void mbuf_resize(struct mbuf *a, size_t new_size) {
   if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
-    char *buf = (char *) MBUF_REALLOC(a->buf, new_size);
-    /*
-     * In case realloc fails, there's not much we can do, except keep things as
-     * they are. Note that NULL is a valid return value from realloc when
-     * size == 0, but that is covered too.
-     */
+    char *buf = MG_MALLOC(new_size);
     if (buf == NULL && new_size != 0) return;
+    if ((a->buf != NULL) && (a->len > 0)) {
+      memcpy(buf, a->buf, a->len);
+      free(a->buf);
+    }
     a->buf = buf;
     a->size = new_size;
   }
@@ -1461,9 +1460,12 @@ size_t mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
     a->len += len;
   } else {
     size_t new_size = (size_t)((a->len + len) * MBUF_SIZE_MULTIPLIER);
-    if ((p = (char *) MBUF_REALLOC(a->buf, new_size)) != NULL) {
+    if ((p = (char *) MG_MALLOC(new_size)) != NULL) {
+      if ((a->buf != NULL) && (a->len > 0)) {
+        memcpy(p, a->buf, a->len);
+        free(a->buf);
+      }
       a->buf = p;
-      memmove(a->buf + off + len, a->buf + off, a->len - off);
       if (buf != NULL) memcpy(a->buf + off, buf, len);
       a->len += len;
       a->size = new_size;
@@ -2775,8 +2777,9 @@ MG_INTERNAL void mg_recv_common(struct mg_connection *nc, void *buf, int len,
     int flags = MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT;
     mg_conn_addr_to_str(nc, h1, sizeof(h1), flags);
     mg_conn_addr_to_str(nc, h2, sizeof(h2), flags | MG_SOCK_STRINGIFY_REMOTE);
-    LOG(LL_ERROR, ("%p %s <-> %s recv buffer %lu bytes, not drained, closing",
-                   nc, h1, h2, (unsigned long) nc->recv_mbuf.len));
+    // This happens when a large packet is sent trying to disrupt the server.
+    /* LOG(LL_ERROR, ("%p %s <-> %s recv buffer %lu bytes, not drained, closing", */
+    /*                nc, h1, h2, (unsigned long) nc->recv_mbuf.len)); */
     nc->flags |= MG_F_CLOSE_IMMEDIATELY;
   }
 }

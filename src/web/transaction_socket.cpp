@@ -39,19 +39,15 @@ static constexpr auto poll_interval_milliseconds = 100u;
 
 transaction_socket::transaction_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : manager(authenticator, node, secure, domain),
-    settings_(node.server_settings()),
-    external_(node.protocol_settings()),
-    service_(settings_.websockets_transaction_endpoint(secure)),
-    node_(node)
+  : manager(authenticator, node, secure, domain)
 {
 }
 
 void transaction_socket::work()
 {
-    zmq::socket sub(authenticator_, role::subscriber, external_);
+    zmq::socket sub(authenticator_, role::subscriber, protocol_settings_);
 
-    const auto endpoint = retrieve_connect_endpoint(true);
+    const auto endpoint = retrieve_zeromq_connect_endpoint();
     const auto ec = sub.connect(endpoint);
 
     if (ec)
@@ -94,6 +90,16 @@ void transaction_socket::work()
             << " transaction websocket service.";
 
     finished(websocket_stop && sub_stop);
+}
+
+const config::endpoint& transaction_socket::retrieve_zeromq_endpoint() const
+{
+    return server_settings_.zeromq_transaction_endpoint(secure_);
+}
+
+const config::endpoint& transaction_socket::retrieve_websocket_endpoint() const
+{
+    return server_settings_.websockets_transaction_endpoint(secure_);
 }
 
 } // namespace server

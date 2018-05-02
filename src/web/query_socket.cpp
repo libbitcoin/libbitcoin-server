@@ -35,15 +35,83 @@ query_socket::query_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
   : manager(authenticator, node, secure, domain)
 {
+    // JSON to ZMQ request encoders.
+    //-------------------------------------------------------------------------
+
+    const auto encode_empty = [](zmq::message& request,
+        const std::string& command, const std::string& arguments, uint32_t id)
+    {
+        request.enqueue(command);
+        request.enqueue_little_endian(id);
+        request.enqueue(data_chunk{});
+    };
+
+    const auto encode_hash = [](zmq::message& request,
+        const std::string& command, const std::string& arguments, uint32_t id)
+    {
+        hash_digest hash;
+        DEBUG_ONLY(const auto result =) decode_hash(hash, arguments);
+        BITCOIN_ASSERT(result);
+        request.enqueue(command);
+        request.enqueue_little_endian(id);
+        request.enqueue(to_chunk(hash));
+    };
+
+    // JSON to ZMQ response decoders.
+    //-------------------------------------------------------------------------
+    const auto decode_height = [this](const data_chunk& data, const uint32_t id,
+        connection_ptr connection)
+    {
+        data_source istream(data);
+        istream_reader source(istream);
+        const auto height = source.read_4_bytes_little_endian();
+        send(connection, to_json(height, id));
+    };
+
+    const auto decode_transaction = [this](const data_chunk& data,
+        const uint32_t id, connection_ptr connection)
+    {
+        chain::transaction transaction;
+        transaction.from_data(data, true, true);
+        send(connection, to_json(transaction, id));
+    };
+
+    const auto decode_block_header = [this](const data_chunk& data,
+        const uint32_t id,connection_ptr connection)
+    {
+        chain::header header;
+        header.from_data(data, true);
+        send(connection, to_json(header, id));
+    };
+
+    handlers_["query fetch-height"] = handlers
+    {
+        "blockchain.fetch_last_height",
+        encode_empty,
+        decode_height
+    };
+
+    handlers_["query fetch-tx"] = handlers
+    {
+        "transaction_pool.fetch_transaction2",
+        encode_hash,
+        decode_transaction
+    };
+
+    handlers_["query fetch-header"] = handlers
+    {
+        "blockchain.fetch_block_header",
+        encode_hash,
+        decode_block_header
+    };
 }
 
 void query_socket::work()
 {
-    zmq::socket dealer(authenticator_, role::dealer, internal_);
-    zmq::socket query_receiver(authenticator_, role::pair, internal_);
+    zmq::socket dealer(authenticator_, role::dealer, protocol_settings_);
+    zmq::socket query_receiver(authenticator_, role::pair, protocol_settings_);
 
-    const auto endpoint = retrieve_connect_endpoint(true);
-    auto ec = query_receiver.bind(retrieve_endpoint(true, true));
+    auto ec = query_receiver.bind(retrieve_query_endpoint());
 
     if (ec)
     {
@@ -53,6 +121,7 @@ void query_socket::work()
         return;
     }
 
+    const auto endpoint = retrieve_zeromq_connect_endpoint();
     ec = dealer.connect(endpoint);
 
     if (ec)
@@ -105,6 +174,57 @@ void query_socket::work()
             << "Failed to disconnect " << security_ << " query connection.";
 
     finished(websocket_stop && query_stop && dealer_stop);
+}
+
+const config::endpoint& query_socket::retrieve_zeromq_endpoint() const
+{
+    return server_settings_.zeromq_query_endpoint(secure_);
+}
+
+const config::endpoint& query_socket::retrieve_websocket_endpoint() const
+{
+    return server_settings_.websockets_query_endpoint(secure_);
+}
+
+const config::endpoint& query_socket::retrieve_query_endpoint() const
+{
+    static const config::endpoint secure_query("inproc://secure_query_websockets");
+    static const config::endpoint public_query("inproc://public_query_websockets");
+    return secure_ ? secure_query : public_query;
+}
+
+void query_socket::handle_websockets()
+{
+    // A zmq socket must remain on its single thread.
+    service_ = std::make_shared<socket>(authenticator_, role::pair, protocol_settings_);
+    const auto ec = service_->connect(retrieve_query_endpoint());
+
+    if (ec)
+    {
+        // BUGBUG: This startup failure will not prevent the server startup.
+        LOG_ERROR(LOG_SERVER)
+            << "Failed to connect " << security_ << " query sender socket: "
+            << ec.message();
+        return;
+    }
+
+    // manager::poll eventually calls into the static (manager)
+    // handle_event callback, which calls manager::notify_query_work,
+    // which uses this service_ socket for sending.
+    manager::handle_websockets();
+
+    if (!service_->stop())
+    {
+        // BUGBUG: This startup failure will not prevent the server startup.
+        LOG_ERROR(LOG_SERVER)
+            << "Failed to disconnect " << security_ << " query sender.";
+    }
+}
+
+bool query_socket::start_websocket_handler()
+{
+    thread_ = std::make_shared<asio::thread>(&query_socket::handle_websockets, this);
+    return true;
 }
 
 } // namespace server

@@ -44,9 +44,19 @@ public:
         server_node& node, bool secure);
 
 protected:
-
     // Implement the socket.
     virtual void work();
+
+    virtual bool start_websocket_handler() override;
+
+    // Initialize the query specific zmq socket.
+    virtual void handle_websockets() override;
+
+    virtual const config::endpoint& retrieve_zeromq_endpoint() const override;
+    virtual const config::endpoint& retrieve_websocket_endpoint() const override;
+
+    const config::endpoint& retrieve_query_endpoint() const;
+    const config::endpoint& retrieve_zeromq_client_endpoint() const;
 };
 
 } // namespace server

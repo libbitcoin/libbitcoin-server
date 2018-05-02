@@ -49,9 +49,8 @@ protected:
     // Implement the service.
     virtual void work();
 
-private:
-    // These are thread safe.
-    const bc::protocol::settings& external_;
+    virtual const config::endpoint& retrieve_zeromq_endpoint() const override;
+    virtual const config::endpoint& retrieve_websocket_endpoint() const override;
 };
 
 } // namespace server

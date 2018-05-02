@@ -40,18 +40,15 @@ static constexpr auto poll_interval_milliseconds = 100u;
 
 block_socket::block_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : manager(authenticator, node, secure, domain),
-    external_(node.protocol_settings())
+  : manager(authenticator, node, secure, domain)
 {
 }
 
-// Implement worker as extended pub-sub.
-// The publisher drops messages for lost peers (clients) and high water.
 void block_socket::work()
 {
-    zmq::socket sub(authenticator_, role::subscriber, external_);
+    zmq::socket sub(authenticator_, role::subscriber, protocol_settings_);
 
-    const auto endpoint = retrieve_connect_endpoint(true);
+    const auto endpoint = retrieve_zeromq_connect_endpoint();
     const auto ec = sub.connect(endpoint);
 
     if (ec)
@@ -94,6 +91,16 @@ void block_socket::work()
             << " block websocket service.";
 
     finished(websocket_stop && sub_stop);
+}
+
+const config::endpoint& block_socket::retrieve_zeromq_endpoint() const
+{
+    return server_settings_.zeromq_block_endpoint(secure_);
+}
+
+const config::endpoint& block_socket::retrieve_websocket_endpoint() const
+{
+    return server_settings_.websockets_block_endpoint(secure_);
 }
 
 } // namespace server
