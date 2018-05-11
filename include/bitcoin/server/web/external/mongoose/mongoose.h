@@ -314,11 +314,13 @@ typedef struct _stati64 cs_stat_t;
 #endif
 
 #ifndef CS_ENABLE_STDIO
-#define CS_ENABLE_STDIO 1
+/* #define CS_ENABLE_STDIO 1 */
+#define CS_ENABLE_STDIO 0
 #endif
 
 #ifndef MG_ENABLE_BROADCAST
-#define MG_ENABLE_BROADCAST 1
+/* #define MG_ENABLE_BROADCAST 1 */
+#define MG_ENABLE_BROADCAST 0
 #endif
 
 #ifndef MG_ENABLE_DIRECTORY_LISTING
@@ -401,7 +403,8 @@ unsigned int sleep(unsigned int seconds);
 #include <string.h>
 #include <sys/param.h>
 #include <sys/socket.h>
-#include <sys/select.h>
+#include <poll.h>
+/* #include <sys/select.h> */
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -530,7 +533,8 @@ typedef struct stat cs_stat_t;
 #define __cdecl
 #define _FILE_OFFSET_BITS 32
 
-#define MG_LWIP 1
+/* #define MG_LWIP 1 */
+#define MG_LWIP 0
 
 #ifndef MG_NET_IF
 #define MG_NET_IF MG_NET_IF_SOCKET
@@ -3539,6 +3543,8 @@ struct mg_connection {
 #define MG_F_USER_4 (1 << 23)
 #define MG_F_USER_5 (1 << 24)
 #define MG_F_USER_6 (1 << 25)
+
+  char read_buffer[1024];
 };
 
 /*

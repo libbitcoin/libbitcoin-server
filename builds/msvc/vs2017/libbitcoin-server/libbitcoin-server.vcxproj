@@ -166,6 +166,7 @@
     <ClCompile Include="..\..\..\..\src\web\manager.cpp" />
     <ClCompile Include="..\..\..\..\src\web\query_socket.cpp" />
     <ClCompile Include="..\..\..\..\src\web\transaction_socket.cpp" />
+    <ClCompile Include="..\..\..\..\src\web\utility.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp" />

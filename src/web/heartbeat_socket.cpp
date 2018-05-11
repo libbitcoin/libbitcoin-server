@@ -63,6 +63,10 @@ void heartbeat_socket::work()
         return;
     }
 
+    // Hold a shared reference to the websocket thread_ so that we can
+    // properly call stop_websocket_handler on cleanup.
+    const auto thread_ref = thread_;
+
     zmq::poller poller;
     poller.add(sub);
 
@@ -73,20 +77,19 @@ void heartbeat_socket::work()
             break;
     }
 
-    const auto websocket_stop = stop_websocket_handler();
     const auto sub_stop = sub.stop();
-
-    if (!websocket_stop)
-        LOG_ERROR(LOG_SERVER)
-            << "Failed to stop " << security_ << " " << domain
-            << " websocket handler: " << ec.message();
 
     if (!sub_stop)
         LOG_ERROR(LOG_SERVER)
             << "Failed to disconnect " << security_
             << " hearbeat websocket service.";
 
-    finished(websocket_stop && sub_stop);
+    if (!stop_websocket_handler())
+        LOG_ERROR(LOG_SERVER)
+            << "Failed to stop " << security_
+            << " heartbeat websocket handler";
+
+    finished(sub_stop);
 }
 
 const config::endpoint& heartbeat_socket::retrieve_zeromq_endpoint() const

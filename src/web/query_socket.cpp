@@ -140,6 +140,10 @@ void query_socket::work()
         return;
     }
 
+    // Hold a shared reference to the websocket thread_ so that we can
+    // properly call stop_websocket_handler on cleanup.
+    const auto thread_ref = thread_;
+
     zmq::poller poller;
     poller.add(dealer);
     poller.add(query_receiver);
@@ -156,14 +160,8 @@ void query_socket::work()
             break;
     }
 
-    const auto websocket_stop = stop_websocket_handler();
     const auto query_stop = query_receiver.stop();
     const auto dealer_stop = dealer.stop();
-
-    if (!websocket_stop)
-        LOG_ERROR(LOG_SERVER)
-            << "Failed to stop " << security_ << " websocket handler: "
-            << ec.message();
 
     if (!query_stop)
         LOG_ERROR(LOG_SERVER)
@@ -173,7 +171,12 @@ void query_socket::work()
         LOG_ERROR(LOG_SERVER)
             << "Failed to disconnect " << security_ << " query connection.";
 
-    finished(websocket_stop && query_stop && dealer_stop);
+    if (!stop_websocket_handler())
+        LOG_ERROR(LOG_SERVER)
+            << "Failed to stop " << security_
+            << " query websocket handler";
+
+    finished(query_stop && dealer_stop);
 }
 
 const config::endpoint& query_socket::retrieve_zeromq_endpoint() const
@@ -197,14 +200,17 @@ void query_socket::handle_websockets()
 {
     // A zmq socket must remain on its single thread.
     service_ = std::make_shared<socket>(authenticator_, role::pair, protocol_settings_);
-    const auto ec = service_->connect(retrieve_query_endpoint());
+    // Hold a shared reference to the service_ socket_ so that we can
+    // properly call stop on cleanup.
+    const auto service_ref = service_;
+    const auto ec = service_ref->connect(retrieve_query_endpoint());
 
     if (ec)
     {
-        // BUGBUG: This startup failure will not prevent the server startup.
         LOG_ERROR(LOG_SERVER)
             << "Failed to connect " << security_ << " query sender socket: "
             << ec.message();
+        thread_status_.set_value(false);
         return;
     }
 
@@ -213,9 +219,8 @@ void query_socket::handle_websockets()
     // which uses this service_ socket for sending.
     manager::handle_websockets();
 
-    if (!service_->stop())
+    if (!service_ref->stop())
     {
-        // BUGBUG: This startup failure will not prevent the server startup.
         LOG_ERROR(LOG_SERVER)
             << "Failed to disconnect " << security_ << " query sender.";
     }
@@ -223,8 +228,10 @@ void query_socket::handle_websockets()
 
 bool query_socket::start_websocket_handler()
 {
+    std::future<bool> status = thread_status_.get_future();
     thread_ = std::make_shared<asio::thread>(&query_socket::handle_websockets, this);
-    return true;
+    status.wait();
+    return status.get();
 }
 
 } // namespace server

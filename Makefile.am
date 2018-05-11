@@ -55,6 +55,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/web/manager.cpp \
     src/web/query_socket.cpp \
     src/web/transaction_socket.cpp \
+    src/web/utility.cpp \
     src/web/external/mbedtls/aes.c \
     src/web/external/mbedtls/aesni.c \
     src/web/external/mbedtls/arc4.c \

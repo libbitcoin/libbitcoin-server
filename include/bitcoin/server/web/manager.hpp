@@ -159,6 +159,7 @@ protected:
     // The service_ socket operates on only the below member thread_.
     std::shared_ptr<socket> service_;
     std::shared_ptr<asio::thread> thread_;
+    std::promise<bool> thread_status_;
 
 private:
     static void handle_event(connection_ptr connection, int event, void* data);

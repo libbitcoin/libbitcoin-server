@@ -26,21 +26,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 
-extern "C"
-{
-
-// Required implementation provided for mbedtls random data usage.
-int mg_ssl_if_mbed_random(void* connection, uint8_t* buffer, size_t length)
-{
-    bc::data_chunk data;
-    data.reserve(length);
-    bc::pseudo_random_fill(data);
-    std::memcpy(buffer, data.data(), data.size());
-    return 0;
-}
-
-}
-
 namespace libbitcoin {
 namespace server {
 
@@ -57,7 +42,7 @@ using role = zmq::socket::role;
 static constexpr auto max_address_length = 32u;
 
 static constexpr auto poll_interval_milliseconds = 100u;
-static constexpr auto websocket_poll_interval_milliseconds = 10u;
+static constexpr auto websocket_poll_interval_milliseconds = 1u;
 
 // The protocol message_size_limit is on the order of 1M.  The maximum
 // websocket message size is set to a fraction of this, closer to 62K.
@@ -88,9 +73,7 @@ void manager::handle_event(connection_ptr connection, int event, void* data)
     {
         case MG_EV_WEBSOCKET_HANDSHAKE_DONE:
         {
-            BITCOIN_ASSERT(data != nullptr);
             auto instance = static_cast<manager*>(connection->user_data);
-
             BITCOIN_ASSERT(instance != nullptr);
             instance->add_connection(connection);
 
@@ -103,10 +86,9 @@ void manager::handle_event(connection_ptr connection, int event, void* data)
 
         case MG_EV_WEBSOCKET_FRAME:
         {
-            BITCOIN_ASSERT(data != nullptr);
             const auto message = static_cast<websocket_message*>(data);
-
             BITCOIN_ASSERT(message != nullptr);
+
             const auto input = std::string(reinterpret_cast<char*>(
                 message->data), message->size);
 
@@ -156,6 +138,8 @@ void manager::handle_event(connection_ptr connection, int event, void* data)
             BITCOIN_ASSERT(instance != nullptr);
 
             const auto message = static_cast<http_message*>(data);
+            BITCOIN_ASSERT(message != nullptr);
+
             mg_serve_http(connection, message, instance->options_);
             break;
         }
@@ -191,8 +175,6 @@ void manager::handle_event(connection_ptr connection, int event, void* data)
     }
 }
 
-// TODO: eliminate domain parameter and implement service distinctions in
-// overrides of manager virtual methods.
 manager::manager(zmq::authenticator& authenticator, server_node& node,
     bool secure, const std::string& domain)
   : worker(priority(node.server_settings().priority)),
@@ -274,11 +256,10 @@ void manager::handle_websockets()
 
     if (connection == nullptr)
     {
-        // BUGBUG: This startup failure will not prevent the server startup.
         LOG_ERROR(LOG_SERVER)
             << "Failed to bind listener websocket to port " << port << ": "
             << error;
-        stop();
+        thread_status_.set_value(false);
         return;
     }
 
@@ -287,22 +268,25 @@ void manager::handle_websockets()
         << port;
 
     connection->user_data = static_cast<void*>(this);
-    // TODO: Add "websocket_max_message_size" option to protocol.
+    // TODO: Add "websocket_max_message_size" option to protocol settings??
     connection->recv_mbuf_limit = protocol_settings_.message_size_limit /
         websocket_message_size_divisor;
     mg_set_protocol_http_websocket(connection);
 
+    thread_status_.set_value(true);
     while (!stopped())
         poll(poll_interval_milliseconds);
 
-    // Cleans up internal socket connections.
+    // Cleans up internal wesocket connections and state.
     mg_mgr_free(&manager_);
 }
 
 bool manager::start_websocket_handler()
 {
+    std::future<bool> status = thread_status_.get_future();
     thread_ = std::make_shared<asio::thread>(&manager::handle_websockets, this);
-    return true;
+    status.wait();
+    return status.get();
 }
 
 bool manager::stop_websocket_handler()
@@ -346,12 +330,13 @@ void manager::remove_connection(connection_ptr connection)
     {
         // TODO: tearing down a connection is still O(n) where n is
         // the amount of remaining outstanding queries
+
+        ////////////////////////////////////////////////////////////////////
+        // Critical Section
+        correlation_lock_.lock_upgrade();
         auto& query_work_map = it->second;
         for (auto query_work: query_work_map)
         {
-            ////////////////////////////////////////////////////////////////////
-            // Critical Section
-            correlation_lock_.lock_upgrade();
             const auto id = query_work.second.correlation_id;
             auto correlation = correlations_.find(id);
             if (correlation != correlations_.end())
@@ -361,9 +346,9 @@ void manager::remove_connection(connection_ptr connection)
                 correlations_.erase(correlation);
                 correlation_lock_.unlock_and_lock_upgrade();
             }
-            correlation_lock_.unlock_upgrade();
-            ////////////////////////////////////////////////////////////////////
         }
+        correlation_lock_.unlock_upgrade();
+        ////////////////////////////////////////////////////////////////////
 
         // Clear the query_work_map for this connection before removal.
         query_work_map.clear();
@@ -375,7 +360,7 @@ void manager::notify_query_work(connection_ptr connection,
     const std::string& command, const uint32_t id,
     const std::string& arguments)
 {
-    BITCOIN_ASSERT(!handler_.empty());
+    BITCOIN_ASSERT(!handlers_.empty());
 
     const auto handler = handlers_.find(command);
     if (handler == handlers_.end())
@@ -417,10 +402,10 @@ void manager::notify_query_work(connection_ptr connection,
 
     // While each connection has its own id map (meaning correlation
     // ids passed from the web client are unique on a per connection
-    // basis, potentially utilizing the full number space available),
-    // we need an internal mapping that will allow us to correlate
-    // each zmq request/response pair with the connection and original
-    // id number that originated it.  The client never sees this
+    // basis, potentially utilizing the full range available), we need
+    // an internal mapping that will allow us to correlate each zmq
+    // request/response pair with the connection and original id
+    // number that originated it.  The client never sees this
     // sequence_ value.
     correlations_[sequence_++] = { connection, id };
 
@@ -638,9 +623,10 @@ bool manager::handle_query(zmq::socket& dealer)
     auto query_work = query_work_map.find(id);
     if (query_work == query_work_map.end())
     {
-        static const std::string error = "Unmatched websocket query work id.";
-        send(query_work->second.connection, error);
-        LOG_ERROR(LOG_SERVER) << error << " (" << id << ")";
+        // This can happen anytime the client disconnects before this
+        // code is reached. We can safely discard the result here.
+        LOG_DEBUG(LOG_SERVER)
+            << "Unmatched websocket query work id: " << id;
         return true;
     }
 
@@ -668,9 +654,10 @@ bool manager::handle_query(zmq::socket& dealer)
         return true;
     }
 
-    // Decode response and send query output to websocket client.
+    // Decode response and send query output to websocket client
     const auto payload = source.read_bytes();
-    handler->second.decode(payload, id, work.connection);
+    if (work.connection->user_data != nullptr)
+        handler->second.decode(payload, id, work.connection);
     return true;
 }
 
