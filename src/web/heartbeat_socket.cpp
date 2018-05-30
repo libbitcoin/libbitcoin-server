@@ -23,6 +23,7 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/web/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -36,7 +37,7 @@ using role = zmq::socket::role;
 
 heartbeat_socket::heartbeat_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : manager(authenticator, node, secure, domain)
+  : socket(authenticator, node, secure, domain)
 {
 }
 
@@ -90,6 +91,39 @@ void heartbeat_socket::work()
             << " heartbeat websocket handler";
 
     finished(sub_stop);
+}
+
+// Called by this thread's work() method.
+// Returns true to continue future notifications.
+bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
+{
+    if (stopped())
+        return false;
+
+    zmq::message response;
+    subscriber.receive(response);
+
+    static constexpr size_t heartbeat_message_size = 2;
+    if (response.empty() || response.size() != heartbeat_message_size)
+    {
+        LOG_WARNING(LOG_SERVER)
+            << "Failure handling heartbeat notification: invalid data.";
+
+        // Don't let a failure here prevent future notifications.
+        return true;
+    }
+
+    uint16_t sequence;
+    uint64_t height;
+    response.dequeue<uint16_t>(sequence);
+    response.dequeue<uint64_t>(height);
+
+    broadcast(web::to_json(height, sequence));
+
+    LOG_VERBOSE(LOG_SERVER)
+        << "Sent " << security_ << " heartbeat [" << height << "]";
+
+    return true;
 }
 
 const config::endpoint& heartbeat_socket::retrieve_zeromq_endpoint() const

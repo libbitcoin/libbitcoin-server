@@ -1,4 +1,4 @@
-#include <bitcoin/server/web/external/mongoose/mongoose.h>
+#include "mongoose.h"
 
 #ifdef MG_MODULE_LINES
 #line 1 "mongoose/src/internal.h"

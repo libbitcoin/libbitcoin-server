@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_HEARTBEAT_SOCKET_HPP
-#define LIBBITCOIN_SERVER_HEARTBEAT_SOCKET_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HEARTBEAT_SOCKET_HPP
+#define LIBBITCOIN_SERVER_WEB_HEARTBEAT_SOCKET_HPP
 
 #include <cstdint>
 #include <memory>
@@ -25,7 +25,7 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/manager.hpp>
+#include <bitcoin/server/web/socket.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -35,22 +35,26 @@ class server_node;
 // This class is thread safe.
 // Subscribe to a pulse from a dedicated socket endpoint.
 class BCS_API heartbeat_socket
-  : public manager
+  : public socket
 {
 public:
     typedef std::shared_ptr<heartbeat_socket> ptr;
 
-    /// Construct a heartbeat endpoint.
+    /// Construct a heartbeat socket service endpoint.
     heartbeat_socket(bc::protocol::zmq::authenticator& authenticator,
         server_node& node, bool secure);
 
 protected:
 
     // Implement the service.
-    virtual void work();
+    virtual void work() override;
 
     virtual const config::endpoint& retrieve_zeromq_endpoint() const override;
-    virtual const config::endpoint& retrieve_websocket_endpoint() const override;
+    virtual const config::endpoint& retrieve_websocket_endpoint()
+        const override;
+
+private:
+    bool handle_heartbeat(bc::protocol::zmq::socket& subscriber);
 };
 
 } // namespace server

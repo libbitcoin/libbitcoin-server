@@ -16,43 +16,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_BLOCK_SOCKET_HPP
-#define LIBBITCOIN_SERVER_WEB_BLOCK_SOCKET_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_JSON_STRING_HPP
+#define LIBBITCOIN_SERVER_WEB_JSON_STRING_HPP
 
-#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/web/socket.hpp>
+#include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
+namespace web {
 
-class server_node;
+// Object to JSON converters.
+//-----------------------------------------------------------------------------
 
-// This class is thread safe.
-// Subscribe to block acceptances into the long chain from a dedicated
-// socket endpoint.
-class BCS_API block_socket
-  : public socket
-{
-public:
-    typedef std::shared_ptr<block_socket> ptr;
+std::string to_json(const boost::property_tree::ptree& tree);
+std::string to_json(uint64_t height, uint32_t sequence);
+std::string to_json(const std::error_code& code, uint32_t sequence);
+std::string to_json(const bc::chain::header& header, uint32_t sequence);
+std::string to_json(const bc::chain::block& block, uint32_t height,
+    uint32_t sequence);
+std::string to_json(const bc::chain::transaction& transaction,
+    uint32_t sequence);
 
-    /// Construct a block socket service endpoint.
-    block_socket(bc::protocol::zmq::authenticator& authenticator,
-        server_node& node, bool secure);
-
-protected:
-    // Implement the service.
-    virtual void work() override;
-
-    virtual const config::endpoint& retrieve_zeromq_endpoint() const override;
-    virtual const config::endpoint& retrieve_websocket_endpoint()
-        const override;
-
-private:
-    bool handle_block(bc::protocol::zmq::socket& subscriber);
-};
-
+} // namespace web
 } // namespace server
 } // namespace libbitcoin
 

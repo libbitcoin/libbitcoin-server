@@ -16,35 +16,33 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_MANAGER_HPP
-#define LIBBITCOIN_SERVER_WEB_MANAGER_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_SOCKET_HPP
+#define LIBBITCOIN_SERVER_WEB_SOCKET_HPP
 
 #include <cstdint>
 #include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <boost/algorithm/string.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/messages/message.hpp>
 
 // TODO: avoid public exposure of this header (move types to cpp).
-#include <bitcoin/server/web/external/mongoose/mongoose.h>
+#include <../src/web/external/mongoose/mongoose.h>
 
 namespace libbitcoin {
 namespace server {
 
 class server_node;
 
-// TODO: bc::server::manager is ambiguous name.
-// RESP: We're in the subdirectory of web, so web_manager seemed redundant.  Rename to socket_manager?
-class BCS_API manager
+class BCS_API socket
   : public bc::protocol::zmq::worker
 {
 public:
-    // TODO: Avoid use of dumb pointers.
+    // These "dumb" pointers are managed internally by mongoose and
+    // exposed to us via their API.
     typedef struct mg_connection* connection_ptr;
 
     // Tracks websocket queries via the query_work_map.  Used for
@@ -92,8 +90,8 @@ public:
         query_correlation_map;
     typedef std::unordered_map<std::string, handlers> handler_map;
 
-    /// Construct a manager class.
-    manager(bc::protocol::zmq::authenticator& authenticator, server_node& node,
+    /// Construct a socket class.
+    socket(bc::protocol::zmq::authenticator& authenticator, server_node& node,
         bool secure, const std::string& domain);
 
     /// Start the service.
@@ -108,7 +106,6 @@ public:
 
 protected:
     typedef struct mg_mgr connection_manager;
-    typedef bc::protocol::zmq::socket socket;
 
     // Initialize the websocket event loop and start a thread to poll events.
     virtual bool start_websocket_handler();
@@ -120,19 +117,7 @@ protected:
 
     virtual const config::endpoint& retrieve_zeromq_endpoint() const = 0;
     virtual const config::endpoint& retrieve_websocket_endpoint() const = 0;
-
-    bool handle_block(socket& subscriber);
-    bool handle_heartbeat(socket& subscriber);
-    bool handle_transaction(socket& subscriber);
-    bool handle_query(socket& dealer);
-
-    std::string to_json(uint64_t height, uint32_t sequence) const;
-    std::string to_json(const std::error_code& code, uint32_t sequence) const;
-    std::string to_json(const chain::header& header, uint32_t sequence) const;
-    std::string to_json(const chain::block& block, uint32_t height,
-         uint32_t sequence) const;
-    std::string to_json(const chain::transaction& transaction,
-         uint32_t sequence) const;
+    virtual const std::shared_ptr<bc::protocol::zmq::socket> get_service() const;
 
     // Send a message to the websocket client.
     void send(connection_ptr connection, const std::string& json);
@@ -156,21 +141,22 @@ protected:
     // handlers_ is effectively const.
     handler_map handlers_;
 
-    // The service_ socket operates on only the below member thread_.
-    std::shared_ptr<socket> service_;
+    // For query socket, get_service() is used to retrieve the zmq
+    // socket connected to the query_socket service.  This socket
+    // operates on only the below member thread_.
     std::shared_ptr<asio::thread> thread_;
     std::promise<bool> thread_status_;
+
+    // Used by the query_socket class.
+    uint32_t sequence_;
+    connection_work_map connections_;
+    query_correlation_map correlations_;
+    mutable upgrade_mutex correlation_lock_;
 
 private:
     static void handle_event(connection_ptr connection, int event, void* data);
 
     connection_manager manager_;
-
-    uint32_t sequence_;
-    connection_work_map connections_;
-    query_correlation_map correlations_;
-
-    mutable upgrade_mutex correlation_lock_;
 
     const std::string domain_;
     const std::string root_;

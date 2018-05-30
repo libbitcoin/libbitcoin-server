@@ -24,6 +24,7 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/web/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -39,7 +40,7 @@ static constexpr auto poll_interval_milliseconds = 100u;
 
 transaction_socket::transaction_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : manager(authenticator, node, secure, domain)
+  : socket(authenticator, node, secure, domain)
 {
 }
 
@@ -93,6 +94,42 @@ void transaction_socket::work()
             << " transaction websocket handler";
 
     finished(sub_stop);
+}
+
+// Called by this thread's work() method.
+// Returns true to continue future notifications.
+bool transaction_socket::handle_transaction(zmq::socket& subscriber)
+{
+    if (stopped())
+        return false;
+
+    zmq::message response;
+    subscriber.receive(response);
+
+    static constexpr size_t transaction_message_size = 2;
+    if (response.empty() || response.size() != transaction_message_size)
+    {
+        LOG_WARNING(LOG_SERVER)
+            << "Failure handling transaction notification: invalid data";
+
+        // Don't let a failure here prevent future notifications.
+        return true;
+    }
+
+    uint16_t sequence;
+    data_chunk transaction_data;
+    response.dequeue<uint16_t>(sequence);
+    response.dequeue(transaction_data);
+
+    chain::transaction tx;
+    tx.from_data(transaction_data, true, true);
+
+    broadcast(web::to_json(tx, sequence));
+
+    LOG_VERBOSE(LOG_SERVER)
+        << "Sent " << security_ << " tx [" << encode_hash(tx.hash()) << "]";
+
+    return true;
 }
 
 const config::endpoint& transaction_socket::retrieve_zeromq_endpoint() const

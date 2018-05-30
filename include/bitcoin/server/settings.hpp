@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>

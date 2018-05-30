@@ -20,6 +20,7 @@
 
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/web/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -33,7 +34,7 @@ static constexpr auto poll_interval_milliseconds = 100u;
 
 query_socket::query_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : manager(authenticator, node, secure, domain)
+  : socket(authenticator, node, secure, domain)
 {
     // JSON to ZMQ request encoders.
     //-------------------------------------------------------------------------
@@ -65,7 +66,7 @@ query_socket::query_socket(zmq::authenticator& authenticator,
         data_source istream(data);
         istream_reader source(istream);
         const auto height = source.read_4_bytes_little_endian();
-        send(connection, to_json(height, id));
+        send(connection, web::to_json(height, id));
     };
 
     const auto decode_transaction = [this](const data_chunk& data,
@@ -73,7 +74,7 @@ query_socket::query_socket(zmq::authenticator& authenticator,
     {
         chain::transaction transaction;
         transaction.from_data(data, true, true);
-        send(connection, to_json(transaction, id));
+        send(connection, web::to_json(transaction, id));
     };
 
     const auto decode_block_header = [this](const data_chunk& data,
@@ -81,7 +82,7 @@ query_socket::query_socket(zmq::authenticator& authenticator,
     {
         chain::header header;
         header.from_data(data, true);
-        send(connection, to_json(header, id));
+        send(connection, web::to_json(header, id));
     };
 
     handlers_["query fetch-height"] = handlers
@@ -179,32 +180,166 @@ void query_socket::work()
     finished(query_stop && dealer_stop);
 }
 
-const config::endpoint& query_socket::retrieve_zeromq_endpoint() const
+// Called by this thread's zmq work() method.
+// Returns true to continue future notifications.
+//
+// Correlation lock usage is required because it protects the shared
+// correlation map of query ids, which is also used by the websocket
+// thread event handler (e.g. remove_connection, notify_query_work).
+bool query_socket::handle_query(zmq::socket& dealer)
+{
+    if (stopped())
+        return false;
+
+    zmq::message response;
+    auto ec = dealer.receive(response);
+
+    if (ec)
+    {
+        LOG_ERROR(LOG_SERVER)
+            << "Failed to receive response from dealer: " << ec.message();
+        return true;
+    }
+
+    static constexpr size_t query_message_size = 3;
+    if (response.empty() || response.size() != query_message_size)
+    {
+        LOG_WARNING(LOG_SERVER)
+            << "Failure handling query response: invalid data size.";
+        return true;
+    }
+
+    uint32_t sequence;
+    data_chunk data;
+    std::string command;
+
+    if (!response.dequeue(command) ||
+        !response.dequeue<uint32_t>(sequence) ||
+        !response.dequeue(data))
+    {
+        LOG_WARNING(LOG_SERVER)
+            << "Failure handling query response: invalid data parts.";
+        return true;
+    }
+
+    ///////////////////////////////////////////////////////////////////////
+    // Critical Section
+    correlation_lock_.lock_upgrade();
+
+    // Use internal sequence number to find connection and work id.
+    auto correlation = correlations_.find(sequence);
+    if (correlation == correlations_.end())
+    {
+        correlation_lock_.unlock_upgrade();
+
+        // This will happen anytime the client disconnects before this
+        // handler is called. We can safely discard the result here.
+        LOG_DEBUG(LOG_SERVER)
+            << "Unmatched websocket query work item sequence: " << sequence;
+        return true;
+    }
+
+    auto connection = correlation->second.first;
+    const auto id = correlation->second.second;
+
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    correlation_lock_.unlock_upgrade_and_lock();
+    correlations_.erase(correlation);
+    // TODO: Can this 2 step unlock be done atomically?
+    correlation_lock_.unlock_and_lock_upgrade();
+    correlation_lock_.unlock_upgrade();
+    ///////////////////////////////////////////////////////////////////////
+
+    // Use connection to locate connection state.
+    auto it = connections_.find(connection);
+    if (it == connections_.end())
+    {
+        LOG_ERROR(LOG_SERVER)
+            << "Query work completed for unknown connection";
+        return true;
+    }
+
+    // Use work id to locate the query work item.
+    auto& query_work_map = it->second;
+    auto query_work = query_work_map.find(id);
+    if (query_work == query_work_map.end())
+    {
+        // This can happen anytime the client disconnects before this
+        // code is reached. We can safely discard the result here.
+        LOG_DEBUG(LOG_SERVER)
+            << "Unmatched websocket query work id: " << id;
+        return true;
+    }
+
+    const auto work = query_work->second;
+    query_work_map.erase(query_work);
+
+    BITCOIN_ASSERT(work.id == id);
+    BITCOIN_ASSERT(work.correlation_id == sequence);
+
+    data_source istream(data);
+    istream_reader source(istream);
+    ec = source.read_error_code();
+    if (ec)
+    {
+        send(work.connection, web::to_json(ec, id));
+        return true;
+    }
+
+    const auto handler = handlers_.find(work.command);
+    if (handler == handlers_.end())
+    {
+        static constexpr auto error = bc::error::not_implemented;
+        send(work.connection, web::to_json(error, id));
+        return true;
+    }
+
+    // Decode response and send query output to websocket client.
+    // Note that this send is a web socket send from the zmq thread.
+    // It does not need to be protected because the send is buffered
+    // and the actual socket write happens on the web socket thread
+    // via socket::poll that is eventually called from the
+    // socket::handle_websockets loop.
+    const auto payload = source.read_bytes();
+    if (work.connection->user_data != nullptr)
+        handler->second.decode(payload, id, work.connection);
+    return true;
+}
+
+const endpoint& query_socket::retrieve_zeromq_endpoint() const
 {
     return server_settings_.zeromq_query_endpoint(secure_);
 }
 
-const config::endpoint& query_socket::retrieve_websocket_endpoint() const
+const endpoint& query_socket::retrieve_websocket_endpoint() const
 {
     return server_settings_.websockets_query_endpoint(secure_);
 }
 
-const config::endpoint& query_socket::retrieve_query_endpoint() const
+const endpoint& query_socket::retrieve_query_endpoint() const
 {
-    static const config::endpoint secure_query("inproc://secure_query_websockets");
-    static const config::endpoint public_query("inproc://public_query_websockets");
+    static const endpoint secure_query("inproc://secure_query_websockets");
+    static const endpoint public_query("inproc://public_query_websockets");
     return secure_ ? secure_query : public_query;
 }
 
+const std::shared_ptr<zmq::socket> query_socket::get_service() const
+{
+    return service_;
+}
+
+// This method is run by the web socket thread.
 void query_socket::handle_websockets()
 {
     // A zmq socket must remain on its single thread.
-    service_ = std::make_shared<socket>(authenticator_, role::pair, protocol_settings_);
-    // Hold a shared reference to the service_ socket_ so that we can
-    // properly call stop on cleanup.
+    service_ = std::make_shared<zmq::socket>(authenticator_, role::pair,
+        protocol_settings_);
+
+    // Hold a reference to this service_ socket member by this thread
+    // method so that we can properly shutdown even if the
+    // query_socket object is destroyed.
     const auto service_ref = service_;
     const auto ec = service_ref->connect(retrieve_query_endpoint());
-
     if (ec)
     {
         LOG_ERROR(LOG_SERVER)
@@ -214,10 +349,13 @@ void query_socket::handle_websockets()
         return;
     }
 
-    // manager::poll eventually calls into the static (manager)
-    // handle_event callback, which calls manager::notify_query_work,
-    // which uses this service_ socket for sending.
-    manager::handle_websockets();
+    // socket::handle_websockets does web socket initialization and
+    // runs the web event loop.  Inside that loop, socket::poll
+    // eventually calls into the static handle_event callback, which
+    // calls socket::notify_query_work, which uses this service_ zmq
+    // socket for sending incoming requests and reading the json web
+    // responses.
+    socket::handle_websockets();
 
     if (!service_ref->stop())
     {

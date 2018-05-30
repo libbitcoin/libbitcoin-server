@@ -26,6 +26,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/web/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -40,7 +41,7 @@ static constexpr auto poll_interval_milliseconds = 100u;
 
 block_socket::block_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : manager(authenticator, node, secure, domain)
+  : socket(authenticator, node, secure, domain)
 {
 }
 
@@ -94,6 +95,44 @@ void block_socket::work()
             << " block websocket handler";
 
     finished(sub_stop);
+}
+
+// Called by this thread's work() method.
+// Returns true to continue future notifications.
+bool block_socket::handle_block(zmq::socket& subscriber)
+{
+    if (stopped())
+        return false;
+
+    zmq::message response;
+    subscriber.receive(response);
+
+    static constexpr size_t block_message_size = 3;
+    if (response.empty() || response.size() != block_message_size)
+    {
+        LOG_WARNING(LOG_SERVER)
+            << "Failure handling block notification: invalid data";
+
+        // Don't let a failure here prevent future notifications.
+        return true;
+    }
+
+    uint16_t sequence;
+    uint32_t height;
+    data_chunk block_data;
+    response.dequeue<uint16_t>(sequence);
+    response.dequeue<uint32_t>(height);
+    response.dequeue(block_data);
+
+    chain::block block;
+    block.from_data(block_data);
+
+    // Format and send transaction to websocket subscribers.
+    broadcast(web::to_json(block, height, sequence));
+
+    LOG_VERBOSE(LOG_SERVER)
+        << "Sent " << security_ << " block [" << height << "]";
+    return true;
 }
 
 const config::endpoint& block_socket::retrieve_zeromq_endpoint() const

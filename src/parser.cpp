@@ -18,13 +18,7 @@
  */
 #include <bitcoin/server/parser.hpp>
 
-#include <cstdint>
-#include <iostream>
-#include <string>
-#include <vector>
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/define.hpp>
-#include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/settings.hpp>
 
 BC_DECLARE_CONFIG_DEFAULT_PATH("libbitcoin" / "bs.cfg")

@@ -52,8 +52,9 @@ src_libbitcoin_server_la_SOURCES = \
     src/services/transaction_service.cpp \
     src/web/block_socket.cpp \
     src/web/heartbeat_socket.cpp \
-    src/web/manager.cpp \
+    src/web/json_string.cpp \
     src/web/query_socket.cpp \
+    src/web/socket.cpp \
     src/web/transaction_socket.cpp \
     src/web/utility.cpp \
     src/web/external/mbedtls/aes.c \
@@ -200,6 +201,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/web/external/mbedtls/include/mbedtls/x509_csr.h \
     src/web/external/mbedtls/include/mbedtls/xtea.h \
     src/web/external/mongoose/mongoose.c \
+    src/web/external/mongoose/mongoose.h \
     src/workers/authenticator.cpp \
     src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
@@ -273,13 +275,10 @@ include_bitcoin_server_webdir = ${includedir}/bitcoin/server/web
 include_bitcoin_server_web_HEADERS = \
     include/bitcoin/server/web/block_socket.hpp \
     include/bitcoin/server/web/heartbeat_socket.hpp \
-    include/bitcoin/server/web/manager.hpp \
+    include/bitcoin/server/web/json_string.hpp \
     include/bitcoin/server/web/query_socket.hpp \
+    include/bitcoin/server/web/socket.hpp \
     include/bitcoin/server/web/transaction_socket.hpp
-
-include_bitcoin_server_web_external_mongoosedir = ${includedir}/bitcoin/server/web/external/mongoose
-include_bitcoin_server_web_external_mongoose_HEADERS = \
-    include/bitcoin/server/web/external/mongoose/mongoose.h
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \
