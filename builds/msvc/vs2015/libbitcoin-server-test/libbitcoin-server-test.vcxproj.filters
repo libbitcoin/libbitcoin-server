@@ -10,6 +10,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000000}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\.deps">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000001}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\main.cpp">
