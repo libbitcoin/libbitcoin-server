@@ -250,6 +250,42 @@ AS_CASE([${CC}], [*gcc*],
     [AX_CHECK_COMPILE_FLAG([-fvisibility-inlines-hidden],
         [CXXFLAGS="$CXXFLAGS -fvisibility-inlines-hidden"])])
 
+# Clean up mbedtls and mongoose build.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-std=c99],
+        [CFLAGS="$CFLAGS -std=c99"])])
+
+# Clean up mbedtls and mongoose build.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-pedantic],
+        [CFLAGS="$CFLAGS -Wno-pedantic"])])
+
+# Clean up mbedtls and mongoose build.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-format],
+        [CFLAGS="$CFLAGS -Wno-format"])])
+
+# Clean up mbedtls and mongoose build.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-comment],
+        [CFLAGS="$CFLAGS -Wno-comment"])])
+
+# Clean up mbedtls and mongoose build.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-long-long],
+        [CFLAGS="$CFLAGS -Wno-long-long"])])
+
+# Clean up mbedtls and mongoose build.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings],
+        [CFLAGS="$CFLAGS -Wno-overlength-strings"])])
+
 
 # Process outputs into templates.
 #==============================================================================

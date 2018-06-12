@@ -20,8 +20,7 @@
 #define LIBBITCOIN_SERVER_PARSER_HPP
 
 #include <ostream>
-#include <bitcoin/bitcoin.hpp>
-#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/configuration.hpp>
 
 namespace libbitcoin {

@@ -528,10 +528,11 @@ void blockchain::broadcast(server_node& node, const message& request,
     // Organize into our chain.
     block->header().metadata.simulate = false;
 
-    // This call is async but blocks on other organizations until started.
-    // Subscribed channels will pick up and announce via inventory to peers.
-    node.chain().organize(block,
-        std::bind(handle_broadcast, _1, request, handler));
+    // TODO: DISABLED BLOCKCHAIN WIP
+    ////// This call is async but blocks on other organizations until started.
+    ////// Subscribed channels will pick up and announce via inventory to peers.
+    ////node.chain().organize(block,
+    ////    std::bind(handle_broadcast, _1, request, handler));
 }
 
 void blockchain::handle_broadcast(const code& ec, const message& request,
@@ -555,9 +556,10 @@ void blockchain::validate(server_node& node, const message& request,
     // Simulate organization into our chain.
     block->header().metadata.simulate = true;
 
-    // This call is async but blocks on other organizations until started.
-    node.chain().organize(block,
-        std::bind(handle_validated, _1, request, handler));
+    // TODO: DISABLED BLOCKCHAIN WIP
+    ////// This call is async but blocks on other organizations until started.
+    ////node.chain().organize(block,
+    ////    std::bind(handle_validated, _1, request, handler));
 }
 
 void blockchain::handle_validated(const code& ec, const message& request,

@@ -158,7 +158,7 @@ code message::receive(zmq::socket& socket)
     command_ = message.dequeue_text();
 
     // Arbitrary caller data (returned to caller for correlation).
-    if (!message.dequeue(id_))
+    if (!message.dequeue<uint32_t>(id_))
         return error::bad_stream;
 
     // Serialized query.

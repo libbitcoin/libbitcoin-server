@@ -41,7 +41,7 @@ heartbeat_service::heartbeat_service(zmq::authenticator& authenticator,
     security_(secure ? "secure" : "public"),
     settings_(node.server_settings()),
     external_(node.protocol_settings()),
-    service_(settings_.heartbeat_endpoint(secure)),
+    service_(settings_.zeromq_heartbeat_endpoint(secure)),
     authenticator_(authenticator),
     node_(node),
 

@@ -47,7 +47,7 @@ query_service::query_service(zmq::authenticator& authenticator,
     settings_(node.server_settings()),
     external_(node.protocol_settings()),
     internal_(external_.send_high_water, external_.receive_high_water),
-    service_(settings_.query_endpoint(secure)),
+    service_(settings_.zeromq_query_endpoint(secure)),
     worker_(secure ? secure_worker : public_worker),
     authenticator_(authenticator)
 {

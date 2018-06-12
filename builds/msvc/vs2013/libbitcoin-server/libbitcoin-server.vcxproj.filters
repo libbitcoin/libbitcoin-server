@@ -8,67 +8,64 @@
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000B}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\interface">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\messages">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\services">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\web">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\workers">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
     </Filter>
     <Filter Include="resource">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000000}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\.deps">
+    <Filter Include="src\interface">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\.libs">
+    <Filter Include="src\messages">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\interface">
+    <Filter Include="src\services">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\interface\.deps">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\messages">
+    <Filter Include="src\web">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\messages\.deps">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\services">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\services\.deps">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000A}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\utility">
+    <Filter Include="src\web\external">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\utility\.deps">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000B}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\workers">
+    <Filter Include="src\web\external\mbedtls">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\workers\.deps">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
+    <Filter Include="src\web\external\mbedtls\include">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\web\external\mbedtls\include\mbedtls">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\web\external\mongoose">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\workers">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -116,6 +113,246 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\block_socket.cpp">
+      <Filter>src\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\aes.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\aesni.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\arc4.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\asn1parse.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\asn1write.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\base64.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\bignum.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\blowfish.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\camellia.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ccm.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\certs.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\cipher.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\cipher_wrap.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\cmac.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ctr_drbg.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\debug.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\des.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\dhm.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ecdh.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ecdsa.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ecjpake.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ecp.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ecp_curves.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\entropy.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\entropy_poll.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\error.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\gcm.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\havege.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\hmac_drbg.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\md.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\md2.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\md4.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\md5.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\md_wrap.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\memory_buffer_alloc.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\net_sockets.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\oid.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\padlock.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pem.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pk.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pk_wrap.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pkcs11.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pkcs12.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pkcs5.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pkparse.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\pkwrite.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\platform.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ripemd160.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\rsa.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\rsa_internal.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\sha1.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\sha256.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\sha512.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ssl_cache.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ssl_ciphersuites.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ssl_cli.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ssl_cookie.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ssl_srv.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ssl_ticket.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\ssl_tls.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\threading.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\timing.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\version.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\version_features.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\x509.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\x509_create.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\x509_crl.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\x509_crt.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\x509_csr.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\x509write_crt.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\x509write_csr.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mbedtls\xtea.c">
+      <Filter>src\web\external\mbedtls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\external\mongoose\mongoose.c">
+      <Filter>src\web\external\mongoose</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\heartbeat_socket.cpp">
+      <Filter>src\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\manager.cpp">
+      <Filter>src\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\query_socket.cpp">
+      <Filter>src\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\socket.cpp">
+      <Filter>src\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\transaction_socket.cpp">
+      <Filter>src\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\utility.cpp">
+      <Filter>src\web</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp">
       <Filter>src\workers</Filter>
@@ -182,6 +419,24 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\block_socket.hpp">
+      <Filter>include\bitcoin\server\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp">
+      <Filter>include\bitcoin\server\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\manager.hpp">
+      <Filter>include\bitcoin\server\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\query_socket.hpp">
+      <Filter>include\bitcoin\server\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\socket.hpp">
+      <Filter>include\bitcoin\server\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\transaction_socket.hpp">
+      <Filter>include\bitcoin\server\web</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\authenticator.hpp">
       <Filter>include\bitcoin\server\workers</Filter>
     </ClInclude>
@@ -190,6 +445,222 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp">
       <Filter>include\bitcoin\server\workers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\aes.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\aesni.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\arc4.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\asn1.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\asn1write.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\base64.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\bignum.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\blowfish.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\bn_mul.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\camellia.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ccm.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\certs.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\check_config.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\cipher.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\cipher_internal.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\cmac.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\compat-1.3.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\config.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ctr_drbg.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\debug.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\des.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\dhm.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ecdh.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ecdsa.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ecjpake.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ecp.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ecp_internal.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\entropy.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\entropy_poll.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\error.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\gcm.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\havege.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\hmac_drbg.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\md.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\md2.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\md4.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\md5.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\md_internal.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\memory_buffer_alloc.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\net.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\net_sockets.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\oid.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\padlock.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\pem.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\pk.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\pk_internal.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\pkcs11.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\pkcs12.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\pkcs5.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\platform.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\platform_time.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ripemd160.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\rsa.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\rsa_internal.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\sha1.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\sha256.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\sha512.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ssl.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ssl_cache.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ssl_ciphersuites.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ssl_cookie.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ssl_internal.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\ssl_ticket.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\threading.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\timing.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\version.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\x509.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\x509_crl.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\x509_crt.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\x509_csr.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mbedtls\include\mbedtls\xtea.h">
+      <Filter>src\web\external\mbedtls\include\mbedtls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\web\external\mongoose\mongoose.h">
+      <Filter>src\web\external\mongoose</Filter>
     </ClInclude>
     <ClInclude Include="..\..\resource.h">
       <Filter>resource</Filter>

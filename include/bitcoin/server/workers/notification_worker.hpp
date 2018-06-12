@@ -32,7 +32,7 @@
 #include <bitcoin/server/messages/subscription.hpp>
 #include <bitcoin/server/settings.hpp>
 
-// Include after bitcoin.hpp (placeholders).
+// Include after define.hpp (placeholders).
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 
