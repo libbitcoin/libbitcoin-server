@@ -70,12 +70,12 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
 bool notification_worker::start()
 {
     // Subscribe to blockchain reorganizations.
-    node_.subscribe_blockchain(
+    node_.subscribe_blocks(
         std::bind(&notification_worker::handle_reorganization,
             this, _1, _2, _3, _4));
 
     // Subscribe to transaction pool acceptances.
-    node_.subscribe_transaction(
+    node_.subscribe_transactions(
         std::bind(&notification_worker::handle_transaction_pool,
             this, _1, _2));
 
