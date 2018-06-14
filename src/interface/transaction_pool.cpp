@@ -101,21 +101,24 @@ void transaction_pool::transaction_fetched(const code& ec,
 void transaction_pool::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto tx = std::make_shared<bc::message::transaction>();
+    // TODO: re-implement.
+    handler(message(request, error::not_implemented));
 
-    if (!tx->from_data(canonical, request.data()))
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
+    ////const auto tx = std::make_shared<bc::message::transaction>();
 
-    // Organize into our chain.
-    tx->metadata.simulate = false;
+    ////if (!tx->from_data(canonical, request.data()))
+    ////{
+    ////    handler(message(request, error::bad_stream));
+    ////    return;
+    ////}
 
-    // This call is async but blocks on other organizations until started.
-    // Subscribed channels will pick up and announce via tx inventory to peers.
-    node.chain().organize(tx,
-        std::bind(handle_broadcast, _1, request, handler));
+    ////// Organize into our chain.
+    ////tx->metadata.simulate = false;
+
+    ////// This call is async but blocks on other organizations until started.
+    ////// Subscribed channels will pick up and announce via tx inventory to peers.
+    ////node.chain().organize(tx,
+    ////    std::bind(handle_broadcast, _1, request, handler));
 }
 
 void transaction_pool::handle_broadcast(const code& ec, const message& request,
@@ -128,20 +131,23 @@ void transaction_pool::handle_broadcast(const code& ec, const message& request,
 void transaction_pool::validate2(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto tx = std::make_shared<bc::message::transaction>();
+    // TODO: re-implement.
+    handler(message(request, error::not_implemented));
 
-    if (!tx->from_data(canonical, request.data()))
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
+    ////const auto tx = std::make_shared<bc::message::transaction>();
 
-    // Simulate organization into our chain.
-    tx->metadata.simulate = true;
+    ////if (!tx->from_data(canonical, request.data()))
+    ////{
+    ////    handler(message(request, error::bad_stream));
+    ////    return;
+    ////}
 
-    // This call is async but blocks on other organizations until started.
-    node.chain().organize(tx,
-        std::bind(handle_validated2, _1, request, handler));
+    ////// Simulate organization into our chain.
+    ////tx->metadata.simulate = true;
+
+    ////// This call is async but blocks on other organizations until started.
+    ////node.chain().organize(tx,
+    ////    std::bind(handle_validated2, _1, request, handler));
 }
 
 void transaction_pool::handle_validated2(const code& ec,
