@@ -137,7 +137,7 @@ AS_CASE([${enable_shared}], [yes], AC_DEFINE([BOOST_ALL_DYN_LINK]))
 AS_CASE([${CC}], [*],
     [AX_BOOST_BASE([1.62.0],
         [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
-         AC_SUBST([boost_SYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/-I/-isystem/g`])
+         AC_SUBST([boost_SYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
          AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
          AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
          AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
@@ -157,7 +157,7 @@ AS_CASE([${bash_completiondir}], [yes],
         [bash_completiondir="${datadir}/bash-completion/completions"])
      AC_SUBST([bash_completion_PKG], ['bash-completion >= 2.0.0'])
      AC_SUBST([bash_completion_CPPFLAGS], [${bash_completion_CFLAGS}])
-     AC_SUBST([bash_completion_SYS_CPPFLAGS], [`echo ${bash_completion_CFLAGS} | $SED s/-I/-isystem/g`])
+     AC_SUBST([bash_completion_SYS_CPPFLAGS], [`echo ${bash_completion_CFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
      AC_MSG_NOTICE([bash_completion_CPPFLAGS : ${bash_completion_CPPFLAGS}])
      AC_MSG_NOTICE([bash_completion_LIBS : ${bash_completion_LIBS}])],
     [AC_SUBST([bash_completion_PKG], [])])
@@ -167,7 +167,7 @@ AS_CASE([${bash_completiondir}], [yes],
 PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 4.0.0])
 AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 4.0.0'])
 AC_SUBST([bitcoin_node_CPPFLAGS], [${bitcoin_node_CFLAGS}])
-AC_SUBST([bitcoin_node_SYS_CPPFLAGS], [`echo ${bitcoin_node_CFLAGS} | $SED s/-I/-isystem/g`])
+AC_SUBST([bitcoin_node_SYS_CPPFLAGS], [`echo ${bitcoin_node_CFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
 AC_MSG_NOTICE([bitcoin_node_CPPFLAGS : ${bitcoin_node_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_node_LIBS : ${bitcoin_node_LIBS}])
 
@@ -176,7 +176,7 @@ AC_MSG_NOTICE([bitcoin_node_LIBS : ${bitcoin_node_LIBS}])
 PKG_CHECK_MODULES([bitcoin_protocol], [libbitcoin-protocol >= 4.0.0])
 AC_SUBST([bitcoin_protocol_PKG], ['libbitcoin-protocol >= 4.0.0'])
 AC_SUBST([bitcoin_protocol_CPPFLAGS], [${bitcoin_protocol_CFLAGS}])
-AC_SUBST([bitcoin_protocol_SYS_CPPFLAGS], [`echo ${bitcoin_protocol_CFLAGS} | $SED s/-I/-isystem/g`])
+AC_SUBST([bitcoin_protocol_SYS_CPPFLAGS], [`echo ${bitcoin_protocol_CFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
 AC_MSG_NOTICE([bitcoin_protocol_CPPFLAGS : ${bitcoin_protocol_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_protocol_LIBS : ${bitcoin_protocol_LIBS}])
 
