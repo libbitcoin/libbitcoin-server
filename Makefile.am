@@ -32,7 +32,7 @@ doc_DATA = \
 # src/libbitcoin-server.la => ${libdir}
 #------------------------------------------------------------------------------
 lib_LTLIBRARIES = src/libbitcoin-server.la
-src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_protocol_CPPFLAGS} ${bitcoin_node_CPPFLAGS}
+src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_protocol_SYS_CPPFLAGS} ${bitcoin_node_SYS_CPPFLAGS}
 src_libbitcoin_server_la_LIBADD = ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
 src_libbitcoin_server_la_SOURCES = \
     src/configuration.cpp \
@@ -61,7 +61,7 @@ if WITH_TESTS
 TESTS = libbitcoin-server-test_runner.sh
 
 check_PROGRAMS = test/libbitcoin-server-test
-test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_CPPFLAGS} ${bitcoin_node_CPPFLAGS}
+test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_SYS_CPPFLAGS} ${bitcoin_node_SYS_CPPFLAGS}
 test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
 test_libbitcoin_server_test_SOURCES = \
     test/main.cpp \
@@ -75,7 +75,7 @@ endif WITH_TESTS
 if WITH_CONSOLE
 
 bin_PROGRAMS = console/bs
-console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_CPPFLAGS} ${bitcoin_node_CPPFLAGS}
+console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_SYS_CPPFLAGS} ${bitcoin_node_SYS_CPPFLAGS}
 console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
 console_bs_SOURCES = \
     console/executor.cpp \

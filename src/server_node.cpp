@@ -88,7 +88,7 @@ void server_node::run(result_handler handler)
             this, _1, handler));
 }
 
-void server_node::handle_running(const code& ec, result_handler handler)
+void server_node::handle_running(const code& , result_handler handler)
 {
     if (stopped())
     {
@@ -195,7 +195,7 @@ bool server_node::start_query_services()
             return false;
 
     // Start public service, query workers and notification workers if enabled.
-    if (!settings.secure_only && 
+    if (!settings.secure_only &&
         (!public_query_service_.start() || !start_query_workers(false) ||
         (settings.subscription_limit > 0 && !start_notification_workers(false))))
             return false;
@@ -281,9 +281,6 @@ bool server_node::start_query_workers(bool secure)
 // Called from start_query_services.
 bool server_node::start_notification_workers(bool secure)
 {
-    auto& server = *this;
-    const auto& settings = configuration_.server;
-
     if (secure)
     {
         if (!secure_notification_worker_.start())
