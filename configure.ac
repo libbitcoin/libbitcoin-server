@@ -44,6 +44,9 @@ AC_PROG_CXX
 # Enable shared libraries if available, and static if they don't conflict.
 AC_PROG_LIBTOOL
 
+# Enable sed for substitution.
+AC_PROG_SED
+
 # Compute the canonical host-system type variable host, including host_os.
 AC_CANONICAL_HOST
 
@@ -134,6 +137,7 @@ AS_CASE([${enable_shared}], [yes], AC_DEFINE([BOOST_ALL_DYN_LINK]))
 AS_CASE([${CC}], [*],
     [AX_BOOST_BASE([1.62.0],
         [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
+         AC_SUBST([boost_SYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/-I/-isystem/g`])
          AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
          AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
          AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
@@ -153,6 +157,7 @@ AS_CASE([${bash_completiondir}], [yes],
         [bash_completiondir="${datadir}/bash-completion/completions"])
      AC_SUBST([bash_completion_PKG], ['bash-completion >= 2.0.0'])
      AC_SUBST([bash_completion_CPPFLAGS], [${bash_completion_CFLAGS}])
+     AC_SUBST([bash_completion_SYS_CPPFLAGS], [`echo ${bash_completion_CFLAGS} | $SED s/-I/-isystem/g`])
      AC_MSG_NOTICE([bash_completion_CPPFLAGS : ${bash_completion_CPPFLAGS}])
      AC_MSG_NOTICE([bash_completion_LIBS : ${bash_completion_LIBS}])],
     [AC_SUBST([bash_completion_PKG], [])])
@@ -162,6 +167,7 @@ AS_CASE([${bash_completiondir}], [yes],
 PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 4.0.0])
 AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 4.0.0'])
 AC_SUBST([bitcoin_node_CPPFLAGS], [${bitcoin_node_CFLAGS}])
+AC_SUBST([bitcoin_node_SYS_CPPFLAGS], [`echo ${bitcoin_node_CFLAGS} | $SED s/-I/-isystem/g`])
 AC_MSG_NOTICE([bitcoin_node_CPPFLAGS : ${bitcoin_node_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_node_LIBS : ${bitcoin_node_LIBS}])
 
@@ -170,6 +176,7 @@ AC_MSG_NOTICE([bitcoin_node_LIBS : ${bitcoin_node_LIBS}])
 PKG_CHECK_MODULES([bitcoin_protocol], [libbitcoin-protocol >= 4.0.0])
 AC_SUBST([bitcoin_protocol_PKG], ['libbitcoin-protocol >= 4.0.0'])
 AC_SUBST([bitcoin_protocol_CPPFLAGS], [${bitcoin_protocol_CFLAGS}])
+AC_SUBST([bitcoin_protocol_SYS_CPPFLAGS], [`echo ${bitcoin_protocol_CFLAGS} | $SED s/-I/-isystem/g`])
 AC_MSG_NOTICE([bitcoin_protocol_CPPFLAGS : ${bitcoin_protocol_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_protocol_LIBS : ${bitcoin_protocol_LIBS}])
 
@@ -188,11 +195,23 @@ AS_CASE([${CC}], [*],
     [AX_CHECK_COMPILE_FLAG([-Wall],
         [CFLAGS="$CFLAGS -Wall"])])
 
+# Warn on all stuff.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wall],
+        [CXXFLAGS="$CXXFLAGS -Wall"])])
+
 # Warn on extra stuff.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
     [AX_CHECK_COMPILE_FLAG([-Wextra],
         [CFLAGS="$CFLAGS -Wextra"])])
+
+# Warn on extra stuff.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wextra],
+        [CXXFLAGS="$CXXFLAGS -Wextra"])])
 
 # Be really annoying.
 #------------------------------------------------------------------------------
@@ -201,6 +220,20 @@ AS_CASE([${CC}], [*],
         [CFLAGS="$CFLAGS -Wpedantic"],
         [AX_CHECK_COMPILE_FLAG([-pedantic],
             [CFLAGS="$CFLAGS -pedantic"])])])
+
+# Be really annoying.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wpedantic],
+        [CXXFLAGS="$CXXFLAGS -Wpedantic"],
+        [AX_CHECK_COMPILE_FLAG([-pedantic],
+            [CXXFLAGS="$CXXFLAGS -pedantic"])])])
+
+# Disallow warning on style order of declarations.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-reorder],
+        [CXXFLAGS="$CXXFLAGS -Wno-reorder"])])
 
 # Conform to style.
 #------------------------------------------------------------------------------
@@ -214,18 +247,6 @@ AS_CASE([${CC}], [*clang*],
     [AX_CHECK_COMPILE_FLAG([-Wno-mismatched-tags],
         [CXXFLAGS="$CXXFLAGS -Wno-mismatched-tags"])])
 
-# Clean up boost 1.55 headers. Enabled in gcc only.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*gcc*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-deprecated-declarations],
-        [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"])])
-
-# Clean up boost 1.55 headers. Enabled in clang only.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*clang*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-redeclared-class-member],
-        [CXXFLAGS="$CXXFLAGS -Wno-redeclared-class-member"])])
-
 # Protect stack.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
@@ -237,12 +258,6 @@ AS_CASE([${CC}], [*],
 AS_CASE([${CC}], [*],
     [AX_CHECK_LINK_FLAG([-fstack-protector-all],
         [LDFLAGS="$LDFLAGS -fstack-protector-all"])])
-
-# Hide internal functions from external libs. Enabled in gcc only.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*gcc*],
-    [AX_CHECK_COMPILE_FLAG([-fvisibility-hidden],
-        [CXXFLAGS="$CXXFLAGS -fvisibility-hidden"])])
 
 # Hide inlines from external libs. Enabled in gcc only.
 #------------------------------------------------------------------------------
