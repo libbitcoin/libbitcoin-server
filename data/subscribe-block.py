@@ -12,7 +12,8 @@ if len(sys.argv) > 1:
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
 socket.connect(url)
-socket.setsockopt(zmq.SUBSCRIBE, '')
+socket.setsockopt(zmq.SUBSCRIBE, b'')
+socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
     
 while True:
     # Collect the response in parts.
@@ -20,5 +21,5 @@ while True:
     height = struct.unpack('<I', socket.recv())[0]
     block_data = hexlify(socket.recv()).decode('ascii')
 
-    print '[Seq:{}] Block {} received {}'.format(
-        sequence, height, block_data)
+    print('[Seq:{}] Block {} received {}'.format(
+        sequence, height, block_data))
