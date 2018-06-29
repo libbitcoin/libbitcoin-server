@@ -194,7 +194,7 @@ void block_service::publish_blocks(uint32_t fork_height,
     }
 
     for (const auto block: *blocks)
-        publish_block(publisher, fork_height++, block);
+        publish_block(publisher, ++fork_height, block);
 }
 
 // [ height:4 ]
