@@ -61,7 +61,7 @@ block_service::block_service(zmq::authenticator& authenticator,
 bool block_service::start()
 {
     // Subscribe to blockchain reorganizations.
-    node_.subscribe_blockchain(
+    node_.subscribe_blocks(
         std::bind(&block_service::handle_reorganization,
             this, _1, _2, _3, _4));
 

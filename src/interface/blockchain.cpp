@@ -517,21 +517,24 @@ void blockchain::stealth_transaction_hashes_fetched(const code& ec,
 void blockchain::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto block = std::make_shared<bc::message::block>();
+    // TODO: re-implement.
+    handler(message(request, error::not_implemented));
 
-    if (!block->from_data(canonical, request.data()))
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
+    ////const auto block = std::make_shared<bc::message::block>();
 
-    // Organize into our chain.
-    block->header().metadata.simulate = false;
+    ////if (!block->from_data(canonical, request.data()))
+    ////{
+    ////    handler(message(request, error::bad_stream));
+    ////    return;
+    ////}
 
-    // This call is async but blocks on other organizations until started.
-    // Subscribed channels will pick up and announce via inventory to peers.
-    node.chain().organize(block,
-        std::bind(handle_broadcast, _1, request, handler));
+    ////// Organize into our chain.
+    ////block->header().metadata.simulate = false;
+
+    ////// This call is async but blocks on other organizations until started.
+    ////// Subscribed channels will pick up and announce via inventory to peers.
+    ////node.chain().organize(block,
+    ////    std::bind(handle_broadcast, _1, request, handler));
 }
 
 void blockchain::handle_broadcast(const code& ec, const message& request,
@@ -544,20 +547,23 @@ void blockchain::handle_broadcast(const code& ec, const message& request,
 void blockchain::validate(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto block = std::make_shared<bc::message::block>();
+    // TODO: re-implement.
+    handler(message(request, error::not_implemented));
 
-    if (!block->from_data(canonical, request.data()))
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
+    ////const auto block = std::make_shared<bc::message::block>();
 
-    // Simulate organization into our chain.
-    block->header().metadata.simulate = true;
+    ////if (!block->from_data(canonical, request.data()))
+    ////{
+    ////    handler(message(request, error::bad_stream));
+    ////    return;
+    ////}
 
-    // This call is async but blocks on other organizations until started.
-    node.chain().organize(block,
-        std::bind(handle_validated, _1, request, handler));
+    ////// Simulate organization into our chain.
+    ////block->header().metadata.simulate = true;
+
+    ////// This call is async but blocks on other organizations until started.
+    ////node.chain().organize(block,
+    ////    std::bind(handle_validated, _1, request, handler));
 }
 
 void blockchain::handle_validated(const code& ec, const message& request,

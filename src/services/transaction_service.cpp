@@ -60,7 +60,7 @@ transaction_service::transaction_service(zmq::authenticator& authenticator,
 bool transaction_service::start()
 {
     // Subscribe to transaction pool acceptances.
-    node_.subscribe_transaction(
+    node_.subscribe_transactions(
         std::bind(&transaction_service::handle_transaction,
             this, _1, _2));
 
