@@ -390,7 +390,6 @@ void notification_worker::notify(zmq::socket& dealer,
 time_t notification_worker::current_time()
 {
     // use system_clock to ensure to_time_t is defined.
-    const auto now = system_clock::now();
     return system_clock::to_time_t(system_clock::now());
 }
 
