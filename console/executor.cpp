@@ -127,14 +127,8 @@ bool executor::do_initchain()
     {
         LOG_INFO(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
-        // Unfortunately we are limited to a choice of hardcoded chains.
-        auto testnet = metadata_.configured.network.identifier == 118034699u;
-        auto regtest = metadata_.configured.network.identifier == 3669344250u;
         const auto& bitcoin_settings = metadata_.configured.bitcoin;
-        const auto genesis =
-            regtest ? block::genesis_regtest(bitcoin_settings) :
-            testnet ? block::genesis_testnet(bitcoin_settings) :
-                block::genesis_mainnet(bitcoin_settings);
+        const auto genesis = bitcoin_settings.genesis_block;
 
         const auto& settings = metadata_.configured.database;
         const auto result = data_base(settings, bitcoin_settings).create(genesis);
