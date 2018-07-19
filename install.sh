@@ -9,11 +9,12 @@
 #
 # Script options:
 # --build-boost            Builds Boost libraries.
-# --build-zmq              Build ZeroMQ libraries.
+# --build-zmq              Builds ZeroMQ libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --prefix=<absolute-path> Library install location (defaults to /usr/local).
 # --disable-shared         Disables shared library builds.
 # --disable-static         Disables static library builds.
+# --help                   Display usage, overriding script execution.
 #
 # Verified on Ubuntu 14.04, requires gcc-4.8 or newer.
 # Verified on OSX 10.10, using MacPorts and Homebrew repositories, requires
@@ -44,6 +45,14 @@ BOOST_ARCHIVE="boost_1_62_0.tar.bz2"
 
 # Define utility functions.
 #==============================================================================
+configure_links()
+{
+    # Configure dynamic linker run-time bindings when installing to system.
+    if [[ ($OS == Linux) && ($PREFIX == "/usr/local") ]]; then
+        ldconfig
+    fi
+}
+
 configure_options()
 {
     display_message "configure options:"
@@ -54,14 +63,6 @@ configure_options()
     done
 
     ./configure "$@"
-}
-
-configure_links()
-{
-    # Configure dynamic linker run-time bindings when installing to system.
-    if [[ ($OS == Linux) && ($PREFIX == "/usr/local") ]]; then
-        ldconfig
-    fi
 }
 
 create_directory()
@@ -91,6 +92,8 @@ display_error()
 
 initialize_git()
 {
+    display_heading_message "Initialize git"
+
     # Initialize git repository at the root of the current directory.
     git init
     git config user.name anonymous
@@ -161,12 +164,58 @@ push_directory()
     pushd "$DIRECTORY" >/dev/null
 }
 
+display_help()
+{
+    display_message "Usage: ./install.sh [OPTION]..."
+    display_message "Manage the installation of libbitcoin-server."
+    display_message "Script options:"
+    display_message "  --build-boost            Builds Boost libraries."
+    display_message "  --build-zmq              Build ZeroMQ libraries."
+    display_message "  --build-dir=<path>       Location of downloaded and intermediate files."
+    display_message "  --prefix=<absolute-path> Library install location (defaults to /usr/local)."
+    display_message "  --disable-shared         Disables shared library builds."
+    display_message "  --disable-static         Disables static library builds."
+    display_message "  --help                   Display usage, overriding script execution."
+    display_message ""
+    display_message "All unrecognized options provided shall be passed as configuration options for "
+    display_message "all dependencies."
+}
 
 # Initialize the build environment.
 #==============================================================================
 # Exit this script on the first build error.
 #------------------------------------------------------------------------------
 set -e
+
+# Parse command line options that are handled by this script.
+#------------------------------------------------------------------------------
+for OPTION in "$@"; do
+    case $OPTION in
+        # Standard script options.
+        (--help)                DISPLAY_HELP="yes";;
+
+        # Standard build options.
+        (--prefix=*)            PREFIX="${OPTION#*=}";;
+        (--disable-shared)      DISABLE_SHARED="yes";;
+        (--disable-static)      DISABLE_STATIC="yes";;
+
+        # Common project options.
+        (--with-icu)            WITH_ICU="yes";;
+        (--with-png)            WITH_PNG="yes";;
+        (--with-qrencode)       WITH_QRENCODE="yes";;
+
+        # Custom build options (in the form of --build-<option>).
+        (--build-icu)           BUILD_ICU="yes";;
+        (--build-zlib)          BUILD_ZLIB="yes";;
+        (--build-png)           BUILD_PNG="yes";;
+        (--build-qrencode)      BUILD_QRENCODE="yes";;
+        (--build-zmq)           BUILD_ZMQ="yes";;
+        (--build-boost)         BUILD_BOOST="yes";;
+
+        # Unique script options.
+        (--build-dir=*)    BUILD_DIR="${OPTION#*=}";;
+    esac
+done
 
 # Configure build parallelism.
 #------------------------------------------------------------------------------
@@ -180,6 +229,9 @@ elif [[ ($OS == Darwin) || ($OS == OpenBSD) ]]; then
     PARALLEL=`sysctl -n hw.ncpu`
 else
     display_error "Unsupported system: $OS"
+    display_error "  Explicit shell-definition of PARALLEL will avoid system detection."
+    display_error ""
+    display_help
     exit 1
 fi
 
@@ -204,32 +256,6 @@ if [[ ($OS == Linux && $CC == "clang") || ($OS == OpenBSD) ]]; then
     export LDLIBS="-l$STDLIB $LDLIBS"
     export CXXFLAGS="-stdlib=lib$STDLIB $CXXFLAGS"
 fi
-
-# Parse command line options that are handled by this script.
-#------------------------------------------------------------------------------
-for OPTION in "$@"; do
-    case $OPTION in
-        # Custom build options (in the form of --build-<option>).
-        (--build-icu)      BUILD_ICU="yes";;
-        (--build-zlib)     BUILD_ZLIB="yes";;
-        (--build-png)      BUILD_PNG="yes";;
-        (--build-qrencode) BUILD_QRENCODE="yes";;
-        (--build-zmq)      BUILD_ZMQ="yes";;
-        (--build-boost)    BUILD_BOOST="yes";;
-        (--build-dir=*)    BUILD_DIR="${OPTION#*=}";;
-
-        # Standard build options.
-        (--prefix=*)       PREFIX="${OPTION#*=}";;
-        (--disable-shared) DISABLE_SHARED="yes";;
-        (--disable-static) DISABLE_STATIC="yes";;
-        (--with-icu)       WITH_ICU="yes";;
-        (--with-png)       WITH_PNG="yes";;
-        (--with-qrencode)  WITH_QRENCODE="yes";;
-
-        # Standard script options.
-        (--help)           DISPLAY_HELP="yes";;
-    esac
-done
 
 # Normalize of static and shared options.
 #------------------------------------------------------------------------------
@@ -279,7 +305,7 @@ fi
 
 display_configuration()
 {
-    display_message "Libbitcoin installer configuration."
+    display_message "libbitcoin-server installer configuration."
     display_message "--------------------------------------------------------------------"
     display_message "OS                    : $OS"
     display_message "PARALLEL              : $PARALLEL"
@@ -290,61 +316,17 @@ display_configuration()
     display_message "CXXFLAGS              : $CXXFLAGS"
     display_message "LDFLAGS               : $LDFLAGS"
     display_message "LDLIBS                : $LDLIBS"
-    display_message "WITH_ICU              : $WITH_ICU"
-    display_message "WITH_PNG              : $WITH_PNG"
-    display_message "WITH_QRENCODE         : $WITH_QRENCODE"
-    display_message "BUILD_ICU             : $BUILD_ICU"
-    display_message "BUILD_ZLIB            : $BUILD_ZLIB"
-    display_message "BUILD_PNG             : $BUILD_PNG"
-    display_message "BUILD_QRENCODE        : $BUILD_QRENCODE"
     display_message "BUILD_ZMQ             : $BUILD_ZMQ"
     display_message "BUILD_BOOST           : $BUILD_BOOST"
-    display_message "PREFIX                : $PREFIX"
     display_message "BUILD_DIR             : $BUILD_DIR"
+    display_message "PREFIX                : $PREFIX"
     display_message "DISABLE_SHARED        : $DISABLE_SHARED"
     display_message "DISABLE_STATIC        : $DISABLE_STATIC"
     display_message "with_boost            : ${with_boost}"
     display_message "with_pkgconfigdir     : ${with_pkgconfigdir}"
     display_message "--------------------------------------------------------------------"
 }
-display_install_help()
-{
-    display_message "Usage: ./install.sh [OPTION]..."
-    display_message "Manage the installation of libbitcoin-server."
-    display_message "Script options:"
-    display_message "  --with-icu               Compile with International Components for Unicode."
-    display_message "                             Since the addition of BIP-39 and later BIP-38 "
-    display_message "                             support, libbitcoin conditionally incorporates ICU "
-    display_message "                              to provide BIP-38 and BIP-39 passphrase "
-    display_message "                             normalization features. Currently "
-    display_message "                             libbitcoin-explorer is the only other library that "
-    display_message "                             accesses this feature, so if you do not intend to "
-    display_message "                             use passphrase normalization this dependency can "
-    display_message "                             be avoided."
-    display_message "  --with-qrencode          Compile with QR Code Support"
-    display_message "                             Since the addition of qrcode support, libbitcoin "
-    display_message "                             conditionally incorporates qrencode. Currently "
-    display_message "                             libbitcoin-explorer is the only other library that "
-    display_message "                             accesses this feature, so if you do not intend to "
-    display_message "                             use qrcode this dependency can be avoided."
-    display_message "  --with-png               Compile with QR Code PNG Output Support"
-    display_message "                             Since the addition of png support, libbitcoin "
-    display_message "                             conditionally incorporates libpng (which in turn "
-    display_message "                             requires zlib). Currently libbitcoin-explorer is "
-    display_message "                             the only other library that accesses this feature, "
-    display_message "                             so if you do not intend to use png this dependency "
-    display_message "                             can be avoided."
-    display_message "  --build-boost            Builds Boost libraries."
-    display_message "  --build-zmq              Build ZeroMQ libraries."
-    display_message "  --build-dir=<path>       Location of downloaded and intermediate files."
-    display_message "  --prefix=<absolute-path> Library install location (defaults to /usr/local)."
-    display_message "  --disable-shared         Disables shared library builds."
-    display_message "  --disable-static         Disables static library builds."
-    display_message "  --help                   Display usage, overriding script execution."
-    display_message ""
-    display_message "All unrecognized options provided shall be passed as configuration options for "
-    display_message "all dependencies."
-}
+
 
 # Define build options.
 #==============================================================================
@@ -433,7 +415,6 @@ BITCOIN_SERVER_OPTIONS=(
 
 # Define build functions.
 #==============================================================================
-
 # Because PKG_CONFIG_PATH doesn't get updated by Homebrew or MacPorts.
 initialize_icu_packages()
 {
@@ -789,7 +770,7 @@ build_all()
 # Build the primary library and all dependencies.
 #==============================================================================
 if [[ $DISPLAY_HELP ]]; then
-    display_install_help
+    display_help
 else
     display_configuration
     create_directory "$BUILD_DIR"
