@@ -72,7 +72,7 @@ bool transaction_service::start()
 void transaction_service::work()
 {
     zmq::socket xpub(authenticator_, role::extended_publisher, external_);
-    zmq::socket xsub(authenticator_, role::extended_subscriber, internal_);
+    zmq::socket xsub(authenticator_, role::puller, internal_);
 
     // Bind sockets to the service and worker endpoints.
     if (!started(bind(xpub, xsub)))
@@ -175,7 +175,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (stopped())
         return;
 
-    zmq::socket publisher(authenticator_, role::publisher, internal_);
+    zmq::socket publisher(authenticator_, role::pusher, internal_);
 
     // Subscriptions are off the pub-sub thread so this must connect back.
     // This could be optimized by caching the socket as thread static.
