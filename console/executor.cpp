@@ -128,10 +128,8 @@ bool executor::do_initchain()
         LOG_INFO(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
         const auto& bitcoin_settings = metadata_.configured.bitcoin;
-        const auto genesis = bitcoin_settings.genesis_block;
-
-        const auto& settings = metadata_.configured.database;
-        const auto result = data_base(settings, bitcoin_settings).create(genesis);
+        const auto result = data_base(metadata_.configured.database,
+            bitcoin_settings).create(bitcoin_settings.genesis_block);
 
         LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
         return result;
