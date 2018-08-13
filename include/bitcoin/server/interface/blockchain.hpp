@@ -36,7 +36,7 @@ class BCS_API blockchain
 {
 public:
     /// Fetch the blockchain history of a payment address.
-    static void fetch_history3(server_node& node,
+    static void fetch_history4(server_node& node,
         const message& request, send_handler handler);
 
     /// Fetch a transaction from the blockchain by its hash.

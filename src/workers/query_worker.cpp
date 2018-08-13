@@ -171,7 +171,7 @@ void query_worker::query(zmq::socket& dealer)
 
     // Execute the request and send the result.
     // Example: address.renew(node_, request, sender);
-    // Example: blockchain.fetch_history3(node_, request, sender);
+    // Example: blockchain.fetch_history4(node_, request, sender);
     query_execute(request,
         std::bind(&query_worker::send,
             _1, std::ref(dealer)));
@@ -216,6 +216,7 @@ void query_worker::attach(const std::string& command,
 // blockchain.fetch_history2 was new in v3.
 // blockchain.fetch_history2 is obsoleted in v3.1 (version byte unused)
 // blockchain.fetch_history3 is new in v3.1 (no version byte)
+// blockchain.fetch_history4 is new in v4.0.
 // blockchain.fetch_stealth is obsoleted in v3 (hash reversal).
 // blockchain.fetch_stealth2 is new in v3.
 // blockchain.fetch_stealth_transaction_hashes is new in v3 (safe version).
@@ -258,7 +259,7 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_transaction2, node_);              // new (3.4)
     ATTACH(blockchain, fetch_transaction_index, node_);         // original
     ATTACH(blockchain, fetch_spend, node_);                     // original
-    ATTACH(blockchain, fetch_history3, node_);                  // new (3.1)
+    ATTACH(blockchain, fetch_history4, node_);                  // new (4.0)
     ATTACH(blockchain, fetch_stealth2, node_);                  // new (3.0)
     ATTACH(blockchain, fetch_stealth_transaction_hashes, node_);// new (3.0)
     ATTACH(blockchain, broadcast, node_);                       // new (3.0)
