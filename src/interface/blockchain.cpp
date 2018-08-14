@@ -40,7 +40,7 @@ static constexpr size_t index_size = sizeof(uint32_t);
 static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 static constexpr auto canonical = bc::message::version::level::canonical;
 
-void blockchain::fetch_history3(server_node& node, const message& request,
+void blockchain::fetch_history4(server_node& node, const message& request,
     send_handler handler)
 {
     static constexpr size_t limit = 0;
