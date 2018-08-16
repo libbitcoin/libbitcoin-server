@@ -517,8 +517,7 @@ void blockchain::stealth_transaction_hashes_fetched(const code& ec,
 void blockchain::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto block = std::make_shared<bc::message::block>(
-        node.bitcoin_settings());
+    const auto block = std::make_shared<bc::message::block>();
 
     if (!block->from_data(canonical, request.data()))
     {
@@ -548,8 +547,7 @@ void blockchain::handle_broadcast(const code& ec, const message& request,
 void blockchain::validate(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto block = std::make_shared<bc::message::block>(
-        node.bitcoin_settings());
+    const auto block = std::make_shared<bc::message::block>();
 
     if (!block->from_data(canonical, request.data()))
     {
