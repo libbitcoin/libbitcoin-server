@@ -75,24 +75,16 @@ Next install the [build system](http://wikipedia.org/wiki/GNU_build_system):
 ```sh
 $ sudo apt-get install build-essential autoconf automake libtool pkg-config
 ```
-Next install the [Boost](http://www.boost.org) (1.57.0 or newer) development package:
-```sh
-$ sudo apt-get install libboost-all-dev
-```
-Next install the [ZeroMQ](http://www.zeromq.org) (4.2.0 or newer) development package (if not available, build with the `--build-zmq` option):
-```sh
-$ sudo apt-get install libzmq3-dev
-```
 Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version3/install.sh) and enable execution:
 ```sh
 $ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version3/install.sh
 $ chmod +x install.sh
 ```
-Finally install Libbitcoin Server with default [build options](#build-notes-for-linux--macos):
+Finally install Libbitcoin Server with recommended [build options](#build-notes-for-linux--macos):
 ```sh
-$ sudo ./install.sh
+$ ./install.sh --prefix=/home/me/myprefix --build-boost --disable-shared
 ```
-Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
+Libbitcoin Server is now installed in `/home/me/myprefix` and can be invoked as `$ bs`.
 
 ### Macintosh
 
@@ -125,24 +117,16 @@ Next install the [build system](http://wikipedia.org/wiki/GNU_build_system) and 
 ```sh
 $ brew install autoconf automake libtool pkgconfig wget
 ```
-Next install the [Boost](http://www.boost.org) (1.57.0 or newer) development package:
-```sh
-$ brew install boost
-```
-Next install the [ZeroMQ](http://www.zeromq.org) (4.2.0 or newer) development package:
-```sh
-$ brew install zeromq
-```
 Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version3/install.sh) and enable execution:
 ```sh
 $ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version3/install.sh
 $ chmod +x install.sh
 ```
-Finally install Libbitcoin Server with default [build options](#build-notes-for-linux--macos):
+Finally install Libbitcoin Server with recommended [build options](#build-notes-for-linux--macos):
 ```sh
-$ ./install.sh
+$ ./install.sh --prefix=/home/me/myprefix --build-boost --disable-shared
 ```
-Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
+Libbitcoin Server is now installed in `/home/me/myprefix` and can be invoked as `$ bs`.
 
 ##### Installing from Formula
 
@@ -163,24 +147,16 @@ Next install the [build system](http://wikipedia.org/wiki/GNU_build_system) and 
 ```sh
 $ sudo port install autoconf automake libtool pkgconfig wget
 ```
-Next install the [Boost](http://www.boost.org) (1.57.0 or newer) development package. The `-` options remove MacPort defaults that are not Boost defaults:
-```sh
-$ sudo port install boost -no_single -no_static -python27
-```
-Next install the [ZeroMQ](http://www.zeromq.org) (4.2.0 or newer) development package:
-```sh
-$ sudo port install zmq
-```
 Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version3/install.sh) and enable execution:
 ```sh
 $ wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/version3/install.sh
 $ chmod +x install.sh
 ```
-Finally install Libbitcoin Server with default [build options](#build-notes-for-linux--macos):
+Finally install Libbitcoin Server with recommended [build options](#build-notes-for-linux--macos):
 ```sh
-$ ./install.sh
+$ ./install.sh --prefix=/home/me/myprefix --build-boost --disable-shared
 ```
-Libbitcoin Server is now installed in `/usr/local/bin` and can be invoked as `$ bs`.
+Libbitcoin Server is now installed in `/home/me/myprefix` and can be invoked as `$ bs`.
 
 ### Build Notes for Linux / macOS
 
@@ -188,22 +164,22 @@ Any set of `./configure` options can be passed via the build script, several exa
 
 Building for minimum size and with debug symbols stripped:
 ```sh
-$ sudo ./install.sh CXXFLAGS="-Os -s"
+$ ./install.sh CXXFLAGS="-Os -s" --prefix=/home/me/myprefix
 ```
 
 > The `-s` option is not supported by the Clang compiler. Instead use the command `$ strip bs` after the build.
 
 Building without NDEBUG (i.e. with debug assertions) defined:
 ```sh
-$ sudo ./install.sh --disable-ndebug
+$ ./install.sh --disable-ndebug --build-boost --disable-shared --prefix=/home/me/myprefix
 ```
 Building without building tests:
 ```sh
-$ sudo ./install.sh --without-tests
+$ ./install.sh --without-tests --build-boost --disable-shared --prefix=/home/me/myprefix
 ```
 Building from a specified directory, such as `/home/me/mybuild`:
 ```sh
-$ sudo ./install.sh --build-dir=/home/me/mybuild
+$ ./install.sh --build-dir=/home/me/mybuild --build-boost --disable-shared --prefix=/home/me/myprefix
 ```
 Building into a directory other than `/usr/local`, such as `/home/me/myprefix`:
 ```sh
@@ -230,7 +206,7 @@ Building with bash-completion support:
 > If your target system does not have it pre-installed you must first install the [bash-completion](http://bash-completion.alioth.debian.org) package. Packages are available for common package managers, including apt-get, homebrew and macports.
 
 ```sh
-$ sudo ./install.sh --with-bash-completion-dir
+$ ./install.sh --with-bash-completion-dir
 ```
 
 ### Windows
