@@ -72,19 +72,19 @@ bool transaction_service::start()
 void transaction_service::work()
 {
     zmq::socket xpub(authenticator_, role::extended_publisher, external_);
-    zmq::socket xsub(authenticator_, role::puller, internal_);
+    zmq::socket puller(authenticator_, role::puller, internal_);
 
     // Bind sockets to the service and worker endpoints.
-    if (!started(bind(xpub, xsub)))
+    if (!started(bind(xpub, puller)))
         return;
 
     // TODO: tap in to failure conditions, such as high water.
     // BUGBUG: stop is insufficient to stop the worker, because of relay().
     // Relay messages between subscriber and publisher (blocks on context).
-    relay(xpub, xsub);
+    relay(xpub, puller);
 
     // Unbind the sockets and exit this thread.
-    finished(unbind(xpub, xsub));
+    finished(unbind(xpub, puller));
 }
 
 // Bind/Unbind.
@@ -175,11 +175,11 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     if (stopped())
         return;
 
-    zmq::socket publisher(authenticator_, role::pusher, internal_);
+    zmq::socket pusher(authenticator_, role::pusher, internal_);
 
     // Subscriptions are off the pub-sub thread so this must connect back.
     // This could be optimized by caching the socket as thread static.
-    auto ec = publisher.connect(worker_);
+    auto ec = pusher.connect(worker_);
 
     if (ec == error::service_stopped)
         return;
@@ -201,7 +201,7 @@ void transaction_service::publish_transaction(transaction_const_ptr tx)
     broadcast.enqueue_little_endian(++sequence_);
     broadcast.enqueue(tx->to_data(bc::message::version::level::canonical));
 
-    ec = publisher.send(broadcast);
+    ec = pusher.send(broadcast);
 
     if (ec == error::service_stopped)
         return;

@@ -73,19 +73,19 @@ bool block_service::start()
 void block_service::work()
 {
     zmq::socket xpub(authenticator_, role::extended_publisher, external_);
-    zmq::socket xsub(authenticator_, role::puller, internal_);
+    zmq::socket puller(authenticator_, role::puller, internal_);
 
     // Bind sockets to the service and worker endpoints.
-    if (!started(bind(xpub, xsub)))
+    if (!started(bind(xpub, puller)))
         return;
 
     // TODO: tap in to failure conditions, such as high water.
     // BUGBUG: stop is insufficient to stop the worker, because of relay().
     // Relay messages between subscriber and publisher (blocks on context).
-    relay(xpub, xsub);
+    relay(xpub, puller);
 
     // Unbind the sockets and exit this thread.
-    finished(unbind(xpub, xsub));
+    finished(unbind(xpub, puller));
 }
 
 // Bind/Unbind.
@@ -176,11 +176,11 @@ void block_service::publish_blocks(uint32_t fork_height,
     if (stopped())
         return;
 
-    zmq::socket publisher(authenticator_, role::pusher, internal_);
+    zmq::socket pusher(authenticator_, role::pusher, internal_);
 
     // Subscriptions are off the pub-sub thread so this must connect back.
     // This could be optimized by caching the socket as thread static.
-    const auto ec = publisher.connect(worker_);
+    const auto ec = pusher.connect(worker_);
 
     if (ec == error::service_stopped)
         return;
@@ -194,14 +194,14 @@ void block_service::publish_blocks(uint32_t fork_height,
     }
 
     for (const auto block: *blocks)
-        publish_block(publisher, ++fork_height, block);
+        publish_block(pusher, ++fork_height, block);
 }
 
 // [ height:4 ]
 // [ block ]
 // The payload for block publication is delimited within the zeromq message.
 // This is required for compatability and inconsistent with query payloads.
-void block_service::publish_block(zmq::socket& publisher, size_t height,
+void block_service::publish_block(zmq::socket& pusher, size_t height,
     block_const_ptr block)
 {
     if (stopped())
@@ -215,7 +215,7 @@ void block_service::publish_block(zmq::socket& publisher, size_t height,
     broadcast.enqueue_little_endian(static_cast<uint32_t>(height));
     broadcast.enqueue(block->to_data(bc::message::version::level::canonical));
 
-    const auto ec = publisher.send(broadcast);
+    const auto ec = pusher.send(broadcast);
 
     if (ec == error::service_stopped)
         return;
