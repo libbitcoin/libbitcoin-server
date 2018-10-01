@@ -24,6 +24,7 @@
 #include <utility>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 
@@ -172,6 +173,47 @@ void blockchain::last_height_fetched(const code& ec, size_t last_height,
     handler(message(request, std::move(result)));
 }
 
+void blockchain::fetch_block(server_node& node, const message& request,
+    send_handler handler)
+{
+    const auto& data = request.data();
+
+    if (data.size() == hash_size)
+        blockchain::fetch_block_by_hash(node, request, handler);
+    else if (data.size() == sizeof(uint32_t))
+        blockchain::fetch_block_by_height(node, request, handler);
+    else
+        handler(message(request, error::bad_stream));
+}
+
+void blockchain::fetch_block_by_hash(server_node& node,
+    const message& request, send_handler handler)
+{
+    const auto& data = request.data();
+    BITCOIN_ASSERT(data.size() == hash_size);
+
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const auto block_hash = deserial.read_hash();
+
+    node.chain().fetch_block(block_hash, node.blockchain_settings().bip141,
+        std::bind(&blockchain::block_fetched,
+            _1, _2, request, handler));
+}
+
+void blockchain::fetch_block_by_height(server_node& node,
+    const message& request, send_handler handler)
+{
+    const auto& data = request.data();
+    BITCOIN_ASSERT(data.size() == sizeof(uint32_t));
+
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const uint64_t height = deserial.read_4_bytes_little_endian();
+
+    node.chain().fetch_block(height, node.blockchain_settings().bip141,
+        std::bind(&blockchain::block_fetched,
+            _1, _2, request, handler));
+}
+
 void blockchain::fetch_block_header(server_node& node, const message& request,
     send_handler handler)
 {
@@ -211,6 +253,26 @@ void blockchain::fetch_block_header_by_height(server_node& node,
     node.chain().fetch_block_header(height,
         std::bind(&blockchain::block_header_fetched,
             _1, _2, request, handler));
+}
+
+void blockchain::block_fetched(const code& ec, block_const_ptr block,
+    const message& request, send_handler handler)
+{
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
+    // [ code:4 ]
+    // [ block... ]
+    auto result = build_chunk(
+    {
+        message::to_bytes(error::success),
+        block->to_data(canonical),
+    });
+
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::block_header_fetched(const code& ec, header_const_ptr header,

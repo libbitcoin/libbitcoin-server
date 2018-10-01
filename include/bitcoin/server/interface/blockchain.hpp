@@ -51,6 +51,10 @@ public:
     static void fetch_last_height(server_node& node,
         const message& request, send_handler handler);
 
+    /// Fetch a block by hash or height (conditional serialization).
+    static void fetch_block(server_node& node,
+        const message& request, send_handler handler);
+
     /// Fetch a block header by hash or height (conditional serialization).
     static void fetch_block_header(server_node& node,
         const message& request, send_handler handler);
@@ -98,11 +102,21 @@ private:
     static void last_height_fetched(const code& ec, size_t last_height,
         const message& request, send_handler handler);
 
+    static void fetch_block_by_hash(server_node& node,
+        const message& request, send_handler handler);
+
+    static void fetch_block_by_height(server_node& node,
+        const message& request, send_handler handler);
+
     static void fetch_block_header_by_hash(server_node& node,
         const message& request, send_handler handler);
 
     static void fetch_block_header_by_height(server_node& node,
         const message& request, send_handler handler);
+
+    static void block_fetched(const code& ec,
+        block_const_ptr header, const message& request,
+        send_handler handler);
 
     static void block_header_fetched(const code& ec,
         header_const_ptr header, const message& request,

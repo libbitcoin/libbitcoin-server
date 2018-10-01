@@ -26,7 +26,8 @@ namespace server {
 // Construct with defaults derived from given context.
 configuration::configuration(bc::config::settings context)
   : node::configuration(context),
-    server(context)
+    server(context),
+    blockchain(context)
 {
 }
 

@@ -193,8 +193,9 @@ void query_worker::attach(const std::string& command,
 }
 
 //=============================================================================
-// TODO: add to client and bx:
+// Note: add to client and bx after changing here:
 // blockchain.fetch_spend
+// blockchain.fetch_block (full)
 // blockchain.fetch_block_height
 // blockchain.fetch_block_transaction_hashes
 // blockchain.fetch_stealth_transaction_hashes [document name change]
@@ -204,7 +205,6 @@ void query_worker::attach(const std::string& command,
 // subscribe.stealth
 // unsubscribe.address
 // unsubscribe.stealth
-// TODO: add fetch_block (full)
 //=============================================================================
 // address.fetch_history is obsoleted in v3 (no unconfirmed tx indexing).
 // address.renew is obsoleted in v3.
@@ -251,6 +251,7 @@ void query_worker::attach_interface()
     ////ATTACH(blockchain, fetch_stealth, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history2, node_);              // obsoleted
+    ATTACH(blockchain, fetch_block, node_);                     // new (4.0)
     ATTACH(blockchain, fetch_block_header, node_);              // original
     ATTACH(blockchain, fetch_block_height, node_);              // original
     ATTACH(blockchain, fetch_block_transaction_hashes, node_);  // original

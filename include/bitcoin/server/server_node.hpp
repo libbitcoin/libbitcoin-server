@@ -55,6 +55,9 @@ public:
     // ----------------------------------------------------------------------------
 
     /// Server configuration settings.
+    virtual const bc::blockchain::settings& blockchain_settings() const;
+
+    /// Server configuration settings.
     virtual const bc::protocol::settings& protocol_settings() const;
 
     /// Server configuration settings.

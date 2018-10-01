@@ -61,6 +61,11 @@ server_node::~server_node()
 // Properties.
 // ----------------------------------------------------------------------------
 
+const bc::blockchain::settings& server_node::blockchain_settings() const
+{
+    return configuration_.blockchain;
+}
+
 const bc::protocol::settings& server_node::protocol_settings() const
 {
     return configuration_.protocol;
