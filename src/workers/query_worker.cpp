@@ -198,13 +198,6 @@ void query_worker::attach(const std::string& command,
 // blockchain.fetch_block_height
 // blockchain.fetch_block_transaction_hashes
 // blockchain.fetch_stealth_transaction_hashes [document name change]
-// subscribe.block (pub-sub)
-// subscribe.transaction (pub-sub)
-// subscribe.address
-// subscribe.stealth
-// unsubscribe.address
-// unsubscribe.stealth
-// TODO: add fetch_block (full)
 //=============================================================================
 // address.fetch_history is obsoleted in v3 (no unconfirmed tx indexing).
 // address.renew is obsoleted in v3.
@@ -220,6 +213,7 @@ void query_worker::attach(const std::string& command,
 // blockchain.fetch_stealth is obsoleted in v3 (hash reversal).
 // blockchain.fetch_stealth2 is new in v3.
 // blockchain.fetch_stealth_transaction_hashes is new in v3 (safe version).
+// blockchain.fetch_block (full) is new in v4.
 //-----------------------------------------------------------------------------
 // transaction_pool.validate is obsoleted in v3 (unconfirmed outputs).
 // transaction_pool.validate2 is new in v3.
@@ -234,6 +228,10 @@ void query_worker::attach(const std::string& command,
 //-----------------------------------------------------------------------------
 // unsubscribe.address is new in v3 (there was never address.unsubscribe).
 // unsubscribe.stealth is new in v3 (there was never stealth.unsubscribe).
+//-----------------------------------------------------------------------------
+// subscribe.block (pub-sub) is new in v3.4.
+// subscribe.transaction (pub-sub) is new in v3.4.
+// subscribe.heartbeat (pub-sub) is new in v3.4.
 //=============================================================================
 // Interface class.method names must match protocol names.
 void query_worker::attach_interface()
@@ -251,6 +249,7 @@ void query_worker::attach_interface()
     ////ATTACH(blockchain, fetch_stealth, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history2, node_);              // obsoleted
+    ATTACH(blockchain, fetch_block, node_);                     // new (4.0)
     ATTACH(blockchain, fetch_block_header, node_);              // original
     ATTACH(blockchain, fetch_block_height, node_);              // original
     ATTACH(blockchain, fetch_block_transaction_hashes, node_);  // original

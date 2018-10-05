@@ -21,6 +21,7 @@
 
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
+#include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
@@ -48,6 +49,7 @@ public:
     /// Settings.
     bc::server::settings server;
     bc::protocol::settings protocol;
+    bc::blockchain::settings blockchain;
 };
 
 } // namespace server

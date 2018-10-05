@@ -24,6 +24,7 @@
 #include <utility>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 
@@ -34,6 +35,7 @@ using namespace std::placeholders;
 using namespace bc::blockchain;
 using namespace bc::chain;
 using namespace bc::wallet;
+using namespace bc::machine;
 
 static constexpr size_t code_size = sizeof(uint32_t);
 static constexpr size_t index_size = sizeof(uint32_t);
@@ -115,8 +117,12 @@ void blockchain::fetch_transaction2(server_node& node, const message& request,
     const auto hash = deserial.read_hash();
 
     // The response is restricted to confirmed transactions.
-    // This response includes witness data so may break old parsers.
-    node.chain().fetch_transaction(hash, true, true,
+    // This response can include witness data (based on configuration)
+    // so may break old parsers.
+    const auto witness = script::is_enabled(
+        node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
+
+    node.chain().fetch_transaction(hash, true, witness,
         std::bind(&blockchain::transaction_fetched,
             _1, _2, _3, _4, request, handler));
 }
@@ -172,6 +178,53 @@ void blockchain::last_height_fetched(const code& ec, size_t last_height,
     handler(message(request, std::move(result)));
 }
 
+void blockchain::fetch_block(server_node& node, const message& request,
+    send_handler handler)
+{
+    const auto& data = request.data();
+
+    if (data.size() == hash_size)
+        blockchain::fetch_block_by_hash(node, request, handler);
+    else if (data.size() == sizeof(uint32_t))
+        blockchain::fetch_block_by_height(node, request, handler);
+    else
+        handler(message(request, error::bad_stream));
+}
+
+void blockchain::fetch_block_by_hash(server_node& node,
+    const message& request, send_handler handler)
+{
+    const auto& data = request.data();
+    BITCOIN_ASSERT(data.size() == hash_size);
+
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const auto block_hash = deserial.read_hash();
+
+    const auto witness = script::is_enabled(
+        node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
+
+    node.chain().fetch_block(block_hash, witness,
+        std::bind(&blockchain::block_fetched,
+            _1, _2, request, handler));
+}
+
+void blockchain::fetch_block_by_height(server_node& node,
+    const message& request, send_handler handler)
+{
+    const auto& data = request.data();
+    BITCOIN_ASSERT(data.size() == sizeof(uint32_t));
+
+    auto deserial = make_safe_deserializer(data.begin(), data.end());
+    const uint64_t height = deserial.read_4_bytes_little_endian();
+
+    const auto witness = script::is_enabled(
+        node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
+
+    node.chain().fetch_block(height, witness,
+        std::bind(&blockchain::block_fetched,
+            _1, _2, request, handler));
+}
+
 void blockchain::fetch_block_header(server_node& node, const message& request,
     send_handler handler)
 {
@@ -211,6 +264,26 @@ void blockchain::fetch_block_header_by_height(server_node& node,
     node.chain().fetch_block_header(height,
         std::bind(&blockchain::block_header_fetched,
             _1, _2, request, handler));
+}
+
+void blockchain::block_fetched(const code& ec, block_const_ptr block,
+    const message& request, send_handler handler)
+{
+    if (ec)
+    {
+        handler(message(request, ec));
+        return;
+    }
+
+    // [ code:4 ]
+    // [ block... ]
+    auto result = build_chunk(
+    {
+        message::to_bytes(error::success),
+        block->to_data(canonical),
+    });
+
+    handler(message(request, std::move(result)));
 }
 
 void blockchain::block_header_fetched(const code& ec, header_const_ptr header,
