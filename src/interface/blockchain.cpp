@@ -35,6 +35,7 @@ using namespace std::placeholders;
 using namespace bc::blockchain;
 using namespace bc::chain;
 using namespace bc::wallet;
+using namespace bc::machine;
 
 static constexpr size_t code_size = sizeof(uint32_t);
 static constexpr size_t index_size = sizeof(uint32_t);
@@ -116,8 +117,12 @@ void blockchain::fetch_transaction2(server_node& node, const message& request,
     const auto hash = deserial.read_hash();
 
     // The response is restricted to confirmed transactions.
-    // This response includes witness data so may break old parsers.
-    node.chain().fetch_transaction(hash, true, true,
+    // This response can include witness data (based on configuration)
+    // so may break old parsers.
+    const auto witness = script::is_enabled(
+        node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
+
+    node.chain().fetch_transaction(hash, true, witness,
         std::bind(&blockchain::transaction_fetched,
             _1, _2, _3, _4, request, handler));
 }
@@ -195,7 +200,10 @@ void blockchain::fetch_block_by_hash(server_node& node,
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto block_hash = deserial.read_hash();
 
-    node.chain().fetch_block(block_hash, node.blockchain_settings().bip141,
+    const auto witness = script::is_enabled(
+        node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
+
+    node.chain().fetch_block(block_hash, witness,
         std::bind(&blockchain::block_fetched,
             _1, _2, request, handler));
 }
@@ -209,7 +217,10 @@ void blockchain::fetch_block_by_height(server_node& node,
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const uint64_t height = deserial.read_4_bytes_little_endian();
 
-    node.chain().fetch_block(height, node.blockchain_settings().bip141,
+    const auto witness = script::is_enabled(
+        node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
+
+    node.chain().fetch_block(height, witness,
         std::bind(&blockchain::block_fetched,
             _1, _2, request, handler));
 }
