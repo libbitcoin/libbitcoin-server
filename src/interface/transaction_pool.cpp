@@ -99,7 +99,7 @@ void transaction_pool::transaction_fetched(const code& ec,
 
 // Save to tx pool and announce to all connected peers.
 // FUTURE: conditionally subscribe to penetration notifications.
-void transaction_pool::broadcast(server_node& node, const message& request,
+void transaction_pool::broadcast(server_node& /* node */, const message& request,
     send_handler handler)
 {
     // TODO: re-implement.
@@ -129,7 +129,7 @@ void transaction_pool::handle_broadcast(const code& ec, const message& request,
     handler(message(request, ec));
 }
 
-void transaction_pool::validate2(server_node& node, const message& request,
+void transaction_pool::validate2(server_node& /* node */, const message& request,
     send_handler handler)
 {
     // TODO: re-implement.
