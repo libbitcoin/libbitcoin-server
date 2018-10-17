@@ -587,7 +587,7 @@ void blockchain::stealth_transaction_hashes_fetched(const code& ec,
 }
 
 // Save to blockchain and announce to all connected peers.
-void blockchain::broadcast(server_node& node, const message& request,
+void blockchain::broadcast(server_node& /* node */, const message& request,
     send_handler handler)
 {
     const auto block = std::make_shared<bc::message::block>();
@@ -617,7 +617,7 @@ void blockchain::handle_broadcast(const code& ec, const message& request,
     handler(message(request, ec));
 }
 
-void blockchain::validate(server_node& node, const message& request,
+void blockchain::validate(server_node& /* node */, const message& request,
     send_handler handler)
 {
     const auto block = std::make_shared<bc::message::block>();

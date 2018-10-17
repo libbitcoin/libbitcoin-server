@@ -92,8 +92,8 @@ typedef int sock_t;
 #endif
 
 static const size_t sha1_hash_length = 20;
-static const size_t default_buffer_length = 1 << 10; // 1KB
-static const size_t transfer_buffer_length = 1 << 18; // 256KB
+static const int32_t default_buffer_length = 1 << 10; // 1KB
+static const int32_t transfer_buffer_length = 1 << 18; // 256KB
 
 #ifdef WITH_MBEDTLS
 static const int default_ciphers[] =
@@ -229,16 +229,16 @@ struct file_transfer
 {
     bool in_progress;
     FILE* descriptor;
-    size_t offset;
-    size_t length;
+    int32_t offset;
+    int32_t length;
 };
 
 struct websocket_transfer
 {
     bool in_progress;
-    size_t offset;
-    size_t length;
-    size_t header_length;
+    int32_t offset;
+    int32_t length;
+    int32_t header_length;
     data_buffer mask;
     data_buffer data;
 };

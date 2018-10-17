@@ -100,7 +100,7 @@ int32_t manager::high_water_mark()
     return high_water_mark_;
 }
 
-void manager::set_backlog(size_t backlog)
+void manager::set_backlog(int32_t backlog)
 {
     backlog_ = backlog;
 }
@@ -393,8 +393,8 @@ void manager::poll(size_t timeout_milliseconds)
     {
         const size_t number_of_lists =
             (connections_.size() / maximum_items) + 1;
-        const auto adjusted_timeout =
-            std::ceil(timeout_milliseconds / number_of_lists);
+        const auto adjusted_timeout = static_cast<size_t>(
+            std::ceil(timeout_milliseconds / number_of_lists));
         std::vector<connection_list> connection_lists;
         connection_lists.reserve(number_of_lists);
         for (size_t i = 0; i < number_of_lists; i++)
@@ -430,9 +430,9 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
     BITCOIN_ASSERT(connections.size() <= maximum_items);
 
     struct timeval poll_interval{};
-    poll_interval.tv_sec = timeout_milliseconds / 1000;
-    poll_interval.tv_usec = (timeout_milliseconds * 1000) -
-        (poll_interval.tv_sec * 100000);
+    poll_interval.tv_sec = static_cast<long>(timeout_milliseconds / 1000);
+    poll_interval.tv_usec = static_cast<long>((timeout_milliseconds * 1000) -
+        (poll_interval.tv_sec * 100000));
 
     fd_set read_set;
     fd_set write_set;
@@ -448,7 +448,7 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
     connection_list pending_removal;
     for (auto& connection: connections)
     {
-        auto descriptor = connection->socket();
+        auto descriptor = static_cast<int>(connection->socket());
         if (connection == nullptr || connection->closed())
             continue;
 
@@ -456,6 +456,14 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
         // fd_set.
         if (descriptor > maximum_items)
         {
+#ifdef WIN32
+            close_socket(descriptor);
+            LOG_ERROR(LOG_SERVER_HTTP)
+                << "Error: cannot monitor socket " << descriptor
+                << ", value is above" << maximum_items;
+            pending_removal.push_back(connection);
+            continue;
+#else
             // Attempt to resolve this by looking for a lower
             // available descriptor.
             auto new_descriptor = dup(descriptor);
@@ -474,6 +482,7 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
                 pending_removal.push_back(connection);
                 continue;
             }
+#endif
         }
 
         if (connection->file_transfer().in_progress ||
@@ -620,8 +629,7 @@ bool manager::handle_connection(connection_ptr& connection, event current_event)
                     // Check for configuration violation (helps
                     // prevent DoS by filling RAM with unexpectedly
                     // large messages).
-                    if (static_cast<int32_t>(transfer.offset) >
-                        maximum_incoming_frame_length_)
+                    if (transfer.offset > maximum_incoming_frame_length_)
                     {
                         LOG_ERROR(LOG_SERVER_HTTP)
                             << "Terminating due to exceeding the "
@@ -745,7 +753,7 @@ bool manager::transfer_file_data(connection_ptr& connection)
     auto amount_to_read = std::min(transfer_buffer_length,
         file_transfer.length - file_transfer.offset);
 
-    auto read = fread(data, sizeof(unsigned char), amount_to_read,
+    int32_t read = fread(data, sizeof(unsigned char), amount_to_read,
         file_transfer.descriptor);
 
     auto success = ((read == amount_to_read) ||
@@ -983,7 +991,7 @@ bool manager::handle_websocket(connection_ptr& connection)
         const auto mask_start = transfer.mask.data();
         const auto payload_length =
             transfer.length - transfer.header_length;
-        for(size_t i = 0; i < payload_length; i++)
+        for(int32_t i = 0; i < payload_length; i++)
             data[i + transfer.header_length] ^= mask_start[i % 4];
 
         websocket_message message

@@ -50,7 +50,7 @@ class manager
     // May invalidate any buffered write data on each connection.
     void set_high_water_mark(int32_t length);
     int32_t high_water_mark();
-    void set_backlog(size_t backlog);
+    void set_backlog(int32_t backlog);
     bool bind(std::string hostname, uint16_t port, const bind_options& options);
     bool accept_connection();
     void add_connection(const connection_ptr& connection);
@@ -102,7 +102,7 @@ class manager
     connection_list connections_;
     int32_t maximum_incoming_frame_length_;
     int32_t high_water_mark_;
-    size_t backlog_;
+    int32_t backlog_;
     connection_ptr listener_;
     struct sockaddr_in listener_address_;
     task_list tasks_;

@@ -30,29 +30,16 @@ std::string error_string()
 {
 #ifdef WIN32
     LPVOID buffer{};
-    LPVOID display_buffer{};
     DWORD dw = last_error();
 
     FormatMessage(
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
         FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dw,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        static_cast<LPTSTR>(&buffer), 0, nullptr);
+        reinterpret_cast<LPTSTR>(&buffer), 0, nullptr);
 
-    display_buffer = static_cast<LPVOID>(LocalAlloc(LMEM_ZEROINIT,
-        (lstrlen(static_cast<LPCTSTR>(buffer)) +
-         lstrlen(static_cast<LPCTSTR>(lpszFunction)) + 40) * sizeof(TCHAR)));
-
-    StringCchPrintf(static_cast<LPTSTR>(display_buffer),
-                    LocalSize(display_buffer) / sizeof(TCHAR),
-                    TEXT("%s failed with error %d: %s"),
-                    lpszFunction, dw, buffer);
-
-    const std::string error_string = { display_buffer };
-
+    const std::string error_string = { buffer };
     LocalFree(buffer);
-    LocalFree(display_buffer);
-
     return error_string;
 #else
     return { strerror(last_error()) };

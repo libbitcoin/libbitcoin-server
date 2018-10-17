@@ -42,10 +42,10 @@ typedef std::function<bool(connection_ptr&,
 class connection
 {
   public:
-    static const size_t maximum_read_length = (1 << 10); // 1 KB
-    static const size_t default_high_water_mark = (1 << 21); // 2 MB
-    static const size_t default_incoming_frame_length = (1 << 19); //512 KB
-    typedef std::function<int32_t(const unsigned char*, size_t)> write_method;
+    static const int32_t maximum_read_length = (1 << 10); // 1 KB
+    static const int32_t default_high_water_mark = (1 << 21); // 2 MB
+    static const int32_t default_incoming_frame_length = (1 << 19); //512 KB
+    typedef std::function<int32_t(const unsigned char*, int32_t)> write_method;
 
     connection();
     connection(socket_connection connection, struct sockaddr_in& address);
@@ -71,11 +71,11 @@ class connection
     int32_t write(const std::string& buffer);
     // This is a buffered write call so long as we're under the high
     // water mark.
-    int32_t write(const unsigned char* data, size_t length);
+    int32_t write(const unsigned char* data, int32_t length);
     // This is a write call that does not buffer internally and keeps
     // trying until an error is received, or the entire specified
     // length is sent.
-    int32_t do_write(const unsigned char* data, size_t length,
+    int32_t do_write(const unsigned char* data, int32_t length,
         bool write_frame);
     void close();
     socket_connection& socket();
@@ -93,15 +93,15 @@ class connection
     bool operator==(const connection& other);
 
   private:
-    websocket_frame generate_websocket_frame(size_t length, websocket_op code);
+    websocket_frame generate_websocket_frame(int32_t length, websocket_op code);
 
     void* user_data_;
     connection_state state_;
     socket_connection socket_;
     struct sockaddr_in address_;
     std::chrono::steady_clock::time_point last_active_;
-    size_t high_water_mark_;
-    size_t maximum_incoming_frame_length_;
+    int32_t high_water_mark_;
+    int32_t maximum_incoming_frame_length_;
     buffer read_buffer_;
     data_buffer write_buffer_;
     int32_t bytes_read_;

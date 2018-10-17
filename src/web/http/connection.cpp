@@ -139,7 +139,12 @@ bool connection::closed()
 
 int32_t connection::read()
 {
+#ifdef WIN32
+    auto data = reinterpret_cast<char*>(read_buffer_.data());
+#else
     auto data = reinterpret_cast<unsigned char*>(read_buffer_.data());
+#endif
+
 #ifdef WITH_MBEDTLS
     bytes_read_ = (ssl_context_.enabled ? mbedtls_ssl_read(
         &ssl_context_.context, data, maximum_read_length) :
@@ -167,25 +172,32 @@ data_buffer& connection::write_buffer()
 
 // This is effectively a blocking write call that does not buffer
 // internally.
-int32_t connection::do_write(const unsigned char* data, size_t length,
+int32_t connection::do_write(const unsigned char* data, int32_t length,
     bool write_frame)
 {
     write_method plaintext_write = [this](const unsigned char* data,
-        size_t length)
+        int32_t length)
     {
-        return static_cast<int32_t>(send(socket_, data, length, 0));
+        return static_cast<int32_t>(send(socket_,
+#ifdef WIN32
+            reinterpret_cast<char*>(data),
+#else
+            data,
+#endif
+            length, 0));
     };
 
 #ifdef WITH_MBEDTLS
-    write_method ssl_write = [this](const unsigned char* data, size_t length)
+    write_method ssl_write = [this](const unsigned char* data, int32_t length)
     {
         return static_cast<int32_t>(
             mbedtls_ssl_write(&ssl_context_.context, data, length));
     };
 
-    write_method writer = (ssl_context_.enabled ? ssl_write : plaintext_write);
+    auto writer = static_cast<write_method>(ssl_context_.enabled ? ssl_write :
+        plaintext_write);
 #else
-    write_method writer = plaintext_write;
+    auto writer = static_cast<write_method>(plaintext_write);
 #endif
 
     if (write_frame)
@@ -200,8 +212,8 @@ int32_t connection::do_write(const unsigned char* data, size_t length,
     }
 
     int32_t written = 0;
-    auto position = data;
     auto remaining = length;
+    auto position = data;
 
     do
     {
@@ -225,7 +237,7 @@ int32_t connection::do_write(const unsigned char* data, size_t length,
 
     } while (remaining != 0);
 
-    return static_cast<size_t>(position - data);
+    return static_cast<int32_t>(position - data);
 }
 
 int32_t connection::write(const std::string& buffer)
@@ -236,9 +248,12 @@ int32_t connection::write(const std::string& buffer)
 
 // This is a buffered write call so long as we're under the high
 // water mark.
-int32_t connection::write(const unsigned char* data, size_t length)
+int32_t connection::write(const unsigned char* data, int32_t length)
 {
-    const auto buffered_length = write_buffer_.size() + length +
+    if (length < 0)
+        return length;
+
+    const int32_t buffered_length = write_buffer_.size() + length +
         (websocket_ ? sizeof(websocket_frame) : 0);
 
     // If we're currently at the hwm, issue blocking writes until
@@ -251,8 +266,8 @@ int32_t connection::write(const unsigned char* data, size_t length)
         // Drain the buffered data.
         while (!write_buffer_.empty())
         {
-            const auto segment_length = std::min(static_cast<size_t>(
-                transfer_buffer_length), write_buffer_.size());
+            const auto segment_length = std::min(transfer_buffer_length,
+                static_cast<int32_t>(write_buffer_.size()));
             const auto written = do_write(reinterpret_cast<unsigned char*>(
                 write_buffer_.data()), segment_length, false);
 
@@ -377,16 +392,17 @@ bool connection::operator==(const connection& other)
     return user_data_ == other.user_data_ && socket_ == other.socket_;
 }
 
-websocket_frame connection::generate_websocket_frame(size_t length,
+websocket_frame connection::generate_websocket_frame(int32_t length,
     websocket_op code)
 {
+    BITCOIN_ASSERT(length > 0);
     websocket_frame frame{};
     frame.flags = 0x80 | static_cast<uint8_t>(code);
 
     auto start = &frame.length[0];
     if (length < 126)
     {
-        frame.payload_length = length;
+        frame.payload_length = static_cast<uint8_t>(length);
         frame.write_length = 2;
     }
     else if (length < std::numeric_limits<uint16_t>::max())
