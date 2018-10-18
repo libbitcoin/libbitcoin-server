@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <bitcoin/server/define.hpp>
 
 #include "connection.hpp"
@@ -31,38 +32,35 @@ connection::connection()
     state_(connection_state::unknown),
     socket_(0),
     address_{},
-    last_active_(std::chrono::steady_clock::now()),
+    last_active_(asio::steady_clock::now()),
     high_water_mark_(default_high_water_mark),
     maximum_incoming_frame_length_(default_incoming_frame_length),
-    read_buffer_{},
-    write_buffer_{},
     ssl_context_{},
-    websocket_(false),
     websocket_endpoint_{},
     json_rpc_(false),
+    websocket_(false),
     file_transfer_{},
-    websocket_transfer_{}
+    websocket_transfer_{},
+    bytes_read_(0)
 {
     write_buffer_.reserve(high_water_mark_);
 }
 
-connection::connection(socket_connection connection, struct sockaddr_in&
-    address)
+connection::connection(sock_t connection, struct sockaddr_in& address)
   : user_data_(nullptr),
     state_(connection_state::unknown),
     socket_(connection),
     address_(address),
-    last_active_(std::chrono::steady_clock::now()),
+    last_active_(asio::steady_clock::now()),
     high_water_mark_(default_high_water_mark),
     maximum_incoming_frame_length_(default_incoming_frame_length),
-    read_buffer_{},
-    write_buffer_{},
     ssl_context_{},
-    websocket_(false),
     websocket_endpoint_{},
+    websocket_(false),
     json_rpc_(false),
     file_transfer_{},
-    websocket_transfer_{}
+    websocket_transfer_{},
+    bytes_read_(0)
 {
     write_buffer_.reserve(high_water_mark_);
 }
@@ -73,56 +71,7 @@ connection::~connection()
         close();
 }
 
-// May invalidate any buffered write data.
-void connection::set_high_water_mark(int32_t high_water_mark)
-{
-    if (high_water_mark > 0)
-    {
-        high_water_mark_ = high_water_mark;
-        write_buffer_.reserve(high_water_mark);
-        write_buffer_.shrink_to_fit();
-    }
-}
-
-int32_t connection::high_water_mark()
-{
-    return high_water_mark_;
-}
-
-void connection::set_maximum_incoming_frame_length(int32_t length)
-{
-    if (length > 0)
-        maximum_incoming_frame_length_ = length;
-}
-
-int32_t connection::maximum_incoming_frame_length()
-{
-    return maximum_incoming_frame_length_;
-}
-
-void connection::set_socket_non_blocking()
-{
-#ifdef WIN32
-    unsigned long non_blocking = 1;
-    ioctlsocket(socket_ , FIONBIO, &non_blocking);
-#else
-    fcntl(socket_, F_SETFL, fcntl(socket_, F_GETFD) | O_NONBLOCK);
-#endif
-}
-
-struct sockaddr_in connection::address()
-{
-    return address_;
-}
-
-bool connection::reuse_address()
-{
-    static constexpr int opt = 1;
-    return setsockopt(socket_, SOL_SOCKET, SO_REUSEADDR,
-        reinterpret_cast<const char*>(&opt), sizeof(opt)) != -1;
-}
-
-connection_state connection::state()
+connection_state connection::state() const
 {
     return state_;
 }
@@ -132,25 +81,72 @@ void connection::set_state(connection_state state)
     state_ = state;
 }
 
-bool connection::closed()
+size_t connection::high_water_mark() const
+{
+    return high_water_mark_;
+}
+
+// May invalidate any buffered write data.
+void connection::set_high_water_mark(size_t high_water_mark)
+{
+    if (high_water_mark > 0)
+    {
+        high_water_mark_ = high_water_mark;
+        write_buffer_.reserve(high_water_mark);
+        write_buffer_.shrink_to_fit();
+    }
+}
+
+size_t connection::maximum_incoming_frame_length() const
+{
+    return maximum_incoming_frame_length_;
+}
+
+void connection::set_maximum_incoming_frame_length(size_t length)
+{
+    if (length > 0)
+        maximum_incoming_frame_length_ = length;
+}
+
+void connection::set_socket_non_blocking()
+{
+#ifdef WIN32
+    ULONG non_blocking = 1;
+    ioctlsocket(socket_, FIONBIO, &non_blocking);
+#else
+    fcntl(socket_, F_SETFL, fcntl(socket_, F_GETFD) | O_NONBLOCK);
+#endif
+}
+
+sockaddr_in connection::address() const
+{
+    return address_;
+}
+
+bool connection::reuse_address() const
+{
+    static constexpr uint32_t opt = 1;
+
+    // reinterpret_cast required for Win32, otherwise nop.
+    return setsockopt(socket_, SOL_SOCKET, SO_REUSEADDR,
+        reinterpret_cast<const char*>(&opt), sizeof(opt)) != -1;
+}
+
+bool connection::closed() const
 {
     return state_ == connection_state::closed;
 }
 
 int32_t connection::read()
 {
-#ifdef WIN32
-    auto data = reinterpret_cast<char*>(read_buffer_.data());
-#else
-    auto data = reinterpret_cast<unsigned char*>(read_buffer_.data());
-#endif
-
 #ifdef WITH_MBEDTLS
-    bytes_read_ = (ssl_context_.enabled ? mbedtls_ssl_read(
-        &ssl_context_.context, data, maximum_read_length) :
-        recv(socket_, data, maximum_read_length, 0));
+    bytes_read_ = ssl_context_.enabled ?
+        mbedtls_ssl_read(&ssl_context_.context, data, maximum_read_length) :
+        recv(socket_, data, maximum_read_length, 0)
 #else
-    bytes_read_ = recv(socket_, data, maximum_read_length, 0);
+    // reinterpret_cast required for Win32, otherwise nop.
+    bytes_read_ = recv(socket_, reinterpret_cast<char*>(read_buffer_.data()),
+        maximum_read_length, 0);
 #endif
     return bytes_read_;
 }
@@ -160,64 +156,61 @@ int32_t connection::read_length()
     return bytes_read_;
 }
 
-buffer& connection::read_buffer()
+http::read_buffer& connection::read_buffer()
 {
     return read_buffer_;
 }
 
-data_buffer& connection::write_buffer()
+data_chunk& connection::write_buffer()
 {
     return write_buffer_;
 }
 
-// This is effectively a blocking write call that does not buffer
-// internally.
-int32_t connection::do_write(const unsigned char* data, int32_t length,
-    bool write_frame)
+// This is effectively a blocking write call that does not buffer internally.
+int32_t connection::do_write(const uint8_t* data, size_t length, bool frame)
 {
-    write_method plaintext_write = [this](const unsigned char* data,
-        int32_t length)
+    const auto plaintext_write = [this](const uint8_t* data, size_t length)
     {
-        return static_cast<int32_t>(send(socket_,
+        // BUGBUG: must set errno for return error handling.
+        if (length > max_int32)
+            return -1;
+
 #ifdef WIN32
-            reinterpret_cast<char*>(data),
+        return send(socket_, reinterpret_cast<const char*>(data),
+            static_cast<int32_t>(length), 0);
 #else
-            data,
+        return send(socket_, data, length, 0);
 #endif
-            length, 0));
     };
 
 #ifdef WITH_MBEDTLS
-    write_method ssl_write = [this](const unsigned char* data, int32_t length)
+    const auto ssl_write = [this](const uint8_t* data, size_t length)
     {
-        return static_cast<int32_t>(
-            mbedtls_ssl_write(&ssl_context_.context, data, length));
+        // BUGBUG: handle MBEDTLS_ERR_SSL_WANT_WRITE
+        return mbedtls_ssl_write(&ssl_context_.context, data, length));
     };
 
-    auto writer = static_cast<write_method>(ssl_context_.enabled ? ssl_write :
-        plaintext_write);
+    auto writer = ssl_context_.enabled ? ssl_write : plaintext_write;
 #else
-    auto writer = static_cast<write_method>(plaintext_write);
+    auto writer = plaintext_write;
 #endif
 
-    if (write_frame)
+    if (frame)
     {
-        const auto frame = generate_websocket_frame(length,
-            websocket_op::text);
-        const auto frame_data = reinterpret_cast<const unsigned char*>(&frame);
+        auto frame_data = websocket_frame::to_data(length, websocket_op::text);
+        const auto written = writer(frame_data.data(), frame_data.size());
 
-        int32_t frame_write = writer(frame_data, frame.write_length);
-        if (frame_write < 0)
-            return frame_write;
+        if (written < 0)
+            return written;
     }
 
-    int32_t written = 0;
     auto remaining = length;
     auto position = data;
 
     do
     {
-        written = writer(position, remaining);
+        const auto written = writer(position, remaining);
+
         if (written < 0)
         {
             const auto error = last_error();
@@ -229,6 +222,7 @@ int32_t connection::do_write(const unsigned char* data, int32_t length,
                 return written;
             }
 
+            // BUGBUG: non-terminating loop , or does would_block prevent?
             continue;
         }
 
@@ -240,43 +234,47 @@ int32_t connection::do_write(const unsigned char* data, int32_t length,
     return static_cast<int32_t>(position - data);
 }
 
-int32_t connection::write(const std::string& buffer)
+int32_t connection::write(const data_chunk& buffer)
 {
-    return write(reinterpret_cast<const unsigned char*>(buffer.c_str()),
-        buffer.size());
+    return write(buffer.data(), buffer.size());
 }
 
-// This is a buffered write call so long as we're under the high
-// water mark.
-int32_t connection::write(const unsigned char* data, int32_t length)
+int32_t connection::write(const std::string& buffer)
 {
-    if (length < 0)
-        return length;
+    const auto data = reinterpret_cast<const uint8_t*>(buffer.data());
+    return write(data, buffer.size());
+}
 
-    const int32_t buffered_length = write_buffer_.size() + length +
-        (websocket_ ? sizeof(websocket_frame) : 0);
+// This is a buffered write call if under the high water mark.
+int32_t connection::write(const uint8_t* data, size_t length)
+{
+    if (length > max_int32)
+        return -1;
+
+    static constexpr auto maximal_websocket_frame = 11u;
+    const auto buffered_length = write_buffer_.size() + length +
+        (websocket_ ? maximal_websocket_frame : 0);
 
     // If we're currently at the hwm, issue blocking writes until
     // we've cleared the buffered data and then write this current
     // request.  This is an expensive operation, but should be
-    // mostly avoidable with proper hwm tuning of your
-    // application.
+    // mostly avoidable with proper hwm tuning of your application.
     if (buffered_length >= high_water_mark_)
     {
         // Drain the buffered data.
         while (!write_buffer_.empty())
         {
             const auto segment_length = std::min(transfer_buffer_length,
-                static_cast<int32_t>(write_buffer_.size()));
-            const auto written = do_write(reinterpret_cast<unsigned char*>(
-                write_buffer_.data()), segment_length, false);
+                write_buffer_.size());
+            const auto written = do_write(write_buffer_.data(), segment_length,
+                false);
 
             if (written < 0)
                 return written;
 
             if (!write_buffer_.empty())
-                write_buffer_.erase(write_buffer_.begin(), write_buffer_.begin()
-                    + written);
+                write_buffer_.erase(write_buffer_.begin(),
+                    write_buffer_.begin() + written);
         }
 
         // Perform this write in a blocking manner.
@@ -285,16 +283,14 @@ int32_t connection::write(const unsigned char* data, int32_t length)
 
     if (websocket_)
     {
-        const auto frame = generate_websocket_frame(length,
-            websocket_op::text);
-        const auto frame_data = reinterpret_cast<const unsigned char*>(&frame);
-        write_buffer_.insert(write_buffer_.end(), frame_data, frame_data +
-            frame.write_length);
+        auto frame_data = websocket_frame::to_data(length, websocket_op::text);
+        write_buffer_.insert(write_buffer_.end(), frame_data.begin(),
+            frame_data.end());
     }
 
     // Buffer this data for future writes (called from poll).
     write_buffer_.insert(write_buffer_.end(), data, data + length);
-    return length;
+    return static_cast<int32_t>(length);
 }
 
 void connection::close()
@@ -316,13 +312,13 @@ void connection::close()
     }
 #endif
 
-    close_socket(socket_);
+    CLOSE_SOCKET(socket_);
     state_ = connection_state::closed;
     LOG_VERBOSE(LOG_SERVER_HTTP)
         << "Closed socket " << this;
 }
 
-socket_connection& connection::socket()
+sock_t& connection::socket()
 {
     return socket_;
 }
@@ -332,12 +328,12 @@ http::ssl& connection::ssl_context()
     return ssl_context_;
 }
 
-bool connection::ssl_enabled()
+bool connection::ssl_enabled() const
 {
     return ssl_context_.enabled;
 }
 
-bool connection::websocket()
+bool connection::websocket() const
 {
     return websocket_;
 }
@@ -347,7 +343,7 @@ void connection::set_websocket(bool websocket)
     websocket_ = websocket;
 }
 
-const std::string& connection::websocket_endpoint()
+const std::string& connection::websocket_endpoint() const
 {
     return websocket_endpoint_;
 }
@@ -357,7 +353,7 @@ void connection::set_websocket_endpoint(const std::string endpoint)
     websocket_endpoint_ = endpoint;
 }
 
-bool connection::json_rpc()
+bool connection::json_rpc() const
 {
     return json_rpc_;
 }
@@ -390,39 +386,6 @@ http::websocket_transfer& connection::websocket_transfer()
 bool connection::operator==(const connection& other)
 {
     return user_data_ == other.user_data_ && socket_ == other.socket_;
-}
-
-websocket_frame connection::generate_websocket_frame(int32_t length,
-    websocket_op code)
-{
-    BITCOIN_ASSERT(length > 0);
-    websocket_frame frame{};
-    frame.flags = 0x80 | static_cast<uint8_t>(code);
-
-    auto start = &frame.length[0];
-    if (length < 126)
-    {
-        frame.payload_length = static_cast<uint8_t>(length);
-        frame.write_length = 2;
-    }
-    else if (length < std::numeric_limits<uint16_t>::max())
-    {
-        auto data_length = static_cast<uint16_t>(length);
-        *reinterpret_cast<uint16_t*>(start) =
-            boost::endian::endian_reverse(data_length);
-        frame.payload_length = 126;
-        frame.write_length = 4; // 2 + sizeof(uint16_t)
-    }
-    else
-    {
-        auto data_length = static_cast<uint64_t>(length);
-        *reinterpret_cast<uint64_t*>(start) =
-            boost::endian::endian_reverse(data_length);
-        frame.payload_length = 127;
-        frame.write_length = 10; // 2 + sizeof(uint64_t)
-    }
-
-    return frame;
 }
 
 } // namespace http

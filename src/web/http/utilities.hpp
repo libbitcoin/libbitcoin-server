@@ -30,24 +30,25 @@ namespace http {
 #endif
 
 #ifdef WIN32
-#define would_block(x) (x == WSAEWOULDBLOCK)
+    #define would_block(value) (value == WSAEWOULDBLOCK)
 #else
-#define would_block(x) (x == EAGAIN || x == EWOULDBLOCK)
+    #define would_block(value) (value == EAGAIN || value == EWOULDBLOCK)
 #endif
 
-#define mbedtls_would_block(x) \
-(x == MBEDTLS_ERR_SSL_WANT_READ || x == MBEDTLS_ERR_SSL_WANT_WRITE)
+#define mbedtls_would_block(value) \
+    (value == MBEDTLS_ERR_SSL_WANT_READ || value == MBEDTLS_ERR_SSL_WANT_WRITE)
+
+#ifdef WITH_MBEDTLS
+    std::string mbedtls_error_string(int error);
+    sha1_hash sha1(const std::string& input);
+#endif
 
 std::string error_string();
-#ifdef WITH_MBEDTLS
-std::string mbedtls_error_string(int error);
-sha1_hash sha1(const std::string& input);
-#endif
 std::string to_string(websocket_op code);
 std::string websocket_key_response(const std::string& websocket_key);
 bool is_json_request(const std::string& header_value);
-bool parse_http(const std::string& request, struct http_request& out);
-unsigned long resolve_hostname(const std::string& hostname);
+bool parse_http(http_request& out, const std::string& request);
+////unsigned long resolve_hostname(const std::string& hostname);
 std::string mime_type(const std::string& filename);
 
 } // namespace http

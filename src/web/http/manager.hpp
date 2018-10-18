@@ -45,11 +45,13 @@ class manager
     // Required on the Windows platform.
     bool initialize();
 
-    void set_maximum_incoming_frame_length(int32_t length);
-    int32_t maximum_incoming_frame_length();
+    size_t maximum_incoming_frame_length();
+    void set_maximum_incoming_frame_length(size_t length);
+
     // May invalidate any buffered write data on each connection.
-    void set_high_water_mark(int32_t length);
-    int32_t high_water_mark();
+    size_t high_water_mark();
+    void set_high_water_mark(size_t length);
+
     void set_backlog(int32_t backlog);
     bool bind(std::string hostname, uint16_t port, const bind_options& options);
     bool accept_connection();
@@ -71,8 +73,8 @@ class manager
   private:
 #ifdef WITH_MBEDTLS
     // Passed to mbedtls for internal use only.
-    static int ssl_send(void* data, const unsigned char* buffer, size_t length);
-    static int ssl_receive(void* data, unsigned char* buffer, size_t length);
+    static int ssl_send(void* data, const uint8_t* buffer, size_t length);
+    static int ssl_receive(void* data, uint8_t* buffer, size_t length);
 #endif
 
     void run_once(size_t timeout_milliseconds);
@@ -100,8 +102,8 @@ class manager
     event_handler handler_;
     boost::filesystem::path document_root_;
     connection_list connections_;
-    int32_t maximum_incoming_frame_length_;
-    int32_t high_water_mark_;
+    size_t maximum_incoming_frame_length_;
+    size_t high_water_mark_;
     int32_t backlog_;
     connection_ptr listener_;
     struct sockaddr_in listener_address_;

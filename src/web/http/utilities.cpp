@@ -16,6 +16,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <cstdlib>
+#include <cstring>
+#include <errno.h>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 
@@ -26,23 +29,26 @@ namespace libbitcoin {
 namespace server {
 namespace http {
 
+// TODO: std::strerror is not required to be thread safe.
+// TODO: Win32 FormatMessage requires unicode to utf-8 conversion.
 std::string error_string()
 {
 #ifdef WIN32
-    LPVOID buffer{};
-    DWORD dw = last_error();
+    WCHAR wide[MAX_PATH];
+    const auto error = ::GetLastError();
+    const auto flags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+    const auto language = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT);
 
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        reinterpret_cast<LPTSTR>(&buffer), 0, nullptr);
+    if (::FormatMessageW(flags, nullptr, error, language, wide, MAX_PATH,
+        nullptr) == 0)
+    {
+        // TODO: incorporate `error`.
+        return "Format error message failed.";
+    }
 
-    const std::string error_string = { buffer };
-    LocalFree(buffer);
-    return error_string;
+    return to_utf8(wide);
 #else
-    return { strerror(last_error()) };
+    return { strerror(errno) };
 #endif
 }
 
@@ -61,7 +67,7 @@ sha1_hash sha1(const std::string& input)
     mbedtls_sha1_context context;
     mbedtls_sha1_init(&context);
 
-    const auto source = reinterpret_cast<const unsigned char*>(input.c_str());
+    const auto source = reinterpret_cast<const uint8_t*>(input.c_str());
     if ((mbedtls_sha1_starts_ret(&context) == 0) &&
         (mbedtls_sha1_update_ret(&context, source, input.size()) == 0) &&
         (mbedtls_sha1_finish_ret(&context, out.data()) == 0))
@@ -73,25 +79,23 @@ sha1_hash sha1(const std::string& input)
 
 std::string to_string(websocket_op code)
 {
-    static const std::unordered_map<uint8_t, std::string> opcode_map =
+    static const std::string unknown = "unknown";
+    static const std::unordered_map<websocket_op, std::string> opcode_map
     {
-        { static_cast<uint8_t>(websocket_op::continuation), "continue" },
-        { static_cast<uint8_t>(websocket_op::text), "text" },
-        { static_cast<uint8_t>(websocket_op::binary), "binary" },
-        { static_cast<uint8_t>(websocket_op::close), "close" },
-        { static_cast<uint8_t>(websocket_op::ping), "ping" },
-        { static_cast<uint8_t>(websocket_op::pong), "pong" }
+        { websocket_op::continuation, "continue" },
+        { websocket_op::text, "text" },
+        { websocket_op::binary, "binary" },
+        { websocket_op::close, "close" },
+        { websocket_op::ping, "ping" },
+        { websocket_op::pong, "pong" }
     };
 
-    auto it = opcode_map.find(static_cast<uint8_t>(code));
-    if (it != opcode_map.end())
-        return it->second;
-
-    return { "unknown" };
+    auto it = opcode_map.find(code);
+    return it == opcode_map.end() ? unknown : it->second;
 }
 
 // Generates the RFC6455 handshake response described here:
-// https://tools.ietf.org/html/rfc6455#section-1.3
+// tools.ietf.org/html/rfc6455#section-1.3
 std::string websocket_key_response(const std::string& websocket_key)
 {
     static const std::string rfc6455_guid =
@@ -101,7 +105,7 @@ std::string websocket_key_response(const std::string& websocket_key)
     // The required buffer size is for a base64 encoded sha1 hash (20
     // bytes in length).
     static constexpr size_t key_buffer_length = 64;
-    std::array<unsigned char, key_buffer_length> buffer{};
+    std::array<uint8_t, key_buffer_length> buffer{};
 
     size_t processed_length = 0;
     const auto input = websocket_key + rfc6455_guid;
@@ -122,12 +126,13 @@ std::string websocket_key_response(const std::string& websocket_key)
 
 bool is_json_request(const std::string& header_value)
 {
-    return header_value == "application/json-rpc" ||
+    return
+        header_value == "application/json-rpc" ||
         header_value == "application/json" ||
         header_value == "application/jsonrequest";
 }
 
-bool parse_http(const std::string& request, struct http_request& out)
+bool parse_http(http_request& out, const std::string& request)
 {
     auto& headers = out.headers;
     auto& parameters = out.parameters;
@@ -188,27 +193,31 @@ bool parse_http(const std::string& request, struct http_request& out)
             boost::algorithm::trim(elements[0]);
             boost::algorithm::trim(elements[1]);
             boost::algorithm::to_lower(elements[0]);
+
             if (elements[0] != "sec-websocket-key")
                 boost::algorithm::to_lower(elements[1]);
+
             headers[elements[0]] = elements[1];
         }
         else if (elements.size() > 2)
         {
-            std::stringstream ss;
+            std::stringstream buffer;
             for (size_t i = 0; i < elements.size(); i++)
             {
                 boost::algorithm::trim(elements[i]);
+
                 if (elements[0] != "sec-websocket-key")
                     boost::algorithm::to_lower(elements[i]);
+
                 if (i > 0)
                 {
-                    ss << elements[i];
+                    buffer << elements[i];
                     if (i != elements.size() -1)
-                        ss << ":";
+                        buffer << ":";
                 }
             }
 
-            headers[elements[0]] = ss.str();
+            headers[elements[0]] = buffer.str();
         }
     };
 
@@ -229,7 +238,7 @@ bool parse_http(const std::string& request, struct http_request& out)
             if (line.empty())
                 return;
 
-            auto line_end = line.find(" ");
+            const auto line_end = line.find(" ");
             const auto input_line = ((line_end == std::string::npos) ? line :
                 line.substr(0, line_end));
 
@@ -269,44 +278,45 @@ bool parse_http(const std::string& request, struct http_request& out)
     {
         const auto json_request = request.substr(request.size() -
             out.content_length, out.content_length);
+
         LOG_VERBOSE(LOG_SERVER_HTTP)
             << "POST content: " << json_request;
+
         out.json_rpc = bc::property_tree(out.json_tree, json_request);
     }
 
     return true;
 }
 
-unsigned long resolve_hostname(const std::string& hostname)
-{
-    unsigned long address = 0;
-
-#ifdef WIN32
-#define get_address(host, address) *address = inet_addr(host)
-#define validate_address(address) (address != INADDR_NONE)
-#define host_info HOSTENT
-#else
-#define get_address(host, address) inet_pton(AF_INET, host, address)
-#define validate_address(address) (address > 0)
-#define host_info struct hostent
-#endif
-
-    // Resolve dotted ip address.
-    if (!validate_address(get_address(hostname.c_str(), &address)))
-    {
-        // Resolve host name.
-        const host_info *resolved = gethostbyname(hostname.c_str());
-        if (resolved)
-            address = *(reinterpret_cast<unsigned long*>(
-                resolved->h_addr_list[0]));
-    }
-
-#undef get_address
-#undef validate_address
-#undef host_info
-
-    return address;
-}
+////unsigned long resolve_hostname(const std::string& hostname)
+////{
+////    unsigned long address = 0;
+////
+////#ifdef WIN32
+////    #define GET_ADDRESS(host, address) *address = ::inet_addr(host)
+////    #define VALIDATE_ADDRESS(address) (address != INADDR_NONE)
+////#else
+////    #define GET_ADDRESS(host, address) inet_pton(AF_INET, host, address)
+////    #define VALIDATE_ADDRESS(address) (address > 0)
+////#endif
+////
+////    // Resolve dotted ip address.
+////    if (!VALIDATE_ADDRESS(GET_ADDRESS(hostname.c_str(), &address)))
+////    {
+////        // Resolve host name.
+////        const auto* resolved = gethostbyname(hostname.c_str());
+////
+////        if (resolved != nullptr)
+////            address = *(reinterpret_cast<unsigned long*>(
+////                resolved->h_addr_list[0]));
+////    }
+////
+////#undef get_address
+////#undef validate_address
+////#undef host_info
+////
+////    return address;
+////}
 
 std::string mime_type(const std::string& filename)
 {

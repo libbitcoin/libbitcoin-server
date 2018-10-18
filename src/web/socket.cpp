@@ -32,8 +32,7 @@ extern "C"
 {
 int https_random(void*, uint8_t* buffer, size_t length)
 {
-    bc::data_chunk random;
-    random.reserve(length);
+    bc::data_chunk random(length);
     bc::pseudo_random_fill(random);
     std::memcpy(buffer, reinterpret_cast<void*>(random.data()), length);
     return 0;
@@ -58,12 +57,13 @@ using namespace boost::property_tree;
 using namespace http;
 using role = zmq::socket::role;
 
-class task_sender : public http::manager::task
+// Local class.
+class task_sender
+  : public http::manager::task
 {
   public:
     task_sender(connection_ptr connection, const std::string& data)
-      : connection_(connection),
-        data_(data)
+      : connection_(connection), data_(data)
     {
     }
 
@@ -74,16 +74,17 @@ class task_sender : public http::manager::task
 
         if (connection_->json_rpc())
         {
-            static auto keep_alive = false;
-
             http_reply reply;
-            const auto response = reply.generate(protocol_status::ok, {},
-                data_.size(), keep_alive) + data_;
-            LOG_VERBOSE(LOG_SERVER_HTTP) << "Writing JSON-RPC response: " << response;
-            return connection_->write(response) == static_cast<int32_t>(
-                response.size());
+            const auto header = reply.generate(protocol_status::ok, {},
+                data_.size(), false);
+
+            LOG_VERBOSE(LOG_SERVER_HTTP)
+                << "Writing JSON-RPC response: " << header;
+
+            return connection_->write(header) == static_cast<int32_t>(header.size());
         }
 
+        // BUGBUG: unguarded narrowing cast.
         return connection_->write(data_) == static_cast<int32_t>(data_.size());
     }
 
@@ -139,15 +140,14 @@ bool socket::handle_event(connection_ptr& connection, const http::event event,
             const auto& request = *reinterpret_cast<const http_request*>(data);
             BITCOIN_ASSERT(request.json_rpc);
 
-            // Use default-value version of get to avoid exceptions on
-            // invalid input.
+            // Use default-value get to avoid exceptions on invalid input.
             const auto id = request.json_tree.get<uint32_t>("id", 0);
             const auto method = request.json_tree.get<std::string>("method", "");
             std::string parameters{};
 
             const auto child = request.json_tree.get_child("params");
             std::vector<std::string> parameter_list;
-            for (auto& parameter: child)
+            for (const auto& parameter: child)
                 parameter_list.push_back(
                     parameter.second.get_value<std::string>());
 
@@ -165,19 +165,18 @@ bool socket::handle_event(connection_ptr& connection, const http::event event,
 
         case http::event::websocket_frame:
         {
-            // Process new incoming user websocket data.  Returning
-            // false here will cause this connection to be closed.
+            // Process new incoming user websocket data. Returning false
+            // will cause this connection to be closed.
             auto instance = static_cast<socket*>(connection->user_data());
-            BITCOIN_ASSERT(instance != nullptr);
             if (instance == nullptr)
                 return false;
+
             BITCOIN_ASSERT(data != nullptr);
-            const auto& message = *reinterpret_cast<const websocket_message*>(
-                data);
+            auto message = reinterpret_cast<const websocket_message*>(data);
 
             ptree input_tree;
-            if (!bc::property_tree(input_tree, std::string(
-                reinterpret_cast<const char*>(message.data), message.size)))
+            if (!bc::property_tree(input_tree,
+                { message->data, message->data + message->size }))
             {
                 http_reply reply;
                 connection->write(reply.generate(
@@ -185,15 +184,14 @@ bool socket::handle_event(connection_ptr& connection, const http::event event,
                 return false;
             }
 
-            // Use default-value version of get to avoid exceptions on
-            // invalid input.
+            // Use default-value get to avoid exceptions on invalid input.
             const auto id = input_tree.get<uint32_t>("id", 0);
             const auto method = input_tree.get<std::string>("method", "");
             std::string parameters{};
 
             const auto child = input_tree.get_child("params");
             std::vector<std::string> parameter_list;
-            for (auto& parameter: child)
+            for (const auto& parameter: child)
                 parameter_list.push_back(
                     parameter.second.get_value<std::string>());
 
@@ -356,15 +354,18 @@ bool socket::stop_websocket_handler()
 
 size_t socket::connection_count() const
 {
+    // BUGBUG: use of connections_ in this method is not thread safe.
     return connections_.size();
 }
 
 // Called by the websocket handling thread via handle_event.
 void socket::add_connection(connection_ptr& connection)
 {
+    // BUGBUG: use of connections_ in this method is not thread safe.
     BITCOIN_ASSERT(connections_.find(connection) == connections_.end());
+
     // Initialize a new query_work_map for this connection.
-    connections_[connection] = {};
+    connections_[connection].clear();
 }
 
 // Called by the websocket handling thread via handle_event.
@@ -373,33 +374,38 @@ void socket::add_connection(connection_ptr& connection)
 // thread on response handling (i.e. query_socket::handle_query).
 void socket::remove_connection(connection_ptr& connection)
 {
+    // BUGBUG: use of connections_ in this method is not thread safe.
     if (connections_.empty())
         return;
 
-    auto it = connections_.find(connection);
+    const auto it = connections_.find(connection);
     if (it != connections_.end())
     {
         // Tearing down a connection is O(n) where n is the amount of
         // remaining outstanding queries.
 
-        ////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////
         // Critical Section
         correlation_lock_.lock_upgrade();
+
         auto& query_work_map = it->second;
-        for (auto query_work: query_work_map)
+        for (const auto& query_work: query_work_map)
         {
-            const auto id = query_work.second.correlation_id;
-            auto correlation = correlations_.find(id);
+            const auto correlation = correlations_.find(
+                query_work.second.correlation_id);
+
             if (correlation != correlations_.end())
             {
-                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 correlation_lock_.unlock_upgrade_and_lock();
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 correlations_.erase(correlation);
+                // ------------------------------------------------------------
                 correlation_lock_.unlock_and_lock_upgrade();
             }
         }
+
         correlation_lock_.unlock_upgrade();
-        ////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////
 
         // Clear the query_work_map for this connection before removal.
         query_work_map.clear();
@@ -418,7 +424,7 @@ void socket::notify_query_work(connection_ptr& connection,
     const std::string& method, const uint32_t id,
     const std::string& parameters)
 {
-    typedef std::pair<int, std::string> error;
+    typedef std::pair<int32_t, std::string> error;
     static const error invalid_request{ -32600, "Invalid Request." };
     static const error not_found{ -32601, "Method not found." };
     static const error internal_error{ -32603, "Internal error." };
@@ -455,6 +461,8 @@ void socket::notify_query_work(connection_ptr& connection,
         return;
     }
 
+    // BUGBUG: use of connections_ in this method is not thread safe.
+    // BUGBUG: this includes modification of query_work_map below.
     auto it = connections_.find(connection);
     if (it == connections_.end())
     {
@@ -480,21 +488,20 @@ void socket::notify_query_work(connection_ptr& connection,
     handler->second.encode(request, handler->second.command, parameters,
         sequence_);
 
-    ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     correlation_lock_.lock();
 
-    // While each connection has its own id map (meaning correlation
-    // ids passed from the web client are unique on a per connection
-    // basis, potentially utilizing the full range available), we need
-    // an internal mapping that will allow us to correlate each zmq
-    // request/response pair with the connection and original id
-    // number that originated it.  The client never sees this
-    // sequence_ value.
+    // While each connection has its own id map (meaning correlation ids passed
+    // from the web client are unique on a per connection basis, potentially
+    // utilizing the full range available), we need an internal mapping that
+    // will allow us to correlate each zmq request/response pair with the
+    // connection and original id number that originated it. The client never
+    // sees this sequence_ value.
     correlations_[sequence_++] = { connection, id };
 
     correlation_lock_.unlock();
-    ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
 
     const auto ec = service()->send(request);
 
@@ -510,16 +517,14 @@ void socket::notify_query_work(connection_ptr& connection,
 
 // Sends json strings to websockets or connections waiting on json_rpc
 // replies (only).
-//
-// By using a task_sender via the manager's execute method, we
-// guarantee that the write is performed on the manager's websocket
-// thread (at the expense of a copied json response payload).
 void socket::send(connection_ptr connection, const std::string& json)
 {
     if (connection == nullptr || connection->closed() ||
         (!connection->websocket() && !connection->json_rpc()))
         return;
-
+    // By using a task_sender via the manager's execute method, we guarantee
+    // that the write is performed on the manager's websocket thread (at the
+    // expense of copied json send and response payloads).
     manager_->execute(std::make_shared<task_sender>(connection, json));
 }
 
@@ -531,6 +536,7 @@ void socket::broadcast(const std::string& json)
         send(entry.first, json);
     };
 
+    // BUGBUG: use of connections_ in this method is not thread safe.
     std::for_each(connections_.begin(), connections_.end(), sender);
 }
 

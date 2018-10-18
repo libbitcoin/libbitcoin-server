@@ -323,8 +323,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
     }
 
     // Decode response and send query output to websocket client.  The
-    // websocket write is performed on the websocket thread via the
-    // task_sender.
+    // websocket write is performed on the websocket thread via task_sender.
     const auto payload = source.read_bytes();
     handler->second.decode(payload, id, work.connection);
     return true;
