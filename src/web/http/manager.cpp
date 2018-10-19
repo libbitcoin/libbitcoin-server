@@ -775,7 +775,7 @@ bool manager::transfer_file_data(connection_ptr connection)
         return false;
     }
 
-    file_transfer.offset += read;
+    file_transfer.offset += written;
 
     if (file_transfer.offset == file_transfer.length)
     {

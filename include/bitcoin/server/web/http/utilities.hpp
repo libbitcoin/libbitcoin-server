@@ -38,13 +38,14 @@ namespace http {
 
 #ifdef _MSC_VER
     #define would_block(value) (value == WSAEWOULDBLOCK)
+    #define WOULD_BLOCK WSAEWOULDBLOCK
 #else
     #define would_block(value) (value == EAGAIN || value == EWOULDBLOCK)
+    #define WOULD_BLOCK EWOULDBLOCK
 #endif
 
 #ifdef WITH_MBEDTLS
     std::string mbedtls_error_string(int32_t error);
-    ////short_hash sha1(const std::string& input);
     #define mbedtls_would_block(value) \
         (value == MBEDTLS_ERR_SSL_WANT_READ || \
          value == MBEDTLS_ERR_SSL_WANT_WRITE)

@@ -117,10 +117,10 @@ void server_node::handle_running(const code& , result_handler handler)
     // The stop handler is already stopped but the authenticator context gets
     // started, allowing services to stop. The registration of services with
     // the stop handler invokes the registered handlers immediately, invoking
-    // stop o nthe services. The services are running and don't stop...
+    // stop on the services. The services are running and don't stop...
     // notification_worker, query_service and authenticator service.
     // The authenticator is already stopped (before it started) so there will
-    // be no context stop to stop the services, specifically the relays.
+    // be no context to stop the services, specifically the relays.
     if (!start_services())
     {
         handler(error::operation_failed);

@@ -21,6 +21,12 @@
 #include <algorithm>
 #include <windows.h>
 #include <bitcoin/bitcoin.hpp>
+/* #include <functional> */
+
+/* // Explicitly use std::placeholders here for usage internally to the */
+/* // boost parsing helpers included from json_parser.hpp. */
+/* // See: https://svn.boost.org/trac10/ticket/12621 */
+/* using namespace std::placeholders; */
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/web/http/http.hpp>
 #include <bitcoin/server/web/http/utilities.hpp>
@@ -102,14 +108,19 @@ bool connection::closed() const
 
 int32_t connection::read()
 {
-#ifdef WITH_MBEDTLS
-    bytes_read_ = ssl_context_.enabled ?
-        mbedtls_ssl_read(&ssl_context_.context, data, maximum_read_length) :
-        recv(socket_, data, maximum_read_length, 0)
-#else
+#ifdef WIN32
     // reinterpret_cast required for Win32, otherwise nop.
-    bytes_read_ = recv(socket_, reinterpret_cast<char*>(read_buffer_.data()),
-        maximum_read_length, 0);
+    auto data = reinterpret_cast<char*>(read_buffer_.data());
+#else
+    auto data = read_buffer_.data();
+#endif
+
+#ifdef WITH_MBEDTLS
+    bytes_read_ = (ssl_context_.enabled ?
+        mbedtls_ssl_read(&ssl_context_.context, data, maximum_read_length) :
+        recv(socket_, data, maximum_read_length, 0));
+#else
+    bytes_read_ = recv(socket_, data, maximum_read_length, 0);
 #endif
     return bytes_read_;
 }
@@ -152,20 +163,22 @@ int32_t connection::unbuffered_write(const uint8_t* data, size_t length)
         return send(socket_, reinterpret_cast<const char*>(data),
             static_cast<int32_t>(length), 0);
 #else
-        return send(socket_, data, length, 0);
+        return static_cast<int32_t>(send(socket_, data, length, 0));
 #endif
     };
 
 #ifdef WITH_MBEDTLS
     const auto ssl_write = [this](const uint8_t* data, size_t length)
     {
-        // BUGBUG: handle MBEDTLS_ERR_SSL_WANT_WRITE
-        return mbedtls_ssl_write(&ssl_context_.context, data, length));
+        int32_t value = mbedtls_ssl_write(&ssl_context_.context, data, length);
+        return mbedtls_would_block(value) ? WOULD_BLOCK : value;
     };
 
-    auto writer = ssl_context_.enabled ? ssl_write : plaintext_write;
+    auto writer = ssl_context_.enabled ?
+        static_cast<write_method>(ssl_write) :
+        static_cast<write_method>(plaintext_write);
 #else
-    auto writer = plaintext_write;
+    auto writer = static_cast<write_method>(plaintext_write);
 #endif
 
     auto remaining = length;

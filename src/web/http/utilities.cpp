@@ -64,27 +64,13 @@ std::string mbedtls_error_string(int32_t error)
     mbedtls_strerror(error, data.data(), data.size());
     return { data.data() };
 }
-
-////short_hash sha1(const std::string& input)
-////{
-////    short_hash out;
-////    mbedtls_sha1_context context;
-////    mbedtls_sha1_init(&context);
-////
-////    const auto source = reinterpret_cast<const uint8_t*>(input.data());
-////    if ((mbedtls_sha1_starts_ret(&context) == 0) &&
-////        (mbedtls_sha1_update_ret(&context, source, input.size()) == 0) &&
-////        (mbedtls_sha1_finish_ret(&context, out.data()) == 0))
-////        return out;
-////
-////    return {};
-////}
 #endif
 
 std::string op_to_string(websocket_op code)
 {
     static const std::string unknown = "unknown";
-    static const std::unordered_map<websocket_op, std::string> opcode_map
+    static const std::unordered_map<websocket_op, std::string,
+        websocket_op_hasher> opcode_map
     {
         { websocket_op::continuation, "continue" },
         { websocket_op::text, "text" },
@@ -105,25 +91,10 @@ std::string websocket_key_response(const std::string& websocket_key)
     static const std::string rfc6455_guid =
         "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-// TODO: why are there two implementations of this?
-////#ifdef WITH_MBEDTLS
-////    // The buffer is a base64 encoded sha1 hash (20 bytes in length).
-////    static constexpr size_t key_buffer_length = 64;
-////    std::array<uint8_t, key_buffer_length> buffer;
-////
-////    size_t processed_length = 0;
-////    const auto hash = sha1(websocket_key + rfc6455_guid);
-////
-////    if ((mbedtls_base64_encode(buffer.data(), buffer.size(), &processed_length,
-////        hash.data(), hash.size()) != 0) || (processed_length == 0))
-////        return {};
-////
-////    return { reinterpret_cast<char*>(buffer.data()), processed_length };
-////#else
     const auto input = websocket_key + rfc6455_guid;
-    const data_chunk input_data{ input.begin(), input.end() };
-    return encode_base64(bc::sha1_hash(input_data));
-////#endif
+    const data_chunk input_data(input.begin(), input.end());
+    const data_slice slice(bc::sha1_hash(input_data));
+    return encode_base64(slice);
 }
 
 bool is_json_request(const std::string& header_value)
