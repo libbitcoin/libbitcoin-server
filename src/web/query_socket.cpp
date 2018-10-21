@@ -250,7 +250,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
         return true;
     }
 
-    ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     correlation_lock_.lock_upgrade();
 
@@ -259,9 +259,9 @@ bool query_socket::handle_query(zmq::socket& dealer)
     if (correlation == correlations_.end())
     {
         correlation_lock_.unlock_upgrade();
-
-        // This will happen anytime the client disconnects before this
-        // handler is called. We can safely discard the result here.
+        //---------------------------------------------------------------------
+        // This will happen anytime the client disconnects before this handler
+        // is called. We can safely discard the result here.
         LOG_DEBUG(LOG_SERVER)
             << "Unmatched websocket query work item sequence: " << sequence;
         return true;
@@ -269,14 +269,11 @@ bool query_socket::handle_query(zmq::socket& dealer)
 
     auto connection = correlation->second.first;
     const auto id = correlation->second.second;
-
-    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     correlation_lock_.unlock_upgrade_and_lock();
     correlations_.erase(correlation);
-    // TODO: Can this 2 step unlock be done atomically?
-    correlation_lock_.unlock_and_lock_upgrade();
-    correlation_lock_.unlock_upgrade();
-    ///////////////////////////////////////////////////////////////////////
+    correlation_lock_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
 
     // Use connection to locate connection state.
     auto it = connections_.find(connection);
