@@ -84,9 +84,9 @@ class connection
     int32_t write(const std::string& buffer);
     int32_t write(const uint8_t* data, size_t length);
 
-    int32_t do_write(const data_chunk& buffer, bool frame);
-    int32_t do_write(const std::string& buffer, bool frame);
-    int32_t do_write(const uint8_t* data, size_t length, bool frame);
+    int32_t unbuffered_write(const data_chunk& buffer);
+    int32_t unbuffered_write(const std::string& buffer);
+    int32_t unbuffered_write(const uint8_t* data, size_t length);
 
     // Other.
     // ------------------------------------------------------------------------

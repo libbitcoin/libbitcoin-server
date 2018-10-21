@@ -521,8 +521,9 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
             {
                 const auto segment_length = std::min(write_buffer.size(),
                     transfer_buffer_length);
-                const auto written = connection->do_write(write_buffer.data(),
-                    segment_length, false);
+
+                const auto written = connection->unbuffered_write(
+                    write_buffer.data(), segment_length);
 
                 if (written < 0)
                 {
@@ -530,6 +531,7 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
                     continue;
                 }
 
+                // TODO: this is very inefficient, use circular buffer.
                 write_buffer.erase(write_buffer.begin(),
                     write_buffer.begin() + written);
             }
@@ -1092,12 +1094,12 @@ bool manager::upgrade_connection(connection_ptr connection,
     const auto protocol = request.header("sec-websocket-protocol");
     const auto response = reply.generate_upgrade(key_response, protocol);
 
-    // This write is unbuffered since we're not a websocket yet and
-    // want to be sure it completes before changing our state to be
-    // upgraded to a websocket.
-    if (connection->do_write(reinterpret_cast<const uint8_t*>(
-        response.c_str()), response.size(), false) != static_cast<int32_t>(
-            response.size()))
+    // Unbuffered since not websocket yet and must complete before upgrade.
+    const auto result = connection->unbuffered_write(response);
+
+    // TODO: why have both result conditions if both are a simple error?
+    // TODO: there must be a case where uneuqal response is not an error.
+    if (result < 0 || static_cast<size_t>(result) != response.size())
     {
         LOG_ERROR(LOG_SERVER_HTTP)
             << "Failed to upgrade connection due to a write failure";
@@ -1110,7 +1112,7 @@ bool manager::upgrade_connection(connection_ptr connection,
     LOG_VERBOSE(LOG_SERVER_HTTP)
         << "Upgraded connection " << connection << " for uri " << request.uri;
 
-    // On upgrade, call the user handler so they can track this websocket.
+    // On upgrade, call the user handler so it can track this websocket.
     return handler_(connection, event::accepted, nullptr);
 }
 
