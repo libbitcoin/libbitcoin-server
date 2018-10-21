@@ -19,6 +19,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <errno.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 
@@ -30,10 +32,9 @@ namespace server {
 namespace http {
 
 // TODO: std::strerror is not required to be thread safe.
-// TODO: Win32 FormatMessage requires unicode to utf-8 conversion.
 std::string error_string()
 {
-#ifdef WIN32
+#ifdef _MSC_VER
     WCHAR wide[MAX_PATH];
     const auto error = ::GetLastError();
     const auto flags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
@@ -53,7 +54,7 @@ std::string error_string()
 }
 
 #ifdef WITH_MBEDTLS
-std::string mbedtls_error_string(int error)
+std::string mbedtls_error_string(int32_t error)
 {
     static constexpr size_t error_buffer_length = 256;
     std::array<char, error_buffer_length> data{};
@@ -63,7 +64,7 @@ std::string mbedtls_error_string(int error)
 
 sha1_hash sha1(const std::string& input)
 {
-    sha1_hash out{};
+    sha1_hash out;
     mbedtls_sha1_context context;
     mbedtls_sha1_init(&context);
 
@@ -104,7 +105,7 @@ std::string websocket_key_response(const std::string& websocket_key)
 #ifdef WITH_MBEDTLS
     // The buffer is a base64 encoded sha1 hash (20 bytes in length).
     static constexpr size_t key_buffer_length = 64;
-    std::array<uint8_t, key_buffer_length> buffer{};
+    std::array<uint8_t, key_buffer_length> buffer;
 
     size_t processed_length = 0;
     const auto input = websocket_key + rfc6455_guid;
@@ -286,96 +287,64 @@ bool parse_http(http_request& out, const std::string& request)
     return true;
 }
 
-////unsigned long resolve_hostname(const std::string& hostname)
-////{
-////    unsigned long address = 0;
-////
-////#ifdef WIN32
-////    #define GET_ADDRESS(host, address) *address = ::inet_addr(host)
-////    #define VALIDATE_ADDRESS(address) (address != INADDR_NONE)
-////#else
-////    #define GET_ADDRESS(host, address) inet_pton(AF_INET, host, address)
-////    #define VALIDATE_ADDRESS(address) (address > 0)
-////#endif
-////
-////    // Resolve dotted ip address.
-////    if (!VALIDATE_ADDRESS(GET_ADDRESS(hostname.c_str(), &address)))
-////    {
-////        // Resolve host name.
-////        const auto* resolved = gethostbyname(hostname.c_str());
-////
-////        if (resolved != nullptr)
-////            address = *(reinterpret_cast<unsigned long*>(
-////                resolved->h_addr_list[0]));
-////    }
-////
-////#undef get_address
-////#undef validate_address
-////#undef host_info
-////
-////    return address;
-////}
-
-std::string mime_type(const std::string& filename)
+std::string mime_type(const boost::filesystem::path& path)
 {
-    std::unordered_map<std::string, std::string> mime_type_map =
+    static const std::unordered_map<std::string, std::string> map
     {
-        { "html", "text/html" },
-        { "htm", "text/html" },
-        { "shtm", "text/html" },
-        { "shtml", "text/html" },
-        { "css", "text/css" },
-        { "js", "application/x-javascript" },
-        { "ico", "image/x-icon" },
-        { "gif", "image/gif" },
-        { "jpg", "image/jpeg" },
-        { "jpeg", "image/jpeg" },
-        { "png", "image/png" },
-        { "svg", "image/svg+xml" },
-        { "md", "text/plain" },
-        { "txt", "text/plain" },
-        { "torrent", "application/x-bittorrent" },
-        { "wav", "audio/x-wav" },
-        { "mp3", "audio/x-mp3" },
-        { "mid", "audio/mid" },
-        { "m3u", "audio/x-mpegurl" },
-        { "ogg", "application/ogg" },
-        { "ram", "audio/x-pn-realaudio" },
-        { "xml", "text/xml" },
-        { "ttf", "application/x-font-ttf" },
-        { "json", "application/json" },
-        { "xslt", "application/xml" },
-        { "xsl", "application/xml" },
-        { "ra", "audio/x-pn-realaudio" },
-        { "doc", "application/msword" },
-        { "exe", "application/octet-stream" },
-        { "zip", "application/x-zip-compressed" },
-        { "xls", "application/excel" },
-        { "tgz", "application/x-tar-gz" },
-        { "tar", "application/x-tar" },
-        { "gz", "application/x-gunzip" },
-        { "arj", "application/x-arj-compressed" },
-        { "rar", "application/x-rar-compressed" },
-        { "rtf", "application/rtf" },
-        { "pdf", "application/pdf" },
-        { "swf", "application/x-shockwave-flash" },
-        { "mpg", "video/mpeg" },
-        { "webm", "video/webm" },
-        { "mpeg", "video/mpeg" },
-        { "mov", "video/quicktime" },
-        { "mp4", "video/mp4" },
-        { "m4v", "video/x-m4v" },
-        { "asf", "video/x-ms-asf" },
-        { "avi", "video/x-msvideo" },
-        { "bmp", "image/bmp" }
+        { ".html", "text/html" },
+        { ".htm", "text/html" },
+        { ".shtm", "text/html" },
+        { ".shtml", "text/html" },
+        { ".css", "text/css" },
+        { ".js", "application/x-javascript" },
+        { ".ico", "image/x-icon" },
+        { ".gif", "image/gif" },
+        { ".jpg", "image/jpeg" },
+        { ".jpeg", "image/jpeg" },
+        { ".png", "image/png" },
+        { ".svg", "image/svg+xml" },
+        { ".md", "text/plain" },
+        { ".txt", "text/plain" },
+        { ".torrent", "application/x-bittorrent" },
+        { ".wav", "audio/x-wav" },
+        { ".mp3", "audio/x-mp3" },
+        { ".mid", "audio/mid" },
+        { ".m3u", "audio/x-mpegurl" },
+        { ".ogg", "application/ogg" },
+        { ".ram", "audio/x-pn-realaudio" },
+        { ".xml", "text/xml" },
+        { ".ttf", "application/x-font-ttf" },
+        { ".json", "application/json" },
+        { ".xslt", "application/xml" },
+        { ".xsl", "application/xml" },
+        { ".ra", "audio/x-pn-realaudio" },
+        { ".doc", "application/msword" },
+        { ".exe", "application/octet-stream" },
+        { ".zip", "application/x-zip-compressed" },
+        { ".xls", "application/excel" },
+        { ".tgz", "application/x-tar-gz" },
+        { ".tar", "application/x-tar" },
+        { ".gz", "application/x-gunzip" },
+        { ".arj", "application/x-arj-compressed" },
+        { ".rar", "application/x-rar-compressed" },
+        { ".rtf", "application/rtf" },
+        { ".pdf", "application/pdf" },
+        { ".swf", "application/x-shockwave-flash" },
+        { ".mpg", "video/mpeg" },
+        { ".webm", "video/webm" },
+        { ".mpeg", "video/mpeg" },
+        { ".mov", "video/quicktime" },
+        { ".mp4", "video/mp4" },
+        { ".m4v", "video/x-m4v" },
+        { ".asf", "video/x-ms-asf" },
+        { ".avi", "video/x-msvideo" },
+        { ".bmp", "image/bmp" }
     };
 
-    const auto dot_position = filename.rfind(".");
-    if (dot_position != std::string::npos)
+    if (path.has_extension())
     {
-        const auto extension = filename.substr(dot_position + 1);
-        auto it = mime_type_map.find(extension);
-        if (it != mime_type_map.end())
+        const auto it = map.find(path.extension().generic_string());
+        if (it != map.end())
             return it->second;
     }
 

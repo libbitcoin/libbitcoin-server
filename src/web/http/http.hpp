@@ -34,7 +34,7 @@
 #include <vector>
 #include <fcntl.h>
 
-#ifdef WIN32
+#ifdef _MSC_VER
     #include <winsock2.h>
     #include <ws2tcpip.h>
     #include <windows.h>
@@ -74,7 +74,7 @@ namespace libbitcoin {
 namespace server {
 namespace http {
 
-#ifdef WIN32
+#ifdef _MSC_VER
     typedef SOCKET sock_t;
     typedef uint32_t in_addr_t;
     #define CLOSE_SOCKET closesocket

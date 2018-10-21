@@ -78,7 +78,7 @@ class manager
     void run_once(size_t timeout_milliseconds);
     void select(size_t timeout_milliseconds, connection_list& sockets);
     bool transfer_file_data(connection_ptr connection);
-    bool send_http_file(connection_ptr connection, const std::string& path, bool keep_alive);
+    bool send_http_file(connection_ptr connection, const path& path, bool keep_alive);
     bool handle_websocket(connection_ptr connection);
     bool send_response(connection_ptr connection, const http_request& request);
     bool send_generated_reply(connection_ptr connection, protocol_status status);

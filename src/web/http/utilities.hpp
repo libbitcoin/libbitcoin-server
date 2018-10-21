@@ -23,13 +23,17 @@ namespace libbitcoin {
 namespace server {
 namespace http {
 
-#ifdef WIN32
+#include <string>
+#include <boost/filesystem.hpp>
+#include "http.hpp"
+
+#ifdef _MSC_VER
 #define last_error() GetLastError()
 #else
 #define last_error() errno
 #endif
 
-#ifdef WIN32
+#ifdef _MSC_VER
     #define would_block(value) (value == WSAEWOULDBLOCK)
 #else
     #define would_block(value) (value == EAGAIN || value == EWOULDBLOCK)
@@ -39,7 +43,7 @@ namespace http {
     (value == MBEDTLS_ERR_SSL_WANT_READ || value == MBEDTLS_ERR_SSL_WANT_WRITE)
 
 #ifdef WITH_MBEDTLS
-    std::string mbedtls_error_string(int error);
+    std::string mbedtls_error_string(int32_t error);
     sha1_hash sha1(const std::string& input);
 #endif
 
@@ -48,8 +52,7 @@ std::string to_string(websocket_op code);
 std::string websocket_key_response(const std::string& websocket_key);
 bool is_json_request(const std::string& header_value);
 bool parse_http(http_request& out, const std::string& request);
-////unsigned long resolve_hostname(const std::string& hostname);
-std::string mime_type(const std::string& filename);
+std::string mime_type(const boost::filesystem::path& path);
 
 } // namespace http
 } // namespace server

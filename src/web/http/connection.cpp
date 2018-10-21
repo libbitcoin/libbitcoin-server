@@ -71,7 +71,7 @@ void connection::set_state(connection_state state)
 
 void connection::set_socket_non_blocking()
 {
-#ifdef WIN32
+#ifdef _MSC_VER
     ULONG non_blocking = 1;
     ioctlsocket(socket_, FIONBIO, &non_blocking);
 #else
@@ -148,7 +148,7 @@ int32_t connection::do_write(const uint8_t* data, size_t length, bool frame)
         if (length > max_int32)
             return -1;
 
-#ifdef WIN32
+#ifdef _MSC_VER
         return send(socket_, reinterpret_cast<const char*>(data),
             static_cast<int32_t>(length), 0);
 #else

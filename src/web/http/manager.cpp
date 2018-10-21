@@ -64,7 +64,7 @@ manager::manager(bool ssl, event_handler handler, path document_root)
 
 manager::~manager()
 {
-#ifdef WIN32
+#ifdef _MSC_VER
     if (initialized_)
         ::WSACleanup();
 #endif
@@ -73,7 +73,7 @@ manager::~manager()
 // Initialize is not thread safe.
 bool manager::initialize()
 {
-#ifdef WIN32
+#ifdef _MSC_VER
     WSADATA wsa_data;
     static constexpr auto winsock_version = MAKEWORD(2, 2);
     if (::WSAStartup(winsock_version, &wsa_data) != 0)
@@ -425,7 +425,7 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
         // Check if the descriptor is too high to monitor in our fd_set.
         if (descriptor > maximum_connections)
         {
-#ifdef WIN32
+#ifdef _MSC_VER
             CLOSE_SOCKET(descriptor);
             LOG_ERROR(LOG_SERVER_HTTP)
                 << "Error: cannot monitor socket " << descriptor
@@ -433,8 +433,7 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
             pending_removal.push_back(connection);
             continue;
 #else
-            // Attempt to resolve this by looking for a lower
-            // available descriptor.
+            // Attempt to resolve this by seeking a lower available descriptor.
             auto new_descriptor = dup(descriptor);
             if (new_descriptor < descriptor &&
                 new_descriptor < maximum_connections)
@@ -774,14 +773,17 @@ bool manager::transfer_file_data(connection_ptr connection)
     return success;
 }
 
-bool manager::send_http_file(connection_ptr connection,
-    const std::string& path, bool keep_alive)
+bool manager::send_http_file(connection_ptr connection, const path& path,
+    bool keep_alive)
 {
     auto& file_transfer = connection->file_transfer();
 
     if (!file_transfer.in_progress)
     {
-        file_transfer.descriptor = fopen(path.c_str(), "r");
+        // BUGBUG: UTF8 string passed to Windows ANSI parameter.
+        const auto file = path.generic_string().c_str();
+
+        file_transfer.descriptor = fopen(file, "r");
         if (file_transfer.descriptor == nullptr)
             return false;
 
@@ -1033,7 +1035,7 @@ bool manager::send_response(connection_ptr connection,
         ((request.protocol.find("HTTP/1.0") == std::string::npos) ||
         (request.header(std::string("Connection")) == "keep-alive"));
 
-    return send_http_file(connection, path.generic_string(), keep_alive);
+    return send_http_file(connection, path, keep_alive);
 }
 
 bool manager::send_generated_reply(connection_ptr connection,
