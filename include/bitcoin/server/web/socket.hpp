@@ -139,6 +139,7 @@ protected:
     const std::string security_;
     const bc::server::settings& server_settings_;
     const bc::protocol::settings& protocol_settings_;
+
     // handlers_ is effectively const.
     handler_map handlers_;
 

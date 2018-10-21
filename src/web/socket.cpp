@@ -314,7 +314,7 @@ void socket::handle_websockets()
 
 const std::shared_ptr<zmq::socket> socket::service() const
 {
-    // TODO: implement.
+    // TODO: implement?
     BITCOIN_ASSERT_MSG(false, "not implemented");
     return nullptr;
 }

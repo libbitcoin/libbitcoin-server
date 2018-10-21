@@ -66,9 +66,9 @@ class connection
     bool json_rpc() const;
     void set_json_rpc(bool json_rpc);
 
-    // Websocket endpoints are HTTP specific endpoints such as '/'.
-    const std::string& websocket_endpoint() const;
-    void set_websocket_endpoint(const std::string& endpoint);
+    // The connection endpoint is a request uri, such as '/'.
+    const std::string& uri() const;
+    void set_uri(const std::string& uri);
 
     // Readers and Writers.
     // ------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class connection
     sockaddr_in address_;
     asio::time_point last_active_;
     ssl ssl_context_;
-    std::string websocket_endpoint_;
+    std::string uri_;
     bool websocket_;
     bool json_rpc_;
 

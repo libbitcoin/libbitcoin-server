@@ -282,14 +282,14 @@ void connection::set_websocket(bool websocket)
     websocket_ = websocket;
 }
 
-const std::string& connection::websocket_endpoint() const
+const std::string& connection::uri() const
 {
-    return websocket_endpoint_;
+    return uri_;
 }
 
-void connection::set_websocket_endpoint(const std::string& endpoint)
+void connection::set_uri(const std::string& uri)
 {
-    websocket_endpoint_ = endpoint;
+    uri_ = uri;
 }
 
 bool connection::json_rpc() const

@@ -884,7 +884,7 @@ bool manager::handle_websocket(connection_ptr connection)
 
         websocket_message message
         {
-            connection->websocket_endpoint(),
+            connection->uri(),
             data + header_length,
             data_length,
             flags,
@@ -916,7 +916,7 @@ bool manager::handle_websocket(connection_ptr connection)
 
         websocket_message message
         {
-            connection->websocket_endpoint(),
+            connection->uri(),
             data + transfer.header_length,
             transfer.data.size() - transfer.header_length,
             flags,
@@ -957,7 +957,7 @@ bool manager::handle_websocket(connection_ptr connection)
 
         websocket_message message
         {
-            connection->websocket_endpoint(),
+            connection->uri(),
             data + header_length,
             data_length,
             flags,
@@ -1104,7 +1104,7 @@ bool manager::upgrade_connection(connection_ptr connection,
     }
 
     connection->set_websocket(true);
-    connection->set_websocket_endpoint(request.uri);
+    connection->set_uri(request.uri);
 
     LOG_VERBOSE(LOG_SERVER_HTTP)
         << "Upgraded connection " << connection << " for uri " << request.uri;
