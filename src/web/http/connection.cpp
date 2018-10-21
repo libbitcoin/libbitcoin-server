@@ -43,7 +43,6 @@ connection::connection(sock_t connection, const sockaddr_in& address)
     address_(address),
     last_active_(asio::steady_clock::now()),
     ssl_context_{},
-    websocket_endpoint_{},
     websocket_(false),
     json_rpc_(false),
     file_transfer_{},

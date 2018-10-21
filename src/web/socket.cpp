@@ -288,13 +288,13 @@ void socket::handle_websockets()
     {
         LOG_ERROR(LOG_SERVER)
             << "Failed to initialize websocket manager";
-        thread_status_.set_value(false);
+        socket_started_.set_value(false);
         return;
     }
 
     if (secure_)
     {
-        // Specified and not found CA cert be a failure condition.
+        // Specified and not found CA cert should be a failure condition.
         // TODO: defer string conversion to ssl internals, keep paths here.
         options.ssl_key = server_settings_.websockets_server_private_key.generic_string();
         options.ssl_certificate = server_settings_.websockets_server_certificate.generic_string();
@@ -304,11 +304,11 @@ void socket::handle_websockets()
     options.user_data = static_cast<void*>(this);
     if (!manager_->bind(websocket_endpoint(), options))
     {
-        thread_status_.set_value(false);
+        socket_started_.set_value(false);
         return;
     }
 
-    thread_status_.set_value(true);
+    socket_started_.set_value(true);
     manager_->start();
 }
 
@@ -321,9 +321,8 @@ const std::shared_ptr<zmq::socket> socket::service() const
 
 bool socket::start_websocket_handler()
 {
-    auto status = thread_status_.get_future();
+    auto status = socket_started_.get_future();
     thread_ = std::make_shared<asio::thread>(&socket::handle_websockets, this);
-    status.wait();
     return status.get();
 }
 
@@ -337,18 +336,18 @@ bool socket::stop_websocket_handler()
 
 size_t socket::connection_count() const
 {
-    // BUGBUG: use of connections_ in this method is not thread safe.
-    return connections_.size();
+    // BUGBUG: use of work_ in this method is not thread safe.
+    return work_.size();
 }
 
 // Called by the websocket handling thread via handle_event.
 void socket::add_connection(connection_ptr connection)
 {
-    // BUGBUG: use of connections_ in this method is not thread safe.
-    BITCOIN_ASSERT(connections_.find(connection) == connections_.end());
+    // BUGBUG: use of work_ in this method is not thread safe.
+    BITCOIN_ASSERT(work_.find(connection) == work_.end());
 
     // Initialize a new query_work_map for this connection.
-    connections_[connection].clear();
+    work_[connection].clear();
 }
 
 // Called by the websocket handling thread via handle_event.
@@ -357,12 +356,12 @@ void socket::add_connection(connection_ptr connection)
 // thread on response handling (i.e. query_socket::handle_query).
 void socket::remove_connection(connection_ptr connection)
 {
-    // BUGBUG: use of connections_ in this method is not thread safe.
-    if (connections_.empty())
+    // BUGBUG: use of work_ in this method is not thread safe.
+    if (work_.empty())
         return;
 
-    const auto it = connections_.find(connection);
-    if (it != connections_.end())
+    const auto it = work_.find(connection);
+    if (it != work_.end())
     {
         // Tearing down a connection is O(n) where n is the amount of
         // remaining outstanding queries.
@@ -392,7 +391,7 @@ void socket::remove_connection(connection_ptr connection)
 
         // Clear the query_work_map for this connection before removal.
         query_work_map.clear();
-        connections_.erase(it);
+        work_.erase(it);
     }
 }
 
@@ -431,10 +430,10 @@ void socket::notify_query_work(connection_ptr connection,
         return;
     }
 
-    // BUGBUG: use of connections_ in this method is not thread safe.
+    // BUGBUG: use of work_ in this method is not thread safe.
     // BUGBUG: this includes modification of query_work_map below.
-    auto it = connections_.find(connection);
-    if (it == connections_.end())
+    auto it = work_.find(connection);
+    if (it == work_.end())
     {
         LOG_ERROR(LOG_SERVER)
             << "Query work provided for unknown connection " << connection;
@@ -504,8 +503,8 @@ void socket::broadcast(const std::string& json)
         send(entry.first, json);
     };
 
-    // BUGBUG: use of connections_ in this method is not thread safe.
-    std::for_each(connections_.begin(), connections_.end(), sender);
+    // BUGBUG: use of work_ in this method is not thread safe.
+    std::for_each(work_.begin(), work_.end(), sender);
 }
 
 } // namespace server

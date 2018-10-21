@@ -276,8 +276,8 @@ bool query_socket::handle_query(zmq::socket& dealer)
     ///////////////////////////////////////////////////////////////////////////
 
     // Use connection to locate connection state.
-    auto it = connections_.find(connection);
-    if (it == connections_.end())
+    auto it = work_.find(connection);
+    if (it == work_.end())
     {
         LOG_ERROR(LOG_SERVER)
             << "Query work completed for unknown connection";
@@ -360,8 +360,8 @@ void query_socket::handle_websockets()
         protocol_settings_);
 
     // Hold a reference to this service_ socket member by this thread
-    // method so that we can properly shutdown even if the
-    // query_socket object is destroyed.
+    // method so that we can properly shutdown even if the query_socket
+    // object is destroyed.
     const auto service_ref = service_;
     const auto ec = service_ref->connect(query_endpoint());
 
@@ -370,16 +370,15 @@ void query_socket::handle_websockets()
         LOG_ERROR(LOG_SERVER)
             << "Failed to connect " << security_ << " query sender socket: "
             << ec.message();
-        thread_status_.set_value(false);
+        socket_started_.set_value(false);
         return;
     }
 
-    // socket::handle_websockets does web socket initialization and
-    // runs the web event loop.  Inside that loop, socket::poll
-    // eventually calls into the static handle_event callback, which
-    // calls socket::notify_query_work, which uses this 'service_' zmq
-    // socket for sending incoming requests and reading the json web
-    // responses.
+    // socket::handle_websockets does web socket initialization and runs the
+    // web event loop. Inside that loop, socket::poll eventually calls into
+    // the static handle_event callback, which calls socket::notify_query_work,
+    // which uses this 'service_' zmq socket for sending incoming requests and
+    // reading the json web responses.
     socket::handle_websockets();
 
     if (!service_ref->stop())
@@ -391,11 +390,10 @@ void query_socket::handle_websockets()
 
 bool query_socket::start_websocket_handler()
 {
-    std::future<bool> status = thread_status_.get_future();
+    auto& started = socket_started_.get_future();
     thread_ = std::make_shared<asio::thread>(&query_socket::handle_websockets,
         this);
-    status.wait();
-    return status.get();
+    return started.get();
 }
 
 } // namespace server

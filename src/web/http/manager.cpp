@@ -345,16 +345,13 @@ void manager::run_tasks()
 }
 
 // Portable select based implementation.
-// Break up number of connections into N lists of a specified
-// maximum size and call select for each of them, given a
-// timeout of (timeout_milliseconds / N).
-// This is a hack to work around limitations of the select
-// system call.  Note that you may also need to adjust the
-// descriptor limit for this process in order for this to work
-// properly.
-// With very large connection counts and small specified
-// timeout values, this poll method may very well exceed the
-// specified timeout.
+// Break up number of connections into N lists of a specified maximum size and
+// call select for each of them, given a timeout of (timeout_milliseconds / N).
+// This is a hack to work around limitations of the select system call. Note
+// that you may also need to adjust the descriptor limit for this process in
+// order for this to work properly.
+// With very large connection counts and small specified timeout values, this
+// poll method may very well exceed the specified timeout.
 void manager::poll(size_t timeout_milliseconds)
 {
     if (connections_.size() > maximum_connections)

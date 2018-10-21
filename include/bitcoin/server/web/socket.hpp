@@ -146,11 +146,11 @@ protected:
     // connected to the query_socket service.  This socket operates on
     // only the below member thread_.
     std::shared_ptr<asio::thread> thread_;
-    std::promise<bool> thread_status_;
+    std::promise<bool> socket_started_;
 
     // Used by the query_socket class.
     uint32_t sequence_;
-    connection_work_map connections_;
+    connection_work_map work_;
     query_correlation_map correlations_;
     mutable upgrade_mutex correlation_lock_;
 
