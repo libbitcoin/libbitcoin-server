@@ -99,6 +99,7 @@ class task_sender
     const std::string data_;
 };
 
+// TODO: eliminate the use of weak and untyped pointer to pass self here.
 // static
 // Callback made internally via socket::poll on the web socket thread.
 bool socket::handle_event(connection_ptr connection, const http::event event,

@@ -19,12 +19,12 @@
 #ifndef LIBBITCOIN_SERVER_WEB_HTTP_CONNECTION_HPP
 #define LIBBITCOIN_SERVER_WEB_HTTP_CONNECTION_HPP
 
-#include <chrono>
 #include <cstdint>
 #include <set>
 #include <string>
 #include <memory>
 #include <vector>
+#include <bitcoin/bitcoin.hpp>
 
 #include "http.hpp"
 
