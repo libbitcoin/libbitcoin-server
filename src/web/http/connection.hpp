@@ -37,7 +37,7 @@ class connection;
 typedef std::shared_ptr<connection> connection_ptr;
 typedef std::set<connection_ptr> connection_set;
 typedef std::vector<connection_ptr> connection_list;
-typedef std::function<bool(connection_ptr&, const event, void* data)>
+typedef std::function<bool(connection_ptr, const event, void* data)>
     event_handler;
 
 // This class is instantiated from accepted/incoming HTTP clients.
@@ -45,13 +45,10 @@ typedef std::function<bool(connection_ptr&, const event, void* data)>
 class connection
 {
   public:
-    static const uint32_t maximum_read_length = (1 << 10); // 1 KB
-    static const uint32_t default_high_water_mark = (1 << 21); // 2 MB
-    static const uint32_t default_incoming_frame_length = (1 << 19); // 512 KB
     typedef std::function<int32_t(const uint8_t*, uint32_t)> write_method;
 
     connection();
-    connection(sock_t connection, struct sockaddr_in& address);
+    connection(sock_t connection, const sockaddr_in& address);
     ~connection();
 
     // Properties.
@@ -69,34 +66,33 @@ class connection
     bool json_rpc() const;
     void set_json_rpc(bool json_rpc);
 
-    size_t high_water_mark() const;
-    void set_high_water_mark(size_t high_water_mark);
-
-    size_t maximum_incoming_frame_length() const;
-    void set_maximum_incoming_frame_length(size_t length);
-
     // Websocket endpoints are HTTP specific endpoints such as '/'.
     const std::string& websocket_endpoint() const;
-    void set_websocket_endpoint(const std::string endpoint);
+    void set_websocket_endpoint(const std::string& endpoint);
 
     // Readers and Writers.
     // ------------------------------------------------------------------------
+    // Signed integer results overload negative range for error code.
+
     read_buffer& read_buffer();
     data_chunk& write_buffer();
 
-    // Signed integer results use negative range for error code.
-    int32_t read_length();
     int32_t read();
+    int32_t read_length();
+
     int32_t write(const data_chunk& buffer);
     int32_t write(const std::string& buffer);
     int32_t write(const uint8_t* data, size_t length);
+
+    int32_t do_write(const data_chunk& buffer, bool frame);
+    int32_t do_write(const std::string& buffer, bool frame);
     int32_t do_write(const uint8_t* data, size_t length, bool frame);
 
     // Other.
     // ------------------------------------------------------------------------
 
     void set_socket_non_blocking();
-    struct sockaddr_in address() const;
+    sockaddr_in address() const;
     bool reuse_address() const;
     bool closed() const;
     void close();
@@ -117,8 +113,6 @@ class connection
     sock_t socket_;
     sockaddr_in address_;
     asio::time_point last_active_;
-    size_t high_water_mark_;
-    size_t maximum_incoming_frame_length_;
     ssl ssl_context_;
     std::string websocket_endpoint_;
     bool websocket_;

@@ -109,11 +109,10 @@ public:
     bool start() override;
 
     size_t connection_count() const;
-    void add_connection(connection_ptr& connection);
-    void remove_connection(connection_ptr& connection);
-    void notify_query_work(connection_ptr& connection,
-        const std::string& method, const uint32_t id,
-        const std::string& parameters);
+    void add_connection(connection_ptr connection);
+    void remove_connection(connection_ptr connection);
+    void notify_query_work(connection_ptr connection,
+        const std::string& method, uint32_t id, const std::string& parameters);
 
 protected:
     // Initialize the websocket event loop and start a thread to poll events.
@@ -156,7 +155,7 @@ protected:
     mutable upgrade_mutex correlation_lock_;
 
 private:
-    static bool handle_event(connection_ptr& connection,
+    static bool handle_event(connection_ptr connection,
         const http::event event, const void* data);
 
     std::shared_ptr<http::manager> manager_;

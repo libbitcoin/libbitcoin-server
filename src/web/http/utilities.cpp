@@ -102,8 +102,7 @@ std::string websocket_key_response(const std::string& websocket_key)
         "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 #ifdef WITH_MBEDTLS
-    // The required buffer size is for a base64 encoded sha1 hash (20
-    // bytes in length).
+    // The buffer is a base64 encoded sha1 hash (20 bytes in length).
     static constexpr size_t key_buffer_length = 64;
     std::array<uint8_t, key_buffer_length> buffer{};
 
@@ -118,9 +117,8 @@ std::string websocket_key_response(const std::string& websocket_key)
     return { reinterpret_cast<char*>(buffer.data()), processed_length };
 #else
     const auto input = websocket_key + rfc6455_guid;
-    const data_chunk input_data(input.begin(), input.end());
-    const data_slice slice(bc::sha1_hash(input_data));
-    return encode_base64(slice);
+    const data_chunk input_data{ input.begin(), input.end() };
+    return encode_base64(bc::sha1_hash(input_data));
 #endif
 }
 

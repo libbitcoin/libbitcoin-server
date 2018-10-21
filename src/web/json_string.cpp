@@ -18,23 +18,19 @@
  */
 #include <bitcoin/server/web/json_string.hpp>
 
-// Explicitly use std::placeholders here for usage internally to the
-// boost parsing helpers included from json_parser.hpp.
-// See: https://svn.boost.org/trac10/ticket/12621
-#include <functional>
-using namespace std::placeholders;
-
+#include <cstdint>
+#include <sstream>
+#include <string>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace web {
-using namespace boost::property_tree;
 
-static constexpr auto json_encoding = true;
+using namespace boost::property_tree;
 
 // Object to JSON converters.
 //-----------------------------------------------------------------------------
@@ -60,25 +56,15 @@ std::string to_json(uint64_t height, uint32_t id)
     tree.put("result", height);
     tree.put("id", id);
     return to_json(tree);
-    // NOTE: The bc::property_tree call works fine, but the format is
+
+    // TODO: The bc::property_tree call works fine, but the format is
     // different than expected for json_rpc so eventually we need to
     // separate out property_tree and json_rpc::property_tree, or
     // something along the lines to make this a clear distinction.
-    /* return to_json(bc::property_tree(height, id)); */
+    //// return to_json(property_tree(height, id));
 }
 
-std::string to_json(const int code, const std::string message, uint32_t id)
-{
-    ptree tree;
-    ptree error_tree;
-    error_tree.put("code", code);
-    error_tree.put("message", message);
-    tree.add_child("error", error_tree);
-    tree.put("id", id);
-    return to_json(tree);
-}
-
-std::string to_json(const std::error_code& code, uint32_t id)
+std::string to_json(const code& code, uint32_t id)
 {
     ptree tree;
     ptree error_tree;
@@ -87,31 +73,27 @@ std::string to_json(const std::error_code& code, uint32_t id)
     tree.add_child("error", error_tree);
     tree.put("id", id);
     return to_json(tree);
-    /* return to_json(bc::property_tree(code, id)); */
+    //// return to_json(property_tree(code, id));
 }
 
-std::string to_json(const bc::chain::header& header, uint32_t id)
+std::string to_json(const chain::header& header, uint32_t id)
 {
-    return to_json(bc::property_tree(bc::config::header(header)), id);
+    return to_json(property_tree(config::header(header)), id);
 }
 
-std::string to_json(const bc::chain::block& block, uint32_t id)
+std::string to_json(const chain::block& block, uint32_t id)
 {
-    auto tree = bc::property_tree(block, json_encoding);
-    return to_json(tree, id);
+    return to_json(property_tree(block, true), id);
 }
 
-std::string to_json(const bc::chain::block& block, uint32_t /* height */,
-    uint32_t id)
+std::string to_json(const chain::block& block, uint32_t, uint32_t id)
 {
-    return to_json(bc::property_tree(bc::config::header(block.header())), id);
+    return to_json(property_tree(config::header(block.header())), id);
 }
 
-std::string to_json(const bc::chain::transaction& transaction,
-    uint32_t id)
+std::string to_json(const chain::transaction& transaction, uint32_t id)
 {
-    return to_json(bc::property_tree(bc::config::transaction(
-        transaction), json_encoding), id);
+    return to_json(property_tree(config::transaction(transaction), true), id);
 }
 
 } // namespace web

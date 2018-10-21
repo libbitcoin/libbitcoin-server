@@ -19,8 +19,11 @@
 #ifndef LIBBITCOIN_SERVER_WEB_JSON_STRING_HPP
 #define LIBBITCOIN_SERVER_WEB_JSON_STRING_HPP
 
+#include <cstdint>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -31,13 +34,11 @@ namespace web {
 
 std::string to_json(const boost::property_tree::ptree& tree);
 std::string to_json(uint64_t height, uint32_t id);
-std::string to_json(const int code, const std::string message, uint32_t id);
-std::string to_json(const std::error_code& code, uint32_t id);
-std::string to_json(const bc::chain::header& header, uint32_t id);
-std::string to_json(const bc::chain::block& block, uint32_t id);
-std::string to_json(const bc::chain::block& block, uint32_t height,
-    uint32_t id);
-std::string to_json(const bc::chain::transaction& transaction, uint32_t id);
+std::string to_json(const code& code, uint32_t id);
+std::string to_json(const chain::header& header, uint32_t id);
+std::string to_json(const chain::block& block, uint32_t id);
+std::string to_json(const chain::block& block, uint32_t height, uint32_t id);
+std::string to_json(const chain::transaction& transaction, uint32_t id);
 
 } // namespace web
 } // namespace server

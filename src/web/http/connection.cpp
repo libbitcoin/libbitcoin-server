@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <algorithm>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
 
 #include "connection.hpp"
@@ -27,33 +28,20 @@ namespace libbitcoin {
 namespace server {
 namespace http {
 
+static constexpr size_t maximum_read_length = 1024;
+static constexpr size_t high_water_mark = 2 * 1024 * 1024;
+
 connection::connection()
-  : user_data_(nullptr),
-    state_(connection_state::unknown),
-    socket_(0),
-    address_{},
-    last_active_(asio::steady_clock::now()),
-    high_water_mark_(default_high_water_mark),
-    maximum_incoming_frame_length_(default_incoming_frame_length),
-    ssl_context_{},
-    websocket_endpoint_{},
-    json_rpc_(false),
-    websocket_(false),
-    file_transfer_{},
-    websocket_transfer_{},
-    bytes_read_(0)
+  : connection(0, sockaddr_in{})
 {
-    write_buffer_.reserve(high_water_mark_);
 }
 
-connection::connection(sock_t connection, struct sockaddr_in& address)
+connection::connection(sock_t connection, const sockaddr_in& address)
   : user_data_(nullptr),
     state_(connection_state::unknown),
     socket_(connection),
     address_(address),
     last_active_(asio::steady_clock::now()),
-    high_water_mark_(default_high_water_mark),
-    maximum_incoming_frame_length_(default_incoming_frame_length),
     ssl_context_{},
     websocket_endpoint_{},
     websocket_(false),
@@ -62,7 +50,7 @@ connection::connection(sock_t connection, struct sockaddr_in& address)
     websocket_transfer_{},
     bytes_read_(0)
 {
-    write_buffer_.reserve(high_water_mark_);
+    write_buffer_.reserve(high_water_mark);
 }
 
 connection::~connection()
@@ -79,33 +67,6 @@ connection_state connection::state() const
 void connection::set_state(connection_state state)
 {
     state_ = state;
-}
-
-size_t connection::high_water_mark() const
-{
-    return high_water_mark_;
-}
-
-// May invalidate any buffered write data.
-void connection::set_high_water_mark(size_t high_water_mark)
-{
-    if (high_water_mark > 0)
-    {
-        high_water_mark_ = high_water_mark;
-        write_buffer_.reserve(high_water_mark);
-        write_buffer_.shrink_to_fit();
-    }
-}
-
-size_t connection::maximum_incoming_frame_length() const
-{
-    return maximum_incoming_frame_length_;
-}
-
-void connection::set_maximum_incoming_frame_length(size_t length)
-{
-    if (length > 0)
-        maximum_incoming_frame_length_ = length;
 }
 
 void connection::set_socket_non_blocking()
@@ -166,6 +127,18 @@ data_chunk& connection::write_buffer()
     return write_buffer_;
 }
 
+
+int32_t connection::do_write(const data_chunk& buffer, bool frame)
+{
+    return do_write(buffer.data(), buffer.size(), frame);
+}
+
+int32_t connection::do_write(const std::string& buffer, bool frame)
+{
+    const auto data = reinterpret_cast<const uint8_t*>(buffer.data());
+    return do_write(data, buffer.size(), frame);
+}
+
 // This is effectively a blocking write call that does not buffer internally.
 int32_t connection::do_write(const uint8_t* data, size_t length, bool frame)
 {
@@ -222,7 +195,7 @@ int32_t connection::do_write(const uint8_t* data, size_t length, bool frame)
                 return written;
             }
 
-            // BUGBUG: non-terminating loop , or does would_block prevent?
+            // BUGBUG: non-terminating loop, or does would_block prevent?
             continue;
         }
 
@@ -251,21 +224,21 @@ int32_t connection::write(const uint8_t* data, size_t length)
     if (length > max_int32)
         return -1;
 
-    static constexpr auto maximal_websocket_frame = 11u;
-    const auto buffered_length = write_buffer_.size() + length +
-        (websocket_ ? maximal_websocket_frame : 0);
+    const auto frame_size = websocket_ ? websocket_frame::maximal_size : 0;
+    const auto buffered_length = write_buffer_.size() + length + frame_size;
 
     // If we're currently at the hwm, issue blocking writes until
     // we've cleared the buffered data and then write this current
     // request.  This is an expensive operation, but should be
     // mostly avoidable with proper hwm tuning of your application.
-    if (buffered_length >= high_water_mark_)
+    if (buffered_length >= high_water_mark)
     {
         // Drain the buffered data.
         while (!write_buffer_.empty())
         {
             const auto segment_length = std::min(transfer_buffer_length,
                 write_buffer_.size());
+
             const auto written = do_write(write_buffer_.data(), segment_length,
                 false);
 
@@ -348,7 +321,7 @@ const std::string& connection::websocket_endpoint() const
     return websocket_endpoint_;
 }
 
-void connection::set_websocket_endpoint(const std::string endpoint)
+void connection::set_websocket_endpoint(const std::string& endpoint)
 {
     websocket_endpoint_ = endpoint;
 }

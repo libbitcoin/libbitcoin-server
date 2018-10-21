@@ -50,12 +50,6 @@
     #include <sys/select.h>
 #endif
 
-// Explicitly use std::placeholders here for usage internally to the
-// boost parsing helpers included from json_parser.hpp.
-// See: https://svn.boost.org/trac10/ticket/12621
-////// TODO: DO NOT USE 'using namespace' IN HEADER.
-////using namespace std::placeholders;
-
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -191,18 +185,20 @@ struct websocket_message
 class websocket_frame
 {
 public:
-    websocket_frame()
-      : header_length_(0), data_length_(0)
+    static const size_t maximal_size = 11;
+
+    websocket_frame(const uint8_t* data, size_t size)
     {
+        from_data(data, size);
     }
 
     static data_chunk to_data(size_t length, websocket_op code)
     {
-        if (length < 126)
+        if (length < 0x7e)
         {
             return build_chunk(
             {
-                to_array(0x80 | static_cast<uint8_t>(code)),
+                to_array(uint8_t(0x80) | static_cast<uint8_t>(code)),
                 to_array(static_cast<uint8_t>(length))
             });
         }
@@ -210,8 +206,8 @@ public:
         {
             return build_chunk(
             {
-                to_array(0x80 | static_cast<uint8_t>(code)),
-                to_array(uint8_t(126)),
+                to_array(uint8_t(0x80) | static_cast<uint8_t>(code)),
+                to_array(uint8_t(0x7e)),
                 to_big_endian(static_cast<uint16_t>(length))
             });
         }
@@ -219,63 +215,111 @@ public:
         {
             return build_chunk(
             {
-                to_array(0x80 | static_cast<uint8_t>(code)),
-                to_array(uint8_t(127)),
+                to_array(uint8_t(0x80) | static_cast<uint8_t>(code)),
+                to_array(uint8_t(0x7f)),
                 to_big_endian(static_cast<uint64_t>(length))
             });
         }
     }
 
-    bool from_data(const uint8_t* data, size_t size)
+    operator bool() const
     {
-        static constexpr auto prefix_length = 2u;
-        static constexpr auto mask_length = 4u;
+        return valid_;
+    }
 
-        header_length_ = 0;
-        data_length_ = 0;
+    bool final() const
+    {
+        return (flags_ & 0x80) != 0;
+    }
 
-        if (size < prefix_length || (data[1] & 0x80) == 0)
-            return false;
+    bool fragment() const
+    {
+        return !final() || op_code() == websocket_op::continuation;
+    }
 
-        const size_t length = (data[1] & 0x7f);
+    event event_type() const
+    {
+        return (flags_ & 0x08) ? event::websocket_control_frame :
+            event::websocket_frame;
+    }
 
-        if (size >= mask_length && length < 126u)
-        {
-            data_length_ = length;
-            header_length_ = prefix_length + mask_length;
-        }
-        else if (size >= prefix_length + sizeof(uint16_t) + mask_length &&
-            length == 126u)
-        {
-            data_length_ = from_big_endian<uint16_t>(&data[prefix_length],
-                &data[prefix_length + sizeof(uint16_t)]);
+    websocket_op op_code() const
+    {
+        return static_cast<websocket_op>(flags_ & 0x0f);
+    }
 
-            header_length_ = prefix_length + sizeof(uint16_t) + mask_length;
-        }
-        else if (size >= prefix_length + sizeof(uint64_t) + mask_length)
-        {
-            data_length_ = from_big_endian<uint64_t>(&data[prefix_length],
-                &data[prefix_length + sizeof(uint64_t)]);
-
-            header_length_ = prefix_length + sizeof(uint64_t) + mask_length;
-        }
-
-        return true;
+    uint8_t flags() const
+    {
+        return flags_;
     }
 
     size_t header_length() const
     {
-        return header_length_;
+        return header_;
     }
 
     size_t data_length() const
     {
-        return data_length_;
+        return data_;
+    }
+
+    size_t mask_length() const
+    {
+        return valid_ ? mask_ : 0;
     }
 
 private:
-    size_t header_length_;
-    size_t data_length_;
+    void from_data(const uint8_t* data, size_t read_length)
+    {
+        static constexpr size_t prefix = 2;
+        static constexpr size_t prefix16 = prefix + sizeof(uint16_t);
+        static constexpr size_t prefix64 = prefix + sizeof(uint64_t);
+
+        valid_ = false;
+
+        // Invalid websocket frame (too small).
+        if (read_length < 2)
+            return;
+
+        flags_ = data[0];
+        header_ = 0;
+        data_ = 0;
+
+        // Invalid websocket frame (unmasked).
+        if ((data[1] & 0x80) == 0)
+            return;
+
+        const size_t length = (data[1] & 0x7f);
+
+        if (read_length >= mask_ && length < 0x7e)
+        {
+            header_ = prefix + mask_;
+            data_ = length;
+        }
+        else if (read_length >= prefix16 + mask_ && length == 0x7e)
+        {
+            header_ = prefix16 + mask_;
+            data_ = from_big_endian<uint16_t>(&data[prefix],
+                &data[prefix16]);
+        }
+        else if (read_length >= prefix64 + mask_)
+        {
+            header_ = prefix64 + mask_;
+            data_ = from_big_endian<uint64_t>(&data[prefix],
+                &data[prefix64]);
+        }
+
+        valid_ = true;
+        return;
+    }
+
+private:
+    static const size_t mask_ = 4;
+
+    bool valid_;
+    uint8_t flags_;
+    size_t header_;
+    size_t data_;
 };
 
 struct ssl

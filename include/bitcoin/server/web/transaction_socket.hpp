@@ -33,8 +33,7 @@ namespace server {
 class server_node;
 
 // This class is thread safe.
-// Subscribe to transaction acceptances into the transaction memory
-// pool from a dedicated socket endpoint.
+// Subscribe to tx acceptances into the pool from a dedicated socket endpoint.
 class BCS_API transaction_socket
   : public socket
 {

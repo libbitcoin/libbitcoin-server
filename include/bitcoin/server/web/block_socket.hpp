@@ -29,8 +29,7 @@ namespace server {
 class server_node;
 
 // This class is thread safe.
-// Subscribe to block acceptances into the long chain from a dedicated
-// socket endpoint.
+// Subscribe to block acceptances from a dedicated socket endpoint.
 class BCS_API block_socket
   : public socket
 {

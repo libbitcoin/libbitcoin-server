@@ -69,7 +69,7 @@ class task_sender
 
     bool run()
     {
-        if (connection_ == nullptr || connection_->closed())
+        if (!connection_ || connection_->closed())
             return false;
 
         if (connection_->json_rpc())
@@ -81,6 +81,7 @@ class task_sender
             LOG_VERBOSE(LOG_SERVER_HTTP)
                 << "Writing JSON-RPC response: " << header;
 
+            // BUGBUG: unguarded narrowing cast.
             return connection_->write(header) == static_cast<int32_t>(header.size());
         }
 
@@ -88,7 +89,7 @@ class task_sender
         return connection_->write(data_) == static_cast<int32_t>(data_.size());
     }
 
-    connection_ptr& connection()
+    connection_ptr connection()
     {
         return connection_;
     }
@@ -98,16 +99,9 @@ class task_sender
     const std::string data_;
 };
 
-// The protocol message_size_limit is on the order of 1M.  The maximum
-// websocket frame size is set to a much smaller fraction of this
-// because our websocket protocol implementation does not contain
-// large incoming messages, and also to help avoid DoS attacks via
-// large incoming messages.
-static constexpr auto maximum_incoming_websocket_message_size = 4096u;
-
 // static
 // Callback made internally via socket::poll on the web socket thread.
-bool socket::handle_event(connection_ptr& connection, const http::event event,
+bool socket::handle_event(connection_ptr connection, const http::event event,
     const void* data)
 {
     switch (event)
@@ -184,10 +178,10 @@ bool socket::handle_event(connection_ptr& connection, const http::event event,
                 return false;
             }
 
-            // Use default-value get to avoid exceptions on invalid input.
+            // Use default value get to avoid exceptions on invalid input.
             const auto id = input_tree.get<uint32_t>("id", 0);
             const auto method = input_tree.get<std::string>("method", "");
-            std::string parameters{};
+            std::string parameters;
 
             const auto child = input_tree.get_child("params");
             std::vector<std::string> parameter_list;
@@ -216,11 +210,10 @@ bool socket::handle_event(connection_ptr& connection, const http::event event,
 
             if (connection->websocket())
             {
-                const auto connection_type = connection->json_rpc() ?
-                    "JSON-RPC" : "Websocket";
+                const auto type = connection->json_rpc() ? "JSON-RPC" : "Websocket";
                 LOG_DEBUG(LOG_SERVER)
-                    << connection_type << " client disconnected [" << connection
-                    << "] (" << instance->connection_count() << ")";
+                    << type << " client disconnected [" << connection << "] ("
+                    << instance->connection_count() << ")";
             }
 
             break;
@@ -287,12 +280,11 @@ bool socket::start()
 
 void socket::handle_websockets()
 {
-    const auto& endpoint = websocket_endpoint();
     http::bind_options options;
     manager_ = std::make_shared<http::manager>(secure_, &socket::handle_event,
         document_root_);
 
-    if (manager_ == nullptr || !manager_->initialize())
+    if (!manager_ || !manager_->initialize())
     {
         LOG_ERROR(LOG_SERVER)
             << "Failed to initialize websocket manager";
@@ -302,43 +294,34 @@ void socket::handle_websockets()
 
     if (secure_)
     {
-        options.ssl_ca_certificate =
-            (exists(server_settings_.websockets_ca_certificate) ?
-             server_settings_.websockets_ca_certificate.generic_string() : "*");
-        options.ssl_key =
-            server_settings_.websockets_server_private_key.generic_string();
-        options.ssl_certificate =
-            server_settings_.websockets_server_certificate.generic_string();
+        // Specified and not found CA cert be a failure condition.
+        // TODO: defer string conversion to ssl internals, keep paths here.
+        options.ssl_key = server_settings_.websockets_server_private_key.generic_string();
+        options.ssl_certificate = server_settings_.websockets_server_certificate.generic_string();
+        options.ssl_ca_certificate = server_settings_.websockets_ca_certificate.generic_string();
     }
 
     options.user_data = static_cast<void*>(this);
-    if (!manager_->bind(endpoint.to_local().host(), endpoint.port(), options))
+    if (!manager_->bind(websocket_endpoint(), options))
     {
-        LOG_ERROR(LOG_SERVER)
-            << "Failed to bind listener websocket to port " << endpoint.port();
         thread_status_.set_value(false);
         return;
     }
 
-    LOG_INFO(LOG_SERVER)
-        << "Bound " << security_ << " " << domain_ << " websocket to port "
-        << endpoint.port();
-
-    manager_->set_maximum_incoming_frame_length(
-        maximum_incoming_websocket_message_size);
     thread_status_.set_value(true);
-
     manager_->start();
 }
 
 const std::shared_ptr<zmq::socket> socket::service() const
 {
+    // TODO: implement.
+    BITCOIN_ASSERT_MSG(false, "not implemented");
     return nullptr;
 }
 
 bool socket::start_websocket_handler()
 {
-    std::future<bool> status = thread_status_.get_future();
+    auto status = thread_status_.get_future();
     thread_ = std::make_shared<asio::thread>(&socket::handle_websockets, this);
     status.wait();
     return status.get();
@@ -346,7 +329,7 @@ bool socket::start_websocket_handler()
 
 bool socket::stop_websocket_handler()
 {
-    BITCOIN_ASSERT(manager_ != nullptr);
+    BITCOIN_ASSERT(manager_);
     manager_->stop();
     thread_->join();
     return true;
@@ -359,7 +342,7 @@ size_t socket::connection_count() const
 }
 
 // Called by the websocket handling thread via handle_event.
-void socket::add_connection(connection_ptr& connection)
+void socket::add_connection(connection_ptr connection)
 {
     // BUGBUG: use of connections_ in this method is not thread safe.
     BITCOIN_ASSERT(connections_.find(connection) == connections_.end());
@@ -372,7 +355,7 @@ void socket::add_connection(connection_ptr& connection)
 // Correlation lock usage is required because it protects the shared
 // correlation map of ids, which can also used by the zmq service
 // thread on response handling (i.e. query_socket::handle_query).
-void socket::remove_connection(connection_ptr& connection)
+void socket::remove_connection(connection_ptr connection)
 {
     // BUGBUG: use of connections_ in this method is not thread safe.
     if (connections_.empty())
@@ -420,20 +403,14 @@ void socket::remove_connection(connection_ptr& connection)
 //
 // Errors write directly on the connection since this is called from
 // the event_handler, which is called on the websocket thread.
-void socket::notify_query_work(connection_ptr& connection,
-    const std::string& method, const uint32_t id,
-    const std::string& parameters)
+void socket::notify_query_work(connection_ptr connection,
+    const std::string& method, uint32_t id, const std::string& parameters)
 {
-    typedef std::pair<int32_t, std::string> error;
-    static const error invalid_request{ -32600, "Invalid Request." };
-    static const error not_found{ -32601, "Method not found." };
-    static const error internal_error{ -32603, "Internal error." };
-
-    auto send_error_reply = [&connection, id](const protocol_status status,
-        int code, const std::string message)
+    const auto send_error_reply = [=](protocol_status status,
+        const bc::code& ec)
     {
         http_reply reply;
-        const auto error = web::to_json(code, message, id);
+        const auto error = web::to_json(ec, id);
         const auto response = reply.generate(status, {}, error.size(), false);
         LOG_VERBOSE(LOG_SERVER) << error + response;
         connection->write(error + response);
@@ -442,22 +419,15 @@ void socket::notify_query_work(connection_ptr& connection,
     if (handlers_.empty())
     {
         send_error_reply(protocol_status::service_unavailable,
-            invalid_request.first, invalid_request.second);
-        // This error will most commonly present when a client
-        // connects to one of the other websocket services (other than
-        // query_socket), so no handlers are available.
-        LOG_ERROR(LOG_SERVER)
-            << "No method handlers available; ensure you're connected to the "
-            << "query websocket service";
+            bc::error::http_invalid_request);
         return;
     }
 
     const auto handler = handlers_.find(method);
     if (handler == handlers_.end())
     {
-        send_error_reply(protocol_status::not_found, not_found.first,
-            not_found.second);
-        LOG_VERBOSE(LOG_SERVER) << "Method " << method << " not found";
+        send_error_reply(protocol_status::not_found,
+            bc::error::http_method_not_found);
         return;
     }
 
@@ -475,7 +445,7 @@ void socket::notify_query_work(connection_ptr& connection,
     if (query_work_map.find(id) != query_work_map.end())
     {
         send_error_reply(protocol_status::internal_server_error,
-            internal_error.first, internal_error.second);
+            bc::error::http_internal_error);
         return;
     }
 
@@ -507,21 +477,19 @@ void socket::notify_query_work(connection_ptr& connection,
 
     if (ec)
     {
-        LOG_WARNING(LOG_SERVER)
-            << "Query send failure: " << ec.message();
         send_error_reply(protocol_status::internal_server_error,
-           internal_error.first, internal_error.second);
+            bc::error::http_internal_error);
         return;
     }
 }
 
-// Sends json strings to websockets or connections waiting on json_rpc
-// replies (only).
+// Sends json to websockets/connections waiting on json_rpc replies (only).
 void socket::send(connection_ptr connection, const std::string& json)
 {
-    if (connection == nullptr || connection->closed() ||
+    if (!connection || connection->closed() ||
         (!connection->websocket() && !connection->json_rpc()))
         return;
+
     // By using a task_sender via the manager's execute method, we guarantee
     // that the write is performed on the manager's websocket thread (at the
     // expense of copied json send and response payloads).
