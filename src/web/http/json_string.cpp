@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/web/json_string.hpp>
+#include <bitcoin/server/web/http/json_string.hpp>
 
 #include <cstdint>
 #include <sstream>

@@ -28,11 +28,14 @@
     <Filter Include="include\bitcoin\server\web">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\bitcoin\server\web\http">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
+    </Filter>
     <Filter Include="include\bitcoin\server\workers">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
     </Filter>
     <Filter Include="resource">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000000}</UniqueIdentifier>
@@ -111,19 +114,19 @@
     <ClCompile Include="..\..\..\..\src\web\http\connection.cpp">
       <Filter>src\web\http</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\http\json_string.cpp">
+      <Filter>src\web\http</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\web\http\manager.cpp">
+      <Filter>src\web\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\http\socket.cpp">
       <Filter>src\web\http</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\web\http\utilities.cpp">
       <Filter>src\web\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\web\json_string.cpp">
-      <Filter>src\web</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\web\query_socket.cpp">
-      <Filter>src\web</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\web\socket.cpp">
       <Filter>src\web</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\web\transaction_socket.cpp">
@@ -200,13 +203,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp">
       <Filter>include\bitcoin\server\web</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\json_string.hpp">
-      <Filter>include\bitcoin\server\web</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\json_string.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\socket.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\query_socket.hpp">
-      <Filter>include\bitcoin\server\web</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\socket.hpp">
       <Filter>include\bitcoin\server\web</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\transaction_socket.hpp">

@@ -24,7 +24,7 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/json_string.hpp>
+#include <bitcoin/server/web/http/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/web/socket.hpp>
+#include <bitcoin/server/web/http/socket.hpp>
 
 #include <string>
 #include <utility>
@@ -25,7 +25,7 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/web/json_string.hpp>
+#include <bitcoin/server/web/http/json_string.hpp>
 
 #ifdef WITH_MBEDTLS
 extern "C"

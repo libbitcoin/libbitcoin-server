@@ -21,7 +21,7 @@
 
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/web/socket.hpp>
+#include <bitcoin/server/web/http/socket.hpp>
 
 namespace libbitcoin {
 namespace server {

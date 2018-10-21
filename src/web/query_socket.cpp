@@ -21,7 +21,7 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/web/json_string.hpp>
+#include <bitcoin/server/web/http/json_string.hpp>
 
 // Explicitly use std::placeholders here for usage internally to the
 // boost parsing helpers included from json_parser.hpp.

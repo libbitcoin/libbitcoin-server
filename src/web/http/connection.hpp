@@ -99,6 +99,7 @@ class connection
     sock_t& socket();
     http::ssl& ssl_context();
     bool ssl_enabled() const;
+
     http::file_transfer& file_transfer();
     http::websocket_transfer& websocket_transfer();
 

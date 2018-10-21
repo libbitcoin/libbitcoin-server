@@ -91,11 +91,11 @@
     <ClCompile Include="..\..\..\..\src\web\block_socket.cpp" />
     <ClCompile Include="..\..\..\..\src\web\heartbeat_socket.cpp" />
     <ClCompile Include="..\..\..\..\src\web\http\connection.cpp" />
+    <ClCompile Include="..\..\..\..\src\web\http\json_string.cpp" />
     <ClCompile Include="..\..\..\..\src\web\http\manager.cpp" />
+    <ClCompile Include="..\..\..\..\src\web\http\socket.cpp" />
     <ClCompile Include="..\..\..\..\src\web\http\utilities.cpp" />
-    <ClCompile Include="..\..\..\..\src\web\json_string.cpp" />
     <ClCompile Include="..\..\..\..\src\web\query_socket.cpp" />
-    <ClCompile Include="..\..\..\..\src\web\socket.cpp" />
     <ClCompile Include="..\..\..\..\src\web\transaction_socket.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp" />
     <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp" />
@@ -122,9 +122,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\block_socket.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\json_string.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\json_string.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\socket.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\query_socket.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\socket.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\transaction_socket.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\authenticator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp" />

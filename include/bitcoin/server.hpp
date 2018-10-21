@@ -35,10 +35,10 @@
 #include <bitcoin/server/services/transaction_service.hpp>
 #include <bitcoin/server/web/block_socket.hpp>
 #include <bitcoin/server/web/heartbeat_socket.hpp>
-#include <bitcoin/server/web/json_string.hpp>
 #include <bitcoin/server/web/query_socket.hpp>
-#include <bitcoin/server/web/socket.hpp>
 #include <bitcoin/server/web/transaction_socket.hpp>
+#include <bitcoin/server/web/http/json_string.hpp>
+#include <bitcoin/server/web/http/socket.hpp>
 #include <bitcoin/server/workers/authenticator.hpp>
 #include <bitcoin/server/workers/notification_worker.hpp>
 #include <bitcoin/server/workers/query_worker.hpp>
