@@ -127,7 +127,6 @@ data_chunk& connection::write_buffer()
     return write_buffer_;
 }
 
-
 int32_t connection::do_write(const data_chunk& buffer, bool frame)
 {
     return do_write(buffer.data(), buffer.size(), frame);
@@ -170,8 +169,8 @@ int32_t connection::do_write(const uint8_t* data, size_t length, bool frame)
 
     if (frame)
     {
-        auto frame_data = websocket_frame::to_data(length, websocket_op::text);
-        const auto written = writer(frame_data.data(), frame_data.size());
+        auto header = websocket_frame::to_header(length, websocket_op::text);
+        const auto written = writer(header.data(), header.size());
 
         if (written < 0)
             return written;
@@ -221,16 +220,16 @@ int32_t connection::write(const std::string& buffer)
 // This is a buffered write call if under the high water mark.
 int32_t connection::write(const uint8_t* data, size_t length)
 {
+    // TODO: set errno.
     if (length > max_int32)
         return -1;
 
-    const auto frame_size = websocket_ ? websocket_frame::maximal_size : 0;
-    const auto buffered_length = write_buffer_.size() + length + frame_size;
+    const auto frame = websocket_frame::to_header(length, websocket_op::text);
+    const auto buffered_length = write_buffer_.size() + frame.size() + length;
 
-    // If we're currently at the hwm, issue blocking writes until
-    // we've cleared the buffered data and then write this current
-    // request.  This is an expensive operation, but should be
-    // mostly avoidable with proper hwm tuning of your application.
+    // If currently at the hwm, issue blocking writes until buffer is cleared
+    // and then write this current request. This is expensive but should be
+    // mostly avoidable with proper hwm tuning.
     if (buffered_length >= high_water_mark)
     {
         // Drain the buffered data.
@@ -245,6 +244,7 @@ int32_t connection::write(const uint8_t* data, size_t length)
             if (written < 0)
                 return written;
 
+            // Costly buffer rewrite.
             if (!write_buffer_.empty())
                 write_buffer_.erase(write_buffer_.begin(),
                     write_buffer_.begin() + written);
@@ -256,12 +256,12 @@ int32_t connection::write(const uint8_t* data, size_t length)
 
     if (websocket_)
     {
-        auto frame_data = websocket_frame::to_data(length, websocket_op::text);
-        write_buffer_.insert(write_buffer_.end(), frame_data.begin(),
-            frame_data.end());
+        // Buffer header for future writes (called from poll).
+        auto frame = websocket_frame::to_header(length, websocket_op::text);
+        write_buffer_.insert(write_buffer_.end(), frame.begin(), frame.end());
     }
 
-    // Buffer this data for future writes (called from poll).
+    // Buffer data for future writes (called from poll).
     write_buffer_.insert(write_buffer_.end(), data, data + length);
     return static_cast<int32_t>(length);
 }

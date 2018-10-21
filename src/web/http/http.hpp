@@ -24,6 +24,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <fcntl.h>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -32,14 +33,13 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <fcntl.h>
 
 #ifdef _MSC_VER
+    #include <process.h>
+    #include <strsafe.h>
+    #include <windows.h>
     #include <winsock2.h>
     #include <ws2tcpip.h>
-    #include <windows.h>
-    #include <strsafe.h>
-    #include <process.h>
 #else
     #include <arpa/inet.h>
     #include <netdb.h>
@@ -50,10 +50,10 @@
     #include <sys/select.h>
 #endif
 
-#include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/random.hpp>
@@ -88,7 +88,7 @@ static const size_t default_buffer_length = 1 << 10; // 1KB
 static const size_t transfer_buffer_length = 1 << 18; // 256KB
 
 #ifdef WITH_MBEDTLS
-static const int default_ciphers[] =
+static const int32_t default_ciphers[] =
 {
     MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256,
@@ -185,14 +185,12 @@ struct websocket_message
 class websocket_frame
 {
 public:
-    static const size_t maximal_size = 11;
-
     websocket_frame(const uint8_t* data, size_t size)
     {
         from_data(data, size);
     }
 
-    static data_chunk to_data(size_t length, websocket_op code)
+    static data_chunk to_header(size_t length, websocket_op code)
     {
         if (length < 0x7e)
         {
@@ -398,8 +396,9 @@ public:
     boost::property_tree::ptree json_tree;
 };
 
-struct http_reply
+class http_reply
 {
+public:
     static std::string to_string(protocol_status status)
     {
         typedef std::unordered_map<protocol_status, std::string> status_map;
