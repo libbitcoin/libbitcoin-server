@@ -431,22 +431,21 @@ void notification_worker::purge()
     // Accumulate removals, send expiration notifications outside locks.
     std::vector<subscription> expires;
 
-    if (true)
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    address_mutex_.lock();
+
+    auto& address = address_subscriptions_.right;
+
+    for (auto it = address.begin(); it != address.end() &&
+        it->first.updated() < cutoff; it = address.erase(it))
     {
-        ///////////////////////////////////////////////////////////////////////
-        // Critical Section
-        unique_lock lock(address_mutex_);
-
-        auto& right = address_subscriptions_.right;
-
-        for (auto it = right.begin(); it != right.end() &&
-            it->first.updated() < cutoff; it = right.erase(it))
-        {
-            it->first.increment();
-            expires.push_back(it->first);
-        }
-        ///////////////////////////////////////////////////////////////////////
+        it->first.increment();
+        expires.push_back(it->first);
     }
+
+    address_mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
 
     // Send failure is logged in send.
     if (dealer)
@@ -456,22 +455,21 @@ void notification_worker::purge()
 
     expires.clear();
 
-    if (true)
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    stealth_mutex_.lock();
+
+    auto& stealth = stealth_subscriptions_.right;
+
+    for (auto it = stealth.begin(); it != stealth.end() &&
+        it->first.updated() < cutoff; it = stealth.erase(it))
     {
-        ///////////////////////////////////////////////////////////////////////
-        // Critical Section
-        unique_lock lock(stealth_mutex_);
-
-        auto& right = stealth_subscriptions_.right;
-
-        for (auto it = right.begin(); it != right.end() &&
-            it->first.updated() < cutoff; it = right.erase(it))
-        {
-            it->first.increment();
-            expires.push_back(it->first);
-        }
-        ///////////////////////////////////////////////////////////////////////
+        it->first.increment();
+        expires.push_back(it->first);
     }
+
+    stealth_mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
 
     // Send failure is logged in send.
     if (dealer)
