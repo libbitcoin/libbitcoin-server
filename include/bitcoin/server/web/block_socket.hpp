@@ -31,7 +31,7 @@ class server_node;
 // This class is thread safe.
 // Subscribe to block acceptances from a dedicated socket endpoint.
 class BCS_API block_socket
-  : public socket
+  : public http::socket
 {
 public:
     typedef std::shared_ptr<block_socket> ptr;

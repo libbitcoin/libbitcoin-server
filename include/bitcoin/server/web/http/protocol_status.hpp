@@ -16,31 +16,35 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
-#define LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HTTP_PROTOCOL_STATUS_HPP
+#define LIBBITCOIN_SERVER_WEB_HTTP_PROTOCOL_STATUS_HPP
 
 #include <cstdint>
-#include <string>
-#include <bitcoin/server/define.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace http {
 
-// Object to JSON converters.
-//-----------------------------------------------------------------------------
-
-BCS_API std::string to_json(const boost::property_tree::ptree& tree);
-BCS_API std::string to_json(uint64_t height, uint32_t id);
-BCS_API std::string to_json(const code& code, uint32_t id);
-BCS_API std::string to_json(const chain::header& header, uint32_t id);
-BCS_API std::string to_json(const chain::block& block, uint32_t id);
-BCS_API std::string to_json(const chain::block& block, uint32_t height,
-    uint32_t id);
-BCS_API std::string to_json(const chain::transaction& transaction,
-    uint32_t id);
+enum class protocol_status : uint16_t
+{
+    switching = 101,
+    ok = 200,
+    created = 201,
+    accepted = 202,
+    no_content = 204,
+    multiple_choices = 300,
+    moved_permanently = 301,
+    moved_temporarily = 302,
+    not_modified = 304,
+    bad_request = 400,
+    unauthorized = 401,
+    forbidden = 403,
+    not_found = 404,
+    internal_server_error = 500,
+    not_implemented = 501,
+    bad_gateway = 502,
+    service_unavailable = 503
+};
 
 } // namespace http
 } // namespace server

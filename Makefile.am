@@ -137,12 +137,24 @@ include_bitcoin_server_web_HEADERS = \
 
 include_bitcoin_server_web_httpdir = ${includedir}/bitcoin/server/web/http
 include_bitcoin_server_web_http_HEADERS = \
+    include/bitcoin/server/web/http/bind_options.hpp \
     include/bitcoin/server/web/http/connection.hpp \
+    include/bitcoin/server/web/http/connection_state.hpp \
+    include/bitcoin/server/web/http/event.hpp \
+    include/bitcoin/server/web/http/file_transfer.hpp \
     include/bitcoin/server/web/http/http.hpp \
+    include/bitcoin/server/web/http/http_reply.hpp \
+    include/bitcoin/server/web/http/http_request.hpp \
     include/bitcoin/server/web/http/json_string.hpp \
     include/bitcoin/server/web/http/manager.hpp \
+    include/bitcoin/server/web/http/protocol_status.hpp \
     include/bitcoin/server/web/http/socket.hpp \
-    include/bitcoin/server/web/http/utilities.hpp
+    include/bitcoin/server/web/http/ssl.hpp \
+    include/bitcoin/server/web/http/utilities.hpp \
+    include/bitcoin/server/web/http/websocket_frame.hpp \
+    include/bitcoin/server/web/http/websocket_message.hpp \
+    include/bitcoin/server/web/http/websocket_op.hpp \
+    include/bitcoin/server/web/http/websocket_transfer.hpp
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \

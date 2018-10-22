@@ -20,18 +20,24 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
-#include <windows.h>
+#include <vector>
+#include <boost/filesystem.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/web/http/http.hpp>
+#include <bitcoin/server/web/http/http_reply.hpp>
 #include <bitcoin/server/web/http/utilities.hpp>
+#include <bitcoin/server/web/http/websocket_frame.hpp>
+#include <bitcoin/server/web/http/websocket_message.hpp>
+#include <bitcoin/server/web/http/websocket_op.hpp>
 
 #ifdef WITH_MBEDTLS
 extern "C"
 {
 // Random data generator used by mbedtls for SSL.
-int https_random(void*, uint8_t* buffer, size_t length);
+uint32_t https_random(void*, uint8_t* buffer, size_t length);
 }
 #endif
 
@@ -905,15 +911,17 @@ bool manager::handle_websocket(connection_ptr connection)
         };
 
         // Possible TODO: If the opcode is a ping, send response here.
-        if (message.code != http::websocket_op::close)
+        if (message.code != websocket_op::close)
+        {
             LOG_DEBUG(LOG_SERVER_HTTP)
-                << "Unhandled websocket op: " << to_string(message.code);
+                << "Unhandled websocket op: " << op_to_string(message.code);
+        }
 
         // Call user handler for control frames.
         const auto status = handler_(connection, event_type, &message);
 
         // Returning false here causes the connection to be removed.
-        if (message.code == http::websocket_op::close)
+        if (message.code == websocket_op::close)
             return false;
 
         return status;

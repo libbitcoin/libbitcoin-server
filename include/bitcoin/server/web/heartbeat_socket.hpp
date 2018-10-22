@@ -35,7 +35,7 @@ class server_node;
 // This class is thread safe.
 // Subscribe to a pulse from a dedicated socket endpoint.
 class BCS_API heartbeat_socket
-  : public socket
+  : public http::socket
 {
 public:
     typedef std::shared_ptr<heartbeat_socket> ptr;

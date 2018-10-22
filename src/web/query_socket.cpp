@@ -30,14 +30,14 @@ namespace server {
 using namespace bc::config;
 using namespace bc::machine;
 using namespace bc::protocol;
+using namespace http;
 using role = zmq::socket::role;
 
-static const auto domain = "query";
 static constexpr auto poll_interval_milliseconds = 100u;
 
 query_socket::query_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : socket(authenticator, node, secure, domain)
+  : http::socket(authenticator, node, secure)
 {
     // JSON to ZMQ request encoders.
     //-------------------------------------------------------------------------
@@ -70,7 +70,7 @@ query_socket::query_socket(zmq::authenticator& authenticator,
         data_source istream(data);
         istream_reader source(istream);
         const auto height = source.read_4_bytes_little_endian();
-        send(connection, web::to_json(height, id));
+        send(connection, to_json(height, id));
     };
 
     const auto decode_transaction = [this, &node](const data_chunk& data,
@@ -80,7 +80,7 @@ query_socket::query_socket(zmq::authenticator& authenticator,
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto transaction = chain::transaction::factory(data, true,
             witness);
-        send(connection, web::to_json(transaction, id));
+        send(connection, to_json(transaction, id));
     };
 
     const auto decode_block = [this, &node](const data_chunk& data,
@@ -89,14 +89,14 @@ query_socket::query_socket(zmq::authenticator& authenticator,
         const auto witness = chain::script::is_enabled(
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto block = chain::block::factory(data, witness);
-        send(connection, web::to_json(block, id));
+        send(connection, to_json(block, id));
     };
 
     const auto decode_block_header = [this](const data_chunk& data,
         const uint32_t id,connection_ptr connection)
     {
         const auto header = chain::header::factory(data, true);
-        send(connection, web::to_json(header, id));
+        send(connection, to_json(header, id));
     };
 
     handlers_["getblockcount"] = handlers
@@ -196,8 +196,7 @@ void query_socket::work()
 
     if (!websocket_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to stop " << security_
-            << " query websocket handler";
+            << "Failed to stop " << security_ << " query websocket handler.";
 
     finished(query_stop && dealer_stop && websocket_stop);
 }
@@ -300,7 +299,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
     ec = source.read_error_code();
     if (ec)
     {
-        send(work.connection, web::to_json(ec, id));
+        send(work.connection, to_json(ec, id));
         return true;
     }
 
@@ -308,7 +307,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
     if (handler == handlers_.end())
     {
         static constexpr auto error = bc::error::not_implemented;
-        send(work.connection, web::to_json(error, id));
+        send(work.connection, to_json(error, id));
         return true;
     }
 

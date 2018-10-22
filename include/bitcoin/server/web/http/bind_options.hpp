@@ -16,46 +16,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_TRANSACTION_SOCKET_HPP
-#define LIBBITCOIN_SERVER_WEB_TRANSACTION_SOCKET_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HTTP_BIND_OPTIONS_HPP
+#define LIBBITCOIN_SERVER_WEB_HTTP_BIND_OPTIONS_HPP
 
 #include <cstdint>
-#include <memory>
 #include <string>
-#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/http/socket.hpp>
 
 namespace libbitcoin {
 namespace server {
+namespace http {
 
-class server_node;
-
-// This class is thread safe.
-// Subscribe to tx acceptances into the pool from a dedicated socket endpoint.
-class BCS_API transaction_socket
-  : public http::socket
+struct BCS_API bind_options
 {
-public:
-    typedef std::shared_ptr<transaction_socket> ptr;
-
-    /// Construct a transaction socket service endpoint.
-    transaction_socket(bc::protocol::zmq::authenticator& authenticator,
-        server_node& node, bool secure);
-
-protected:
-
-    // Implement the service.
-    virtual void work() override;
-
-    virtual const config::endpoint& zeromq_endpoint() const override;
-    virtual const config::endpoint& websocket_endpoint() const override;
-
-private:
-    bool handle_transaction(bc::protocol::zmq::socket& subscriber);
+    void* user_data;
+    uint32_t flags;
+    std::string ssl_key;
+    std::string ssl_certificate;
+    std::string ssl_ca_certificate;
+    std::string ssl_cipers;
 };
 
+} // namespace http
 } // namespace server
 } // namespace libbitcoin
 

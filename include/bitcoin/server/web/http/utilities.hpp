@@ -19,13 +19,16 @@
 #ifndef LIBBITCOIN_SERVER_WEB_HTTP_UTILITIES_HPP
 #define LIBBITCOIN_SERVER_WEB_HTTP_UTILITIES_HPP
 
+#include <string>
+#include <boost/filesystem.hpp>
+#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/web/http/http.hpp>
+#include <bitcoin/server/web/http/http_request.hpp>
+#include <bitcoin/server/web/http/websocket_op.hpp>
+
 namespace libbitcoin {
 namespace server {
 namespace http {
-
-#include <string>
-#include <boost/filesystem.hpp>
-#include <bitcoin/server/web/http/http.hpp>
 
 #ifdef _MSC_VER
     #define last_error() GetLastError()
@@ -41,18 +44,18 @@ namespace http {
 
 #ifdef WITH_MBEDTLS
     std::string mbedtls_error_string(int32_t error);
-    sha1_hash sha1(const std::string& input);
+    ////short_hash sha1(const std::string& input);
     #define mbedtls_would_block(value) \
         (value == MBEDTLS_ERR_SSL_WANT_READ || \
          value == MBEDTLS_ERR_SSL_WANT_WRITE)
 #endif
 
-std::string error_string();
-std::string to_string(websocket_op code);
-std::string websocket_key_response(const std::string& websocket_key);
-bool is_json_request(const std::string& header_value);
-bool parse_http(http_request& out, const std::string& request);
-std::string mime_type(const boost::filesystem::path& path);
+BCS_API std::string error_string();
+BCS_API std::string op_to_string(websocket_op code);
+BCS_API std::string websocket_key_response(const std::string& websocket_key);
+BCS_API bool is_json_request(const std::string& header_value);
+BCS_API bool parse_http(http_request& out, const std::string& request);
+BCS_API std::string mime_type(const boost::filesystem::path& path);
 
 } // namespace http
 } // namespace server

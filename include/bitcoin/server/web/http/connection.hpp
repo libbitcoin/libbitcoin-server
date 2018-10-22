@@ -26,7 +26,13 @@
 #include <memory>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/web/http/connection_state.hpp>
+#include <bitcoin/server/web/http/event.hpp>
+#include <bitcoin/server/web/http/file_transfer.hpp>
 #include <bitcoin/server/web/http/http.hpp>
+#include <bitcoin/server/web/http/ssl.hpp>
+#include <bitcoin/server/web/http/websocket_transfer.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -38,12 +44,11 @@ class connection;
 typedef std::shared_ptr<connection> connection_ptr;
 typedef std::set<connection_ptr> connection_set;
 typedef std::vector<connection_ptr> connection_list;
-typedef std::function<bool(connection_ptr, const event, void* data)>
-    event_handler;
+typedef std::function<bool(connection_ptr, event, void* data)> event_handler;
 
 // This class is instantiated from accepted/incoming HTTP clients.
 // Initiating outgoing HTTP connections are not currently supported.
-class connection
+class BCS_API connection
 {
 public:
     typedef std::function<int32_t(const uint8_t*, uint32_t)> write_method;

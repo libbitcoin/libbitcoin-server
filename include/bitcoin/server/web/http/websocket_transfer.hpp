@@ -16,31 +16,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
-#define LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HTTP_WEBSOCKET_TRANSFER_HPP
+#define LIBBITCOIN_SERVER_WEB_HTTP_WEBSOCKET_TRANSFER_HPP
 
+#include <cstddef>
 #include <cstdint>
-#include <string>
-#include <bitcoin/server/define.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace http {
 
-// Object to JSON converters.
-//-----------------------------------------------------------------------------
-
-BCS_API std::string to_json(const boost::property_tree::ptree& tree);
-BCS_API std::string to_json(uint64_t height, uint32_t id);
-BCS_API std::string to_json(const code& code, uint32_t id);
-BCS_API std::string to_json(const chain::header& header, uint32_t id);
-BCS_API std::string to_json(const chain::block& block, uint32_t id);
-BCS_API std::string to_json(const chain::block& block, uint32_t height,
-    uint32_t id);
-BCS_API std::string to_json(const chain::transaction& transaction,
-    uint32_t id);
+struct BCS_API websocket_transfer
+{
+    bool in_progress;
+    size_t offset;
+    size_t length;
+    size_t header_length;
+    data_chunk mask;
+    data_chunk data;
+};
 
 } // namespace http
 } // namespace server

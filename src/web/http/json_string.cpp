@@ -28,7 +28,7 @@
 
 namespace libbitcoin {
 namespace server {
-namespace web {
+namespace http {
 
 using namespace boost::property_tree;
 
@@ -96,6 +96,6 @@ std::string to_json(const chain::transaction& transaction, uint32_t id)
     return to_json(property_tree(config::transaction(transaction), true), id);
 }
 
-} // namespace web
+} // namespace http
 } // namespace server
 } // namespace libbitcoin

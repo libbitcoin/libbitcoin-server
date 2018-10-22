@@ -20,16 +20,22 @@
 #define LIBBITCOIN_SERVER_WEB_HTTP_MANAGER_HPP
 
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/web/http/bind_options.hpp>
 #include <bitcoin/server/web/http/connection.hpp>
+#include <bitcoin/server/web/http/http.hpp>
+#include <bitcoin/server/web/http/http_request.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace http {
 
-class manager
+class BCS_API manager
 {
 public:
     class task

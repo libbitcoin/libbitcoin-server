@@ -33,14 +33,14 @@ using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::message;
 using namespace bc::protocol;
+using namespace http;
 using role = zmq::socket::role;
 
-static const auto domain = "transaction";
 static constexpr auto poll_interval_milliseconds = 100u;
 
 transaction_socket::transaction_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : socket(authenticator, node, secure, domain)
+  : http::socket(authenticator, node, secure)
 {
 }
 
@@ -62,8 +62,8 @@ void transaction_socket::work()
     if (!started(start_websocket_handler()))
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to start " << security_ << " " << domain
-            << " websocket handler";
+            << "Failed to start " << security_
+            << " transaction websocket handler.";
         return;
     }
 
@@ -92,7 +92,7 @@ void transaction_socket::work()
     if (!websocket_stop)
         LOG_ERROR(LOG_SERVER)
             << "Failed to stop " << security_
-            << " transaction websocket handler";
+            << " transaction websocket handler.";
 
     finished(sub_stop && websocket_stop);
 }
@@ -125,7 +125,7 @@ bool transaction_socket::handle_transaction(zmq::socket& subscriber)
     chain::transaction tx;
     tx.from_data(transaction_data, true, true);
 
-    broadcast(web::to_json(tx, sequence));
+    broadcast(to_json(tx, sequence));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket tx ["

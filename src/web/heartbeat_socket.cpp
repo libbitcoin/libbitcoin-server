@@ -28,16 +28,16 @@
 namespace libbitcoin {
 namespace server {
 
-static const auto domain = "heartbeat";
 static constexpr auto poll_interval_milliseconds = 100u;
 
 using namespace bc::config;
 using namespace bc::protocol;
+using namespace http;
 using role = zmq::socket::role;
 
 heartbeat_socket::heartbeat_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : socket(authenticator, node, secure, domain)
+  : http::socket(authenticator, node, secure)
 {
 }
 
@@ -59,8 +59,8 @@ void heartbeat_socket::work()
     if (!started(start_websocket_handler()))
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to start " << security_ << " " << domain
-            << " websocket handler";
+            << "Failed to start " << security_
+            << " heartbeat websocket handler.";
         return;
     }
 
@@ -89,7 +89,7 @@ void heartbeat_socket::work()
     if (!websocket_stop)
         LOG_ERROR(LOG_SERVER)
             << "Failed to stop " << security_
-            << " heartbeat websocket handler";
+            << " heartbeat websocket handler.";
 
     finished(sub_stop && websocket_stop);
 }
@@ -119,7 +119,7 @@ bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
     response.dequeue<uint16_t>(sequence);
     response.dequeue<uint64_t>(height);
 
-    broadcast(web::to_json(height, sequence));
+    broadcast(to_json(height, sequence));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket heartbeat [" << height

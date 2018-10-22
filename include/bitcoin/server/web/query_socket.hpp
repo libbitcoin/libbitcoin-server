@@ -35,7 +35,7 @@ class server_node;
 // Submit queries and address subscriptions and receive address
 // notifications on a dedicated socket endpoint.
 class BCS_API query_socket
-  : public socket
+  : public http::socket
 {
 public:
     typedef std::shared_ptr<query_socket> ptr;

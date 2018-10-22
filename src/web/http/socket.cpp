@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/web/http/socket.hpp>
 
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <bitcoin/protocol.hpp>
@@ -26,14 +27,16 @@
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/web/http/connection.hpp>
 #include <bitcoin/server/web/http/http.hpp>
+#include <bitcoin/server/web/http/http_reply.hpp>
 #include <bitcoin/server/web/http/json_string.hpp>
 #include <bitcoin/server/web/http/manager.hpp>
 #include <bitcoin/server/web/http/utilities.hpp>
+#include <bitcoin/server/web/http/websocket_message.hpp>
 
 #ifdef WITH_MBEDTLS
 extern "C"
 {
-int https_random(void*, uint8_t* buffer, size_t length)
+uint32_t https_random(void*, uint8_t* buffer, size_t length)
 {
     bc::data_chunk random(length);
     bc::pseudo_random_fill(random);
@@ -45,6 +48,7 @@ int https_random(void*, uint8_t* buffer, size_t length)
 
 namespace libbitcoin {
 namespace server {
+namespace http {
 
 using namespace asio;
 using namespace bc::chain;
@@ -57,9 +61,9 @@ using role = zmq::socket::role;
 
 // Local class.
 class task_sender
-  : public http::manager::task
+  : public manager::task
 {
-  public:
+public:
     task_sender(connection_ptr connection, const std::string& data)
       : connection_(connection), data_(data)
     {
@@ -92,7 +96,7 @@ class task_sender
         return connection_;
     }
 
-  private:
+private:
     connection_ptr connection_;
     const std::string data_;
 };
@@ -100,12 +104,12 @@ class task_sender
 // TODO: eliminate the use of weak and untyped pointer to pass self here.
 // static
 // Callback made internally via socket::poll on the web socket thread.
-bool socket::handle_event(connection_ptr connection, const http::event event,
+bool socket::handle_event(connection_ptr connection, event event,
     const void* data)
 {
     switch (event)
     {
-        case http::event::accepted:
+        case event::accepted:
         {
             // This connection is newly accepted and is either an HTTP
             // JSON-RPC connection, or an already upgraded websocket.
@@ -123,7 +127,7 @@ bool socket::handle_event(connection_ptr connection, const http::event event,
             break;
         }
 
-        case http::event::json_rpc:
+        case event::json_rpc:
         {
             // Process new incoming user json_rpc request.  Returning
             // false here will cause this connection to be closed.
@@ -156,7 +160,7 @@ bool socket::handle_event(connection_ptr connection, const http::event event,
             break;
         }
 
-        case http::event::websocket_frame:
+        case event::websocket_frame:
         {
             // Process new incoming user websocket data. Returning false
             // will cause this connection to be closed.
@@ -200,7 +204,7 @@ bool socket::handle_event(connection_ptr connection, const http::event event,
             break;
         }
 
-        case http::event::closing:
+        case event::closing:
         {
             // This connection is going away after this handling.
             auto instance = static_cast<socket*>(connection->user_data());
@@ -219,9 +223,9 @@ bool socket::handle_event(connection_ptr connection, const http::event event,
         }
 
         // No specific handling required for other events.
-        case http::event::read:
-        case http::event::error:
-        case http::event::websocket_control_frame:
+        case event::read:
+        case event::error:
+        case event::websocket_control_frame:
         default:
             break;
     }
@@ -230,7 +234,7 @@ bool socket::handle_event(connection_ptr connection, const http::event event,
 }
 
 socket::socket(zmq::authenticator& authenticator, server_node& node,
-    bool secure, const std::string& domain)
+    bool secure)
   : worker(priority(node.server_settings().priority)),
     authenticator_(authenticator),
     secure_(secure),
@@ -238,7 +242,6 @@ socket::socket(zmq::authenticator& authenticator, server_node& node,
     server_settings_(node.server_settings()),
     protocol_settings_(node.protocol_settings()),
     sequence_(0),
-    domain_(domain),
     manager_(nullptr),
     document_root_(node.server_settings().websockets_root)
 {
@@ -280,10 +283,10 @@ bool socket::start()
 
 void socket::handle_websockets()
 {
-    http::bind_options options;
+    bind_options options;
 
     // This starts up the listener for the socket.
-    manager_ = std::make_shared<http::manager>(secure_, &socket::handle_event,
+    manager_ = std::make_shared<manager>(secure_, &socket::handle_event,
         document_root_);
 
     if (!manager_ || !manager_->initialize())
@@ -414,7 +417,7 @@ void socket::notify_query_work(connection_ptr connection,
         const bc::code& ec)
     {
         http_reply reply;
-        const auto error = web::to_json(ec, id);
+        const auto error = to_json(ec, id);
         const auto response = reply.generate(status, {}, error.size(), false);
         LOG_VERBOSE(LOG_SERVER) << error + response;
         connection->write(error + response);
@@ -512,5 +515,6 @@ void socket::broadcast(const std::string& json)
     std::for_each(work_.begin(), work_.end(), sender);
 }
 
+} // namespace http
 } // namespace server
 } // namespace libbitcoin

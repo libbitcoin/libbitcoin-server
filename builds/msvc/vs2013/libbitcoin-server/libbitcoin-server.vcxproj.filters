@@ -203,10 +203,28 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp">
       <Filter>include\bitcoin\server\web</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\bind_options.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\connection.hpp">
       <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\connection_state.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\event.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\file_transfer.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\http.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\http_reply.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\http_request.hpp">
       <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\json_string.hpp">
@@ -215,10 +233,28 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\manager.hpp">
       <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\protocol_status.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\socket.hpp">
       <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\ssl.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\utilities.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_frame.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_message.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_op.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_transfer.hpp">
       <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\query_socket.hpp">

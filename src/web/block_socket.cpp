@@ -34,14 +34,14 @@ namespace server {
 using namespace std::placeholders;
 using namespace bc::chain;
 using namespace bc::protocol;
+using namespace http;
 using role = zmq::socket::role;
 
-static const auto domain = "block";
 static constexpr auto poll_interval_milliseconds = 100u;
 
 block_socket::block_socket(zmq::authenticator& authenticator,
     server_node& node, bool secure)
-  : socket(authenticator, node, secure, domain)
+  : http::socket(authenticator, node, secure)
 {
 }
 
@@ -63,8 +63,7 @@ void block_socket::work()
     if (!started(start_websocket_handler()))
     {
         LOG_ERROR(LOG_SERVER)
-            << "Failed to start " << security_ << " " << domain
-            << " websocket handler";
+            << "Failed to start " << security_ << " block websocket handler.";
         return;
     }
 
@@ -92,8 +91,7 @@ void block_socket::work()
 
     if (!websocket_stop)
         LOG_ERROR(LOG_SERVER)
-            << "Failed to stop " << security_
-            << " block websocket handler";
+            << "Failed to stop " << security_ << " block websocket handler.";
 
     finished(sub_stop && websocket_stop);
 }
@@ -127,7 +125,7 @@ bool block_socket::handle_block(zmq::socket& subscriber)
 
     // Format and send transaction to websocket subscribers.
     const auto block = block::factory(block_data, true);
-    broadcast(web::to_json(block, height, sequence));
+    broadcast(to_json(block, height, sequence));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket block ["

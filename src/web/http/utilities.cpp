@@ -16,24 +16,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <bitcoin/server/web/http/utilities.hpp>
 
 #include <cstdlib>
 #include <string>
+#include <unordered_map>
 #include <windows.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/web/http/http.hpp>
-
-// TODO: determine why this include must follow http.hpp.
-#include <bitcoin/server/web/http/utilities.hpp>
+#include <bitcoin/server/web/http/http_request.hpp>
+#include <bitcoin/server/web/http/websocket_op.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace http {
 
-// TODO: std::strerror is not required to be thread safe.
+// BUGBUG: std::strerror is not required to be thread safe.
 std::string error_string()
 {
 #ifdef _MSC_VER
@@ -64,23 +65,23 @@ std::string mbedtls_error_string(int32_t error)
     return { data.data() };
 }
 
-sha1_hash sha1(const std::string& input)
-{
-    sha1_hash out;
-    mbedtls_sha1_context context;
-    mbedtls_sha1_init(&context);
-
-    const auto source = reinterpret_cast<const uint8_t*>(input.c_str());
-    if ((mbedtls_sha1_starts_ret(&context) == 0) &&
-        (mbedtls_sha1_update_ret(&context, source, input.size()) == 0) &&
-        (mbedtls_sha1_finish_ret(&context, out.data()) == 0))
-        return out;
-
-    return {};
-}
+////short_hash sha1(const std::string& input)
+////{
+////    short_hash out;
+////    mbedtls_sha1_context context;
+////    mbedtls_sha1_init(&context);
+////
+////    const auto source = reinterpret_cast<const uint8_t*>(input.data());
+////    if ((mbedtls_sha1_starts_ret(&context) == 0) &&
+////        (mbedtls_sha1_update_ret(&context, source, input.size()) == 0) &&
+////        (mbedtls_sha1_finish_ret(&context, out.data()) == 0))
+////        return out;
+////
+////    return {};
+////}
 #endif
 
-std::string to_string(websocket_op code)
+std::string op_to_string(websocket_op code)
 {
     static const std::string unknown = "unknown";
     static const std::unordered_map<websocket_op, std::string> opcode_map
@@ -104,25 +105,25 @@ std::string websocket_key_response(const std::string& websocket_key)
     static const std::string rfc6455_guid =
         "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-#ifdef WITH_MBEDTLS
-    // The buffer is a base64 encoded sha1 hash (20 bytes in length).
-    static constexpr size_t key_buffer_length = 64;
-    std::array<uint8_t, key_buffer_length> buffer;
-
-    size_t processed_length = 0;
-    const auto input = websocket_key + rfc6455_guid;
-    const auto hash = sha1(input);
-
-    if ((mbedtls_base64_encode(buffer.data(), buffer.size(), &processed_length,
-        hash.data(), sha1_hash_length) != 0) || (processed_length == 0))
-        return {};
-
-    return { reinterpret_cast<char*>(buffer.data()), processed_length };
-#else
+// TODO: why are there two implementations of this?
+////#ifdef WITH_MBEDTLS
+////    // The buffer is a base64 encoded sha1 hash (20 bytes in length).
+////    static constexpr size_t key_buffer_length = 64;
+////    std::array<uint8_t, key_buffer_length> buffer;
+////
+////    size_t processed_length = 0;
+////    const auto hash = sha1(websocket_key + rfc6455_guid);
+////
+////    if ((mbedtls_base64_encode(buffer.data(), buffer.size(), &processed_length,
+////        hash.data(), hash.size()) != 0) || (processed_length == 0))
+////        return {};
+////
+////    return { reinterpret_cast<char*>(buffer.data()), processed_length };
+////#else
     const auto input = websocket_key + rfc6455_guid;
     const data_chunk input_data{ input.begin(), input.end() };
     return encode_base64(bc::sha1_hash(input_data));
-#endif
+////#endif
 }
 
 bool is_json_request(const std::string& header_value)

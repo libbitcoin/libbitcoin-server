@@ -16,31 +16,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
-#define LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HTTP_SSL_HPP
+#define LIBBITCOIN_SERVER_WEB_HTTP_SSL_HPP
 
-#include <cstdint>
 #include <string>
 #include <bitcoin/server/define.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/server/web/http/http.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace http {
 
-// Object to JSON converters.
-//-----------------------------------------------------------------------------
-
-BCS_API std::string to_json(const boost::property_tree::ptree& tree);
-BCS_API std::string to_json(uint64_t height, uint32_t id);
-BCS_API std::string to_json(const code& code, uint32_t id);
-BCS_API std::string to_json(const chain::header& header, uint32_t id);
-BCS_API std::string to_json(const chain::block& block, uint32_t id);
-BCS_API std::string to_json(const chain::block& block, uint32_t height,
-    uint32_t id);
-BCS_API std::string to_json(const chain::transaction& transaction,
-    uint32_t id);
+struct ssl
+{
+    bool enabled;
+    std::string hostname;
+#ifdef WITH_MBEDTLS
+    mbedtls_ssl_context context;
+    mbedtls_ssl_config configuration;
+    mbedtls_pk_context key;
+    mbedtls_x509_crt certificate;
+    mbedtls_x509_crt ca_certificate;
+#endif
+};
 
 } // namespace http
 } // namespace server

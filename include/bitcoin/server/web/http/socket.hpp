@@ -25,6 +25,8 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
@@ -35,20 +37,23 @@
 #ifdef WITH_MBEDTLS
 extern "C"
 {
-int https_random(void*, uint8_t* buffer, size_t length);
+uint32_t https_random(void*, uint8_t* buffer, size_t length);
 }
 #endif
 
 namespace libbitcoin {
 namespace server {
 
+// TODO: eliminate server_node dependency, for move to protocol.
 class server_node;
+
+namespace http {
 
 class BCS_API socket
   : public bc::protocol::zmq::worker
 {
 public:
-    typedef http::connection_ptr connection_ptr;
+    typedef connection_ptr connection_ptr;
 
     // Tracks websocket queries via the query_work_map.  Used for
     // matching websocket client requests to zmq query responses.
@@ -74,10 +79,10 @@ public:
     };
 
     typedef std::function<void(bc::protocol::zmq::message&, const std::string&,
-        const std::string&, const uint32_t)> encode_handler;
+        const std::string&, uint32_t)> encode_handler;
 
-    typedef std::function<void(const data_chunk&, const uint32_t,
-        connection_ptr)> decode_handler;
+    typedef std::function<void(const data_chunk&, uint32_t, connection_ptr)>
+        decode_handler;
 
     // Handles translation of incoming JSON to zmq protocol methods and
     // converting the result back to JSON for web clients.
@@ -97,7 +102,7 @@ public:
 
     /// Construct a socket class.
     socket(bc::protocol::zmq::authenticator& authenticator, server_node& node,
-        bool secure, const std::string& domain);
+        bool secure);
 
     /// Start the service.
     bool start() override;
@@ -150,14 +155,14 @@ protected:
     mutable upgrade_mutex correlation_lock_;
 
 private:
-    static bool handle_event(connection_ptr connection,
-        const http::event event, const void* data);
+    static bool handle_event(connection_ptr connection, event event,
+        const void* data);
 
-    http::manager::ptr manager_;
-    const std::string domain_;
+    manager::ptr manager_;
     const boost::filesystem::path document_root_;
 };
 
+} // namespace http
 } // namespace server
 } // namespace libbitcoin
 
