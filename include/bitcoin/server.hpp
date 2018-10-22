@@ -37,8 +37,12 @@
 #include <bitcoin/server/web/heartbeat_socket.hpp>
 #include <bitcoin/server/web/query_socket.hpp>
 #include <bitcoin/server/web/transaction_socket.hpp>
+#include <bitcoin/server/web/http/connection.hpp>
+#include <bitcoin/server/web/http/http.hpp>
 #include <bitcoin/server/web/http/json_string.hpp>
+#include <bitcoin/server/web/http/manager.hpp>
 #include <bitcoin/server/web/http/socket.hpp>
+#include <bitcoin/server/web/http/utilities.hpp>
 #include <bitcoin/server/workers/authenticator.hpp>
 #include <bitcoin/server/workers/notification_worker.hpp>
 #include <bitcoin/server/workers/query_worker.hpp>

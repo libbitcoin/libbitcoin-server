@@ -25,12 +25,12 @@ namespace http {
 
 #include <string>
 #include <boost/filesystem.hpp>
-#include "http.hpp"
+#include <bitcoin/server/web/http/http.hpp>
 
 #ifdef _MSC_VER
-#define last_error() GetLastError()
+    #define last_error() GetLastError()
 #else
-#define last_error() errno
+    #define last_error() errno
 #endif
 
 #ifdef _MSC_VER
@@ -39,12 +39,12 @@ namespace http {
     #define would_block(value) (value == EAGAIN || value == EWOULDBLOCK)
 #endif
 
-#define mbedtls_would_block(value) \
-    (value == MBEDTLS_ERR_SSL_WANT_READ || value == MBEDTLS_ERR_SSL_WANT_WRITE)
-
 #ifdef WITH_MBEDTLS
     std::string mbedtls_error_string(int32_t error);
     sha1_hash sha1(const std::string& input);
+    #define mbedtls_would_block(value) \
+        (value == MBEDTLS_ERR_SSL_WANT_READ || \
+         value == MBEDTLS_ERR_SSL_WANT_WRITE)
 #endif
 
 std::string error_string();

@@ -16,14 +16,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_JSON_STRING_HPP
-#define LIBBITCOIN_SERVER_WEB_JSON_STRING_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
+#define LIBBITCOIN_SERVER_WEB_HTTP_JSON_STRING_HPP
 
 #include <cstdint>
+#include <string>
+#include <boost/property_tree/ptree.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 namespace libbitcoin {
 namespace server {

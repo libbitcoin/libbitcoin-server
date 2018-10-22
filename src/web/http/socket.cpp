@@ -20,12 +20,15 @@
 
 #include <string>
 #include <utility>
-
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/web/http/connection.hpp>
+#include <bitcoin/server/web/http/http.hpp>
 #include <bitcoin/server/web/http/json_string.hpp>
+#include <bitcoin/server/web/http/manager.hpp>
+#include <bitcoin/server/web/http/utilities.hpp>
 
 #ifdef WITH_MBEDTLS
 extern "C"
@@ -39,11 +42,6 @@ int https_random(void*, uint8_t* buffer, size_t length)
 }
 }
 #endif
-
-#include "../src/web/http/http.hpp"
-#include "../src/web/http/utilities.hpp"
-#include "../src/web/http/manager.hpp"
-#include "../src/web/http/connection.hpp"
 
 namespace libbitcoin {
 namespace server {
@@ -241,6 +239,7 @@ socket::socket(zmq::authenticator& authenticator, server_node& node,
     protocol_settings_(node.protocol_settings()),
     sequence_(0),
     domain_(domain),
+    manager_(nullptr),
     document_root_(node.server_settings().websockets_root)
 {
 }

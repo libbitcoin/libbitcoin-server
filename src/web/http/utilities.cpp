@@ -16,16 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <cstdlib>
-#include <cstring>
-#include <errno.h>
+#include <string>
+#include <windows.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/web/http/http.hpp>
 
-#include "http.hpp"
-#include "utilities.hpp"
+// TODO: determine why this include must follow http.hpp.
+#include <bitcoin/server/web/http/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -57,7 +59,7 @@ std::string error_string()
 std::string mbedtls_error_string(int32_t error)
 {
     static constexpr size_t error_buffer_length = 256;
-    std::array<char, error_buffer_length> data{};
+    std::array<char, error_buffer_length> data;
     mbedtls_strerror(error, data.data(), data.size());
     return { data.data() };
 }

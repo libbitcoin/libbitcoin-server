@@ -16,18 +16,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_SOCKET_HPP
-#define LIBBITCOIN_SERVER_WEB_SOCKET_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HTTP_SOCKET_HPP
+#define LIBBITCOIN_SERVER_WEB_HTTP_SOCKET_HPP
 
 #include <cstdint>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/messages/message.hpp>
+#include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/web/http/connection.hpp>
+#include <bitcoin/server/web/http/manager.hpp>
 
 #ifdef WITH_MBEDTLS
 extern "C"
@@ -40,15 +43,6 @@ namespace libbitcoin {
 namespace server {
 
 class server_node;
-
-// Forward declarations in the http namespace.
-namespace http
-{
-class manager;
-class connection;
-enum class event : uint8_t;
-typedef std::shared_ptr<connection> connection_ptr;
-} // namespace http
 
 class BCS_API socket
   : public bc::protocol::zmq::worker
@@ -159,7 +153,7 @@ private:
     static bool handle_event(connection_ptr connection,
         const http::event event, const void* data);
 
-    std::shared_ptr<http::manager> manager_;
+    http::manager::ptr manager_;
     const std::string domain_;
     const boost::filesystem::path document_root_;
 };

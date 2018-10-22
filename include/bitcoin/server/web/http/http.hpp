@@ -16,20 +16,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_WEB_HTTP_HPP
-#define LIBBITCOIN_SERVER_WEB_HTTP_HPP
+#ifndef LIBBITCOIN_SERVER_WEB_HTTP_HTTP_HPP
+#define LIBBITCOIN_SERVER_WEB_HTTP_HTTP_HPP
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
-#include <fcntl.h>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -70,6 +71,8 @@
     #include <mbedtls/x509_crt.h>
 #endif
 
+#include <bitcoin/bitcoin.hpp>
+
 namespace libbitcoin {
 namespace server {
 namespace http {
@@ -83,33 +86,32 @@ namespace http {
     #define CLOSE_SOCKET ::close
 #endif
 
+#ifdef WITH_MBEDTLS
+    static const int32_t default_ciphers[] =
+    {
+        MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA,
+        MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256,
+        MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,
+        MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,
+        MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,
+        MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,
+        MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+        MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+        MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+        0
+    };
+#endif
+
 static const size_t sha1_hash_length = 20;
 static const size_t default_buffer_length = 1 << 10; // 1KB
 static const size_t transfer_buffer_length = 1 << 18; // 256KB
 
-#ifdef WITH_MBEDTLS
-static const int32_t default_ciphers[] =
-{
-    MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA,
-    MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256,
-    MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256,
-    MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,
-    MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,
-    MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,
-    MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,
-    MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,
-    MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
-    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
-    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-    0
-};
-#endif
-
-////typedef std::vector<char> data_buffer;
 typedef std::array<uint8_t, default_buffer_length> read_buffer;
 typedef std::array<uint8_t, sha1_hash_length> sha1_hash;
 typedef std::vector<std::string> string_list;

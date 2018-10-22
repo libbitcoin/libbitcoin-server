@@ -55,14 +55,10 @@ src_libbitcoin_server_la_SOURCES = \
     src/web/query_socket.cpp \
     src/web/transaction_socket.cpp \
     src/web/http/connection.cpp \
-    src/web/http/connection.hpp \
-    src/web/http/http.hpp \
     src/web/http/json_string.cpp \
     src/web/http/manager.cpp \
-    src/web/http/manager.hpp \
     src/web/http/socket.cpp \
     src/web/http/utilities.cpp \
-    src/web/http/utilities.hpp \
     src/workers/authenticator.cpp \
     src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
@@ -141,8 +137,12 @@ include_bitcoin_server_web_HEADERS = \
 
 include_bitcoin_server_web_httpdir = ${includedir}/bitcoin/server/web/http
 include_bitcoin_server_web_http_HEADERS = \
+    include/bitcoin/server/web/http/connection.hpp \
+    include/bitcoin/server/web/http/http.hpp \
     include/bitcoin/server/web/http/json_string.hpp \
-    include/bitcoin/server/web/http/socket.hpp
+    include/bitcoin/server/web/http/manager.hpp \
+    include/bitcoin/server/web/http/socket.hpp \
+    include/bitcoin/server/web/http/utilities.hpp
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \

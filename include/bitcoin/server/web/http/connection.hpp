@@ -20,13 +20,13 @@
 #define LIBBITCOIN_SERVER_WEB_HTTP_CONNECTION_HPP
 
 #include <cstdint>
+#include <functional>
 #include <set>
 #include <string>
 #include <memory>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
-
-#include "http.hpp"
+#include <bitcoin/server/web/http/http.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -34,6 +34,7 @@ namespace http {
 
 class connection;
 
+// TODO: make internal connection typedefs.
 typedef std::shared_ptr<connection> connection_ptr;
 typedef std::set<connection_ptr> connection_set;
 typedef std::vector<connection_ptr> connection_list;

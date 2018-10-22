@@ -21,15 +21,8 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <bitcoin/server/web/http/connection.hpp>
 #include <bitcoin/server/web/http/json_string.hpp>
-
-// Explicitly use std::placeholders here for usage internally to the
-// boost parsing helpers included from json_parser.hpp.
-// See: https://svn.boost.org/trac10/ticket/12621
-#include <functional>
-using namespace std::placeholders;
-
-#include "../src/web/http/connection.hpp"
 
 namespace libbitcoin {
 namespace server {

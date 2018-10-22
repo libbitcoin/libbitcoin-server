@@ -203,10 +203,22 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp">
       <Filter>include\bitcoin\server\web</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\connection.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\http.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\json_string.hpp">
       <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\manager.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\socket.hpp">
+      <Filter>include\bitcoin\server\web\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\utilities.hpp">
       <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\query_socket.hpp">
@@ -223,18 +235,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp">
       <Filter>include\bitcoin\server\workers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\web\http\connection.hpp">
-      <Filter>src\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\web\http\http.hpp">
-      <Filter>src\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\web\http\manager.hpp">
-      <Filter>src\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\web\http\utilities.hpp">
-      <Filter>src\web\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\resource.h">
       <Filter>resource</Filter>

@@ -23,7 +23,7 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include "connection.hpp"
+#include <bitcoin/server/web/http/connection.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -43,6 +43,7 @@ class manager
     typedef boost::filesystem::path path;
     typedef std::shared_ptr<task> task_ptr;
     typedef std::vector<task_ptr> task_list;
+    typedef std::shared_ptr<manager> ptr;
 
     manager(bool ssl, event_handler handler, path document_root);
     ~manager();

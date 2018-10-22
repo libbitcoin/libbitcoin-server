@@ -16,15 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "manager.hpp"
+#include <bitcoin/server/web/http/manager.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
+#include <windows.h>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include "http.hpp"
-#include "utilities.hpp"
+#include <bitcoin/server/web/http/http.hpp>
+#include <bitcoin/server/web/http/utilities.hpp>
 
 #ifdef WITH_MBEDTLS
 extern "C"
