@@ -231,7 +231,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
         return true;
     }
 
-    uint32_t sequence{};
+    uint32_t sequence;
     data_chunk data;
     std::string command;
 

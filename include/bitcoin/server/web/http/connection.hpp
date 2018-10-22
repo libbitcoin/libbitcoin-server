@@ -45,7 +45,7 @@ typedef std::function<bool(connection_ptr, const event, void* data)>
 // Initiating outgoing HTTP connections are not currently supported.
 class connection
 {
-  public:
+public:
     typedef std::function<int32_t(const uint8_t*, uint32_t)> write_method;
 
     connection();
@@ -109,7 +109,7 @@ class connection
 
     bool operator==(const connection& other);
 
-  private:
+private:
     void* user_data_;
     connection_state state_;
     sock_t socket_;

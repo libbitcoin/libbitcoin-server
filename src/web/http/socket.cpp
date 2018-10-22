@@ -281,6 +281,8 @@ bool socket::start()
 void socket::handle_websockets()
 {
     http::bind_options options;
+
+    // This starts up the listener for the socket.
     manager_ = std::make_shared<http::manager>(secure_, &socket::handle_event,
         document_root_);
 
@@ -296,9 +298,12 @@ void socket::handle_websockets()
     {
         // Specified and not found CA cert should be a failure condition.
         // TODO: defer string conversion to ssl internals, keep paths here.
-        options.ssl_key = server_settings_.websockets_server_private_key.generic_string();
-        options.ssl_certificate = server_settings_.websockets_server_certificate.generic_string();
-        options.ssl_ca_certificate = server_settings_.websockets_ca_certificate.generic_string();
+        options.ssl_key = server_settings_.
+            websockets_server_private_key.generic_string();
+        options.ssl_certificate = server_settings_.
+            websockets_server_certificate.generic_string();
+        options.ssl_ca_certificate = server_settings_.
+            websockets_ca_certificate.generic_string();
     }
 
     options.user_data = static_cast<void*>(this);

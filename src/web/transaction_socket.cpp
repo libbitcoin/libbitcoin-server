@@ -117,7 +117,7 @@ bool transaction_socket::handle_transaction(zmq::socket& subscriber)
         return true;
     }
 
-    uint16_t sequence{};
+    uint16_t sequence;
     data_chunk transaction_data;
     response.dequeue<uint16_t>(sequence);
     response.dequeue(transaction_data);

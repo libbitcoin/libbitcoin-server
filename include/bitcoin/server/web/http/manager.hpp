@@ -31,7 +31,7 @@ namespace http {
 
 class manager
 {
-  public:
+public:
     class task
     {
       public:
@@ -53,7 +53,7 @@ class manager
 
     // Connections.
     bool accept_connection();
-    void add_connection(const connection_ptr connection);
+    void add_connection(connection_ptr connection);
     void remove_connection(connection_ptr connection);
     size_t connection_count() const;
 
@@ -69,7 +69,7 @@ class manager
     void poll(size_t timeout_milliseconds);
     bool handle_connection(connection_ptr connection, event current_event);
 
-  private:
+private:
 #ifdef WITH_MBEDTLS
     // Passed to mbedtls for internal use only.
     static int32_t ssl_send(void* data, const uint8_t* buffer, size_t length);

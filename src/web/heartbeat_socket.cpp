@@ -114,8 +114,8 @@ bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
         return true;
     }
 
-    uint16_t sequence{};
-    uint64_t height{};
+    uint16_t sequence;
+    uint64_t height;
     response.dequeue<uint16_t>(sequence);
     response.dequeue<uint64_t>(height);
 

@@ -118,8 +118,8 @@ bool block_socket::handle_block(zmq::socket& subscriber)
         return true;
     }
 
-    uint16_t sequence{};
-    uint32_t height{};
+    uint16_t sequence;
+    uint32_t height;
     data_chunk block_data;
     response.dequeue<uint16_t>(sequence);
     response.dequeue<uint32_t>(height);

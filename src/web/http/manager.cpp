@@ -112,7 +112,11 @@ bool manager::bind(const config::endpoint& address,
     user_data_ = options.user_data;
 
     listener_ = std::make_shared<connection>();
+
+    // asio::acceptor.open(endpoint.protocol());
+    // ************************************************************************
     listener_->socket() = ::socket(listener_address_.sin_family, SOCK_STREAM, 0);
+    // ************************************************************************
 
     if (listener_->socket() == 0)
     {
@@ -132,13 +136,17 @@ bool manager::bind(const config::endpoint& address,
             ca_certificate_ = options.ssl_ca_certificate;
         }
 
+        // The default context object for the listener socket is initialized.
         if (!initialize_ssl(listener_, listening_))
             return false;
     }
 
-    listener_->set_socket_non_blocking();
+    //// asio::acceptor.set_option(reuse_address);
     listener_->reuse_address();
+    listener_->set_socket_non_blocking();
 
+    //// asio::acceptor.bind(address);
+    // ************************************************************************
     if (::bind(listener_->socket(), reinterpret_cast<sockaddr*>(
         &listener_address_), sizeof(listener_address_)) != 0)
     {
@@ -148,8 +156,12 @@ bool manager::bind(const config::endpoint& address,
         listener_->close();
         return false;
     }
+    // ************************************************************************
 
+    //// asio::acceptor.listen(asio::max_connections);
+    // ************************************************************************
     ::listen(listener_->socket(), maximum_backlog);
+    // ************************************************************************
 
     listener_->set_state(connection_state::listening);
     add_connection(listener_);
@@ -246,7 +258,7 @@ bool manager::accept_connection()
     return true;
 }
 
-void manager::add_connection(const connection_ptr connection)
+void manager::add_connection(connection_ptr connection)
 {
     connections_.push_back(connection);
 
