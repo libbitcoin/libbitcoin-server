@@ -35,6 +35,7 @@ class BCS_API websocket_frame
 {
 public:
     websocket_frame(const uint8_t* data, size_t size)
+      : valid_(false), flags_(0), header_(0), data_(0)
     {
         from_data(data, size);
     }
@@ -122,20 +123,12 @@ private:
         static constexpr size_t prefix16 = prefix + sizeof(uint16_t);
         static constexpr size_t prefix64 = prefix + sizeof(uint64_t);
 
-        valid_ = false;
-
         // Invalid websocket frame (too small).
-        if (read_length < 2)
+        // Invalid websocket frame (unmasked).
+        if (read_length < 2 || (data[1] & 0x80) == 0)
             return;
 
         flags_ = data[0];
-        header_ = 0;
-        data_ = 0;
-
-        // Invalid websocket frame (unmasked).
-        if ((data[1] & 0x80) == 0)
-            return;
-
         const size_t length = (data[1] & 0x7f);
 
         if (read_length >= mask_ && length < 0x7e)
