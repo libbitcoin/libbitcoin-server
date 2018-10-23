@@ -37,8 +37,8 @@ public:
     typedef std::shared_ptr<block_socket> ptr;
 
     /// Construct a block socket service endpoint.
-    block_socket(bc::protocol::zmq::authenticator& authenticator,
-        server_node& node, bool secure);
+    block_socket(bc::protocol::zmq::context& context, server_node& node
+        , bool secure);
 
 protected:
     // Implement the service.

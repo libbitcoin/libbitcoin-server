@@ -35,15 +35,15 @@ using namespace bc::protocol;
 using namespace http;
 using role = zmq::socket::role;
 
-heartbeat_socket::heartbeat_socket(zmq::authenticator& authenticator,
-    server_node& node, bool secure)
-  : http::socket(authenticator, node, secure)
+heartbeat_socket::heartbeat_socket(zmq::context& context, server_node& node,
+    bool secure)
+  : http::socket(context, node, secure)
 {
 }
 
 void heartbeat_socket::work()
 {
-    zmq::socket sub(authenticator_, role::subscriber, protocol_settings_);
+    zmq::socket sub(context_, role::subscriber, protocol_settings_);
 
     const auto endpoint = zeromq_endpoint().to_local();
     const auto ec = sub.connect(endpoint);

@@ -233,10 +233,9 @@ bool socket::handle_event(connection_ptr connection, event event,
     return true;
 }
 
-socket::socket(zmq::authenticator& authenticator, server_node& node,
-    bool secure)
+socket::socket(zmq::context& context, server_node& node, bool secure)
   : worker(priority(node.server_settings().priority)),
-    authenticator_(authenticator),
+    context_(context),
     secure_(secure),
     security_(secure ? "secure" : "public"),
     server_settings_(node.server_settings()),
@@ -456,9 +455,8 @@ void socket::notify_query_work(connection_ptr connection,
         return;
     }
 
-    query_work_map.emplace(std::piecewise_construct,
-        std::forward_as_tuple(id),
-        std::forward_as_tuple(id, sequence_, connection, method, parameters));
+    query_work_map.emplace(id,
+        query_work_item{ id, sequence_, connection, method, parameters });
 
     // Encode request based on query work and send to query_websocket.
     zmq::message request;

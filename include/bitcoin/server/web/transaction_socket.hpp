@@ -41,8 +41,8 @@ public:
     typedef std::shared_ptr<transaction_socket> ptr;
 
     /// Construct a transaction socket service endpoint.
-    transaction_socket(bc::protocol::zmq::authenticator& authenticator,
-        server_node& node, bool secure);
+    transaction_socket(bc::protocol::zmq::context& context, server_node& node,
+        bool secure);
 
 protected:
 

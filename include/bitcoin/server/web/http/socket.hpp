@@ -53,55 +53,8 @@ class BCS_API socket
   : public bc::protocol::zmq::worker
 {
 public:
-    typedef connection_ptr connection_ptr;
-
-    // Tracks websocket queries via the query_work_map.  Used for
-    // matching websocket client requests to zmq query responses.
-    struct query_work_item
-    {
-        // Constructor provided for in-place construction.
-        query_work_item(uint32_t id, uint32_t correlation_id,
-            connection_ptr connection, const std::string& command,
-            const std::string& arguments)
-        :   id(id),
-            correlation_id(correlation_id),
-            command(command),
-            arguments(arguments),
-            connection(connection)
-        {
-        }
-
-        uint32_t id;
-        uint32_t correlation_id;
-        std::string command;
-        std::string arguments;
-        connection_ptr connection;
-    };
-
-    typedef std::function<void(bc::protocol::zmq::message&, const std::string&,
-        const std::string&, uint32_t)> encode_handler;
-
-    typedef std::function<void(const data_chunk&, uint32_t, connection_ptr)>
-        decode_handler;
-
-    // Handles translation of incoming JSON to zmq protocol methods and
-    // converting the result back to JSON for web clients.
-    struct handlers
-    {
-        std::string command;
-        encode_handler encode;
-        decode_handler decode;
-    };
-
-    typedef std::unordered_map<uint32_t, query_work_item> query_work_map;
-    typedef std::unordered_map<connection_ptr, query_work_map>
-        connection_work_map;
-    typedef std::unordered_map<uint32_t, std::pair<connection_ptr, uint32_t>>
-        query_correlation_map;
-    typedef std::unordered_map<std::string, handlers> handler_map;
-
     /// Construct a socket class.
-    socket(bc::protocol::zmq::authenticator& authenticator, server_node& node,
+    socket(bc::protocol::zmq::context& context, server_node& node,
         bool secure);
 
     /// Start the service.
@@ -114,6 +67,39 @@ public:
         const std::string& method, uint32_t id, const std::string& parameters);
 
 protected:
+    // Tracks websocket queries via the query_work_map. Used for matching 
+    // websocket client requests to zmq query responses.
+    struct query_work_item
+    {
+        uint32_t id;
+        uint32_t correlation_id;
+        connection_ptr connection;
+        std::string command;
+        std::string arguments;
+    };
+
+    // Handles translation of incoming JSON to zmq protocol methods and
+    // converting the result back to JSON for web clients.
+    struct handlers
+    {
+        typedef std::function<void(bc::protocol::zmq::message&,
+            const std::string&, const std::string&, uint32_t)> encode_handler;
+        typedef std::function<void(const data_chunk&, uint32_t,
+            connection_ptr)> decode_handler;
+
+        std::string command;
+        encode_handler encode;
+        decode_handler decode;
+    };
+
+    typedef std::unordered_map<std::string, handlers> handler_map;
+    typedef std::unordered_map<uint32_t, std::pair<connection_ptr, uint32_t>>
+        query_correlation_map;
+
+    typedef std::unordered_map<uint32_t, query_work_item> query_work_map;
+    typedef std::unordered_map<connection_ptr, query_work_map>
+        connection_work_map;
+
     // Initialize the websocket event loop and start a thread to poll events.
     virtual bool start_websocket_handler();
 
@@ -133,7 +119,7 @@ protected:
     void broadcast(const std::string& json);
 
     // The zmq socket operates on only this one thread.
-    bc::protocol::zmq::authenticator& authenticator_;
+    bc::protocol::zmq::context& context_;
     const bool secure_;
     const std::string security_;
     const bc::server::settings& server_settings_;

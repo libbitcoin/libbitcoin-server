@@ -35,9 +35,9 @@ using role = zmq::socket::role;
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
-query_socket::query_socket(zmq::authenticator& authenticator,
-    server_node& node, bool secure)
-  : http::socket(authenticator, node, secure)
+query_socket::query_socket(zmq::context& context, server_node& node,
+    bool secure)
+  : http::socket(context, node, secure)
 {
     // JSON to ZMQ request encoders.
     //-------------------------------------------------------------------------
@@ -130,8 +130,8 @@ query_socket::query_socket(zmq::authenticator& authenticator,
 
 void query_socket::work()
 {
-    zmq::socket dealer(authenticator_, role::dealer, protocol_settings_);
-    zmq::socket query_receiver(authenticator_, role::pair, protocol_settings_);
+    zmq::socket dealer(context_, role::dealer, protocol_settings_);
+    zmq::socket query_receiver(context_, role::pair, protocol_settings_);
 
     auto ec = query_receiver.bind(query_endpoint());
 
@@ -348,7 +348,7 @@ const std::shared_ptr<zmq::socket> query_socket::service() const
 void query_socket::handle_websockets()
 {
     // A zmq socket must remain on its single thread.
-    service_ = std::make_shared<zmq::socket>(authenticator_, role::pair,
+    service_ = std::make_shared<zmq::socket>(context_, role::pair,
         protocol_settings_);
 
     // Hold a reference to this service_ socket member by this thread

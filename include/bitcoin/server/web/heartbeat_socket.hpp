@@ -41,8 +41,8 @@ public:
     typedef std::shared_ptr<heartbeat_socket> ptr;
 
     /// Construct a heartbeat socket service endpoint.
-    heartbeat_socket(bc::protocol::zmq::authenticator& authenticator,
-        server_node& node, bool secure);
+    heartbeat_socket(bc::protocol::zmq::context& context, server_node& node,
+        bool secure);
 
 protected:
 

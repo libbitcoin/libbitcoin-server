@@ -41,8 +41,8 @@ public:
     typedef std::shared_ptr<query_socket> ptr;
 
     /// Construct a query socket service endpoint.
-    query_socket(bc::protocol::zmq::authenticator& authenticator,
-        server_node& node, bool secure);
+    query_socket(bc::protocol::zmq::context& context, server_node& node,
+        bool secure);
 
 protected:
     // Implement the socket.
