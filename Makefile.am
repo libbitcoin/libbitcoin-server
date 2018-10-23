@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2015 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2018 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -32,8 +32,8 @@ doc_DATA = \
 # src/libbitcoin-server.la => ${libdir}
 #------------------------------------------------------------------------------
 lib_LTLIBRARIES = src/libbitcoin-server.la
-src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS}
-src_libbitcoin_server_la_LIBADD = ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
+src_libbitcoin_server_la_CPPFLAGS = -I${srcdir}/include -DSYSCONFDIR=\"${sysconfdir}\" ${mbedtls} ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS} ${mbedtls_BUILD_CPPFLAGS}
+src_libbitcoin_server_la_LIBADD = ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS} ${mbedtls_LIBS}
 src_libbitcoin_server_la_SOURCES = \
     src/configuration.cpp \
     src/parser.cpp \
@@ -61,8 +61,8 @@ if WITH_TESTS
 TESTS = libbitcoin-server-test_runner.sh
 
 check_PROGRAMS = test/libbitcoin-server-test
-test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS}
-test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
+test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${mbedtls} ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS} ${mbedtls_BUILD_CPPFLAGS}
+test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS} ${mbedtls_LIBS}
 test_libbitcoin_server_test_SOURCES = \
     test/main.cpp \
     test/server.cpp \
@@ -75,8 +75,8 @@ endif WITH_TESTS
 if WITH_CONSOLE
 
 bin_PROGRAMS = console/bs
-console_bs_CPPFLAGS = -I${srcdir}/include ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS}
-console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS}
+console_bs_CPPFLAGS = -I${srcdir}/include ${mbedtls} ${bitcoin_protocol_BUILD_CPPFLAGS} ${bitcoin_node_BUILD_CPPFLAGS} ${mbedtls_BUILD_CPPFLAGS}
+console_bs_LDADD = src/libbitcoin-server.la ${bitcoin_protocol_LIBS} ${bitcoin_node_LIBS} ${mbedtls_LIBS}
 console_bs_SOURCES = \
     console/executor.cpp \
     console/executor.hpp \
