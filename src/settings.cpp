@@ -53,6 +53,7 @@ settings::settings()
     websockets_server_private_key("key.pem"),
     websockets_server_certificate("server.pem"),
     websockets_client_certificates("clients"),
+    websockets_origins{},
 
     // [zeromq]
     zeromq_secure_query_endpoint("tcp://*:9081"),

@@ -78,6 +78,7 @@ public:
     boost::filesystem::path websockets_server_private_key;
     boost::filesystem::path websockets_server_certificate;
     boost::filesystem::path websockets_client_certificates;
+    config::endpoint::list websockets_origins;
 
     /// [zeromq]
     system::config::endpoint zeromq_secure_query_endpoint;

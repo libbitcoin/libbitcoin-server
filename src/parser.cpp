@@ -737,6 +737,11 @@ options_metadata parser::load_settings()
         value<path>(&configured.server.websockets_client_certificates),
         "The SSL client certificates directory, defaults to 'clients'."
     )
+    (
+        "websockets.origin",
+        value<config::endpoint::list>(&configured.server.websockets_origins),
+        "A websocket origin, multiple entries allowed."
+    )
 
     /* [bitcoin] */
     (
