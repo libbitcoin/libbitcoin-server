@@ -42,17 +42,8 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 # Warn on all stuff.
 add_compile_options( "-Wall" )
 
-# Warn on all stuff.
-add_compile_options( "-Wall" )
-
 # Warn on extra stuff.
 add_compile_options( "-Wextra" )
-
-# Warn on extra stuff.
-add_compile_options( "-Wextra" )
-
-# Be really annoying.
-add_compile_options( "-Wpedantic" )
 
 # Be really annoying.
 add_compile_options( "-Wpedantic" )
@@ -89,14 +80,6 @@ set( with-tests "yes" CACHE BOOL "Compile with unit tests." )
 # Implement -Dwith-console and declare with-console.
 #------------------------------------------------------------------------------
 set( with-console "yes" CACHE BOOL "Compile console application." )
-
-# Implement -Dwith-mbedtls and output ${mbedtls}.
-#------------------------------------------------------------------------------
-set( with-mbedtls "no" CACHE BOOL "Compile with MbedTLS." )
-
-if (with-mbedtls)
-    set( mbedtls "-DWITH_MBEDTLS" )
-endif()
 
 # Implement -Denable-ndebug and define NDEBUG.
 #------------------------------------------------------------------------------
@@ -142,24 +125,16 @@ find_package( Bitcoin-Node 4.0.0 REQUIRED )
 #------------------------------------------------------------------------------
 find_package( Bitcoin-Protocol 4.0.0 REQUIRED )
 
-# Find mbedtls
-#------------------------------------------------------------------------------
-if (with-mbedtls)
-    find_package( Mbedtls REQUIRED )
-endif()
-
 # Define project common includes directories
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
     include_directories( SYSTEM
         ${bitcoin_protocol_INCLUDE_DIRS}
-        ${bitcoin_node_INCLUDE_DIRS}
-        ${mbedtls_INCLUDE_DIRS} )
+        ${bitcoin_node_INCLUDE_DIRS} )
 else()
     include_directories( SYSTEM
         ${bitcoin_protocol_STATIC_INCLUDE_DIRS}
-        ${bitcoin_node_STATIC_INCLUDE_DIRS}
-        ${mbedtls_STATIC_INCLUDE_DIRS} )
+        ${bitcoin_node_STATIC_INCLUDE_DIRS} )
 endif()
 
 # Define project common library directories
@@ -167,13 +142,11 @@ endif()
 if (BUILD_SHARED_LIBS)
     link_directories( 
         ${bitcoin_protocol_LIBRARY_DIRS}
-        ${bitcoin_node_LIBRARY_DIRS}
-        ${mbedtls_LIBRARY_DIRS} )
+        ${bitcoin_node_LIBRARY_DIRS} )
 else()
     link_directories( 
         ${bitcoin_protocol_STATIC_LIBRARY_DIRS}
-        ${bitcoin_node_STATIC_LIBRARY_DIRS}
-        ${mbedtls_STATIC_LIBRARY_DIRS} )
+        ${bitcoin_node_STATIC_LIBRARY_DIRS} )
 endif()
 
 # Define project common libraries/linker flags.
@@ -183,20 +156,17 @@ if (BUILD_SHARED_LIBS)
         "-fstack-protector"
         "-fstack-protector-all"
         ${bitcoin_protocol_LIBRARIES}
-        ${bitcoin_node_LIBRARIES}
-        ${mbedtls_LIBRARIES} )
+        ${bitcoin_node_LIBRARIES} )
 else()
     link_libraries( 
         "-fstack-protector"
         "-fstack-protector-all"
         ${bitcoin_protocol_STATIC_LIBRARIES}
-        ${bitcoin_node_STATIC_LIBRARIES}
-        ${mbedtls_STATIC_LIBRARIES} )
+        ${bitcoin_node_STATIC_LIBRARIES} )
 endif()
 
 add_definitions( 
-    -DSYSCONFDIR=\"${sysconfdir}\"
-    ${mbedtls} )
+    -DSYSCONFDIR=\"${sysconfdir}\" )
 
 # Define ${CANONICAL_LIB_NAME} project.
 #------------------------------------------------------------------------------
@@ -226,14 +196,12 @@ if (BUILD_SHARED_LIBS)
     target_include_directories( ${CANONICAL_LIB_NAME} PRIVATE
         "../../include"
         ${bitcoin_protocol_INCLUDE_DIRS}
-        ${bitcoin_node_INCLUDE_DIRS}
-        ${mbedtls_INCLUDE_DIRS} )
+        ${bitcoin_node_INCLUDE_DIRS} )
 else()
     target_include_directories( ${CANONICAL_LIB_NAME} PRIVATE
         "../../include"
         ${bitcoin_protocol_STATIC_INCLUDE_DIRS}
-        ${bitcoin_node_STATIC_INCLUDE_DIRS}
-        ${mbedtls_STATIC_INCLUDE_DIRS} )
+        ${bitcoin_node_STATIC_INCLUDE_DIRS} )
 endif()
 
 target_include_directories( ${CANONICAL_LIB_NAME} PUBLIC
@@ -244,13 +212,11 @@ target_include_directories( ${CANONICAL_LIB_NAME} PUBLIC
 if (BUILD_SHARED_LIBS)
     target_link_libraries( ${CANONICAL_LIB_NAME}
         ${bitcoin_protocol_LIBRARIES}
-        ${bitcoin_node_LIBRARIES}
-        ${mbedtls_LIBRARIES} )
+        ${bitcoin_node_LIBRARIES} )
 else()
     target_link_libraries( ${CANONICAL_LIB_NAME}
         ${bitcoin_protocol_STATIC_LIBRARIES}
-        ${bitcoin_node_STATIC_LIBRARIES}
-        ${mbedtls_STATIC_LIBRARIES} )
+        ${bitcoin_node_STATIC_LIBRARIES} )
 endif()
 
 # Define libbitcoin-server-test project.

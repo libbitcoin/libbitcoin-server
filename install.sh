@@ -8,11 +8,8 @@
 # Script to build and install libbitcoin-server.
 #
 # Script options:
-# --with-mbedtls          Compile with MbedTLS Support
-#                            Provides a websockets implementation for query.
 # --build-boost            Builds Boost libraries.
 # --build-zmq              Builds ZeroMQ libraries.
-# --build-mbedtls          Builds MbedTLS libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --prefix=<absolute-path> Library install location (defaults to /usr/local).
 # --disable-shared         Disables shared library builds.
@@ -39,11 +36,6 @@ BUILD_DIR="build-libbitcoin-server"
 #------------------------------------------------------------------------------
 ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.2.5/zeromq-4.2.5.tar.gz"
 ZMQ_ARCHIVE="zeromq-4.2.5.tar.gz"
-
-# MBEDTLS archive.
-#------------------------------------------------------------------------------
-MBEDTLS_URL="https://tls.mbed.org/download/mbedtls-2.12.0-apache.tgz"
-MBEDTLS_ARCHIVE="mbedtls-2.12.0-apache.tgz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
@@ -177,11 +169,8 @@ display_help()
     display_message "Usage: ./install.sh [OPTION]..."
     display_message "Manage the installation of libbitcoin-server."
     display_message "Script options:"
-    display_message "  --with-mbedtls          Compile with MbedTLS Support"
-    display_message "                             Provides a websockets implementation for query."
     display_message "  --build-boost            Builds Boost libraries."
     display_message "  --build-zmq              Build ZeroMQ libraries."
-    display_message "  --build-mbedtls          Builds MbedTLS libraries."
     display_message "  --build-dir=<path>       Location of downloaded and intermediate files."
     display_message "  --prefix=<absolute-path> Library install location (defaults to /usr/local)."
     display_message "  --disable-shared         Disables shared library builds."
@@ -214,7 +203,6 @@ for OPTION in "$@"; do
 
         # Custom build options (in the form of --build-<option>).
         (--build-zmq)           BUILD_ZMQ="yes";;
-        (--build-mbedtls)       BUILD_MBEDTLS="yes";;
         (--build-boost)         BUILD_BOOST="yes";;
 
         # Unique script options.
@@ -322,7 +310,6 @@ display_configuration()
     display_message "LDFLAGS               : $LDFLAGS"
     display_message "LDLIBS                : $LDLIBS"
     display_message "BUILD_ZMQ             : $BUILD_ZMQ"
-    display_message "BUILD_MBEDTLS         : $BUILD_MBEDTLS"
     display_message "BUILD_BOOST           : $BUILD_BOOST"
     display_message "BUILD_DIR             : $BUILD_DIR"
     display_message "PREFIX                : $PREFIX"
@@ -416,7 +403,6 @@ BITCOIN_PROTOCOL_OPTIONS=(
 #------------------------------------------------------------------------------
 BITCOIN_SERVER_OPTIONS=(
 "${with_boost}" \
-"${with_mbedtls}" \
 "${with_pkgconfigdir}")
 
 
@@ -768,7 +754,6 @@ build_all()
 {
     build_from_tarball_boost $BOOST_URL $BOOST_ARCHIVE bzip2 . $PARALLEL "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     build_from_tarball $ZMQ_URL $ZMQ_ARCHIVE gzip . $PARALLEL "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" "$@"
-    build_from_tarball $MBEDTLS_URL $MBEDTLS_ARCHIVE gzip . $PARALLEL "$BUILD_MBEDTLS" "${MBEDTLS_OPTIONS[@]}" "$@"
     build_from_github libbitcoin secp256k1 version5 $PARALLEL ${SECP256K1_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin master $PARALLEL ${BITCOIN_OPTIONS[@]} "$@"
     build_from_github libbitcoin libbitcoin-consensus master $PARALLEL ${BITCOIN_CONSENSUS_OPTIONS[@]} "$@"
