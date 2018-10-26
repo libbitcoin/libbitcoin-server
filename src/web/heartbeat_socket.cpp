@@ -64,6 +64,10 @@ void heartbeat_socket::work()
         return;
     }
 
+    LOG_INFO(LOG_SERVER)
+        << "Bound " << security_ << " websocket heartbeat service to "
+        << websocket_endpoint();
+
     // Hold a shared reference to the websocket thread_ so that we can
     // properly call stop_websocket_handler on cleanup.
     const auto thread_ref = thread_;

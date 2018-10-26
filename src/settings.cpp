@@ -49,7 +49,7 @@ settings::settings()
 
     websockets_enabled(true),
     websockets_root("web"),
-    websockets_ca_certificate("ca.pem"),
+    websockets_ca_certificate(""),
     websockets_server_private_key("key.pem"),
     websockets_server_certificate("server.pem"),
     websockets_client_certificates("clients"),

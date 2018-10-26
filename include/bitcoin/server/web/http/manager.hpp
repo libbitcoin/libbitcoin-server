@@ -105,9 +105,9 @@ private:
     uint16_t port_;
 
     void* user_data_;
-    std::string key_;
-    std::string certificate_;
-    std::string ca_certificate_;
+    path key_;
+    path certificate_;
+    path ca_certificate_;
     event_handler handler_;
     path document_root_;
     connection_list connections_;

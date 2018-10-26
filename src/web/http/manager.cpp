@@ -37,7 +37,9 @@
 extern "C"
 {
 // Random data generator used by mbedtls for SSL.
-uint32_t https_random(void*, uint8_t* buffer, size_t length);
+int https_random(void*, unsigned char* buffer, size_t length);
+// The below signature does not build on gcc:
+/* uint32_t https_random(void*, uint8_t* buffer, size_t length); */
 }
 #endif
 
@@ -61,6 +63,9 @@ manager::manager(bool ssl, event_handler handler, path document_root)
     initialized_(false),
     port_(0),
     user_data_(nullptr),
+    key_{},
+    certificate_{},
+    ca_certificate_{},
     handler_(handler),
     document_root_(document_root)
 {
@@ -94,8 +99,7 @@ bool manager::initialize()
 }
 
 // Bind is not thread safe.
-bool manager::bind(const config::endpoint& address,
-    const bind_options& options)
+bool manager::bind(const config::endpoint& address, const bind_options& options)
 {
     if (address.host() != "*")
     {
@@ -134,12 +138,23 @@ bool manager::bind(const config::endpoint& address,
 
     if (ssl_)
     {
-        if (!options.ssl_certificate.empty() ||
-            !options.ssl_ca_certificate.empty())
+        if (!options.ssl_certificate.empty())
         {
-            key_ = options.ssl_key;
-            certificate_ = options.ssl_certificate;
-            ca_certificate_ = options.ssl_ca_certificate;
+            key_ = options.ssl_key.generic_string();
+            certificate_ = options.ssl_certificate.generic_string();
+        }
+
+        if (!options.ssl_ca_certificate.empty())
+        {
+            // Specified and not found CA cert is a failure condition.
+            if (!exists(options.ssl_ca_certificate))
+            {
+                LOG_ERROR(LOG_SERVER_HTTP)
+                    << "Specified CA certificate does not exist";
+                return false;
+            }
+
+            ca_certificate_ = options.ssl_ca_certificate.generic_string();
         }
 
         // The default context object for the listener socket is initialized.
@@ -382,7 +397,7 @@ void manager::poll(size_t timeout_milliseconds)
         std::vector<connection_list> connection_lists;
         connection_lists.reserve(number_of_lists);
 
-        for (auto it = 0; it < number_of_lists; it++)
+        for (size_t it = 0; it < number_of_lists; it++)
         {
             connection_list connection_list;
             connection_list.reserve(maximum_connections);
@@ -437,8 +452,18 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
 
         const auto descriptor = connection->socket();
 
-        // TODO: how does this relation make sense?
         // Check if the descriptor is too high to monitor in our fd_set.
+        //
+        // maximum_connections should be set to FD_SETSIZE. Since the
+        // select call tracks sockets in a 0-indexed bit field for
+        // file descriptors, any descriptor greater than FD_SETSIZE
+        // cannot be monitored in the bit field provided by the
+        // (select) mechanism.  This means that if a single descriptor
+        // is greater than this value, it has to be closed since it
+        // can't be monitored, unless it can be dup'd (which asks the
+        // kernel to copy and return the descriptor mappings into the
+        // lowest-numbered unused descriptor).  If that dup attempt
+        // fails to lower the value, close the connection.
         if (descriptor > maximum_connections)
         {
 #ifdef _MSC_VER
@@ -449,8 +474,9 @@ void manager::select(size_t timeout_milliseconds, connection_list& connections)
             pending_removal.push_back(connection);
             continue;
 #else
-            // Attempt to resolve this by seeking a lower available descriptor.
-            auto new_descriptor = dup(descriptor);
+            // If the dup system call is supported, attempt to resolve
+            // this by seeking a lower available descriptor.
+            sock_t new_descriptor = dup(descriptor);
             if (new_descriptor < descriptor &&
                 new_descriptor < maximum_connections)
             {
@@ -1134,7 +1160,7 @@ bool manager::upgrade_connection(connection_ptr connection,
     return handler_(connection, event::accepted, nullptr);
 }
 
-bool manager::validate_origin(const std::string& origin)
+bool manager::validate_origin(const std::string& /* origin */)
 {
     // TODO: test against configured set.
     return true;
@@ -1232,6 +1258,7 @@ bool manager::initialize_ssl(connection_ptr connection, bool listener)
         mbedtls_ssl_session_reset(&context.context);
     }
 
+    // TODO: Allow ciphers to be caller specified
     mbedtls_ssl_conf_ciphersuites(&configuration, default_ciphers);
 
     LOG_DEBUG(LOG_SERVER_HTTP)

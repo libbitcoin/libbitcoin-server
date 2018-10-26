@@ -162,6 +162,10 @@ void query_socket::work()
         return;
     }
 
+    LOG_INFO(LOG_SERVER)
+        << "Bound " << security_ << " websocket query service to "
+        << websocket_endpoint();
+
     // Hold a shared reference to the websocket thread_ so that we can
     // properly call stop_websocket_handler on cleanup.
     const auto thread_ref = thread_;
@@ -382,7 +386,7 @@ void query_socket::handle_websockets()
 
 bool query_socket::start_websocket_handler()
 {
-    auto& started = socket_started_.get_future();
+    auto started = socket_started_.get_future();
     thread_ = std::make_shared<asio::thread>(&query_socket::handle_websockets,
         this);
     return started.get();

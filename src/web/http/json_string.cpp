@@ -21,6 +21,12 @@
 #include <cstdint>
 #include <sstream>
 #include <string>
+#include <functional>
+
+// Explicitly use std::placeholders here for usage internally to the
+// boost parsing helpers included from json_parser.hpp.
+// See: https://svn.boost.org/trac10/ticket/12621
+using namespace std::placeholders;
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <bitcoin/bitcoin.hpp>

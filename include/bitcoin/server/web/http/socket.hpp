@@ -141,7 +141,7 @@ protected:
     mutable upgrade_mutex correlation_lock_;
 
 private:
-    static bool handle_event(connection_ptr connection, event event,
+    static bool handle_event(connection_ptr connection, http::event event,
         const void* data);
 
     manager::ptr manager_;

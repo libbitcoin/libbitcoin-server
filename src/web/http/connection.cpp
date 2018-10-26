@@ -18,15 +18,12 @@
  */
 #include <bitcoin/server/web/http/connection.hpp>
 
-#include <algorithm>
+#ifdef _MSC_VER
 #include <windows.h>
-#include <bitcoin/bitcoin.hpp>
-/* #include <functional> */
+#endif
 
-/* // Explicitly use std::placeholders here for usage internally to the */
-/* // boost parsing helpers included from json_parser.hpp. */
-/* // See: https://svn.boost.org/trac10/ticket/12621 */
-/* using namespace std::placeholders; */
+#include <algorithm>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/web/http/http.hpp>
 #include <bitcoin/server/web/http/utilities.hpp>

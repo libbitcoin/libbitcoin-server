@@ -26,6 +26,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/web/http/connection.hpp>
+#include <bitcoin/server/web/http/event.hpp>
 #include <bitcoin/server/web/http/http.hpp>
 #include <bitcoin/server/web/http/http_reply.hpp>
 #include <bitcoin/server/web/http/json_string.hpp>
@@ -57,6 +58,7 @@ using namespace boost::filesystem;
 using namespace boost::iostreams;
 using namespace boost::property_tree;
 using namespace http;
+using http_event = http::event;
 using role = zmq::socket::role;
 
 // Local class.
@@ -74,21 +76,20 @@ public:
         if (!connection_ || connection_->closed())
             return false;
 
-        if (connection_->json_rpc())
-        {
-            http_reply reply;
-            const auto header = reply.generate(protocol_status::ok, {},
-                data_.size(), false);
-
-            LOG_VERBOSE(LOG_SERVER_HTTP)
-                << "Writing JSON-RPC response: " << header;
-
+        if (!connection_->json_rpc())
             // BUGBUG: unguarded narrowing cast.
-            return connection_->write(header) == static_cast<int32_t>(header.size());
-        }
+            return connection_->write(data_) == static_cast<int32_t>(data_.size());
+
+        http_reply reply;
+        const auto response = reply.generate(protocol_status::ok, {},
+            data_.size(), false) + data_;
+
+        LOG_VERBOSE(LOG_SERVER_HTTP)
+            << "Writing JSON-RPC response: " << response;
 
         // BUGBUG: unguarded narrowing cast.
-        return connection_->write(data_) == static_cast<int32_t>(data_.size());
+        return connection_->write(response) ==
+            static_cast<int32_t>(response.size());
     }
 
     connection_ptr connection()
@@ -104,12 +105,12 @@ private:
 // TODO: eliminate the use of weak and untyped pointer to pass self here.
 // static
 // Callback made internally via socket::poll on the web socket thread.
-bool socket::handle_event(connection_ptr connection, event event,
+bool socket::handle_event(connection_ptr connection, http_event event,
     const void* data)
 {
     switch (event)
     {
-        case event::accepted:
+        case http_event::accepted:
         {
             // This connection is newly accepted and is either an HTTP
             // JSON-RPC connection, or an already upgraded websocket.
@@ -127,7 +128,7 @@ bool socket::handle_event(connection_ptr connection, event event,
             break;
         }
 
-        case event::json_rpc:
+        case http_event::json_rpc:
         {
             // Process new incoming user json_rpc request.  Returning
             // false here will cause this connection to be closed.
@@ -140,15 +141,23 @@ bool socket::handle_event(connection_ptr connection, event event,
             // Use default-value get to avoid exceptions on invalid input.
             const auto id = request.json_tree.get<uint32_t>("id", 0);
             const auto method = request.json_tree.get<std::string>("method", "");
-            std::string parameters{};
 
-            const auto child = request.json_tree.get_child("params");
+            if (request.json_tree.count("params") == 0)
+            {
+                http_reply reply;
+                connection->write(reply.generate(
+                    protocol_status::bad_request, {}, 0, false));
+                return false;
+            }
+
             std::vector<std::string> parameter_list;
+            const auto child = request.json_tree.get_child("params");
             for (const auto& parameter: child)
                 parameter_list.push_back(
                     parameter.second.get_value<std::string>());
 
             // TODO: Support full parameter lists?
+            std::string parameters{};
             if (!parameter_list.empty())
                 parameters = parameter_list[0];
 
@@ -160,7 +169,7 @@ bool socket::handle_event(connection_ptr connection, event event,
             break;
         }
 
-        case event::websocket_frame:
+        case http_event::websocket_frame:
         {
             // Process new incoming user websocket data. Returning false
             // will cause this connection to be closed.
@@ -204,7 +213,7 @@ bool socket::handle_event(connection_ptr connection, event event,
             break;
         }
 
-        case event::closing:
+        case http_event::closing:
         {
             // This connection is going away after this handling.
             auto instance = static_cast<socket*>(connection->user_data());
@@ -223,9 +232,9 @@ bool socket::handle_event(connection_ptr connection, event event,
         }
 
         // No specific handling required for other events.
-        case event::read:
-        case event::error:
-        case event::websocket_control_frame:
+        case http_event::read:
+        case http_event::error:
+        case http_event::websocket_control_frame:
         default:
             break;
     }
@@ -258,6 +267,16 @@ bool socket::start()
 
     if (secure_)
     {
+        if (!server_settings_.websockets_ca_certificate.generic_string().empty() &&
+            !exists(server_settings_.websockets_server_certificate))
+        {
+            LOG_ERROR(LOG_SERVER)
+                << "Requested CA certificate '"
+                << server_settings_.websockets_ca_certificate
+                << "' does not exist.";
+            return false;
+        }
+
         if (!exists(server_settings_.websockets_server_certificate))
         {
             LOG_ERROR(LOG_SERVER)
@@ -298,14 +317,10 @@ void socket::handle_websockets()
 
     if (secure_)
     {
-        // Specified and not found CA cert should be a failure condition.
-        // TODO: defer string conversion to ssl internals, keep paths here.
-        options.ssl_key = server_settings_.
-            websockets_server_private_key.generic_string();
-        options.ssl_certificate = server_settings_.
-            websockets_server_certificate.generic_string();
-        options.ssl_ca_certificate = server_settings_.
-            websockets_ca_certificate.generic_string();
+        options.ssl_key = server_settings_.websockets_server_private_key;
+        options.ssl_certificate =
+            server_settings_.websockets_server_certificate;
+        options.ssl_ca_certificate = server_settings_.websockets_ca_certificate;
     }
 
     options.user_data = static_cast<void*>(this);
@@ -319,9 +334,17 @@ void socket::handle_websockets()
     manager_->start();
 }
 
+// NOTE: query_socket is the only service that should implement this
+// by returning something other than nullptr.
+//
+// The reason it's needed is so that socket::notify_query_work (which
+// is called from handle_event in the web thread via
+// handle_websockets) can retrieve the zmq socket within the query
+// socket service (created on the same websocket thread) in order to
+// send incoming requests to the internally connected zmq
+// query_service.  No other socket/service class requires this access.
 const std::shared_ptr<zmq::socket> socket::service() const
 {
-    // TODO: implement?
     BITCOIN_ASSERT_MSG(false, "not implemented");
     return nullptr;
 }
@@ -488,7 +511,8 @@ void socket::notify_query_work(connection_ptr connection,
     }
 }
 
-// Sends json to websockets/connections waiting on json_rpc replies (only).
+// Sends json strings to the specified web or json_rpc socket (does nothing if
+// neither).
 void socket::send(connection_ptr connection, const std::string& json)
 {
     if (!connection || connection->closed() ||
@@ -501,7 +525,7 @@ void socket::send(connection_ptr connection, const std::string& json)
     manager_->execute(std::make_shared<task_sender>(connection, json));
 }
 
-// Sends json strings to all connected websockets.
+// Sends json strings to all connected web and json_rpc sockets.
 void socket::broadcast(const std::string& json)
 {
     auto sender = [this, &json](std::pair<connection_ptr, query_work_map> entry)

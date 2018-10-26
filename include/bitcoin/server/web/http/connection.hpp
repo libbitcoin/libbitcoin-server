@@ -80,7 +80,7 @@ public:
     // ------------------------------------------------------------------------
     // Signed integer results overload negative range for error code.
 
-    read_buffer& read_buffer();
+    http::read_buffer& read_buffer();
     data_chunk& write_buffer();
 
     int32_t read();

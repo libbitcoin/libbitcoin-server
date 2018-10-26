@@ -720,7 +720,7 @@ options_metadata parser::load_settings()
     (
         "websockets.ca_certificate",
         value<path>(&configured.server.websockets_ca_certificate),
-        "The SSL certificate authority file, defaults to 'ca.pem', enables secure endpoints."
+        "The SSL certificate authority file, defaults to '', enables secure endpoints."
     )
     (
         "websockets.server_private_key",

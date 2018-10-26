@@ -32,14 +32,23 @@
 namespace libbitcoin {
 namespace server {
 namespace http {
-    
+
 // TODO: move implementation to cpp.
 class BCS_API http_reply
 {
 public:
     static std::string to_string(protocol_status status)
     {
-        typedef std::unordered_map<protocol_status, std::string> status_map;
+        struct protocol_status_hasher
+        {
+            size_t operator()(const protocol_status& status) const
+            {
+                return std::hash<uint16_t>{}(static_cast<uint16_t>(status));
+            }
+        };
+
+        typedef std::unordered_map<protocol_status, std::string,
+            protocol_status_hasher> status_map;
         static const status_map status_strings
         {
             { protocol_status::switching, "HTTP/1.1 101 Switching Protocols\r\n" },

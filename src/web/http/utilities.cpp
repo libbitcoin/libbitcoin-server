@@ -21,7 +21,11 @@
 #include <cstdlib>
 #include <string>
 #include <unordered_map>
-#include <windows.h>
+
+#ifdef _MSC_VER
+    #include <windows.h>
+#endif
+
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <bitcoin/protocol.hpp>
@@ -68,6 +72,14 @@ std::string mbedtls_error_string(int32_t error)
 
 std::string op_to_string(websocket_op code)
 {
+    struct websocket_op_hasher
+    {
+        size_t operator()(const websocket_op& status) const
+        {
+            return std::hash<uint8_t>{}(static_cast<uint8_t>(status));
+        }
+    };
+
     static const std::string unknown = "unknown";
     static const std::unordered_map<websocket_op, std::string,
         websocket_op_hasher> opcode_map

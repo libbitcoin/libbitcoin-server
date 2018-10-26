@@ -35,6 +35,20 @@ namespace http {
 class BCS_API http_request
 {
 public:
+    http_request()
+      : method({}),
+        uri({}),
+        protocol({}),
+        protocol_version(0.0f),
+        message_length(0),
+        content_length(0),
+        headers({}),
+        parameters({}),
+        upgrade_request(false),
+        json_rpc(false)
+    {
+    }
+
     std::string find(const string_map& haystack,
         const std::string& needle) const
     {

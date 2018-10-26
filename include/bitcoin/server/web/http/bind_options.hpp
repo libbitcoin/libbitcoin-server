@@ -31,10 +31,9 @@ struct BCS_API bind_options
 {
     void* user_data;
     uint32_t flags;
-    std::string ssl_key;
-    std::string ssl_certificate;
-    std::string ssl_ca_certificate;
-    std::string ssl_cipers;
+    boost::filesystem::path ssl_key;
+    boost::filesystem::path ssl_certificate;
+    boost::filesystem::path ssl_ca_certificate;
 };
 
 } // namespace http
