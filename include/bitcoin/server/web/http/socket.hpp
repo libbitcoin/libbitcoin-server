@@ -53,30 +53,15 @@ class BCS_API socket
   : public bc::protocol::zmq::worker
 {
 public:
-    /// Construct a socket class.
-    socket(bc::protocol::zmq::context& context, server_node& node,
-        bool secure);
-
-    /// Start the service.
-    bool start() override;
-
-    size_t connection_count() const;
-    void add_connection(connection_ptr connection);
-    void remove_connection(connection_ptr connection);
-    void notify_query_work(connection_ptr connection,
-        const std::string& method, uint32_t id, const std::string& parameters);
-
-protected:
-    // Tracks websocket queries via the query_work_map. Used for matching 
-    // websocket client requests to zmq query responses.
-    struct query_work_item
+    class query_response_task
     {
-        uint32_t id;
-        uint32_t correlation_id;
-        connection_ptr connection;
-        std::string command;
-        std::string arguments;
+      public:
+        virtual ~query_response_task() = default;
+        virtual bool run() = 0;
     };
+
+    typedef std::shared_ptr<query_response_task> query_response_task_ptr;
+    typedef std::vector<query_response_task_ptr> query_response_task_list;
 
     // Handles translation of incoming JSON to zmq protocol methods and
     // converting the result back to JSON for web clients.
@@ -93,6 +78,18 @@ protected:
     };
 
     typedef std::unordered_map<std::string, handlers> handler_map;
+
+    // Tracks websocket queries via the query_work_map. Used for matching
+    // websocket client requests to zmq query responses.
+    struct query_work_item
+    {
+        uint32_t id;
+        uint32_t correlation_id;
+        connection_ptr connection;
+        std::string command;
+        std::string arguments;
+    };
+
     typedef std::unordered_map<uint32_t, std::pair<connection_ptr, uint32_t>>
         query_correlation_map;
 
@@ -100,6 +97,24 @@ protected:
     typedef std::unordered_map<connection_ptr, query_work_map>
         connection_work_map;
 
+    /// Construct a socket class.
+    socket(bc::protocol::zmq::context& context, server_node& node,
+        bool secure);
+
+    /// Start the service.
+    bool start() override;
+
+    void queue_response(uint32_t sequence, const data_chunk& data,
+        const std::string& command);
+    bool send_query_responses();
+
+    size_t connection_count() const;
+    void add_connection(connection_ptr connection);
+    void remove_connection(connection_ptr connection);
+    void notify_query_work(connection_ptr connection,
+        const std::string& method, uint32_t id, const std::string& parameters);
+
+protected:
     // Initialize the websocket event loop and start a thread to poll events.
     virtual bool start_websocket_handler();
 
@@ -138,14 +153,18 @@ protected:
     uint32_t sequence_;
     connection_work_map work_;
     query_correlation_map correlations_;
-    mutable upgrade_mutex correlation_lock_;
 
 private:
     static bool handle_event(connection_ptr connection, http::event event,
         const void* data);
 
     manager::ptr manager_;
+    const config::endpoint::list origins_;
     const boost::filesystem::path document_root_;
+
+    // This is protected by mutex.
+    query_response_task_list query_response_tasks_;
+    shared_mutex query_response_task_mutex_;
 };
 
 } // namespace http

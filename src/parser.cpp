@@ -24,6 +24,8 @@
 #include <vector>
 #include <bitcoin/system.hpp>
 #include <bitcoin/node.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/settings.hpp>
 
 BC_DECLARE_CONFIG_DEFAULT_PATH("libbitcoin" / "bs.cfg")
@@ -602,20 +604,20 @@ options_metadata parser::load_settings()
         value<bool>(&configured.database.index_addresses),
         "Enable payment and stealth address indexing, defaults to true."
     )
-    /* Internally this is protocol, but application to server is more intuitive. */
     (
+        /* Internally this is protocol, but application to server is more intuitive. */
         "server.send_high_water",
         value<uint32_t>(&configured.protocol.send_high_water),
         "Drop messages at this outgoing backlog level, defaults to 100."
     )
-    /* Internally this is protocol, but application to server is more intuitive. */
     (
+        /* Internally this is protocol, but application to server is more intuitive. */
         "server.receive_high_water",
         value<uint32_t>(&configured.protocol.receive_high_water),
         "Drop messages at this incoming backlog level, defaults to 100."
     )
-    /* Internally this is protocol, but application to server is more intuitive. */
     (
+        /* Internally this is protocol, but application to server is more intuitive. */
         "server.handshake_seconds",
         value<uint32_t>(&configured.protocol.handshake_seconds),
         "The time limit to complete the connection handshake, defaults to 30."
@@ -623,12 +625,12 @@ options_metadata parser::load_settings()
     (
         "server.secure_only",
         value<bool>(&configured.server.secure_only),
-        "Disable all public endpoints, defaults to false."
+        "Disable public endpoints, defaults to false."
     )
     (
         "server.query_workers",
         value<uint16_t>(&configured.server.query_workers),
-        "The number of query worker threads, defaults to 1 (0 disables service)."
+        "The number of query worker threads per endpoint, defaults to 1 (0 disables service)."
     )
     (
         "server.subscription_limit",
@@ -648,12 +650,12 @@ options_metadata parser::load_settings()
     (
         "server.block_service_enabled",
         value<bool>(&configured.server.block_service_enabled),
-        "Enable the block publishing service, defaults to true."
+        "Enable the block publishing service, defaults to false."
     )
     (
         "server.transaction_service_enabled",
         value<bool>(&configured.server.transaction_service_enabled),
-        "Enable the transaction publishing service, defaults to true."
+        "Enable the transaction publishing service, defaults to false."
     )
     (
         "server.client_address",
@@ -740,99 +742,7 @@ options_metadata parser::load_settings()
     (
         "websockets.origin",
         value<config::endpoint::list>(&configured.server.websockets_origins),
-        "A websocket origin, multiple entries allowed."
-    )
-
-    /* [bitcoin] */
-    (
-        "bitcoin.retargeting_factor",
-        PROPERTY(uint32_t, configured.bitcoin.retargeting_factor),
-        "The difficulty retargeting factor, defaults to 4."
-    )
-    (
-        "bitcoin.block_spacing_seconds",
-        PROPERTY(uint32_t, configured.bitcoin.block_spacing_seconds),
-        "The target block period in seconds, defaults to 600."
-    )
-    (
-        "bitcoin.timestamp_limit_seconds",
-        value<uint32_t>(&configured.bitcoin.timestamp_limit_seconds),
-        "The future timestamp allowance in seconds, defaults to 7200."
-    )
-    (
-        "bitcoin.retargeting_interval_seconds",
-        PROPERTY(uint32_t, configured.bitcoin.retargeting_interval_seconds),
-        "The difficulty retargeting period in seconds, defaults to 1209600."
-    )
-    (
-        "bitcoin.proof_of_work_limit",
-        value<uint32_t>(&configured.bitcoin.proof_of_work_limit),
-        "The proof of work limit, defaults to 486604799."
-    )
-    (
-        "bitcoin.genesis_block",
-        value<config::block>(&configured.bitcoin.genesis_block),
-        "The genesis block."
-    )
-    (
-        "bitcoin.activation_threshold",
-        value<size_t>(&configured.bitcoin.activation_threshold),
-        "The number of new version blocks required for bip34 style soft fork activation, defaults to 750."
-    )
-    (
-        "bitcoin.enforcement_threshold",
-        value<size_t>(&configured.bitcoin.enforcement_threshold),
-        "The number of new version blocks required for bip34 style soft fork enforcement, defaults to 950."
-    )
-    (
-        "bitcoin.activation_sample",
-        value<size_t>(&configured.bitcoin.activation_sample),
-        "The number of blocks considered for bip34 style soft fork activation, defaults to 1000."
-    )
-    (
-        "bitcoin.bip65_freeze",
-        value<size_t>(&configured.bitcoin.bip65_freeze),
-        "The block height to freeze the bip65 softfork as in bip90, defaults to 388381."
-    )
-    (
-        "bitcoin.bip66_freeze",
-        value<size_t>(&configured.bitcoin.bip66_freeze),
-        "The block height to freeze the bip66 softfork as in bip90, defaults to 363725."
-    )
-    (
-        "bitcoin.bip34_freeze",
-        value<size_t>(&configured.bitcoin.bip34_freeze),
-        "The block height to freeze the bip34 softfork as in bip90, defaults to 227931."
-    )
-    (
-        "bitcoin.bip16_activation_time",
-        value<uint32_t>(&configured.bitcoin.bip16_activation_time),
-        "The activation time for bip16 in unix time, defaults to 1333238400."
-    )
-    (
-        "bitcoin.bip34_active_checkpoint",
-        value<config::checkpoint>(&configured.bitcoin.bip34_active_checkpoint),
-        "The hash:height checkpoint for bip34 activation, defaults to 000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8:227931."
-    )
-    (
-        "bitcoin.bip9_bit0_active_checkpoint",
-        value<config::checkpoint>(&configured.bitcoin.bip9_bit0_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit0 activation, defaults to 000000000000000004a1b34462cb8aeebd5799177f7a29cf28f2d1961716b5b5:419328."
-    )
-    (
-        "bitcoin.bip9_bit1_active_checkpoint",
-        value<config::checkpoint>(&configured.bitcoin.bip9_bit1_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit1 activation, defaults to 0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893:481824."
-    )
-    (
-        "bitcoin.initial_block_subsidy_bitcoin",
-        PROPERTY(uint64_t, configured.bitcoin.initial_block_subsidy_bitcoin),
-        "The initial block subsidy in bitcoin, defaults to 50."
-    )
-    (
-        "bitcoin.subsidy_interval",
-        PROPERTY(uint64_t, configured.bitcoin.subsidy_interval),
-        "The subsidy halving period in number of blocks, defaults to 210000."
+        "An acceptable websocket origin, multiple entries allowed."
     )
 
     /* [zeromq] */

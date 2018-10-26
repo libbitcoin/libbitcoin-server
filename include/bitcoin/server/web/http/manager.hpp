@@ -50,8 +50,11 @@ public:
     typedef std::shared_ptr<task> task_ptr;
     typedef std::vector<task_ptr> task_list;
     typedef std::shared_ptr<manager> ptr;
+    typedef std::function<void()> handler;
+    typedef std::vector<std::string> origin_list;
 
-    manager(bool ssl, event_handler handler, path document_root);
+    manager(bool ssl, event_handler handler, path document_root,
+        const origin_list origins);
     ~manager();
 
     bool initialize();
@@ -68,6 +71,9 @@ public:
     bool stopped() const;
 
     void start();
+    // Same as start above, but allows a callback to be called after
+    // each iteration of run_once.
+    void start(handler callback);
     void stop();
     void execute(task_ptr task);
     void run_tasks();
@@ -82,7 +88,7 @@ private:
     static int32_t ssl_receive(void* data, uint8_t* buffer, size_t length);
 #endif
 
-    void run_once(size_t timeout_milliseconds);
+    void run_once();
     void select(size_t timeout_milliseconds, connection_list& sockets);
     bool transfer_file_data(connection_ptr connection);
     bool send_http_file(connection_ptr connection, const path& path, bool keep_alive);
@@ -117,6 +123,8 @@ private:
     // This is protected by mutex.
     task_list tasks_;
     shared_mutex task_mutex_;
+
+    const origin_list origins_;
 };
 
 } // namespace http

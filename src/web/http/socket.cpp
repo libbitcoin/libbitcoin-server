@@ -102,6 +102,110 @@ private:
     const std::string data_;
 };
 
+// Local class.
+//
+// The purpose of this class is to handle previously received zmq
+// responses and write them to the requesting websocket.
+//
+// The run() method is only called from send_query_responses on the
+// web thread.  With this guarantee in mind, no locking of any state
+// is required.
+class query_response_task_sender
+  : public socket::query_response_task
+{
+public:
+    query_response_task_sender(uint32_t sequence, const data_chunk& data,
+        const std::string& command, const socket::handler_map& handlers,
+        socket::connection_work_map& work,
+        socket::query_correlation_map& correlations)
+      : sequence_(sequence),
+        data_(data),
+        command_(command),
+        handlers_(handlers),
+        work_(work),
+        correlations_(correlations)
+    {
+    }
+
+    bool run()
+    {
+        // Use internal sequence number to find connection and work id.
+        auto correlation = correlations_.find(sequence_);
+        if (correlation == correlations_.end())
+        {
+            // This will happen anytime the client disconnects before this handler
+            // is called. We can safely discard the result here.
+            LOG_DEBUG(LOG_SERVER)
+                << "Unmatched websocket query work item sequence: " << sequence_;
+            return true;
+        }
+
+        auto connection = correlation->second.first;
+        const auto id = correlation->second.second;
+        correlations_.erase(correlation);
+
+        // Use connection to locate connection state.
+        auto it = work_.find(connection);
+        if (it == work_.end())
+        {
+            LOG_ERROR(LOG_SERVER)
+                << "Query work completed for unknown connection";
+            return true;
+        }
+
+        // Use work id to locate the query work item.
+        auto& query_work_map = it->second;
+        auto query_work = query_work_map.find(id);
+        if (query_work == query_work_map.end())
+        {
+            // This can happen anytime the client disconnects before this
+            // code is reached. We can safely discard the result here.
+            LOG_DEBUG(LOG_SERVER)
+                << "Unmatched websocket query work id: " << id;
+            return true;
+        }
+
+        const auto work = query_work->second;
+        query_work_map.erase(query_work);
+
+        BITCOIN_ASSERT(work.id == id);
+        BITCOIN_ASSERT(work.connection == connection);
+        BITCOIN_ASSERT(work.correlation_id == sequence);
+
+        data_source istream(data_);
+        istream_reader source(istream);
+        const auto ec = source.read_error_code();
+        if (ec)
+        {
+            work.connection->write(to_json(ec, id));
+            return true;
+        }
+
+        const auto handler = handlers_.find(work.command);
+        if (handler == handlers_.end())
+        {
+            static constexpr auto error = bc::error::not_implemented;
+            work.connection->write(to_json(error, id));
+            return true;
+        }
+
+        // Decode response and send query output to websocket client.
+        // The websocket write is performed directly (running on the
+        // websocket thread).
+        const auto payload = source.read_bytes();
+        handler->second.decode(payload, id, work.connection);
+        return true;
+    }
+
+private:
+    const uint32_t sequence_;
+    const data_chunk data_;
+    const std::string command_;
+    const socket::handler_map& handlers_;
+    socket::connection_work_map& work_;
+    socket::query_correlation_map& correlations_;
+};
+
 // TODO: eliminate the use of weak and untyped pointer to pass self here.
 // static
 // Callback made internally via socket::poll on the web socket thread.
@@ -251,6 +355,7 @@ socket::socket(zmq::context& context, server_node& node, bool secure)
     protocol_settings_(node.protocol_settings()),
     sequence_(0),
     manager_(nullptr),
+    origins_(node.server_settings().websockets_origins),
     document_root_(node.server_settings().websockets_root)
 {
 }
@@ -299,13 +404,54 @@ bool socket::start()
     return zmq::worker::start();
 }
 
+void socket::queue_response(uint32_t sequence, const data_chunk& data,
+    const std::string& command)
+{
+    auto task = std::make_shared<query_response_task_sender>(
+        sequence, data, command, handlers_, work_, correlations_);
+
+    // Critical Section.
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(query_response_task_mutex_);
+    query_response_tasks_.push_back(task);
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+bool socket::send_query_responses()
+{
+    query_response_task_list tasks;
+
+    // Critical Section.
+    ///////////////////////////////////////////////////////////////////////////
+    query_response_task_mutex_.lock();
+    query_response_tasks_.swap(tasks);
+    query_response_task_mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
+
+    for (const auto task: tasks)
+        if (!task->run())
+            return false;
+
+    return true;
+}
+
 void socket::handle_websockets()
 {
     bind_options options;
 
+    auto format_origins = [](const config::endpoint::list& endpoints)
+    {
+        manager::origin_list origins;
+        origins.reserve(endpoints.size());
+        for (const auto& endpoint: endpoints)
+            origins.emplace_back(endpoint.to_string());
+
+        return origins;
+    };
+
     // This starts up the listener for the socket.
     manager_ = std::make_shared<manager>(secure_, &socket::handle_event,
-        document_root_);
+        document_root_, format_origins(origins_));
 
     if (!manager_ || !manager_->initialize())
     {
@@ -330,8 +476,13 @@ void socket::handle_websockets()
         return;
     }
 
+    auto callback = [this]()
+    {
+        send_query_responses();
+    };
+
     socket_started_.set_value(true);
-    manager_->start();
+    manager_->start(static_cast<manager::handler>(callback));
 }
 
 // NOTE: query_socket is the only service that should implement this
@@ -366,14 +517,12 @@ bool socket::stop_websocket_handler()
 
 size_t socket::connection_count() const
 {
-    // BUGBUG: use of work_ in this method is not thread safe.
     return work_.size();
 }
 
 // Called by the websocket handling thread via handle_event.
 void socket::add_connection(connection_ptr connection)
 {
-    // BUGBUG: use of work_ in this method is not thread safe.
     BITCOIN_ASSERT(work_.find(connection) == work_.end());
 
     // Initialize a new query_work_map for this connection.
@@ -381,12 +530,8 @@ void socket::add_connection(connection_ptr connection)
 }
 
 // Called by the websocket handling thread via handle_event.
-// Correlation lock usage is required because it protects the shared
-// correlation map of ids, which can also used by the zmq service
-// thread on response handling (i.e. query_socket::handle_query).
 void socket::remove_connection(connection_ptr connection)
 {
-    // BUGBUG: use of work_ in this method is not thread safe.
     if (work_.empty())
         return;
 
@@ -395,11 +540,6 @@ void socket::remove_connection(connection_ptr connection)
     {
         // Tearing down a connection is O(n) where n is the amount of
         // remaining outstanding queries.
-
-        ///////////////////////////////////////////////////////////////////////
-        // Critical Section
-        correlation_lock_.lock_upgrade();
-
         auto& query_work_map = it->second;
         for (const auto& query_work: query_work_map)
         {
@@ -407,17 +547,8 @@ void socket::remove_connection(connection_ptr connection)
                 query_work.second.correlation_id);
 
             if (correlation != correlations_.end())
-            {
-                correlation_lock_.unlock_upgrade_and_lock();
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 correlations_.erase(correlation);
-                // ------------------------------------------------------------
-                correlation_lock_.unlock_and_lock_upgrade();
-            }
         }
-
-        correlation_lock_.unlock_upgrade();
-        ///////////////////////////////////////////////////////////////////////
 
         // Clear the query_work_map for this connection before removal.
         query_work_map.clear();
@@ -426,9 +557,6 @@ void socket::remove_connection(connection_ptr connection)
 }
 
 // Called by the websocket handling thread via handle_event.
-// Correlation lock usage is required because it protects the shared
-// correlation map of ids, which is also used by the zmq service
-// thread on query response handling.
 //
 // Errors write directly on the connection since this is called from
 // the event_handler, which is called on the websocket thread.
@@ -460,8 +588,6 @@ void socket::notify_query_work(connection_ptr connection,
         return;
     }
 
-    // BUGBUG: use of work_ in this method is not thread safe.
-    // BUGBUG: this includes modification of query_work_map below.
     auto it = work_.find(connection);
     if (it == work_.end())
     {
@@ -486,10 +612,6 @@ void socket::notify_query_work(connection_ptr connection,
     handler->second.encode(request, handler->second.command, parameters,
         sequence_);
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    correlation_lock_.lock();
-
     // While each connection has its own id map (meaning correlation ids passed
     // from the web client are unique on a per connection basis, potentially
     // utilizing the full range available), we need an internal mapping that
@@ -497,9 +619,6 @@ void socket::notify_query_work(connection_ptr connection,
     // connection and original id number that originated it. The client never
     // sees this sequence_ value.
     correlations_[sequence_++] = { connection, id };
-
-    correlation_lock_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
 
     const auto ec = service()->send(request);
 
@@ -533,7 +652,6 @@ void socket::broadcast(const std::string& json)
         send(entry.first, json);
     };
 
-    // BUGBUG: use of work_ in this method is not thread safe.
     std::for_each(work_.begin(), work_.end(), sender);
 }
 

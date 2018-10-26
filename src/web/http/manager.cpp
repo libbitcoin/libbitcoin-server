@@ -56,7 +56,8 @@ static constexpr size_t timeout_milliseconds = 10;
 static constexpr size_t maximum_backlog = 8;
 static constexpr size_t maximum_connections = FD_SETSIZE;
 
-manager::manager(bool ssl, event_handler handler, path document_root)
+manager::manager(bool ssl, event_handler handler, path document_root,
+    const origin_list origins)
   : ssl_(ssl),
     running_(false),
     listening_(false),
@@ -67,7 +68,8 @@ manager::manager(bool ssl, event_handler handler, path document_root)
     certificate_{},
     ca_certificate_{},
     handler_(handler),
-    document_root_(document_root)
+    document_root_(document_root),
+    origins_(origins)
 {
 #ifndef WITH_MBEDTLS
     BITCOIN_ASSERT_MSG(!ssl, "Secure HTTP requires MBEDTLS library.");
@@ -328,15 +330,25 @@ void manager::start()
 {
     running_ = true;
     while (running_)
-        run_once(timeout_milliseconds);
+        run_once();
 }
 
-void manager::run_once(size_t timeout_milliseconds)
+void manager::start(handler callback)
+{
+    running_ = true;
+    while (running_)
+    {
+        run_once();
+        callback();
+    }
+}
+
+void manager::run_once()
 {
     if (stopped())
         return;
 
-    // Run any tasks the user queued tasks that must be run inside this thread.
+    // Run any user queued tasks that must be run inside this thread.
     run_tasks();
 
     // Monitor and process sockets.
@@ -1160,10 +1172,10 @@ bool manager::upgrade_connection(connection_ptr connection,
     return handler_(connection, event::accepted, nullptr);
 }
 
-bool manager::validate_origin(const std::string& /* origin */)
+bool manager::validate_origin(const std::string& origin)
 {
-    // TODO: test against configured set.
-    return true;
+    return std::find(origins_.begin(), origins_.end(), origin) !=
+        origins_.end();
 }
 
 bool manager::initialize_ssl(connection_ptr connection, bool listener)

@@ -22,6 +22,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/web/http/connection.hpp>
+#include <bitcoin/server/web/http/http_reply.hpp>
 #include <bitcoin/server/web/http/json_string.hpp>
 
 namespace libbitcoin {
@@ -62,41 +63,67 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         request.enqueue(to_chunk(hash));
     };
 
+    // A local clone of the task_sender send logic, for the decoders
+    // below that don't need to use that mechanism since they're
+    // already guaranteed to be run on the web thread.
+    auto decode_send = [](connection_ptr connection, const std::string& json)
+    {
+        if (!connection || connection->closed())
+            return false;
+
+        if (!connection->json_rpc())
+            // BUGBUG: unguarded narrowing cast.
+            return connection->write(json) == static_cast<int32_t>(json.size());
+
+        http_reply reply;
+        const auto response = reply.generate(protocol_status::ok, {},
+            json.size(), false) + json;
+
+        LOG_VERBOSE(LOG_SERVER_HTTP)
+            << "Writing JSON-RPC response: " << response;
+
+        // BUGBUG: unguarded narrowing cast.
+        return connection->write(response) ==
+            static_cast<int32_t>(response.size());
+    };
+
     // JSON to ZMQ response decoders.
-    //-------------------------------------------------------------------------
-    const auto decode_height = [this](const data_chunk& data, const uint32_t id,
-        connection_ptr connection)
+    // -------------------------------------------------------------------------
+    // These all run on the websocket thread, so can write on the
+    // connection directly.
+    const auto decode_height = [this, decode_send](const data_chunk& data,
+        const uint32_t id, connection_ptr connection)
     {
         data_source istream(data);
         istream_reader source(istream);
         const auto height = source.read_4_bytes_little_endian();
-        send(connection, to_json(height, id));
+        decode_send(connection, to_json(height, id));
     };
 
-    const auto decode_transaction = [this, &node](const data_chunk& data,
-        const uint32_t id, connection_ptr connection)
+    const auto decode_transaction = [this, &node, decode_send](
+        const data_chunk& data, const uint32_t id, connection_ptr connection)
     {
         const auto witness = chain::script::is_enabled(
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto transaction = chain::transaction::factory(data, true,
             witness);
-        send(connection, to_json(transaction, id));
+        decode_send(connection, to_json(transaction, id));
     };
 
-    const auto decode_block = [this, &node](const data_chunk& data,
-        const uint32_t id,connection_ptr connection)
+    const auto decode_block = [this, &node, decode_send](
+        const data_chunk& data, const uint32_t id,connection_ptr connection)
     {
         const auto witness = chain::script::is_enabled(
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto block = chain::block::factory(data, witness);
-        send(connection, to_json(block, id));
+        decode_send(connection, to_json(block, id));
     };
 
-    const auto decode_block_header = [this](const data_chunk& data,
+    const auto decode_block_header = [this, decode_send](const data_chunk& data,
         const uint32_t id,connection_ptr connection)
     {
         const auto header = chain::header::factory(data, true);
-        send(connection, to_json(header, id));
+        decode_send(connection, to_json(header, id));
     };
 
     handlers_["getblockcount"] = handlers
@@ -207,10 +234,6 @@ void query_socket::work()
 
 // Called by this thread's zmq work() method.  Returns true to
 // continue future notifications.
-//
-// Correlation lock usage is required because it protects the shared
-// correlation map of query ids, which is also used by the websocket
-// thread event handler (e.g. remove_connection, notify_query_work).
 bool query_socket::handle_query(zmq::socket& dealer)
 {
     if (stopped())
@@ -246,79 +269,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
         return true;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    correlation_lock_.lock_upgrade();
-
-    // Use internal sequence number to find connection and work id.
-    auto correlation = correlations_.find(sequence);
-    if (correlation == correlations_.end())
-    {
-        correlation_lock_.unlock_upgrade();
-        //---------------------------------------------------------------------
-        // This will happen anytime the client disconnects before this handler
-        // is called. We can safely discard the result here.
-        LOG_DEBUG(LOG_SERVER)
-            << "Unmatched websocket query work item sequence: " << sequence;
-        return true;
-    }
-
-    auto connection = correlation->second.first;
-    const auto id = correlation->second.second;
-    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    correlation_lock_.unlock_upgrade_and_lock();
-    correlations_.erase(correlation);
-    correlation_lock_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
-    // Use connection to locate connection state.
-    auto it = work_.find(connection);
-    if (it == work_.end())
-    {
-        LOG_ERROR(LOG_SERVER)
-            << "Query work completed for unknown connection";
-        return true;
-    }
-
-    // Use work id to locate the query work item.
-    auto& query_work_map = it->second;
-    auto query_work = query_work_map.find(id);
-    if (query_work == query_work_map.end())
-    {
-        // This can happen anytime the client disconnects before this
-        // code is reached. We can safely discard the result here.
-        LOG_DEBUG(LOG_SERVER)
-            << "Unmatched websocket query work id: " << id;
-        return true;
-    }
-
-    const auto work = query_work->second;
-    query_work_map.erase(query_work);
-
-    BITCOIN_ASSERT(work.id == id);
-    BITCOIN_ASSERT(work.correlation_id == sequence);
-
-    data_source istream(data);
-    istream_reader source(istream);
-    ec = source.read_error_code();
-    if (ec)
-    {
-        send(work.connection, to_json(ec, id));
-        return true;
-    }
-
-    const auto handler = handlers_.find(work.command);
-    if (handler == handlers_.end())
-    {
-        static constexpr auto error = bc::error::not_implemented;
-        send(work.connection, to_json(error, id));
-        return true;
-    }
-
-    // Decode response and send query output to websocket client.  The
-    // websocket write is performed on the websocket thread via task_sender.
-    const auto payload = source.read_bytes();
-    handler->second.decode(payload, id, work.connection);
+    socket::queue_response(sequence, data, command);
     return true;
 }
 
