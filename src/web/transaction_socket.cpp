@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,29 +18,29 @@
  */
 #include <bitcoin/server/web/transaction_socket.hpp>
 
-#include <functional>
-#include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/http/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 using namespace std::placeholders;
-using namespace bc::chain;
-using namespace bc::message;
 using namespace bc::protocol;
-using namespace http;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::config;
+using namespace bc::system::message;
 using role = zmq::socket::role;
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
 transaction_socket::transaction_socket(zmq::context& context,
     server_node& node, bool secure)
-  : http::socket(context, node, secure)
+  : http::socket(context, node.protocol_settings(), secure),
+    settings_(node.server_settings()),
+    protocol_settings_(node.protocol_settings())
 {
 }
 
@@ -129,7 +129,7 @@ bool transaction_socket::handle_transaction(zmq::socket& subscriber)
     chain::transaction tx;
     tx.from_data(transaction_data, true, true);
 
-    broadcast(to_json(tx, sequence));
+    broadcast(http::to_json(tx, sequence));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket tx ["
@@ -137,18 +137,18 @@ bool transaction_socket::handle_transaction(zmq::socket& subscriber)
     return true;
 }
 
-const config::endpoint& transaction_socket::zeromq_endpoint() const
+const endpoint& transaction_socket::zeromq_endpoint() const
 {
     // The Websocket to zeromq backend internally always uses the
     // local public zeromq endpoint since it does not affect the
     // external security of the websocket endpoint and impacts
     // configuration and performance for no additional gain.
-    return server_settings_.zeromq_transaction_endpoint(false /* secure_ */);
+    return settings_.zeromq_transaction_endpoint(false /* secure_ */);
 }
 
-const config::endpoint& transaction_socket::websocket_endpoint() const
+const endpoint& transaction_socket::websocket_endpoint() const
 {
-    return server_settings_.websockets_transaction_endpoint(secure_);
+    return settings_.websockets_transaction_endpoint(secure_);
 }
 
 } // namespace server

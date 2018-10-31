@@ -125,15 +125,13 @@ private:
     notification_worker public_notification_worker_;
 
     // Websocket services
-#ifdef WITH_MBEDTLS
     query_socket secure_query_websockets_;
-    heartbeat_socket secure_heartbeat_websockets_;
-    block_socket secure_block_websockets_;
-    transaction_socket secure_transaction_websockets_;
-#endif
     query_socket public_query_websockets_;
+    heartbeat_socket secure_heartbeat_websockets_;
     heartbeat_socket public_heartbeat_websockets_;
+    block_socket secure_block_websockets_;
     block_socket public_block_websockets_;
+    transaction_socket secure_transaction_websockets_;
     transaction_socket public_transaction_websockets_;
 };
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -21,24 +21,24 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <bitcoin/server/web/http/connection.hpp>
-#include <bitcoin/server/web/http/http_reply.hpp>
-#include <bitcoin/server/web/http/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-using namespace bc::config;
-using namespace bc::machine;
 using namespace bc::protocol;
-using namespace http;
+using namespace bc::system;
+using namespace bc::system::config;
+using namespace bc::system::machine;
 using role = zmq::socket::role;
+using connection_ptr = http::connection_ptr;
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
 query_socket::query_socket(zmq::context& context, server_node& node,
     bool secure)
-  : http::socket(context, node, secure)
+  : http::socket(context, node.protocol_settings(), secure),
+    settings_(node.server_settings()),
+    protocol_settings_(node.protocol_settings())
 {
     // JSON to ZMQ request encoders.
     //-------------------------------------------------------------------------
@@ -71,20 +71,26 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         if (!connection || connection->closed())
             return false;
 
-        if (!connection->json_rpc())
-            // BUGBUG: unguarded narrowing cast.
-            return connection->write(json) == static_cast<int32_t>(json.size());
+        if (json.size() > std::numeric_limits<int32_t>::max())
+        {
+            LOG_ERROR(LOG_SERVER_HTTP)
+                << "Skipping JSON-RPC response of size " << json.size();
+            return false;
+        }
 
-        http_reply reply;
-        const auto response = reply.generate(protocol_status::ok, {},
-            json.size(), false) + json;
+        const int32_t json_size = static_cast<int32_t>(json.size());
+
+        if (!connection->json_rpc())
+            return connection->write(json) == json_size;
+
+        http::http_reply reply;
+        const auto response = reply.generate(http::protocol_status::ok, {},
+            json_size, false) + json;
 
         LOG_VERBOSE(LOG_SERVER_HTTP)
             << "Writing JSON-RPC response: " << response;
 
-        // BUGBUG: unguarded narrowing cast.
-        return connection->write(response) ==
-            static_cast<int32_t>(response.size());
+        return connection->write(response) == json_size;
     };
 
     // JSON to ZMQ response decoders.
@@ -97,7 +103,7 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         data_source istream(data);
         istream_reader source(istream);
         const auto height = source.read_4_bytes_little_endian();
-        decode_send(connection, to_json(height, id));
+        decode_send(connection, http::to_json(height, id));
     };
 
     const auto decode_transaction = [this, &node, decode_send](
@@ -107,23 +113,23 @@ query_socket::query_socket(zmq::context& context, server_node& node,
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto transaction = chain::transaction::factory(data, true,
             witness);
-        decode_send(connection, to_json(transaction, id));
+        decode_send(connection, http::to_json(transaction, id));
     };
 
     const auto decode_block = [this, &node, decode_send](
-        const data_chunk& data, const uint32_t id,connection_ptr connection)
+        const data_chunk& data, const uint32_t id, connection_ptr connection)
     {
         const auto witness = chain::script::is_enabled(
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto block = chain::block::factory(data, witness);
-        decode_send(connection, to_json(block, id));
+        decode_send(connection, http::to_json(block, id));
     };
 
     const auto decode_block_header = [this, decode_send](const data_chunk& data,
-        const uint32_t id,connection_ptr connection)
+        const uint32_t id, connection_ptr connection)
     {
         const auto header = chain::header::factory(data, true);
-        decode_send(connection, to_json(header, id));
+        decode_send(connection, http::to_json(header, id));
     };
 
     handlers_["getblockcount"] = handlers
@@ -152,6 +158,13 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         "blockchain.fetch_block_header",
         encode_hash,
         decode_block_header
+    };
+
+    handlers_["getblockheight"] = handlers
+    {
+        "blockchain.fetch_block_height",
+        encode_hash,
+        decode_height
     };
 }
 
@@ -279,12 +292,12 @@ const endpoint& query_socket::zeromq_endpoint() const
     // local public zeromq endpoint since it does not affect the
     // external security of the websocket endpoint and impacts
     // configuration and performance for no additional gain.
-    return server_settings_.zeromq_query_endpoint(false /* secure_ */);
+    return settings_.zeromq_query_endpoint(false /* secure_ */);
 }
 
 const endpoint& query_socket::websocket_endpoint() const
 {
-    return server_settings_.websockets_query_endpoint(secure_);
+    return settings_.websockets_query_endpoint(secure_);
 }
 
 const endpoint& query_socket::query_endpoint() const

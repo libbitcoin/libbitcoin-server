@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -23,21 +23,21 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/http/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
-using namespace bc::config;
 using namespace bc::protocol;
-using namespace http;
+using namespace bc::system::config;
 using role = zmq::socket::role;
 
 heartbeat_socket::heartbeat_socket(zmq::context& context, server_node& node,
     bool secure)
-  : http::socket(context, node, secure)
+  : http::socket(context, node.protocol_settings(), secure),
+    settings_(node.server_settings()),
+    protocol_settings_(node.protocol_settings())
 {
 }
 
@@ -123,7 +123,7 @@ bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
     response.dequeue<uint16_t>(sequence);
     response.dequeue<uint64_t>(height);
 
-    broadcast(to_json(height, sequence));
+    broadcast(http::to_json(height, sequence));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket heartbeat [" << height
@@ -131,18 +131,18 @@ bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
     return true;
 }
 
-const config::endpoint& heartbeat_socket::zeromq_endpoint() const
+const endpoint& heartbeat_socket::zeromq_endpoint() const
 {
     // The Websocket to zeromq backend internally always uses the
     // local public zeromq endpoint since it does not affect the
     // external security of the websocket endpoint and impacts
     // configuration and performance for no additional gain.
-    return server_settings_.zeromq_heartbeat_endpoint(false /* secure_ */);
+    return settings_.zeromq_heartbeat_endpoint(false /* secure_ */);
 }
 
-const config::endpoint& heartbeat_socket::websocket_endpoint() const
+const endpoint& heartbeat_socket::websocket_endpoint() const
 {
-    return server_settings_.websockets_heartbeat_endpoint(secure_);
+    return settings_.websockets_heartbeat_endpoint(secure_);
 }
 
 } // namespace server

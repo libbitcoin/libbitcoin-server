@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -26,22 +26,23 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/http/json_string.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-using namespace std::placeholders;
-using namespace bc::chain;
 using namespace bc::protocol;
-using namespace http;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::config;
 using role = zmq::socket::role;
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
 block_socket::block_socket(zmq::context& context, server_node& node,
     bool secure)
-  : http::socket(context, node, secure)
+  : http::socket(context, node.protocol_settings(), secure),
+    settings_(node.server_settings()),
+    protocol_settings_(node.protocol_settings())
 {
 }
 
@@ -128,8 +129,8 @@ bool block_socket::handle_block(zmq::socket& subscriber)
     response.dequeue(block_data);
 
     // Format and send transaction to websocket subscribers.
-    const auto block = block::factory(block_data, true);
-    broadcast(to_json(block, height, sequence));
+    const auto block = system::chain::block::factory(block_data, true);
+    broadcast(http::to_json(block, height, sequence));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket block ["
@@ -137,18 +138,18 @@ bool block_socket::handle_block(zmq::socket& subscriber)
     return true;
 }
 
-const config::endpoint& block_socket::zeromq_endpoint() const
+const endpoint& block_socket::zeromq_endpoint() const
 {
     // The Websocket to zeromq backend internally always uses the
     // local public zeromq endpoint since it does not affect the
     // external security of the websocket endpoint and impacts
     // configuration and performance for no additional gain.
-    return server_settings_.zeromq_block_endpoint(false /* secure_ */);
+    return settings_.zeromq_block_endpoint(false /* secure_ */);
 }
 
-const config::endpoint& block_socket::websocket_endpoint() const
+const endpoint& block_socket::websocket_endpoint() const
 {
-    return server_settings_.websockets_block_endpoint(secure_);
+    return settings_.websockets_block_endpoint(secure_);
 }
 
 } // namespace server

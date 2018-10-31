@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -21,7 +21,7 @@
 
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/web/http/socket.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -31,24 +31,27 @@ class server_node;
 // This class is thread safe.
 // Subscribe to block acceptances from a dedicated socket endpoint.
 class BCS_API block_socket
-  : public http::socket
+  : public bc::protocol::http::socket
 {
 public:
     typedef std::shared_ptr<block_socket> ptr;
 
     /// Construct a block socket service endpoint.
-    block_socket(bc::protocol::zmq::context& context, server_node& node
-        , bool secure);
+    block_socket(bc::protocol::zmq::context& context, server_node& node,
+        bool secure);
 
 protected:
     // Implement the service.
     virtual void work() override;
 
-    virtual const config::endpoint& zeromq_endpoint() const override;
-    virtual const config::endpoint& websocket_endpoint() const override;
+    virtual const system::config::endpoint& zeromq_endpoint() const override;
+    virtual const system::config::endpoint& websocket_endpoint() const override;
 
 private:
     bool handle_block(bc::protocol::zmq::socket& subscriber);
+
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& protocol_settings_;
 };
 
 } // namespace server

@@ -48,12 +48,6 @@ settings::settings()
     websockets_public_transaction_endpoint("tcp://*:9074"),
 
     websockets_enabled(true),
-    websockets_root("web"),
-    websockets_ca_certificate(""),
-    websockets_server_private_key("key.pem"),
-    websockets_server_certificate("server.pem"),
-    websockets_client_certificates("clients"),
-    websockets_origins{},
 
     // [zeromq]
     zeromq_secure_query_endpoint("tcp://*:9081"),

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,12 +19,9 @@
 #ifndef LIBBITCOIN_SERVER_WEB_QUERY_SOCKET_HPP
 #define LIBBITCOIN_SERVER_WEB_QUERY_SOCKET_HPP
 
-#include <memory>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/http/socket.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -35,7 +32,7 @@ class server_node;
 // Submit queries and address subscriptions and receive address
 // notifications on a dedicated socket endpoint.
 class BCS_API query_socket
-  : public http::socket
+  : public bc::protocol::http::socket
 {
 public:
     typedef std::shared_ptr<query_socket> ptr;
@@ -53,16 +50,18 @@ protected:
     // Initialize the query specific zmq socket.
     virtual void handle_websockets() override;
 
-    virtual const config::endpoint& zeromq_endpoint() const override;
-    virtual const config::endpoint& websocket_endpoint() const override;
+    virtual const system::config::endpoint& zeromq_endpoint() const override;
+    virtual const system::config::endpoint& websocket_endpoint() const override;
     virtual const std::shared_ptr<bc::protocol::zmq::socket> service()
         const override;
 
-    const config::endpoint& query_endpoint() const;
+    const system::config::endpoint& query_endpoint() const;
 
 private:
     bool handle_query(bc::protocol::zmq::socket& dealer);
 
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& protocol_settings_;
     std::shared_ptr<bc::protocol::zmq::socket> service_;
 };
 

@@ -8,34 +8,31 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\interface">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000A}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\messages">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000B}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000A}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\services">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000B}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\web">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\server\web\http">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\bitcoin\server\workers">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
     </Filter>
     <Filter Include="resource">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000000}</UniqueIdentifier>
@@ -51,9 +48,6 @@
     </Filter>
     <Filter Include="src\web">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\web\http">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\workers">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
@@ -110,21 +104,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\web\heartbeat_socket.cpp">
       <Filter>src\web</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\web\http\connection.cpp">
-      <Filter>src\web\http</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\web\http\json_string.cpp">
-      <Filter>src\web\http</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\web\http\manager.cpp">
-      <Filter>src\web\http</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\web\http\socket.cpp">
-      <Filter>src\web\http</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\web\http\utilities.cpp">
-      <Filter>src\web\http</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\web\query_socket.cpp">
       <Filter>src\web</Filter>
@@ -202,60 +181,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp">
       <Filter>include\bitcoin\server\web</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\bind_options.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\connection.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\connection_state.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\event.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\file_transfer.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\http.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\http_reply.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\http_request.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\json_string.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\manager.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\protocol_status.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\socket.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\ssl.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\utilities.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_frame.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_message.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_op.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\http\websocket_transfer.hpp">
-      <Filter>include\bitcoin\server\web\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\query_socket.hpp">
       <Filter>include\bitcoin\server\web</Filter>

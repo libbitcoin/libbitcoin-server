@@ -716,32 +716,32 @@ options_metadata parser::load_settings()
     )
     (
         "websockets.root",
-        value<path>(&configured.server.websockets_root),
+        value<path>(&configured.protocol.web_root),
         "The optional directory for serving files via HTTP/S, defaults to 'web'."
     )
     (
         "websockets.ca_certificate",
-        value<path>(&configured.server.websockets_ca_certificate),
+        value<path>(&configured.protocol.web_ca_certificate),
         "The SSL certificate authority file, defaults to '', enables secure endpoints."
     )
     (
         "websockets.server_private_key",
-        value<path>(&configured.server.websockets_server_private_key),
+        value<path>(&configured.protocol.web_server_private_key),
         "The SSL private key file, defaults to 'key.pem', enables secure endpoints."
     )
     (
         "websockets.server_certificate",
-        value<path>(&configured.server.websockets_server_certificate),
+        value<path>(&configured.protocol.web_server_certificate),
         "The SSL certificate file, defaults to 'server.pem', enables secure endpoints."
     )
     (
         "websockets.client_certificates",
-        value<path>(&configured.server.websockets_client_certificates),
+        value<path>(&configured.protocol.web_client_certificates),
         "The SSL client certificates directory, defaults to 'clients'."
     )
     (
         "websockets.origin",
-        value<config::endpoint::list>(&configured.server.websockets_origins),
+        value<config::endpoint::list>(&configured.protocol.web_origins),
         "An acceptable websocket origin, multiple entries allowed."
     )
 

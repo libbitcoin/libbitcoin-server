@@ -54,11 +54,6 @@ src_libbitcoin_server_la_SOURCES = \
     src/web/heartbeat_socket.cpp \
     src/web/query_socket.cpp \
     src/web/transaction_socket.cpp \
-    src/web/http/connection.cpp \
-    src/web/http/json_string.cpp \
-    src/web/http/manager.cpp \
-    src/web/http/socket.cpp \
-    src/web/http/utilities.cpp \
     src/workers/authenticator.cpp \
     src/workers/notification_worker.cpp \
     src/workers/query_worker.cpp
@@ -134,27 +129,6 @@ include_bitcoin_server_web_HEADERS = \
     include/bitcoin/server/web/heartbeat_socket.hpp \
     include/bitcoin/server/web/query_socket.hpp \
     include/bitcoin/server/web/transaction_socket.hpp
-
-include_bitcoin_server_web_httpdir = ${includedir}/bitcoin/server/web/http
-include_bitcoin_server_web_http_HEADERS = \
-    include/bitcoin/server/web/http/bind_options.hpp \
-    include/bitcoin/server/web/http/connection.hpp \
-    include/bitcoin/server/web/http/connection_state.hpp \
-    include/bitcoin/server/web/http/event.hpp \
-    include/bitcoin/server/web/http/file_transfer.hpp \
-    include/bitcoin/server/web/http/http.hpp \
-    include/bitcoin/server/web/http/http_reply.hpp \
-    include/bitcoin/server/web/http/http_request.hpp \
-    include/bitcoin/server/web/http/json_string.hpp \
-    include/bitcoin/server/web/http/manager.hpp \
-    include/bitcoin/server/web/http/protocol_status.hpp \
-    include/bitcoin/server/web/http/socket.hpp \
-    include/bitcoin/server/web/http/ssl.hpp \
-    include/bitcoin/server/web/http/utilities.hpp \
-    include/bitcoin/server/web/http/websocket_frame.hpp \
-    include/bitcoin/server/web/http/websocket_message.hpp \
-    include/bitcoin/server/web/http/websocket_op.hpp \
-    include/bitcoin/server/web/http/websocket_transfer.hpp
 
 include_bitcoin_server_workersdir = ${includedir}/bitcoin/server/workers
 include_bitcoin_server_workers_HEADERS = \

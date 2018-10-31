@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,13 +19,9 @@
 #ifndef LIBBITCOIN_SERVER_WEB_TRANSACTION_SOCKET_HPP
 #define LIBBITCOIN_SERVER_WEB_TRANSACTION_SOCKET_HPP
 
-#include <cstdint>
-#include <memory>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
-#include <bitcoin/server/web/http/socket.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -35,7 +31,7 @@ class server_node;
 // This class is thread safe.
 // Subscribe to tx acceptances into the pool from a dedicated socket endpoint.
 class BCS_API transaction_socket
-  : public http::socket
+  : public bc::protocol::http::socket
 {
 public:
     typedef std::shared_ptr<transaction_socket> ptr;
@@ -49,11 +45,14 @@ protected:
     // Implement the service.
     virtual void work() override;
 
-    virtual const config::endpoint& zeromq_endpoint() const override;
-    virtual const config::endpoint& websocket_endpoint() const override;
+    virtual const system::config::endpoint& zeromq_endpoint() const override;
+    virtual const system::config::endpoint& websocket_endpoint() const override;
 
 private:
     bool handle_transaction(bc::protocol::zmq::socket& subscriber);
+
+    const bc::server::settings& settings_;
+    const bc::protocol::settings& protocol_settings_;
 };
 
 } // namespace server
