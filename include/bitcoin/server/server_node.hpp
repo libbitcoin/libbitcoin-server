@@ -85,14 +85,14 @@ public:
     // Notification.
     // ------------------------------------------------------------------------
 
-    virtual code subscribe_address(const message& request,
-        short_hash&& address_hash, bool unsubscribe);
+    virtual system::code subscribe_address(const message& request,
+        system::short_hash&& address_hash, bool unsubscribe);
 
-    virtual code subscribe_stealth(const message& request,
-        binary&& prefix_filter, bool unsubscribe);
+    virtual system::code subscribe_stealth(const message& request,
+        system::binary&& prefix_filter, bool unsubscribe);
 
 private:
-    void handle_running(const code& ec, result_handler handler);
+    void handle_running(const system::code& ec, result_handler handler);
 
     bool start_services();
     bool start_authenticator();

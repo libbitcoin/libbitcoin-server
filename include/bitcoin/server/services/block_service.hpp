@@ -57,14 +57,14 @@ protected:
     virtual void work() override;
 
 private:
-    bool handle_reorganization(const code& ec, size_t fork_height,
-        block_const_ptr_list_const_ptr incoming,
-        block_const_ptr_list_const_ptr outgoing);
+    bool handle_reorganization(const system::code& ec, size_t fork_height,
+        system::block_const_ptr_list_const_ptr incoming,
+        system::block_const_ptr_list_const_ptr outgoing);
 
     void publish_blocks(uint32_t fork_height,
-        block_const_ptr_list_const_ptr blocks);
+        system::block_const_ptr_list_const_ptr blocks);
     void publish_block(socket& publisher, size_t height,
-        block_const_ptr block);
+        system::block_const_ptr block);
 
     // These are thread safe.
     const bool secure_;
@@ -72,8 +72,8 @@ private:
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
     const bc::protocol::settings internal_;
-    const config::endpoint service_;
-    const config::endpoint worker_;
+    const system::config::endpoint service_;
+    const system::config::endpoint worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 

@@ -23,7 +23,8 @@
 namespace libbitcoin {
 namespace server {
 
-using namespace asio;
+using namespace bc::system;
+using namespace bc::system::asio;
 
 settings::settings()
   : priority(false),
@@ -48,7 +49,7 @@ settings::settings()
 }
 
 // There are no current distinctions spanning chain contexts.
-settings::settings(bc::config::settings)
+settings::settings(system::config::settings)
   : settings()
 {
 }

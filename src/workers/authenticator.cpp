@@ -27,6 +27,7 @@ namespace libbitcoin {
 namespace server {
 
 using namespace bc::protocol;
+using namespace bc::system;
 
 authenticator::authenticator(server_node& node)
   : zmq::authenticator(priority(node.server_settings().priority))

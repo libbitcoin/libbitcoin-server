@@ -35,15 +35,15 @@ class BCS_API settings
 {
 public:
     settings();
-    settings(bc::config::settings context);
+    settings(system::config::settings context);
 
     /// Helpers.
-    asio::duration heartbeat_interval() const;
-    asio::duration subscription_expiration() const;
-    const config::endpoint& query_endpoint(bool secure) const;
-    const config::endpoint& heartbeat_endpoint(bool secure) const;
-    const config::endpoint& block_endpoint(bool secure) const;
-    const config::endpoint& transaction_endpoint(bool secure) const;
+    system::asio::duration heartbeat_interval() const;
+    system::asio::duration subscription_expiration() const;
+    const system::config::endpoint& query_endpoint(bool secure) const;
+    const system::config::endpoint& heartbeat_endpoint(bool secure) const;
+    const system::config::endpoint& block_endpoint(bool secure) const;
+    const system::config::endpoint& transaction_endpoint(bool secure) const;
 
     /// Properties.
     bool priority;
@@ -56,20 +56,20 @@ public:
     bool block_service_enabled;
     bool transaction_service_enabled;
 
-    config::endpoint secure_query_endpoint;
-    config::endpoint secure_heartbeat_endpoint;
-    config::endpoint secure_block_endpoint;
-    config::endpoint secure_transaction_endpoint;
+    system::config::endpoint secure_query_endpoint;
+    system::config::endpoint secure_heartbeat_endpoint;
+    system::config::endpoint secure_block_endpoint;
+    system::config::endpoint secure_transaction_endpoint;
 
-    config::endpoint public_query_endpoint;
-    config::endpoint public_heartbeat_endpoint;
-    config::endpoint public_block_endpoint;
-    config::endpoint public_transaction_endpoint;
+    system::config::endpoint public_query_endpoint;
+    system::config::endpoint public_heartbeat_endpoint;
+    system::config::endpoint public_block_endpoint;
+    system::config::endpoint public_transaction_endpoint;
 
-    config::sodium server_private_key;
-    config::sodium::list client_public_keys;
-    config::authority::list client_addresses;
-    config::authority::list blacklists;
+    system::config::sodium server_private_key;
+    system::config::sodium::list client_public_keys;
+    system::config::authority::list client_addresses;
+    system::config::authority::list blacklists;
 };
 
 } // namespace server

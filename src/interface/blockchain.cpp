@@ -33,14 +33,15 @@ namespace server {
 
 using namespace std::placeholders;
 using namespace bc::blockchain;
-using namespace bc::chain;
-using namespace bc::wallet;
-using namespace bc::machine;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::machine;
+using namespace bc::system::wallet;
 
 static constexpr size_t code_size = sizeof(uint32_t);
 static constexpr size_t index_size = sizeof(uint32_t);
 static constexpr size_t point_size = hash_size + sizeof(uint32_t);
-static constexpr auto canonical = bc::message::version::level::canonical;
+static constexpr auto canonical = system::message::version::level::canonical;
 
 void blockchain::fetch_history4(server_node& node, const message& request,
     send_handler handler)
@@ -590,7 +591,7 @@ void blockchain::stealth_transaction_hashes_fetched(const code& ec,
 void blockchain::broadcast(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto block = std::make_shared<bc::message::block>();
+    const auto block = std::make_shared< system::message::block>();
 
     if (!block->from_data(canonical, request.data()))
     {
@@ -620,7 +621,7 @@ void blockchain::handle_broadcast(const code& ec, const message& request,
 void blockchain::validate(server_node& node, const message& request,
     send_handler handler)
 {
-    const auto block = std::make_shared<bc::message::block>();
+    const auto block = std::make_shared< system::message::block>();
 
     if (!block->from_data(canonical, request.data()))
     {

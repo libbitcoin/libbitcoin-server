@@ -31,8 +31,9 @@ namespace libbitcoin {
 namespace server {
 
 using namespace std::placeholders;
-using namespace bc::chain;
 using namespace bc::protocol;
+using namespace bc::system;
+using namespace bc::system::chain;
 using role = zmq::socket::role;
 
 static const auto domain = "block";
@@ -213,7 +214,8 @@ void block_service::publish_block(zmq::socket& publisher, size_t height,
     zmq::message broadcast;
     broadcast.enqueue_little_endian(++sequence_);
     broadcast.enqueue_little_endian(static_cast<uint32_t>(height));
-    broadcast.enqueue(block->to_data(bc::message::version::level::canonical));
+    broadcast.enqueue(block->to_data(
+        system::message::version::level::canonical));
 
     const auto ec = publisher.send(broadcast);
 

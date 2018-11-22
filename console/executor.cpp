@@ -35,10 +35,11 @@ using boost::format;
 using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::system;
-using namespace bc::chain;
-using namespace bc::config;
 using namespace bc::database;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::config;
 using namespace std::placeholders;
 
 namespace keywords = boost::log::keywords;

@@ -23,9 +23,9 @@
   </ItemDefinitionGroup>
 
   <!-- Dependencies -->
-  
+
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(SolutionDir)libbitcoin.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-system.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-consensus.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-database.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-blockchain.import.props" />
@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
     <Linkage-libzmq>dynamic</Linkage-libzmq>
     <Linkage-secp256k1>dynamic</Linkage-secp256k1>
-    <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
+    <Linkage-libbitcoin-system>dynamic</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>dynamic</Linkage-libbitcoin-database>
     <Linkage-libbitcoin-blockchain>dynamic</Linkage-libbitcoin-blockchain>
@@ -54,7 +54,7 @@
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-libzmq>ltcg</Linkage-libzmq>
     <Linkage-secp256k1>ltcg</Linkage-secp256k1>
-    <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
+    <Linkage-libbitcoin-system>ltcg</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>ltcg</Linkage-libbitcoin-database>
     <Linkage-libbitcoin-blockchain>ltcg</Linkage-libbitcoin-blockchain>
@@ -66,7 +66,7 @@
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-libzmq>static</Linkage-libzmq>
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-libbitcoin>static</Linkage-libbitcoin>
+    <Linkage-libbitcoin-system>static</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>static</Linkage-libbitcoin-database>
     <Linkage-libbitcoin-blockchain>static</Linkage-libbitcoin-blockchain>
@@ -77,11 +77,11 @@
   </PropertyGroup>
 
   <!-- Messages -->
-  
+
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
     <Message Text="Linkage-libzmq     : $(Linkage-libzmq)" Importance="high"/>
     <Message Text="Linkage-secp256k1  : $(Linkage-secp256k1)" Importance="high"/>
-    <Message Text="Linkage-libbitcoin : $(Linkage-libbitcoin)" Importance="high"/>
+    <Message Text="Linkage-_system    : $(Linkage-libbitcoin-system)" Importance="high"/>
     <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
     <Message Text="Linkage-_database  : $(Linkage-libbitcoin-database)" Importance="high"/>
     <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>

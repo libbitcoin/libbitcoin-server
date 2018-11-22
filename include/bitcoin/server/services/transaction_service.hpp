@@ -56,8 +56,9 @@ protected:
     virtual void work() override;
 
 private:
-    bool handle_transaction(const code& ec, transaction_const_ptr tx);
-    void publish_transaction(transaction_const_ptr tx);
+    bool handle_transaction(const system::code& ec,
+        system::transaction_const_ptr tx);
+    void publish_transaction(system::transaction_const_ptr tx);
 
     // These are thread safe.
     const bool secure_;
@@ -65,8 +66,8 @@ private:
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
     const bc::protocol::settings internal_;
-    const config::endpoint service_;
-    const config::endpoint worker_;
+    const system::config::endpoint service_;
+    const system::config::endpoint worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 

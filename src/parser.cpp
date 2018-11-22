@@ -22,7 +22,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parser.hpp>
@@ -37,8 +37,9 @@ namespace server {
 
 using namespace boost::filesystem;
 using namespace boost::program_options;
-using namespace bc::config;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::config;
 
 // Initialize configuration by copying the given instance.
 parser::parser(const configuration& defaults)
@@ -47,7 +48,7 @@ parser::parser(const configuration& defaults)
 }
 
 // Initialize configuration using defaults of the given context.
-parser::parser(bc::config::settings context)
+parser::parser(system::config::settings context)
   : configured(context)
 {
     using serve = message::version::service;

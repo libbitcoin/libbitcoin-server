@@ -34,6 +34,7 @@ namespace server {
 
 using namespace std::placeholders;
 using namespace bc::protocol;
+using namespace bc::system;
 using role = zmq::socket::role;
 
 query_worker::query_worker(zmq::authenticator& authenticator,
