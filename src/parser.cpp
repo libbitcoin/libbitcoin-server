@@ -48,7 +48,7 @@ parser::parser(const configuration& defaults)
 }
 
 // Initialize configuration using defaults of the given context.
-parser::parser(system::config::settings context)
+parser::parser(config::settings context)
   : configured(context)
 {
     using serve = message::version::service;

@@ -23,8 +23,10 @@
 namespace libbitcoin {
 namespace server {
 
+using namespace bc::system;
+
 // Construct with defaults derived from given context.
-configuration::configuration(system::config::settings context)
+configuration::configuration(config::settings context)
   : node::configuration(context),
     server(context),
     blockchain(context)

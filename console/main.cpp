@@ -36,7 +36,7 @@ int bc::system::main(int argc, char* argv[])
     using namespace bc::system;
 
     set_utf8_stdio();
-    server::parser metadata(system::config::settings::mainnet);
+    server::parser metadata(config::settings::mainnet);
     const auto& args = const_cast<const char**>(argv);
 
     if (!metadata.parse(argc, args, cerr))
