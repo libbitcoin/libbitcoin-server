@@ -32,7 +32,7 @@ namespace server {
 class BCS_API message
 {
 public:
-    static data_chunk to_bytes(const code& ec);
+    static system::data_chunk to_bytes(const system::code& ec);
 
     // Constructors.
     //-------------------------------------------------------------------------
@@ -41,18 +41,18 @@ public:
     message(bool secure);
 
     // Create an error message in respose to the request.
-    message(const message& request, const code& ec);
+    message(const message& request, const system::code& ec);
 
     // Create a general message in respose to the request.
-    message(const message& request, data_chunk&& data);
+    message(const message& request, system::data_chunk&& data);
 
     // Create an error notification message for the subscription.
     message(const subscription& route, const std::string& command,
-        const code& ec);
+        const system::code& ec);
 
     //// Construct a notification message for the subscription.
     message(const subscription& route, const std::string& command,
-        data_chunk&& data);
+        system::data_chunk&& data);
 
     // Properties.
     //-------------------------------------------------------------------------
@@ -64,7 +64,7 @@ public:
     uint32_t id() const;
 
     /// Serialized query or response (defined in relation to command).
-    const data_chunk& data() const;
+    const system::data_chunk& data() const;
 
     /// The message route.
     const server::route& route() const;
@@ -76,15 +76,15 @@ public:
     //-------------------------------------------------------------------------
 
     /// Receive a message via the socket.
-    code receive(bc::protocol::zmq::socket& socket);
+    system::code receive(bc::protocol::zmq::socket& socket);
 
     /// Send the message via the socket.
-    code send(bc::protocol::zmq::socket& socket) const;
+    system::code send(bc::protocol::zmq::socket& socket) const;
 
 protected:
     std::string command_;
     uint32_t id_;
-    data_chunk data_;
+    system::data_chunk data_;
     server::route route_;
     const bool secure_;
 };

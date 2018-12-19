@@ -22,14 +22,15 @@
 #include <cstdint>
 #include <functional>
 #include <utility>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-using namespace bc::wallet;
+using namespace bc::system;
+using namespace bc::system::wallet;
 
 void subscribe::address(server_node& node, const message& request,
     send_handler handler)

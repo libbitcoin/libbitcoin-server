@@ -29,6 +29,7 @@ namespace libbitcoin {
 namespace server {
 
 using namespace bc::protocol;
+using namespace bc::system;
 
 // Protocol delimitation migration plan.
 //-----------------------------------------------------------------------------

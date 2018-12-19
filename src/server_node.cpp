@@ -31,9 +31,10 @@ namespace libbitcoin {
 namespace server {
 
 using namespace std::placeholders;
-using namespace bc::chain;
 using namespace bc::node;
 using namespace bc::protocol;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 server_node::server_node(const configuration& configuration)
   : full_node(configuration),

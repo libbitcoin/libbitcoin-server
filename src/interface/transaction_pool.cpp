@@ -29,9 +29,10 @@
 namespace libbitcoin {
 namespace server {
 
+using namespace bc::system;
 using namespace std::placeholders;
 
-static constexpr auto canonical = bc::message::version::level::canonical;
+static constexpr auto canonical = system::message::version::level::canonical;
 
 void transaction_pool::fetch_transaction(server_node& node,
     const message& request, send_handler handler)

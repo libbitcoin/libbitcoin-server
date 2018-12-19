@@ -35,10 +35,11 @@ using boost::format;
 using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::system;
-using namespace bc::chain;
-using namespace bc::config;
 using namespace bc::database;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::config;
 using namespace std::placeholders;
 
 namespace keywords = boost::log::keywords;
@@ -112,7 +113,7 @@ void executor::do_version()
         LIBBITCOIN_PROTOCOL_VERSION %
         LIBBITCOIN_NODE_VERSION %
         LIBBITCOIN_BLOCKCHAIN_VERSION %
-        LIBBITCOIN_VERSION << std::endl;
+        LIBBITCOIN_SYSTEM_VERSION << std::endl;
 }
 
 // Emit to the log.

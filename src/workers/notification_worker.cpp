@@ -42,9 +42,10 @@ namespace server {
 
 using namespace std::chrono;
 using namespace std::placeholders;
-using namespace bc::chain;
 using namespace bc::protocol;
-using namespace bc::wallet;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::wallet;
 using role = zmq::socket::role;
 
 static const auto notification_address = "notification.address";

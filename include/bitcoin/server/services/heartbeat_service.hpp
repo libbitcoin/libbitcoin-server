@@ -63,7 +63,7 @@ private:
     const std::string security_;
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
-    const config::endpoint service_;
+    const system::config::endpoint service_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 

@@ -19,7 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 #define LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>
@@ -49,14 +49,15 @@ public:
         send_handler handler);
 
 private:
-    static void transaction_fetched(const code& ec, transaction_const_ptr tx,
-        size_t, size_t, const message& request, send_handler handler);
+    static void transaction_fetched(const system::code& ec,
+        system::transaction_const_ptr tx, size_t, size_t,
+        const message& request, send_handler handler);
 
-    static void handle_broadcast(const code& ec, const message& request,
-        send_handler handler);
+    static void handle_broadcast(const system::code& ec,
+        const message& request, send_handler handler);
 
-    static void handle_validated2(const code& ec, const message& request,
-        send_handler handler);
+    static void handle_validated2(const system::code& ec,
+        const message& request, send_handler handler);
 };
 
 } // namespace server

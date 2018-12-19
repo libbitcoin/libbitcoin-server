@@ -40,12 +40,12 @@ public:
     bool menu();
 
 private:
-    static void stop(const code& ec);
+    static void stop(const system::code& ec);
     static void handle_stop(int code);
 
-    void handle_started(const code& ec);
-    void handle_running(const code& ec);
-    void handle_stopped(const code& ec);
+    void handle_started(const system::code& ec);
+    void handle_running(const system::code& ec);
+    void handle_stopped(const system::code& ec);
 
     void do_help();
     void do_settings();
@@ -57,7 +57,7 @@ private:
     bool run();
 
     // Termination state.
-    static std::promise<code> stopping_;
+    static std::promise<system::code> stopping_;
 
     parser& metadata_;
     std::ostream& output_;

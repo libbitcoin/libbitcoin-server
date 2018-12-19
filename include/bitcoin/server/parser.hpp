@@ -20,7 +20,7 @@
 #define LIBBITCOIN_SERVER_PARSER_HPP
 
 #include <ostream>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/configuration.hpp>
 
@@ -30,26 +30,26 @@ namespace server {
 /// Parse configurable values from environment variables, settings file, and
 /// command line positional and non-positional options.
 class BCS_API parser
-  : public config::parser
+  : public system::config::parser
 {
 public:
-    parser(bc::config::settings context);
+    parser(system::config::settings context);
     parser(const configuration& defaults);
 
     /// Parse all configuration into member settings.
     virtual bool parse(int argc, const char* argv[], std::ostream& error);
 
     /// Load command line options (named).
-    virtual options_metadata load_options();
+    virtual system::options_metadata load_options();
 
     /// Load command line arguments (positional).
-    virtual arguments_metadata load_arguments();
+    virtual system::arguments_metadata load_arguments();
 
     /// Load configuration file settings.
-    virtual options_metadata load_settings();
+    virtual system::options_metadata load_settings();
 
     /// Load environment variable settings.
-    virtual options_metadata load_environment();
+    virtual system::options_metadata load_environment();
 
     /// The populated configuration settings values.
     configuration configured;

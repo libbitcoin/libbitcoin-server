@@ -44,7 +44,7 @@ class BCS_API configuration
   : public node::configuration
 {
 public:
-    configuration(config::settings context);
+    configuration(system::config::settings context);
 
     /// Settings.
     bc::server::settings server;

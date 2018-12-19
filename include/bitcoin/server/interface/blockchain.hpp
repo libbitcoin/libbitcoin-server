@@ -92,14 +92,15 @@ public:
         send_handler handler);
 
 private:
-    static void history_fetched(const code& ec,
-        const chain::payment_record::list& payments, const message& request,
-        send_handler handler);
+    static void history_fetched(const system::code& ec,
+        const system::chain::payment_record::list& payments,
+        const message& request, send_handler handler);
 
-    static void transaction_fetched(const code& ec, transaction_const_ptr tx,
-        size_t, size_t, const message& request, send_handler handler);
+    static void transaction_fetched(const system::code& ec,
+        system::transaction_const_ptr tx, size_t, size_t,
+        const message& request, send_handler handler);
 
-    static void last_height_fetched(const code& ec, size_t last_height,
+    static void last_height_fetched(const system::code& ec, size_t last_height,
         const message& request, send_handler handler);
 
     static void fetch_block_by_hash(server_node& node,
@@ -114,12 +115,12 @@ private:
     static void fetch_block_header_by_height(server_node& node,
         const message& request, send_handler handler);
 
-    static void block_fetched(const code& ec,
-        block_const_ptr header, const message& request,
+    static void block_fetched(const system::code& ec,
+        system::block_const_ptr header, const message& request,
         send_handler handler);
 
-    static void block_header_fetched(const code& ec,
-        header_const_ptr header, const message& request,
+    static void block_header_fetched(const system::code& ec,
+        system::header_const_ptr header, const message& request,
         send_handler handler);
 
     static void fetch_block_transaction_hashes_by_hash(server_node& node,
@@ -128,33 +129,34 @@ private:
     static void fetch_block_transaction_hashes_by_height(server_node& node,
         const message& request, send_handler handler);
 
-    static void merkle_block_fetched(const code& ec, merkle_block_ptr block,
-        size_t height, const message& request, send_handler handler);
+    static void merkle_block_fetched(const system::code& ec,
+        system::merkle_block_ptr block, size_t height, const message& request,
+        send_handler handler);
 
-    static void transaction_index_fetched(const code& ec,
+    static void transaction_index_fetched(const system::code& ec,
         size_t tx_position, size_t block_height, const message& request,
         send_handler handler);
 
-    static void spend_fetched(const code& ec,
-        const chain::input_point& inpoint, const message& request,
+    static void spend_fetched(const system::code& ec,
+        const system::chain::input_point& inpoint, const message& request,
         send_handler handler);
 
-    static void block_height_fetched(const code& ec, size_t block_height,
+    static void block_height_fetched(const system::code& ec,
+        size_t block_height, const message& request, send_handler handler);
+
+    static void stealth_fetched(const system::code& ec,
+        const system::chain::stealth_record::list& stealth,
         const message& request, send_handler handler);
 
-    static void stealth_fetched(const code& ec,
-        const chain::stealth_record::list& stealth,
+    static void stealth_transaction_hashes_fetched(const system::code& ec,
+        const system::chain::stealth_record::list& stealth,
         const message& request, send_handler handler);
 
-    static void stealth_transaction_hashes_fetched(const code& ec,
-        const chain::stealth_record::list& stealth, const message& request,
-        send_handler handler);
+    static void handle_broadcast(const system::code& ec,
+        const message& request, send_handler handler);
 
-    static void handle_broadcast(const code& ec, const message& request,
-        send_handler handler);
-
-    static void handle_validated(const code& ec, const message& request,
-        send_handler handler);
+    static void handle_validated(const system::code& ec,
+        const message& request, send_handler handler);
 };
 
 } // namespace server

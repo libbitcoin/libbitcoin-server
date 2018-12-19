@@ -25,8 +25,9 @@
 namespace libbitcoin {
 namespace server {
 
-using namespace bc::config;
 using namespace bc::protocol;
+using namespace bc::system;
+using namespace bc::system::config;
 using role = zmq::socket::role;
 
 static const auto domain = "query";

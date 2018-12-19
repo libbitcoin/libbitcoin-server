@@ -29,8 +29,9 @@ namespace server {
 
 static const auto domain = "heartbeat";
 
-using namespace bc::config;
 using namespace bc::protocol;
+using namespace bc::system;
+using namespace bc::system::config;
 using role = zmq::socket::role;
 
 // Heartbeat is capped at ~ 25 days by signed/millsecond conversions.
