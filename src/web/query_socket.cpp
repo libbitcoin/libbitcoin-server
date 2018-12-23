@@ -206,6 +206,7 @@ void query_socket::work()
         << "Bound " << security_ << " websocket query service to "
         << websocket_endpoint();
 
+    // TODO: this should be hidden in socket base.
     // Hold a shared reference to the websocket thread_ so that we can
     // properly call stop_websocket_handler on cleanup.
     const auto thread_ref = thread_;
