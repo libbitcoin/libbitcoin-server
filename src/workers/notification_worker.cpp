@@ -541,9 +541,10 @@ code notification_worker::subscribe_address(const message& request,
 
     address_mutex_.unlock_upgrade_and_lock();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    address_subscriptions_.insert({
+    address_subscriptions_.insert(
+    {
         std::move(address_hash),
-        subscription{ request.route(), request.id(), current_time() }
+        { request.route(), request.id(), current_time() }
     });
 
     address_mutex_.unlock();
@@ -593,9 +594,10 @@ code notification_worker::subscribe_stealth(const message& request,
 
     stealth_mutex_.unlock_upgrade_and_lock();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    stealth_subscriptions_.insert({
+    stealth_subscriptions_.insert(
+    {
         std::move(prefix_filter),
-        subscription{ request.route(), request.id(), current_time() }
+        { request.route(), request.id(), current_time() }
     });
 
     stealth_mutex_.unlock();
