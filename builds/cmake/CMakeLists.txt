@@ -186,6 +186,10 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/services/heartbeat_service.cpp"
     "../../src/services/query_service.cpp"
     "../../src/services/transaction_service.cpp"
+    "../../src/web/block_socket.cpp"
+    "../../src/web/heartbeat_socket.cpp"
+    "../../src/web/query_socket.cpp"
+    "../../src/web/transaction_socket.cpp"
     "../../src/workers/authenticator.cpp"
     "../../src/workers/notification_worker.cpp"
     "../../src/workers/query_worker.cpp" )

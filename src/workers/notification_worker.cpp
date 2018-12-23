@@ -67,7 +67,7 @@ notification_worker::notification_worker(zmq::authenticator& authenticator,
 
 // There is no unsubscribe so this class shouldn't be restarted.
 // Notifications are ordered by validation in node but thread safety is still
-// required so that purge can run on a seperate time thread.
+// required so that purge can run on a separate time thread.
 bool notification_worker::start()
 {
     // Subscribe to blockchain reorganizations.
@@ -173,7 +173,7 @@ bool notification_worker::handle_reorganization(const code& ec,
         LOG_WARNING(LOG_SERVER)
             << "Failure handling new block: " << ec.message();
 
-        // Don't let a failure here prevent prevent future notifications.
+        // Don't let a failure here prevent future notifications.
         return true;
     }
 
@@ -431,22 +431,21 @@ void notification_worker::purge()
     // Accumulate removals, send expiration notifications outside locks.
     std::vector<subscription> expires;
 
-    if (true)
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    address_mutex_.lock();
+
+    auto& address = address_subscriptions_.right;
+
+    for (auto it = address.begin(); it != address.end() &&
+        it->first.updated() < cutoff; it = address.erase(it))
     {
-        ///////////////////////////////////////////////////////////////////////
-        // Critical Section
-        unique_lock lock(address_mutex_);
-
-        auto& right = address_subscriptions_.right;
-
-        for (auto it = right.begin(); it != right.end() &&
-            it->first.updated() < cutoff; it = right.erase(it))
-        {
-            it->first.increment();
-            expires.push_back(it->first);
-        }
-        ///////////////////////////////////////////////////////////////////////
+        it->first.increment();
+        expires.push_back(it->first);
     }
+
+    address_mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
 
     // Send failure is logged in send.
     if (dealer)
@@ -456,22 +455,21 @@ void notification_worker::purge()
 
     expires.clear();
 
-    if (true)
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    stealth_mutex_.lock();
+
+    auto& stealth = stealth_subscriptions_.right;
+
+    for (auto it = stealth.begin(); it != stealth.end() &&
+        it->first.updated() < cutoff; it = stealth.erase(it))
     {
-        ///////////////////////////////////////////////////////////////////////
-        // Critical Section
-        unique_lock lock(stealth_mutex_);
-
-        auto& right = stealth_subscriptions_.right;
-
-        for (auto it = right.begin(); it != right.end() &&
-            it->first.updated() < cutoff; it = right.erase(it))
-        {
-            it->first.increment();
-            expires.push_back(it->first);
-        }
-        ///////////////////////////////////////////////////////////////////////
+        it->first.increment();
+        expires.push_back(it->first);
     }
+
+    stealth_mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
 
     // Send failure is logged in send.
     if (dealer)
@@ -543,9 +541,10 @@ code notification_worker::subscribe_address(const message& request,
 
     address_mutex_.unlock_upgrade_and_lock();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    address_subscriptions_.insert({
+    address_subscriptions_.insert(
+    {
         std::move(address_hash),
-        subscription{ request.route(), request.id(), current_time() }
+        { request.route(), request.id(), current_time() }
     });
 
     address_mutex_.unlock();
@@ -595,9 +594,10 @@ code notification_worker::subscribe_stealth(const message& request,
 
     stealth_mutex_.unlock_upgrade_and_lock();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    stealth_subscriptions_.insert({
+    stealth_subscriptions_.insert(
+    {
         std::move(prefix_filter),
-        subscription{ request.route(), request.id(), current_time() }
+        { request.route(), request.id(), current_time() }
     });
 
     stealth_mutex_.unlock();

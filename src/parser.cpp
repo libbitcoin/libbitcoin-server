@@ -604,20 +604,20 @@ options_metadata parser::load_settings()
         value<bool>(&configured.database.index_addresses),
         "Enable payment and stealth address indexing, defaults to true."
     )
-    /* Internally this is protocol, but application to server is more intuitive. */
     (
+        /* Internally this is protocol, but application to server is more intuitive. */
         "server.send_high_water",
         value<uint32_t>(&configured.protocol.send_high_water),
         "Drop messages at this outgoing backlog level, defaults to 100."
     )
-    /* Internally this is protocol, but application to server is more intuitive. */
     (
+        /* Internally this is protocol, but application to server is more intuitive. */
         "server.receive_high_water",
         value<uint32_t>(&configured.protocol.receive_high_water),
         "Drop messages at this incoming backlog level, defaults to 100."
     )
-    /* Internally this is protocol, but application to server is more intuitive. */
     (
+        /* Internally this is protocol, but application to server is more intuitive. */
         "server.handshake_seconds",
         value<uint32_t>(&configured.protocol.handshake_seconds),
         "The time limit to complete the connection handshake, defaults to 30."
@@ -658,56 +658,6 @@ options_metadata parser::load_settings()
         "Enable the transaction publishing service, defaults to false."
     )
     (
-        "server.secure_query_endpoint",
-        value<endpoint>(&configured.server.secure_query_endpoint),
-        "The secure query endpoint, defaults to 'tcp://*:9081'."
-    )
-    (
-        "server.secure_heartbeat_endpoint",
-        value<endpoint>(&configured.server.secure_heartbeat_endpoint),
-        "The secure heartbeat endpoint, defaults to 'tcp://*:9082'."
-    )
-    (
-        "server.secure_block_endpoint",
-        value<endpoint>(&configured.server.secure_block_endpoint),
-        "The secure block publishing endpoint, defaults to 'tcp://*:9083'."
-    )
-    (
-        "server.secure_transaction_endpoint",
-        value<endpoint>(&configured.server.secure_transaction_endpoint),
-        "The secure transaction publishing endpoint, defaults to 'tcp://*:9084'."
-    )
-    (
-        "server.public_query_endpoint",
-        value<endpoint>(&configured.server.public_query_endpoint),
-        "The public query endpoint, defaults to 'tcp://*:9091'."
-    )
-    (
-        "server.public_heartbeat_endpoint",
-        value<endpoint>(&configured.server.public_heartbeat_endpoint),
-        "The public heartbeat endpoint, defaults to 'tcp://*:9092'."
-    )
-    (
-        "server.public_block_endpoint",
-        value<endpoint>(&configured.server.public_block_endpoint),
-        "The public block publishing endpoint, defaults to 'tcp://*:9093'."
-    )
-    (
-        "server.public_transaction_endpoint",
-        value<endpoint>(&configured.server.public_transaction_endpoint),
-        "The public transaction publishing endpoint, defaults to 'tcp://*:9094'."
-    )
-    (
-        "server.server_private_key",
-        value<config::sodium>(&configured.server.server_private_key),
-        "The Z85-encoded private key of the server, enables secure endpoints."
-    )
-    (
-        "server.client_public_key",
-        value<config::sodium::list>(&configured.server.client_public_keys),
-        "Allowed Z85-encoded public key of the client, multiple entries allowed."
-    )
-    (
         "server.client_address",
         value<config::authority::list>(&configured.server.client_addresses),
         "Allowed client IP address, multiple entries allowed."
@@ -716,6 +666,135 @@ options_metadata parser::load_settings()
         "server.blacklist",
         value<config::authority::list>(&configured.server.blacklists),
         "Blocked client IP address, multiple entries allowed."
+    )
+
+    /* [websockets] */
+    (
+        "websockets.secure_query_endpoint",
+        value<endpoint>(&configured.server.websockets_secure_query_endpoint),
+        "The secure query websocket endpoint, defaults to 'tcp://*:9061'."
+    )
+    (
+        "websockets.secure_heartbeat_endpoint",
+        value<endpoint>(&configured.server.websockets_secure_heartbeat_endpoint),
+        "The secure heartbeat websocket endpoint, defaults to 'tcp://*:9062'."
+    )
+    (
+        "websockets.secure_block_endpoint",
+        value<endpoint>(&configured.server.websockets_secure_block_endpoint),
+        "The secure block publishing websocket endpoint, defaults to 'tcp://*:9063'."
+    )
+    (
+        "websockets.secure_transaction_endpoint",
+        value<endpoint>(&configured.server.websockets_secure_transaction_endpoint),
+        "The secure transaction publishing websocket endpoint, defaults to 'tcp://*:9064'."
+    )
+    (
+        "websockets.public_query_endpoint",
+        value<endpoint>(&configured.server.websockets_public_query_endpoint),
+        "The public query websocket endpoint, defaults to 'tcp://*:9071'."
+    )
+    (
+        "websockets.public_heartbeat_endpoint",
+        value<endpoint>(&configured.server.websockets_public_heartbeat_endpoint),
+        "The public heartbeat websocket endpoint, defaults to 'tcp://*:9072'."
+    )
+    (
+        "websockets.public_block_endpoint",
+        value<endpoint>(&configured.server.websockets_public_block_endpoint),
+        "The public block publishing websocket endpoint, defaults to 'tcp://*:9073'."
+    )
+    (
+        "websockets.public_transaction_endpoint",
+        value<endpoint>(&configured.server.websockets_public_transaction_endpoint),
+        "The public transaction websocket publishing endpoint, defaults to 'tcp://*:9074'."
+    )
+    (
+        "websockets.enabled",
+        value<bool>(&configured.server.websockets_enabled),
+        "Enable websocket endpoints, defaults to true."
+    )
+    (
+        "websockets.root",
+        value<path>(&configured.protocol.web_root),
+        "The optional directory for serving files via HTTP/S, defaults to 'web'."
+    )
+    (
+        "websockets.ca_certificate",
+        value<path>(&configured.protocol.web_ca_certificate),
+        "The SSL certificate authority file, defaults to '', enables secure endpoints."
+    )
+    (
+        "websockets.server_private_key",
+        value<path>(&configured.protocol.web_server_private_key),
+        "The SSL private key file, defaults to 'key.pem', enables secure endpoints."
+    )
+    (
+        "websockets.server_certificate",
+        value<path>(&configured.protocol.web_server_certificate),
+        "The SSL certificate file, defaults to 'server.pem', enables secure endpoints."
+    )
+    (
+        "websockets.client_certificates",
+        value<path>(&configured.protocol.web_client_certificates),
+        "The SSL client certificates directory, defaults to 'clients'."
+    )
+    (
+        "websockets.origin",
+        value<config::endpoint::list>(&configured.protocol.web_origins),
+        "An acceptable websocket origin, multiple entries allowed."
+    )
+
+    /* [zeromq] */
+    (
+        "zeromq.secure_query_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_query_endpoint),
+        "The secure query zeromq endpoint, defaults to 'tcp://*:9081'."
+    )
+    (
+        "zeromq.secure_heartbeat_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_heartbeat_endpoint),
+        "The secure heartbeat zeromq endpoint, defaults to 'tcp://*:9082'."
+    )
+    (
+        "zeromq.secure_block_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_block_endpoint),
+        "The secure block publishing zeromq endpoint, defaults to 'tcp://*:9083'."
+    )
+    (
+        "zeromq.secure_transaction_endpoint",
+        value<endpoint>(&configured.server.zeromq_secure_transaction_endpoint),
+        "The secure transaction publishing zeromq endpoint, defaults to 'tcp://*:9084'."
+    )
+    (
+        "zeromq.public_query_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_query_endpoint),
+        "The public query zeromq endpoint, defaults to 'tcp://*:9091'."
+    )
+    (
+        "zeromq.public_heartbeat_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_heartbeat_endpoint),
+        "The public heartbeat zeromq endpoint, defaults to 'tcp://*:9092'."
+    )
+    (
+        "zeromq.public_block_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_block_endpoint),
+        "The public block publishing zeromq endpoint, defaults to 'tcp://*:9093'."
+    )
+    (
+        "zeromq.public_transaction_endpoint",
+        value<endpoint>(&configured.server.zeromq_public_transaction_endpoint),
+        "The public transaction publishing zeromq endpoint, defaults to 'tcp://*:9094'."
+    )
+    (
+        "zeromq.server_private_key",
+        value<config::sodium>(&configured.server.zeromq_server_private_key),
+        "The Z85-encoded private key of the server, enables secure endpoints."
+    )
+    (
+        "zeromq.client_public_key",
+        value<config::sodium::list>(&configured.server.zeromq_client_public_keys),
+        "Allowed Z85-encoded public key of the client, multiple entries allowed."
     );
 
     return description;

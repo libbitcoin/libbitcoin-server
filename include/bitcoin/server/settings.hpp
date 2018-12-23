@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <boost/filesystem.hpp>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
@@ -30,7 +29,7 @@
 namespace libbitcoin {
 namespace server {
 
-/// Common database configuration settings, properties not thread safe.
+/// Common server configuration settings, properties not thread safe.
 class BCS_API settings
 {
 public:
@@ -40,36 +39,54 @@ public:
     /// Helpers.
     system::asio::duration heartbeat_interval() const;
     system::asio::duration subscription_expiration() const;
-    const system::config::endpoint& query_endpoint(bool secure) const;
-    const system::config::endpoint& heartbeat_endpoint(bool secure) const;
-    const system::config::endpoint& block_endpoint(bool secure) const;
-    const system::config::endpoint& transaction_endpoint(bool secure) const;
+    const system::config::endpoint& zeromq_query_endpoint(bool secure) const;
+    const system::config::endpoint& zeromq_heartbeat_endpoint(bool secure) const;
+    const system::config::endpoint& zeromq_block_endpoint(bool secure) const;
+    const system::config::endpoint& zeromq_transaction_endpoint(bool secure) const;
 
-    /// Properties.
+    const system::config::endpoint& websockets_query_endpoint(bool secure) const;
+    const system::config::endpoint& websockets_heartbeat_endpoint(bool secure) const;
+    const system::config::endpoint& websockets_block_endpoint(bool secure) const;
+    const system::config::endpoint& websockets_transaction_endpoint(bool secure) const;
+
+    /// [server]
     bool priority;
     bool secure_only;
-
     uint16_t query_workers;
     uint32_t subscription_limit;
     uint32_t subscription_expiration_minutes;
     uint32_t heartbeat_service_seconds;
     bool block_service_enabled;
     bool transaction_service_enabled;
-
-    system::config::endpoint secure_query_endpoint;
-    system::config::endpoint secure_heartbeat_endpoint;
-    system::config::endpoint secure_block_endpoint;
-    system::config::endpoint secure_transaction_endpoint;
-
-    system::config::endpoint public_query_endpoint;
-    system::config::endpoint public_heartbeat_endpoint;
-    system::config::endpoint public_block_endpoint;
-    system::config::endpoint public_transaction_endpoint;
-
-    system::config::sodium server_private_key;
-    system::config::sodium::list client_public_keys;
     system::config::authority::list client_addresses;
     system::config::authority::list blacklists;
+
+    /// [websockets]
+    system::config::endpoint websockets_secure_query_endpoint;
+    system::config::endpoint websockets_secure_heartbeat_endpoint;
+    system::config::endpoint websockets_secure_block_endpoint;
+    system::config::endpoint websockets_secure_transaction_endpoint;
+
+    system::config::endpoint websockets_public_query_endpoint;
+    system::config::endpoint websockets_public_heartbeat_endpoint;
+    system::config::endpoint websockets_public_block_endpoint;
+    system::config::endpoint websockets_public_transaction_endpoint;
+
+    bool websockets_enabled;
+
+    /// [zeromq]
+    system::config::endpoint zeromq_secure_query_endpoint;
+    system::config::endpoint zeromq_secure_heartbeat_endpoint;
+    system::config::endpoint zeromq_secure_block_endpoint;
+    system::config::endpoint zeromq_secure_transaction_endpoint;
+
+    system::config::endpoint zeromq_public_query_endpoint;
+    system::config::endpoint zeromq_public_heartbeat_endpoint;
+    system::config::endpoint zeromq_public_block_endpoint;
+    system::config::endpoint zeromq_public_transaction_endpoint;
+
+    system::config::sodium zeromq_server_private_key;
+    system::config::sodium::list zeromq_client_public_keys;
 };
 
 } // namespace server
