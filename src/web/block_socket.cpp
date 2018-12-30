@@ -131,7 +131,7 @@ bool block_socket::handle_block(zmq::socket& subscriber)
 
     // Format and send transaction to websocket subscribers.
     const auto block = system::chain::block::factory(block_data, true);
-    broadcast(http::to_json(block, height, sequence));
+    broadcast(http::to_json(block, height, sequence, false));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket block ["

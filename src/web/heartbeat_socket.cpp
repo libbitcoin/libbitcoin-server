@@ -124,7 +124,7 @@ bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
     response.dequeue<uint16_t>(sequence);
     response.dequeue<uint64_t>(height);
 
-    broadcast(http::to_json(height, sequence));
+    broadcast(http::to_json(height, sequence, false));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket heartbeat [" << height

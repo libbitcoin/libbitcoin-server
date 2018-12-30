@@ -130,7 +130,7 @@ bool transaction_socket::handle_transaction(zmq::socket& subscriber)
     chain::transaction tx;
     tx.from_data(transaction_data, true, true);
 
-    broadcast(http::to_json(tx, sequence));
+    broadcast(http::to_json(tx, sequence, false));
 
     LOG_VERBOSE(LOG_SERVER)
         << "Broadcasted " << security_ << " socket tx ["
