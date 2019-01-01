@@ -29,6 +29,7 @@ using namespace bc::protocol;
 using namespace bc::system;
 using namespace bc::system::config;
 using namespace bc::system::machine;
+using namespace std::placeholders;
 using role = zmq::socket::role;
 using connection_ptr = http::connection_ptr;
 
@@ -49,7 +50,8 @@ query_socket::query_socket(zmq::context& context, server_node& node,
     {
         request.enqueue(command);
         request.enqueue_little_endian(id);
-        request.enqueue(data_chunk{});
+        request.enqueue();
+        return true;
     };
 
     const auto encode_height = [](zmq::message& request,
@@ -57,30 +59,37 @@ query_socket::query_socket(zmq::context& context, server_node& node,
     {
         request.enqueue(command);
         request.enqueue_little_endian(id);
-        const uint32_t height = std::strtoul(arguments.c_str(), nullptr, 0);
-        request.enqueue_little_endian(height);
+        try
+        {
+            request.enqueue_little_endian(boost::lexical_cast<uint32_t>(
+                arguments));
+        }
+        catch (const boost::bad_lexical_cast&)
+        {
+            return false;
+        }
+
+        return true;
     };
 
     const auto encode_hash = [](zmq::message& request,
         const std::string& command, const std::string& arguments, uint32_t id)
     {
         hash_digest hash;
-        DEBUG_ONLY(const auto result =) decode_hash(hash, arguments);
-        BITCOIN_ASSERT(result);
+        if (!decode_hash(hash, arguments))
+            return false;
+
         request.enqueue(command);
         request.enqueue_little_endian(id);
         request.enqueue(to_chunk(hash));
+        return true;
     };
 
     const auto encode_hash_or_height = [&](zmq::message& request,
         const std::string& command, const std::string& arguments, uint32_t id)
     {
-        data_chunk decoded;
-        if (decode_base16(decoded, arguments) &&
-            decoded.size() == system::hash_size)
-            encode_hash(request, command, arguments, id);
-        else
-            encode_height(request, command, arguments, id);
+        return encode_hash(request, command, arguments, id) ?
+            true : encode_height(request, command, arguments, id);
     };
 
     // A local clone of the task_sender send logic, for the decoders
@@ -122,9 +131,11 @@ query_socket::query_socket(zmq::context& context, server_node& node,
     {
         data_source istream(data);
         istream_reader source(istream);
-        const auto height = source.read_4_bytes_little_endian();
-        decode_send(connection, http::to_json(height, id,
-            connection->json_rpc()));
+        const auto height = static_cast<uint64_t>(
+            source.read_4_bytes_little_endian());
+        const auto json = rpc ? http::rpc::to_json(height, id) : http::to_json(
+            height, id);
+        decode_send(connection, json);
     };
 
     const auto decode_transaction_raw = [&node, decode_send](
@@ -135,8 +146,9 @@ query_socket::query_socket(zmq::context& context, server_node& node,
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto transaction = chain::transaction::factory(data, true,
             witness);
-        decode_send(connection, http::to_json(transaction, id,
-            connection->json_rpc()));
+        const auto json = rpc ? http::rpc::to_json(transaction, id) :
+            http::to_json(transaction, id);
+        decode_send(connection, json);
     };
 
     const auto decode_block_raw = [&node, decode_send](const data_chunk& data,
@@ -145,16 +157,18 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         const auto witness = chain::script::is_enabled(
             node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
         const auto block = chain::block::factory(data, witness);
-        decode_send(connection, http::to_json(block, id,
-            connection->json_rpc()));
+        const auto json = rpc ? http::rpc::to_json(block, id) :
+            http::to_json(block, id);
+        decode_send(connection, json);
     };
 
     const auto decode_block_header_raw = [decode_send](const data_chunk& data,
         const uint32_t id, connection_ptr connection, bool rpc)
     {
         const auto header = chain::header::factory(data, true);
-        decode_send(connection, http::to_json(header, id,
-            connection->json_rpc()));
+        const auto json = rpc ? http::rpc::to_json(header, id) :
+            http::to_json(header, id);
+        decode_send(connection, json);
     };
 
     const auto decode_block_hash_from_header_raw = [decode_send](
@@ -162,17 +176,30 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         bool rpc)
     {
         const auto header = chain::header::factory(data, true);
-        if (connection->json_rpc())
-            decode_send(connection, http::to_json(header.hash(), id,
-                connection->json_rpc()));
-        else
-            decode_send(connection, http::to_json(header, id,
-                connection->json_rpc()));
+        const auto json = rpc ? http::rpc::to_json(header.hash(), id) :
+            http::to_json(header.hash(), id);
+        decode_send(connection, json);
     };
 
-#define REGISTER_HANDLER(native, core, encoder, decoder)    \
+// Defines both handler variants based on the raw method, one for
+// native and one for rpc.
+#define BUILD_DECODER(name) \
+    const auto name = std::bind(name##_raw, _1, _2, _3, false); \
+    const auto name##_rpc = std::bind(name##_raw, _1, _2, _3, true)
+
+    BUILD_DECODER(decode_height);
+    BUILD_DECODER(decode_transaction);
+    BUILD_DECODER(decode_block);
+    BUILD_DECODER(decode_block_header);
+    BUILD_DECODER(decode_block_hash_from_header);
+
+#undef BUILD_DECODER
+
+#define REGISTER_HANDLER(native, core, encoder, decoder) \
     handlers_[core] = handlers{ native, encoder, decoder }; \
-    handlers_[native] = handlers{ native, encoder, decoder }
+    handlers_[native] = handlers{ native, encoder, decoder }; \
+    rpc_handlers_[core] = handlers{ native, encoder, decoder##_rpc }; \
+    rpc_handlers_[native] = handlers{ native, encoder, decoder##_rpc }
 
     REGISTER_HANDLER("blockchain.fetch_last_height", "getblockcount",
         encode_empty, decode_height);
@@ -188,7 +215,6 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         encode_hash, decode_height);
 
 #undef REGISTER_HANDLER
-
 }
 
 void query_socket::work()
