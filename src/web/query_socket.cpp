@@ -21,6 +21,7 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -57,18 +58,13 @@ query_socket::query_socket(zmq::context& context, server_node& node,
     const auto encode_height = [](zmq::message& request,
         const std::string& command, const std::string& arguments, uint32_t id)
     {
+        uint32_t value;
+        if (!deserialize(value, arguments, false))
+            return false;
+
         request.enqueue(command);
         request.enqueue_little_endian(id);
-        try
-        {
-            request.enqueue_little_endian(boost::lexical_cast<uint32_t>(
-                arguments));
-        }
-        catch (const boost::bad_lexical_cast&)
-        {
-            return false;
-        }
-
+        request.enqueue_little_endian(value);
         return true;
     };
 
@@ -88,8 +84,8 @@ query_socket::query_socket(zmq::context& context, server_node& node,
     const auto encode_hash_or_height = [&](zmq::message& request,
         const std::string& command, const std::string& arguments, uint32_t id)
     {
-        return encode_hash(request, command, arguments, id) ?
-            true : encode_height(request, command, arguments, id);
+        return encode_hash(request, command, arguments, id) ||
+            encode_height(request, command, arguments, id);
     };
 
     // A local clone of the task_sender send logic, for the decoders
@@ -131,8 +127,7 @@ query_socket::query_socket(zmq::context& context, server_node& node,
     {
         data_source istream(data);
         istream_reader source(istream);
-        const auto height = static_cast<uint64_t>(
-            source.read_4_bytes_little_endian());
+        const auto height = source.read_4_bytes_little_endian();
         const auto json = rpc ? http::rpc::to_json(height, id) : http::to_json(
             height, id);
         decode_send(connection, json);
