@@ -21,7 +21,6 @@
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/server_node.hpp>
-#include <boost/lexical_cast.hpp>
 
 namespace libbitcoin {
 namespace server {
