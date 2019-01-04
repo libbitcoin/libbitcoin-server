@@ -97,7 +97,7 @@ query_socket::query_socket(zmq::context& context, server_node& node,
     // -------------------------------------------------------------------------
     // These all run on the websocket thread, so can write on the
     // connection directly.
-    const auto decode_height = [this, decode_send](const data_chunk& data,
+    const auto decode_height = [decode_send](const data_chunk& data,
         const uint32_t id, connection_ptr connection)
     {
         data_source istream(data);
@@ -106,7 +106,7 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         decode_send(connection, http::to_json(height, id));
     };
 
-    const auto decode_transaction = [this, &node, decode_send](
+    const auto decode_transaction = [&node, decode_send](
         const data_chunk& data, const uint32_t id, connection_ptr connection)
     {
         const auto witness = chain::script::is_enabled(
@@ -116,7 +116,7 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         decode_send(connection, http::to_json(transaction, id));
     };
 
-    const auto decode_block = [this, &node, decode_send](
+    const auto decode_block = [&node, decode_send](
         const data_chunk& data, const uint32_t id, connection_ptr connection)
     {
         const auto witness = chain::script::is_enabled(
@@ -125,7 +125,7 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         decode_send(connection, http::to_json(block, id));
     };
 
-    const auto decode_block_header = [this, decode_send](const data_chunk& data,
+    const auto decode_block_header = [decode_send](const data_chunk& data,
         const uint32_t id, connection_ptr connection)
     {
         const auto header = chain::header::factory(data, true);

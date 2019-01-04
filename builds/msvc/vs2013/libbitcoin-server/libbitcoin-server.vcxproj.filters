@@ -60,6 +60,9 @@
     <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp">
       <Filter>src\interface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\interface\server.cpp">
+      <Filter>src\interface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\interface\subscribe.cpp">
       <Filter>src\interface</Filter>
     </ClCompile>
@@ -132,6 +135,9 @@
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp">
+      <Filter>include\bitcoin\server\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\server.hpp">
       <Filter>include\bitcoin\server\interface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\subscribe.hpp">

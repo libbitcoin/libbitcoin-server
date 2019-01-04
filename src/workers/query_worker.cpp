@@ -24,6 +24,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>
 #include <bitcoin/server/interface/subscribe.hpp>
+#include <bitcoin/server/interface/server.hpp>
 #include <bitcoin/server/interface/transaction_pool.hpp>
 #include <bitcoin/server/interface/unsubscribe.hpp>
 #include <bitcoin/server/messages/message.hpp>
@@ -233,6 +234,8 @@ void query_worker::attach(const std::string& command,
 // subscribe.block (pub-sub) is new in v3.4.
 // subscribe.transaction (pub-sub) is new in v3.4.
 // subscribe.heartbeat (pub-sub) is new in v3.4.
+//-----------------------------------------------------------------------------
+// server.version is new in v4.
 //=============================================================================
 // Interface class.method names must match protocol names.
 void query_worker::attach_interface()
@@ -270,6 +273,8 @@ void query_worker::attach_interface()
     ATTACH(transaction_pool, fetch_transaction2, node_);        // new (3.4)
     ATTACH(transaction_pool, broadcast, node_);                 // new (3.0)
     ATTACH(transaction_pool, validate2, node_);                 // new (3.0)
+
+    ATTACH(server, version, node_);                             // new (4.0)
 
     ////ATTACH(protocol, broadcast_transaction, node_);         // obsoleted
     ////ATTACH(protocol, total_connections, node_);             // obsoleted

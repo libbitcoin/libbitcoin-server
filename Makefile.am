@@ -40,6 +40,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/server_node.cpp \
     src/settings.cpp \
     src/interface/blockchain.cpp \
+    src/interface/server.cpp \
     src/interface/subscribe.cpp \
     src/interface/transaction_pool.cpp \
     src/interface/unsubscribe.cpp \
@@ -106,6 +107,7 @@ include_bitcoin_server_HEADERS = \
 include_bitcoin_server_interfacedir = ${includedir}/bitcoin/server/interface
 include_bitcoin_server_interface_HEADERS = \
     include/bitcoin/server/interface/blockchain.hpp \
+    include/bitcoin/server/interface/server.hpp \
     include/bitcoin/server/interface/subscribe.hpp \
     include/bitcoin/server/interface/transaction_pool.hpp \
     include/bitcoin/server/interface/unsubscribe.hpp
