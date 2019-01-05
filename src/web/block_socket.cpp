@@ -38,6 +38,11 @@ using role = zmq::socket::role;
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
+static const std::string block_socket_default
+{
+    "FIXME: Default Block Service page."
+};
+
 block_socket::block_socket(zmq::context& context, server_node& node,
     bool secure)
   : http::socket(context, node.protocol_settings(), secure),
@@ -71,6 +76,10 @@ void block_socket::work()
     LOG_INFO(LOG_SERVER)
         << "Bound " << security_ << " websocket block service to "
         << websocket_endpoint();
+
+    // Default page data can now be set since the base socket's manager has
+    // been initialized.
+    set_default_page_data(block_socket_default);
 
     // TODO: this should be hidden in socket base.
     // Hold a shared reference to the websocket thread_ so that we can

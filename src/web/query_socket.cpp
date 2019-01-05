@@ -35,6 +35,11 @@ using connection_ptr = http::connection_ptr;
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
+static const std::string query_socket_default
+{
+    "FIXME: Default Query Service page."
+};
+
 query_socket::query_socket(zmq::context& context, server_node& node,
     bool secure)
   : http::socket(context, node.protocol_settings(), secure),
@@ -248,6 +253,10 @@ void query_socket::work()
     LOG_INFO(LOG_SERVER)
         << "Bound " << security_ << " websocket query service to "
         << websocket_endpoint();
+
+    // Default page data can now be set since the base socket's manager has
+    // been initialized.
+    set_default_page_data(query_socket_default);
 
     // TODO: this should be hidden in socket base.
     // Hold a shared reference to the websocket thread_ so that we can
