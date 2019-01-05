@@ -493,6 +493,11 @@ options_metadata parser::load_settings()
         "The maximum reorganization depth, defaults to 0 (unlimited)."
     )
     (
+        "blockchain.block_buffer_limit",
+        value<uint32_t>(&configured.chain.block_buffer_limit),
+        "The maximum number of blocks to buffer, defaults to 0 (none)."
+    )
+    (
         "blockchain.checkpoint",
         value<config::checkpoint::list>(&configured.chain.checkpoints),
         "A hash:height checkpoint, multiple entries allowed."
