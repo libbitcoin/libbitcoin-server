@@ -23,6 +23,7 @@
 #include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/version.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>
+#include <bitcoin/server/interface/server.hpp>
 #include <bitcoin/server/interface/subscribe.hpp>
 #include <bitcoin/server/interface/transaction_pool.hpp>
 #include <bitcoin/server/interface/unsubscribe.hpp>

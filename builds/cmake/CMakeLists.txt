@@ -176,6 +176,7 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/server_node.cpp"
     "../../src/settings.cpp"
     "../../src/interface/blockchain.cpp"
+    "../../src/interface/server.cpp"
     "../../src/interface/subscribe.cpp"
     "../../src/interface/transaction_pool.cpp"
     "../../src/interface/unsubscribe.cpp"
