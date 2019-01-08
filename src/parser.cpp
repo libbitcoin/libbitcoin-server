@@ -782,7 +782,7 @@ options_metadata parser::load_settings()
     (
         "websockets.origin",
         value<config::endpoint::list>(&configured.protocol.web_origins),
-        "An acceptable websocket origin, multiple entries allowed."
+        "Allowed websocket origin, multiple entries allowed."
     )
 
     /* [zeromq] */
