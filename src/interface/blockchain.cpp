@@ -59,10 +59,10 @@ void blockchain::fetch_history4(server_node& node, const message& request,
     }
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
-    const auto address_hash = deserial.read_short_hash();
+    const auto script_hash = deserial.read_hash();
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
-    node.chain().fetch_history(address_hash, limit, from_height,
+    node.chain().fetch_history(script_hash, limit, from_height,
         std::bind(&blockchain::history_fetched,
             _1, _2, request, handler));
 }
