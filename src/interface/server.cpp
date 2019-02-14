@@ -23,6 +23,8 @@
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/version.hpp>
 
+// TODO: rename this class to minimize namespace conflicts.
+
 namespace libbitcoin {
 namespace server {
 
