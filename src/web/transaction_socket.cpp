@@ -128,7 +128,14 @@ bool transaction_socket::handle_transaction(zmq::socket& subscriber)
     response.dequeue(transaction_data);
 
     chain::transaction tx;
-    tx.from_data(transaction_data, true, true);
+    if (!tx.from_data(transaction_data, true, true))
+    {
+        LOG_WARNING(LOG_SERVER)
+            << "Failure handling transaction notification: invalid data";
+
+        // Don't let a failure here prevent future notifications.
+        return true;
+    }
 
     broadcast(http::to_json(tx, sequence));
 
