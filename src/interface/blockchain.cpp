@@ -416,7 +416,9 @@ void blockchain::fetch_spend(server_node& node, const message& request,
     }
 
     output_point outpoint;
-    outpoint.from_data(data);
+
+    // Failure to parse will result in a not found output.
+    /* bool */ outpoint.from_data(data);
 
     node.chain().fetch_spend(outpoint,
         std::bind(&blockchain::spend_fetched,
