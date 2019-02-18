@@ -76,6 +76,8 @@ void blockchain::history_fetched(const code& ec,
     auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
+    // TODO: revise interface documentation to support unconfirmed in v4.
+    // Unconfirmed transactions have height sentinal of max_uint32.
     for (const auto& record: payments)
         record.to_data(serial, true);
 
