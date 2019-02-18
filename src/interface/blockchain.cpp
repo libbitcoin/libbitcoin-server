@@ -43,6 +43,7 @@ static constexpr size_t index_size = sizeof(uint32_t);
 static constexpr size_t point_size = hash_size + sizeof(uint32_t);
 static constexpr auto canonical = system::message::version::level::canonical;
 
+// TODO: create interface doc for unordered list, unconfirmeds and key change.
 void blockchain::fetch_history4(server_node& node, const message& request,
     send_handler handler)
 {
@@ -76,7 +77,6 @@ void blockchain::history_fetched(const code& ec,
     auto serial = make_unsafe_serializer(result.begin());
     serial.write_error_code(ec);
 
-    // TODO: revise interface documentation to support unconfirmed in v4.
     // Unconfirmed transactions have height sentinal of max_uint32.
     for (const auto& record: payments)
         record.to_data(serial, true);
