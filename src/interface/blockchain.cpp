@@ -47,9 +47,8 @@ static constexpr auto canonical = system::message::version::level::canonical;
 void blockchain::fetch_history4(server_node& node, const message& request,
     send_handler handler)
 {
-    static constexpr size_t limit = 0;
-    static constexpr size_t history_args_size = short_hash_size +
-        sizeof(uint32_t);
+    static constexpr size_t default_limit = bc::max_uint32;
+    static constexpr size_t history_args_size = hash_size + sizeof(uint32_t);
 
     const auto& data = request.data();
 
@@ -63,7 +62,7 @@ void blockchain::fetch_history4(server_node& node, const message& request,
     const auto script_hash = deserial.read_hash();
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
-    node.chain().fetch_history(script_hash, limit, from_height,
+    node.chain().fetch_history(script_hash, default_limit, from_height,
         std::bind(&blockchain::history_fetched,
             _1, _2, request, handler));
 }
