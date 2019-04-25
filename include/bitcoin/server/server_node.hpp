@@ -89,8 +89,8 @@ public:
     // Notification.
     // ------------------------------------------------------------------------
 
-    virtual system::code subscribe_address(const message& request,
-        system::short_hash&& address_hash, bool unsubscribe);
+    virtual system::code subscribe_key(const message& request,
+        system::hash_digest&& key, bool unsubscribe);
 
     virtual system::code subscribe_stealth(const message& request,
         system::binary&& prefix_filter, bool unsubscribe);

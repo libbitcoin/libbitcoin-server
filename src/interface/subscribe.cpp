@@ -32,24 +32,24 @@ namespace server {
 using namespace bc::system;
 using namespace bc::system::wallet;
 
-void subscribe::address(server_node& node, const message& request,
+void subscribe::key(server_node& node, const message& request,
     send_handler handler)
 {
-    static constexpr size_t address_args_size = short_hash_size;
+    static constexpr size_t args_size = hash_size;
 
     const auto& data = request.data();
 
-    if (data.size() != address_args_size)
+    if (data.size() != args_size)
     {
         handler(message(request, error::bad_stream));
         return;
     }
 
-    // [ address_hash:20 ]
+    // [ key:32 ]
     auto deserial = make_safe_deserializer(data.begin(), data.end());
-    auto address_hash = deserial.read_short_hash();
+    auto key = deserial.read_hash();
 
-    auto ec = node.subscribe_address(request, std::move(address_hash), false);
+    auto ec = node.subscribe_key(request, std::move(key), false);
     handler(message(request, ec));
 }
 

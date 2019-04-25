@@ -48,7 +48,7 @@ using namespace bc::system::chain;
 using namespace bc::system::wallet;
 using role = zmq::socket::role;
 
-static const auto notification_address = "notification.address";
+static const auto notification_key = "notification.key";
 static const auto notification_stealth = "notification.stealth";
 
 notification_worker::notification_worker(zmq::authenticator& authenticator,
@@ -181,11 +181,11 @@ bool notification_worker::handle_reorganization(const code& ec,
     if (!incoming || incoming->empty())
         return true;
 
-    // Do not announce addresses to clients if too far behind.
+    // Do not announce payment keys to clients if too far behind.
     if (node_.chain().is_blocks_stale())
         return true;
 
-    if (address_subscriptions_empty() && stealth_subscriptions_empty())
+    if (key_subscriptions_empty() && stealth_subscriptions_empty())
         return true;
 
     // Connect failure is logged in connect, nothing else to do on fail.
@@ -232,11 +232,11 @@ bool notification_worker::handle_transaction_pool(const code& ec,
     if (!tx)
         return true;
 
-    // Do not announce addresses to clients if too far behind.
+    // Do not announce payment keys to clients if too far behind.
     if (node_.chain().is_blocks_stale())
         return true;
 
-    if (address_subscriptions_empty() && stealth_subscriptions_empty())
+    if (key_subscriptions_empty() && stealth_subscriptions_empty())
         return true;
 
     // Connect failure is logged in connect, nothing else to do on fail.
@@ -250,7 +250,7 @@ bool notification_worker::handle_transaction_pool(const code& ec,
     return true;
 }
 
-// All payment addresses are cached on the transaction.
+// All payment keys are cached on the transaction.
 // This parsing is duplicated by bc::database::data_base.
 void notification_worker::notify_transaction(zmq::socket& dealer,
     size_t height, const transaction& tx)
@@ -265,28 +265,15 @@ void notification_worker::notify_transaction(zmq::socket& dealer,
 
     // Gather unique values, eliminating duplicate notifications per tx.
     stealth_set prefixes;
-    address_set addresses;
+    key_set keys;
 
-    if (!address_subscriptions_empty())
+    if (!key_subscriptions_empty())
     {
         for (const auto& input: tx.inputs())
-        {
-            // TODO: use a vector result to extract sign_multisig.
-            const auto address = input.address();
-
-            if (address)
-                addresses.insert(address.hash());
-        }
+            keys.insert(bc::system::sha256_hash(input.script().to_data(false)));
 
         for (const auto& output: outputs)
-        {
-            // TODO: use a vector result to extract pay_multisig.
-            // TODO: notify all multisig participants using prevout addresses.
-            const auto address = output.address();
-
-            if (address)
-                addresses.insert(address.hash());
-        }
+            keys.insert(bc::system::sha256_hash(output.script().to_data(false)));
     }
 
     if (!stealth_subscriptions_empty())
@@ -303,11 +290,11 @@ void notification_worker::notify_transaction(zmq::socket& dealer,
     }
 
     // Send both sets of notifications on the same worker connection.
-    notify(dealer, addresses, prefixes, height, tx.hash());
+    notify(dealer, keys, prefixes, height, tx.hash());
 }
 
 void notification_worker::notify(zmq::socket& dealer,
-    const address_set& hashes, const stealth_set& prefixes, size_t height,
+    const key_set& keys, const stealth_set& prefixes, size_t height,
     const hash_digest& tx_hash)
 {
     static const code ok = error::success;
@@ -319,20 +306,20 @@ void notification_worker::notify(zmq::socket& dealer,
     std::vector<subscription> notifies;
 
     // Notify address subscribers, O(N + M).
-    if (!hashes.empty())
+    if (!keys.empty())
     {
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
-        shared_lock lock(address_mutex_);
+        shared_lock lock(key_mutex_);
 
-        const auto& left = address_subscriptions_.left;
+        const auto& left = key_subscriptions_.left;
 
-        for (const auto& hash: hashes)
+        for (const auto& key: keys)
         {
 #ifdef HIGH_VOLUME_NOTIFICATION_TESTING
             for (auto it = left.begin(); it != left.end(); ++it)
 #else
-            auto range = left.equal_range(hash);
+            auto range = left.equal_range(key);
             for (auto it = range.first; it != range.second; ++it)
 #endif
             {
@@ -345,7 +332,7 @@ void notification_worker::notify(zmq::socket& dealer,
 
     // Send failure is logged in send.
     for (auto& notify: notifies)
-        if (!send(dealer, notify, notification_address, ok, height, tx_hash))
+        if (!send(dealer, notify, notification_key, ok, height, tx_hash))
             break;
 
     notifies.clear();
@@ -433,9 +420,9 @@ void notification_worker::purge()
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
-    address_mutex_.lock();
+    key_mutex_.lock();
 
-    auto& address = address_subscriptions_.right;
+    auto& address = key_subscriptions_.right;
 
     for (auto it = address.begin(); it != address.end() &&
         it->first.updated() < cutoff; it = address.erase(it))
@@ -444,13 +431,13 @@ void notification_worker::purge()
         expires.push_back(it->first);
     }
 
-    address_mutex_.unlock();
+    key_mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
     // Send failure is logged in send.
     if (dealer)
         for (auto& expire: expires)
-            if (!send(*dealer, expire, notification_address, to, 0, null_hash))
+            if (!send(*dealer, expire, notification_key, to, 0, null_hash))
                 break;
 
     expires.clear();
@@ -478,13 +465,13 @@ void notification_worker::purge()
                 break;
 }
 
-bool notification_worker::address_subscriptions_empty() const
+bool notification_worker::key_subscriptions_empty() const
 {
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
-    shared_lock lock(address_mutex_);
+    shared_lock lock(key_mutex_);
 
-    return address_subscriptions_.empty();
+    return key_subscriptions_.empty();
     ///////////////////////////////////////////////////////////////////////////
 }
 
@@ -498,26 +485,26 @@ bool notification_worker::stealth_subscriptions_empty() const
     ///////////////////////////////////////////////////////////////////////////
 }
 
-code notification_worker::subscribe_address(const message& request,
-    short_hash&& address_hash, bool unsubscribe)
+code notification_worker::subscribe_key(const message& request,
+    hash_digest&& key, bool unsubscribe)
 {
     if (stopped())
         return error::service_stopped;
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
-    address_mutex_.lock_upgrade();
+    key_mutex_.lock_upgrade();
 
-    auto& left = address_subscriptions_.left;
-    auto range = left.equal_range(address_hash);
+    auto& left = key_subscriptions_.left;
+    auto range = left.equal_range(key);
 
-    // Check each subscription for the given address hash.
+    // Check each subscription for the given key.
     // A change to the id is not considered (caller should not change).
     for (auto it = range.first; it != range.second; ++it)
     {
         if (it->second == request.route())
         {
-            address_mutex_.unlock_upgrade_and_lock();
+            key_mutex_.unlock_upgrade_and_lock();
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
             if (unsubscribe)
@@ -526,28 +513,28 @@ code notification_worker::subscribe_address(const message& request,
                 it->second.set_updated(current_time());
 
             //-----------------------------------------------------------------
-            address_mutex_.unlock();
+            key_mutex_.unlock();
             return error::success;
         }
     }
 
-    // TODO: add independent limits for stealth and address.
-    if (address_subscriptions_.size() >= settings_.subscription_limit)
+    // TODO: add independent limits for stealth and key.
+    if (key_subscriptions_.size() >= settings_.subscription_limit)
     {
-        address_mutex_.unlock_upgrade();
+        key_mutex_.unlock_upgrade();
         //---------------------------------------------------------------------
         return error::oversubscribed;
     }
 
-    address_mutex_.unlock_upgrade_and_lock();
+    key_mutex_.unlock_upgrade_and_lock();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    address_subscriptions_.insert(
+    key_subscriptions_.insert(
     {
-        std::move(address_hash),
+        std::move(key),
         { request.route(), request.id(), current_time() }
     });
 
-    address_mutex_.unlock();
+    key_mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
     return error::success;
 }
@@ -584,7 +571,7 @@ code notification_worker::subscribe_stealth(const message& request,
         }
     }
 
-    // TODO: add independent limits for stealth and address.
+    // TODO: add independent limits for stealth and keys.
     if (stealth_subscriptions_.size() >= settings_.subscription_limit)
     {
         stealth_mutex_.unlock_upgrade();

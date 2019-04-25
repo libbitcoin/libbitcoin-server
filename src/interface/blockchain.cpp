@@ -59,10 +59,10 @@ void blockchain::fetch_history4(server_node& node, const message& request,
     }
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
-    const auto script_hash = deserial.read_reverse<hash_digest>();
+    const auto key = deserial.read_reverse<hash_digest>();
     const size_t from_height = deserial.read_4_bytes_little_endian();
 
-    node.chain().fetch_history(script_hash, default_limit, from_height,
+    node.chain().fetch_history(key, default_limit, from_height,
         std::bind(&blockchain::history_fetched,
             _1, _2, request, handler));
 }
@@ -99,7 +99,10 @@ void blockchain::fetch_transaction(server_node& node, const message& request,
 
     // The response is restricted to confirmed transactions.
     // This response excludes witness data so as not to break old parsers.
-    node.chain().fetch_transaction(hash, true, false,
+    const auto require_confirmed = true;
+    const auto witness = false;
+
+    node.chain().fetch_transaction(hash, require_confirmed, witness,
         std::bind(&blockchain::transaction_fetched,
             _1, _2, _3, _4, request, handler));
 }
@@ -121,10 +124,11 @@ void blockchain::fetch_transaction2(server_node& node, const message& request,
     // The response is restricted to confirmed transactions.
     // This response can include witness data (based on configuration)
     // so may break old parsers.
+    const auto require_confirmed = true;
     const auto witness = script::is_enabled(
         node.blockchain_settings().enabled_forks(), rule_fork::bip141_rule);
 
-    node.chain().fetch_transaction(hash, true, witness,
+    node.chain().fetch_transaction(hash, require_confirmed, witness,
         std::bind(&blockchain::transaction_fetched,
             _1, _2, _3, _4, request, handler));
 }
@@ -377,7 +381,9 @@ void blockchain::fetch_transaction_index(server_node& node,
     const auto hash = deserial.read_hash();
 
     // The response is restricted to confirmed transactions (backward compat).
-    node.chain().fetch_transaction_position(hash, true,
+    const auto require_confirmed = true;
+
+    node.chain().fetch_transaction_position(hash, require_confirmed,
         std::bind(&blockchain::transaction_index_fetched,
             _1, _2, _3, request, handler));
 }

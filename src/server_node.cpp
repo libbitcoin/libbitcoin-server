@@ -148,14 +148,14 @@ bool server_node::close()
 // Notification.
 // ----------------------------------------------------------------------------
 
-code server_node::subscribe_address(const message& request,
-    short_hash&& address_hash, bool unsubscribe)
+code server_node::subscribe_key(const message& request,
+    hash_digest&& key, bool unsubscribe)
 {
     return request.secure() ?
-        secure_notification_worker_.subscribe_address(request,
-            std::move(address_hash), unsubscribe) :
-        public_notification_worker_.subscribe_address(request,
-            std::move(address_hash), unsubscribe);
+        secure_notification_worker_.subscribe_key(request,
+            std::move(key), unsubscribe) :
+        public_notification_worker_.subscribe_key(request,
+            std::move(key), unsubscribe);
 }
 
 code server_node::subscribe_stealth(const message& request,
