@@ -33,11 +33,6 @@ using namespace bc::protocol;
 using namespace bc::system::config;
 using role = zmq::socket::role;
 
-static const std::string heartbeat_socket_default
-{
-    "FIXME: Default Heartbeat Service page."
-};
-
 heartbeat_socket::heartbeat_socket(zmq::context& context, server_node& node,
     bool secure)
   : http::socket(context, node.protocol_settings(), secure),
@@ -75,7 +70,11 @@ void heartbeat_socket::work()
 
     // Default page data can now be set since the base socket's manager has
     // been initialized.
-    set_default_page_data(heartbeat_socket_default);
+    set_default_page_data(http::get_default_page_data(
+        settings_.websockets_query_endpoint(secure_),
+        settings_.websockets_heartbeat_endpoint(secure_),
+        settings_.websockets_block_endpoint(secure_),
+        settings_.websockets_transaction_endpoint(secure_)));
 
     // TODO: this should be hidden in socket base.
     // Hold a shared reference to the websocket thread_ so that we can
@@ -128,7 +127,7 @@ bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
         return true;
     }
 
-    uint16_t sequence;
+    uint16_t sequence{};
     uint64_t height;
     response.dequeue<uint16_t>(sequence);
     response.dequeue<uint64_t>(height);

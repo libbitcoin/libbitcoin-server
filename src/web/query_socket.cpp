@@ -35,11 +35,6 @@ using connection_ptr = http::connection_ptr;
 
 static constexpr auto poll_interval_milliseconds = 100u;
 
-static const std::string query_socket_default
-{
-    "FIXME: Default Query Service page."
-};
-
 query_socket::query_socket(zmq::context& context, server_node& node,
     bool secure)
   : http::socket(context, node.protocol_settings(), secure),
@@ -256,7 +251,11 @@ void query_socket::work()
 
     // Default page data can now be set since the base socket's manager has
     // been initialized.
-    set_default_page_data(query_socket_default);
+    set_default_page_data(http::get_default_page_data(
+        settings_.websockets_query_endpoint(secure_),
+        settings_.websockets_heartbeat_endpoint(secure_),
+        settings_.websockets_block_endpoint(secure_),
+        settings_.websockets_transaction_endpoint(secure_)));
 
     // TODO: this should be hidden in socket base.
     // Hold a shared reference to the websocket thread_ so that we can
@@ -323,7 +322,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
         return true;
     }
 
-    uint32_t sequence;
+    uint32_t sequence{};
     data_chunk data;
     std::string command;
 
