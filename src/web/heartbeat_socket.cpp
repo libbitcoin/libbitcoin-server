@@ -68,6 +68,14 @@ void heartbeat_socket::work()
         << "Bound " << security_ << " websocket heartbeat service to "
         << websocket_endpoint();
 
+    // Default page data can now be set since the base socket's manager has
+    // been initialized.
+    set_default_page_data(http::get_default_page_data(
+        settings_.websockets_query_endpoint(secure_),
+        settings_.websockets_heartbeat_endpoint(secure_),
+        settings_.websockets_block_endpoint(secure_),
+        settings_.websockets_transaction_endpoint(secure_)));
+
     // TODO: this should be hidden in socket base.
     // Hold a shared reference to the websocket thread_ so that we can
     // properly call stop_websocket_handler on cleanup.
@@ -119,7 +127,7 @@ bool heartbeat_socket::handle_heartbeat(zmq::socket& subscriber)
         return true;
     }
 
-    uint16_t sequence;
+    uint16_t sequence{};
     uint64_t height;
     response.dequeue<uint16_t>(sequence);
     response.dequeue<uint64_t>(height);

@@ -249,6 +249,14 @@ void query_socket::work()
         << "Bound " << security_ << " websocket query service to "
         << websocket_endpoint();
 
+    // Default page data can now be set since the base socket's manager has
+    // been initialized.
+    set_default_page_data(http::get_default_page_data(
+        settings_.websockets_query_endpoint(secure_),
+        settings_.websockets_heartbeat_endpoint(secure_),
+        settings_.websockets_block_endpoint(secure_),
+        settings_.websockets_transaction_endpoint(secure_)));
+
     // TODO: this should be hidden in socket base.
     // Hold a shared reference to the websocket thread_ so that we can
     // properly call stop_websocket_handler on cleanup.
@@ -314,7 +322,7 @@ bool query_socket::handle_query(zmq::socket& dealer)
         return true;
     }
 
-    uint32_t sequence;
+    uint32_t sequence{};
     data_chunk data;
     std::string command;
 
