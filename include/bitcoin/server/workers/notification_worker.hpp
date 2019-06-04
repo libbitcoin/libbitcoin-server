@@ -56,9 +56,9 @@ public:
     /// Start the worker.
     bool start() override;
 
-    /// Subscribe to address notifications.
-    virtual system::code subscribe_address(const message& request,
-        system::short_hash&& address_hash, bool unsubscribe);
+    /// Subscribe to payment key notifications.
+    virtual system::code subscribe_key(const message& request,
+        system::hash_digest&& key, bool unsubscribe);
 
     /// Subscribe to stealth notifications.
     virtual system::code subscribe_stealth(const message& request,
@@ -72,7 +72,7 @@ protected:
 private:
     typedef bc::protocol::zmq::socket socket;
     typedef std::unordered_set<uint32_t> stealth_set;
-    typedef std::unordered_set<system::short_hash> address_set;
+    typedef std::unordered_set<system::hash_digest> key_set;
 
     // Purge:     route.created (constant: 1).
     // Notify:    address (constant: 1).
@@ -82,8 +82,8 @@ private:
     // This produces the effect of a circular hash table of subscriptions.
     // Since address hashes are fixed length, 1 query returns all matches.
     typedef boost::bimaps::bimap<
-        boost::bimaps::multiset_of<system::short_hash>,
-        boost::bimaps::multiset_of<subscription>> address_subscriptions;
+        boost::bimaps::multiset_of<system::hash_digest>,
+        boost::bimaps::multiset_of<subscription>> key_subscriptions;
 
     // Purge:     route.created (constant: 1).
     // Notify:    prefix (constant: 24 [32-8]).
@@ -102,7 +102,7 @@ private:
     int32_t purge_milliseconds() const;
     void purge();
 
-    bool address_subscriptions_empty() const;
+    bool key_subscriptions_empty() const;
     bool stealth_subscriptions_empty() const;
 
     bool handle_reorganization(const system::code& ec, size_t fork_height,
@@ -115,7 +115,7 @@ private:
         system::block_const_ptr block);
     void notify_transaction(socket& dealer, size_t height,
         const system::chain::transaction& tx);
-    void notify(socket& dealer, const address_set& addresses,
+    void notify(socket& dealer, const key_set& keys,
         const stealth_set& prefixes, size_t height,
         const system::hash_digest& tx_hash);
 
@@ -135,9 +135,9 @@ private:
     server_node& node_;
 
     // These are protected by mutex.
-    address_subscriptions address_subscriptions_;
+    key_subscriptions key_subscriptions_;
     stealth_subscriptions stealth_subscriptions_;
-    mutable system::upgrade_mutex address_mutex_;
+    mutable system::upgrade_mutex key_mutex_;
     mutable system::upgrade_mutex stealth_mutex_;
 };
 
