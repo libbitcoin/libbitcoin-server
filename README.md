@@ -28,7 +28,7 @@ The API is backward compatible with its predecessor [Obelisk](https://github.com
 
 ## Requirements.
 
-At least 100 Gb file storage (SSD preferred), with swap enabled and at least 4Gb RAM (8Gb preferred).
+Growing file storage (SSD preferred), with swap enabled and at least 4Gb RAM (8Gb preferred).  See [storage space](https://github.com/libbitcoin/libbitcoin-server/wiki/Hardware#storage-space) for the estimated growth rate.
 
 ## Installation
 
