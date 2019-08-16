@@ -34,8 +34,8 @@ BUILD_DIR="build-libbitcoin-server"
 
 # ZMQ archive.
 #------------------------------------------------------------------------------
-ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.2.5/zeromq-4.2.5.tar.gz"
-ZMQ_ARCHIVE="zeromq-4.2.5.tar.gz"
+ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz"
+ZMQ_ARCHIVE="zeromq-4.3.2.tar.gz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
