@@ -24,7 +24,7 @@ A full Bitcoin peer-to-peer node, Libbitcoin Server is also a high performance b
 
 Libbitcoin Server exposes a custom query TCP API built based on the [ZeroMQ](http://zeromq.org) networking stack. It supports server, and optionally client, identity certificates and wire encryption via [CurveZMQ](http://curvezmq.org) and the [Sodium](http://libsodium.org) cryptographic library.
 
-The API is backward compatible with its predecessor [Obelisk](https://github.com/spesmilo/obelisk) and supports simple and advanced scenarios, including stealth payment queries. The [libbitcoin-client](https://github.com/libbitcoin/libbitcoin-client) library provides a calling API for building client applications. The server is complimented by [libbitcoin-explorer (BX)](https://github.com/libbitcoin/libbitcoin-explorer), the Bitcoin command line tool and successor to [SX](https://github.com/spesmilo/sx).
+The API is backward compatible with its predecessor [Obelisk](https://github.com/spesmilo/obelisk) and supports simple and advanced scenarios, including stealth payment queries. The [libbitcoin-client](https://github.com/libbitcoin/libbitcoin-client) library provides a calling API for building client applications. The server is complimented by [libbitcoin-explorer (BX)](https://github.com/libbitcoin/libbitcoin-explorer), the Bitcoin command line tool and successor to [SX](https://libraries.io/github/spesmilo/sx).
 
 ## Requirements.
 
@@ -71,9 +71,9 @@ $ sudo apt-get install g++-4.8
 $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 50
 $ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50
 ```
-Next install the [build system](http://wikipedia.org/wiki/GNU_build_system):
+Next install the [build system](http://wikipedia.org/wiki/GNU_build_system) and git:
 ```sh
-$ sudo apt-get install build-essential autoconf automake libtool pkg-config
+$ sudo apt-get install build-essential autoconf automake libtool pkg-config git
 ```
 Next download the [install script](https://github.com/libbitcoin/libbitcoin-server/blob/version3/install.sh) and enable execution:
 ```sh
