@@ -90,6 +90,7 @@
     <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\web\block_socket.cpp" />
+    <ClCompile Include="..\..\..\..\src\web\default_page_data.cpp" />
     <ClCompile Include="..\..\..\..\src\web\heartbeat_socket.cpp" />
     <ClCompile Include="..\..\..\..\src\web\query_socket.cpp" />
     <ClCompile Include="..\..\..\..\src\web\transaction_socket.cpp" />
@@ -118,6 +119,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\block_socket.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\default_page_data.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\query_socket.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\transaction_socket.hpp" />

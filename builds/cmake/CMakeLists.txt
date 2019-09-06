@@ -188,6 +188,7 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/services/query_service.cpp"
     "../../src/services/transaction_service.cpp"
     "../../src/web/block_socket.cpp"
+    "../../src/web/default_page_data.cpp"
     "../../src/web/heartbeat_socket.cpp"
     "../../src/web/query_socket.cpp"
     "../../src/web/transaction_socket.cpp"

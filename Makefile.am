@@ -52,6 +52,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/services/query_service.cpp \
     src/services/transaction_service.cpp \
     src/web/block_socket.cpp \
+    src/web/default_page_data.cpp \
     src/web/heartbeat_socket.cpp \
     src/web/query_socket.cpp \
     src/web/transaction_socket.cpp \
@@ -128,6 +129,7 @@ include_bitcoin_server_services_HEADERS = \
 include_bitcoin_server_webdir = ${includedir}/bitcoin/server/web
 include_bitcoin_server_web_HEADERS = \
     include/bitcoin/server/web/block_socket.hpp \
+    include/bitcoin/server/web/default_page_data.hpp \
     include/bitcoin/server/web/heartbeat_socket.hpp \
     include/bitcoin/server/web/query_socket.hpp \
     include/bitcoin/server/web/transaction_socket.hpp
