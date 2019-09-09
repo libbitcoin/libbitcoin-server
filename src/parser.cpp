@@ -431,9 +431,9 @@ options_metadata parser::load_settings()
         "Transaction hash table size, defaults to 110000000."
     )
     (
-        "database.address_table_buckets",
-        value<uint32_t>(&configured.database.address_table_buckets),
-        "Address hash table size, defaults to 107000000."
+        "database.payment_table_buckets",
+        value<uint32_t>(&configured.database.payment_table_buckets),
+        "Payment hash table size, defaults to 107000000."
     )
     (
         "database.block_table_size",
@@ -461,14 +461,14 @@ options_metadata parser::load_settings()
         "Transaction table minimum file size, defaults to 220000000000."
     )
     (
-        "database.address_index_size",
-        value<uint64_t>(&configured.database.address_index_size),
-        "Address index minimum file size, defaults to 100000000000."
+        "database.payment_index_size",
+        value<uint64_t>(&configured.database.payment_index_size),
+        "Payment index minimum file size, defaults to 100000000000."
     )
     (
-        "database.address_table_size",
-        value<uint64_t>(&configured.database.address_table_size),
-        "Address table minimum file size, defaults to 100000000."
+        "database.payment_table_size",
+        value<uint64_t>(&configured.database.payment_table_size),
+        "Payment table minimum file size, defaults to 100000000."
     )
 
     /* [blockchain] */
