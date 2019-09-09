@@ -105,6 +105,9 @@
     <ClCompile Include="..\..\..\..\src\web\block_socket.cpp">
       <Filter>src\web</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\web\default_page_data.cpp">
+      <Filter>src\web</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\web\heartbeat_socket.cpp">
       <Filter>src\web</Filter>
     </ClCompile>
@@ -183,6 +186,9 @@
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\block_socket.hpp">
+      <Filter>include\bitcoin\server\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\web\default_page_data.hpp">
       <Filter>include\bitcoin\server\web</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\web\heartbeat_socket.hpp">

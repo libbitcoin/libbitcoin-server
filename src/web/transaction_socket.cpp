@@ -22,6 +22,7 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/web/default_page_data.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -73,7 +74,7 @@ void transaction_socket::work()
 
     // Default page data can now be set since the base socket's manager has
     // been initialized.
-    set_default_page_data(http::get_default_page_data(
+    set_default_page_data(get_default_page_data(
         settings_.websockets_query_endpoint(secure_),
         settings_.websockets_heartbeat_endpoint(secure_),
         settings_.websockets_block_endpoint(secure_),

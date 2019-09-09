@@ -35,6 +35,7 @@
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/transaction_service.hpp>
 #include <bitcoin/server/web/block_socket.hpp>
+#include <bitcoin/server/web/default_page_data.hpp>
 #include <bitcoin/server/web/heartbeat_socket.hpp>
 #include <bitcoin/server/web/query_socket.hpp>
 #include <bitcoin/server/web/transaction_socket.hpp>
