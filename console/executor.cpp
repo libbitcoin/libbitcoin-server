@@ -130,7 +130,8 @@ bool executor::do_initchain()
 
         const auto& bitcoin_settings = metadata_.configured.bitcoin;
         const auto result = data_base(metadata_.configured.database,
-            metadata_.configured.chain.index_payments).create(
+            metadata_.configured.chain.index_payments,
+            metadata_.configured.chain.bip158).create(
                 bitcoin_settings.genesis_block);
 
         LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
