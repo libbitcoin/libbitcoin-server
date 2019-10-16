@@ -134,7 +134,11 @@ bool executor::do_initchain()
             metadata_.configured.chain.bip158).create(
                 bitcoin_settings.genesis_block);
 
-        LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
+        if (result)
+            LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
+        else
+            LOG_ERROR(LOG_SERVER) << BS_INITCHAIN_DATABASE_FAILURE;
+
         return result;
     }
 
