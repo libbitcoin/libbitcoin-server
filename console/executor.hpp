@@ -83,8 +83,8 @@ private:
     "Failed to test directory %1% with error, '%2%'."
 #define BS_INITCHAIN_COMPLETE \
     "Completed initialization."
-#define BS_INITCHAIN_DATABASE_FAILURE \
-    "Database creation failed."
+#define BS_INITCHAIN_DATABASE_CREATE_FAILURE \
+    "Database creation failed with error, '%2%'."
 
 #define BS_NODE_INTERRUPT \
     "Press CTRL-C to stop the server."

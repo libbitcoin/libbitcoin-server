@@ -128,18 +128,21 @@ bool executor::do_initchain()
     {
         LOG_INFO(LOG_SERVER) << format(BS_INITIALIZING_CHAIN) % directory;
 
-        const auto& bitcoin_settings = metadata_.configured.bitcoin;
-        const auto result = data_base(metadata_.configured.database,
-            metadata_.configured.chain.index_payments,
-            metadata_.configured.chain.bip158).create(
-                bitcoin_settings.genesis_block);
+        const auto& settings_chain = metadata_.configured.chain;
+        const auto& settings_database = metadata_.configured.database;
+        const auto& settings_system = metadata_.configured.bitcoin;
 
-        if (result)
-            LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
+        system::code code = bc::blockchain::block_chain_initializer(
+            settings_chain, settings_database, settings_system).create(
+                settings_system.genesis_block);
+
+        if (code)
+            LOG_ERROR(LOG_SERVER) <<
+                format(BS_INITCHAIN_DATABASE_CREATE_FAILURE) % code.message();
         else
-            LOG_ERROR(LOG_SERVER) << BS_INITCHAIN_DATABASE_FAILURE;
+            LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
 
-        return result;
+        return (code == error::success);
     }
 
     if (ec.value() == directory_exists)
