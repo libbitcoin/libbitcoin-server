@@ -545,6 +545,11 @@ options_metadata parser::load_settings()
         "Require coinbase input includes block height, defaults to true (soft fork)."
     )
     (
+        "fork.bip42",
+        value<bool>(&configured.chain.bip42),
+        "Finite monetary supply, defaults to true (soft fork)."
+    )
+    (
         "fork.bip66",
         value<bool>(&configured.chain.bip66),
         "Require strict signature encoding, defaults to true (soft fork)."
