@@ -188,23 +188,23 @@ options_metadata parser::load_settings()
     /* [bitcoin] */
     (
         "bitcoin.retargeting_factor",
-        PROPERTY(uint32_t, configured.bitcoin.retargeting_factor),
+        value<uint32_t>(&configured.bitcoin.retargeting_factor),
         "The difficulty retargeting factor, defaults to 4."
     )
     (
+        "bitcoin.retargeting_interval_seconds",
+        value<uint32_t>(&configured.bitcoin.retargeting_interval_seconds),
+        "The difficulty retargeting period, defaults to 1209600."
+    )
+    (
         "bitcoin.block_spacing_seconds",
-        PROPERTY(uint32_t, configured.bitcoin.block_spacing_seconds),
-        "The target block period in seconds, defaults to 600."
+        value<uint32_t>(&configured.bitcoin.block_spacing_seconds),
+        "The target block period, defaults to 600."
     )
     (
         "bitcoin.timestamp_limit_seconds",
         value<uint32_t>(&configured.bitcoin.timestamp_limit_seconds),
-        "The future timestamp allowance in seconds, defaults to 7200."
-    )
-    (
-        "bitcoin.retargeting_interval_seconds",
-        PROPERTY(uint32_t, configured.bitcoin.retargeting_interval_seconds),
-        "The difficulty retargeting period in seconds, defaults to 1209600."
+        "The future timestamp allowance, defaults to 7200."
     )
     (
         "bitcoin.proof_of_work_limit",
@@ -213,13 +213,13 @@ options_metadata parser::load_settings()
     )
     (
         "bitcoin.initial_block_subsidy_bitcoin",
-        PROPERTY(uint64_t, configured.bitcoin.initial_block_subsidy_bitcoin),
-        "The initial block subsidy in bitcoin, defaults to 50."
+        value<uint64_t>(&configured.bitcoin.initial_subsidy_bitcoin),
+        "The initial block subsidy, defaults to 50."
     )
     (
         "bitcoin.subsidy_interval",
-        PROPERTY(uint64_t, configured.bitcoin.subsidy_interval),
-        "The subsidy halving period in number of blocks, defaults to 210000."
+        value<uint64_t>(&configured.bitcoin.subsidy_interval_blocks),
+        "The subsidy halving period, defaults to 210000."
     )
     (
         "bitcoin.genesis_block",
