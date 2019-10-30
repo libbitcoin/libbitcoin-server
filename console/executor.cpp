@@ -132,17 +132,19 @@ bool executor::do_initchain()
         const auto& settings_database = metadata_.configured.database;
         const auto& settings_system = metadata_.configured.bitcoin;
 
-        system::code code = bc::blockchain::block_chain_initializer(
+        const auto code = bc::blockchain::block_chain_initializer(
             settings_chain, settings_database, settings_system).create(
                 settings_system.genesis_block);
 
         if (code)
+        {
             LOG_ERROR(LOG_SERVER) <<
                 format(BS_INITCHAIN_DATABASE_CREATE_FAILURE) % code.message();
-        else
-            LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
+            return false;
+        }
 
-        return (code == error::success);
+        LOG_INFO(LOG_SERVER) << BS_INITCHAIN_COMPLETE;
+        return true;
     }
 
     if (ec.value() == directory_exists)
