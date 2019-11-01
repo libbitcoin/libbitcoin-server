@@ -63,6 +63,18 @@ public:
     static void fetch_block_transaction_hashes(server_node& node,
         const message& request, send_handler handler);
 
+    /// Fetch compact filter of block by hash or height.
+    static void fetch_compact_filter(server_node& node,
+        const message& request, send_handler handler);
+
+    /// Fetch compact filter checkpoint ending in block by hash.
+    static void fetch_compact_filter_checkpoint(server_node& node,
+        const message& request, send_handler handler);
+
+    /// Fetch compact filter headers by start height and stop hash or height.
+    static void fetch_compact_filter_headers(server_node& node,
+        const message& request, send_handler handler);
+
     /// Fetch the block index of a transaction and the height of its block.
     static void fetch_transaction_index(server_node& node,
         const message& request, send_handler handler);
@@ -118,6 +130,30 @@ private:
     static void block_fetched(const system::code& ec,
         system::block_const_ptr header, const message& request,
         send_handler handler);
+
+    static void fetch_compact_filter_by_hash(server_node& node,
+        const message& request, send_handler handler);
+
+    static void fetch_compact_filter_by_height(server_node& node,
+        const message& request, send_handler handler);
+
+    static void compact_filter_fetched(const system::code& ec,
+        system::compact_filter_ptr response, size_t, const message& request,
+        send_handler handler);
+
+    static void fetch_compact_filter_headers_by_hash(server_node& node,
+        const message& request, send_handler handler);
+
+    static void fetch_compact_filter_headers_by_height(server_node& node,
+        const message& request, send_handler handler);
+
+    static void compact_filter_headers_fetched(const system::code& ec,
+        system::compact_filter_headers_ptr response,
+        const message& request, send_handler handler);
+
+    static void compact_filter_checkpoint_fetched(const system::code& ec,
+        system::compact_filter_checkpoint_ptr checkpoint,
+        const message& request, send_handler handler);
 
     static void block_header_fetched(const system::code& ec,
         system::header_const_ptr header, const message& request,
