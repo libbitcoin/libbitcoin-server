@@ -271,6 +271,9 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_stealth_transaction_hashes, node_);// new (3.0)
     ATTACH(blockchain, broadcast, node_);                       // new (3.0)
     ATTACH(blockchain, validate, node_);                        // new (3.0)
+    ATTACH(blockchain, fetch_compact_filter, node_);            // new (4.0)
+    ATTACH(blockchain, fetch_compact_filter_checkpoint, node_); // new (4.0)
+    ATTACH(blockchain, fetch_compact_filter_headers, node_);    // new (4.0)
 
     ////ATTACH(transaction_pool, validate, node_);              // obsoleted
     ATTACH(transaction_pool, fetch_transaction, node_);         // enhanced (3.0)
