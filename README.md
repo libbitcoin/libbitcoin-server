@@ -211,7 +211,7 @@ $ ./install.sh --with-bash-completion-dir
 
 ### Windows
 
-Visual Studio solutions are maintained for all libbitcoin libraries and dependencies. See the [libbitcoin](https://github.com/libbitcoin/libbitcoin/blob/master/README.md#windows) repository general information about building the Visual Studio solutions. To build Libbitcoin Server you must also download and build its **libbitcoin dependencies**, as these are not yet packaged.
+Visual Studio solutions are maintained for all libbitcoin libraries and dependencies. See the [libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system/blob/master/README.md#windows) repository general information about building the Visual Studio solutions. To build Libbitcoin Server you must also download and build its **libbitcoin dependencies**, as these are not yet packaged.
 
 Build these solutions in order:
 
