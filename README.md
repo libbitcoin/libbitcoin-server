@@ -215,7 +215,7 @@ Visual Studio solutions are maintained for all libbitcoin libraries and dependen
 
 Build these solutions in order:
 
-1. [libbitcoin/libbitcoin](https://github.com/libbitcoin/libbitcoin)
+1. [libbitcoin/libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system)
 2. [libbitcoin/libbitcoin-consensus](https://github.com/libbitcoin/libbitcoin-consensus)
 3. [libbitcoin/libbitcoin-database](https://github.com/libbitcoin/libbitcoin-database)
 4. [libbitcoin/libbitcoin-blockchain](https://github.com/libbitcoin/libbitcoin-blockchain)
