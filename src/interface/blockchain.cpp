@@ -189,9 +189,9 @@ void blockchain::fetch_compact_filter(server_node& node,
 {
     const auto& data = request.data();
 
-    if (data.size() == hash_size + 1)
+    if (data.size() == hash_size + 1u)
         blockchain::fetch_compact_filter_by_hash(node, request, handler);
-    else if (data.size() == sizeof(uint32_t) + 1)
+    else if (data.size() == sizeof(uint32_t) + 1u)
         blockchain::fetch_compact_filter_by_height(node, request, handler);
     else
         handler(message(request, error::bad_stream));
@@ -201,7 +201,7 @@ void blockchain::fetch_compact_filter_by_hash(server_node& node,
     const message& request, send_handler handler)
 {
     const auto& data = request.data();
-    BITCOIN_ASSERT(data.size() == 1 + hash_size);
+    BITCOIN_ASSERT(data.size() == 1u + hash_size);
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto filter_type = deserial.read_byte();
@@ -216,7 +216,7 @@ void blockchain::fetch_compact_filter_by_height(server_node& node,
     const message& request, send_handler handler)
 {
     const auto& data = request.data();
-    BITCOIN_ASSERT(data.size() == 1 + sizeof(uint32_t));
+    BITCOIN_ASSERT(data.size() == 1u + sizeof(uint32_t));
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto filter_type = deserial.read_byte();
@@ -253,9 +253,9 @@ void blockchain::fetch_compact_filter_headers(server_node& node,
 {
     const auto& data = request.data();
 
-    if (data.size() == 1 + sizeof(uint32_t) + hash_size)
+    if (data.size() == 1u + sizeof(uint32_t) + hash_size)
         blockchain::fetch_compact_filter_headers_by_hash(node, request, handler);
-    else if (data.size() == 1 + sizeof(uint32_t) + sizeof(uint32_t))
+    else if (data.size() == 1u + sizeof(uint32_t) + sizeof(uint32_t))
         blockchain::fetch_compact_filter_headers_by_height(node, request, handler);
     else
         handler(message(request, error::bad_stream));
@@ -265,11 +265,11 @@ void blockchain::fetch_compact_filter_headers_by_hash(server_node& node,
     const message& request, send_handler handler)
 {
     const auto& data = request.data();
-    BITCOIN_ASSERT(data.size() == 1 + sizeof(uint32_t) + hash_size);
+    BITCOIN_ASSERT(data.size() == 1u + sizeof(uint32_t) + hash_size);
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto filter_type = deserial.read_byte();
-    const uint64_t start_height = deserial.read_4_bytes_little_endian();
+    const auto start_height = deserial.read_4_bytes_little_endian();
     const auto stop_hash = deserial.read_hash();
 
     node.chain().fetch_compact_filter_headers(filter_type, start_height,
@@ -281,12 +281,12 @@ void blockchain::fetch_compact_filter_headers_by_height(server_node& node,
     const message& request, send_handler handler)
 {
     const auto& data = request.data();
-    BITCOIN_ASSERT(data.size() == 1 + sizeof(uint32_t) + sizeof(uint32_t));
+    BITCOIN_ASSERT(data.size() == 1u + sizeof(uint32_t) + sizeof(uint32_t));
 
     auto deserial = make_safe_deserializer(data.begin(), data.end());
     const auto filter_type = deserial.read_byte();
-    const uint64_t start_height = deserial.read_4_bytes_little_endian();
-    const uint64_t stop_height = deserial.read_4_bytes_little_endian();
+    const auto start_height = deserial.read_4_bytes_little_endian();
+    const auto stop_height = deserial.read_4_bytes_little_endian();
 
     node.chain().fetch_compact_filter_headers(filter_type, start_height,
         stop_height, std::bind(&blockchain::compact_filter_headers_fetched,
@@ -319,7 +319,7 @@ void blockchain::fetch_compact_filter_checkpoint(server_node& node,
 {
     const auto& data = request.data();
 
-    if (data.size() != hash_size + 1)
+    if (data.size() != hash_size + 1u)
     {
         handler(message(request, error::bad_stream));
         return;
