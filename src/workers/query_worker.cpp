@@ -214,7 +214,9 @@ void query_worker::attach(const std::string& command,
 // blockchain.fetch_history4 is new in v4.0.
 // blockchain.fetch_stealth is obsoleted in v3 (hash reversal).
 // blockchain.fetch_stealth2 is new in v3.
+// blockchain.fetch_stealth2 is obsoleted in v4.
 // blockchain.fetch_stealth_transaction_hashes is new in v3 (safe version).
+// blockchain.fetch_stealth_transaction_hashes is obsoleted in v4.
 // blockchain.fetch_block (full) is new in v4.
 //-----------------------------------------------------------------------------
 // transaction_pool.validate is obsoleted in v3 (unconfirmed outputs).
@@ -225,13 +227,17 @@ void query_worker::attach(const std::string& command,
 // protocol.broadcast_transaction is obsoleted in v3 (renamed).
 // protocol.total_connections is obsoleted in v3 (administrative).
 //-----------------------------------------------------------------------------
+// subscribe.address is new in v3, also call for renew.
+// subscribe.address is obsoleted in v4 (see subscribe.key).
 // subscribe.key is new in v4, also call for renew.
-// subscribe.address is new in v3, also call for renew (deprecated v4).
 // subscribe.stealth is new in v3, also call for renew.
+// subscribe.stealth is obsoleted in v4.
 //-----------------------------------------------------------------------------
+// unsubscribe.address is new in v3 (there was never address.unsubscribe).
+// unsubscribe.address is obsoleted in v4 (see unsubscribe.key).
 // unsubscribe.key is new in v4 (matching subscribe.key).
-// unsubscribe.address is new in v3 (there was never address.unsubscribe, deprecated v4).
 // unsubscribe.stealth is new in v3 (there was never stealth.unsubscribe).
+// unsubscribe.stealth is obsoleted in v4.
 //-----------------------------------------------------------------------------
 // subscribe.block (pub-sub) is new in v3.4.
 // subscribe.transaction (pub-sub) is new in v3.4.
@@ -248,15 +254,19 @@ void query_worker::attach_interface()
     ////ATTACH(address, fetch_history, node_);            // obsoleted (3.0)
     ////ATTACH(subscribe, address, node_);     // new (3.1), obsoleted (4.0)
     ////ATTACH(unsubscribe, address, node_);   // new (3.1), obsoleted (4.0)
+    ////ATTACH(subscribe, stealth, node_);     // new (3.1), obsoleted (4.0)
+    ////ATTACH(unsubscribe, stealth, node_);   // new (3.1), obsoleted (4.0)
 
     ATTACH(subscribe, key, node_);                              // new (4.0)
-    ATTACH(subscribe, stealth, node_);                          // new (3.1)
     ATTACH(unsubscribe, key, node_);                            // new (4.0)
-    ATTACH(unsubscribe, stealth, node_);                        // new (3.1)
 
     ////ATTACH(blockchain, fetch_stealth, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history, node_);               // obsoleted
     ////ATTACH(blockchain, fetch_history2, node_);              // obsoleted
+    ////ATTACH(blockchain, fetch_stealth2, node_);
+    ////                                       // new (3.0), obsoleted (4.0)
+    ////ATTACH(blockchain, fetch_stealth_transaction_hashes, node_);
+    ////                                       // new (3.0), obsoleted (4.0)
     ATTACH(blockchain, fetch_block, node_);                     // new (4.0)
     ATTACH(blockchain, fetch_block_header, node_);              // original
     ATTACH(blockchain, fetch_block_height, node_);              // original
@@ -267,8 +277,6 @@ void query_worker::attach_interface()
     ATTACH(blockchain, fetch_transaction_index, node_);         // original
     ATTACH(blockchain, fetch_spend, node_);                     // original
     ATTACH(blockchain, fetch_history4, node_);                  // new (4.0)
-    ATTACH(blockchain, fetch_stealth2, node_);                  // new (3.0)
-    ATTACH(blockchain, fetch_stealth_transaction_hashes, node_);// new (3.0)
     ATTACH(blockchain, broadcast, node_);                       // new (3.0)
     ATTACH(blockchain, validate, node_);                        // new (3.0)
     ATTACH(blockchain, fetch_compact_filter, node_);            // new (4.0)

@@ -87,14 +87,6 @@ public:
     static void fetch_block_height(server_node& node,
         const message& request, send_handler handler);
 
-    /// Fetch the history of a stealth address by its prefix filter.
-    static void fetch_stealth2(server_node& node,
-        const message& request, send_handler handler);
-
-    /// Fetch the transactions of a stealth address by its prefix filter.
-    static void fetch_stealth_transaction_hashes(server_node& node,
-        const message& request, send_handler handler);
-
     /// Save to blockchain and announce to all connected peers.
     static void broadcast(server_node& node, const message& request,
         send_handler handler);
@@ -179,14 +171,6 @@ private:
 
     static void block_height_fetched(const system::code& ec,
         size_t block_height, const message& request, send_handler handler);
-
-    static void stealth_fetched(const system::code& ec,
-        const system::chain::stealth_record::list& stealth,
-        const message& request, send_handler handler);
-
-    static void stealth_transaction_hashes_fetched(const system::code& ec,
-        const system::chain::stealth_record::list& stealth,
-        const message& request, send_handler handler);
 
     static void handle_broadcast(const system::code& ec,
         const message& request, send_handler handler);

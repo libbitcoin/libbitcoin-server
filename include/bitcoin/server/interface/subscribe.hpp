@@ -34,10 +34,6 @@ public:
     /// Subscribe to payment address notifications by key.
     static void key(server_node& node, const message& request,
         send_handler handler);
-
-    /// Subscribe to stealth address notifications by prefix.
-    static void stealth(server_node& node, const message& request,
-        send_handler handler);
 };
 
 } // namespace server
