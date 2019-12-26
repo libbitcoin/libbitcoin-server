@@ -53,42 +53,5 @@ void subscribe::key(server_node& node, const message& request,
     handler(message(request, ec));
 }
 
-void subscribe::stealth(server_node& node, const message& request,
-    send_handler handler)
-{
-    const auto& data = request.data();
-
-    if (data.empty())
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
-
-    // [ prefix_bitsize:1 ]
-    // [ prefix_blocks:1..4 ]
-    auto deserial = make_safe_deserializer(data.begin(), data.end());
-    const auto bits = deserial.read_byte();
-
-    if (bits < stealth_address::min_filter_bits ||
-        bits > stealth_address::max_filter_bits)
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
-
-    const auto bytes = binary::blocks_size(bits);
-
-    if (data.size() != sizeof(uint8_t) + bytes)
-    {
-        handler(message(request, error::bad_stream));
-        return;
-    }
-
-    const auto blocks = deserial.read_bytes(bytes);
-
-    auto ec = node.subscribe_stealth(request, binary{ bits, blocks }, false);
-    handler(message(request, ec));
-}
-
 } // namespace server
 } // namespace libbitcoin
