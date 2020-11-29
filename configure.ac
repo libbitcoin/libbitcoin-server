@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2019 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -206,8 +206,7 @@ AC_MSG_NOTICE([bash_completion_BUILD_CPPFLAGS : ${bash_completion_BUILD_CPPFLAGS
 PKG_CHECK_MODULES([bitcoin_node], [libbitcoin-node >= 4.0.0],
     [bitcoin_node_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-node >= 4.0.0" 2>/dev/null`"
      bitcoin_node_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-node >= 4.0.0" 2>/dev/null`"],
-    [bitcoin_node_INCLUDEDIR=""
-     bitcoin_node_OTHER_CFLAGS=""])
+    [AC_MSG_ERROR([libbitcoin-node >= 4.0.0 is required but was not found.])])
 AC_SUBST([bitcoin_node_PKG], ['libbitcoin-node >= 4.0.0'])
 AC_SUBST([bitcoin_node_CPPFLAGS], [${bitcoin_node_CFLAGS}])
 AS_IF([test x${bitcoin_node_INCLUDEDIR} != "x"],
@@ -230,8 +229,7 @@ AC_MSG_NOTICE([bitcoin_node_BUILD_CPPFLAGS : ${bitcoin_node_BUILD_CPPFLAGS}])
 PKG_CHECK_MODULES([bitcoin_protocol], [libbitcoin-protocol >= 4.0.0],
     [bitcoin_protocol_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-protocol >= 4.0.0" 2>/dev/null`"
      bitcoin_protocol_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-protocol >= 4.0.0" 2>/dev/null`"],
-    [bitcoin_protocol_INCLUDEDIR=""
-     bitcoin_protocol_OTHER_CFLAGS=""])
+    [AC_MSG_ERROR([libbitcoin-protocol >= 4.0.0 is required but was not found.])])
 AC_SUBST([bitcoin_protocol_PKG], ['libbitcoin-protocol >= 4.0.0'])
 AC_SUBST([bitcoin_protocol_CPPFLAGS], [${bitcoin_protocol_CFLAGS}])
 AS_IF([test x${bitcoin_protocol_INCLUDEDIR} != "x"],
