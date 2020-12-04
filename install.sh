@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-#  Copyright (c) 2014-2019 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -116,6 +116,7 @@ make_jobs()
     local JOBS=$1
     shift 1
 
+    SEQUENTIAL=1
     # Avoid setting -j1 (causes problems on Travis).
     if [[ $JOBS > $SEQUENTIAL ]]; then
         make -j"$JOBS" "$@"
@@ -129,8 +130,7 @@ make_tests()
 {
     local JOBS=$1
 
-    # Disable exit on error.
-    set +e
+    disable_exit_on_error
 
     # Build and run unit tests relative to the primary directory.
     # VERBOSE=1 ensures test runner output sent to console (gcc).
@@ -146,8 +146,7 @@ make_tests()
         exit $RESULT
     fi
 
-    # Reenable exit on error.
-    set -e
+    enable_exit_on_error
 }
 
 pop_directory()
@@ -160,6 +159,16 @@ push_directory()
     local DIRECTORY="$1"
 
     pushd "$DIRECTORY" >/dev/null
+}
+
+enable_exit_on_error()
+{
+    set -e
+}
+
+disable_exit_on_error()
+{
+    set +e
 }
 
 display_help()
@@ -179,120 +188,156 @@ display_help()
     display_message "all dependencies."
 }
 
+# Define environment initialization functions
+#==============================================================================
+parse_command_line_options()
+{
+    for OPTION in "$@"; do
+        case $OPTION in
+            # Standard script options.
+            (--help)                DISPLAY_HELP="yes";;
+
+            # Standard build options.
+            (--prefix=*)            PREFIX="${OPTION#*=}";;
+            (--disable-shared)      DISABLE_SHARED="yes";;
+            (--disable-static)      DISABLE_STATIC="yes";;
+
+            # Common project options.
+
+            # Custom build options (in the form of --build-<option>).
+            (--build-zmq)           BUILD_ZMQ="yes";;
+            (--build-boost)         BUILD_BOOST="yes";;
+
+            # Unique script options.
+            (--build-dir=*)    BUILD_DIR="${OPTION#*=}";;
+        esac
+    done
+}
+
+handle_help_line_option()
+{
+    if [[ $DISPLAY_HELP ]]; then
+        display_help
+        exit 0
+    fi
+}
+
+set_operating_system()
+{
+    OS=$(uname -s)
+}
+
+configure_build_parallelism()
+{
+    if [[ $PARALLEL ]]; then
+        display_message "Using shell-defined PARALLEL value."
+    elif [[ $OS == Linux ]]; then
+        PARALLEL=$(nproc)
+    elif [[ ($OS == Darwin) || ($OS == OpenBSD) ]]; then
+        PARALLEL=$(sysctl -n hw.ncpu)
+    else
+        display_error "Unsupported system: $OS"
+        display_error "  Explicit shell-definition of PARALLEL will avoid system detection."
+        display_error ""
+        display_help
+        exit 1
+    fi
+}
+
+set_os_specific_compiler_settings()
+{
+    if [[ $OS == Darwin ]]; then
+        export CC="clang"
+        export CXX="clang++"
+        STDLIB="c++"
+    elif [[ $OS == OpenBSD ]]; then
+        make() { gmake "$@"; }
+        export CC="egcc"
+        export CXX="eg++"
+        STDLIB="estdc++"
+    else # Linux
+        STDLIB="stdc++"
+    fi
+}
+
+link_to_standard_library()
+{
+    if [[ ($OS == Linux && $CC == "clang") || ($OS == OpenBSD) ]]; then
+        export LDLIBS="-l$STDLIB $LDLIBS"
+        export CXXFLAGS="-stdlib=lib$STDLIB $CXXFLAGS"
+    fi
+}
+
+normalize_static_and_shared_options()
+{
+    if [[ $DISABLE_SHARED ]]; then
+        CONFIGURE_OPTIONS=("$@" "--enable-static")
+    elif [[ $DISABLE_STATIC ]]; then
+        CONFIGURE_OPTIONS=("$@" "--enable-shared")
+    else
+        CONFIGURE_OPTIONS=("$@" "--enable-shared")
+        CONFIGURE_OPTIONS=("$@" "--enable-static")
+    fi
+}
+
+remove_build_options()
+{    
+    # Purge custom build options so they don't break configure.
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-*/}")
+}
+
+set_prefix()
+{
+    # Always set a prefix (required on OSX and for lib detection).
+    if [[ ! ($PREFIX) ]]; then
+        PREFIX="/usr/local"
+        CONFIGURE_OPTIONS=( "${CONFIGURE_OPTIONS[@]}" "--prefix=$PREFIX")
+    else
+        # Incorporate the custom libdir into each object, for link time resolution.
+        export LD_RUN_PATH="$PREFIX/lib"
+    fi
+}
+
+set_pkgconfigdir()
+{
+    # Set the prefix-based package config directory.
+    PREFIX_PKG_CONFIG_DIR="$PREFIX/lib/pkgconfig"
+
+    # Prioritize prefix package config in PKG_CONFIG_PATH search path.
+    export PKG_CONFIG_PATH="$PREFIX_PKG_CONFIG_DIR:$PKG_CONFIG_PATH"
+
+    # Set a package config save path that can be passed via our builds.
+    with_pkgconfigdir="--with-pkgconfigdir=$PREFIX_PKG_CONFIG_DIR"
+}
+
+set_with_boost_prefix()
+{
+    if [[ $BUILD_BOOST ]]; then
+        # Boost has no pkg-config, m4 searches in the following order:
+        # --with-boost=<path>, /usr, /usr/local, /opt, /opt/local, $BOOST_ROOT.
+        # We use --with-boost to prioritize the --prefix path when we build it.
+        # Otherwise standard paths suffice for Linux, Homebrew and MacPorts.
+        # ax_boost_base.m4 appends /include and adds to BOOST_CPPFLAGS
+        # ax_boost_base.m4 searches for /lib /lib64 and adds to BOOST_LDFLAGS
+        with_boost="--with-boost=$PREFIX"
+    fi
+}
+
+
 # Initialize the build environment.
 #==============================================================================
-# Exit this script on the first build error.
-#------------------------------------------------------------------------------
-set -e
-
-# Parse command line options that are handled by this script.
-#------------------------------------------------------------------------------
-for OPTION in "$@"; do
-    case $OPTION in
-        # Standard script options.
-        (--help)                DISPLAY_HELP="yes";;
-
-        # Standard build options.
-        (--prefix=*)            PREFIX="${OPTION#*=}";;
-        (--disable-shared)      DISABLE_SHARED="yes";;
-        (--disable-static)      DISABLE_STATIC="yes";;
-
-        # Common project options.
-
-        # Custom build options (in the form of --build-<option>).
-        (--build-zmq)           BUILD_ZMQ="yes";;
-        (--build-boost)         BUILD_BOOST="yes";;
-
-        # Unique script options.
-        (--build-dir=*)    BUILD_DIR="${OPTION#*=}";;
-    esac
-done
-
-# Configure build parallelism.
-#------------------------------------------------------------------------------
-SEQUENTIAL=1
-OS=$(uname -s)
-if [[ $PARALLEL ]]; then
-    display_message "Using shell-defined PARALLEL value."
-elif [[ $OS == Linux ]]; then
-    PARALLEL=$(nproc)
-elif [[ ($OS == Darwin) || ($OS == OpenBSD) ]]; then
-    PARALLEL=$(sysctl -n hw.ncpu)
-else
-    display_error "Unsupported system: $OS"
-    display_error "  Explicit shell-definition of PARALLEL will avoid system detection."
-    display_error ""
-    display_help
-    exit 1
-fi
-
-# Define operating system specific settings.
-#------------------------------------------------------------------------------
-if [[ $OS == Darwin ]]; then
-    export CC="clang"
-    export CXX="clang++"
-    STDLIB="c++"
-elif [[ $OS == OpenBSD ]]; then
-    make() { gmake "$@"; }
-    export CC="egcc"
-    export CXX="eg++"
-    STDLIB="estdc++"
-else # Linux
-    STDLIB="stdc++"
-fi
-
-# Link to appropriate standard library in non-default scnearios.
-#------------------------------------------------------------------------------
-if [[ ($OS == Linux && $CC == "clang") || ($OS == OpenBSD) ]]; then
-    export LDLIBS="-l$STDLIB $LDLIBS"
-    export CXXFLAGS="-stdlib=lib$STDLIB $CXXFLAGS"
-fi
-
-# Normalize of static and shared options.
-#------------------------------------------------------------------------------
-if [[ $DISABLE_SHARED ]]; then
-    CONFIGURE_OPTIONS=("$@" "--enable-static")
-elif [[ $DISABLE_STATIC ]]; then
-    CONFIGURE_OPTIONS=("$@" "--enable-shared")
-else
-    CONFIGURE_OPTIONS=("$@" "--enable-shared")
-    CONFIGURE_OPTIONS=("$@" "--enable-static")
-fi
-
-# Purge custom build options so they don't break configure.
-#------------------------------------------------------------------------------
-CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-*/}")
-
-# Always set a prefix (required on OSX and for lib detection).
-#------------------------------------------------------------------------------
-if [[ ! ($PREFIX) ]]; then
-    PREFIX="/usr/local"
-    CONFIGURE_OPTIONS=( "${CONFIGURE_OPTIONS[@]}" "--prefix=$PREFIX")
-else
-    # Incorporate the custom libdir into each object, for runtime resolution.
-    export LD_RUN_PATH="$PREFIX/lib"
-fi
-
-# Incorporate the prefix.
-#------------------------------------------------------------------------------
-# Set the prefix-based package config directory.
-PREFIX_PKG_CONFIG_DIR="$PREFIX/lib/pkgconfig"
-
-# Prioritize prefix package config in PKG_CONFIG_PATH search path.
-export PKG_CONFIG_PATH="$PREFIX_PKG_CONFIG_DIR:$PKG_CONFIG_PATH"
-
-# Set a package config save path that can be passed via our builds.
-with_pkgconfigdir="--with-pkgconfigdir=$PREFIX_PKG_CONFIG_DIR"
-
-if [[ $BUILD_BOOST ]]; then
-    # Boost has no pkg-config, m4 searches in the following order:
-    # --with-boost=<path>, /usr, /usr/local, /opt, /opt/local, $BOOST_ROOT.
-    # We use --with-boost to prioritize the --prefix path when we build it.
-    # Otherwise standard paths suffice for Linux, Homebrew and MacPorts.
-    # ax_boost_base.m4 appends /include and adds to BOOST_CPPFLAGS
-    # ax_boost_base.m4 searches for /lib /lib64 and adds to BOOST_LDFLAGS
-    with_boost="--with-boost=$PREFIX"
-fi
+enable_exit_on_error
+parse_command_line_options "$@"
+handle_help_line_option
+set_operating_system
+configure_build_parallelism
+set_os_specific_compiler_settings "$@"
+link_to_standard_library
+normalize_static_and_shared_options "$@"
+remove_build_options
+set_prefix
+set_pkgconfigdir
+set_with_boost_prefix
 
 display_configuration()
 {
@@ -772,13 +817,9 @@ build_all()
 
 # Build the primary library and all dependencies.
 #==============================================================================
-if [[ $DISPLAY_HELP ]]; then
-    display_help
-else
-    display_configuration
-    create_directory "$BUILD_DIR"
-    push_directory "$BUILD_DIR"
-    initialize_git
-    pop_directory
-    time build_all "${CONFIGURE_OPTIONS[@]}"
-fi
+display_configuration
+create_directory "$BUILD_DIR"
+push_directory "$BUILD_DIR"
+initialize_git
+pop_directory
+time build_all "${CONFIGURE_OPTIONS[@]}"
