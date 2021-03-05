@@ -11,10 +11,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- It's not clear why we are not getting this warning on client test. -->
-      <DisableSpecificWarnings>4251;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DefaultLinkage)' == 'dynamic'">BOOST_TEST_DYN_LINK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent Condition="'$(DebugOrRelease)' == 'release'">

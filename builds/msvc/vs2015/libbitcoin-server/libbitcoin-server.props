@@ -18,9 +18,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4290;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
