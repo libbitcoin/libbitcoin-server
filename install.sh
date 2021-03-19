@@ -34,13 +34,13 @@ BUILD_DIR="build-libbitcoin-server"
 
 # ZMQ archive.
 #------------------------------------------------------------------------------
-ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz"
-ZMQ_ARCHIVE="zeromq-4.3.2.tar.gz"
+ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.3.4/zeromq-4.3.4.tar.gz"
+ZMQ_ARCHIVE="zeromq-4.3.4.tar.gz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
-BOOST_URL="http://downloads.sourceforge.net/project/boost/boost/1.62.0/boost_1_62_0.tar.bz2"
-BOOST_ARCHIVE="boost_1_62_0.tar.bz2"
+BOOST_URL="http://downloads.sourceforge.net/project/boost/boost/1.72.0/boost_1_72_0.tar.bz2"
+BOOST_ARCHIVE="boost_1_72_0.tar.bz2"
 
 
 # Define utility functions.
@@ -280,8 +280,14 @@ normalize_static_and_shared_options()
     fi
 }
 
+handle_custom_options()
+{
+    # bash doesn't like empty functions.
+    FOO="bar"
+}
+
 remove_build_options()
-{    
+{
     # Purge custom build options so they don't break configure.
     CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-*/}")
 }
@@ -329,6 +335,7 @@ set_with_boost_prefix()
 enable_exit_on_error
 parse_command_line_options "$@"
 handle_help_line_option
+handle_custom_options
 set_operating_system
 configure_build_parallelism
 set_os_specific_compiler_settings "$@"
@@ -386,8 +393,9 @@ BOOST_OPTIONS=(
 #------------------------------------------------------------------------------
 SECP256K1_OPTIONS=(
 "--disable-tests" \
+"--enable-experimental" \
 "--enable-module-recovery" \
-"--enable-endomorphism")
+"--enable-module-schnorrsig")
 
 # Define bitcoin-system options.
 #------------------------------------------------------------------------------
@@ -470,26 +478,6 @@ initialize_icu_packages()
     fi
 }
 
-# Because ZLIB doesn't actually parse its --disable-shared option.
-# Because ZLIB doesn't follow GNU recommentation for unknown arguments.
-patch_zlib_configuration()
-{
-    sed -i.tmp "s/leave 1/shift/" configure
-    sed -i.tmp "s/--static/--static | --disable-shared/" configure
-    sed -i.tmp "/unknown option/d" configure
-    sed -i.tmp "/help for help/d" configure
-
-    # display_message "Hack: ZLIB configuration options modified."
-}
-
-# Because ZLIB can't build shared only.
-clean_zlib_build()
-{
-    if [[ $DISABLE_STATIC ]]; then
-        rm --force "$PREFIX/lib/libz.a"
-    fi
-}
-
 # Standard build from tarball.
 build_from_tarball()
 {
@@ -510,17 +498,10 @@ build_from_tarball()
         return
     fi
 
-    # Because libpng doesn't actually use pkg-config to locate zlib.
     # Because ICU tools don't know how to locate internal dependencies.
-    if [[ ($ARCHIVE == "$ICU_ARCHIVE") || ($ARCHIVE == "$PNG_ARCHIVE") ]]; then
+    if [[ ($ARCHIVE == "$ICU_ARCHIVE") ]]; then
         local SAVE_LDFLAGS="$LDFLAGS"
         export LDFLAGS="-L$PREFIX/lib $LDFLAGS"
-    fi
-
-    # Because libpng doesn't actually use pkg-config to locate zlib.h.
-    if [[ ($ARCHIVE == "$PNG_ARCHIVE") ]]; then
-        local SAVE_CPPFLAGS="$CPPFLAGS"
-        export CPPFLAGS="-I$PREFIX/include $CPPFLAGS"
     fi
 
     display_heading_message "Download $ARCHIVE"
@@ -536,11 +517,6 @@ build_from_tarball()
     tar --extract --file "$ARCHIVE" "--$COMPRESSION" --strip-components=1
     push_directory "$PUSH_DIR"
 
-    # Enable static only zlib build.
-    if [[ $ARCHIVE == "$ZLIB_ARCHIVE" ]]; then
-        patch_zlib_configuration
-    fi
-
     # Join generated and command line options.
     local CONFIGURATION=("${OPTIONS[@]}" "$@")
 
@@ -555,11 +531,6 @@ build_from_tarball()
 
     configure_links
 
-    # Enable shared only zlib build.
-    if [[ $ARCHIVE == "$ZLIB_ARCHIVE" ]]; then
-        clean_zlib_build
-    fi
-
     pop_directory
     pop_directory
 
@@ -570,7 +541,7 @@ build_from_tarball()
     pop_directory
 }
 
-# Because boost ICU detection assumes in incorrect ICU path.
+# Because boost ICU static lib detection assumes in incorrect ICU path.
 circumvent_boost_icu_detection()
 {
     # Boost expects a directory structure for ICU which is incorrect.
@@ -610,27 +581,28 @@ initialize_boost_configuration()
 }
 
 # Because boost doesn't use pkg-config.
+# The hacks below are still required as of boost 1.72.0.
 initialize_boost_icu_configuration()
 {
     BOOST_ICU_ICONV="on"
     BOOST_ICU_POSIX="on"
 
     if [[ $WITH_ICU ]]; then
-        circumvent_boost_icu_detection
-
         # Restrict other locale options when compiling boost with icu.
         BOOST_ICU_ICONV="off"
         BOOST_ICU_POSIX="off"
+
+        # Work around boost ICU static lib discovery bug.
+        circumvent_boost_icu_detection
+
+        # Extract ICU prefix directory from package config variable.
+        ICU_PREFIX=$(pkg-config icu-i18n --variable=prefix)
 
         # Extract ICU libs from package config variables and augment with -ldl.
         ICU_LIBS="$(pkg-config icu-i18n --libs) -ldl"
 
         # This is a hack for boost m4 scripts that fail with ICU dependency.
-        # See custom edits in ax-boost-locale.m4 and ax_boost_regex.m4.
         export BOOST_ICU_LIBS=("${ICU_LIBS[@]}")
-
-        # Extract ICU prefix directory from package config variable.
-        ICU_PREFIX=$(pkg-config icu-i18n --variable=prefix)
     fi
 }
 
@@ -679,9 +651,7 @@ build_from_tarball_boost()
     display_message "boost.locale.posix    : $BOOST_ICU_POSIX"
     display_message "-sNO_BZIP2            : 1"
     display_message "-sICU_PATH            : $ICU_PREFIX"
-    display_message "-sICU_LINK            : " "${ICU_LIBS[*]}"
-    display_message "-sZLIB_LIBPATH        : $PREFIX/lib"
-    display_message "-sZLIB_INCLUDE        : $PREFIX/include"
+  # display_message "-sICU_LINK            : " "${ICU_LIBS[*]}"
     display_message "-j                    : $JOBS"
     display_message "-d0                   : [supress informational messages]"
     display_message "-q                    : [stop at the first error]"
@@ -690,15 +660,15 @@ build_from_tarball_boost()
     display_message "BOOST_OPTIONS         : $*"
     display_message "--------------------------------------------------------------------"
 
-    # boost_iostreams
-    # The zlib options prevent boost linkage to system libs in the case where
-    # we have built zlib in a prefix dir. Disabling zlib in boost is broken in
-    # all versions (through 1.60). https://svn.boost.org/trac/boost/ticket/9156
-    # The bzip2 auto-detection is not implemented, but disabling it works.
-
     ./bootstrap.sh \
         "--prefix=$PREFIX" \
         "--with-icu=$ICU_PREFIX"
+
+    # boost_regex:
+    # As of boost 1.72.0 the ICU_LINK symbol is no longer supported and
+    # produces a hard stop if WITH_ICU is also defined. Removal is sufficient.
+    # github.com/libbitcoin/libbitcoin-system/issues/1192
+    # "-sICU_LINK=${ICU_LIBS[*]}"
 
     ./b2 install \
         "variant=release" \
@@ -711,9 +681,6 @@ build_from_tarball_boost()
         "boost.locale.posix=$BOOST_ICU_POSIX" \
         "-sNO_BZIP2=1" \
         "-sICU_PATH=$ICU_PREFIX" \
-        "-sICU_LINK=${ICU_LIBS[*]}" \
-        "-sZLIB_LIBPATH=$PREFIX/lib" \
-        "-sZLIB_INCLUDE=$PREFIX/include" \
         "-j $JOBS" \
         "-d0" \
         "-q" \
@@ -803,7 +770,7 @@ build_all()
 {
     build_from_tarball_boost "$BOOST_URL" "$BOOST_ARCHIVE" bzip2 . "$PARALLEL" "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     build_from_tarball "$ZMQ_URL" "$ZMQ_ARCHIVE" gzip . "$PARALLEL" "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin secp256k1 version6 "$PARALLEL" "${SECP256K1_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin secp256k1 version7 "$PARALLEL" "${SECP256K1_OPTIONS[@]}" "$@"
     build_from_github libbitcoin libbitcoin-system master "$PARALLEL" "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
     build_from_github libbitcoin libbitcoin-consensus master "$PARALLEL" "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
     build_from_github libbitcoin libbitcoin-database master "$PARALLEL" "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"

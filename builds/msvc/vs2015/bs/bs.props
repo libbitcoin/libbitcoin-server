@@ -12,9 +12,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4290;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -75,16 +73,16 @@
   <!-- Messages -->
 
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
-    <Message Text="Linkage-libzmq     : $(Linkage-libzmq)" Importance="high"/>
-    <Message Text="Linkage-secp256k1  : $(Linkage-secp256k1)" Importance="high"/>
-    <Message Text="Linkage-_system    : $(Linkage-libbitcoin-system)" Importance="high"/>
-    <Message Text="Linkage-_consensus : $(Linkage-libbitcoin-consensus)" Importance="high"/>
-    <Message Text="Linkage-_database  : $(Linkage-libbitcoin-database)" Importance="high"/>
+    <Message Text="Linkage-libzmq    : $(Linkage-libzmq)" Importance="high"/>
+    <Message Text="Linkage-secp256k1 : $(Linkage-secp256k1)" Importance="high"/>
+    <Message Text="Linkage-_system   : $(Linkage-libbitcoin-system)" Importance="high"/>
+    <Message Text="Linkage-_consensus: $(Linkage-libbitcoin-consensus)" Importance="high"/>
+    <Message Text="Linkage-_database : $(Linkage-libbitcoin-database)" Importance="high"/>
     <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
-    <Message Text="Linkage-_node      : $(Linkage-libbitcoin-node)" Importance="high"/>
-    <Message Text="Linkage-_network   : $(Linkage-libbitcoin-network)" Importance="high"/>
-    <Message Text="Linkage-_protocol  : $(Linkage-libbitcoin-protocol)" Importance="high"/>
-    <Message Text="Linkage-_server    : $(Linkage-libbitcoin-server)" Importance="high"/>
+    <Message Text="Linkage-_node     : $(Linkage-libbitcoin-node)" Importance="high"/>
+    <Message Text="Linkage-_network  : $(Linkage-libbitcoin-network)" Importance="high"/>
+    <Message Text="Linkage-_protocol : $(Linkage-libbitcoin-protocol)" Importance="high"/>
+    <Message Text="Linkage-_server   : $(Linkage-libbitcoin-server)" Importance="high"/>
   </Target>
 
 </Project>
