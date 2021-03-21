@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2015 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -65,7 +65,7 @@ before_install:
     - if [[ $TRAVIS_OS_NAME == linux   ]]; then LINUX=true; fi
 
     # Update homebrew.
-    - if [[ $OSX   && $CLANG             ]]; then brew update; fi
+    - if [[ $OSX   && $CLANG && $DYNAMIC ]]; then brew update; fi
 
 install:
 

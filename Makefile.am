@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2015 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -134,10 +134,10 @@ dist_bash_completion_DATA = \
 
 endif BASH_COMPLETIONDIR
 
-# files => ${sysconfdir}/libbitcoin
+# files => ${sysconfdir}/libbitcoin-system
 #------------------------------------------------------------------------------
-sysconf_libbitcoindir = ${sysconfdir}/libbitcoin
-sysconf_libbitcoin_DATA = \
+sysconf_libbitcoin_systemdir = ${sysconfdir}/libbitcoin-system
+sysconf_libbitcoin_system_DATA = \
     data/bs.cfg
 
 
