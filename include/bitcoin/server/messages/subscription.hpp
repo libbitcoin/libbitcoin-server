@@ -22,7 +22,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/route.hpp>
 
