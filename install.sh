@@ -768,15 +768,15 @@ build_all()
 {
     build_from_tarball_boost "$BOOST_URL" "$BOOST_ARCHIVE" bzip2 . "$PARALLEL" "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     build_from_tarball "$ZMQ_URL" "$ZMQ_ARCHIVE" gzip . "$PARALLEL" "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system secp256k1 version7 "$PARALLEL" "${SECP256K1_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system libbitcoin-system version3 "$PARALLEL" "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system libbitcoin-consensus version3 "$PARALLEL" "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system libbitcoin-database version3 "$PARALLEL" "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system libbitcoin-blockchain version3 "$PARALLEL" "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system libbitcoin-network version3 "$PARALLEL" "${BITCOIN_NETWORK_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system libbitcoin-node version3 "$PARALLEL" "${BITCOIN_NODE_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin-system libbitcoin-protocol version3 "$PARALLEL" "${BITCOIN_PROTOCOL_OPTIONS[@]}" "$@"
-    build_from_travis libbitcoin-system libbitcoin-server version3 "$PARALLEL" "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin secp256k1 version7 "$PARALLEL" "${SECP256K1_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin libbitcoin-system version3 "$PARALLEL" "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin libbitcoin-consensus version3 "$PARALLEL" "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin libbitcoin-database version3 "$PARALLEL" "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin libbitcoin-blockchain version3 "$PARALLEL" "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin libbitcoin-network version3 "$PARALLEL" "${BITCOIN_NETWORK_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin libbitcoin-node version3 "$PARALLEL" "${BITCOIN_NODE_OPTIONS[@]}" "$@"
+    build_from_github libbitcoin libbitcoin-protocol version3 "$PARALLEL" "${BITCOIN_PROTOCOL_OPTIONS[@]}" "$@"
+    build_from_travis libbitcoin libbitcoin-server version3 "$PARALLEL" "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
 }
 
 
