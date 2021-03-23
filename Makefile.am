@@ -134,11 +134,15 @@ dist_bash_completion_DATA = \
 
 endif BASH_COMPLETIONDIR
 
-# files => ${sysconfdir}/libbitcoin-system
+# files => ${sysconfdir}/libbitcoin
 #------------------------------------------------------------------------------
-sysconf_libbitcoin_systemdir = ${sysconfdir}/libbitcoin-system
-sysconf_libbitcoin_system_DATA = \
+if WITH_CONSOLE
+
+sysconf_libbitcoindir = ${sysconfdir}/libbitcoin
+sysconf_libbitcoin_DATA = \
     data/bs.cfg
+
+endif WITH_CONSOLE
 
 
 # Custom make targets.
