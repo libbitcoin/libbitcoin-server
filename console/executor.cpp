@@ -48,7 +48,6 @@ static const auto application_name = "bs";
 static constexpr int initialize_stop = 0;
 static constexpr int directory_exists = 0;
 static constexpr int directory_not_found = 2;
-static const auto mode = std::ofstream::out | std::ofstream::app;
 
 std::promise<code> executor::stopping_;
 

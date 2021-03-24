@@ -330,7 +330,9 @@ endif()
 
 # Manage data installation for sysconf prefixed product.
 #------------------------------------------------------------------------------
-install( FILES
-    "../../data/bs.cfg"
-    DESTINATION etc/libbitcoin )
+if (with-console)
+    install( FILES
+        "../../data/bs.cfg"
+        DESTINATION etc/libbitcoin )
+endif()
 
