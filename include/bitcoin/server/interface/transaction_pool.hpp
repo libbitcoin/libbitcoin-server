@@ -19,7 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 #define LIBBITCOIN_SERVER_TRANSACTION_POOL_HPP
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>

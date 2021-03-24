@@ -25,7 +25,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/messages/route.hpp>

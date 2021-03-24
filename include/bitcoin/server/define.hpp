@@ -19,7 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_DEFINE_HPP
 #define LIBBITCOIN_SERVER_DEFINE_HPP
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 // We use the generic helper definitions in libbitcoin to define BCS_API
 // and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
