@@ -59,7 +59,7 @@ query_socket::query_socket(zmq::context& context, server_node& node,
         const std::string& command, const std::string& arguments, uint32_t id)
     {
         uint32_t value;
-        if (!deserialize(value, arguments, false))
+        if (!deserialize(value, arguments))
             return false;
 
         request.enqueue(command);
