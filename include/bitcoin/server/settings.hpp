@@ -85,8 +85,8 @@ public:
     system::config::endpoint zeromq_public_block_endpoint;
     system::config::endpoint zeromq_public_transaction_endpoint;
 
-    system::config::sodium zeromq_server_private_key;
-    system::config::sodium::list zeromq_client_public_keys;
+    protocol::zmq::sodium zeromq_server_private_key;
+    protocol::zmq::sodium::list zeromq_client_public_keys;
 };
 
 } // namespace server
