@@ -127,7 +127,7 @@
       <Project>{73CE0AC2-ECB2-4E8D-A136-17840C0371A0}</Project>
     </ProjectReference>
   </ItemGroup>
-    <ItemGroup>
-      <Natvis Include="..\..\debug.natvis" />
-    </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
+  </ItemGroup>
 </Project>

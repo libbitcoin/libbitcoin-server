@@ -34,6 +34,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
+  </ItemGroup>
+  <ItemGroup>
     <ResourceCompile Include="..\..\resource.rc">
       <Filter>resource</Filter>
     </ResourceCompile>
