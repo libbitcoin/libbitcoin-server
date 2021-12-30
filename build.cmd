@@ -23,39 +23,39 @@ IF NOT EXIST "%nuget_pkg_path%" (
   )
 )
 
-call :init libbitcoin libbitcoin-system master
+call :init evoskuil libbitcoin-system master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-system master failed."
+  call :failure "Initializing repository evoskuil libbitcoin-system master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-consensus master
+call :init evoskuil libbitcoin-consensus master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-consensus master failed."
+  call :failure "Initializing repository evoskuil libbitcoin-consensus master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-database master
+call :init evoskuil libbitcoin-database master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-database master failed."
+  call :failure "Initializing repository evoskuil libbitcoin-database master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-blockchain master
+call :init evoskuil libbitcoin-blockchain master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-blockchain master failed."
+  call :failure "Initializing repository evoskuil libbitcoin-blockchain master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-network master
+call :init evoskuil libbitcoin-network master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-network master failed."
+  call :failure "Initializing repository evoskuil libbitcoin-network master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-node master
+call :init evoskuil libbitcoin-node master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-node master failed."
+  call :failure "Initializing repository evoskuil libbitcoin-node master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-protocol master
+call :init evoskuil libbitcoin-protocol master
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-protocol master failed."
+  call :failure "Initializing repository evoskuil libbitcoin-protocol master failed."
   exit /b 1
 )
 call :bld_repo libbitcoin-server

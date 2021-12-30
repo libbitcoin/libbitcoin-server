@@ -770,15 +770,15 @@ build_all()
 {
     build_from_tarball_boost "$BOOST_URL" "$BOOST_ARCHIVE" bzip2 . "$PARALLEL" "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     build_from_tarball "$ZMQ_URL" "$ZMQ_ARCHIVE" gzip . "$PARALLEL" "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin secp256k1 version7 "$PARALLEL" "${SECP256K1_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin libbitcoin-system master "$PARALLEL" "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin libbitcoin-consensus master "$PARALLEL" "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin libbitcoin-database master "$PARALLEL" "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin libbitcoin-blockchain master "$PARALLEL" "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin libbitcoin-network master "$PARALLEL" "${BITCOIN_NETWORK_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin libbitcoin-node master "$PARALLEL" "${BITCOIN_NODE_OPTIONS[@]}" "$@"
-    build_from_github libbitcoin libbitcoin-protocol master "$PARALLEL" "${BITCOIN_PROTOCOL_OPTIONS[@]}" "$@"
-    build_from_ci libbitcoin libbitcoin-server master "$PARALLEL" "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
+    build_from_github evoskuil secp256k1 version8 "$PARALLEL" "${SECP256K1_OPTIONS[@]}" "$@"
+    build_from_github evoskuil libbitcoin-system master "$PARALLEL" "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
+    build_from_github evoskuil libbitcoin-consensus master "$PARALLEL" "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
+    build_from_github evoskuil libbitcoin-database master "$PARALLEL" "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"
+    build_from_github evoskuil libbitcoin-blockchain master "$PARALLEL" "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" "$@"
+    build_from_github evoskuil libbitcoin-network master "$PARALLEL" "${BITCOIN_NETWORK_OPTIONS[@]}" "$@"
+    build_from_github evoskuil libbitcoin-node master "$PARALLEL" "${BITCOIN_NODE_OPTIONS[@]}" "$@"
+    build_from_github evoskuil libbitcoin-protocol master "$PARALLEL" "${BITCOIN_PROTOCOL_OPTIONS[@]}" "$@"
+    build_from_ci evoskuil libbitcoin-server master "$PARALLEL" "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
 }
 
 
