@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Globals">
+    <_PropertySheetDisplayName>Libbitcoin Consensus Import Settings</_PropertySheetDisplayName>
+  </PropertyGroup>
+
+  <!-- User Interface -->
+
+  <ItemGroup Label="BuildOptionsExtension">
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)libbitcoin-consensus.import.xml" />
+  </ItemGroup>
+
+  <!-- Linkage -->
+
+  <ItemDefinitionGroup Condition="'$(Linkage-libbitcoin-consensus)' != 'none'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-consensus\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- 4018: (1) signed/unsigned mismatch. -->
+      <!-- 4101: (4 - bogus vc140 warning) unreferenced local variable ('formatter'). -->
+      <!-- 4244: (x64:36, x32:17) conversion from '[integer]' to '[integer]', possible loss of data. -->
+      <!-- 4267: (x64:17, x32:4) conversion from 'size_t' to '[integer]', possible loss of data. -->
+      <!-- 4715: (1) not all control paths return a value. -->
+      <!-- 4800: (4 - vc140 warning) forcing value to bool. -->
+      <!-- 4996: (2) unchecked iterator, call to 'std::copy' with parameters that may be unsafe. -->
+      <!-- DON'T LET THESE CORE SUPPRESSIONS INFECT LIBBITCOIN LIBRARIES. -->
+      <!--<DisableSpecificWarnings>4018;4101;4244;4267;4715;4800;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>-->
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-consensus)' == 'static' Or '$(Linkage-libbitcoin-consensus)' == 'ltcg'">BCK_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies Condition="'$(Linkage-libbitcoin-consensus)' != ''">libbitcoin-consensus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link Condition="($(PlatformToolset) == 'v120') Or ($(PlatformToolset) == 'CTP_Nov2013')">
+      <!-- Because cloned files use C++11 the CTP_Nov2013 compiler is not optional. -->
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Debug')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\bin\$(PlatformName)\Debug\CTP_Nov2013\$(Linkage-libbitcoin-consensus)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\obj\libbitcoin-consensus\$(PlatformName)\Debug\CTP_Nov2013\$(Linkage-libbitcoin-consensus)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Release')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\bin\$(PlatformName)\Release\CTP_Nov2013\$(Linkage-libbitcoin-consensus)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\obj\libbitcoin-consensus\$(PlatformName)\Release\CTP_Nov2013\$(Linkage-libbitcoin-consensus)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+    </Link>
+    <Link Condition="($(PlatformToolset) != 'v120') And ($(PlatformToolset) != 'CTP_Nov2013')">
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Debug')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\bin\$(PlatformName)\Debug\$(PlatformToolset)\$(Linkage-libbitcoin-consensus)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\obj\libbitcoin-consensus\$(PlatformName)\Debug\$(PlatformToolset)\$(Linkage-libbitcoin-consensus)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Release')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\bin\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-consensus)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-consensus\obj\libbitcoin-consensus\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-consensus)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+    </Link>
+    <Link Condition="$(PlatformToolset) == 'v120'">
+      <!-- Need to link $(VC_CTP_Nov2013_LibraryPath_x86), $(VC_CTP_Nov2013_LibraryPath_x64), or $(VC_CTP_Nov2013_LibraryPath_ARM).-->
+      <AdditionalLibraryDirectories Condition="$(PlatformName) == 'ARM'">$(ProgramFiles)\Microsoft Visual C++ Compiler Nov 2013 CTP\lib\arm;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="$(PlatformName) == 'x64'">$(ProgramFiles)\Microsoft Visual C++ Compiler Nov 2013 CTP\lib\amd64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="$(PlatformName) == 'Win32'">$(ProgramFiles)\Microsoft Visual C++ Compiler Nov 2013 CTP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

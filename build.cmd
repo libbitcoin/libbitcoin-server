@@ -28,14 +28,14 @@ IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository evoskuil libbitcoin-system master failed."
   exit /b 1
 )
-call :init evoskuil libbitcoin-consensus master
-IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository evoskuil libbitcoin-consensus master failed."
-  exit /b 1
-)
 call :init evoskuil libbitcoin-database master
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository evoskuil libbitcoin-database master failed."
+  exit /b 1
+)
+call :init evoskuil libbitcoin-consensus master
+IF %ERRORLEVEL% NEQ 0 (
+  call :failure "Initializing repository evoskuil libbitcoin-consensus master failed."
   exit /b 1
 )
 call :init evoskuil libbitcoin-blockchain master
