@@ -7,8 +7,10 @@ REM ###########################################################################
 @echo off
 SETLOCAL ENABLEEXTENSIONS
 SET "parent=%~dp0"
-SET "path_base=%~1"
-SET "nuget_pkg_path=%~1\.nuget\packages"
+SET "relative_path_base=%~1"
+call cd /d "%relative_path_base%"
+SET "path_base=%cd%"
+SET "nuget_pkg_path=%path_base%\.nuget\packages"
 SET "msbuild_args=/verbosity:minimal /p:Platform=%~2 /p:Configuration=%~3"
 SET "proj_version=%~4"
 SET "msbuild_exe=msbuild"
@@ -28,14 +30,14 @@ IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin-system version3 failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-consensus version3
-IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-consensus version3 failed."
-  exit /b 1
-)
 call :init libbitcoin libbitcoin-database version3
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin-database version3 failed."
+  exit /b 1
+)
+call :init libbitcoin libbitcoin-consensus version3
+IF %ERRORLEVEL% NEQ 0 (
+  call :failure "Initializing repository libbitcoin libbitcoin-consensus version3 failed."
   exit /b 1
 )
 call :init libbitcoin libbitcoin-blockchain version3
@@ -125,7 +127,7 @@ exit /b 0
 
 :depends
 call :pending "nuget restoring dependencies for %~1..."
-call nuget restore "%path_base%\%~1\builds\msvc\%proj_version%\%~1.sln" -Outputdir "%nuget_pkg_path%"
+call nuget restore "%path_base%\%~1\builds\msvc\%proj_version%\%~1.sln" -OutputDirectory "%nuget_pkg_path%"
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "nuget restore failed."
   exit /b 1
