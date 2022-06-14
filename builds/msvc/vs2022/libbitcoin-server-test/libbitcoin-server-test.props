@@ -2,26 +2,21 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>Libbitcoin Server Common Settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>Libbitcoin Server Test Common Settings</_PropertySheetDisplayName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
-
-  <!-- User Interface -->
-
-  <ItemGroup Label="BuildOptionsExtension">
-    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(ProjectName).xml" />
-  </ItemGroup>
 
   <!-- Configuration -->
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(DefaultLinkage)' == 'dynamic'">BOOST_TEST_DYN_LINK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <PostBuildEvent Condition="'$(DebugOrRelease)' == 'release'">
+      <Command>"$(TargetPath)" --run_test=* --show_progress=no --build_info=yes</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <!-- Dependencies -->
@@ -34,6 +29,7 @@
     <Import Project="$(SolutionDir)libbitcoin-network.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-node.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-protocol.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-server.import.props" />
   </ImportGroup>
 
   <PropertyGroup Condition="'$(NuGetPackageRoot)' == ''">
@@ -50,6 +46,7 @@
     <Linkage-libbitcoin-network>dynamic</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>dynamic</Linkage-libbitcoin-node>
     <Linkage-libbitcoin-protocol>dynamic</Linkage-libbitcoin-protocol>
+    <Linkage-libbitcoin-server>dynamic</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-libzmq>ltcg</Linkage-libzmq>
@@ -61,6 +58,7 @@
     <Linkage-libbitcoin-network>ltcg</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>ltcg</Linkage-libbitcoin-node>
     <Linkage-libbitcoin-protocol>ltcg</Linkage-libbitcoin-protocol>
+    <Linkage-libbitcoin-server>ltcg</Linkage-libbitcoin-server>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-libzmq>static</Linkage-libzmq>
@@ -72,6 +70,7 @@
     <Linkage-libbitcoin-network>static</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>static</Linkage-libbitcoin-node>
     <Linkage-libbitcoin-protocol>static</Linkage-libbitcoin-protocol>
+    <Linkage-libbitcoin-server>static</Linkage-libbitcoin-server>
   </PropertyGroup>
 
   <!-- Messages -->
@@ -83,9 +82,10 @@
     <Message Text="Linkage-_consensus: $(Linkage-libbitcoin-consensus)" Importance="high"/>
     <Message Text="Linkage-_database : $(Linkage-libbitcoin-database)" Importance="high"/>
     <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
-    <Message Text="Linkage-_network  : $(Linkage-libbitcoin-network)" Importance="high"/>
     <Message Text="Linkage-_node     : $(Linkage-libbitcoin-node)" Importance="high"/>
+    <Message Text="Linkage-_network  : $(Linkage-libbitcoin-network)" Importance="high"/>
     <Message Text="Linkage-_protocol : $(Linkage-libbitcoin-protocol)" Importance="high"/>
+    <Message Text="Linkage-_server   : $(Linkage-libbitcoin-server)" Importance="high"/>
   </Target>
 
 </Project>
