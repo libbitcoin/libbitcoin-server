@@ -885,24 +885,24 @@ build_all()
     build_from_tarball_boost "$BOOST_ARCHIVE" "$PARALLEL" "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     create_from_github libbitcoin secp256k1 version7
     build_from_github secp256k1 "$PARALLEL" false "${SECP256K1_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS
-    create_from_github libbitcoin libbitcoin-system version3
+    create_from_github pmienk libbitcoin-system install-cmake-v3
     build_from_github_cmake libbitcoin-system "$PARALLEL" false "${BITCOIN_SYSTEM_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
-    create_from_github libbitcoin libbitcoin-database version3
+    create_from_github pmienk libbitcoin-database install-cmake-v3
     build_from_github_cmake libbitcoin-database "$PARALLEL" false "${BITCOIN_DATABASE_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
-    create_from_github libbitcoin libbitcoin-consensus version3
+    create_from_github pmienk libbitcoin-consensus install-cmake-v3
     build_from_github_cmake libbitcoin-consensus "$PARALLEL" false "${BITCOIN_CONSENSUS_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
-    create_from_github libbitcoin libbitcoin-blockchain version3
+    create_from_github pmienk libbitcoin-blockchain install-cmake-v3
     build_from_github_cmake libbitcoin-blockchain "$PARALLEL" false "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
-    create_from_github libbitcoin libbitcoin-network version3
+    create_from_github pmienk libbitcoin-network install-cmake-v3
     build_from_github_cmake libbitcoin-network "$PARALLEL" false "${BITCOIN_NETWORK_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
-    create_from_github libbitcoin libbitcoin-node version3
+    create_from_github pmienk libbitcoin-node install-cmake-v3
     build_from_github_cmake libbitcoin-node "$PARALLEL" false "${BITCOIN_NODE_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
     unpack_from_tarball "$ZMQ_ARCHIVE" "$ZMQ_URL" gzip "$BUILD_ZMQ"
     build_from_tarball "$ZMQ_ARCHIVE" . "$PARALLEL" "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS
-    create_from_github libbitcoin libbitcoin-protocol version3
+    create_from_github pmienk libbitcoin-protocol install-cmake-v3
     build_from_github_cmake libbitcoin-protocol "$PARALLEL" false "${BITCOIN_PROTOCOL_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
     if [[ ! ($CI == true) ]]; then
-        create_from_github libbitcoin libbitcoin-server version3
+        create_from_github pmienk libbitcoin-server install-cmake-v3
         build_from_github_cmake libbitcoin-server "$PARALLEL" true "${BITCOIN_SERVER_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
     else
         push_directory "$PRESUMED_CI_PROJECT_PATH"
