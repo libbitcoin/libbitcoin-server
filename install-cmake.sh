@@ -972,54 +972,54 @@ SECP256K1_OPTIONS=(
 # Define bitcoin-system options.
 #------------------------------------------------------------------------------
 BITCOIN_SYSTEM_OPTIONS=(
-"--without-tests" \
-"--without-examples" \
+"-Dwith-tests=no" \
+"-Dwith-examples=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
 # Define bitcoin-database options.
 #------------------------------------------------------------------------------
 BITCOIN_DATABASE_OPTIONS=(
-"--without-tests" \
-"--without-tools" \
+"-Dwith-tests=no" \
+"-Dwith-tools=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
 # Define bitcoin-consensus options.
 #------------------------------------------------------------------------------
 BITCOIN_CONSENSUS_OPTIONS=(
-"--without-tests" \
+"-Dwith-tests=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
 # Define bitcoin-blockchain options.
 #------------------------------------------------------------------------------
 BITCOIN_BLOCKCHAIN_OPTIONS=(
-"--without-tests" \
-"--without-tools" \
+"-Dwith-tests=no" \
+"-Dwith-tools=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
 # Define bitcoin-network options.
 #------------------------------------------------------------------------------
 BITCOIN_NETWORK_OPTIONS=(
-"--without-tests" \
+"-Dwith-tests=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
 # Define bitcoin-node options.
 #------------------------------------------------------------------------------
 BITCOIN_NODE_OPTIONS=(
-"--without-tests" \
-"--without-console" \
+"-Dwith-tests=no" \
+"-Dwith-console=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
 # Define bitcoin-protocol options.
 #------------------------------------------------------------------------------
 BITCOIN_PROTOCOL_OPTIONS=(
-"--without-tests" \
-"--without-examples" \
+"-Dwith-tests=no" \
+"-Dwith-examples=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
