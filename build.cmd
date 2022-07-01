@@ -25,39 +25,39 @@ IF NOT EXIST "%nuget_pkg_path%" (
   )
 )
 
-call :init pmienk libbitcoin-system install-cmake-v3
+call :init libbitcoin libbitcoin-system version3
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository pmienk libbitcoin-system install-cmake-v3 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-system version3 failed."
   exit /b 1
 )
-call :init pmienk libbitcoin-database install-cmake-v3
+call :init libbitcoin libbitcoin-database version3
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository pmienk libbitcoin-database install-cmake-v3 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-database version3 failed."
   exit /b 1
 )
-call :init pmienk libbitcoin-consensus install-cmake-v3
+call :init libbitcoin libbitcoin-consensus version3
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository pmienk libbitcoin-consensus install-cmake-v3 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-consensus version3 failed."
   exit /b 1
 )
-call :init pmienk libbitcoin-blockchain install-cmake-v3
+call :init libbitcoin libbitcoin-blockchain version3
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository pmienk libbitcoin-blockchain install-cmake-v3 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-blockchain version3 failed."
   exit /b 1
 )
-call :init pmienk libbitcoin-network install-cmake-v3
+call :init libbitcoin libbitcoin-network version3
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository pmienk libbitcoin-network install-cmake-v3 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-network version3 failed."
   exit /b 1
 )
-call :init pmienk libbitcoin-node install-cmake-v3
+call :init libbitcoin libbitcoin-node version3
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository pmienk libbitcoin-node install-cmake-v3 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-node version3 failed."
   exit /b 1
 )
-call :init pmienk libbitcoin-protocol install-cmake-v3
+call :init libbitcoin libbitcoin-protocol version3
 IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository pmienk libbitcoin-protocol install-cmake-v3 failed."
+  call :failure "Initializing repository libbitcoin libbitcoin-protocol version3 failed."
   exit /b 1
 )
 call :bld_repo libbitcoin-server

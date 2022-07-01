@@ -759,24 +759,24 @@ build_all()
     build_from_tarball_boost "$BOOST_ARCHIVE" "$PARALLEL" "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
     create_from_github libbitcoin secp256k1 version7
     build_from_github secp256k1 "$PARALLEL" false "${SECP256K1_OPTIONS[@]}" "$@"
-    create_from_github pmienk libbitcoin-system install-cmake-v3
+    create_from_github libbitcoin libbitcoin-system version3
     build_from_github libbitcoin-system "$PARALLEL" false "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
-    create_from_github pmienk libbitcoin-database install-cmake-v3
+    create_from_github libbitcoin libbitcoin-database version3
     build_from_github libbitcoin-database "$PARALLEL" false "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"
-    create_from_github pmienk libbitcoin-consensus install-cmake-v3
+    create_from_github libbitcoin libbitcoin-consensus version3
     build_from_github libbitcoin-consensus "$PARALLEL" false "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
-    create_from_github pmienk libbitcoin-blockchain install-cmake-v3
+    create_from_github libbitcoin libbitcoin-blockchain version3
     build_from_github libbitcoin-blockchain "$PARALLEL" false "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" "$@"
-    create_from_github pmienk libbitcoin-network install-cmake-v3
+    create_from_github libbitcoin libbitcoin-network version3
     build_from_github libbitcoin-network "$PARALLEL" false "${BITCOIN_NETWORK_OPTIONS[@]}" "$@"
-    create_from_github pmienk libbitcoin-node install-cmake-v3
+    create_from_github libbitcoin libbitcoin-node version3
     build_from_github libbitcoin-node "$PARALLEL" false "${BITCOIN_NODE_OPTIONS[@]}" "$@"
     unpack_from_tarball "$ZMQ_ARCHIVE" "$ZMQ_URL" gzip "$BUILD_ZMQ"
     build_from_tarball "$ZMQ_ARCHIVE" . "$PARALLEL" "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" "$@"
-    create_from_github pmienk libbitcoin-protocol install-cmake-v3
+    create_from_github libbitcoin libbitcoin-protocol version3
     build_from_github libbitcoin-protocol "$PARALLEL" false "${BITCOIN_PROTOCOL_OPTIONS[@]}" "$@"
     if [[ ! ($CI == true) ]]; then
-        create_from_github pmienk libbitcoin-server install-cmake-v3
+        create_from_github libbitcoin libbitcoin-server version3
         build_from_github libbitcoin-server "$PARALLEL" true "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
     else
         push_directory "$PRESUMED_CI_PROJECT_PATH"
