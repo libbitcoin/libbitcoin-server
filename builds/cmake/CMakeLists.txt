@@ -34,7 +34,7 @@ else ()
   set( VERSION "${PACKAGE_VERSION}" )
 endif ()
 
-set( CMAKE_CXX_STANDARD 11 )
+set( CMAKE_CXX_STANDARD 20 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 # Add compiler options
@@ -44,9 +44,6 @@ add_compile_options( "-Wall" )
 
 # Warn on extra stuff.
 add_compile_options( "-Wextra" )
-
-# Be really annoying.
-add_compile_options( "-Wpedantic" )
 
 # Disallow warning on style order of declarations.
 add_compile_options( "-Wno-reorder" )
@@ -59,6 +56,9 @@ add_compile_options( "-Wno-missing-braces" )
 
 # Ignore comments within comments or commenting of backslash extended lines.
 add_compile_options( "-Wno-comment" )
+
+# Suppress warning for copy of implicitly generated copy constructor.
+add_compile_options( "-Wno-deprecated-copy" )
 
 # Conflict in stdlib under clang.
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -95,9 +95,15 @@ if (BUILD_SHARED_LIBS)
     add_definitions( -DBOOST_ALL_DYN_LINK )
 endif()
 
+if (BUILD_SHARED_LIBS)
+    set( Boost_USE_STATIC_LIBS "off" )
+else()
+    set( Boost_USE_STATIC_LIBS "on" )
+endif()
+
 # Find boost
 #------------------------------------------------------------------------------
-find_package( Boost 1.72.0 REQUIRED COMPONENTS
+find_package( Boost 1.76.0 REQUIRED COMPONENTS
     unit_test_framework )
 
 set( boost_unit_test_framework_LIBS "-lboost_unit_test_framework" )

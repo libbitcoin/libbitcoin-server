@@ -79,7 +79,7 @@ public:
     static void fetch_transaction_index(server_node& node,
         const message& request, send_handler handler);
 
-    /// Fetch the inpoint which is spent by the specified output.
+    /// Fetch the output which is spent by the specified inpoint.
     static void fetch_spend(server_node& node,
         const message& request, send_handler handler);
 

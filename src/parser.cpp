@@ -22,8 +22,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <bitcoin/system.hpp>
 #include <bitcoin/node.hpp>
+#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -848,12 +848,12 @@ options_metadata parser::load_settings()
     )
     (
         "zeromq.server_private_key",
-        value<config::sodium>(&configured.server.zeromq_server_private_key),
+        value<bc::protocol::zmq::sodium>(&configured.server.zeromq_server_private_key),
         "The Z85-encoded private key of the server, enables secure endpoints."
     )
     (
         "zeromq.client_public_key",
-        value<config::sodium::list>(&configured.server.zeromq_client_public_keys),
+        value<bc::protocol::zmq::sodium::list>(&configured.server.zeromq_client_public_keys),
         "Allowed Z85-encoded public key of the client, multiple entries allowed."
     );
 

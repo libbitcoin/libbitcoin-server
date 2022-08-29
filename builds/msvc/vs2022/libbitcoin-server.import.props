@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Globals">
+    <_PropertySheetDisplayName>Libbitcoin Server Import Settings</_PropertySheetDisplayName>
+  </PropertyGroup>
+
+  <!-- User Interface -->
+
+  <ItemGroup Label="BuildOptionsExtension">
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)libbitcoin-server.import.xml" />
+  </ItemGroup>
+
+  <!-- Linkage -->
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-server\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-server)' == 'static' Or '$(Linkage-libbitcoin-server)' == 'ltcg'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies Condition="'$(Linkage-libbitcoin-server)' != ''">libbitcoin-server.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link>
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Debug')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-server\bin\$(PlatformName)\Debug\$(PlatformToolset)\$(Linkage-libbitcoin-server)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-server\obj\libbitcoin-server\$(PlatformName)\Debug\$(PlatformToolset)\$(Linkage-libbitcoin-server)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Release')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-server\bin\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-server)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-server\obj\libbitcoin-server\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-server)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Globals">
+    <_PropertySheetDisplayName>Libbitcoin Node Import Settings</_PropertySheetDisplayName>
+  </PropertyGroup>
+
+  <!-- User Interface -->
+
+  <ItemGroup Label="BuildOptionsExtension">
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)libbitcoin-node.import.xml" />
+  </ItemGroup>
+
+  <!-- Linkage -->
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-node\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-node)' == 'static' Or '$(Linkage-libbitcoin-node)' == 'ltcg'">BCN_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies Condition="'$(Linkage-libbitcoin-node)' != ''">libbitcoin-node.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link>
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Debug')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-node\bin\$(PlatformName)\Debug\$(PlatformToolset)\$(Linkage-libbitcoin-node)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-node\obj\libbitcoin-node\$(PlatformName)\Debug\$(PlatformToolset)\$(Linkage-libbitcoin-node)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="$(Configuration.IndexOf('Release')) != -1">
+        $(ProjectDir)..\..\..\..\..\libbitcoin-node\bin\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-node)\;
+        $(ProjectDir)..\..\..\..\..\libbitcoin-node\obj\libbitcoin-node\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-node)\;%(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

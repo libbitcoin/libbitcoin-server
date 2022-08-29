@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- |  Copyright (c) 2014-2020 libbitcoin-server developers (see COPYING).
+ |  Copyright (c) 2014-2021 libbitcoin-server developers (see COPYING).
  |
  |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
  |
@@ -32,6 +32,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resource.rc">
