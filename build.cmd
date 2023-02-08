@@ -30,6 +30,11 @@ IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin-system master failed."
   exit /b 1
 )
+call :init libbitcoin libbitcoin-network master
+IF %ERRORLEVEL% NEQ 0 (
+  call :failure "Initializing repository libbitcoin libbitcoin-network master failed."
+  exit /b 1
+)
 call :init libbitcoin libbitcoin-database master
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin-database master failed."
@@ -43,11 +48,6 @@ IF %ERRORLEVEL% NEQ 0 (
 call :init libbitcoin libbitcoin-blockchain master
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin-blockchain master failed."
-  exit /b 1
-)
-call :init libbitcoin libbitcoin-network master
-IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-network master failed."
   exit /b 1
 )
 call :init libbitcoin libbitcoin-node master
