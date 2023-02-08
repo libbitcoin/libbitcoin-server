@@ -8,6 +8,9 @@
 # Script to build and install libbitcoin-server.
 #
 # Script options:
+# --with-consensus         Compile libbitcoin-consensus for consensus checks.
+# --without-consensus      Compile without libbitcoin-consensus for consensus
+#                            checks.
 # --with-icu               Compile with International Components for Unicode.
 #                            Since the addition of BIP-39 and later BIP-38
 #                            support, libbitcoin conditionally incorporates ICU
@@ -224,6 +227,9 @@ display_help()
     display_message "Usage: ./install.sh [OPTION]..."
     display_message "Manage the installation of libbitcoin-server."
     display_message "Script options:"
+    display_message "  --with-consensus         Compile libbitcoin-consensus for consensus checks."
+    display_message "  --without-consensus      Compile without libbitcoin-consensus for consensus "
+    display_message "                             checks."
     display_message "  --with-icu               Compile with International Components for Unicode."
     display_message "                             Since the addition of BIP-39 and later BIP-38 "
     display_message "                             support, libbitcoin conditionally incorporates ICU "
@@ -250,6 +256,8 @@ display_help()
 #==============================================================================
 parse_command_line_options()
 {
+    WITH_BITCOIN_CONSENSUS="yes"
+
     for OPTION in "$@"; do
         case $OPTION in
             # Standard script options.
@@ -262,6 +270,8 @@ parse_command_line_options()
             (--disable-static)      DISABLE_STATIC="yes";;
 
             # Common project options.
+            (--with-consensus)      WITH_BITCOIN_CONSENSUS="yes";;
+            (--without-consensus)   unset -f WITH_BITCOIN_CONSENSUS;;
             (--with-icu)            WITH_ICU="yes";;
 
             # Custom build options (in the form of --build-<option>).
@@ -575,6 +585,12 @@ create_from_github()
     local ACCOUNT=$1
     local REPO=$2
     local BRANCH=$3
+    local BUILD=$4
+	shift 4
+
+    if [[ ! ($BUILD) || ($BUILD == "no") ]]; then
+        return
+    fi
 
     FORK="$ACCOUNT/$REPO"
 
@@ -602,8 +618,13 @@ build_from_github()
     local REPO=$1
     local JOBS=$2
     local TEST=$3
-    local OPTIONS=$4
-    shift 4
+    local BUILD=$4
+    local OPTIONS=$5
+    shift 5
+
+    if [[ ! ($BUILD) || ($BUILD == "no") ]]; then
+        return
+    fi
 
     # Join generated and command line options.
     local CONFIGURATION=("${OPTIONS[@]}" "$@")
@@ -769,31 +790,31 @@ build_all()
     build_from_tarball "$ICU_ARCHIVE" source "$PARALLEL" "$BUILD_ICU" "${ICU_OPTIONS[@]}" "$@"
     unpack_from_tarball "$BOOST_ARCHIVE" "$BOOST_URL" bzip2 "$BUILD_BOOST"
     build_from_tarball_boost "$BOOST_ARCHIVE" "$PARALLEL" "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
-    create_from_github libbitcoin secp256k1 version7
-    build_from_github secp256k1 "$PARALLEL" false "${SECP256K1_OPTIONS[@]}" "$@"
-    create_from_github libbitcoin libbitcoin-system version3
-    build_from_github libbitcoin-system "$PARALLEL" false "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
-    create_from_github libbitcoin libbitcoin-database version3
-    build_from_github libbitcoin-database "$PARALLEL" false "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"
-    create_from_github libbitcoin libbitcoin-consensus version3
-    build_from_github libbitcoin-consensus "$PARALLEL" false "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
-    create_from_github libbitcoin libbitcoin-blockchain version3
-    build_from_github libbitcoin-blockchain "$PARALLEL" false "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" "$@"
-    create_from_github libbitcoin libbitcoin-network version3
-    build_from_github libbitcoin-network "$PARALLEL" false "${BITCOIN_NETWORK_OPTIONS[@]}" "$@"
-    create_from_github libbitcoin libbitcoin-node version3
-    build_from_github libbitcoin-node "$PARALLEL" false "${BITCOIN_NODE_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin secp256k1 version7 "yes"
+    build_from_github secp256k1 "$PARALLEL" false "yes" "${SECP256K1_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin libbitcoin-system version3 "yes"
+    build_from_github libbitcoin-system "$PARALLEL" false "yes" "${BITCOIN_SYSTEM_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin libbitcoin-database version3 "yes"
+    build_from_github libbitcoin-database "$PARALLEL" false "yes" "${BITCOIN_DATABASE_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin libbitcoin-consensus version3 "$WITH_BITCOIN_CONSENSUS"
+    build_from_github libbitcoin-consensus "$PARALLEL" false "$WITH_BITCOIN_CONSENSUS" "${BITCOIN_CONSENSUS_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin libbitcoin-blockchain version3 "yes"
+    build_from_github libbitcoin-blockchain "$PARALLEL" false "yes" "${BITCOIN_BLOCKCHAIN_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin libbitcoin-network version3 "yes"
+    build_from_github libbitcoin-network "$PARALLEL" false "yes" "${BITCOIN_NETWORK_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin libbitcoin-node version3 "yes"
+    build_from_github libbitcoin-node "$PARALLEL" false "yes" "${BITCOIN_NODE_OPTIONS[@]}" "$@"
     unpack_from_tarball "$ZMQ_ARCHIVE" "$ZMQ_URL" gzip "$BUILD_ZMQ"
     build_from_tarball "$ZMQ_ARCHIVE" . "$PARALLEL" "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" "$@"
-    create_from_github libbitcoin libbitcoin-protocol version3
-    build_from_github libbitcoin-protocol "$PARALLEL" false "${BITCOIN_PROTOCOL_OPTIONS[@]}" "$@"
+    create_from_github libbitcoin libbitcoin-protocol version3 "yes"
+    build_from_github libbitcoin-protocol "$PARALLEL" false "yes" "${BITCOIN_PROTOCOL_OPTIONS[@]}" "$@"
     if [[ ! ($CI == true) ]]; then
         create_from_github libbitcoin libbitcoin-server version3
-        build_from_github libbitcoin-server "$PARALLEL" true "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
+        build_from_github libbitcoin-server "$PARALLEL" true "yes" "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
     else
         push_directory "$PRESUMED_CI_PROJECT_PATH"
         push_directory ".."
-        build_from_github libbitcoin-server "$PARALLEL" true "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
+        build_from_github libbitcoin-server "$PARALLEL" true "yes" "${BITCOIN_SERVER_OPTIONS[@]}" "$@"
         pop_directory
         pop_directory
     fi
@@ -900,6 +921,11 @@ BITCOIN_NODE_OPTIONS=(
 "${with_boost}" \
 "${with_pkgconfigdir}")
 
+# Define zmq options.
+#------------------------------------------------------------------------------
+ZMQ_OPTIONS=(
+"--disable-Werror")
+
 # Define bitcoin-protocol options.
 #------------------------------------------------------------------------------
 BITCOIN_PROTOCOL_OPTIONS=(
@@ -918,8 +944,14 @@ BITCOIN_SERVER_OPTIONS=(
 # Build the primary library and all dependencies.
 #==============================================================================
 display_configuration
-create_directory "$BUILD_DIR"
-push_directory "$BUILD_DIR"
+
+if [[ ! ($CI == true) ]]; then
+    create_directory "$BUILD_DIR"
+    push_directory "$BUILD_DIR"
+else
+    push_directory "$BUILD_DIR"
+fi
+
 initialize_git
 time build_all "${CONFIGURE_OPTIONS[@]}"
 pop_directory
