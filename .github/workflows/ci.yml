@@ -29,6 +29,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: "--enable-isystem"
             packager: "apt"
             packages: ""
 
@@ -44,6 +45,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: "--enable-isystem"
             packager: "apt"
             packages: ""
 
@@ -59,6 +61,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "gcc"
             flags: "-Os -fPIE"
+            options: "--enable-isystem"
             packager: "apt"
             packages: ""
 
@@ -74,6 +77,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "gcc"
             flags: "-Og -fPIE"
+            options: "--enable-isystem"
             packager: "apt"
             packages: ""
 
@@ -89,6 +93,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: "--enable-isystem"
             packager: "brew"
             packages: ""
 
@@ -104,6 +109,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fvisibility=hidden -fPIE"
+            options: "--enable-isystem"
             packager: "brew"
             packages: ""
 
@@ -155,11 +161,16 @@ jobs:
             echo "LDFLAGS=-Wl,-rpath,$WORKSPACE_SUBPATH/prefix/lib" >> $GITHUB_ENV
           fi
 
+      - name: Display CPU details
+        if: ${{ (runner.os == 'Linux') }}
+        shell: bash
+        run: |
+          lscpu
+
       - name: Execute install.sh
         run: >
           ./install.sh
-          --enable-isystem
-          --build-dir=$LIBBITCOIN_SRC_PATH
+          --build-dir=$LIBBITCOIN_SRC_PATH ${{ matrix.options }}
           --prefix=$LIBBITCOIN_SRC_PATH/prefix
           ${{ env.LINKAGE }}
           ${{ env.ASSERT_NDEBUG }}
@@ -214,11 +225,11 @@ jobs:
         run: |
           cat ${{ github.workspace }}/build/build-*/bootstrap.log
 
+
       - name: Failure display otool output
         if: ${{ failure() && (matrix.os == 'macos-latest') }}
         run: |
           otool -L ${{ github.workspace }}/test/.libs/libbitcoin-server-test
-
       - name: Failure display DYLD_PRINT_LIBRARIES
         if: ${{ failure() && (matrix.os == 'macos-latest') }}
         run: |
@@ -249,6 +260,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: ""
             packager: "apt"
             packages: ""
 
@@ -264,6 +276,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: ""
             packager: "apt"
             packages: ""
 
@@ -279,6 +292,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "gcc"
             flags: "-Os -fPIE"
+            options: ""
             packager: "apt"
             packages: ""
 
@@ -294,6 +308,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "gcc"
             flags: "-Og -fPIE"
+            options: ""
             packager: "apt"
             packages: ""
 
@@ -309,6 +324,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: ""
             packager: "brew"
             packages: ""
 
@@ -324,6 +340,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fvisibility=hidden -fPIE"
+            options: ""
             packager: "brew"
             packages: ""
 
@@ -378,10 +395,16 @@ jobs:
             echo "LDFLAGS=-Wl,-rpath,$WORKSPACE_SUBPATH/prefix/lib" >> $GITHUB_ENV
           fi
 
+      - name: Display CPU details
+        if: ${{ (runner.os == 'Linux') }}
+        shell: bash
+        run: |
+          lscpu
+
       - name: Execute install-cmake.sh
         run: >
           ./install-cmake.sh
-          --build-dir=$LIBBITCOIN_SRC_PATH
+          --build-dir=$LIBBITCOIN_SRC_PATH ${{ matrix.options }}
           --prefix=$LIBBITCOIN_SRC_PATH/prefix
           ${{ env.LINKAGE }}
           ${{ env.ASSERT_NDEBUG }}
@@ -436,11 +459,11 @@ jobs:
         run: |
           cat ${{ github.workspace }}/build/build-*/bootstrap.log
 
+
       - name: Failure display otool output
         if: ${{ failure() && (matrix.os == 'macos-latest') }}
         run: |
           otool -L ${{ github.workspace }}/test/.libs/libbitcoin-server-test
-
       - name: Failure display DYLD_PRINT_LIBRARIES
         if: ${{ failure() && (matrix.os == 'macos-latest') }}
         run: |
@@ -482,6 +505,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: ""
             packager: "apt"
             packages: ""
 
@@ -498,6 +522,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "clang"
             flags: "-Os -fPIE"
+            options: ""
             packager: "apt"
             packages: ""
 
@@ -514,6 +539,7 @@ jobs:
             zmq: "--build-zmq"
             cc: "gcc"
             flags: "-Os -fPIE"
+            options: ""
             packager: "apt"
             packages: ""
 
@@ -568,10 +594,16 @@ jobs:
             echo "LDFLAGS=-Wl,-rpath,$WORKSPACE_SUBPATH/prefix/${{ matrix.preset }}/lib" >> $GITHUB_ENV
           fi
 
+      - name: Display CPU details
+        if: ${{ (runner.os == 'Linux') }}
+        shell: bash
+        run: |
+          lscpu
+
       - name: Execute install-cmakepresets.sh
         run: >
           ./install-cmakepresets.sh
-          --build-dir=$LIBBITCOIN_SRC_PATH
+          --build-dir=$LIBBITCOIN_SRC_PATH ${{ matrix.options }}
           --prefix=$LIBBITCOIN_SRC_PATH/prefix/${{ matrix.preset }}
           --preset=${{ matrix.preset }}
           ${{ env.LINKAGE }}
@@ -627,11 +659,11 @@ jobs:
         run: |
           cat ${{ github.workspace }}/build/build-*/bootstrap.log
 
+
       - name: Failure display otool output
         if: ${{ failure() && (matrix.os == 'macos-latest') }}
         run: |
           otool -L ${{ github.workspace }}/test/.libs/libbitcoin-server-test
-
       - name: Failure display DYLD_PRINT_LIBRARIES
         if: ${{ failure() && (matrix.os == 'macos-latest') }}
         run: |
