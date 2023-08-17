@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2020 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2023 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -147,6 +147,87 @@ AC_ARG_ENABLE([isystem],
 AC_MSG_RESULT([$enable_isystem])
 
 
+# Set flags.
+#==============================================================================
+# Require c++20 for all c++ products.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-std=c++20],
+        [CXXFLAGS="$CXXFLAGS -std=c++20"])])
+
+# Warn on all stuff.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wall],
+        [CFLAGS="$CFLAGS -Wall"])])
+
+# Warn on all stuff.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wall],
+        [CXXFLAGS="$CXXFLAGS -Wall"])])
+
+# Warn on extra stuff.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wextra],
+        [CFLAGS="$CFLAGS -Wextra"])])
+
+# Warn on extra stuff.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wextra],
+        [CXXFLAGS="$CXXFLAGS -Wextra"])])
+
+# Disallow warning on style order of declarations.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-reorder],
+        [CXXFLAGS="$CXXFLAGS -Wno-reorder"])])
+
+# Suppress warning for incomplete field initialization.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
+        [CXXFLAGS="$CXXFLAGS -Wno-missing-field-initializers"])])
+
+# Conform to style.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-missing-braces],
+        [CXXFLAGS="$CXXFLAGS -Wno-missing-braces"])])
+
+# Ignore comments within comments or commenting of backslash extended lines.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-comment],
+        [CXXFLAGS="$CXXFLAGS -Wno-comment"])])
+
+# Suppress warning for copy of implicitly generated copy constructor.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-deprecated-copy],
+        [CXXFLAGS="$CXXFLAGS -Wno-deprecated-copy"])])
+
+# Conflict in stdlib under clang. Enabled in clang only.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*clang*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-mismatched-tags],
+        [CXXFLAGS="$CXXFLAGS -Wno-mismatched-tags"])])
+
+# Protect stack.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_LINK_FLAG([-fstack-protector],
+        [LDFLAGS="$LDFLAGS -fstack-protector"])])
+
+# Protect stack comprehensively.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_LINK_FLAG([-fstack-protector-all],
+        [LDFLAGS="$LDFLAGS -fstack-protector-all"])])
+
+
 # Check dependencies.
 #==============================================================================
 # Require Boost of at least version 1.76.0 and output ${boost_CPPFLAGS/LDFLAGS}.
@@ -246,87 +327,6 @@ AS_CASE([${enable_isystem}],[yes],
     [AC_SUBST([bitcoin_protocol_BUILD_CPPFLAGS], [${bitcoin_protocol_CPPFLAGS}])])
 
 AC_MSG_NOTICE([bitcoin_protocol_BUILD_CPPFLAGS : ${bitcoin_protocol_BUILD_CPPFLAGS}])
-
-
-# Set flags.
-#==============================================================================
-# Require c++20 for all c++ products.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-std=c++20],
-        [CXXFLAGS="$CXXFLAGS -std=c++20"])])
-
-# Warn on all stuff.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wall],
-        [CFLAGS="$CFLAGS -Wall"])])
-
-# Warn on all stuff.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wall],
-        [CXXFLAGS="$CXXFLAGS -Wall"])])
-
-# Warn on extra stuff.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wextra],
-        [CFLAGS="$CFLAGS -Wextra"])])
-
-# Warn on extra stuff.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wextra],
-        [CXXFLAGS="$CXXFLAGS -Wextra"])])
-
-# Disallow warning on style order of declarations.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-reorder],
-        [CXXFLAGS="$CXXFLAGS -Wno-reorder"])])
-
-# Suppress warning for incomplete field initialization.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
-        [CXXFLAGS="$CXXFLAGS -Wno-missing-field-initializers"])])
-
-# Conform to style.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-missing-braces],
-        [CXXFLAGS="$CXXFLAGS -Wno-missing-braces"])])
-
-# Ignore comments within comments or commenting of backslash extended lines.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-comment],
-        [CXXFLAGS="$CXXFLAGS -Wno-comment"])])
-
-# Suppress warning for copy of implicitly generated copy constructor.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-deprecated-copy],
-        [CXXFLAGS="$CXXFLAGS -Wno-deprecated-copy"])])
-
-# Conflict in stdlib under clang. Enabled in clang only.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*clang*],
-    [AX_CHECK_COMPILE_FLAG([-Wno-mismatched-tags],
-        [CXXFLAGS="$CXXFLAGS -Wno-mismatched-tags"])])
-
-# Protect stack.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_LINK_FLAG([-fstack-protector],
-        [LDFLAGS="$LDFLAGS -fstack-protector"])])
-
-# Protect stack comprehensively.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_CHECK_LINK_FLAG([-fstack-protector-all],
-        [LDFLAGS="$LDFLAGS -fstack-protector-all"])])
 
 
 # Process outputs into templates.
