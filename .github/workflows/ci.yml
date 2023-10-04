@@ -161,6 +161,12 @@ jobs:
             echo "LDFLAGS=-Wl,-rpath,$WORKSPACE_SUBPATH/prefix/lib" >> $GITHUB_ENV
           fi
 
+      - name: Display Compiler details
+        shell: bash
+        run: |
+          ${CC} -v
+          ${CXX} -v
+
       - name: Display CPU details
         if: ${{ (runner.os == 'Linux') }}
         shell: bash
@@ -170,8 +176,8 @@ jobs:
       - name: Execute install.sh
         run: >
           ./install.sh
-          --build-dir=$LIBBITCOIN_SRC_PATH ${{ matrix.options }}
-          --prefix=$LIBBITCOIN_SRC_PATH/prefix
+          --build-dir=${{ env.LIBBITCOIN_SRC_PATH }} ${{ matrix.options }}
+          --prefix=${{ env.LIBBITCOIN_SRC_PATH }}prefix
           ${{ env.LINKAGE }}
           ${{ env.ASSERT_NDEBUG }}
           ${{ matrix.boost }}
@@ -395,6 +401,12 @@ jobs:
             echo "LDFLAGS=-Wl,-rpath,$WORKSPACE_SUBPATH/prefix/lib" >> $GITHUB_ENV
           fi
 
+      - name: Display Compiler details
+        shell: bash
+        run: |
+          ${CC} -v
+          ${CXX} -v
+
       - name: Display CPU details
         if: ${{ (runner.os == 'Linux') }}
         shell: bash
@@ -404,8 +416,8 @@ jobs:
       - name: Execute install-cmake.sh
         run: >
           ./install-cmake.sh
-          --build-dir=$LIBBITCOIN_SRC_PATH ${{ matrix.options }}
-          --prefix=$LIBBITCOIN_SRC_PATH/prefix
+          --build-dir=${{ env.LIBBITCOIN_SRC_PATH }} ${{ matrix.options }}
+          --prefix=${{ env.LIBBITCOIN_SRC_PATH }}prefix
           ${{ env.LINKAGE }}
           ${{ env.ASSERT_NDEBUG }}
           ${{ matrix.boost }}
@@ -594,6 +606,12 @@ jobs:
             echo "LDFLAGS=-Wl,-rpath,$WORKSPACE_SUBPATH/prefix/${{ matrix.preset }}/lib" >> $GITHUB_ENV
           fi
 
+      - name: Display Compiler details
+        shell: bash
+        run: |
+          ${CC} -v
+          ${CXX} -v
+
       - name: Display CPU details
         if: ${{ (runner.os == 'Linux') }}
         shell: bash
@@ -603,8 +621,8 @@ jobs:
       - name: Execute install-cmakepresets.sh
         run: >
           ./install-cmakepresets.sh
-          --build-dir=$LIBBITCOIN_SRC_PATH ${{ matrix.options }}
-          --prefix=$LIBBITCOIN_SRC_PATH/prefix/${{ matrix.preset }}
+          --build-dir=${{ env.LIBBITCOIN_SRC_PATH }} ${{ matrix.options }}
+          --prefix=${{ env.LIBBITCOIN_SRC_PATH }}prefix/${{ matrix.preset }}
           --preset=${{ matrix.preset }}
           ${{ env.LINKAGE }}
           ${{ env.ASSERT_NDEBUG }}
