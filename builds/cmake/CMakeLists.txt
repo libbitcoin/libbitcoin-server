@@ -320,6 +320,7 @@ if (with-tests)
 
     add_test( NAME libbitcoin-server-test COMMAND libbitcoin-server-test
             --run_test=*
+            --log_level=warning
             --show_progress=no
             --detect_memory_leak=0
             --report_level=no
