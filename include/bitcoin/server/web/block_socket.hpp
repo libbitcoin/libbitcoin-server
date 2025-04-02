@@ -44,8 +44,8 @@ protected:
     // Implement the service.
     virtual void work() override;
 
-    virtual const system::config::endpoint& zeromq_endpoint() const override;
-    virtual const system::config::endpoint& websocket_endpoint() const override;
+    virtual const bc::protocol::endpoint& zeromq_endpoint() const override;
+    virtual const bc::protocol::endpoint& websocket_endpoint() const override;
 
 private:
     bool handle_block(bc::protocol::zmq::socket& subscriber);

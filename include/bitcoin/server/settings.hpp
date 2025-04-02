@@ -34,20 +34,20 @@ class BCS_API settings
 {
 public:
     settings();
-    settings(system::config::settings context);
+    settings(system::settings context);
 
     /// Helpers.
-    system::asio::duration heartbeat_interval() const;
-    system::asio::duration subscription_expiration() const;
-    const system::config::endpoint& zeromq_query_endpoint(bool secure) const;
-    const system::config::endpoint& zeromq_heartbeat_endpoint(bool secure) const;
-    const system::config::endpoint& zeromq_block_endpoint(bool secure) const;
-    const system::config::endpoint& zeromq_transaction_endpoint(bool secure) const;
+    network::asio::steady_timer heartbeat_interval() const;
+    network::asio::steady_timer subscription_expiration() const;
+    const protocol::endpoint& zeromq_query_endpoint(bool secure) const;
+    const protocol::endpoint& zeromq_heartbeat_endpoint(bool secure) const;
+    const protocol::endpoint& zeromq_block_endpoint(bool secure) const;
+    const protocol::endpoint& zeromq_transaction_endpoint(bool secure) const;
 
-    const system::config::endpoint& websockets_query_endpoint(bool secure) const;
-    const system::config::endpoint& websockets_heartbeat_endpoint(bool secure) const;
-    const system::config::endpoint& websockets_block_endpoint(bool secure) const;
-    const system::config::endpoint& websockets_transaction_endpoint(bool secure) const;
+    const protocol::endpoint& websockets_query_endpoint(bool secure) const;
+    const protocol::endpoint& websockets_heartbeat_endpoint(bool secure) const;
+    const protocol::endpoint& websockets_block_endpoint(bool secure) const;
+    const protocol::endpoint& websockets_transaction_endpoint(bool secure) const;
 
     /// [server]
     bool priority;
@@ -58,35 +58,35 @@ public:
     uint32_t heartbeat_service_seconds;
     bool block_service_enabled;
     bool transaction_service_enabled;
-    system::config::authority::list client_addresses;
-    system::config::authority::list blacklists;
+    network::config::authorities client_addresses;
+    network::config::authorities blacklists;
 
     /// [websockets]
-    system::config::endpoint websockets_secure_query_endpoint;
-    system::config::endpoint websockets_secure_heartbeat_endpoint;
-    system::config::endpoint websockets_secure_block_endpoint;
-    system::config::endpoint websockets_secure_transaction_endpoint;
+    protocol::endpoint websockets_secure_query_endpoint;
+    protocol::endpoint websockets_secure_heartbeat_endpoint;
+    protocol::endpoint websockets_secure_block_endpoint;
+    protocol::endpoint websockets_secure_transaction_endpoint;
 
-    system::config::endpoint websockets_public_query_endpoint;
-    system::config::endpoint websockets_public_heartbeat_endpoint;
-    system::config::endpoint websockets_public_block_endpoint;
-    system::config::endpoint websockets_public_transaction_endpoint;
+    protocol::endpoint websockets_public_query_endpoint;
+    protocol::endpoint websockets_public_heartbeat_endpoint;
+    protocol::endpoint websockets_public_block_endpoint;
+    protocol::endpoint websockets_public_transaction_endpoint;
 
     bool websockets_enabled;
 
     /// [zeromq]
-    system::config::endpoint zeromq_secure_query_endpoint;
-    system::config::endpoint zeromq_secure_heartbeat_endpoint;
-    system::config::endpoint zeromq_secure_block_endpoint;
-    system::config::endpoint zeromq_secure_transaction_endpoint;
+    protocol::endpoint zeromq_secure_query_endpoint;
+    protocol::endpoint zeromq_secure_heartbeat_endpoint;
+    protocol::endpoint zeromq_secure_block_endpoint;
+    protocol::endpoint zeromq_secure_transaction_endpoint;
 
-    system::config::endpoint zeromq_public_query_endpoint;
-    system::config::endpoint zeromq_public_heartbeat_endpoint;
-    system::config::endpoint zeromq_public_block_endpoint;
-    system::config::endpoint zeromq_public_transaction_endpoint;
+    protocol::endpoint zeromq_public_query_endpoint;
+    protocol::endpoint zeromq_public_heartbeat_endpoint;
+    protocol::endpoint zeromq_public_block_endpoint;
+    protocol::endpoint zeromq_public_transaction_endpoint;
 
-    protocol::zmq::sodium zeromq_server_private_key;
-    protocol::zmq::sodium::list zeromq_client_public_keys;
+    protocol::sodium zeromq_server_private_key;
+    protocol::sodium::list zeromq_client_public_keys;
 };
 
 } // namespace server
