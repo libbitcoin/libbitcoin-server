@@ -50,7 +50,7 @@ public:
 
 private:
     static void transaction_fetched(const system::code& ec,
-        system::transaction_const_ptr tx, size_t, size_t,
+        system::chain::transaction::cptr tx, size_t, size_t,
         const message& request, send_handler handler);
 
     static void handle_broadcast(const system::code& ec,

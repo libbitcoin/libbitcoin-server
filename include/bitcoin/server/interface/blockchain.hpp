@@ -63,17 +63,17 @@ public:
     static void fetch_block_transaction_hashes(server_node& node,
         const message& request, send_handler handler);
 
-    /// Fetch compact filter of block by hash or height.
-    static void fetch_compact_filter(server_node& node,
-        const message& request, send_handler handler);
+//    /// Fetch compact filter of block by hash or height.
+//    static void fetch_compact_filter(server_node& node,
+//        const message& request, send_handler handler);
 
-    /// Fetch compact filter checkpoint ending in block by hash.
-    static void fetch_compact_filter_checkpoint(server_node& node,
-        const message& request, send_handler handler);
+//    /// Fetch compact filter checkpoint ending in block by hash.
+//    static void fetch_compact_filter_checkpoint(server_node& node,
+//        const message& request, send_handler handler);
 
-    /// Fetch compact filter headers by start height and stop hash or height.
-    static void fetch_compact_filter_headers(server_node& node,
-        const message& request, send_handler handler);
+//    /// Fetch compact filter headers by start height and stop hash or height.
+//    static void fetch_compact_filter_headers(server_node& node,
+//        const message& request, send_handler handler);
 
     /// Fetch the block index of a transaction and the height of its block.
     static void fetch_transaction_index(server_node& node,
@@ -96,12 +96,12 @@ public:
         send_handler handler);
 
 private:
-    static void history_fetched(const system::code& ec,
-        const system::chain::payment_record::list& payments,
-        const message& request, send_handler handler);
+//    static void history_fetched(const system::code& ec,
+//        const system::chain::payment_record::list& payments,
+//        const message& request, send_handler handler);
 
     static void transaction_fetched(const system::code& ec,
-        system::transaction_const_ptr tx, size_t, size_t,
+        system::chain::transaction::cptr tx, size_t, size_t,
         const message& request, send_handler handler);
 
     static void last_height_fetched(const system::code& ec, size_t last_height,
@@ -120,35 +120,35 @@ private:
         const message& request, send_handler handler);
 
     static void block_fetched(const system::code& ec,
-        system::block_const_ptr header, const message& request,
+        system::chain::block::cptr header, const message& request,
         send_handler handler);
 
-    static void fetch_compact_filter_by_hash(server_node& node,
-        const message& request, send_handler handler);
+//    static void fetch_compact_filter_by_hash(server_node& node,
+//        const message& request, send_handler handler);
 
-    static void fetch_compact_filter_by_height(server_node& node,
-        const message& request, send_handler handler);
+//    static void fetch_compact_filter_by_height(server_node& node,
+//        const message& request, send_handler handler);
 
-    static void compact_filter_fetched(const system::code& ec,
-        system::compact_filter_ptr response, size_t, const message& request,
-        send_handler handler);
+//    static void compact_filter_fetched(const system::code& ec,
+//        system::chain::compact::cptr response, size_t, const message& request,
+//        send_handler handler);
 
-    static void fetch_compact_filter_headers_by_hash(server_node& node,
-        const message& request, send_handler handler);
+//    static void fetch_compact_filter_headers_by_hash(server_node& node,
+//        const message& request, send_handler handler);
 
-    static void fetch_compact_filter_headers_by_height(server_node& node,
-        const message& request, send_handler handler);
+//    static void fetch_compact_filter_headers_by_height(server_node& node,
+//        const message& request, send_handler handler);
 
-    static void compact_filter_headers_fetched(const system::code& ec,
-        system::compact_filter_headers_ptr response,
-        const message& request, send_handler handler);
+//    static void compact_filter_headers_fetched(const system::code& ec,
+//        system::compact_filter_headers_ptr response,
+//        const message& request, send_handler handler);
 
-    static void compact_filter_checkpoint_fetched(const system::code& ec,
-        system::compact_filter_checkpoint_ptr checkpoint,
-        const message& request, send_handler handler);
+//    static void compact_filter_checkpoint_fetched(const system::code& ec,
+//        system::compact_filter_checkpoint_ptr checkpoint,
+//        const message& request, send_handler handler);
 
     static void block_header_fetched(const system::code& ec,
-        system::header_const_ptr header, const message& request,
+        system::chain::header::cptr header, const message& request,
         send_handler handler);
 
     static void fetch_block_transaction_hashes_by_hash(server_node& node,
@@ -157,16 +157,16 @@ private:
     static void fetch_block_transaction_hashes_by_height(server_node& node,
         const message& request, send_handler handler);
 
-    static void merkle_block_fetched(const system::code& ec,
-        system::merkle_block_ptr block, size_t height, const message& request,
-        send_handler handler);
+//    static void merkle_block_fetched(const system::code& ec,
+//        system::merkle_block_ptr block, size_t height, const message& request,
+//        send_handler handler);
 
     static void transaction_index_fetched(const system::code& ec,
         size_t tx_position, size_t block_height, const message& request,
         send_handler handler);
 
     static void spend_fetched(const system::code& ec,
-        const system::chain::input_point& inpoint, const message& request,
+        const system::chain::input::cptr inpoint, const message& request,
         send_handler handler);
 
     static void block_height_fetched(const system::code& ec,

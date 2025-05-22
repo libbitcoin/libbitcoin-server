@@ -67,6 +67,7 @@ void blockchain::fetch_history4(server_node& node, const message& request,
             _1, _2, request, handler));
 }
 
+/*
 void blockchain::history_fetched(const code& ec,
     const payment_record::list& payments, const message& request,
     send_handler handler)
@@ -82,6 +83,7 @@ void blockchain::history_fetched(const code& ec,
 
     handler(message(request, std::move(result)));
 }
+*/
 
 void blockchain::fetch_transaction(server_node& node, const message& request,
     send_handler handler)
@@ -184,6 +186,7 @@ void blockchain::last_height_fetched(const code& ec, size_t last_height,
     handler(message(request, std::move(result)));
 }
 
+/*
 void blockchain::fetch_compact_filter(server_node& node,
     const message& request, send_handler handler)
 {
@@ -354,6 +357,7 @@ void blockchain::compact_filter_checkpoint_fetched(const code& ec,
 
     handler(message(request, std::move(result)));
 }
+*/
 
 void blockchain::fetch_block(server_node& node, const message& request,
     send_handler handler)
@@ -522,6 +526,7 @@ void blockchain::fetch_block_transaction_hashes_by_height(server_node& node,
             _1, _2, _3, request, handler));
 }
 
+/*
 void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
     size_t, const message& request, send_handler handler)
 {
@@ -536,6 +541,7 @@ void blockchain::merkle_block_fetched(const code& ec, merkle_block_ptr block,
 
     handler(message(request, std::move(result)));
 }
+*/
 
 void blockchain::fetch_transaction_index(server_node& node,
     const message& request, send_handler handler)
@@ -603,7 +609,7 @@ void blockchain::fetch_spend(server_node& node, const message& request,
             _1, _2, request, handler));
 }
 
-void blockchain::spend_fetched(const code& ec, const input_point& inpoint,
+void blockchain::spend_fetched(const code& ec, const system::chain::input::cptr inpoint,
     const message& request, send_handler handler)
 {
     // [ code:4 ]
@@ -612,7 +618,7 @@ void blockchain::spend_fetched(const code& ec, const input_point& inpoint,
     auto result = build_chunk(
     {
         message::to_bytes(ec),
-        inpoint.to_data()
+        inpoint->to_data()
     });
 
     handler(message(request, std::move(result)));

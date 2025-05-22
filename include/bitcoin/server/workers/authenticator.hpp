@@ -40,7 +40,7 @@ public:
 
     /// Apply authentication to the socket.
     bool apply(bc::protocol::zmq::socket& socket, const std::string& domain,
-        bool secure);
+        bool secure) NOEXCEPT override;
 };
 
 } // namespace server

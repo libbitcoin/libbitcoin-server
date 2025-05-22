@@ -68,19 +68,19 @@ public:
 
     /// Synchronize the blockchain and then begin long running sessions,
     /// call from start result handler. Call base method to skip sync.
-    virtual void run(result_handler handler) override;
+    virtual void run(network::result_handler handler);
 
     // Shutdown.
     // ------------------------------------------------------------------------
 
     /// Idempotent call to signal work stop, start may be reinvoked after.
     /// Returns the result of file save operation.
-    virtual bool stop() override;
+    virtual bool stop();
 
     /// Blocking call to coalesce all work and then terminate all threads.
     /// Call from thread that constructed this class, or don't call at all.
     /// This calls stop, and start may be reinvoked after calling this.
-    virtual bool close() override;
+    virtual void close() NOEXCEPT override;
 
     // Notification.
     // ------------------------------------------------------------------------
@@ -92,7 +92,7 @@ public:
         system::binary&& prefix_filter, bool unsubscribe);
 
 private:
-    void handle_running(const system::code& ec, result_handler handler);
+    void handle_running(const system::code& ec, network::result_handler handler);
 
     bool start_services();
     bool start_authenticator();
