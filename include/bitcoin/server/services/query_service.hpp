@@ -39,7 +39,7 @@ public:
     typedef std::shared_ptr<query_service> ptr;
 
     /// A reference to each inprocess worker endpoint.
-    static const system::config::endpoint& worker_endpoint(bool secure);
+    static const bc::protocol::endpoint& worker_endpoint(bool secure);
 
     /// Construct a query service.
     query_service(bc::protocol::zmq::authenticator& authenticator,
@@ -61,8 +61,8 @@ private:
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
     const bc::protocol::settings internal_;
-    const system::config::endpoint& service_;
-    const system::config::endpoint& worker_;
+    const bc::protocol::endpoint& service_;
+    const bc::protocol::endpoint& worker_;
     bc::protocol::zmq::authenticator& authenticator_;
 };
 

@@ -44,7 +44,7 @@ public:
         server_node& node, bool secure);
 
     /// Start the service.
-    bool start() override;
+    bool start() NOEXCEPT override;
 
 protected:
     typedef bc::protocol::zmq::socket socket;
@@ -57,8 +57,8 @@ protected:
 
 private:
     bool handle_transaction(const system::code& ec,
-        system::transaction_const_ptr tx);
-    void publish_transaction(system::transaction_const_ptr tx);
+        system::chain::transaction::cptr tx);
+    void publish_transaction(system::chain::transaction::cptr tx);
 
     // These are thread safe.
     const bool secure_;
@@ -66,8 +66,8 @@ private:
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
     const bc::protocol::settings internal_;
-    const system::config::endpoint service_;
-    const system::config::endpoint worker_;
+    const bc::protocol::endpoint service_;
+    const bc::protocol::endpoint worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 

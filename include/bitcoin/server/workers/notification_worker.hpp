@@ -54,7 +54,7 @@ public:
         server_node& node, bool secure);
 
     /// Start the worker.
-    bool start() override;
+    bool start() NOEXCEPT override;
 
     /// Subscribe to payment key notifications.
     virtual system::code subscribe_key(const message& request,
@@ -106,13 +106,13 @@ private:
     bool stealth_subscriptions_empty() const;
 
     bool handle_reorganization(const system::code& ec, size_t fork_height,
-        system::block_const_ptr_list_const_ptr incoming,
-        system::block_const_ptr_list_const_ptr outgoing);
+        system::chain::block::cptr incoming,
+        system::chain::block::cptr outgoing);
     bool handle_transaction_pool(const system::code& ec,
-        system::transaction_const_ptr tx);
+        system::chain::transaction::cptr tx);
 
     void notify_block(socket& dealer, size_t height,
-        system::block_const_ptr block);
+        system::chain::block::cptr block);
     void notify_transaction(socket& dealer, size_t height,
         const system::chain::transaction& tx);
     void notify(socket& dealer, const key_set& keys,
@@ -130,15 +130,15 @@ private:
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
     const bc::protocol::settings internal_;
-    const system::config::endpoint& worker_;
+    const bc::protocol::endpoint& worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 
     // These are protected by mutex.
     key_subscriptions key_subscriptions_;
     stealth_subscriptions stealth_subscriptions_;
-    mutable system::upgrade_mutex key_mutex_;
-    mutable system::upgrade_mutex stealth_mutex_;
+    mutable std::mutex key_mutex_;
+    mutable std::mutex stealth_mutex_;
 };
 
 } // namespace server

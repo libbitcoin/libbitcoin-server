@@ -45,7 +45,7 @@ public:
         server_node& node, bool secure);
 
     /// Start the service.
-    bool start() override;
+    bool start() NOEXCEPT override;
 
 protected:
     typedef bc::protocol::zmq::socket socket;
@@ -58,13 +58,13 @@ protected:
 
 private:
     bool handle_reorganization(const system::code& ec, size_t fork_height,
-        system::block_const_ptr_list_const_ptr incoming,
-        system::block_const_ptr_list_const_ptr outgoing);
+        system::chain::block::cptr incoming,
+        system::chain::block::cptr outgoing);
 
     void publish_blocks(uint32_t fork_height,
-        system::block_const_ptr_list_const_ptr blocks);
+        system::chain::block::cptr blocks);
     void publish_block(socket& publisher, size_t height,
-        system::block_const_ptr block);
+        system::chain::block::cptr block);
 
     // These are thread safe.
     const bool secure_;
@@ -72,8 +72,8 @@ private:
     const bc::server::settings& settings_;
     const bc::protocol::settings& external_;
     const bc::protocol::settings internal_;
-    const system::config::endpoint service_;
-    const system::config::endpoint worker_;
+    const protocol::endpoint service_;
+    const protocol::endpoint worker_;
     bc::protocol::zmq::authenticator& authenticator_;
     server_node& node_;
 

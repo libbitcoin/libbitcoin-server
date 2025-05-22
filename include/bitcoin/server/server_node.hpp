@@ -31,10 +31,6 @@
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/transaction_service.hpp>
-#include <bitcoin/server/web/block_socket.hpp>
-#include <bitcoin/server/web/heartbeat_socket.hpp>
-#include <bitcoin/server/web/query_socket.hpp>
-#include <bitcoin/server/web/transaction_socket.hpp>
 #include <bitcoin/server/workers/authenticator.hpp>
 #include <bitcoin/server/workers/notification_worker.hpp>
 
@@ -72,19 +68,19 @@ public:
 
     /// Synchronize the blockchain and then begin long running sessions,
     /// call from start result handler. Call base method to skip sync.
-    virtual void run(result_handler handler) override;
+    virtual void run(network::result_handler handler);
 
     // Shutdown.
     // ------------------------------------------------------------------------
 
     /// Idempotent call to signal work stop, start may be reinvoked after.
     /// Returns the result of file save operation.
-    virtual bool stop() override;
+    virtual bool stop();
 
     /// Blocking call to coalesce all work and then terminate all threads.
     /// Call from thread that constructed this class, or don't call at all.
     /// This calls stop, and start may be reinvoked after calling this.
-    virtual bool close() override;
+    virtual void close() NOEXCEPT override;
 
     // Notification.
     // ------------------------------------------------------------------------
@@ -96,7 +92,7 @@ public:
         system::binary&& prefix_filter, bool unsubscribe);
 
 private:
-    void handle_running(const system::code& ec, result_handler handler);
+    void handle_running(const system::code& ec, network::result_handler handler);
 
     bool start_services();
     bool start_authenticator();
@@ -123,16 +119,6 @@ private:
     transaction_service public_transaction_service_;
     notification_worker secure_notification_worker_;
     notification_worker public_notification_worker_;
-
-    // Websocket services
-    query_socket secure_query_websockets_;
-    query_socket public_query_websockets_;
-    heartbeat_socket secure_heartbeat_websockets_;
-    heartbeat_socket public_heartbeat_websockets_;
-    block_socket secure_block_websockets_;
-    block_socket public_block_websockets_;
-    transaction_socket secure_transaction_websockets_;
-    transaction_socket public_transaction_websockets_;
 };
 
 } // namespace server

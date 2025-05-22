@@ -21,6 +21,7 @@
 
 #include <future>
 #include <iostream>
+#include <bitcoin/network/log/logger.hpp>
 #include <bitcoin/server.hpp>
 
 namespace libbitcoin {
@@ -40,12 +41,26 @@ public:
     bool menu();
 
 private:
+    void logger(const auto& message) const
+    {
+        if (log_.stopped())
+            output_ << message << std::endl;
+        else
+            log_.write(network::levels::application) << message << std::endl;
+    }
+
+    void stopper(const auto& message)
+    {
+        log_.stop(message, network::levels::application);
+        stopped_.get_future().wait();
+    }
+
     static void stop(const system::code& ec);
     static void handle_stop(int code);
 
     void handle_started(const system::code& ec);
     void handle_running(const system::code& ec);
-    void handle_stopped(const system::code& ec);
+    //void handle_stopped(const system::code& ec);
 
     void do_help();
     void do_settings();
@@ -62,7 +77,11 @@ private:
     parser& metadata_;
     std::ostream& output_;
     std::ostream& error_;
+    network::logger log_{};
+    std::promise<system::code> stopped_{};
     server_node::ptr node_;
+    server_node::store store_;
+    server_node::query query_;
 };
 
 // Localizable messages.
