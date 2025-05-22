@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023 libbitcoin-server developers (see COPYING).
+// Copyright (c) 2014-2025 libbitcoin-server developers (see COPYING).
 //
 //        GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 //
@@ -34,6 +34,11 @@
 #include <bitcoin/server/services/heartbeat_service.hpp>
 #include <bitcoin/server/services/query_service.hpp>
 #include <bitcoin/server/services/transaction_service.hpp>
+#include <bitcoin/server/web/block_socket.hpp>
+#include <bitcoin/server/web/default_page_data.hpp>
+#include <bitcoin/server/web/heartbeat_socket.hpp>
+#include <bitcoin/server/web/query_socket.hpp>
+#include <bitcoin/server/web/transaction_socket.hpp>
 #include <bitcoin/server/workers/authenticator.hpp>
 #include <bitcoin/server/workers/notification_worker.hpp>
 #include <bitcoin/server/workers/query_worker.hpp>

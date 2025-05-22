@@ -6,10 +6,19 @@
 *.pyc
 Makefile
 Makefile.in
-libobelisk.pc
+libbitcoin.pc
 
+bin
+obj
+build
+.*.swp
+*~
+/*.kdev4
 /.cproject
 /.project
+/.settings
+/nbproject
+
 /aclocal.m4
 /autom4te.cache
 /build-aux
@@ -17,13 +26,4 @@ libobelisk.pc
 /configure
 /libtool
 .dirstamp
-
-/bin/
-/obj/
-
-/src/bitcoin_server
-
-build-libbitcoin-server
-console/bs
-libbitcoin-server.pc
-
+/.vs
