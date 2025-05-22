@@ -1,6 +1,6 @@
 #!/bin/sh
 ###############################################################################
-#  Copyright (c) 2014-2023 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2025 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -10,6 +10,7 @@
 #==============================================================================
 BOOST_UNIT_TEST_OPTIONS=\
 "--run_test=* "\
+"--log_level=warning "\
 "--show_progress=no "\
 "--detect_memory_leak=0 "\
 "--report_level=no "\

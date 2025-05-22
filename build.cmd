@@ -1,5 +1,5 @@
 REM ###########################################################################
-REM #  Copyright (c) 2014-2023 libbitcoin-server developers (see COPYING).
+REM #  Copyright (c) 2014-2025 libbitcoin-server developers (see COPYING).
 REM #
 REM #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 REM #
@@ -11,10 +11,10 @@ SET "relative_path_base=%~1"
 call cd /d "%relative_path_base%"
 SET "path_base=%cd%"
 SET "nuget_pkg_path=%path_base%\.nuget\packages"
-SET "msbuild_args=/verbosity:minimal /p:Platform=%~2 /p:Configuration=%~3"
-SET "proj_version=%~4"
+SET "msbuild_args=/verbosity:minimal /p:Platform=%~2 /p:Configuration=%~3 /p:PreferredToolArchitecture=%~4"
+SET "proj_version=%~5"
 SET "msbuild_exe=msbuild"
-IF EXIST "%~5" SET "msbuild_exe=%~5"
+IF EXIST "%~6" SET "msbuild_exe=%~6"
 
 call :pending "Build initialized..."
 IF NOT EXIST "%nuget_pkg_path%" (
@@ -38,16 +38,6 @@ IF %ERRORLEVEL% NEQ 0 (
 call :init libbitcoin libbitcoin-database master
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin-database master failed."
-  exit /b 1
-)
-call :init libbitcoin libbitcoin-consensus master
-IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-consensus master failed."
-  exit /b 1
-)
-call :init libbitcoin libbitcoin-blockchain master
-IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-blockchain master failed."
   exit /b 1
 )
 call :init libbitcoin libbitcoin-node master

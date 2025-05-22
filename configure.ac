@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2023 libbitcoin-server developers (see COPYING).
+#  Copyright (c) 2014-2025 libbitcoin-server developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -214,6 +214,12 @@ AS_CASE([${CC}], [*],
 AS_CASE([${CC}], [*clang*],
     [AX_CHECK_COMPILE_FLAG([-Wno-mismatched-tags],
         [CXXFLAGS="$CXXFLAGS -Wno-mismatched-tags"])])
+
+# Address -undefined dynamic_lookup MacOS error.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_LINK_FLAG([-no_fixup_chains],
+        [LDFLAGS="$LDFLAGS -no_fixup_chains"])])
 
 # Protect stack.
 #------------------------------------------------------------------------------
