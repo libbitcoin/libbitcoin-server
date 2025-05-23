@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2025 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -27,28 +27,46 @@
 namespace libbitcoin {
 namespace server {
 
-// Not localizable.
-#define BS_HELP_VARIABLE "help"
-#define BS_SETTINGS_VARIABLE "settings"
-#define BS_VERSION_VARIABLE "version"
-
-// This must be lower case but the env var part can be any case.
-#define BS_CONFIG_VARIABLE "config"
-
-// This must match the case of the env var.
-#define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
-
-/// Full server node configuration, thread safe.
+/// Server configuration, thread safe.
 class BCS_API configuration
-  : public node::configuration
 {
 public:
-    configuration(system::settings context);
+    DEFAULT_COPY_MOVE_DESTRUCT(configuration);
+
+    configuration(system::chain::selection context) NOEXCEPT;
+
+    /// Environment.
+    std::filesystem::path file{};
+
+    /// Information.
+    bool help{};
+    bool hardware{};
+    bool settings{};
+    bool version{};
+
+    /// Actions.
+    bool newstore{};
+    bool backup{};
+    bool restore{};
+
+    /// Chain scans.
+    bool flags{};
+    bool information{};
+    bool slabs{};
+    bool buckets{};
+    bool collisions{};
+
+    /// Ad-hoc Testing.
+    bool test{};
+    bool write{};
 
     /// Settings.
-    bc::server::settings server;
-    bc::protocol::settings protocol;
-    bc::blockchain::settings blockchain;
+    log::settings log;
+    server::settings server;
+    node::settings node;
+    network::settings network;
+    database::settings database;
+    system::settings bitcoin;
 };
 
 } // namespace server

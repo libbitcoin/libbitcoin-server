@@ -45,7 +45,7 @@ authenticator::authenticator(server_node& node)
     }
 
     // Allow wins in case of conflict with deny (first writer).
-    for (const auto& address: settings.client_addresses)
+    for (const auto& address: settings.clients)
     {
         LOG_DEBUG(LOG_SERVER)
             << "Allow client address [" << address.to_hostname() << "]";

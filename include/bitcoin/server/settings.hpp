@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_SETTINGS_HPP
 #define LIBBITCOIN_SERVER_SETTINGS_HPP
 
+#include <chrono>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
@@ -31,20 +32,17 @@ class BCS_API settings
 {
 public:
     settings();
-    settings(system::settings context);
+    settings(system::chain::selection context);
 
-    /// Helpers.
-    network::asio::steady_timer heartbeat_interval() const;
-    network::asio::steady_timer subscription_expiration() const;
+    /// Times.
+    std::chrono::steady_clock::duration heartbeat_service() const;
+    std::chrono::steady_clock::duration subscription_expiration() const;
+
+    /// Endpoints.
     const protocol::endpoint& zeromq_query_endpoint(bool secure) const;
     const protocol::endpoint& zeromq_heartbeat_endpoint(bool secure) const;
     const protocol::endpoint& zeromq_block_endpoint(bool secure) const;
     const protocol::endpoint& zeromq_transaction_endpoint(bool secure) const;
-
-    const protocol::endpoint& websockets_query_endpoint(bool secure) const;
-    const protocol::endpoint& websockets_heartbeat_endpoint(bool secure) const;
-    const protocol::endpoint& websockets_block_endpoint(bool secure) const;
-    const protocol::endpoint& websockets_transaction_endpoint(bool secure) const;
 
     /// [server]
     bool priority;
@@ -55,35 +53,24 @@ public:
     uint32_t heartbeat_service_seconds;
     bool block_service_enabled;
     bool transaction_service_enabled;
-    network::config::authorities client_addresses;
-    network::config::authorities blacklists;
+    protocol::authorities clients{};
+    protocol::authorities blacklists{};
 
-    /// [websockets]
-    protocol::endpoint websockets_secure_query_endpoint;
-    protocol::endpoint websockets_secure_heartbeat_endpoint;
-    protocol::endpoint websockets_secure_block_endpoint;
-    protocol::endpoint websockets_secure_transaction_endpoint;
-
-    protocol::endpoint websockets_public_query_endpoint;
-    protocol::endpoint websockets_public_heartbeat_endpoint;
-    protocol::endpoint websockets_public_block_endpoint;
-    protocol::endpoint websockets_public_transaction_endpoint;
-
-    bool websockets_enabled;
-
-    /// [zeromq]
+    /// [zeromq] secure
     protocol::endpoint zeromq_secure_query_endpoint;
     protocol::endpoint zeromq_secure_heartbeat_endpoint;
     protocol::endpoint zeromq_secure_block_endpoint;
     protocol::endpoint zeromq_secure_transaction_endpoint;
 
+    /// [zeromq] clear
     protocol::endpoint zeromq_public_query_endpoint;
     protocol::endpoint zeromq_public_heartbeat_endpoint;
     protocol::endpoint zeromq_public_block_endpoint;
     protocol::endpoint zeromq_public_transaction_endpoint;
 
-    protocol::sodium zeromq_server_private_key;
-    protocol::sodium::list zeromq_client_public_keys;
+    /// [zeromq] keys
+    protocol::sodium zeromq_server_private_key{};
+    protocol::sodiums zeromq_client_public_keys{};
 };
 
 } // namespace server

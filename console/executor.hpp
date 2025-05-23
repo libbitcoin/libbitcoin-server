@@ -71,16 +71,16 @@ private:
     bool run();
 
     // Termination state.
-    static std::promise<system::code> stopping_;
+    static std::promise<system::code> stopping_{};
 
     parser& metadata_;
     std::ostream& output_;
     std::ostream& error_;
     network::logger log_{};
     std::promise<system::code> stopped_{};
-    server_node::ptr node_;
-    server_node::store store_;
-    server_node::query query_;
+    server_node::ptr node_{};
+    server_node::store store_{};
+    server_node::query query_{};
 };
 
 // Localizable messages.
