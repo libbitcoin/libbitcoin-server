@@ -19,8 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_ROUTE
 #define LIBBITCOIN_SERVER_ROUTE
 
-#include <cstddef>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 

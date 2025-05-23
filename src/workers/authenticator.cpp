@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/workers/authenticator.hpp>
 
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/server_node.hpp>

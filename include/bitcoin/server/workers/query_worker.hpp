@@ -20,8 +20,6 @@
 #define LIBBITCOIN_SERVER_QUERY_WORKER_HPP
 
 #include <memory>
-#include <functional>
-#include <string>
 #include <unordered_map>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>

@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PARSER_HPP
 #define LIBBITCOIN_SERVER_PARSER_HPP
 
-#include <ostream>
 #include <bitcoin/system.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/configuration.hpp>

@@ -18,10 +18,6 @@
  */
 #include <bitcoin/server/parser.hpp>
 
-#include <cstdint>
-#include <iostream>
-#include <string>
-#include <vector>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>

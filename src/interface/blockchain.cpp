@@ -18,11 +18,7 @@
  */
 #include <bitcoin/server/interface/blockchain.hpp>
 
-#include <cstdint>
-#include <cstddef>
-#include <functional>
 #include <utility>
-#include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>

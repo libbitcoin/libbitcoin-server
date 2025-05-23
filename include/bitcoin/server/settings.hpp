@@ -19,9 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_SETTINGS_HPP
 #define LIBBITCOIN_SERVER_SETTINGS_HPP
 
-#include <cstdint>
-#include <string>
-#include <vector>
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>

@@ -19,10 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
 #define LIBBITCOIN_SERVER_BLOCK_SERVICE_HPP
 
-#include <cstddef>
-#include <cstdint>
 #include <memory>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>

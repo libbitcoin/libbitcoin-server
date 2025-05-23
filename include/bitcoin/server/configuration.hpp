@@ -21,7 +21,6 @@
 
 #include <bitcoin/node.hpp>
 #include <bitcoin/protocol.hpp>
-#include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 

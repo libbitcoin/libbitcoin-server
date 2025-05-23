@@ -20,7 +20,6 @@
 #define LIBBITCOIN_SERVER_QUERY_SERVICE_HPP
 
 #include <memory>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>

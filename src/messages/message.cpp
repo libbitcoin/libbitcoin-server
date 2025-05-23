@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/messages/message.hpp>
 
-#include <cstdint>
-#include <string>
 #include <utility>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/messages/route.hpp>

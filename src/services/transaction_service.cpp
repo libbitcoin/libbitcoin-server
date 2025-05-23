@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/services/transaction_service.hpp>
 
-#include <functional>
 #include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>

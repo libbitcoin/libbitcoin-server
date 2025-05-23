@@ -20,10 +20,7 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cstdint>
-#include <functional>
 #include <memory>
-#include <string>
 #include <utility>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>

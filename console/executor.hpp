@@ -20,7 +20,6 @@
 #define LIBBITCOIN_SERVER_EXECUTOR_HPP
 
 #include <future>
-#include <iostream>
 #include <bitcoin/network/log/logger.hpp>
 #include <bitcoin/server.hpp>
 

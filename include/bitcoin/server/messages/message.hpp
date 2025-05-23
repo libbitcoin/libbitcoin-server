@@ -19,8 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_MESSAGE
 #define LIBBITCOIN_SERVER_MESSAGE
 
-#include <cstdint>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/route.hpp>
