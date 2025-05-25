@@ -19,9 +19,7 @@
 #include "executor.hpp"
 
 #include <csignal>
-#include <functional>
 #include <future>
-#include <iostream>
 #include <memory>
 #include <mutex>
 #include <boost/core/null_deleter.hpp>

@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/server_node.hpp>
 
-#include <cstdint>
-#include <functional>
 #include <memory>
 #include <utility>
 #include <bitcoin/node.hpp>

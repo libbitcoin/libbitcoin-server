@@ -18,18 +18,22 @@
  */
 #include <bitcoin/server/configuration.hpp>
 
+#include <bitcoin/node.hpp>
+#include <bitcoin/protocol.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-using namespace bc::system;
-
 // Construct with defaults derived from given context.
-configuration::configuration(config::settings context)
-  : node::configuration(context),
+configuration::configuration(system::chain::selection context) NOEXCEPT
+  : log(context),
     server(context),
-    blockchain(context)
+    node(context),
+    network(context),
+    database(context),
+    bitcoin(context)
 {
 }
 

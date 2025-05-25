@@ -148,7 +148,7 @@ endif()
 
 # Find boost
 #------------------------------------------------------------------------------
-find_package( Boost 1.76.0 REQUIRED COMPONENTS
+find_package( Boost 1.86.0 REQUIRED COMPONENTS
     unit_test_framework )
 
 set( boost_unit_test_framework_LIBS "-lboost_unit_test_framework" )
@@ -263,11 +263,6 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/services/heartbeat_service.cpp"
     "../../src/services/query_service.cpp"
     "../../src/services/transaction_service.cpp"
-    "../../src/web/block_socket.cpp"
-    "../../src/web/default_page_data.cpp"
-    "../../src/web/heartbeat_socket.cpp"
-    "../../src/web/query_socket.cpp"
-    "../../src/web/transaction_socket.cpp"
     "../../src/workers/authenticator.cpp"
     "../../src/workers/notification_worker.cpp"
     "../../src/workers/query_worker.cpp" )

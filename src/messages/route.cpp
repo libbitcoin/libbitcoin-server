@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/messages/route.hpp>
 
-#include <string>
 #include <bitcoin/protocol.hpp>
 
 namespace libbitcoin {

@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/workers/query_worker.hpp>
 
-#include <functional>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interface/blockchain.hpp>

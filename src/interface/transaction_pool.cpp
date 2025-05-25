@@ -18,9 +18,6 @@
  */
 #include <bitcoin/server/interface/transaction_pool.hpp>
 
-#include <cstdint>
-#include <cstddef>
-#include <functional>
 #include <memory>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/messages/message.hpp>

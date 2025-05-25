@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/services/block_service.hpp>
 
-#include <cstdint>
-#include <functional>
 #include <memory>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>

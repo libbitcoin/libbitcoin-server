@@ -19,7 +19,6 @@
 #include <bitcoin/server/services/heartbeat_service.hpp>
 
 #include <algorithm>
-#include <cstdint>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>

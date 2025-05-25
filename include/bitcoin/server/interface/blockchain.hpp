@@ -19,9 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 #define LIBBITCOIN_SERVER_BLOCKCHAIN_HPP
 
-#include <cstddef>
-#include <cstdint>
-#include <bitcoin/blockchain.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/messages/message.hpp>
 #include <bitcoin/server/server_node.hpp>

@@ -18,16 +18,20 @@
  */
 #include <bitcoin/server/settings.hpp>
 
+#include <chrono>
 #include <bitcoin/node.hpp>
+#include <bitcoin/protocol.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-using namespace bc::system;
-using namespace bc::system::asio;
+using namespace system;
+using namespace protocol;
+using namespace std::chrono;
 
 settings::settings()
-  : priority(false),
+  : // [server]
+    priority(false),
     secure_only(false),
     query_workers(1),
     subscription_limit(1000),
@@ -36,12 +40,13 @@ settings::settings()
     block_service_enabled(true),
     transaction_service_enabled(true),
 
-    // [zeromq]
+    // [zeromq] secure
     zeromq_secure_query_endpoint("tcp://*:9081"),
     zeromq_secure_heartbeat_endpoint("tcp://*:9082"),
     zeromq_secure_block_endpoint("tcp://*:9083"),
     zeromq_secure_transaction_endpoint("tcp://*:9084"),
 
+    // [zeromq] clear
     zeromq_public_query_endpoint("tcp://*:9091"),
     zeromq_public_heartbeat_endpoint("tcp://*:9092"),
     zeromq_public_block_endpoint("tcp://*:9093"),
@@ -49,41 +54,40 @@ settings::settings()
 {
 }
 
-// There are no current distinctions spanning chain contexts.
-settings::settings(config::settings)
+settings::settings(chain::selection context)
   : settings()
 {
 }
 
-duration settings::heartbeat_interval() const
+steady_clock::duration settings::heartbeat_service() const
 {
     return seconds(heartbeat_service_seconds);
 }
 
-duration settings::subscription_expiration() const
+steady_clock::duration settings::subscription_expiration() const
 {
     return minutes(subscription_expiration_minutes);
 }
 
-const config::endpoint& settings::zeromq_query_endpoint(bool secure) const
+const endpoint& settings::zeromq_query_endpoint(bool secure) const
 {
     return secure ? zeromq_secure_query_endpoint :
         zeromq_public_query_endpoint;
 }
 
-const config::endpoint& settings::zeromq_heartbeat_endpoint(bool secure) const
+const endpoint& settings::zeromq_heartbeat_endpoint(bool secure) const
 {
     return secure ? zeromq_secure_heartbeat_endpoint :
         zeromq_public_heartbeat_endpoint;
 }
 
-const config::endpoint& settings::zeromq_block_endpoint(bool secure) const
+const endpoint& settings::zeromq_block_endpoint(bool secure) const
 {
     return secure ? zeromq_secure_block_endpoint :
         zeromq_public_block_endpoint;
 }
 
-const config::endpoint& settings::zeromq_transaction_endpoint(bool secure) const
+const endpoint& settings::zeromq_transaction_endpoint(bool secure) const
 {
     return secure ? zeromq_secure_transaction_endpoint :
         zeromq_public_transaction_endpoint;

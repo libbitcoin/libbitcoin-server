@@ -20,10 +20,7 @@
 #define LIBBITCOIN_SERVER_NOTIFICATION_WORKER_HPP
 
 #include <chrono>
-#include <cstddef>
-#include <cstdint>
 #include <memory>
-#include <string>
 #include <unordered_set>
 #include <bitcoin/system.hpp>
 #include <bitcoin/server/define.hpp>

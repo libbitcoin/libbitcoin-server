@@ -19,9 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_HEARTBEAT_SERVICE_HPP
 #define LIBBITCOIN_SERVER_HEARTBEAT_SERVICE_HPP
 
-#include <cstdint>
 #include <memory>
-#include <string>
 #include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>

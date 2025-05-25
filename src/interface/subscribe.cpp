@@ -18,9 +18,6 @@
  */
 #include <bitcoin/server/interface/subscribe.hpp>
 
-#include <cstddef>
-#include <cstdint>
-#include <functional>
 #include <utility>
 #include <bitcoin/system.hpp>
 #include <bitcoin/server/messages/message.hpp>
