@@ -85,8 +85,8 @@ ZMQ_ARCHIVE="zeromq-4.3.5.tar.gz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
-BOOST_URL="https://archives.boost.io/release/1.78.0/source/boost_1_78_0.tar.bz2"
-BOOST_ARCHIVE="boost_1_78_0.tar.bz2"
+BOOST_URL="https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2"
+BOOST_ARCHIVE="boost_1_86_0.tar.bz2"
 
 
 # Define utility functions.
@@ -408,8 +408,6 @@ handle_custom_options()
     display_message "REPO_PRESET[libbitcoin-node]=${REPO_PRESET[libbitcoin-node]}"
     REPO_PRESET[libbitcoin-network]="$BASE_PRESET_ID"
     display_message "REPO_PRESET[libbitcoin-network]=${REPO_PRESET[libbitcoin-network]}"
-    REPO_PRESET[libbitcoin-consensus]="$BASE_PRESET_ID"
-    display_message "REPO_PRESET[libbitcoin-consensus]=${REPO_PRESET[libbitcoin-consensus]}"
     REPO_PRESET[libbitcoin-database]="$BASE_PRESET_ID"
     display_message "REPO_PRESET[libbitcoin-database]=${REPO_PRESET[libbitcoin-database]}"
     REPO_PRESET[libbitcoin-system]="$BASE_PRESET_ID"
