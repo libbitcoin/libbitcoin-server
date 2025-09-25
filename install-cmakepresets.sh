@@ -26,7 +26,7 @@
 # --disable-shared         Disables shared library builds.
 # --disable-static         Disables static library builds.
 # --verbose                Display verbose output (defaults to quiet on called tooling).
-# --help                   Display usage, overriding script execution.
+# --help, -h               Display usage, overriding script execution.
 #
 # Verified on Ubuntu 14.04, requires gcc-4.8 or newer.
 # Verified on OSX 10.10, using MacPorts and Homebrew repositories, requires
@@ -42,7 +42,7 @@
 #==============================================================================
 # Branches for github dependencies.
 #------------------------------------------------------------------------------
-SECP256K1_BRANCH="v0.5.1"
+SECP256K1_BRANCH="v0.7.0"
 BITCOIN_SYSTEM_BRANCH="master"
 BITCOIN_NETWORK_BRANCH="master"
 BITCOIN_DATABASE_BRANCH="master"
@@ -258,7 +258,7 @@ display_help()
     display_message "  --prefix=<absolute-path> Library install location (defaults to /usr/local)."
     display_message "  --disable-shared         Disables shared library builds."
     display_message "  --disable-static         Disables static library builds."
-    display_message "  --help                   Display usage, overriding script execution."
+    display_message "  --help, -h               Display usage, overriding script execution."
     display_message ""
     display_message "All unrecognized options provided shall be passed as configuration options for "
     display_message "all dependencies."
@@ -271,7 +271,7 @@ parse_command_line_options()
     for OPTION in "$@"; do
         case $OPTION in
             # Standard script options.
-            (--help)                DISPLAY_HELP="yes";;
+            (--help|-h)             DISPLAY_HELP="yes";;
             (--verbose)             DISPLAY_VERBOSE="yes";;
 
             # Standard build options.
@@ -1112,6 +1112,7 @@ BOOST_OPTIONS=(
 "--with-program_options" \
 "--with-regex" \
 "--with-thread" \
+"--with-url" \
 "--with-test")
 
 # Define secp256k1 options.
