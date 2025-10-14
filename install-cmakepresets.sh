@@ -69,7 +69,7 @@ fi
 
 # The default build directory.
 #------------------------------------------------------------------------------
-BUILD_DIR="build-libbitcoin-server"
+BUILD_SRC_DIR="build-libbitcoin-server"
 
 PRESUMED_CI_PROJECT_PATH=$(pwd)
 
@@ -176,13 +176,13 @@ make_jobs()
     shift 1
 
     VERBOSITY=""
-    if [[ DISPLAY_VERBOSE ]]; then
+    if [[ $DISPLAY_VERBOSE ]]; then
         VERBOSITY="VERBOSE=1"
     fi
 
     SEQUENTIAL=1
     # Avoid setting -j1 (causes problems on single threaded systems [TRAVIS]).
-    if [[ $JOBS > $SEQUENTIAL ]]; then
+    if [[ $JOBS -gt $SEQUENTIAL ]]; then
         make -j"$JOBS" "$@" $VERBOSITY
     else
         make "$@" $VERBOSITY
@@ -289,7 +289,7 @@ parse_command_line_options()
             (--build-zmq)                              BUILD_ZMQ="yes";;
 
             # Unique script options.
-            (--build-dir=*)         BUILD_DIR="${OPTION#*=}";;
+            (--build-dir=*)         BUILD_SRC_DIR="${OPTION#*=}";;
             (--preset=*)            PRESET_ID="${OPTION#*=}";;
 
             # Handle ndebug declarations due to disabled argument passthrough
@@ -343,11 +343,6 @@ set_os_specific_compiler_settings()
         STDLIB="estdc++"
     else # Linux
         STDLIB="stdc++"
-    fi
-
-    if [[ ($OS == Darwin) && ($CC == clang*) ]]; then
-        CFLAGS="${CFLAGS} -DBOOST_NO_CXX98_FUNCTION_BASE"
-        CXXFLAGS="${CXXFLAGS} -DBOOST_NO_CXX98_FUNCTION_BASE"
     fi
 }
 
@@ -535,7 +530,7 @@ display_configuration()
     display_message "BUILD_SECP256K1       : $BUILD_SECP256K1"
     display_message "BUILD_ZMQ             : $BUILD_ZMQ"
     display_message "BOOST_ROOT            : $BOOST_ROOT"
-    display_message "BUILD_DIR                      : $BUILD_DIR"
+    display_message "BUILD_SRC_DIR                  : $BUILD_SRC_DIR"
     display_message "PRESET_ID                      : $PRESET_ID"
     display_message "CUMULATIVE_FILTERED_ARGS       : $CUMULATIVE_FILTERED_ARGS"
     display_message "CUMULATIVE_FILTERED_ARGS_CMAKE : $CUMULATIVE_FILTERED_ARGS_CMAKE"
@@ -1179,10 +1174,10 @@ BITCOIN_SERVER_OPTIONS=(
 display_configuration
 
 if [[ ! ($CI == true) ]]; then
-    create_directory "$BUILD_DIR"
-    push_directory "$BUILD_DIR"
+    create_directory "$BUILD_SRC_DIR"
+    push_directory "$BUILD_SRC_DIR"
 else
-    push_directory "$BUILD_DIR"
+    push_directory "$BUILD_SRC_DIR"
 fi
 
 initialize_git
