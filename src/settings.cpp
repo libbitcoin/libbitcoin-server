@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2025 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,80 +18,102 @@
  */
 #include <bitcoin/server/settings.hpp>
 
-#include <chrono>
-#include <bitcoin/node.hpp>
-#include <bitcoin/protocol.hpp>
+#include <algorithm>
+#include <filesystem>
+
+using namespace bc::system;
+using namespace bc::network;
 
 namespace libbitcoin {
-namespace server {
 
-using namespace system;
-using namespace protocol;
-using namespace std::chrono;
+// log
+// ----------------------------------------------------------------------------
 
-settings::settings()
-  : // [server]
-    priority(false),
-    secure_only(false),
-    query_workers(1),
-    subscription_limit(1000),
-    subscription_expiration_minutes(10),
-    heartbeat_service_seconds(5),
-    block_service_enabled(true),
-    transaction_service_enabled(true),
+namespace log {
 
-    // [zeromq] secure
-    zeromq_secure_query_endpoint("tcp://*:9081"),
-    zeromq_secure_heartbeat_endpoint("tcp://*:9082"),
-    zeromq_secure_block_endpoint("tcp://*:9083"),
-    zeromq_secure_transaction_endpoint("tcp://*:9084"),
-
-    // [zeromq] clear
-    zeromq_public_query_endpoint("tcp://*:9091"),
-    zeromq_public_heartbeat_endpoint("tcp://*:9092"),
-    zeromq_public_block_endpoint("tcp://*:9093"),
-    zeromq_public_transaction_endpoint("tcp://*:9094")
+// Log states default to network compiled states or explicit false.
+settings::settings() NOEXCEPT
+  : application{ levels::application_defined },
+    news{ levels::news_defined },
+    session{ levels::session_defined },
+    protocol{ false /*levels::protocol_defined*/ },
+    proxy{ false /*levels::proxy_defined*/ },
+    remote{ levels::remote_defined },
+    fault{ levels::fault_defined },
+    quitting{ false /*levels::quitting_defined*/ },
+    objects{ false /*levels::objects_defined*/ },
+    verbose{ false /*levels::verbose_defined*/ },
+    maximum_size{ 1'000'000_u32 }
 {
 }
 
-settings::settings(chain::selection context)
+settings::settings(chain::selection) NOEXCEPT
   : settings()
 {
 }
 
-steady_clock::duration settings::heartbeat_service() const
+std::filesystem::path settings::log_file1() const NOEXCEPT
 {
-    return seconds(heartbeat_service_seconds);
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    return path / "bs_end.log";
+    BC_POP_WARNING()
 }
 
-steady_clock::duration settings::subscription_expiration() const
+std::filesystem::path settings::log_file2() const NOEXCEPT
 {
-    return minutes(subscription_expiration_minutes);
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    return path / "bs_begin.log";
+    BC_POP_WARNING()
 }
 
-const endpoint& settings::zeromq_query_endpoint(bool secure) const
+std::filesystem::path settings::events_file() const NOEXCEPT
 {
-    return secure ? zeromq_secure_query_endpoint :
-        zeromq_public_query_endpoint;
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    return path / "events.log";
+    BC_POP_WARNING()
 }
 
-const endpoint& settings::zeromq_heartbeat_endpoint(bool secure) const
+} // namespace log
+
+// server
+// ----------------------------------------------------------------------------
+
+namespace server {
+
+// settings::settings
+settings::settings(system::chain::selection, const embedded_pages& explore,
+    const embedded_pages& web) NOEXCEPT
+  : explore("explore", explore),
+    web("web", web)    
 {
-    return secure ? zeromq_secure_heartbeat_endpoint :
-        zeromq_public_heartbeat_endpoint;
 }
 
-const endpoint& settings::zeromq_block_endpoint(bool secure) const
+// settings::embedded_pages
+span_value settings::embedded_pages::css()  const NOEXCEPT { return {}; }
+span_value settings::embedded_pages::html() const NOEXCEPT { return {}; }
+span_value settings::embedded_pages::ecma() const NOEXCEPT { return {}; }
+span_value settings::embedded_pages::font() const NOEXCEPT { return {}; }
+span_value settings::embedded_pages::icon() const NOEXCEPT { return {}; }
+bool settings::embedded_pages::enabled() const NOEXCEPT
 {
-    return secure ? zeromq_secure_block_endpoint :
-        zeromq_public_block_endpoint;
+    return !html().empty();
 }
 
-const endpoint& settings::zeromq_transaction_endpoint(bool secure) const
+// settings::html_server
+settings::html_server::html_server(const std::string_view& logging_name,
+    const embedded_pages& embedded) NOEXCEPT
+  : network::settings::websocket_server(logging_name),
+    pages(embedded)
 {
-    return secure ? zeromq_secure_transaction_endpoint :
-        zeromq_public_transaction_endpoint;
+}
+
+bool settings::html_server::enabled() const NOEXCEPT
+{
+    return (!path.empty() || pages.enabled()) && http_server::enabled();
 }
 
 } // namespace server
+
+// ----------------------------------------------------------------------------
+
 } // namespace libbitcoin

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2025 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,12 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_EXECUTOR_HPP
-#define LIBBITCOIN_SERVER_EXECUTOR_HPP
+#ifndef LIBBITCOIN_BS_EXECUTOR_HPP
+#define LIBBITCOIN_BS_EXECUTOR_HPP
 
+#include <atomic>
 #include <future>
-#include <bitcoin/network/log/logger.hpp>
+#include <unordered_map>
 #include <bitcoin/server.hpp>
+
+// This class is just an ad-hoc user interface wrapper on the node.
+// It will be factored and cleaned up for final release.
 
 namespace libbitcoin {
 namespace server {
@@ -29,15 +33,12 @@ namespace server {
 class executor
 {
 public:
+    DELETE_COPY(executor);
+
     executor(parser& metadata, std::istream&, std::ostream& output,
         std::ostream& error);
 
-    /// This class is not copyable.
-    executor(const executor&) = delete;
-    void operator=(const executor&) = delete;
-
-    /// Invoke the command indicated by the metadata.
-    bool menu();
+    bool dispatch();
 
 private:
     void logger(const auto& message) const
@@ -50,93 +51,125 @@ private:
 
     void stopper(const auto& message)
     {
+        capture_.stop();
         log_.stop(message, network::levels::application);
         stopped_.get_future().wait();
     }
 
+    // Stop signal.
+    static void initialize_stop();
     static void stop(const system::code& ec);
     static void handle_stop(int code);
 
+    // Event handlers.
     void handle_started(const system::code& ec);
+    void handle_subscribed(const system::code& ec, size_t key);
     void handle_running(const system::code& ec);
-    //void handle_stopped(const system::code& ec);
+    bool handle_stopped(const system::code& ec);
 
-    void do_help();
-    void do_settings();
-    void do_version();
-    bool do_initchain();
+    // Store dumps.
+    void dump_version() const;
+    void dump_hardware() const;
+    void dump_options() const;
+    void dump_body_sizes() const;
+    void dump_records() const;
+    void dump_buckets() const;
+    void dump_progress() const;
+    void dump_collisions() const;
+    void dump_sizes() const;
 
-    void initialize_output();
-    bool verify_directory();
-    bool run();
+    // Store functions.
+    bool check_store_path(bool create=false) const;
+    bool create_store(bool details = false);
+    bool open_store(bool details=false);
+    code open_store_coded(bool details=false);
+    bool close_store(bool details=false);
+    bool reload_store(bool details=false);
+    bool restore_store(bool details=false);
+    bool hot_backup_store(bool details=false);
+    bool cold_backup_store(bool details=false);
 
-    // Termination state.
-    static std::promise<system::code> stopping_{};
+    // Long-running queries (scans).
+    void scan_flags() const;
+    void scan_slabs() const;
+    void scan_buckets() const;
+    void scan_collisions() const;
+
+    // Command line (defaults to do_run).
+    bool do_help();
+    bool do_version();
+    bool do_hardware();
+    bool do_settings();
+    bool do_new_store();
+    bool do_backup();
+    bool do_restore();
+    bool do_flags();
+    bool do_information();
+    bool do_slabs();
+    bool do_buckets();
+    bool do_collisions();
+    bool do_read(const system::hash_digest& hash);
+    bool do_write(const system::hash_digest& hash);
+
+    // Runtime options.
+    void do_hot_backup();
+    void do_close();
+    void do_suspend();
+    void do_resume();
+    void do_report_work();
+    void do_reload_store();
+    void do_menu() const;
+    void do_test() const;
+    void do_info() const;
+    void do_report_condition() const;
+    void subscribe_capture();
+
+    // Built in tests.
+    void read_test(const system::hash_digest& hash) const;
+    void write_test(const system::hash_digest& hash);
+
+    // Logging.
+    database::file::stream::out::rotator create_log_sink() const;
+    system::ofstream create_event_sink() const;
+    void subscribe_log(std::ostream& sink);
+    void subscribe_events(std::ostream& sink);
+
+    // Runner.
+    void subscribe_connect();
+    void subscribe_close();
+    bool do_run();
+    
+    // Other user-facing values.
+    static const std::string name_;
+    static const std::string close_;
+
+    // Runtime options.
+    static const std::unordered_map<std::string, uint8_t> options_;
+    static const std::unordered_map<uint8_t, std::string> options_menu_;
+
+    // Runtime toggles.
+    static const std::unordered_map<std::string, uint8_t> toggles_;
+    static const std::unordered_map<uint8_t, std::string> toggles_menu_;
+    static const std::unordered_map<uint8_t, bool> defined_;
+
+    // Runtime events.
+    static const std::unordered_map<uint8_t, std::string> fired_;
+    static std::promise<system::code> stopping_;
+    static std::atomic_bool cancel_;
 
     parser& metadata_;
-    std::ostream& output_;
-    std::ostream& error_;
-    network::logger log_{};
-    std::promise<system::code> stopped_{};
     server_node::ptr node_{};
-    server_node::store store_{};
-    server_node::query query_{};
+    server_node::store store_;
+    server_node::query query_;
+    std::promise<system::code> stopped_{};
+    node::count_t sequence_{};
+
+    std::istream& input_;
+    std::ostream& output_;
+    network::logger log_{};
+    network::capture capture_{ input_, close_ };
+    std_array<std::atomic_bool, add1(network::levels::verbose)> toggle_;
 };
-
-// Localizable messages.
-#define BS_SETTINGS_MESSAGE \
-    "Configuration Settings:"
-#define BS_INFORMATION_MESSAGE \
-    "Runs a full bitcoin node and query server in the global network."
-
-#define BS_UNINITIALIZED_CHAIN \
-    "The %1% directory is not initialized, run: bs --initchain"
-#define BS_INITIALIZING_CHAIN \
-    "Please wait while initializing %1% directory..."
-#define BS_INITCHAIN_NEW \
-    "Failed to create directory %1% with error, '%2%'."
-#define BS_INITCHAIN_EXISTS \
-    "Failed because the directory %1% already exists."
-#define BS_INITCHAIN_TRY \
-    "Failed to test directory %1% with error, '%2%'."
-#define BS_INITCHAIN_COMPLETE \
-    "Completed initialization."
-#define BS_INITCHAIN_DATABASE_CREATE_FAILURE \
-    "Database creation failed with error, '%2%'."
-
-#define BS_NODE_INTERRUPT \
-    "Press CTRL-C to stop the server."
-#define BS_NODE_STARTING \
-    "Please wait while the server is starting..."
-#define BS_NODE_START_FAIL \
-    "Server failed to start with error, %1%."
-#define BS_NODE_SEEDED \
-    "Seeding is complete."
-#define BS_NODE_STARTED \
-    "Server is started."
-
-#define BS_NODE_SIGNALED \
-    "Stop signal detected (code: %1%)."
-#define BS_NODE_STOPPING \
-    "Please wait while the server is stopping..."
-#define BS_NODE_STOP_FAIL \
-    "Server failed to stop properly, see log."
-#define BS_NODE_STOPPED \
-    "Server stopped successfully."
-
-#define BS_USING_CONFIG_FILE \
-    "Using config file: %1%"
-#define BS_USING_DEFAULT_CONFIG \
-    "Using default configuration settings."
-#define BS_VERSION_MESSAGE \
-    "\nVersion Information:\n\n" \
-    "libbitcoin-server:     %1%\n" \
-    "libbitcoin-protocol:   %2%\n" \
-    "libbitcoin-node:       %3%\n" \
-    "libbitcoin-blockchain: %4%\n" \
-    "libbitcoin:            %5%"
-#define BS_LOG_HEADER \
-    "================= startup %1% =================="
 
 } // namespace server
 } // namespace libbitcoin

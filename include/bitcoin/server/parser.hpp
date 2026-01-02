@@ -19,9 +19,9 @@
 #ifndef LIBBITCOIN_SERVER_PARSER_HPP
 #define LIBBITCOIN_SERVER_PARSER_HPP
 
-#include <bitcoin/system.hpp>
-#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
 
 // Not localizable.
 #define BS_HELP_VARIABLE "help"
@@ -50,17 +50,15 @@
 namespace libbitcoin {
 namespace server {
 
-// TODO: derive from node parser and add new settings.
-// TODO: implement parsers in downlevel libraries.
-
 /// Parse configurable values from environment variables, settings file, and
 /// command line positional and non-positional options.
 class BCS_API parser
   : public system::config::parser
 {
 public:
-    parser(system::chain::selection context) NOEXCEPT;
-    parser(const configuration& defaults) NOEXCEPT;
+    parser(system::chain::selection context,
+        const server::settings::embedded_pages& explore,
+        const server::settings::embedded_pages& web) NOEXCEPT;
 
     /// Load command line options (named).
     virtual options_metadata load_options() THROWS;

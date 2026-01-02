@@ -19,21 +19,20 @@
 #ifndef LIBBITCOIN_SERVER_CONFIGURATION_HPP
 #define LIBBITCOIN_SERVER_CONFIGURATION_HPP
 
-#include <bitcoin/node.hpp>
-#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Server configuration, thread safe.
+/// Server node configuration, thread safe.
 class BCS_API configuration
+  : public node::configuration
 {
 public:
-    DEFAULT_COPY_MOVE_DESTRUCT(configuration);
-
-    configuration(system::chain::selection context) NOEXCEPT;
+    configuration(system::chain::selection context,
+        const server::settings::embedded_pages& explore,
+        const server::settings::embedded_pages& web) NOEXCEPT;
 
     /// Environment.
     std::filesystem::path file{};
@@ -57,16 +56,12 @@ public:
     bool collisions{};
 
     /// Ad-hoc Testing.
-    bool test{};
-    bool write{};
+    system::config::hash256 test{};
+    system::config::hash256 write{};
 
     /// Settings.
     log::settings log;
     server::settings server;
-    node::settings node;
-    network::settings network;
-    database::settings database;
-    system::settings bitcoin;
 };
 
 } // namespace server

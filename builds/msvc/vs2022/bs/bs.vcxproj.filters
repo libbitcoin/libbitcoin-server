@@ -8,22 +8,97 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="resource">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000001}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000000}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\embedded">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000001}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\console\embedded\explore_css.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\explore_ecma.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\explore_font.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\explore_html.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\explore_icon.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\web_css.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\web_ecma.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\web_font.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\web_html.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\web_icon.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_commands.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_dumps.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_events.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_logging.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_options.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_runner.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_scans.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_store.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_test_reader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\console\stack_trace.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\console\embedded\embedded.hpp">
+      <Filter>src\embedded</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\console\executor.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\console\localize.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\console\stack_trace.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\resource.h">

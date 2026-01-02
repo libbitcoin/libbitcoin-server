@@ -19,11 +19,12 @@
 #include <cstdlib>
 #include <filesystem>
 #include <bitcoin/server.hpp>
+#include "embedded/embedded.hpp"
 #include "executor.hpp"
 
-////// This is some experimental code to explore emission of win32 stack dump.
-////#ifdef HAVE_MSC
-////#include "stack_trace.hpp"
+// This is some experimental code to explore emission of win32 stack dump.
+#ifdef HAVE_MSC
+#include "stack_trace.hpp"
 
 namespace libbitcoin {
 namespace system {
@@ -35,80 +36,74 @@ namespace system {
 } // namespace libbitcoin
 
 namespace bc = libbitcoin;
-////std::filesystem::path symbols_path{};
-////
-////int wmain(int argc, wchar_t* argv[])
-////{
-////    __try
-////    {
-////        return bc::system::call_utf8_main(argc, argv, &bc::system::main);
-////    }
-////    __except (dump_stack_trace(GetExceptionCode(), GetExceptionInformation()))
-////    {
-////        return -1;
-////    }
-////}
-////
-////// This is invoked by dump_stack_trace.
-////void handle_stack_trace(const std::string& trace)
-////{
-////    if (trace.empty())
-////    {
-////        bc::system::cout << "<<unhandled exception>>" << std::endl;
-////        return;
-////    }
-////
-////    bc::system::cout << "<<unhandled exception - start trace>>" << std::endl;
-////    bc::system::cout << trace << std::endl;
-////    bc::system::cout << "<<unhandled exception - end trace>>" << std::endl;
-////}
-////
-////// This is invoked by dump_stack_trace.
-////std::wstring pdb_path()
-////{
-////    return bc::system::to_extended_path(symbols_path);
-////}
-////
-////#else
+std::filesystem::path symbols_path{};
+
+int wmain(int argc, wchar_t* argv[])
+{
+    __try
+    {
+        return bc::system::call_utf8_main(argc, argv, &bc::system::main);
+    }
+    __except (dump_stack_trace(GetExceptionCode(), GetExceptionInformation()))
+    {
+        return -1;
+    }
+}
+
+// This is invoked by dump_stack_trace.
+void handle_stack_trace(const std::string& trace)
+{
+    if (trace.empty())
+    {
+        bc::system::cout << "<<unhandled exception>>" << std::endl;
+        return;
+    }
+
+    bc::system::cout << "<<unhandled exception - start trace>>" << std::endl;
+    bc::system::cout << trace << std::endl;
+    bc::system::cout << "<<unhandled exception - end trace>>" << std::endl;
+}
+
+// This is invoked by dump_stack_trace.
+std::wstring pdb_path()
+{
+    return bc::system::extended_path(symbols_path);
+}
+
+#else
 BC_USE_LIBBITCOIN_MAIN
-////#endif
+#endif
 
 /// Invoke this program with the raw arguments provided on the command line.
 /// All console input and output streams for the application originate here.
 int bc::system::main(int argc, char* argv[])
 {
     using namespace bc;
-    using namespace bc::server;
     using namespace bc::system;
+    using namespace bc::network;
+    using namespace bc::node;
+    using namespace bc::server;
 
     // en.cppreference.com/w/cpp/io/ios_base/sync_with_stdio
     std::ios_base::sync_with_stdio(false);
-
     set_utf8_stdio();
-    parser metadata(chain::selection::mainnet);
+
+    const web_pages web_server{};
+    const explore_pages block_explorer{};
+    server::parser metadata(chain::selection::mainnet,
+        block_explorer, web_server);
+
     const auto& args = const_cast<const char**>(argv);
 
     if (!metadata.parse(argc, args, cerr))
         return -1;
 
-////#if defined(HAVE_MSC)
-////    symbols_path = metadata.configured.log.symbols;
-////#endif
-
-// requires _WIN32_WINNT set to 0x0602 (defaults 0x0602 in vc++ 2022).
-#if defined(HAVE_MSC) && defined(MEMORY_PRIORITY_INFORMATION)
-
-    // Set low memory priority on the current process.
-    const MEMORY_PRIORITY_INFORMATION priority{ MEMORY_PRIORITY_LOW };
-    SetProcessInformation(
-        GetCurrentProcess(),
-        ProcessMemoryPriority,
-        &priority,
-        sizeof(priority));
-
+#if defined(HAVE_MSC)
+    symbols_path = metadata.configured.log.symbols;
 #endif
 
+    set_memory_priority(metadata.configured.node.memory_priority_());
+
     executor host(metadata, cin, cout, cerr);
-    ////return host.dispatch() ? 0 : -1;
-    return host.menu() ? 0 : -1;
+    return host.dispatch() ? 0 : -1;
 }

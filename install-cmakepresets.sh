@@ -19,7 +19,6 @@
 #                            be avoided.
 # --build-icu              Builds ICU libraries.
 # --build-boost            Builds Boost libraries.
-# --build-zmq              Builds ZeroMQ libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --preset=<label>         CMakePreset label.
 # --prefix=<absolute-path> Library install location (defaults to /usr/local).
@@ -47,7 +46,6 @@ BITCOIN_SYSTEM_BRANCH="master"
 BITCOIN_NETWORK_BRANCH="master"
 BITCOIN_DATABASE_BRANCH="master"
 BITCOIN_NODE_BRANCH="master"
-BITCOIN_PROTOCOL_BRANCH="master"
 BITCOIN_SERVER_BRANCH="master"
 
 
@@ -77,11 +75,6 @@ PRESUMED_CI_PROJECT_PATH=$(pwd)
 #------------------------------------------------------------------------------
 ICU_URL="https://github.com/unicode-org/icu/releases/download/release-55-2/icu4c-55_2-src.tgz"
 ICU_ARCHIVE="icu4c-55_2-src.tgz"
-
-# ZMQ archive.
-#------------------------------------------------------------------------------
-ZMQ_URL="https://github.com/zeromq/libzmq/releases/download/v4.3.5/zeromq-4.3.5.tar.gz"
-ZMQ_ARCHIVE="zeromq-4.3.5.tar.gz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
@@ -252,7 +245,6 @@ display_help()
     display_message "  --build-icu              Build ICU libraries."
     display_message "  --build-boost            Build Boost libraries."
     display_message "  --build-secp256k1        Build libsecp256k1 libraries."
-    display_message "  --build-zmq              Build ZeroMQ libraries."
     display_message "  --build-dir=<path>       Location of downloaded and intermediate files."
     display_message "  --preset=<label>         CMakePreset label."
     display_message "  --prefix=<absolute-path> Library install location (defaults to /usr/local)."
@@ -286,7 +278,6 @@ parse_command_line_options()
             (--build-icu)                              BUILD_ICU="yes";;
             (--build-boost)                            BUILD_BOOST="yes";;
             (--build-secp256k1)                        BUILD_SECP256K1="yes";;
-            (--build-zmq)                              BUILD_ZMQ="yes";;
 
             # Unique script options.
             (--build-dir=*)         BUILD_SRC_DIR="${OPTION#*=}";;
@@ -397,8 +388,6 @@ handle_custom_options()
     BASE_PRESET_ID="$PRESET_ID"
     REPO_PRESET[libbitcoin-server]="$PRESET_ID"
     display_message "REPO_PRESET[libbitcoin-server]=${REPO_PRESET[libbitcoin-server]}"
-    REPO_PRESET[libbitcoin-protocol]="$BASE_PRESET_ID"
-    display_message "REPO_PRESET[libbitcoin-protocol]=${REPO_PRESET[libbitcoin-protocol]}"
     REPO_PRESET[libbitcoin-node]="$BASE_PRESET_ID"
     display_message "REPO_PRESET[libbitcoin-node]=${REPO_PRESET[libbitcoin-node]}"
     REPO_PRESET[libbitcoin-network]="$BASE_PRESET_ID"
@@ -528,7 +517,6 @@ display_configuration()
     display_message "BUILD_ICU             : $BUILD_ICU"
     display_message "BUILD_BOOST           : $BUILD_BOOST"
     display_message "BUILD_SECP256K1       : $BUILD_SECP256K1"
-    display_message "BUILD_ZMQ             : $BUILD_ZMQ"
     display_message "BOOST_ROOT            : $BOOST_ROOT"
     display_message "BUILD_SRC_DIR                  : $BUILD_SRC_DIR"
     display_message "PRESET_ID                      : $PRESET_ID"
@@ -1010,17 +998,6 @@ build_all()
     display_message "libbitcoin-node PRESET ${REPO_PRESET[libbitcoin-node]}"
     build_from_github_cmake libbitcoin-node ${REPO_PRESET[libbitcoin-node]} "$PARALLEL" false "yes" "${BITCOIN_NODE_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
     export CPPFLAGS=$SAVE_CPPFLAGS
-    unpack_from_tarball "$ZMQ_ARCHIVE" "$ZMQ_URL" gzip "$BUILD_ZMQ"
-    local SAVE_CPPFLAGS="$CPPFLAGS"
-    export CPPFLAGS="$CPPFLAGS ${ZMQ_FLAGS[@]}"
-    build_from_tarball "$ZMQ_ARCHIVE" . "$PARALLEL" "$BUILD_ZMQ" "${ZMQ_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS
-    export CPPFLAGS=$SAVE_CPPFLAGS
-    create_from_github libbitcoin libbitcoin-protocol ${BITCOIN_PROTOCOL_BRANCH} "yes"
-    local SAVE_CPPFLAGS="$CPPFLAGS"
-    export CPPFLAGS="$CPPFLAGS ${BITCOIN_PROTOCOL_FLAGS[@]}"
-    display_message "libbitcoin-protocol PRESET ${REPO_PRESET[libbitcoin-protocol]}"
-    build_from_github_cmake libbitcoin-protocol ${REPO_PRESET[libbitcoin-protocol]} "$PARALLEL" false "yes" "${BITCOIN_PROTOCOL_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
-    export CPPFLAGS=$SAVE_CPPFLAGS
     local SAVE_CPPFLAGS="$CPPFLAGS"
     export CPPFLAGS="$CPPFLAGS ${BITCOIN_SERVER_FLAGS[@]}"
     if [[ ! ($CI == true) ]]; then
@@ -1072,11 +1049,6 @@ BOOST_FLAGS=(
 # Define secp256k1 flags.
 #------------------------------------------------------------------------------
 SECP256K1_FLAGS=(
-"-w")
-
-# Define zmq flags.
-#------------------------------------------------------------------------------
-ZMQ_FLAGS=(
 "-w")
 
 
@@ -1142,19 +1114,6 @@ BITCOIN_DATABASE_OPTIONS=(
 BITCOIN_NODE_OPTIONS=(
 "-Dwith-tests=no" \
 "-Dwith-console=no" \
-"${with_boost}" \
-"${with_pkgconfigdir}")
-
-# Define zmq options.
-#------------------------------------------------------------------------------
-ZMQ_OPTIONS=(
-"--disable-Werror")
-
-# Define bitcoin-protocol options.
-#------------------------------------------------------------------------------
-BITCOIN_PROTOCOL_OPTIONS=(
-"-Dwith-tests=no" \
-"-Dwith-examples=no" \
 "${with_boost}" \
 "${with_pkgconfigdir}")
 

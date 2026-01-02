@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2025 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,108 +16,80 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SERVER_NODE_HPP
-#define LIBBITCOIN_SERVER_SERVER_NODE_HPP
+#ifndef LIBBITCOIN_SERVER_FULL_NODE_HPP
+#define LIBBITCOIN_SERVER_FULL_NODE_HPP
 
-#include <memory>
-#include <bitcoin/node.hpp>
-#include <bitcoin/protocol.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/messages/message.hpp>
-#include <bitcoin/server/messages/subscription.hpp>
-#include <bitcoin/server/services/block_service.hpp>
-#include <bitcoin/server/services/heartbeat_service.hpp>
-#include <bitcoin/server/services/query_service.hpp>
-#include <bitcoin/server/services/transaction_service.hpp>
-#include <bitcoin/server/workers/authenticator.hpp>
-#include <bitcoin/server/workers/notification_worker.hpp>
+#include <bitcoin/server/sessions/sessions.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-class notification_worker;
-
+/// Thread safe.
 class BCS_API server_node
   : public node::full_node
 {
 public:
+    using store = node::store;
+    using query = node::query;
+    using result_handler = network::result_handler;
     typedef std::shared_ptr<server_node> ptr;
 
-    /// Construct a server node.
-    server_node(const configuration& configuration);
+    /// Constructors.
+    /// -----------------------------------------------------------------------
 
-    /// Ensure all threads are coalesced.
-    virtual ~server_node();
+    server_node(query& query, const configuration& configuration,
+        const network::logger& log) NOEXCEPT;
 
-    // Properties.
-    // ----------------------------------------------------------------------------
+    ~server_node() NOEXCEPT;
 
-    /// Server configuration settings.
-    virtual const bc::blockchain::settings& blockchain_settings() const;
+    /// Sequences.
+    /// -----------------------------------------------------------------------
 
-    /// Server configuration settings.
-    virtual const bc::protocol::settings& protocol_settings() const;
+    /// Run the node (inbound/outbound services).
+    void run(result_handler&& handler) NOEXCEPT override;
 
-    /// Server configuration settings.
-    virtual const bc::server::settings& server_settings() const;
+    /// Properties.
+    /// -----------------------------------------------------------------------
 
-    // Run sequence.
-    // ------------------------------------------------------------------------
+    /// Configuration for all libraries.
+    virtual const server::configuration& server_config() const NOEXCEPT;
+    ////const node::configuration& node_config() const NOEXCEPT override;
 
-    /// Synchronize the blockchain and then begin long running sessions,
-    /// call from start result handler. Call base method to skip sync.
-    virtual void run(network::result_handler handler);
+    /// Configuration settings for all libraries.
+    ////const system::settings& system_settings() const NOEXCEPT override;
+    ////const database::settings& database_settings() const NOEXCEPT override;
+    ////const network::settings& network_settings() const NOEXCEPT override;
+    ////const node::settings& node_settings() const NOEXCEPT override;
+    virtual const server::settings& server_settings() const NOEXCEPT;
 
-    // Shutdown.
-    // ------------------------------------------------------------------------
+protected:
+    /// Session attachments.
+    /// -----------------------------------------------------------------------
 
-    /// Idempotent call to signal work stop, start may be reinvoked after.
-    /// Returns the result of file save operation.
-    virtual bool stop();
+    /// Attach server sessions (base net doesn't specialize or start these).
+    virtual session_web::ptr attach_web_session() NOEXCEPT;
+    virtual session_explore::ptr attach_explore_session() NOEXCEPT;
+    virtual session_bitcoind::ptr attach_bitcoind_session() NOEXCEPT;
+    virtual session_electrum::ptr attach_electrum_session() NOEXCEPT;
+    virtual session_stratum_v1::ptr attach_stratum_v1_session() NOEXCEPT;
+    virtual session_stratum_v2::ptr attach_stratum_v2_session() NOEXCEPT;
 
-    /// Blocking call to coalesce all work and then terminate all threads.
-    /// Call from thread that constructed this class, or don't call at all.
-    /// This calls stop, and start may be reinvoked after calling this.
-    virtual void close() NOEXCEPT override;
-
-    // Notification.
-    // ------------------------------------------------------------------------
-
-    virtual system::code subscribe_key(const message& request,
-        system::hash_digest&& key, bool unsubscribe);
-
-    virtual system::code subscribe_stealth(const message& request,
-        system::binary&& prefix_filter, bool unsubscribe);
+    /// Virtual handlers.
+    /// -----------------------------------------------------------------------
+    void do_run(const result_handler& handler) NOEXCEPT override;
 
 private:
-    void handle_running(const system::code& ec, network::result_handler handler);
+    void start_web(const code& ec, const result_handler& handler) NOEXCEPT;
+    void start_explore(const code& ec, const result_handler& handler) NOEXCEPT;
+    void start_bitcoind(const code& ec, const result_handler& handler) NOEXCEPT;
+    void start_electrum(const code& ec, const result_handler& handler) NOEXCEPT;
+    void start_stratum_v1(const code& ec, const result_handler& handler) NOEXCEPT;
+    void start_stratum_v2(const code& ec, const result_handler& handler) NOEXCEPT;
 
-    bool start_services();
-    bool start_authenticator();
-    bool start_query_services();
-    bool start_heartbeat_services();
-    bool start_block_services();
-    bool start_transaction_services();
-    bool start_query_workers(bool secure);
-    bool start_notification_workers(bool secure);
-
-    const configuration& configuration_;
-
-    // These are thread safe.
-    authenticator authenticator_;
-    query_service secure_query_service_;
-    query_service public_query_service_;
-
-    // Zeromq services
-    heartbeat_service secure_heartbeat_service_;
-    heartbeat_service public_heartbeat_service_;
-    block_service secure_block_service_;
-    block_service public_block_service_;
-    transaction_service secure_transaction_service_;
-    transaction_service public_transaction_service_;
-    notification_worker secure_notification_worker_;
-    notification_worker public_notification_worker_;
+    // This is thread safe.
+    const configuration& config_;
 };
 
 } // namespace server

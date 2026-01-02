@@ -311,29 +311,6 @@ AS_CASE([${enable_isystem}],[yes],
 
 AC_MSG_NOTICE([bitcoin_node_BUILD_CPPFLAGS : ${bitcoin_node_BUILD_CPPFLAGS}])
 
-# Require bitcoin-protocol of at least version 4.0.0 and output ${bitcoin_protocol_CPPFLAGS/LIBS/PKG}.
-#------------------------------------------------------------------------------
-PKG_CHECK_MODULES([bitcoin_protocol], [libbitcoin-protocol >= 4.0.0],
-    [bitcoin_protocol_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-protocol >= 4.0.0" 2>/dev/null`"
-     bitcoin_protocol_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-protocol >= 4.0.0" 2>/dev/null`"],
-    [AC_MSG_ERROR([libbitcoin-protocol >= 4.0.0 is required but was not found.])])
-AC_SUBST([bitcoin_protocol_PKG], ['libbitcoin-protocol >= 4.0.0'])
-AC_SUBST([bitcoin_protocol_CPPFLAGS], [${bitcoin_protocol_CFLAGS}])
-AS_IF([test x${bitcoin_protocol_INCLUDEDIR} != "x"],
-    [AC_SUBST([bitcoin_protocol_ISYS_CPPFLAGS], ["-isystem${bitcoin_protocol_INCLUDEDIR} ${bitcoin_protocol_OTHER_CFLAGS}"])],
-    [AC_SUBST([bitcoin_protocol_ISYS_CPPFLAGS], [${bitcoin_protocol_OTHER_CFLAGS}])])
-AC_MSG_NOTICE([bitcoin_protocol_CPPFLAGS : ${bitcoin_protocol_CPPFLAGS}])
-AC_MSG_NOTICE([bitcoin_protocol_ISYS_CPPFLAGS : ${bitcoin_protocol_ISYS_CPPFLAGS}])
-AC_MSG_NOTICE([bitcoin_protocol_OTHER_CFLAGS : ${bitcoin_protocol_OTHER_CFLAGS}])
-AC_MSG_NOTICE([bitcoin_protocol_INCLUDEDIR : ${bitcoin_protocol_INCLUDEDIR}])
-AC_MSG_NOTICE([bitcoin_protocol_LIBS : ${bitcoin_protocol_LIBS}])
-
-AS_CASE([${enable_isystem}],[yes],
-    [AC_SUBST([bitcoin_protocol_BUILD_CPPFLAGS], [${bitcoin_protocol_ISYS_CPPFLAGS}])],
-    [AC_SUBST([bitcoin_protocol_BUILD_CPPFLAGS], [${bitcoin_protocol_CPPFLAGS}])])
-
-AC_MSG_NOTICE([bitcoin_protocol_BUILD_CPPFLAGS : ${bitcoin_protocol_BUILD_CPPFLAGS}])
-
 
 # Process outputs into templates.
 #==============================================================================

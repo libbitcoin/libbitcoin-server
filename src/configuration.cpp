@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2025 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,22 +18,18 @@
  */
 #include <bitcoin/server/configuration.hpp>
 
-#include <bitcoin/node.hpp>
-#include <bitcoin/protocol.hpp>
-#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 // Construct with defaults derived from given context.
-configuration::configuration(system::chain::selection context) NOEXCEPT
-  : log(context),
-    server(context),
-    node(context),
-    network(context),
-    database(context),
-    bitcoin(context)
+configuration::configuration(system::chain::selection context,
+    const server::settings::embedded_pages& explore,
+    const server::settings::embedded_pages& web) NOEXCEPT
+  : node::configuration(context),
+    log(context),
+    server(context, explore, web)
 {
 }
 

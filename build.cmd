@@ -45,11 +45,6 @@ IF %ERRORLEVEL% NEQ 0 (
   call :failure "Initializing repository libbitcoin libbitcoin-node master failed."
   exit /b 1
 )
-call :init libbitcoin libbitcoin-protocol master
-IF %ERRORLEVEL% NEQ 0 (
-  call :failure "Initializing repository libbitcoin libbitcoin-protocol master failed."
-  exit /b 1
-)
 call :bld_repo libbitcoin-server
 IF %ERRORLEVEL% NEQ 0 (
   call :failure "Building libbitcoin-server failed."

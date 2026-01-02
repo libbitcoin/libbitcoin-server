@@ -168,10 +168,6 @@ endif()
 #------------------------------------------------------------------------------
 find_package( Bitcoin-Node 4.0.0 REQUIRED )
 
-# Find bitcoin-protocol
-#------------------------------------------------------------------------------
-find_package( Bitcoin-Protocol 4.0.0 REQUIRED )
-
 # Define project common includes for build.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
@@ -248,24 +244,22 @@ add_definitions(
 #------------------------------------------------------------------------------
 add_library( ${CANONICAL_LIB_NAME}
     "../../src/configuration.cpp"
+    "../../src/error.cpp"
     "../../src/parser.cpp"
     "../../src/server_node.cpp"
     "../../src/settings.cpp"
-    "../../src/interface/blockchain.cpp"
-    "../../src/interface/server.cpp"
-    "../../src/interface/subscribe.cpp"
-    "../../src/interface/transaction_pool.cpp"
-    "../../src/interface/unsubscribe.cpp"
-    "../../src/messages/message.cpp"
-    "../../src/messages/route.cpp"
-    "../../src/messages/subscription.cpp"
-    "../../src/services/block_service.cpp"
-    "../../src/services/heartbeat_service.cpp"
-    "../../src/services/query_service.cpp"
-    "../../src/services/transaction_service.cpp"
-    "../../src/workers/authenticator.cpp"
-    "../../src/workers/notification_worker.cpp"
-    "../../src/workers/query_worker.cpp" )
+    "../../src/parsers/bitcoind_query.cpp"
+    "../../src/parsers/bitcoind_target.cpp"
+    "../../src/parsers/explore_query.cpp"
+    "../../src/parsers/explore_target.cpp"
+    "../../src/protocols/protocol_bitcoind_rest.cpp"
+    "../../src/protocols/protocol_bitcoind_rpc.cpp"
+    "../../src/protocols/protocol_electrum.cpp"
+    "../../src/protocols/protocol_electrum_version.cpp"
+    "../../src/protocols/protocol_explore.cpp"
+    "../../src/protocols/protocol_html.cpp"
+    "../../src/protocols/protocol_http.cpp"
+    "../../src/protocols/protocol_stratum_v1.cpp" )
 
 # ${CANONICAL_LIB_NAME} project specific include directory normalization for build.
 #------------------------------------------------------------------------------
@@ -307,11 +301,10 @@ target_link_libraries( ${CANONICAL_LIB_NAME}
 #------------------------------------------------------------------------------
 if (with-tests)
     add_executable( libbitcoin-server-test
-        "../../test/latest-addrs.py"
+        "../../test/error.cpp"
         "../../test/main.cpp"
-        "../../test/popular_addrs.py"
-        "../../test/server.cpp"
-        "../../test/stress.sh" )
+        "../../test/test.cpp"
+        "../../test/test.hpp" )
 
     add_test( NAME libbitcoin-server-test COMMAND libbitcoin-server-test
             --run_test=*
@@ -340,8 +333,32 @@ if (with-console)
     add_executable( bs
         "../../console/executor.cpp"
         "../../console/executor.hpp"
+        "../../console/executor_commands.cpp"
+        "../../console/executor_dumps.cpp"
+        "../../console/executor_events.cpp"
+        "../../console/executor_logging.cpp"
+        "../../console/executor_options.cpp"
+        "../../console/executor_runner.cpp"
+        "../../console/executor_scans.cpp"
+        "../../console/executor_store.cpp"
+        "../../console/executor_test_reader.cpp"
+        "../../console/executor_test_writer.cpp"
         "../../console/libbitcoin.ico"
-        "../../console/main.cpp" )
+        "../../console/localize.hpp"
+        "../../console/main.cpp"
+        "../../console/stack_trace.cpp"
+        "../../console/stack_trace.hpp"
+        "../../console/embedded/embedded.hpp"
+        "../../console/embedded/explore_css.cpp"
+        "../../console/embedded/explore_ecma.cpp"
+        "../../console/embedded/explore_font.cpp"
+        "../../console/embedded/explore_html.cpp"
+        "../../console/embedded/explore_icon.cpp"
+        "../../console/embedded/web_css.cpp"
+        "../../console/embedded/web_ecma.cpp"
+        "../../console/embedded/web_font.cpp"
+        "../../console/embedded/web_html.cpp"
+        "../../console/embedded/web_icon.cpp" )
 
 #     bs project specific include directories.
 #------------------------------------------------------------------------------

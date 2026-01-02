@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2025 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,13 +19,13 @@
 #ifndef LIBBITCOIN_SERVER_DEFINE_HPP
 #define LIBBITCOIN_SERVER_DEFINE_HPP
 
-#include <bitcoin/system.hpp>
+/// Pulls in common /server headers (excluding settings/config/parser/server_node).
+#include <bitcoin/server/error.hpp>
 
-// We use the generic helper definitions in libbitcoin to define BCS_API
-// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
-// imports or DLL exports (or does nothing for static build) BCS_INTERNAL is
-// used for non-api symbols.
-
+/// Now we use the generic helper definitions above to define BCS_API
+/// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
+/// imports or DLL exports (or does nothing for static build) BCS_INTERNAL is
+/// used for non-api symbols.
 #if defined BCS_STATIC
     #define BCS_API
     #define BCS_INTERNAL
@@ -37,17 +37,60 @@
     #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
-// Log name.
-#define LOG_SERVER "server"
-#define LOG_SERVER_HTTP "http"
+/// For common types below.
+#include <bitcoin/node.hpp>
 
-// Avoid namespace conflict between boost::placeholders and std::placeholders.
-////#define BOOST_BIND_NO_PLACEHOLDERS
+/// Augment limited xcode placeholder defines (10 vs. common 20).
+/// ---------------------------------------------------------------------------
+#if defined (HAVE_XCODE)
 
-////#include <boost/algorithm/string.hpp>
-////#include <boost/filesystem.hpp>
-////#include <boost/iostreams/stream.hpp>
-////#include <boost/program_options.hpp>
-////#include <boost/thread.hpp>
+/// Define custom placeholder types in the global namespace to avoid conflicts.
+struct placeholder_11 {};
+struct placeholder_12 {};
+struct placeholder_13 {};
+
+/// Specialize std::is_placeholder within the std namespace.
+namespace std
+{
+    template <>
+    struct is_placeholder<::placeholder_11> : integral_constant<int, 11> {};
+    template <>
+    struct is_placeholder<::placeholder_12> : integral_constant<int, 12> {};
+    template <>
+    struct is_placeholder<::placeholder_13> : integral_constant<int, 13> {};
+}
+
+/// Add instances to std::placeholders for standard usage syntax.
+namespace std::placeholders
+{
+    inline constexpr ::placeholder_11 _11{};
+    inline constexpr ::placeholder_12 _12{};
+    inline constexpr ::placeholder_13 _13{};
+}
+
+#endif // HAVE_XCODE
+/// ---------------------------------------------------------------------------
 
 #endif
+
+// define.hpp is the common include for /server.
+// All non-server headers include define.hpp.
+// Server inclusions are chained as follows.
+
+// version        : <generated>
+// error          : version
+// events         : error
+// chase          : events
+// define         : chase
+
+// Other directory common includes are not internally chained.
+// Each header includes only its required common headers.
+
+// settings       : define
+// configuration  : define settings
+// parser         : define configuration
+// /channels      : define configuration
+// server_node    : define configuration
+// session        : define                   [forward: server_node]
+// /protocols     : define /channels         [session.hpp]
+// /sessions      : define /protocols        [forward: server_node]
