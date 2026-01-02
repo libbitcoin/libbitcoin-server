@@ -30,13 +30,13 @@ namespace server {
 /// Abstract base for HTTP protocols, thread safe.
 class BCS_API protocol_http
   : public server::protocol,
-    protected network::tracker<protocol_http>
+    protected network::tracker<server::protocol_http>
 {
 protected:
     inline protocol_http(const auto& session,
         const network::channel::ptr& channel) NOEXCEPT
       : server::protocol(session, channel),
-        network::tracker<protocol_http>(session->log)
+        network::tracker<server::protocol_http>(session->log)
     {
     }
 

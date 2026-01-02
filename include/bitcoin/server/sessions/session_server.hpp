@@ -59,9 +59,8 @@ public:
     /// Construct an instance (network should be started).
     inline session_server(server_node& node, uint64_t identifier,
         const configuration& config, const options_t& options) NOEXCEPT
-      : node::session(node),
-        ////network::session_server((network::net&)node, identifier, options),
-        network::session_server(node, identifier, options),
+      : node::session((node::full_node&)node),
+        network::session_server((network::net&)node, identifier, options),
         config_(config), options_(options),
         network::tracker<session_server<Protocols...>>(node)
     {
