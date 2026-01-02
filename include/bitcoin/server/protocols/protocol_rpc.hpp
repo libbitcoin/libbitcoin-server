@@ -32,7 +32,7 @@ template <typename Channel>
 class BCS_API protocol_rpc
   : public server::protocol,
     public network::protocol_rpc<Channel>,
-    protected network::tracker<protocol_rpc<Channel>>
+    protected network::tracker<server::protocol_rpc<Channel>>
 {
 public:
     using channel_t = Channel;
@@ -43,7 +43,7 @@ protected:
         const network::channel::ptr& channel, const options_t& options) NOEXCEPT
       : server::protocol(session, channel),
         network::protocol_rpc<Channel>(session, channel, options),
-        network::tracker<protocol_rpc<Channel>>(session->log)
+        network::tracker<server::protocol_rpc<Channel>>(session->log)
     {
     }
 };

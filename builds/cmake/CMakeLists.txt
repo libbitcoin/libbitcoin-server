@@ -171,33 +171,27 @@ find_package( Bitcoin-Node 4.0.0 REQUIRED )
 # Define project common includes for build.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    set( bitcoin_protocol_FOR_BUILD_INCLUDE_DIRS ${bitcoin_protocol_INCLUDE_DIRS} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_INCLUDE_DIRS ${bitcoin_node_INCLUDE_DIRS} CACHE STRING "Placeholder" )
 else()
-    set( bitcoin_protocol_FOR_BUILD_INCLUDE_DIRS ${bitcoin_protocol_STATIC_INCLUDE_DIRS} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_INCLUDE_DIRS ${bitcoin_node_STATIC_INCLUDE_DIRS} CACHE STRING "Placeholder" )
 endif()
 
 # Define project common includes directories
 #------------------------------------------------------------------------------
 include_directories( SYSTEM
-    ${bitcoin_protocol_FOR_BUILD_INCLUDE_DIRS}
     ${bitcoin_node_FOR_BUILD_INCLUDE_DIRS} )
 
 # Define project common library directories for build.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    set( bitcoin_protocol_FOR_BUILD_LIBRARY_DIRS ${bitcoin_protocol_LIBRARY_DIRS} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_LIBRARY_DIRS ${bitcoin_node_LIBRARY_DIRS} CACHE STRING "Placeholder" )
 else()
-    set( bitcoin_protocol_FOR_BUILD_LIBRARY_DIRS ${bitcoin_protocol_STATIC_LIBRARY_DIRS} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_LIBRARY_DIRS ${bitcoin_node_STATIC_LIBRARY_DIRS} CACHE STRING "Placeholder" )
 endif()
 
 # Define project common library directories
 #------------------------------------------------------------------------------
 link_directories(
-    ${bitcoin_protocol_FOR_BUILD_LIBRARY_DIRS}
     ${bitcoin_node_FOR_BUILD_LIBRARY_DIRS} )
 
 # Define project common linker flags.
@@ -224,17 +218,14 @@ endif()
 # Define common library usage for build.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    set( bitcoin_protocol_FOR_BUILD_LIBRARIES ${bitcoin_protocol_LIBRARIES} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_LIBRARIES ${bitcoin_node_LIBRARIES} CACHE STRING "Placeholder" )
 else()
-    set( bitcoin_protocol_FOR_BUILD_LIBRARIES ${bitcoin_protocol_STATIC_LIBRARIES} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_LIBRARIES ${bitcoin_node_STATIC_LIBRARIES} CACHE STRING "Placeholder" )
 endif()
 
 # Define project common libraries.
 #------------------------------------------------------------------------------
 link_libraries(
-    ${bitcoin_protocol_FOR_BUILD_LIBRARIES}
     ${bitcoin_node_FOR_BUILD_LIBRARIES} )
 
 add_definitions(
@@ -264,10 +255,8 @@ add_library( ${CANONICAL_LIB_NAME}
 # ${CANONICAL_LIB_NAME} project specific include directory normalization for build.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    set( bitcoin_protocol_FOR_BUILD_INCLUDE_DIRS ${bitcoin_protocol_INCLUDE_DIRS} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_INCLUDE_DIRS ${bitcoin_node_INCLUDE_DIRS} CACHE STRING "Placeholder" )
 else()
-    set( bitcoin_protocol_FOR_BUILD_INCLUDE_DIRS ${bitcoin_protocol_STATIC_INCLUDE_DIRS} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_INCLUDE_DIRS ${bitcoin_node_STATIC_INCLUDE_DIRS} CACHE STRING "Placeholder" )
 endif()
 
@@ -275,7 +264,6 @@ endif()
 #------------------------------------------------------------------------------
 target_include_directories( ${CANONICAL_LIB_NAME} PRIVATE
     "../../include"
-    ${bitcoin_protocol_FOR_BUILD_INCLUDE_DIRS}
     ${bitcoin_node_FOR_BUILD_INCLUDE_DIRS} )
 
 target_include_directories( ${CANONICAL_LIB_NAME} PUBLIC
@@ -284,17 +272,14 @@ target_include_directories( ${CANONICAL_LIB_NAME} PUBLIC
 # ${CANONICAL_LIB_NAME} project specific libraries noramalization for build.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    set( bitcoin_protocol_FOR_BUILD_LIBRARIES ${bitcoin_protocol_LIBRARIES} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_LIBRARIES ${bitcoin_node_LIBRARIES} CACHE STRING "Placeholder" )
 else()
-    set( bitcoin_protocol_FOR_BUILD_LIBRARIES ${bitcoin_protocol_STATIC_LIBRARIES} CACHE STRING "Placeholder" )
     set( bitcoin_node_FOR_BUILD_LIBRARIES ${bitcoin_node_STATIC_LIBRARIES} CACHE STRING "Placeholder" )
 endif()
 
 # ${CANONICAL_LIB_NAME} project specific libraries/linker flags.
 #------------------------------------------------------------------------------
 target_link_libraries( ${CANONICAL_LIB_NAME}
-    ${bitcoin_protocol_FOR_BUILD_LIBRARIES}
     ${bitcoin_node_FOR_BUILD_LIBRARIES} )
 
 # Define libbitcoin-server-test project.
