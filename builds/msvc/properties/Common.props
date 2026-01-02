@@ -27,7 +27,7 @@
 
       <!-- Language -->
       <!-- /Zc is conformance mode. -->
-      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <OpenMPSupport>false</OpenMPSupport>
@@ -44,7 +44,7 @@
       <!-- ExternalWarningLevel:EnableAllWarnings produce warning flood (mostly from STL/Boost). -->
       <!-- Language extensions are enabled by default (required for STL/Boost). -->
       <ExternalWarningLevel>Level4</ExternalWarningLevel>
-      </ClCompile>
+    </ClCompile>
   </ItemDefinitionGroup>
 
 </Project>

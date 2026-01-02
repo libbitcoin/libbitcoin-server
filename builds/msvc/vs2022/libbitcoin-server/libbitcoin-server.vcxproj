@@ -122,48 +122,68 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\blockchain.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\server.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\subscribe.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\transaction_pool.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\unsubscribe.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\message.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\route.cpp" />
-    <ClCompile Include="..\..\..\..\src\messages\subscription.cpp" />
+    <ClCompile Include="..\..\..\..\src\error.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_query.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\explore_query.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\explore_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rest.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rpc.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_electrum.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_electrum_version.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_explore.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_html.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_stratum_v1.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\block_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\heartbeat_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\query_service.cpp" />
-    <ClCompile Include="..\..\..\..\src\services\transaction_service.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
-    <ClCompile Include="..\..\..\..\src\workers\authenticator.cpp" />
-    <ClCompile Include="..\..\..\..\src\workers\notification_worker.cpp" />
-    <ClCompile Include="..\..\..\..\src\workers\query_worker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v2.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_ws.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channels.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\blockchain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\server.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\subscribe.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\transaction_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interface\unsubscribe.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\message.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\route.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\messages\subscription.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rest.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rpc.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\electrum.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\explore.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\interfaces.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v1.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v2.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\types.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_query.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\explore_query.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\explore_target.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rest.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rpc.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_explore.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_html.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_http.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_rpc.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_web.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\block_service.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\heartbeat_service.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\query_service.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\services\transaction_service.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_handshake.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_server.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\sessions.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\authenticator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\notification_worker.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\workers\query_worker.hpp" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -182,7 +202,6 @@
     <Import Project="$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets" Condition="Exists('$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets')" />
     <Import Project="$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets" Condition="Exists('$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets')" />
     <Import Project="$(NuGetPackageRoot)secp256k1_vc143.0.1.0.21\build\native\secp256k1_vc143.targets" Condition="Exists('$(NuGetPackageRoot)secp256k1_vc143.0.1.0.21\build\native\secp256k1_vc143.targets')" />
-    <Import Project="$(NuGetPackageRoot)libzmq_vc143.4.3.2\build\native\libzmq_vc143.targets" Condition="Exists('$(NuGetPackageRoot)libzmq_vc143.4.3.2\build\native\libzmq_vc143.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -195,7 +214,6 @@
     <Error Condition="!Exists('$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets'))" />
     <Error Condition="!Exists('$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets'))" />
     <Error Condition="!Exists('$(NuGetPackageRoot)secp256k1_vc143.0.1.0.21\build\native\secp256k1_vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)secp256k1_vc143.0.1.0.21\build\native\secp256k1_vc143.targets'))" />
-    <Error Condition="!Exists('$(NuGetPackageRoot)libzmq_vc143.4.3.2\build\native\libzmq_vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)libzmq_vc143.4.3.2\build\native\libzmq_vc143.targets'))" />
   </Target>
   <ItemGroup>
     <Natvis Include="..\..\debug.natvis" />

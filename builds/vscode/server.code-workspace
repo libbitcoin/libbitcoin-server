@@ -13,9 +13,6 @@
             "path": "../../../libbitcoin-node"
         },
         {
-            "path": "../../../libbitcoin-protocol"
-        },
-        {
             "path": "../../../libbitcoin-server"
         }
     ],

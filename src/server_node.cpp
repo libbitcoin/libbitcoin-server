@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2025 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,300 +18,192 @@
  */
 #include <bitcoin/server/server_node.hpp>
 
-#include <memory>
 #include <utility>
-#include <bitcoin/node.hpp>
-#include <bitcoin/server/configuration.hpp>
-#include <bitcoin/server/messages/route.hpp>
-#include <bitcoin/server/workers/query_worker.hpp>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/sessions/sessions.hpp>
 
 namespace libbitcoin {
 namespace server {
 
+using namespace system;
+using namespace database;
+using namespace network;
+using namespace node;
 using namespace std::placeholders;
-using namespace bc::node;
-using namespace bc::protocol;
-using namespace bc::system;
-using namespace bc::system::chain;
 
-server_node::server_node(const configuration& configuration)
-  : full_node(configuration),
-    configuration_(configuration),
-    authenticator_(*this),
-    secure_query_service_(authenticator_, *this, true),
-    public_query_service_(authenticator_, *this, false),
-    secure_heartbeat_service_(authenticator_, *this, true),
-    public_heartbeat_service_(authenticator_, *this, false),
-    secure_block_service_(authenticator_, *this, true),
-    public_block_service_(authenticator_, *this, false),
-    secure_transaction_service_(authenticator_, *this, true),
-    public_transaction_service_(authenticator_, *this, false),
-    secure_notification_worker_(authenticator_, *this, true),
-    public_notification_worker_(authenticator_, *this, false),
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
+// net::strand() is safe to call from constructor (non-virtual).
+server_node::server_node(query& query, const configuration& configuration,
+    const logger& log) NOEXCEPT
+  : full_node(query, configuration, log),
+    config_(configuration)
 {
 }
 
-// This allows for shutdown based on destruct without need to call stop.
-server_node::~server_node()
+server_node::~server_node() NOEXCEPT
 {
-    server_node::close();
 }
 
 // Properties.
 // ----------------------------------------------------------------------------
 
-const bc::blockchain::settings& server_node::blockchain_settings() const
+const configuration& server_node::server_config() const NOEXCEPT
 {
-    return configuration_.blockchain;
+    return config_;
 }
 
-const bc::protocol::settings& server_node::protocol_settings() const
+const settings& server_node::server_settings() const NOEXCEPT
 {
-    return configuration_.protocol;
+    return config_.server;
 }
 
-const bc::server::settings& server_node::server_settings() const
-{
-    return configuration_.server;
-}
-
-// Run sequence.
+// Sequences.
 // ----------------------------------------------------------------------------
 
-void server_node::run(result_handler handler)
+void server_node::run(result_handler&& handler) NOEXCEPT
 {
-    if (stopped())
+    // Base (net) invokes do_run().
+    full_node::run(std::move(handler));
+}
+
+void server_node::do_run(const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    // Start services after node is running.
+    full_node::do_run(std::bind(&server_node::start_web, this, _1, handler));
+}
+
+void server_node::start_web(const code& ec,
+    const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
     {
-        handler(error::service_stopped);
+        handler(ec);
         return;
     }
 
-    // The handler is invoked on a new thread.
-    full_node::run(
-        std::bind(&server_node::handle_running,
-            this, _1, handler));
+    attach_web_session()->start(
+        std::bind(&server_node::start_explore, this, _1, handler));
 }
 
-void server_node::handle_running(const code& , result_handler handler)
+void server_node::start_explore(const code& ec,
+    const result_handler& handler) NOEXCEPT
 {
-    if (stopped())
+    BC_ASSERT(stranded());
+
+    if (ec)
     {
-        handler(error::service_stopped);
+        handler(ec);
         return;
     }
 
-    // BUGBUG: start/stop race condition.
-    // This can invoke just after close calls stop.
-    // The stop handler is already stopped but the authenticator context gets
-    // started, allowing services to stop. The registration of services with
-    // the stop handler invokes the registered handlers immediately, invoking
-    // stop on the services. The services are running and don't stop...
-    // notification_worker, query_service and authenticator service.
-    // The authenticator is already stopped (before it started) so there will
-    // be no context to stop the services, specifically the relays.
-    if (!start_services())
+    attach_explore_session()->start(
+        std::bind(&server_node::start_bitcoind, this, _1, handler));
+}
+
+void server_node::start_bitcoind(const code& ec,
+    const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
     {
-        handler(error::operation_failed);
+        handler(ec);
         return;
     }
 
-    // This is the end of the derived run sequence.
-    handler(error::success);
+    attach_bitcoind_session()->start(
+        std::bind(&server_node::start_electrum, this, _1, handler));
 }
 
-// Shutdown.
-// ----------------------------------------------------------------------------
-
-bool server_node::stop()
+void server_node::start_electrum(const code& ec,
+    const result_handler& handler) NOEXCEPT
 {
-    // Suspend new work last so we can use work to clear subscribers.
-    return authenticator_.stop() && full_node::stop();
-}
+    BC_ASSERT(stranded());
 
-// This must be called from the thread that constructed this class (see join).
-bool server_node::close()
-{
-    // Invoke own stop to signal work suspension, then close node and join.
-    return server_node::stop() && full_node::close();
-}
-
-// Notification.
-// ----------------------------------------------------------------------------
-
-code server_node::subscribe_key(const message& request,
-    hash_digest&& key, bool unsubscribe)
-{
-    return request.secure() ?
-        secure_notification_worker_.subscribe_key(request,
-            std::move(key), unsubscribe) :
-        public_notification_worker_.subscribe_key(request,
-            std::move(key), unsubscribe);
-}
-
-code server_node::subscribe_stealth(const message& request,
-    binary&& prefix_filter, bool unsubscribe)
-{
-    return request.secure() ?
-        secure_notification_worker_.subscribe_stealth(request,
-            std::move(prefix_filter), unsubscribe) :
-        public_notification_worker_.subscribe_stealth(request,
-            std::move(prefix_filter), unsubscribe);
-}
-
-// Services.
-// ----------------------------------------------------------------------------
-
-bool server_node::start_services()
-{
-    return
-        start_authenticator() && start_query_services() &&
-        start_heartbeat_services() && start_block_services() &&
-        start_transaction_services();
-}
-
-bool server_node::start_authenticator()
-{
-    const auto& settings = configuration_.server;
-
-    // Subscriptions require the query service.
-    if ((!settings.zeromq_server_private_key && settings.secure_only) ||
-        ((settings.query_workers == 0) &&
-        (settings.heartbeat_service_seconds == 0) &&
-        (!settings.block_service_enabled) &&
-        (!settings.transaction_service_enabled)))
-        return true;
-
-    return authenticator_.start();
-}
-
-bool server_node::start_query_services()
-{
-    const auto& settings = configuration_.server;
-
-    // Subscriptions require the query service.
-    if (settings.query_workers == 0)
-        return true;
-
-    // Start secure service, query workers and notification workers if enabled.
-    if (settings.zeromq_server_private_key &&
-        (!secure_query_service_.start() || !start_query_workers(true) ||
-        (settings.subscription_limit > 0 && !start_notification_workers(true))))
-            return false;
-
-    // Start public service, query workers and notification workers if enabled.
-    if (!settings.secure_only &&
-        (!public_query_service_.start() || !start_query_workers(false) ||
-        (settings.subscription_limit > 0 && !start_notification_workers(false))))
-            return false;
-
-    return true;
-}
-
-bool server_node::start_heartbeat_services()
-{
-    const auto& settings = configuration_.server;
-
-    if (settings.heartbeat_service_seconds == 0)
-        return true;
-
-    // Start secure service if enabled.
-    if (settings.zeromq_server_private_key &&
-        !secure_heartbeat_service_.start())
-        return false;
-
-    // Start public service if enabled.
-    if (!settings.secure_only && !public_heartbeat_service_.start())
-        return false;
-
-    return true;
-}
-
-bool server_node::start_block_services()
-{
-    const auto& settings = configuration_.server;
-
-    if (!settings.block_service_enabled)
-        return true;
-
-    // Start secure service if enabled.
-    if (settings.zeromq_server_private_key && !secure_block_service_.start())
-        return false;
-
-    // Start public service if enabled.
-    if (!settings.secure_only && !public_block_service_.start())
-        return false;
-
-    return true;
-}
-
-bool server_node::start_transaction_services()
-{
-    const auto& settings = configuration_.server;
-
-    if (!settings.transaction_service_enabled)
-        return true;
-
-    // Start secure service if enabled.
-    if (settings.zeromq_server_private_key &&
-        !secure_transaction_service_.start())
-        return false;
-
-    // Start public service if enabled.
-    if (!settings.secure_only && !public_transaction_service_.start())
-        return false;
-
-    return true;
-}
-
-// Called from start_query_services.
-bool server_node::start_query_workers(bool secure)
-{
-    auto& server = *this;
-    const auto& settings = configuration_.server;
-
-    for (auto count = 0; count < settings.query_workers; ++count)
+    if (ec)
     {
-        const auto worker = std::make_shared<query_worker>(authenticator_,
-            server, secure);
-
-        if (!worker->start())
-            return false;
-
-        // Workers register with stop handler just to keep them in scope.
-        subscribe_stop([=](const code&) { worker->stop(); });
+        handler(ec);
+        return;
     }
 
-    return true;
+    attach_electrum_session()->start(
+        std::bind(&server_node::start_stratum_v1, this, _1, handler));
 }
 
-// Called from start_query_services.
-bool server_node::start_notification_workers(bool secure)
+void server_node::start_stratum_v1(const code& ec,
+    const result_handler& handler) NOEXCEPT
 {
-    if (secure)
-    {
-        if (!secure_notification_worker_.start())
-            return false;
+    BC_ASSERT(stranded());
 
-        // Because the notification worker holds closures must stop early.
-        subscribe_stop([=](const code&)
-        {
-            secure_notification_worker_.stop();
-        });
-    }
-    else
+    if (ec)
     {
-        if (!public_notification_worker_.start())
-            return false;
-
-        // Because the notification worker holds closures must stop early.
-        subscribe_stop([=](const code&)
-        {
-            public_notification_worker_.stop();
-        });
+        handler(ec);
+        return;
     }
 
-    return true;
+    attach_stratum_v1_session()->start(
+        std::bind(&server_node::start_stratum_v2, this, _1, handler));
 }
+
+void server_node::start_stratum_v2(const code& ec,
+    const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    attach_stratum_v2_session()->start(move_copy(handler));
+}
+
+// Session attachments.
+// ----------------------------------------------------------------------------
+
+session_web::ptr server_node::attach_web_session() NOEXCEPT
+{
+    return net::attach<session_web>(*this, config_,
+        config_.server.web);
+}
+
+session_explore::ptr server_node::attach_explore_session() NOEXCEPT
+{
+    return net::attach<session_explore>(*this, config_,
+        config_.server.explore);
+}
+
+session_bitcoind::ptr server_node::attach_bitcoind_session() NOEXCEPT
+{
+    return net::attach<session_bitcoind>(*this, config_,
+        config_.server.bitcoind);
+}
+
+session_electrum::ptr server_node::attach_electrum_session() NOEXCEPT
+{
+    return net::attach<session_electrum>(*this, config_,
+        config_.server.electrum);
+}
+
+session_stratum_v1::ptr server_node::attach_stratum_v1_session() NOEXCEPT
+{
+    return net::attach<session_stratum_v1>(*this, config_,
+        config_.server.stratum_v1);
+}
+
+session_stratum_v2::ptr server_node::attach_stratum_v2_session() NOEXCEPT
+{
+    return net::attach<session_stratum_v2>(*this, config_,
+        config_.server.stratum_v2);
+}
+
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin
