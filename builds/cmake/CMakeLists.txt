@@ -286,10 +286,16 @@ target_link_libraries( ${CANONICAL_LIB_NAME}
 #------------------------------------------------------------------------------
 if (with-tests)
     add_executable( libbitcoin-server-test
+        "../../test/configuration.cpp"
         "../../test/error.cpp"
         "../../test/main.cpp"
+        "../../test/settings.cpp"
         "../../test/test.cpp"
-        "../../test/test.hpp" )
+        "../../test/test.hpp"
+        "../../test/parsers/bitcoind_query.cpp"
+        "../../test/parsers/bitcoind_target.cpp"
+        "../../test/parsers/explore_query.cpp"
+        "../../test/parsers/explore_target.cpp" )
 
     add_test( NAME libbitcoin-server-test COMMAND libbitcoin-server-test
             --run_test=*
