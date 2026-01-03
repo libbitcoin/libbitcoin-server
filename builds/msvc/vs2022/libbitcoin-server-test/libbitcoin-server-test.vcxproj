@@ -118,8 +118,14 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\configuration.cpp" />
     <ClCompile Include="..\..\..\..\test\error.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\explore_query.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\explore_target.cpp" />
+    <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp" />
   </ItemGroup>
   <ItemGroup>

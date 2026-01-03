@@ -63,10 +63,16 @@ check_PROGRAMS = test/libbitcoin-server-test
 test_libbitcoin_server_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_node_BUILD_CPPFLAGS}
 test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_framework_LIBS} ${bitcoin_node_LIBS}
 test_libbitcoin_server_test_SOURCES = \
+    test/configuration.cpp \
     test/error.cpp \
     test/main.cpp \
+    test/settings.cpp \
     test/test.cpp \
-    test/test.hpp
+    test/test.hpp \
+    test/parsers/bitcoind_query.cpp \
+    test/parsers/bitcoind_target.cpp \
+    test/parsers/explore_query.cpp \
+    test/parsers/explore_target.cpp
 
 endif WITH_TESTS
 
