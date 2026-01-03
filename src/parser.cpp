@@ -696,6 +696,21 @@ options_metadata parser::load_settings() THROWS
         value<uint32_t>(&configured.network.outbound.seeding_timeout_seconds),
         "The time limit for obtaining seed connections and addresses, defaults to '30'."
     )
+    (
+        "outbound.username",
+        value<std::string>(&configured.network.outbound.username),
+        "The socks5 proxy username (optional)."
+    )
+    (
+        "outbound.password",
+        value<std::string>(&configured.network.outbound.password),
+        "The socks5 proxy username (optional)."
+    )
+    (
+        "outbound.socks",
+        value<config::endpoint>(&configured.network.outbound.socks),
+        "The socks5 proxy endpoint (port required)."
+    )
 
     /* [inbound] */
     ////(
@@ -784,6 +799,21 @@ options_metadata parser::load_settings() THROWS
         "manual.peer",
         value<network::config::endpoints>(&configured.network.manual.peers),
         "A persistent peer node, multiple allowed."
+    )
+    (
+        "manual.username",
+        value<std::string>(&configured.network.manual.username),
+        "The socks5 proxy username (optional)."
+    )
+    (
+        "manual.password",
+        value<std::string>(&configured.network.manual.password),
+        "The socks5 proxy username (optional)."
+    )
+    (
+        "manual.socks",
+        value<config::endpoint>(&configured.network.manual.socks),
+        "The socks5 proxy endpoint (port required)."
     )
 
     /* [web] */
