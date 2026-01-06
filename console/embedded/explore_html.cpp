@@ -28,11 +28,13 @@ DEFINE_EMBEDDED_PAGE(explore_pages, char, html,
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A modern blockchain explorer for Libbitcoin." />
+    <meta name="theme-color" content="#272822" />
     <title>libbitcoin Explorer</title>
     <script type="module" crossorigin src="/script.js"></script>
     <link rel="stylesheet" crossorigin href="/style.css">
   </head>
-  <body class="h-full bg-background text-white">
+  <body class="bg-background h-full text-white">
     <div id="root" class="h-full"></div>
   </body>
 </html>
