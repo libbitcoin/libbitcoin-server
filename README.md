@@ -14,7 +14,7 @@
 </div>
 
 ## tl;dr
-This is the **server component of libbitcoin v4**. It integrates the basic components and offers a **high performance Bitcoin full node** with a comprehensive set of client-server interfaces like **bitcoind, electrum and stratum** as well as an intergrated **block explorer**. It makes heavy use of the available hardware, internet connection and availabe RAM and CPU so you can sync the Bitcoin blockchain from genesis, today and in the future.
+This is the **server component of libbitcoin v4**. It integrates the basic components and offers a **high performance Bitcoin full node** with a comprehensive set of client-server interfaces like **bitcoind, electrum and stratum** as well as an intergrated **block explorer**. It makes full use of the available hardware, internet connection and availabe RAM and CPU so you can sync the Bitcoin blockchain from genesis, today and in the future.
 
 If you follow this README you will be able to build, run and monitor your own libbitcoin server (bs). Libbitcoin is a multi platform software that works on Linux, Windows and OSX (Intel and ARM).
 
@@ -22,11 +22,11 @@ Now, If you want to see how fast your setup can sync the Bitcoin Blockchain, rea
 
 **License Overview**
 
-All files in this repository fall under the license specified in [COPYING](COPYING). The project is licensed as [AGPL with a lesser clause](https://wiki.unsystem.net/en/index.php/Libbitcoin/License). It may be used within a proprietary project, but the core library and any changes to it must be published online. Source code for this library must always remain free for everybody to access.
+All files in this repository fall under the license specified in [COPYING](COPYING). The project is licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html). It may be used within a proprietary project, but the core library and any changes to it must be published online. Source code for this library must always remain free for everybody to access.
 
 **About libbitcoin**
 
-The libbitcoin toolkit is a set of cross platform C++ libraries for building Bitcoin applications. The toolkit consists of several libraries, most of which depend on the foundational [libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system) library. Each library's repository can be cloned and built separately. There are no packages yet in distribution, however each library includes an installation script (described below) which is regularly verified via [github actions](https://github.com/features/actions).
+The libbitcoin toolkit is a set of cross platform C++ libraries for building Bitcoin applications. The toolkit consists of several libraries, most of which depend on the foundational [libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system) library. Each library's repository can be cloned and built separately. There are no packages yet in distribution, however each library includes an installation script (described below) which is regularly verified via [GitHub Actions](https://github.com/features/actions).
 
 ## Contents
 - [libbitcoin-server](#libbitcoin-server)
@@ -48,7 +48,7 @@ The libbitcoin toolkit is a set of cross platform C++ libraries for building Bit
       - [Kernel VM Tuning Parameters](#kernel-vm-tuning-parameters)
 
 ## Installation
-Depending on what operating system you use, the build process will be different. Detailed instructions are provided below.
+The build process is essentially the same on Linux, macOS, and other Unix-like systems. It differs significantly on Windows due to the use of native Visual Studio projects and solutions. Detailed instructions are provided below.
 
 - [Linux (Ubuntu)](#linux)
 - [macOS](#macos)
@@ -56,7 +56,7 @@ Depending on what operating system you use, the build process will be different.
 
 ### Linux
 
-Linux users build libbitcoin node with the provided installation script `install.sh` that uses Autotools and pkg-config to first build the needed dependencies (boost, libpsec256) and then fetches the latest libbitcoin projects (libbitcoin-system, libbitcoin-database, libbitcoin-network, libbitcoin-node) from github and builds the stack bottom up to the libbitcoin-server executable - `bs`.
+Linux users can build libbitcoin node with the provided installation script `install.sh` that uses Autotools and pkg-config to first build the needed dependencies (boost, libpsec256) and then fetches the latest libbitcoin projects (libbitcoin-system, libbitcoin-database, libbitcoin-network, libbitcoin-node and libbitcoin-server) from GitHub and builds the stack bottom up to the libbitcoin-server executable - `bs`.
 
 You can issue the following command to check for further parameterization of the install script:
 
@@ -111,7 +111,7 @@ $ sudo apt install build-essential curl git autoconf automake pkg-config libtool
 ```
 
 #### Build
-Create a new directory (e.g. `/home/user/libbitcoin`), then use git to fetch the latest repository from github by issuing the following command from within this directory:
+Create a new directory (e.g. `/home/user/libbitcoin`), then use git to fetch the latest repository from GitHub by issuing the following command from within this directory:
 
 ```bash
 git clone https://github.com/libbitcoin/libbitcoin-server
@@ -142,7 +142,7 @@ This will build the libbitcoin-server executable as a static release with no [CP
 ~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-system/
 ~/bitcoin/libbitcoin/libbitcoin-node
 ```
-Now enter the bin directory and [fire up](#running-libbitcoin) your libbitcoin server.
+Now enter the bin directory and [fire up](#running-bs) your libbitcoin server.
 
 #### CPU Extensions
 CPU Extensions are specific optimizations your CPU might or might not have. libbitcoin(-server) can be built with support for the following CPU extensions if your architecture supports them:
@@ -155,14 +155,14 @@ CPU Extensions are specific optimizations your CPU might or might not have. libb
 To build libbitcoin-server with these extensions use the `--enable-feature` parameters like:
 
 - --enable-shani
-- --enable-avx2
 - --enable-sse41
+- --enable-avx2
 - --enable-avx512
 
 This command will create a static release build with all supported CPU extensions (if supported by the system). Building libbitcoin with unsupported CPU extensions might work but will lead to crashes at runtime.
 
 ```bash
-$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/build/release_static/ --build-dir=/home/user/libbitcoin/build/temp --build-secp256k1 --build-boost --disable-shared --enable-ndebug --enable-shani --enable-avx2 --enable-sse41 --enable-avx512 --enable-isystem
+$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/build/release_static/ --build-dir=/home/user/libbitcoin/build/temp --build-secp256k1 --build-boost --disable-shared --enable-ndebug --enable-shani --enable-avx2 --enable-sse41 --enable-isystem
 ```
 
 You can check if the optimizations have been built in your binary with the following command:
