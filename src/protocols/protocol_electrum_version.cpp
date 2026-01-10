@@ -167,7 +167,7 @@ bool protocol_electrum_version::set_version(const value_t& version) NOEXCEPT
     if (lower > upper)
         return false;
 
-    LOGA("Electrum [" << authority() << "] version ("
+    LOGA("Electrum [" << opposite() << "] version ("
         << version_to_string(client_max) << ") " << client_name());
 
     channel_->set_version(upper);
