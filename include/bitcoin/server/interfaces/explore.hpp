@@ -30,6 +30,8 @@ struct explore_methods
 {
     static constexpr std::tuple methods
     {
+        method<"configuration", uint8_t, uint8_t>{ "version", "media" },
+
         method<"top", uint8_t, uint8_t>{ "version", "media" },
         method<"block", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>>{ "version", "media", "hash", "height", "witness" },
         method<"block_header", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "hash", "height" },
@@ -70,37 +72,39 @@ struct explore_methods
 
     // Derive this from above in c++26 using reflection.
 
-    using top = at<0>;
+    using configuration = at<0>;
 
-    using block = at<1>;
-    using block_header = at<2>;
-    using block_header_context = at<3>;
-    using block_details = at<4>;
-    using block_txs = at<5>;
-    using block_filter = at<6>;
-    using block_filter_hash = at<7>;
-    using block_filter_header = at<8>;
-    using block_tx = at<9>;
+    using top = at<1>;
 
-    using tx = at<10>;
-    using tx_header = at<11>;
-    using tx_details = at<12>;
+    using block = at<2>;
+    using block_header = at<3>;
+    using block_header_context = at<4>;
+    using block_details = at<5>;
+    using block_txs = at<6>;
+    using block_filter = at<7>;
+    using block_filter_hash = at<8>;
+    using block_filter_header = at<9>;
+    using block_tx = at<10>;
 
-    using inputs = at<13>;
-    using input = at<14>;
-    using input_script = at<15>;
-    using input_witness = at<16>;
+    using tx = at<11>;
+    using tx_header = at<12>;
+    using tx_details = at<13>;
 
-    using outputs = at<17>;
-    using output = at<18>;
-    using output_script = at<19>;
-    using output_spender = at<20>;
-    using output_spenders = at<21>;
+    using inputs = at<14>;
+    using input = at<15>;
+    using input_script = at<16>;
+    using input_witness = at<17>;
 
-    using address = at<22>;
-    using address_confirmed = at<23>;
-    using address_unconfirmed = at<24>;
-    using address_balance = at<25>;
+    using outputs = at<18>;
+    using output = at<19>;
+    using output_script = at<20>;
+    using output_spender = at<21>;
+    using output_spenders = at<22>;
+
+    using address = at<23>;
+    using address_confirmed = at<24>;
+    using address_unconfirmed = at<25>;
+    using address_balance = at<26>;
 };
 
 /// ?format=data|text|json (via query string).

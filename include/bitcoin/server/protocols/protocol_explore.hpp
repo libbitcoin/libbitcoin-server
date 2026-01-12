@@ -63,6 +63,9 @@ protected:
 
     /// REST interface handlers.
 
+    bool handle_get_configuration(const code& ec, interface::configuration,
+        uint8_t version, uint8_t media) NOEXCEPT;
+
     bool handle_get_top(const code& ec, interface::top,
         uint8_t version, uint8_t media) NOEXCEPT;
 

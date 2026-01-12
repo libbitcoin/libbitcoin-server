@@ -79,8 +79,9 @@ void protocol_explore::start() NOEXCEPT
     if (started())
         return;
 
-    SUBSCRIBE_EXPLORE(handle_get_top, _1, _2, _3, _4);
+    SUBSCRIBE_EXPLORE(handle_get_configuration, _1, _2, _3, _4);
 
+    SUBSCRIBE_EXPLORE(handle_get_top, _1, _2, _3, _4);
     SUBSCRIBE_EXPLORE(handle_get_block, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_EXPLORE(handle_get_block_header, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_EXPLORE(handle_get_block_header_context, _1, _2, _3, _4, _5, _6);
@@ -147,7 +148,7 @@ bool protocol_explore::try_dispatch_object(const http::request& request) NOEXCEP
     return true;
 }
 
-// Handlers.
+// Serialization.
 // ----------------------------------------------------------------------------
 
 constexpr auto data = to_value(http::media_type::application_octet_stream);
@@ -230,6 +231,32 @@ std::string to_hex_ptr_array(const Collection& collection, size_t size,
 
     BC_ASSERT(writer);
     return out;
+}
+
+// Handlers.
+// ----------------------------------------------------------------------------
+
+bool protocol_explore::handle_get_configuration(const code& ec,
+    interface::configuration, uint8_t, uint8_t media) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (media != json)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    const auto& query = archive();
+
+    value model{};
+    auto& object = model.emplace_object();
+    object.emplace("address", query.address_enabled());
+    object.emplace("filter", query.filter_enabled());
+
+    send_json(std::move(model), 25);
+    return true;
 }
 
 bool protocol_explore::handle_get_top(const code& ec, interface::top,

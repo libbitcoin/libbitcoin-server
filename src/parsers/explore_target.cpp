@@ -84,7 +84,11 @@ code explore_target(request_t& out, const std::string_view& path) NOEXCEPT
     // transaction, address, inputs, and outputs are identical excluding names;
     // input and output are identical excluding names; block is unique.
     const auto target = segments[segment++];
-    if (target == "top")
+    if (target == "configuration")
+    {
+        method = "configuration";
+    }
+    else if (target == "top")
     {
         method = "top";
     }
