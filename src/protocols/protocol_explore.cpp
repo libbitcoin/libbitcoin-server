@@ -248,14 +248,13 @@ bool protocol_explore::handle_get_configuration(const code& ec,
         return true;
     }
 
-    const auto& query = archive();
-
-    value model{};
-    auto& object = model.emplace_object();
-    object.emplace("address", query.address_enabled());
-    object.emplace("filter", query.filter_enabled());
-
-    send_json(std::move(model), 25);
+    boost::json::object object{};
+    object["address"] = archive().address_enabled();
+    object["filter"] = archive().filter_enabled();
+    object["witness"] = network_settings().witness_node();
+    object["retarget"] = system_settings().forks.retarget;
+    object["difficult"] = system_settings().forks.difficult;
+    send_json(std::move(object), 32);
     return true;
 }
 
@@ -352,38 +351,62 @@ bool protocol_explore::handle_get_block_header_context(const code& ec,
     if (stopped(ec))
         return false;
 
-    // states:
-    // block_valid
-    // block_confirmable
-    // block_unconfirmable
-    // get_header_state->unvalidated can be no header or no txs.
-    ////const auto state = query.get_header_state(link);
-    ////if (state == database::error::unvalidated)
-    ////{
-    ////    send_not_found();
-    ////    return true;
-    ////}
-
-    const auto& query = archive();
-    const auto link = to_header(height, hash);
-    database::context context{};
-    if (query.get_context(context, link))
+    if (media != json)
     {
-        switch (media)
-        {
-            case data:
-                send_chunk(to_little_endian_size(context.flags));
-                return true;
-            case text:
-                send_text(encode_base16(to_little_endian_size(context.flags)));
-                return true;
-            case json:
-                send_json(context.flags, two * sizeof(context.flags));
-                return true;
-        }
+        send_not_acceptable();
+        return true;
     }
 
-    send_not_found();
+    database::context context{};
+    const auto& query = archive();
+    const auto link = to_header(height, hash);
+    if (!query.get_context(context, link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    boost::json::object object{};
+    object["hash"] = encode_hash(query.get_header_key(link));
+    object["height"] = context.height;
+    object["mtp"] = context.mtp;
+
+    // The "state" element implies transactions are associated.
+    if (query.is_associated(link))
+    {
+        const auto check = system_settings().top_checkpoint().height();
+        const auto bypass = context.height < check || query.is_milestone(link);
+        object["state"] = boost::json::object
+        {
+            { "wire", query.get_block_size(link) },
+            { "count", query.get_tx_count(link) },
+            { "validated", bypass || query.is_validated(link) },
+            { "confirmed", check || query.is_confirmed_block(link) },
+            { "confirmable", bypass || query.is_confirmable(link) },
+            { "unconfirmable", !bypass && query.is_unconfirmable(link) }
+        };
+    }
+
+    // All modern configurable forks.
+    object["forks"] = boost::json::object
+    {
+        { "bip30",  context.is_enabled(chain::flags::bip30_rule) },
+        { "bip34",  context.is_enabled(chain::flags::bip34_rule) },
+        { "bip66",  context.is_enabled(chain::flags::bip66_rule) },
+        { "bip65",  context.is_enabled(chain::flags::bip65_rule) },
+        { "bip90",  context.is_enabled(chain::flags::bip90_rule) },
+        { "bip68",  context.is_enabled(chain::flags::bip68_rule) },
+        { "bip112", context.is_enabled(chain::flags::bip112_rule) },
+        { "bip113", context.is_enabled(chain::flags::bip113_rule) },
+        { "bip141", context.is_enabled(chain::flags::bip141_rule) },
+        { "bip143", context.is_enabled(chain::flags::bip143_rule) },
+        { "bip147", context.is_enabled(chain::flags::bip147_rule) },
+        { "bip42",  context.is_enabled(chain::flags::bip42_rule) },
+        { "bip341", context.is_enabled(chain::flags::bip341_rule) },
+        { "bip342", context.is_enabled(chain::flags::bip342_rule) }
+    };
+
+    send_json(std::move(object), 256);
     return true;
 }
 
@@ -394,48 +417,65 @@ bool protocol_explore::handle_get_block_details(const code& ec,
     if (stopped(ec))
         return false;
 
+    if (media != json)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    database::context context{};
     const auto& query = archive();
     const auto link = to_header(height, hash);
-    const auto state = query.get_block_state(link);
 
-    // get_block_state->unassociated can be no header or no txs.
-    if (state == database::error::unassociated)
+    // Missing header.
+    if (!query.get_context(context, link))
     {
         send_not_found();
         return true;
     }
 
-    // states:
-    // unvalidated
-    // block_valid
-    // block_confirmable
-    // block_unconfirmable
+    const auto block = query.get_block(link, true);
 
-    // both txs table (can get from details)
-    //const auto size = query.get_block_size(link);
-    //const auto count = query.get_tx_count(link);
-
-    // TODO:
-    // query (whole block and all prevouts, same as get_block_fees)
-    // fees, claim, reward, subsidy, weight, size, count.
-
-    if (const auto fees = query.get_block_fees(link); fees != max_uint64)
+    // Unassociated header.
+    if (!block)
     {
-        switch (media)
-        {
-            case data:
-                send_chunk(to_little_endian_size(fees));
-                return true;
-            case text:
-                send_text(encode_base16(to_little_endian_size(fees)));
-                return true;
-            case json:
-                send_json(fees, two * sizeof(fees));
-                return true;
-        }
+        send_not_found();
+        return true;
     }
 
-    send_not_found();
+    // Internal population (optimization).
+    block->populate();
+
+    // False if missing prevouts (not ready).
+    if (!query.populate_without_metadata(*block))
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto fees = block->fees();
+    const auto& settings = system_settings();
+    const auto bip16 = context.is_enabled(chain::flags::bip16_rule);
+    const auto bip42 = context.is_enabled(chain::flags::bip42_rule);
+    const auto bip141 = context.is_enabled(chain::flags::bip141_rule);
+    const auto subsidy = chain::block::subsidy(context.height,
+        settings.subsidy_interval_blocks, settings.initial_subsidy(), bip42);
+
+    boost::json::object object{};
+    object["hash"] = encode_hash(block->hash());
+    object["height"] = context.height;
+    object["count"] = block->transactions();
+    object["sigops"] = block->signature_operations(bip16, bip141);
+    object["segregated"] = block->is_segregated();
+    object["nominal"] = block->serialized_size(false);
+    object["maximal"] = block->serialized_size(true);
+    object["weight"] = block->weight();
+    object["fees"] = fees;
+    object["subsidy"] = subsidy;
+    object["reward"] = ceilinged_add(fees, subsidy);
+    object["claim"] = block->claim();
+
+    send_json(std::move(object), 512);
     return true;
 }
 
@@ -1181,7 +1221,7 @@ bool protocol_explore::handle_get_address_balance(const code& ec,
 }
 
 void protocol_explore::do_get_address_balance(uint8_t media, bool turbo,
-    const system::hash_cptr& hash) NOEXCEPT
+    const hash_cptr& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
