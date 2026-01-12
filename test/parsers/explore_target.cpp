@@ -63,6 +63,62 @@ BOOST_AUTO_TEST_CASE(parsers__explore_target__invalid_target__invalid_target)
     BOOST_REQUIRE_EQUAL(explore_target(out, "/v3/invalid"), server::error::invalid_target);
 }
 
+// configuration
+
+BOOST_AUTO_TEST_CASE(parsers__explore_target__configuration_valid__expected)
+{
+    const std::string path = "/v42/configuration";
+
+    request_t request{};
+    BOOST_REQUIRE(!explore_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "configuration");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__explore_target__configuration_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/configuration/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(explore_target(out, path), server::error::extra_segment);
+}
+
+// top
+
+BOOST_AUTO_TEST_CASE(parsers__explore_target__top_valid__expected)
+{
+    const std::string path = "/v42/top";
+
+    request_t request{};
+    BOOST_REQUIRE(!explore_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "top");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__explore_target__top_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/top/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(explore_target(out, path), server::error::extra_segment);
+}
+
 // block/height
 
 BOOST_AUTO_TEST_CASE(parsers__explore_target__block_height_valid__expected)
