@@ -251,6 +251,7 @@ bool protocol_explore::handle_get_configuration(const code& ec,
     boost::json::object object{};
     object["address"] = archive().address_enabled();
     object["filter"] = archive().filter_enabled();
+    object["turbo"] = database_settings().turbo;
     object["witness"] = network_settings().witness_node();
     object["retarget"] = system_settings().forks.retarget;
     object["difficult"] = system_settings().forks.difficult;
