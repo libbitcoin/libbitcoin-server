@@ -27,7 +27,7 @@ namespace server {
 
 using system::config::printer;
 
-const std::string executor::name_{ "bn" };
+const std::string executor::name_{ "bs" };
 
 // Command line options.
 // ----------------------------------------------------------------------------

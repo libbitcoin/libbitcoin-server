@@ -33,7 +33,7 @@ namespace server {
 #define BS_SETTINGS_MESSAGE \
     "These are the configuration settings that can be set."
 #define BS_INFORMATION_MESSAGE \
-    "Runs a full bitcoin node."
+    "Runs a full bitcoin node server."
 
 // --initchain
 #define BS_INITIALIZING_CHAIN \
