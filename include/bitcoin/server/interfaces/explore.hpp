@@ -110,6 +110,8 @@ struct explore_methods
 /// ?format=data|text|json (via query string).
 /// -----------------------------------------------------------------------
 
+/// /v1/configuration {1}
+
 /// /v1/top {1}
 
 /// /v1/block/hash/[bkhash] {1}
@@ -118,8 +120,11 @@ struct explore_methods
 /// /v1/block/hash/[bkhash]/header {1}
 /// /v1/block/height/[height]/header {1}
 
-/// /v1/block/hash/[bkhash]/fees {1}
-/// /v1/block/height/[height]/fees {1}
+/// /v1/block/hash/[bkhash]/header/context {1}
+/// /v1/block/height/[height]/header/context {1}
+
+/// /v1/block/hash/[bkhash]/details {1}
+/// /v1/block/height/[height]/details {1}
 
 /// /v1/block/hash/[bkhash]/filter/[type] {1}
 /// /v1/block/height/[height]/filter/[type] {1}
