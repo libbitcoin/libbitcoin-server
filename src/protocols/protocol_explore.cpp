@@ -762,7 +762,7 @@ bool protocol_explore::handle_get_tx_details(const code& ec,
         return true;
     }
 
-    // Coinbase missing prevouts (not ready).
+    // Non-coinbase missing prevouts (not ready).
     const auto coinbase = query.is_coinbase(link);
     if (!coinbase && !query.populate_without_metadata(*tx))
     {
