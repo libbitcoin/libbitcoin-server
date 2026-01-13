@@ -25,6 +25,8 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
 
+// TODO: rationalize confirmed state against database (to_block vs. to_strong).
+
 namespace libbitcoin {
 namespace server {
 
@@ -248,13 +250,16 @@ bool protocol_explore::handle_get_configuration(const code& ec,
         return true;
     }
 
-    boost::json::object object{};
-    object["address"] = archive().address_enabled();
-    object["filter"] = archive().filter_enabled();
-    object["turbo"] = database_settings().turbo;
-    object["witness"] = network_settings().witness_node();
-    object["retarget"] = system_settings().forks.retarget;
-    object["difficult"] = system_settings().forks.difficult;
+    boost::json::object object
+    {
+        { "address", archive().address_enabled() },
+        { "filter", archive().filter_enabled() },
+        { "turbo", database_settings().turbo },
+        { "witness", network_settings().witness_node() },
+        { "retarget", system_settings().forks.retarget },
+        { "difficult", system_settings().forks.difficult },
+    };
+
     send_json(std::move(object), 32);
     return true;
 }
@@ -367,10 +372,12 @@ bool protocol_explore::handle_get_block_header_context(const code& ec,
         return true;
     }
 
-    boost::json::object object{};
-    object["hash"] = encode_hash(query.get_header_key(link));
-    object["height"] = context.height;
-    object["mtp"] = context.mtp;
+    boost::json::object object
+    {
+        { "hash", encode_hash(query.get_header_key(link)) },
+        { "height", context.height },
+        { "mtp", context.mtp },
+    };
 
     // The "state" element implies transactions are associated.
     if (query.is_associated(link))
@@ -447,7 +454,7 @@ bool protocol_explore::handle_get_block_details(const code& ec,
     // Internal population (optimization).
     block->populate();
 
-    // False if missing prevouts (not ready).
+    // Missing prevouts (not ready).
     if (!query.populate_without_metadata(*block))
     {
         send_not_found();
@@ -462,19 +469,21 @@ bool protocol_explore::handle_get_block_details(const code& ec,
     const auto subsidy = chain::block::subsidy(context.height,
         settings.subsidy_interval_blocks, settings.initial_subsidy(), bip42);
 
-    boost::json::object object{};
-    object["hash"] = encode_hash(block->hash());
-    object["height"] = context.height;
-    object["count"] = block->transactions();
-    object["sigops"] = block->signature_operations(bip16, bip141);
-    object["segregated"] = block->is_segregated();
-    object["nominal"] = block->serialized_size(false);
-    object["maximal"] = block->serialized_size(true);
-    object["weight"] = block->weight();
-    object["fees"] = fees;
-    object["subsidy"] = subsidy;
-    object["reward"] = ceilinged_add(fees, subsidy);
-    object["claim"] = block->claim();
+    boost::json::object object
+    {
+        { "hash", encode_hash(block->hash()) },
+        { "height", context.height },
+        { "count", block->transactions() },
+        { "sigops", block->signature_operations(bip16, bip141) },
+        { "segregated", block->is_segregated() },
+        { "nominal", block->serialized_size(false) },
+        { "maximal", block->serialized_size(true) },
+        { "weight", block->weight() },
+        { "fees", fees },
+        { "subsidy", subsidy },
+        { "reward", ceilinged_add(fees, subsidy) },
+        { "claim", block->claim() },
+    };
 
     send_json(std::move(object), 512);
     return true;
@@ -736,26 +745,62 @@ bool protocol_explore::handle_get_tx_details(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: expand details to include tx.size and tx.weight.
-    const auto& query = archive();
-    if (const auto fee = query.get_tx_fee(query.to_tx(*hash));
-        fee != max_uint64)
+    if (media != json)
     {
-        switch (media)
-        {
-            case data:
-                send_chunk(to_little_endian_size(fee));
-                return true;
-            case text:
-                send_text(encode_base16(to_little_endian_size(fee)));
-                return true;
-            case json:
-                send_json(fee, two * sizeof(fee));
-                return true;
-        }
+        send_not_acceptable();
+        return true;
     }
 
-    send_not_found();
+    const auto& query = archive();
+    const auto link = query.to_tx(*hash);
+    const auto tx = query.get_transaction(link, true);
+
+    // Missing tx.
+    if (!tx)
+    {
+        send_not_found();
+        return true;
+    }
+
+    // Coinbase missing prevouts (not ready).
+    const auto coinbase = query.is_coinbase(link);
+    if (!coinbase && !query.populate_without_metadata(*tx))
+    {
+        send_not_found();
+        return true;
+    }
+
+    boost::json::object object
+    {
+        { "coinbase", coinbase },
+        { "segregated", tx->is_segregated() },
+        { "nominal", tx->serialized_size(false) },
+        { "maximal", tx->serialized_size(true) },
+        { "weight", tx->weight() },
+        { "fee", tx->fee() }
+    };
+    
+    size_t position{};
+    if (query.get_tx_position(position, link))
+    {
+        database::context context{};
+        if (!query.get_context(context, query.to_strong(link)))
+        {
+            send_internal_server_error(database::error::integrity);
+            return true;
+        }
+
+        const auto bip16 = context.is_enabled(chain::flags::bip16_rule);
+        const auto bip141 = context.is_enabled(chain::flags::bip141_rule);
+        object["confirmed"] = boost::json::object
+        {
+            { "height",  context.height },
+            { "position",  position },
+            { "sigops",  tx->signature_operations(bip16, bip141) }
+        };
+    }
+
+    send_json(std::move(object), 128);
     return true;
 }
 
