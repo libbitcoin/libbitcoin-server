@@ -772,11 +772,14 @@ bool protocol_explore::handle_get_tx_details(const code& ec,
 
     boost::json::object object
     {
-        { "coinbase", coinbase },
+        { "wtxid", encode_hash(tx->get_hash(true)) },
         { "segregated", tx->is_segregated() },
+        { "coinbase", coinbase },
         { "nominal", tx->serialized_size(false) },
         { "maximal", tx->serialized_size(true) },
         { "weight", tx->weight() },
+        { "value", tx->value() },
+        { "spend", tx->spend() },
         { "fee", tx->fee() }
     };
     
