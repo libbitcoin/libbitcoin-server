@@ -20,6 +20,7 @@
 
 #include <filesystem>
 #include <bitcoin/server/configuration.hpp>
+#include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
 #define BC_HTTP_SERVER_NAME "libbitcoin/4.0"
