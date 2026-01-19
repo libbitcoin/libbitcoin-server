@@ -11,15 +11,29 @@
     <PropertyPageSchema Include="$(MSBuildThisFileDirectory)libbitcoin-network.import.xml" />
   </ItemGroup>
 
+  <!-- Options -->
+
+  <PropertyGroup>
+    <Option-ssl>true</Option-ssl>
+  </PropertyGroup>
+
+  <!-- Messages -->
+
+  <Target Name="OptionInfo" BeforeTargets="PrepareForBuild">
+    <Message Text="Option-ssl        : $(Option-ssl)" Importance="high"/>
+  </Target>
+
   <!-- Linkage -->
 
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\bitcoin\ssl\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+
+      <!-- Prevent boost from seeing ssl includes when ssl is deselected  (requires external headers). -->
+      <AdditionalIncludeDirectories Condition="'$(Option-ssl)' == 'true'">$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\bitcoin\ssl\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-network)' == 'static' Or '$(Linkage-libbitcoin-network)' == 'ltcg'">BCT_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions>WOLFSSL_USER_SETTINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Option-ssl)' == 'true'">WOLFSSL_USER_SETTINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies Condition="'$(Linkage-libbitcoin-network)' != ''">libbitcoin-network.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -35,4 +49,14 @@
       </AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
+
+  <Target Name="WolfSSLSuppressions" BeforeTargets="ClCompile">
+    <ItemGroup>
+      <ClCompile Update="@(ClCompile)">
+        <!-- Exclude wolfssl test sources when ssl is deselected (requires external linkage). -->
+        <ExcludedFromBuild Condition="$([System.String]::new('%(RelativeDir)').StartsWith('..\..\..\..\test\ssl\')) And '$(Option-ssl)' == 'false'">true</ExcludedFromBuild>
+      </ClCompile>
+    </ItemGroup>
+  </Target>
+  
 </Project>
