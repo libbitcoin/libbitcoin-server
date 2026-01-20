@@ -19,10 +19,6 @@
 #include "executor.hpp"
 #include "localize.hpp"
 
-////#include <set>
-#include <boost/format.hpp>
-#include <bitcoin/server.hpp>
-
 namespace libbitcoin {
 namespace server {
 

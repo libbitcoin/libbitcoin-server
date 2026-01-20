@@ -20,8 +20,6 @@
 #include "localize.hpp"
 
 #include <unordered_map>
-#include <boost/format.hpp>
-#include <bitcoin/server.hpp>
 
 namespace libbitcoin {
 namespace server {
