@@ -18,7 +18,7 @@
  */
 #include <bitcoin/server/error.hpp>
 
-#include <bitcoin/system.hpp>
+#include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {

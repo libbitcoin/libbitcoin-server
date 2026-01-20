@@ -30,7 +30,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 
       <!-- Prevent boost from seeing ssl includes when ssl is deselected  (requires external headers). -->
-      <AdditionalIncludeDirectories Condition="'$(Option-ssl)' == 'true'">$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\bitcoin\ssl\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Option-ssl)' == 'true'">$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\bitcoin\network\ssl\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-network)' == 'static' Or '$(Linkage-libbitcoin-network)' == 'ltcg'">BCT_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Option-ssl)' == 'true'">WOLFSSL_USER_SETTINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>

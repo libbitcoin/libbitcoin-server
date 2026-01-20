@@ -19,7 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_DEFINE_HPP
 #define LIBBITCOIN_SERVER_DEFINE_HPP
 
-/// Pulls in common /server headers (excluding settings/config/parser/server_node).
+#include <bitcoin/node.hpp>
 #include <bitcoin/server/error.hpp>
 
 /// Now we use the generic helper definitions above to define BCS_API
@@ -36,9 +36,6 @@
     #define BCS_API      BC_HELPER_DLL_IMPORT
     #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
-
-/// For common types below.
-#include <bitcoin/node.hpp>
 
 /// Augment limited xcode placeholder defines (10 vs. common 20).
 /// ---------------------------------------------------------------------------
@@ -79,9 +76,7 @@ namespace std::placeholders
 
 // version        : <generated>
 // error          : version
-// events         : error
-// chase          : events
-// define         : chase
+// define         : error
 
 // Other directory common includes are not internally chained.
 // Each header includes only its required common headers.
