@@ -22,7 +22,10 @@
 #include <atomic>
 #include <future>
 #include <unordered_map>
+
+// Must pull in any base boost configuration before including boost.
 #include <bitcoin/server.hpp>
+#include <boost/format.hpp>
 
 // This class is just an ad-hoc user interface wrapper on the node.
 // It will be factored and cleaned up for final release.

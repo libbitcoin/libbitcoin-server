@@ -23,8 +23,6 @@
 #include <csignal>
 #include <future>
 #include <mutex>
-#include <boost/format.hpp>
-#include <bitcoin/server.hpp>
 
 namespace libbitcoin {
 namespace server {

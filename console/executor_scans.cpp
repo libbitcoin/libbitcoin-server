@@ -21,8 +21,6 @@
 
 #include <algorithm>
 #include <map>
-#include <boost/format.hpp>
-#include <bitcoin/server.hpp>
 
 namespace libbitcoin {
 namespace server {
