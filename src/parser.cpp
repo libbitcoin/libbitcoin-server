@@ -23,8 +23,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
-#define BC_HTTP_SERVER_NAME "libbitcoin/4.0"
-
 ////std::filesystem::path config_default_path() NOEXCEPT
 ////{
 ////    return { "libbitcoin/bn.cfg" };
@@ -81,13 +79,18 @@ parser::parser(system::chain::selection context,
     configured.network.outbound.seeds.emplace_back("seed.bitcoin.wiz.biz", 8333_u16);
     configured.network.outbound.seeds.emplace_back("seed.mainnet.achownodes.xyz", 8333_u16);
 
-    // admin
+    // server
     configured.server.web.binds.emplace_back(asio::address{}, 8080_u16);
+    configured.server.web.secure_binds.emplace_back(asio::address{}, 8043_u16);
     configured.server.explore.binds.emplace_back(asio::address{}, 8180_u16);
-    configured.server.bitcoind.binds.emplace_back(asio::address{}, 8380_u16);
-    configured.server.electrum.binds.emplace_back(asio::address{}, 8480_u16);
-    configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8580_u16);
-    configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8680_u16);
+    configured.server.explore.secure_binds.emplace_back(asio::address{}, 8143_u16);
+    configured.server.bitcoind.binds.emplace_back(asio::address{}, 8280_u16);
+    configured.server.bitcoind.secure_binds.emplace_back(asio::address{}, 8243_u16);
+    configured.server.electrum.binds.emplace_back(asio::address{}, 8380_u16);
+    configured.server.electrum.secure_binds.emplace_back(asio::address{}, 8343_u16);
+    configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8480_u16);
+    configured.server.stratum_v1.secure_binds.emplace_back(asio::address{}, 8443_u16);
+    configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
 
     // SCALE: LF2.2 @ 850K.
 
@@ -818,15 +821,25 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [web] */
-    ////(
-    ////    "web.secure",
-    ////    value<bool>(&configured.network.web.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
-    ////)
     (
         "web.bind",
         value<network::config::authorities>(&configured.server.web.binds),
         "IP address to bind, multiple allowed, defaults to '0.0.0.0:8080' (all IPv4)."
+    )
+    (
+        "web.secure_bind",
+        value<network::config::authorities>(&configured.server.web.secure_binds),
+        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8143' (all IPv4)."
+    )
+    (
+        "web.certificate_path",
+        value<std::filesystem::path>(&configured.server.web.certificate_path),
+        "The path to the server certificate file (.PEM), defaults to unused."
+    )
+    (
+        "web.key_path",
+        value<std::filesystem::path>(&configured.server.web.key_path),
+        "The path to the server private key file (.PEM), defaults to unused."
     )
     (
         "web.connections",
@@ -885,15 +898,25 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [explore] */
-    ////(
-    ////    "explore.secure",
-    ////    value<bool>(&configured.network.explore.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
-    ////)
     (
         "explore.bind",
         value<network::config::authorities>(&configured.server.explore.binds),
         "IP address to bind, multiple allowed, defaults to '0.0.0.0:8180' (all IPv4)."
+    )
+    (
+        "explore.secure_bind",
+        value<network::config::authorities>(&configured.server.explore.secure_binds),
+        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8143' (all IPv4)."
+    )
+    (
+        "explore.certificate_path",
+        value<std::filesystem::path>(&configured.server.explore.certificate_path),
+        "The path to the server certificate file (.PEM), defaults to unused."
+    )
+    (
+        "explore.key_path",
+        value<std::filesystem::path>(&configured.server.explore.key_path),
+        "The path to the server private key file (.PEM), defaults to unused."
     )
     (
         "explore.connections",
@@ -957,15 +980,25 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [bitcoind] */
-    ////(
-    ////    "bitcoind.secure",
-    ////    value<bool>(&configured.network.bitcoind.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
-    ////)
     (
         "bitcoind.bind",
         value<network::config::authorities>(&configured.server.bitcoind.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8380' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8280' (all IPv4)."
+    )
+    (
+        "bitcoind.secure_bind",
+        value<network::config::authorities>(&configured.server.bitcoind.secure_binds),
+        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8243' (all IPv4)."
+    )
+    (
+        "bitcoind.certificate_path",
+        value<std::filesystem::path>(&configured.server.bitcoind.certificate_path),
+        "The path to the server certificate file (.PEM), defaults to unused."
+    )
+    (
+        "bitcoind.key_path",
+        value<std::filesystem::path>(&configured.server.bitcoind.key_path),
+        "The path to the server private key file (.PEM), defaults to unused."
     )
     (
         "bitcoind.connections",
@@ -1014,15 +1047,25 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [electrum] */
-    ////(
-    ////    "electrum.secure",
-    ////    value<bool>(&configured.network.electrum.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
-    ////)
     (
         "electrum.bind",
         value<network::config::authorities>(&configured.server.electrum.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8480' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8380' (all IPv4)."
+    )
+    (
+        "electrum.secure_bind",
+        value<network::config::authorities>(&configured.server.electrum.secure_binds),
+        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8343' (all IPv4)."
+    )
+    (
+        "electrum.certificate_path",
+        value<std::filesystem::path>(&configured.server.electrum.certificate_path),
+        "The path to the server certificate file (.PEM), defaults to unused."
+    )
+    (
+        "electrum.key_path",
+        value<std::filesystem::path>(&configured.server.electrum.key_path),
+        "The path to the server private key file (.PEM), defaults to unused."
     )
     (
         "electrum.connections",
@@ -1051,15 +1094,25 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [stratum_v1] */
-    ////(
-    ////    "stratum_v1.secure",
-    ////    value<bool>(&configured.network.stratum_v1.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
-    ////)
     (
         "stratum_v1.bind",
         value<network::config::authorities>(&configured.server.stratum_v1.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8580' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8480' (all IPv4)."
+    )
+    (
+        "stratum_v1.secure_bind",
+        value<network::config::authorities>(&configured.server.stratum_v1.secure_binds),
+        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8443' (all IPv4)."
+    )
+    (
+        "stratum_v1.certificate_path",
+        value<std::filesystem::path>(&configured.server.stratum_v1.certificate_path),
+        "The path to the server certificate file (.PEM), defaults to unused."
+    )
+    (
+        "stratum_v1.key_path",
+        value<std::filesystem::path>(&configured.server.stratum_v1.key_path),
+        "The path to the server private key file (.PEM), defaults to unused."
     )
     (
         "stratum_v1.connections",
@@ -1088,11 +1141,6 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [stratum_v2] */
-    ////(
-    ////    "stratum_v2.secure",
-    ////    value<bool>(&configured.network.stratum_v2.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
-    ////)
     (
         "stratum_v2.bind",
         value<network::config::authorities>(&configured.server.stratum_v2.binds),

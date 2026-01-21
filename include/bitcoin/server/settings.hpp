@@ -89,7 +89,7 @@ public:
     struct html_server
       : public network::settings::websocket_server
     {
-        // embedded_pages reference precludes copy.
+        // tls_server and embedded_pages reference preclude copy.
         DELETE_COPY(html_server);
 
         html_server(const std::string_view& logging_name,
@@ -128,10 +128,10 @@ public:
     network::settings::http_server bitcoind{ "bitcoind" };
 
     /// electrum compat interface (tcp/s, json-rpc-v2)
-    network::settings::tcp_server electrum{ "electrum" };
+    network::settings::tls_server electrum{ "electrum" };
 
     /// stratum v1 compat interface (tcp/s, json-rpc-v1, auth handshake)
-    network::settings::tcp_server stratum_v1{ "stratum_v1" };
+    network::settings::tls_server stratum_v1{ "stratum_v1" };
 
     /// stratum v2 compat interface (tcp[/s], binary, auth/privacy handshake)
     network::settings::tcp_server stratum_v2{ "stratum_v2" };
