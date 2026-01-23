@@ -133,8 +133,9 @@ public:
     /// stratum v1 compat interface (tcp/s, json-rpc-v1, auth handshake)
     network::settings::tls_server stratum_v1{ "stratum_v1" };
 
+    /// stratum vs is not TLS, but normalized for session_server usage.
     /// stratum v2 compat interface (tcp[/s], binary, auth/privacy handshake)
-    network::settings::tcp_server stratum_v2{ "stratum_v2" };
+    network::settings::tls_server stratum_v2{ "stratum_v2" };
 };
 
 } // namespace server

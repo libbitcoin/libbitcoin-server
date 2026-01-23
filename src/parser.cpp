@@ -80,17 +80,17 @@ parser::parser(system::chain::selection context,
     configured.network.outbound.seeds.emplace_back("seed.mainnet.achownodes.xyz", 8333_u16);
 
     // server
-    configured.server.web.binds.emplace_back(asio::address{}, 8080_u16);
-    configured.server.web.secure_binds.emplace_back(asio::address{}, 8043_u16);
-    configured.server.explore.binds.emplace_back(asio::address{}, 8180_u16);
-    configured.server.explore.secure_binds.emplace_back(asio::address{}, 8143_u16);
-    configured.server.bitcoind.binds.emplace_back(asio::address{}, 8280_u16);
-    configured.server.bitcoind.secure_binds.emplace_back(asio::address{}, 8243_u16);
-    configured.server.electrum.binds.emplace_back(asio::address{}, 8380_u16);
-    configured.server.electrum.secure_binds.emplace_back(asio::address{}, 8343_u16);
-    configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8480_u16);
-    configured.server.stratum_v1.secure_binds.emplace_back(asio::address{}, 8443_u16);
-    configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
+    ////configured.server.web.binds.emplace_back(asio::address{}, 8080_u16);
+    ////configured.server.web.safes.emplace_back(asio::address{}, 8043_u16);
+    ////configured.server.explore.binds.emplace_back(asio::address{}, 8180_u16);
+    ////configured.server.explore.safes.emplace_back(asio::address{}, 8143_u16);
+    ////configured.server.bitcoind.binds.emplace_back(asio::address{}, 8280_u16);
+    ////configured.server.bitcoind.safes.emplace_back(asio::address{}, 8243_u16);
+    ////configured.server.electrum.binds.emplace_back(asio::address{}, 8380_u16);
+    ////configured.server.electrum.safes.emplace_back(asio::address{}, 8343_u16);
+    ////configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8480_u16);
+    ////configured.server.stratum_v1.safes.emplace_back(asio::address{}, 8443_u16);
+    ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
 
     // SCALE: LF2.2 @ 850K.
 
@@ -824,12 +824,12 @@ options_metadata parser::load_settings() THROWS
     (
         "web.bind",
         value<network::config::authorities>(&configured.server.web.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8080' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "web.secure_bind",
-        value<network::config::authorities>(&configured.server.web.secure_binds),
-        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8143' (all IPv4)."
+        "web.safe",
+        value<network::config::authorities>(&configured.server.web.safes),
+        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
         "web.certificate_path",
@@ -901,12 +901,12 @@ options_metadata parser::load_settings() THROWS
     (
         "explore.bind",
         value<network::config::authorities>(&configured.server.explore.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8180' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "explore.secure_bind",
-        value<network::config::authorities>(&configured.server.explore.secure_binds),
-        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8143' (all IPv4)."
+        "explore.safe",
+        value<network::config::authorities>(&configured.server.explore.safes),
+        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
         "explore.certificate_path",
@@ -983,12 +983,12 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.bind",
         value<network::config::authorities>(&configured.server.bitcoind.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8280' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "bitcoind.secure_bind",
-        value<network::config::authorities>(&configured.server.bitcoind.secure_binds),
-        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8243' (all IPv4)."
+        "bitcoind.safe",
+        value<network::config::authorities>(&configured.server.bitcoind.safes),
+        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
         "bitcoind.certificate_path",
@@ -1050,12 +1050,12 @@ options_metadata parser::load_settings() THROWS
     (
         "electrum.bind",
         value<network::config::authorities>(&configured.server.electrum.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8380' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "electrum.secure_bind",
-        value<network::config::authorities>(&configured.server.electrum.secure_binds),
-        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8343' (all IPv4)."
+        "electrum.safe",
+        value<network::config::authorities>(&configured.server.electrum.safes),
+        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
         "electrum.certificate_path",
@@ -1097,12 +1097,12 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v1.bind",
         value<network::config::authorities>(&configured.server.stratum_v1.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8480' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "stratum_v1.secure_bind",
-        value<network::config::authorities>(&configured.server.stratum_v1.secure_binds),
-        "IP address to secure bind, multiple allowed, defaults to '0.0.0.0:8443' (all IPv4)."
+        "stratum_v1.safe",
+        value<network::config::authorities>(&configured.server.stratum_v1.safes),
+        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
         "stratum_v1.certificate_path",
@@ -1144,7 +1144,7 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v2.bind",
         value<network::config::authorities>(&configured.server.stratum_v2.binds),
-        "IP address to bind, multiple allowed, defaults to '0.0.0.0:8680' (all IPv4)."
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
         "stratum_v2.connections",

@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(server__html_server__defaults__expected)
 
     // tls_server
     BOOST_REQUIRE(!instance.secure());
-    BOOST_REQUIRE(instance.secure_binds.empty());
+    BOOST_REQUIRE(instance.safes.empty());
     BOOST_REQUIRE(instance.certificate_authority.empty());
     BOOST_REQUIRE(instance.certificate_path.empty());
     BOOST_REQUIRE(instance.key_path.empty());
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(server__web_server__defaults__expected)
 
     // tls_server
     BOOST_REQUIRE(!server.secure());
-    BOOST_REQUIRE(server.secure_binds.empty());
+    BOOST_REQUIRE(server.safes.empty());
     BOOST_REQUIRE(server.certificate_authority.empty());
     BOOST_REQUIRE(server.certificate_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(server__explore_server__defaults__expected)
 
     // tls_server
     BOOST_REQUIRE(!server.secure());
-    BOOST_REQUIRE(server.secure_binds.empty());
+    BOOST_REQUIRE(server.safes.empty());
     BOOST_REQUIRE(server.certificate_authority.empty());
     BOOST_REQUIRE(server.certificate_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
 
     // tls_server
     BOOST_REQUIRE(!server.secure());
-    BOOST_REQUIRE(server.secure_binds.empty());
+    BOOST_REQUIRE(server.safes.empty());
     BOOST_REQUIRE(server.certificate_authority.empty());
     BOOST_REQUIRE(server.certificate_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
 
     // tls_server
     BOOST_REQUIRE(!server.secure());
-    BOOST_REQUIRE(server.secure_binds.empty());
+    BOOST_REQUIRE(server.safes.empty());
     BOOST_REQUIRE(server.certificate_authority.empty());
     BOOST_REQUIRE(server.certificate_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
 
     // tls_server
     BOOST_REQUIRE(!server.secure());
-    BOOST_REQUIRE(server.secure_binds.empty());
+    BOOST_REQUIRE(server.safes.empty());
     BOOST_REQUIRE(server.certificate_authority.empty());
     BOOST_REQUIRE(server.certificate_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
