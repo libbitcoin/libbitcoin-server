@@ -86,6 +86,7 @@ protected:
     /// Used instead of suspension because that has independent start/stop.
     inline bool enabled() const NOEXCEPT override
     {
+        // Currently delay_inbound is the only reason to inherit node::session.
         return !this->node_config().node.delay_inbound || this->is_recent();
     }
 
