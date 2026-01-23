@@ -18,3 +18,26 @@
  */
 #define BOOST_TEST_MODULE libbitcoin_server_test
 #include <boost/test/unit_test.hpp>
+
+#include <bitcoin/server.hpp>
+
+// This is required due to the construction of a boost::asio::ssl::context in
+// the configuration tree upon construct, which may preceed initialization.
+struct global_fixture
+{
+    global_fixture() noexcept
+    {
+#if defined(HAVE_SSL)
+        wolfSSL_Init();
+#endif
+    }
+
+    ~global_fixture() noexcept
+    {
+#if defined(HAVE_SSL)
+        wolfSSL_Cleanup();
+#endif
+    }
+};
+
+BOOST_GLOBAL_FIXTURE(global_fixture);
