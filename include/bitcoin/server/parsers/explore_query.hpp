@@ -27,6 +27,9 @@ namespace server {
 BCS_API bool explore_query(network::rpc::request_t& out,
     const network::http::request& request) NOEXCEPT;
 
+BCS_API network::http::media_type get_media(
+    const network::rpc::request_t& model) NOEXCEPT;
+
 } // namespace server
 } // namespace libbitcoin
 

@@ -22,6 +22,7 @@
 #include <optional>
 #include <ranges>
 #include <utility>
+#include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
 
@@ -132,30 +133,34 @@ bool protocol_explore::try_dispatch_object(const http::request& request) NOEXCEP
     BC_ASSERT(stranded());
 
     rpc::request_t model{};
-    if (LOG_ONLY(const auto ec =) explore_target(model, request.target()))
+    if (const auto ec = explore_target(model, request.target()))
     {
         LOGA("Request parse [" << request.target() << "] " << ec.message());
-        return false;
+        return !ec;
     }
 
-    if (!explore_query(model, request))
+    if (explore_query(model, request))
     {
-        send_not_acceptable(request);
+        if (const auto ec = dispatcher_.notify(model))
+            send_internal_server_error(ec, request);
+
         return true;
     }
 
-    if (const auto ec = dispatcher_.notify(model))
-        send_internal_server_error(ec, request);
+    if (get_media(model) == http::media_type::text_html)
+        return false;
 
+    send_not_acceptable(request);
     return true;
 }
 
 // Serialization.
 // ----------------------------------------------------------------------------
 
-constexpr auto data = to_value(http::media_type::application_octet_stream);
-constexpr auto json = to_value(http::media_type::application_json);
+constexpr auto html = to_value(http::media_type::text_html);
 constexpr auto text = to_value(http::media_type::text_plain);
+constexpr auto json = to_value(http::media_type::application_json);
+constexpr auto data = to_value(http::media_type::application_octet_stream);
 
 template <typename Object, typename ...Args>
 data_chunk to_bin(const Object& object, size_t size, Args&&... args) NOEXCEPT
