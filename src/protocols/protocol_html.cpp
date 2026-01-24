@@ -29,6 +29,9 @@ using namespace system;
 using namespace network::http;
 using namespace std::placeholders;
 
+// Shared pointers required in handler parameters so closures control lifetime.
+BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
+BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 // Handle get method.
@@ -283,6 +286,8 @@ std::filesystem::path protocol_html::to_local_path(
     return sanitize_origin(options_.path, to_path(target).string());
 }
 
+BC_POP_WARNING()
+BC_POP_WARNING()
 BC_POP_WARNING()
 
 } // namespace server
