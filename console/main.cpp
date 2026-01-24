@@ -84,25 +84,18 @@ int bc::system::main(int argc, char* argv[])
     using namespace bc::node;
     using namespace bc::server;
 
-#if defined(HAVE_SSL)
-    wolfSSL_Init();
-#endif
-
     // en.cppreference.com/w/cpp/io/ios_base/sync_with_stdio
     std::ios_base::sync_with_stdio(false);
     set_utf8_stdio();
 
     const web_pages web_server{};
     const explore_pages block_explorer{};
-    server::parser metadata(chain::selection::mainnet,
-        block_explorer, web_server);
+    server::parser metadata(chain::selection::mainnet, block_explorer,
+        web_server);
 
     const auto& args = const_cast<const char**>(argv);
     if (!metadata.parse(argc, args, cerr))
     {
-#if defined(HAVE_SSL)
-        wolfSSL_Cleanup();
-#endif
         return -1;
     }
 
@@ -113,11 +106,5 @@ int bc::system::main(int argc, char* argv[])
     set_memory_priority(metadata.configured.node.memory_priority_());
 
     executor host(metadata, cin, cout, cerr);
-    const auto out = host.dispatch() ? 0 : -1;
-
-#if defined(HAVE_SSL)
-    wolfSSL_Cleanup();
-#endif
-
-    return out;
+    return host.dispatch() ? 0 : -1;
 }
