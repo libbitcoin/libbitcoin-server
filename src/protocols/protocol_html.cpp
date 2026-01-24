@@ -29,6 +29,9 @@ using namespace system;
 using namespace network::http;
 using namespace std::placeholders;
 
+// Shared pointers required in handler parameters so closures control lifetime.
+BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
+BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 // Handle get method.
@@ -96,33 +99,8 @@ bool protocol_html::try_dispatch_object(const request&) NOEXCEPT
 void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
 {
     const auto& pages = server_settings().explore.pages;
-    auto media = file_media_type(to_path(request.target()));
-
-    // If file extension isn't canonical derive from accept field.
-    if (media == media_type::unknown)
-    {
-        // This ignores accept field priorities. Ideally we want the highest
-        // priority acceptable media type of the supported types subset.
-        const auto accepts = to_media_types((request)[field::accept]);
-        if (contains(accepts, media_type::text_html))
-            media = media_type::text_html;
-        else if (contains(accepts, media_type::text_css))
-            media = media_type::text_css;
-        else if (contains(accepts, media_type::application_javascript))
-            media = media_type::application_javascript;
-        else if (contains(accepts, media_type::font_woff))
-            media = media_type::font_woff;
-        else if (contains(accepts, media_type::font_woff2))
-            media = media_type::font_woff2;
-        else if (contains(accepts, media_type::image_png))
-            media = media_type::image_png;
-        else if (contains(accepts, media_type::image_gif))
-            media = media_type::image_gif;
-        else if (contains(accepts, media_type::image_jpeg))
-            media = media_type::image_jpeg;
-    }
-
-    switch (media)
+    switch (const auto media = file_media_type(to_path(request.target()),
+        media_type::text_html))
     {
         case media_type::text_html:
             send_span(pages.html(), media, request);
@@ -283,6 +261,8 @@ std::filesystem::path protocol_html::to_local_path(
     return sanitize_origin(options_.path, to_path(target).string());
 }
 
+BC_POP_WARNING()
+BC_POP_WARNING()
 BC_POP_WARNING()
 
 } // namespace server

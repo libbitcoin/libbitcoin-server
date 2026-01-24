@@ -24,6 +24,28 @@
 namespace libbitcoin {
 namespace server {
 
+// Query string tokens.
+namespace token
+{
+    // Names.
+    constexpr auto turbo = "turbo";
+    constexpr auto format = "format";
+    constexpr auto witness = "witness";
+
+    // Boolean values.
+    constexpr auto true_ = "true";
+    constexpr auto false_ = "false";
+
+    // Format values.
+    namespace formats
+    {
+        constexpr auto html = "html";
+        constexpr auto text = "text";
+        constexpr auto json = "json";
+        constexpr auto data = "data";
+    }
+}
+
 BCS_API bool explore_query(network::rpc::request_t& out,
     const network::http::request& request) NOEXCEPT;
 

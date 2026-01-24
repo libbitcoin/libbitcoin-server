@@ -509,86 +509,6 @@ options_metadata parser::load_settings() THROWS
         "The minimum number of threads in the network threadpool, defaults to '16'."
     )
     (
-        "network.address_upper",
-        value<uint16_t>(&configured.network.address_upper),
-        "The upper bound for address selection divisor, defaults to '10'."
-    )
-    (
-        "network.address_lower",
-        value<uint16_t>(&configured.network.address_lower),
-        "The lower bound for address selection divisor, defaults to '5'."
-    )
-    (
-        "network.protocol_maximum",
-        value<uint32_t>(&configured.network.protocol_maximum),
-        "The maximum network protocol version, defaults to '70012'."
-    )
-    (
-        "network.protocol_minimum",
-        value<uint32_t>(&configured.network.protocol_minimum),
-        "The minimum network protocol version, defaults to '31800'."
-    )
-    (
-        "network.services_maximum",
-        value<uint64_t>(&configured.network.services_maximum),
-        "The maximum services exposed by network connections, defaults to '9' (full node, witness)."
-    )
-    (
-        "network.services_minimum",
-        value<uint64_t>(&configured.network.services_minimum),
-        "The minimum services exposed by network connections, defaults to '9' (full node, witness)."
-    )
-    (
-        "network.invalid_services",
-        value<uint64_t>(&configured.network.invalid_services),
-        "The advertised services that cause a peer to be dropped, defaults to '176'."
-    )
-    (
-        "network.enable_address",
-        value<bool>(&configured.network.enable_address),
-        "Enable address messages, defaults to 'true'."
-    )
-    (
-        "network.enable_address_v2",
-        value<bool>(&configured.network.enable_address_v2),
-        "Enable address v2 messages, defaults to 'false'."
-    )
-    (
-        "network.enable_witness_tx",
-        value<bool>(&configured.network.enable_witness_tx),
-        "Enable witness transaction identifier relay, defaults to 'false'."
-    )
-    (
-        "network.enable_compact",
-        value<bool>(&configured.network.enable_compact),
-        "Enable enable compact block messages, defaults to 'false'."
-    )
-    (
-        "network.enable_alert",
-        value<bool>(&configured.network.enable_alert),
-        "Enable alert messages, defaults to 'false'."
-    )
-    (
-        "network.enable_reject",
-        value<bool>(&configured.network.enable_reject),
-        "Enable reject messages, defaults to 'false'."
-    )
-    (
-        "network.enable_relay",
-        value<bool>(&configured.network.enable_relay),
-        "Enable transaction relay, defaults to 'true'."
-    )
-    (
-        "network.validate_checksum",
-        value<bool>(&configured.network.validate_checksum),
-        "Validate the checksum of network messages, defaults to 'false'."
-    )
-    (
-        "network.identifier",
-        value<uint32_t>(&configured.network.identifier),
-        "The magic number for message headers, defaults to '3652501241'."
-    )
-    (
         "network.retry_timeout_seconds",
         value<uint32_t>(&configured.network.retry_timeout_seconds),
         "The time delay for failed connection retry, defaults to '1'."
@@ -599,52 +519,129 @@ options_metadata parser::load_settings() THROWS
         "The time limit for connection establishment, defaults to '5'."
     )
     (
-        "network.handshake_timeout_seconds",
-        value<uint32_t>(&configured.network.handshake_timeout_seconds),
-        "The time limit to complete the connection handshake, defaults to '15'."
-    )
-    (
-        "network.channel_heartbeat_minutes",
-        value<uint32_t>(&configured.network.channel_heartbeat_minutes),
-        "The time between ping messages, defaults to '5'."
-    )
-    (
-        "network.maximum_skew_minutes",
-        value<uint32_t>(&configured.network.maximum_skew_minutes),
-        "The maximum allowable channel clock skew, defaults to '120'."
-    )
-    (
         "network.rate_limit",
         value<uint32_t>(&configured.network.rate_limit),
-        "The peer download rate limit in bytes per second, defaults to 1024 (not implemented)."
-    )
-    (
-        "network.user_agent",
-        value<std::string>(&configured.network.user_agent),
-        "The node user agent string, defaults to '" BC_USER_AGENT "'."
-    )
-    (
-        "network.path",
-        value<std::filesystem::path>(&configured.network.path),
-        "The peer address cache file directory, defaults to empty."
+        "The peer download rate limit (not implemented)."
     )
     (
         "network.blacklist",
         value<network::config::authorities>(&configured.network.blacklists),
-        "IP address to disallow as a peer, multiple allowed."
+        "IP address to disallow, allows all others, multiple allowed."
     )
     (
         "network.whitelist",
         value<network::config::authorities>(&configured.network.whitelists),
-        "IP address to allow as a peer, multiple allowed."
+        "IP address to allow, prohibits all others, multiple allowed."
+    )
+
+    /* [peer] */
+    (
+        "peer.address_upper",
+        value<uint16_t>(&configured.network.address_upper),
+        "The upper bound for address selection divisor, defaults to '10'."
+    )
+    (
+        "peer.address_lower",
+        value<uint16_t>(&configured.network.address_lower),
+        "The lower bound for address selection divisor, defaults to '5'."
+    )
+    (
+        "peer.protocol_maximum",
+        value<uint32_t>(&configured.network.protocol_maximum),
+        "The maximum network protocol version, defaults to '70012'."
+    )
+    (
+        "peer.protocol_minimum",
+        value<uint32_t>(&configured.network.protocol_minimum),
+        "The minimum network protocol version, defaults to '31800'."
+    )
+    (
+        "peer.services_maximum",
+        value<uint64_t>(&configured.network.services_maximum),
+        "The maximum services exposed by network connections, defaults to '9' (full node, witness)."
+    )
+    (
+        "peer.services_minimum",
+        value<uint64_t>(&configured.network.services_minimum),
+        "The minimum services exposed by network connections, defaults to '9' (full node, witness)."
+    )
+    (
+        "peer.invalid_services",
+        value<uint64_t>(&configured.network.invalid_services),
+        "The advertised services that cause a peer to be dropped, defaults to '176'."
+    )
+    (
+        "peer.enable_address",
+        value<bool>(&configured.network.enable_address),
+        "Enable address messages, defaults to 'true'."
+    )
+    (
+        "peer.enable_address_v2",
+        value<bool>(&configured.network.enable_address_v2),
+        "Enable address v2 messages, defaults to 'false'."
+    )
+    (
+        "peer.enable_witness_tx",
+        value<bool>(&configured.network.enable_witness_tx),
+        "Enable witness transaction identifier relay, defaults to 'false'."
+    )
+    (
+        "peer.enable_compact",
+        value<bool>(&configured.network.enable_compact),
+        "Enable enable compact block messages, defaults to 'false'."
+    )
+    (
+        "peer.enable_alert",
+        value<bool>(&configured.network.enable_alert),
+        "Enable alert messages, defaults to 'false'."
+    )
+    (
+        "peer.enable_reject",
+        value<bool>(&configured.network.enable_reject),
+        "Enable reject messages, defaults to 'false'."
+    )
+    (
+        "peer.enable_relay",
+        value<bool>(&configured.network.enable_relay),
+        "Enable transaction relay, defaults to 'true'."
+    )
+    (
+        "peer.validate_checksum",
+        value<bool>(&configured.network.validate_checksum),
+        "Validate the checksum of network messages, defaults to 'false'."
+    )
+    (
+        "peer.identifier",
+        value<uint32_t>(&configured.network.identifier),
+        "The magic number for message headers, defaults to '3652501241'."
+    )
+    (
+        "peer.handshake_timeout_seconds",
+        value<uint32_t>(&configured.network.handshake_timeout_seconds),
+        "The time limit to complete the connection handshake, defaults to '15'."
+    )
+    (
+        "peer.channel_heartbeat_minutes",
+        value<uint32_t>(&configured.network.channel_heartbeat_minutes),
+        "The time between ping messages, defaults to '5'."
+    )
+    (
+        "peer.maximum_skew_minutes",
+        value<uint32_t>(&configured.network.maximum_skew_minutes),
+        "The maximum allowable channel clock skew, defaults to '120'."
+    )
+    (
+        "peer.user_agent",
+        value<std::string>(&configured.network.user_agent),
+        "The node user agent string, defaults to '" BC_USER_AGENT "'."
+    )
+    (
+        "peer.path",
+        value<std::filesystem::path>(&configured.network.path),
+        "The peer address cache file directory, defaults to empty."
     )
 
     /* [outbound] */
-    ////(
-    ////    "outbound.secure",
-    ////    value<bool>(&configured.network.outbound.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
-    ////)
     ////(
     ////    "outbound.bind",
     ////    value<network::config::authorities>(&configured.network.outbound.binds),
@@ -1675,7 +1672,9 @@ options_metadata parser::load_settings() THROWS
     return description;
 }
 
+BC_PUSH_WARNING(NO_ARRAY_TO_POINTER_DECAY)
 bool parser::parse(int argc, const char* argv[], std::ostream& error) THROWS
+BC_POP_WARNING()
 {
     try
     {
