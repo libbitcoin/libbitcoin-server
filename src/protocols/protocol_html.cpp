@@ -24,7 +24,8 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_html
-
+    
+using namespace system;
 using namespace network::http;
 using namespace std::placeholders;
 
@@ -94,15 +95,40 @@ bool protocol_html::try_dispatch_object(const request&) NOEXCEPT
 
 void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
 {
-    // TODO: add protocol.hpp and expose server config.
     const auto& pages = server_settings().explore.pages;
-    switch (const auto media = file_media_type(to_path(request.target())))
+    auto media = file_media_type(to_path(request.target()));
+
+    // If file extension isn't canonical derive from accept field.
+    if (media == media_type::unknown)
     {
-        case media_type::text_css:
-            send_span(pages.css(), media, request);
-            break;
+        // This ignores accept field priorities. Ideally we want the highest
+        // priority acceptable media type of the supported types subset.
+        const auto accepts = to_media_types((request)[field::accept]);
+        if (contains(accepts, media_type::text_html))
+            media = media_type::text_html;
+        else if (contains(accepts, media_type::text_css))
+            media = media_type::text_css;
+        else if (contains(accepts, media_type::application_javascript))
+            media = media_type::application_javascript;
+        else if (contains(accepts, media_type::font_woff))
+            media = media_type::font_woff;
+        else if (contains(accepts, media_type::font_woff2))
+            media = media_type::font_woff2;
+        else if (contains(accepts, media_type::image_png))
+            media = media_type::image_png;
+        else if (contains(accepts, media_type::image_gif))
+            media = media_type::image_gif;
+        else if (contains(accepts, media_type::image_jpeg))
+            media = media_type::image_jpeg;
+    }
+
+    switch (media)
+    {
         case media_type::text_html:
             send_span(pages.html(), media, request);
+            break;
+        case media_type::text_css:
+            send_span(pages.css(), media, request);
             break;
         case media_type::application_javascript:
             send_span(pages.ecma(), media, request);

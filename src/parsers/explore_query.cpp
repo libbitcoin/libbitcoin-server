@@ -41,6 +41,7 @@ bool explore_query(rpc::request_t& out, const request& request) NOEXCEPT
     constexpr auto json = media_type::application_json;
     constexpr auto data = media_type::application_octet_stream;
 
+    // TODO: reject invalid format.
     auto query = uri.decode_query();
     const auto format = query["format"];
 
@@ -102,6 +103,7 @@ bool explore_query(rpc::request_t& out, const request& request) NOEXCEPT
         params["media"] = to_value(html);
 
     // Not dispatchable (media is html or undefined).
+    // TODO: differentiate return of false (error) vs. false (continue).
     return false;
 }
 
@@ -114,16 +116,14 @@ media_type get_media(const rpc::request_t& model) NOEXCEPT
         if (media != params.end() && std::holds_alternative<uint8_t>(
             media->second.value()))
         {
-            switch (std::get<uint8_t>(media->second.value()))
+            switch (const auto value = static_cast<media_type>(
+                std::get<uint8_t>(media->second.value())))
             {
-                case to_value(media_type::text_html):
-                    return media_type::text_html;
-                case to_value(media_type::text_plain):
-                    return media_type::text_plain;
-                case to_value(media_type::application_json):
-                    return media_type::application_json;
-                case to_value(media_type::application_octet_stream):
-                    return media_type::application_octet_stream;
+                case media_type::text_html:
+                case media_type::text_plain:
+                case media_type::application_json:
+                case media_type::application_octet_stream:
+                    return value;
             }
         }
     }
