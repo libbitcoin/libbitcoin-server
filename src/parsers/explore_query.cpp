@@ -30,6 +30,21 @@ using namespace network::http;
 BC_PUSH_WARNING(NO_ARRAY_INDEXING)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+inline bool is_true(const std::string& value) NOEXCEPT
+{
+    return value == token::true_;
+}
+
+inline bool is_false(const std::string& value) NOEXCEPT
+{
+    return value == token::false_;
+}
+
+inline void set_media(rpc::object_t& params, media_type media) NOEXCEPT
+{
+    params["media"] = to_value(media);
+}
+
 bool explore_query(rpc::request_t& out, const request& request) NOEXCEPT
 {
     wallet::uri uri{};
@@ -41,70 +56,59 @@ bool explore_query(rpc::request_t& out, const request& request) NOEXCEPT
     constexpr auto json = media_type::application_json;
     constexpr auto data = media_type::application_octet_stream;
 
-    // TODO: reject invalid format.
-    auto query = uri.decode_query();
-    const auto format = query["format"];
-
+    // Caller must have provided a request.params object.
     if (!out.params.has_value() ||
         !std::holds_alternative<rpc::object_t>(out.params.value()))
         return false;
 
+    auto query = uri.decode_query();
     auto& params = std::get<rpc::object_t>(out.params.value());
 
-    // Validate proper witness bool value if set.
-    const auto witness = query.find("witness");
-    if (witness != query.end())
+    // Witness is optional<true> (where applicable), so only set if false.
+    if (const auto witness = query.find(token::witness); witness != query.end())
     {
-        if (witness->second != "true" && witness->second != "false")
+        if (is_false(witness->second))
+            params[token::witness] = false;
+        else if (!is_true(witness->second))
             return false;
-
-        // Witness is optional<true> (where applicable), so only set if false.
-        if (witness->second == "false")
-            params["witness"] = false;
     }
 
-    // Validate proper turbo bool value if set.
-    const auto turbo = query.find("turbo");
-    if (turbo != query.end())
+    // Turbo is optional<true> (where applicable), so only set if false.
+    if (const auto turbo = query.find(token::turbo); turbo != query.end())
     {
-        if (turbo->second != "true" && turbo->second != "false")
+        if (is_false(turbo->second))
+            params[token::turbo] = false;
+        else if (!is_true(turbo->second))
             return false;
-
-        // Turbo is optional<true> (where applicable), so only set if false.
-        if (turbo->second == "false")
-            params["turbo"] = false;
     }
 
+    const auto format = query[token::format];
     const auto accepts = to_media_types((request)[field::accept]);
 
-    if (contains(accepts, text) || format == "text")
-    {
-        params["media"] = to_value(text);
-        return true;
-    }
+    // Prioritize query string format over http headers.
+    if (format == token::formats::json)
+        set_media(params, json);
+    else if (format == token::formats::text)
+        set_media(params, text);
+    else if (format == token::formats::data)
+        set_media(params, data);
+    else if (format == token::formats::html)
+        set_media(params, html);
 
-    if (contains(accepts, data) || format == "data")
-    {
-        params["media"] = to_value(data);
-        return true;
-    }
+    // Priotize: json, html, text, data (ignores accept priorities).
+    else if (contains(accepts, json))
+        set_media(params, json);
+    else if (contains(accepts, html))
+        set_media(params, html);
+    else if (contains(accepts, text))
+        set_media(params, text);
+    else if (contains(accepts, data))
+        set_media(params, data);
+    else
+        return false;
 
-    ////// Default format to json.
-    ////params["media"] = to_value(json);
-    ////return true;
-
-    if (contains(accepts, json) || format == "json")
-    {
-        params["media"] = to_value(json);
-        return true;
-    }
-
-    if (contains(accepts, html) || format == "html")
-        params["media"] = to_value(html);
-
-    // Not dispatchable (media is html or undefined).
-    // TODO: differentiate return of false (error) vs. false (continue).
-    return false;
+    // Media type has been set.
+    return true;
 }
 
 media_type get_media(const rpc::request_t& model) NOEXCEPT

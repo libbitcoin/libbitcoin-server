@@ -139,19 +139,18 @@ bool protocol_explore::try_dispatch_object(const http::request& request) NOEXCEP
         return !ec;
     }
 
-    // TODO: differentiate return of false (error) vs. false (continue).
-    if (explore_query(model, request))
+    if (!explore_query(model, request))
     {
-        if (const auto ec = dispatcher_.notify(model))
-            send_internal_server_error(ec, request);
-
+        send_not_acceptable(request);
         return true;
     }
 
     if (get_media(model) == http::media_type::text_html)
         return false;
 
-    send_not_acceptable(request);
+    if (const auto ec = dispatcher_.notify(model))
+        send_internal_server_error(ec, request);
+
     return true;
 }
 
