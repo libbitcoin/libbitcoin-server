@@ -36,6 +36,7 @@ bool explore_query(rpc::request_t& out, const request& request) NOEXCEPT
     if (!uri.decode(request.target()))
         return false;
 
+    constexpr auto html = media_type::text_html;
     constexpr auto text = media_type::text_plain;
     constexpr auto json = media_type::application_json;
     constexpr auto data = media_type::application_octet_stream;
@@ -97,7 +98,37 @@ bool explore_query(rpc::request_t& out, const request& request) NOEXCEPT
         return true;
     }
 
+    if (contains(accepts, html) || format == "html")
+        params["media"] = to_value(html);
+
+    // Not dispatchable (media is html or undefined).
     return false;
+}
+
+media_type get_media(const rpc::request_t& model) NOEXCEPT
+{
+    if (model.params.has_value())
+    {
+        const auto& params = std::get<rpc::object_t>(model.params.value());
+        const auto& media = params.find("media");
+        if (media != params.end() && std::holds_alternative<uint8_t>(
+            media->second.value()))
+        {
+            switch (std::get<uint8_t>(media->second.value()))
+            {
+                case to_value(media_type::text_html):
+                    return media_type::text_html;
+                case to_value(media_type::text_plain):
+                    return media_type::text_plain;
+                case to_value(media_type::application_json):
+                    return media_type::application_json;
+                case to_value(media_type::application_octet_stream):
+                    return media_type::application_octet_stream;
+            }
+        }
+    }
+
+    return media_type::unknown;
 }
 
 BC_POP_WARNING()

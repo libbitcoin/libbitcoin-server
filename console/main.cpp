@@ -90,13 +90,14 @@ int bc::system::main(int argc, char* argv[])
 
     const web_pages web_server{};
     const explore_pages block_explorer{};
-    server::parser metadata(chain::selection::mainnet,
-        block_explorer, web_server);
+    server::parser metadata(chain::selection::mainnet, block_explorer,
+        web_server);
 
     const auto& args = const_cast<const char**>(argv);
-
     if (!metadata.parse(argc, args, cerr))
+    {
         return -1;
+    }
 
 #if defined(HAVE_MSC)
     symbols_path = metadata.configured.log.symbols;

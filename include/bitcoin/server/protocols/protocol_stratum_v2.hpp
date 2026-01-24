@@ -36,6 +36,9 @@ public:
     typedef std::shared_ptr<protocol_stratum_v2> ptr;
     using channel_t = channel_stratum_v2;
 
+    // HACK: so this can use network::session_server.
+    using options_t = network::settings::tls_server;
+
     inline protocol_stratum_v2(const auto& session,
         const network::channel::ptr& channel, const options_t&) NOEXCEPT
       : server::protocol(session, channel),

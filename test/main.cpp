@@ -18,3 +18,5 @@
  */
 #define BOOST_TEST_MODULE libbitcoin_server_test
 #include <boost/test/unit_test.hpp>
+
+#include <bitcoin/server.hpp>
