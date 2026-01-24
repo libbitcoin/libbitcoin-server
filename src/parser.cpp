@@ -842,6 +842,11 @@ options_metadata parser::load_settings() THROWS
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
+        "web.key_password",
+        value<std::string>(&configured.server.web.key_password),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
         "web.connections",
         value<uint16_t>(&configured.server.web.connections),
         "The required maximum number of connections, defaults to '0'."
@@ -917,6 +922,11 @@ options_metadata parser::load_settings() THROWS
         "explore.key_path",
         value<std::filesystem::path>(&configured.server.explore.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
+    )
+    (
+        "explore.key_password",
+        value<std::string>(&configured.server.explore.key_password),
+        "The password to decrypt the server private key file (.PEM), optional."
     )
     (
         "explore.connections",
@@ -999,6 +1009,11 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.key_path",
         value<std::filesystem::path>(&configured.server.bitcoind.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
+    )
+    (
+        "bitcoind.key_password",
+        value<std::string>(&configured.server.bitcoind.key_password),
+        "The password to decrypt the server private key file (.PEM), optional."
     )
     (
         "bitcoind.connections",
