@@ -240,10 +240,11 @@ namespace server {
 
 #define BS_VERSION_MESSAGE \
     "Version Information...\n" \
-    "libbitcoin-node:       %1%\n" \
-    "libbitcoin-database:   %2%\n" \
+    "libbitcoin-server:     %1%\n" \
+    "libbitcoin-node:       %2%\n" \
     "libbitcoin-network:    %3%\n" \
-    "libbitcoin-system:     %4%"
+    "libbitcoin-database:   %4%\n" \
+    "libbitcoin-system:     %5%"
 
 #define BS_HARDWARE_HEADER \
     "Hardware configuration..."

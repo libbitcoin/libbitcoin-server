@@ -37,8 +37,9 @@ void executor::dump_version() const
 {
     logger(format(BS_VERSION_MESSAGE)
         % LIBBITCOIN_SERVER_VERSION
-        % LIBBITCOIN_DATABASE_VERSION
+        % LIBBITCOIN_NODE_VERSION
         % LIBBITCOIN_NETWORK_VERSION
+        % LIBBITCOIN_DATABASE_VERSION
         % LIBBITCOIN_SYSTEM_VERSION);
 }
 
