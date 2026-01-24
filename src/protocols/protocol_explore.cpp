@@ -139,6 +139,7 @@ bool protocol_explore::try_dispatch_object(const http::request& request) NOEXCEP
         return !ec;
     }
 
+    // TODO: differentiate return of false (error) vs. false (continue).
     if (explore_query(model, request))
     {
         if (const auto ec = dispatcher_.notify(model))
