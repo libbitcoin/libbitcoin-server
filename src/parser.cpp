@@ -829,6 +829,11 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
+        "web.certificate_authorities",
+        value<std::filesystem::path>(&configured.server.web.certificate_authorities),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
         "web.certificate_path",
         value<std::filesystem::path>(&configured.server.web.certificate_path),
         "The path to the server certificate file (.PEM), defaults to unused."
@@ -909,6 +914,11 @@ options_metadata parser::load_settings() THROWS
         "explore.safe",
         value<network::config::authorities>(&configured.server.explore.safes),
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "explore.certificate_authorities",
+        value<std::filesystem::path>(&configured.server.explore.certificate_authorities),
+        "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
         "explore.certificate_path",
@@ -996,6 +1006,11 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.safe",
         value<network::config::authorities>(&configured.server.bitcoind.safes),
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "bitcoind.certificate_authorities",
+        value<std::filesystem::path>(&configured.server.bitcoind.certificate_authorities),
+        "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
         "bitcoind.certificate_path",
