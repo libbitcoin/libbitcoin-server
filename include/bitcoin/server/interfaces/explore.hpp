@@ -145,7 +145,7 @@ struct explore_methods
 
 /// /v1/tx/[txhash] {1}
 /// /v1/tx/[txhash]/header {1 - if confirmed}
-/// /v1/tx/[txhash]/fee {1}
+/// /v1/tx/[txhash]/details {1}
 
 /// -----------------------------------------------------------------------
 
