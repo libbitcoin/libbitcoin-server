@@ -68,10 +68,10 @@ BOOST_AUTO_TEST_CASE(server__html_server__defaults__expected)
     // tls_server
     BOOST_REQUIRE(!instance.secure());
     BOOST_REQUIRE(instance.safes.empty());
-    BOOST_REQUIRE(instance.certificate_authorities.empty());
-    BOOST_REQUIRE(instance.certificate_path.empty());
+    BOOST_REQUIRE(instance.cert_auth.empty());
+    BOOST_REQUIRE(instance.cert_path.empty());
     BOOST_REQUIRE(instance.key_path.empty());
-    BOOST_REQUIRE(instance.key_password.empty());
+    BOOST_REQUIRE(instance.key_pass.empty());
 
     // http_server
     BOOST_REQUIRE_EQUAL(instance.server, BC_HTTP_SERVER_NAME);
@@ -110,10 +110,10 @@ BOOST_AUTO_TEST_CASE(server__web_server__defaults__expected)
     // tls_server
     BOOST_REQUIRE(!server.secure());
     BOOST_REQUIRE(server.safes.empty());
-    BOOST_REQUIRE(server.certificate_authorities.empty());
-    BOOST_REQUIRE(server.certificate_path.empty());
+    BOOST_REQUIRE(server.cert_auth.empty());
+    BOOST_REQUIRE(server.cert_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
-    BOOST_REQUIRE(server.key_password.empty());
+    BOOST_REQUIRE(server.key_pass.empty());
 
     // http_server
     BOOST_REQUIRE_EQUAL(server.server, BC_HTTP_SERVER_NAME);
@@ -152,10 +152,10 @@ BOOST_AUTO_TEST_CASE(server__explore_server__defaults__expected)
     // tls_server
     BOOST_REQUIRE(!server.secure());
     BOOST_REQUIRE(server.safes.empty());
-    BOOST_REQUIRE(server.certificate_authorities.empty());
-    BOOST_REQUIRE(server.certificate_path.empty());
+    BOOST_REQUIRE(server.cert_auth.empty());
+    BOOST_REQUIRE(server.cert_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
-    BOOST_REQUIRE(server.key_password.empty());
+    BOOST_REQUIRE(server.key_pass.empty());
 
     // http_server
     BOOST_REQUIRE_EQUAL(server.server, BC_HTTP_SERVER_NAME);
@@ -195,10 +195,10 @@ BOOST_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
     // tls_server
     BOOST_REQUIRE(!server.secure());
     BOOST_REQUIRE(server.safes.empty());
-    BOOST_REQUIRE(server.certificate_authorities.empty());
-    BOOST_REQUIRE(server.certificate_path.empty());
+    BOOST_REQUIRE(server.cert_auth.empty());
+    BOOST_REQUIRE(server.cert_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
-    BOOST_REQUIRE(server.key_password.empty());
+    BOOST_REQUIRE(server.key_pass.empty());
 
     // http_server
     BOOST_REQUIRE_EQUAL(server.server, BC_HTTP_SERVER_NAME);
@@ -226,10 +226,10 @@ BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
     // tls_server
     BOOST_REQUIRE(!server.secure());
     BOOST_REQUIRE(server.safes.empty());
-    BOOST_REQUIRE(server.certificate_authorities.empty());
-    BOOST_REQUIRE(server.certificate_path.empty());
+    BOOST_REQUIRE(server.cert_auth.empty());
+    BOOST_REQUIRE(server.cert_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
-    BOOST_REQUIRE(server.key_password.empty());
+    BOOST_REQUIRE(server.key_pass.empty());
 }
 
 BOOST_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
@@ -252,10 +252,10 @@ BOOST_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
     // tls_server
     BOOST_REQUIRE(!server.secure());
     BOOST_REQUIRE(server.safes.empty());
-    BOOST_REQUIRE(server.certificate_authorities.empty());
-    BOOST_REQUIRE(server.certificate_path.empty());
+    BOOST_REQUIRE(server.cert_auth.empty());
+    BOOST_REQUIRE(server.cert_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
-    BOOST_REQUIRE(server.key_password.empty());
+    BOOST_REQUIRE(server.key_pass.empty());
 }
 
 BOOST_AUTO_TEST_CASE(server__stratum_v2_server__defaults__expected)
