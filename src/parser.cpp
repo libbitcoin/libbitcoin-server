@@ -829,8 +829,13 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "web.certificate_path",
-        value<std::filesystem::path>(&configured.server.web.certificate_path),
+        "web.cert_auth",
+        value<std::filesystem::path>(&configured.server.web.cert_auth),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
+        "web.cert_path",
+        value<std::filesystem::path>(&configured.server.web.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
@@ -839,8 +844,8 @@ options_metadata parser::load_settings() THROWS
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
-        "web.key_password",
-        value<std::string>(&configured.server.web.key_password),
+        "web.key_pass",
+        value<std::string>(&configured.server.web.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
@@ -911,8 +916,13 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "explore.certificate_path",
-        value<std::filesystem::path>(&configured.server.explore.certificate_path),
+        "explore.cert_auth",
+        value<std::filesystem::path>(&configured.server.explore.cert_auth),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
+        "explore.cert_path",
+        value<std::filesystem::path>(&configured.server.explore.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
@@ -921,8 +931,8 @@ options_metadata parser::load_settings() THROWS
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
-        "explore.key_password",
-        value<std::string>(&configured.server.explore.key_password),
+        "explore.key_pass",
+        value<std::string>(&configured.server.explore.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
@@ -998,8 +1008,13 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "bitcoind.certificate_path",
-        value<std::filesystem::path>(&configured.server.bitcoind.certificate_path),
+        "bitcoind.cert_auth",
+        value<std::filesystem::path>(&configured.server.bitcoind.cert_auth),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
+        "bitcoind.cert_path",
+        value<std::filesystem::path>(&configured.server.bitcoind.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
@@ -1008,8 +1023,8 @@ options_metadata parser::load_settings() THROWS
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
-        "bitcoind.key_password",
-        value<std::string>(&configured.server.bitcoind.key_password),
+        "bitcoind.key_pass",
+        value<std::string>(&configured.server.bitcoind.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
@@ -1070,8 +1085,8 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "electrum.certificate_path",
-        value<std::filesystem::path>(&configured.server.electrum.certificate_path),
+        "electrum.cert_path",
+        value<std::filesystem::path>(&configured.server.electrum.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
@@ -1117,8 +1132,8 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "stratum_v1.certificate_path",
-        value<std::filesystem::path>(&configured.server.stratum_v1.certificate_path),
+        "stratum_v1.cert_path",
+        value<std::filesystem::path>(&configured.server.stratum_v1.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
