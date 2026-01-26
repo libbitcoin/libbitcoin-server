@@ -400,6 +400,7 @@ bool protocol_explore::handle_get_block_header_context(const code& ec,
         };
     }
 
+    // TODO: move to system serializer.
     // All modern configurable forks.
     object["forks"] = boost::json::object
     {
