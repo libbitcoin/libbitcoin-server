@@ -47,7 +47,7 @@ struct bitcoind_rpc_methods
         method<"savemempool">{},
         method<"scantxoutset", string_t, optional<empty::array>>{ "action", "scanobjects" },
         method<"verifychain", optional<4.0>, optional<288.0>>{ "checklevel", "nblocks" },
-        method<"verifytxoutset", string_t>{ "input_verify_flag" },
+        method<"verifytxoutset", string_t>{ "input_verify_flag" }
 
         /////// Control methods.
         ////method<"getmemoryinfo", optional<"stats"_t>>{ "mode" },
