@@ -103,6 +103,8 @@ protected:
         rpc_interface::verify_chain, double, double) NOEXCEPT;
     bool handle_verify_tx_out_set(const code& ec,
         rpc_interface::verify_tx_out_set, const std::string&) NOEXCEPT;
+    bool handle_get_network_info(const code& ec,
+        rpc_interface::get_network_info) NOEXCEPT;
 
     /// Senders.
     void send_error(const code& ec) NOEXCEPT;

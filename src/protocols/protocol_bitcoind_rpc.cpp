@@ -64,6 +64,8 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_scan_tx_out_set, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_verify_chain, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_verify_tx_out_set, _1, _2, _3);
+
+    SUBSCRIBE_BITCOIND(handle_get_network_info, _1, _2);
     network::protocol_http::start();
 }
 
@@ -338,6 +340,14 @@ bool protocol_bitcoind_rpc::handle_verify_chain(const code& ec,
 
 bool protocol_bitcoind_rpc::handle_verify_tx_out_set(const code& ec,
     rpc_interface::verify_tx_out_set, const std::string&) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
+    rpc_interface::get_network_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);
