@@ -70,7 +70,7 @@ struct bitcoind_rpc_methods
         ////method<"disconnectnode", string_t, optional<-1_i32>>{ "address", "nodeid" },
         ////method<"getaddednodeinfo", optional<false>, optional<true>, optional<""_t>>{ "include_chain_info", "dns", "addnode" },
         ////method<"getconnectioncount">{},
-        ////method<"getnetworkinfo">{},
+        method<"getnetworkinfo">{}
         ////method<"getpeerinfo">{},
         ////method<"listbanned">{},
         ////method<"ping">{},
@@ -187,7 +187,7 @@ struct bitcoind_rpc_methods
     ////using disconnect_node = at<30>;
     ////using get_added_node_info = at<31>;
     ////using get_connection_count = at<32>;
-    ////using get_network_info = at<33>;
+    using get_network_info = at<17>;
     ////using get_peer_info = at<34>;
     ////using list_banned = at<35>;
     ////using ping = at<36>;
