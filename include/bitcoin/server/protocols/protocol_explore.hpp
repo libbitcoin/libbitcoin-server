@@ -62,6 +62,7 @@ protected:
         const network::http::request& request) NOEXCEPT override;
 
     /// REST interface handlers.
+    /// -----------------------------------------------------------------------
 
     bool handle_get_configuration(const code& ec, interface::configuration,
         uint8_t version, uint8_t media) NOEXCEPT;
@@ -154,6 +155,32 @@ protected:
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
 
 private:
+    // Serializers.
+    // ------------------------------------------------------------------------
+    // private/static
+
+    template <typename Object, typename ...Args>
+    inline static system::data_chunk to_bin(const Object& object, size_t size,
+        Args&&... args) NOEXCEPT;
+    template <typename Object, typename ...Args>
+    inline static std::string to_hex(const Object& object, size_t size,
+        Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static system::data_chunk to_bin_array(const Collection& collection,
+        size_t size, Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static std::string to_hex_array(const Collection& collection,
+        size_t size, Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static system::data_chunk to_bin_ptr_array(
+        const Collection& collection, size_t size, Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static std::string to_hex_ptr_array(const Collection& collection,
+        size_t size, Args&&... args) NOEXCEPT;
+
+    // Completion handlers (for asynchronous query).
+    // ------------------------------------------------------------------------
+
     void do_get_address(uint8_t media, bool turbo,
         const system::hash_cptr& hash) NOEXCEPT;
     void do_get_address_confirmed(uint8_t media, bool turbo,
@@ -167,6 +194,9 @@ private:
         const system::hash_cptr& hash) NOEXCEPT;
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance) NOEXCEPT;
+
+    // Utilities.
+    // ------------------------------------------------------------------------
 
     void inject(boost::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
@@ -183,5 +213,7 @@ private:
 
 } // namespace server
 } // namespace libbitcoin
+
+#include <bitcoin/server/impl/protocols/protocol_explore.ipp>
 
 #endif

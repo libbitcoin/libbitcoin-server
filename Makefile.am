@@ -139,6 +139,10 @@ include_bitcoin_server_channels_HEADERS = \
     include/bitcoin/server/channels/channel_ws.hpp \
     include/bitcoin/server/channels/channels.hpp
 
+include_bitcoin_server_impl_protocolsdir = ${includedir}/bitcoin/server/impl/protocols
+include_bitcoin_server_impl_protocols_HEADERS = \
+    include/bitcoin/server/impl/protocols/protocol_explore.ipp
+
 include_bitcoin_server_interfacesdir = ${includedir}/bitcoin/server/interfaces
 include_bitcoin_server_interfaces_HEADERS = \
     include/bitcoin/server/interfaces/bitcoind_rest.hpp \

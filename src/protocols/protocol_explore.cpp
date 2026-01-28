@@ -46,24 +46,6 @@ using outpoint = database::outpoint;
 using inpoints = database::inpoints;
 using outpoints = database::outpoints;
 
-DEFINE_JSON_TO_TAG(inpoints)
-{
-    inpoints out{};
-    for (const auto& point: value.as_array())
-        out.insert(value_to<inpoint>(point));
-
-    return out;
-}
-
-DEFINE_JSON_TO_TAG(outpoints)
-{
-    outpoints out{};
-    for (const auto& point: value.as_array())
-        out.insert(value_to<outpoint>(point));
-
-    return out;
-}
-
 // Avoiding namespace conflict.
 using object_type = network::rpc::object_t;
 
@@ -161,84 +143,6 @@ constexpr auto html = to_value(http::media_type::text_html);
 constexpr auto text = to_value(http::media_type::text_plain);
 constexpr auto json = to_value(http::media_type::application_json);
 constexpr auto data = to_value(http::media_type::application_octet_stream);
-
-template <typename Object, typename ...Args>
-data_chunk to_bin(const Object& object, size_t size, Args&&... args) NOEXCEPT
-{
-    data_chunk out(size);
-    stream::out::fast sink{ out };
-    write::bytes::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    BC_ASSERT(writer);
-    return out;
-}
-
-template <typename Object, typename ...Args>
-std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
-{
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    BC_ASSERT(writer);
-    return out;
-}
-
-template <typename Collection, typename ...Args>
-data_chunk to_bin_array(const Collection& collection, size_t size,
-    Args&&... args) NOEXCEPT
-{
-    data_chunk out(size);
-    stream::out::fast sink{ out };
-    write::bytes::fast writer{ sink };
-    for (const auto& element: collection)
-        element.to_data(writer, std::forward<Args>(args)...);
-
-    BC_ASSERT(writer);
-    return out;
-}
-
-template <typename Collection, typename ...Args>
-std::string to_hex_array(const Collection& collection, size_t size,
-    Args&&... args) NOEXCEPT
-{
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    for (const auto& element: collection)
-        element.to_data(writer, std::forward<Args>(args)...);
-
-    BC_ASSERT(writer);
-    return out;
-}
-
-template <typename Collection, typename ...Args>
-data_chunk to_bin_ptr_array(const Collection& collection, size_t size,
-    Args&&... args) NOEXCEPT
-{
-    data_chunk out(size);
-    stream::out::fast sink{ out };
-    write::bytes::fast writer{ sink };
-    for (const auto& ptr: collection)
-        ptr->to_data(writer, std::forward<Args>(args)...);
-
-    BC_ASSERT(writer);
-    return out;
-}
-
-template <typename Collection, typename ...Args>
-std::string to_hex_ptr_array(const Collection& collection, size_t size,
-    Args&&... args) NOEXCEPT
-{
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    for (const auto& ptr: collection)
-        ptr->to_data(writer, std::forward<Args>(args)...);
-
-    BC_ASSERT(writer);
-    return out;
-}
 
 // Handlers.
 // ----------------------------------------------------------------------------
@@ -1320,8 +1224,9 @@ void protocol_explore::complete_get_address_balance(const code& ec,
     send_not_found();
 }
 
-// private
+// Utilities.
 // ----------------------------------------------------------------------------
+// private
 
 void protocol_explore::inject(value& out, std::optional<uint32_t> height,
     const database::header_link& link) const NOEXCEPT
@@ -1344,6 +1249,30 @@ database::header_link protocol_explore::to_header(
 
     return {};
 }
+
+// Use if deserialization is required.
+#if defined (UNDEFINED)
+DECLARE_JSON_TAG_INVOKE(inpoints);
+DECLARE_JSON_TAG_INVOKE(outpoints);
+
+DEFINE_JSON_TO_TAG(inpoints)
+{
+    inpoints out{};
+    for (const auto& point: value.as_array())
+        out.insert(value_to<inpoint>(point));
+
+    return out;
+}
+
+DEFINE_JSON_TO_TAG(outpoints)
+{
+    outpoints out{};
+    for (const auto& point: value.as_array())
+        out.insert(value_to<outpoint>(point));
+
+    return out;
+}
+#endif 
 
 BC_POP_WARNING()
 BC_POP_WARNING()
