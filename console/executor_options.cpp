@@ -121,7 +121,7 @@ void executor::do_hot_backup()
 void executor::do_close()
 {
     logger("CONSOLE: Close");
-    stop(error::success);
+    stop();
 }
 
 // [e]rrors
