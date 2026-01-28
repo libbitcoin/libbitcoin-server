@@ -339,17 +339,17 @@ if (with-console)
         "../../console/main.cpp"
         "../../console/stack_trace.cpp"
         "../../console/stack_trace.hpp"
+        "../../console/embedded/admin_css.cpp"
+        "../../console/embedded/admin_font.cpp"
+        "../../console/embedded/admin_html.cpp"
+        "../../console/embedded/admin_icon.cpp"
+        "../../console/embedded/amin_ecma.cpp"
         "../../console/embedded/embedded.hpp"
         "../../console/embedded/native_css.cpp"
         "../../console/embedded/native_ecma.cpp"
         "../../console/embedded/native_font.cpp"
         "../../console/embedded/native_html.cpp"
-        "../../console/embedded/native_icon.cpp"
-        "../../console/embedded/web_css.cpp"
-        "../../console/embedded/web_ecma.cpp"
-        "../../console/embedded/web_font.cpp"
-        "../../console/embedded/web_html.cpp"
-        "../../console/embedded/web_icon.cpp" )
+        "../../console/embedded/native_icon.cpp" )
 
 #     bs project specific include directories.
 #------------------------------------------------------------------------------

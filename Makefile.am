@@ -100,17 +100,17 @@ console_bs_SOURCES = \
     console/main.cpp \
     console/stack_trace.cpp \
     console/stack_trace.hpp \
+    console/embedded/admin_css.cpp \
+    console/embedded/admin_font.cpp \
+    console/embedded/admin_html.cpp \
+    console/embedded/admin_icon.cpp \
+    console/embedded/amin_ecma.cpp \
     console/embedded/embedded.hpp \
     console/embedded/native_css.cpp \
     console/embedded/native_ecma.cpp \
     console/embedded/native_font.cpp \
     console/embedded/native_html.cpp \
-    console/embedded/native_icon.cpp \
-    console/embedded/web_css.cpp \
-    console/embedded/web_ecma.cpp \
-    console/embedded/web_font.cpp \
-    console/embedded/web_html.cpp \
-    console/embedded/web_icon.cpp
+    console/embedded/native_icon.cpp
 
 endif WITH_CONSOLE
 
@@ -166,6 +166,7 @@ include_bitcoin_server_parsers_HEADERS = \
 include_bitcoin_server_protocolsdir = ${includedir}/bitcoin/server/protocols
 include_bitcoin_server_protocols_HEADERS = \
     include/bitcoin/server/protocols/protocol.hpp \
+    include/bitcoin/server/protocols/protocol_admin.hpp \
     include/bitcoin/server/protocols/protocol_bitcoind_rest.hpp \
     include/bitcoin/server/protocols/protocol_bitcoind_rpc.hpp \
     include/bitcoin/server/protocols/protocol_electrum.hpp \
@@ -176,7 +177,6 @@ include_bitcoin_server_protocols_HEADERS = \
     include/bitcoin/server/protocols/protocol_rpc.hpp \
     include/bitcoin/server/protocols/protocol_stratum_v1.hpp \
     include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
-    include/bitcoin/server/protocols/protocol_web.hpp \
     include/bitcoin/server/protocols/protocols.hpp
 
 include_bitcoin_server_sessionsdir = ${includedir}/bitcoin/server/sessions

@@ -83,9 +83,9 @@ namespace server {
 
 // settings::settings
 settings::settings(system::chain::selection, const embedded_pages& native,
-    const embedded_pages& web) NOEXCEPT
+    const embedded_pages& admin) NOEXCEPT
   : native("native", native),
-    web("web", web)    
+    admin("admin", admin)    
 {
 }
 

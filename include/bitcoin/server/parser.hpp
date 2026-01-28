@@ -58,7 +58,7 @@ class BCS_API parser
 public:
     parser(system::chain::selection context,
         const server::settings::embedded_pages& native,
-        const server::settings::embedded_pages& web) NOEXCEPT;
+        const server::settings::embedded_pages& admin) NOEXCEPT;
 
     /// Load command line options (named).
     virtual options_metadata load_options() THROWS;

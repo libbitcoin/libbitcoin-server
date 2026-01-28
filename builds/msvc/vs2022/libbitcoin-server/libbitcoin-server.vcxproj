@@ -166,6 +166,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rest.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
@@ -176,7 +177,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_web.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_handshake.hpp" />

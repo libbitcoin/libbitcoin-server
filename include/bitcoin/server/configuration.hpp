@@ -32,7 +32,7 @@ class BCS_API configuration
 public:
     configuration(system::chain::selection context,
         const server::settings::embedded_pages& native,
-        const server::settings::embedded_pages& web) NOEXCEPT;
+        const server::settings::embedded_pages& admin) NOEXCEPT;
 
     /// Environment.
     std::filesystem::path file{};

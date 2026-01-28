@@ -16,17 +16,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../embedded/embedded.hpp"
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_WEB_HPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_WEB_HPP
+
+#include <memory>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/protocols/protocol_html.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-// Simple test ecma script for embedded page.
-DEFINE_EMBEDDED_PAGE(web_pages, char, ecma,
-R"(document.addEventListener('DOMContentLoaded', function()
+/// Administrative admin site for the node (currently just page server).
+class BCS_API protocol_admin
+  : public protocol_html,
+    protected network::tracker<protocol_admin>
 {
-    console.log('ping');
-});)")
+public:
+    typedef std::shared_ptr<protocol_admin> ptr;
+
+    inline protocol_admin(const auto& session,
+        const network::channel::ptr& channel,
+        const options_t& options) NOEXCEPT
+      : protocol_html(session, channel, options),
+        network::tracker<protocol_admin>(session->log)
+    {
+    }
+};
 
 } // namespace server
 } // namespace libbitcoin
+
+#endif

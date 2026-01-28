@@ -116,10 +116,10 @@ public:
     DELETE_COPY(settings);
 
     settings(system::chain::selection context, const embedded_pages& native,
-        const embedded_pages& web) NOEXCEPT;
+        const embedded_pages& admin) NOEXCEPT;
 
     /// admin web interface, isolated (http/s, stateless html)
-    server::settings::html_server web;
+    server::settings::html_server admin;
 
     /// RESTful block explorer (http/s, stateless html/websocket)
     server::settings::html_server native;

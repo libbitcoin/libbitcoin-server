@@ -22,7 +22,7 @@ namespace libbitcoin {
 namespace server {
 
 // Simple test html for embedded page, links in css and page icon.
-DEFINE_EMBEDDED_PAGE(web_pages, char, html,
+DEFINE_EMBEDDED_PAGE(admin_pages, char, html,
 R"(<html>
 <head>
     <title>Libbitcoin Server</title>

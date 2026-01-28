@@ -30,6 +30,6 @@
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
-#include <bitcoin/server/protocols/protocol_web.hpp>
+#include <bitcoin/server/protocols/protocol_admin.hpp>
 
 #endif

@@ -43,6 +43,7 @@
 #include <bitcoin/server/parsers/native_target.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
 #include <bitcoin/server/protocols/protocol.hpp>
+#include <bitcoin/server/protocols/protocol_admin.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_rest.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
@@ -53,7 +54,6 @@
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
-#include <bitcoin/server/protocols/protocol_web.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
 #include <bitcoin/server/sessions/session_handshake.hpp>
 #include <bitcoin/server/sessions/session_server.hpp>
