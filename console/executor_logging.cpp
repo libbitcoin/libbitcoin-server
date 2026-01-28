@@ -99,5 +99,21 @@ void executor::subscribe_log(std::ostream& sink)
     );
 }
 
+void executor::logger(const std::string& message) const
+{
+    if (log_.stopped())
+        output_ << message << std::endl;
+    else
+        log_.write(network::levels::application) << message << std::endl;
+}
+
+void executor::logger(const boost::format& message) const
+{
+    if (log_.stopped())
+        output_ << message << std::endl;
+    else
+        log_.write(network::levels::application) << message << std::endl;
+}
+
 } // namespace server
 } // namespace libbitcoin

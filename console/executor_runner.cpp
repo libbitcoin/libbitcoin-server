@@ -30,6 +30,13 @@ using namespace std::placeholders;
 // Runner.
 // ----------------------------------------------------------------------------
 
+void executor::stopper(const std::string& message)
+{
+    capture_.stop();
+    log_.stop(message, network::levels::application);
+    stopped_.get_future().wait();
+}
+
 void executor::subscribe_connect()
 {
     node_->subscribe_connect
