@@ -37,9 +37,9 @@ using namespace boost::program_options;
 
 // Initialize configuration using defaults of the given context.
 parser::parser(system::chain::selection context,
-    const server::settings::embedded_pages& explore,
-    const server::settings::embedded_pages& web) NOEXCEPT
-  : configured(context, explore, web)
+    const server::settings::embedded_pages& native,
+    const server::settings::embedded_pages& admin) NOEXCEPT
+  : configured(context, native, admin)
 {
     // node
 
@@ -80,10 +80,10 @@ parser::parser(system::chain::selection context,
     configured.network.outbound.seeds.emplace_back("seed.mainnet.achownodes.xyz", 8333_u16);
 
     // server
-    ////configured.server.web.binds.emplace_back(asio::address{}, 8080_u16);
-    ////configured.server.web.safes.emplace_back(asio::address{}, 8043_u16);
-    ////configured.server.explore.binds.emplace_back(asio::address{}, 8180_u16);
-    ////configured.server.explore.safes.emplace_back(asio::address{}, 8143_u16);
+    ////configured.server.admin.binds.emplace_back(asio::address{}, 8080_u16);
+    ////configured.server.admin.safes.emplace_back(asio::address{}, 8043_u16);
+    ////configured.server.native.binds.emplace_back(asio::address{}, 8180_u16);
+    ////configured.server.native.safes.emplace_back(asio::address{}, 8143_u16);
     ////configured.server.bitcoind.binds.emplace_back(asio::address{}, 8280_u16);
     ////configured.server.bitcoind.safes.emplace_back(asio::address{}, 8243_u16);
     ////configured.server.electrum.binds.emplace_back(asio::address{}, 8380_u16);
@@ -817,182 +817,182 @@ options_metadata parser::load_settings() THROWS
         "The socks5 proxy endpoint (port required)."
     )
 
-    /* [web] */
+    /* [admin] */
     (
-        "web.bind",
-        value<network::config::authorities>(&configured.server.web.binds),
+        "admin.bind",
+        value<network::config::authorities>(&configured.server.admin.binds),
         "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "web.safe",
-        value<network::config::authorities>(&configured.server.web.safes),
+        "admin.safe",
+        value<network::config::authorities>(&configured.server.admin.safes),
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "web.cert_auth",
-        value<std::filesystem::path>(&configured.server.web.cert_auth),
+        "admin.cert_auth",
+        value<std::filesystem::path>(&configured.server.admin.cert_auth),
         "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
-        "web.cert_path",
-        value<std::filesystem::path>(&configured.server.web.cert_path),
+        "admin.cert_path",
+        value<std::filesystem::path>(&configured.server.admin.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
-        "web.key_path",
-        value<std::filesystem::path>(&configured.server.web.key_path),
+        "admin.key_path",
+        value<std::filesystem::path>(&configured.server.admin.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
-        "web.key_pass",
-        value<std::string>(&configured.server.web.key_pass),
+        "admin.key_pass",
+        value<std::string>(&configured.server.admin.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
-        "web.connections",
-        value<uint16_t>(&configured.server.web.connections),
+        "admin.connections",
+        value<uint16_t>(&configured.server.admin.connections),
         "The required maximum number of connections, defaults to '0'."
     )
     (
-        "web.inactivity_minutes",
-        value<uint32_t>(&configured.server.web.inactivity_minutes),
+        "admin.inactivity_minutes",
+        value<uint32_t>(&configured.server.admin.inactivity_minutes),
         "The idle timeout (http keep-alive), defaults to '10'."
     )
     (
-        "web.expiration_minutes",
-        value<uint32_t>(&configured.server.web.expiration_minutes),
+        "admin.expiration_minutes",
+        value<uint32_t>(&configured.server.admin.expiration_minutes),
         "The idle timeout (http keep-alive), defaults to '60'."
     )
     (
-        "web.minimum_buffer",
-        value<uint32_t>(&configured.server.web.minimum_buffer),
+        "admin.minimum_buffer",
+        value<uint32_t>(&configured.server.admin.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
-        "web.maximum_request",
-        value<uint32_t>(&configured.server.web.maximum_request),
+        "admin.maximum_request",
+        value<uint32_t>(&configured.server.admin.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
     )
     (
-        "web.server",
-        value<std::string>(&configured.server.web.server),
+        "admin.server",
+        value<std::string>(&configured.server.admin.server),
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
     )
     (
-        "web.host",
-        value<network::config::endpoints>(&configured.server.web.hosts),
+        "admin.host",
+        value<network::config::endpoints>(&configured.server.admin.hosts),
         "The host name (http verification), multiple allowed, defaults to empty (disabled)."
     )
     (
-        "web.origin",
-        value<network::config::endpoints>(&configured.server.web.origins),
+        "admin.origin",
+        value<network::config::endpoints>(&configured.server.admin.origins),
         "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
     )
     (
-        "web.allow_opaque_origin",
-        value<bool>(&configured.server.web.allow_opaque_origin),
+        "admin.allow_opaque_origin",
+        value<bool>(&configured.server.admin.allow_opaque_origin),
         "Allow requests from opaue origin (see CORS), multiple allowed, defaults to false."
     )
     (
-        "web.path",
-        value<std::filesystem::path>(&configured.server.web.path),
+        "admin.path",
+        value<std::filesystem::path>(&configured.server.admin.path),
         "The required root path of source files to be served, defaults to empty."
     )
     (
-        "web.default",
-        value<std::string>(&configured.server.web.default_),
+        "admin.default",
+        value<std::string>(&configured.server.admin.default_),
         "The path of the default source page, defaults to 'index.html'."
     )
 
-    /* [explore] */
+    /* [native] */
     (
-        "explore.bind",
-        value<network::config::authorities>(&configured.server.explore.binds),
+        "native.bind",
+        value<network::config::authorities>(&configured.server.native.binds),
         "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "explore.safe",
-        value<network::config::authorities>(&configured.server.explore.safes),
+        "native.safe",
+        value<network::config::authorities>(&configured.server.native.safes),
         "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "explore.cert_auth",
-        value<std::filesystem::path>(&configured.server.explore.cert_auth),
+        "native.cert_auth",
+        value<std::filesystem::path>(&configured.server.native.cert_auth),
         "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
-        "explore.cert_path",
-        value<std::filesystem::path>(&configured.server.explore.cert_path),
+        "native.cert_path",
+        value<std::filesystem::path>(&configured.server.native.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
-        "explore.key_path",
-        value<std::filesystem::path>(&configured.server.explore.key_path),
+        "native.key_path",
+        value<std::filesystem::path>(&configured.server.native.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
-        "explore.key_pass",
-        value<std::string>(&configured.server.explore.key_pass),
+        "native.key_pass",
+        value<std::string>(&configured.server.native.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
-        "explore.connections",
-        value<uint16_t>(&configured.server.explore.connections),
+        "native.connections",
+        value<uint16_t>(&configured.server.native.connections),
         "The required maximum number of connections, defaults to '0'."
     )
     (
-        "explore.inactivity_minutes",
-        value<uint32_t>(&configured.server.explore.inactivity_minutes),
+        "native.inactivity_minutes",
+        value<uint32_t>(&configured.server.native.inactivity_minutes),
         "The idle timeout (http keep-server), defaults to '60'."
     )
     (
-        "explore.expiration_minutes",
-        value<uint32_t>(&configured.server.explore.expiration_minutes),
+        "native.expiration_minutes",
+        value<uint32_t>(&configured.server.native.expiration_minutes),
         "The idle timeout (http keep-alive), defaults to '60'."
     )
     (
-        "explore.minimum_buffer",
-        value<uint32_t>(&configured.server.explore.minimum_buffer),
+        "native.minimum_buffer",
+        value<uint32_t>(&configured.server.native.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
-        "explore.maximum_request",
-        value<uint32_t>(&configured.server.explore.maximum_request),
+        "native.maximum_request",
+        value<uint32_t>(&configured.server.native.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
     )
     (
-        "explore.server",
-        value<std::string>(&configured.server.explore.server),
+        "native.server",
+        value<std::string>(&configured.server.native.server),
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
     )
     (
-        "explore.host",
-        value<network::config::endpoints>(&configured.server.explore.hosts),
+        "native.host",
+        value<network::config::endpoints>(&configured.server.native.hosts),
         "The host name (http verification), multiple allowed, defaults to empty (disabled)."
     )
     (
-        "explore.origin",
-        value<network::config::endpoints>(&configured.server.explore.origins),
+        "native.origin",
+        value<network::config::endpoints>(&configured.server.native.origins),
         "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
     )
     (
-        "explore.allow_opaque_origin",
-        value<bool>(&configured.server.explore.allow_opaque_origin),
+        "native.allow_opaque_origin",
+        value<bool>(&configured.server.native.allow_opaque_origin),
         "Allow requests from opaue origin (see CORS), multiple allowed, defaults to false."
     )
     (
-        "explore.path",
-        value<std::filesystem::path>(&configured.server.explore.path),
+        "native.path",
+        value<std::filesystem::path>(&configured.server.native.path),
         "The required root path of source files to be served, defaults to empty."
     )
     (
-        "explore.default",
-        value<std::string>(&configured.server.explore.default_),
+        "native.default",
+        value<std::string>(&configured.server.native.default_),
         "The path of the default source page, defaults to 'index.html'."
     )
     (
-        "explore.websocket",
-        value<bool>(&configured.server.explore.websocket),
+        "native.websocket",
+        value<bool>(&configured.server.native.websocket),
         "Enable websocket interface, defaults to true."
     )
 

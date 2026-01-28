@@ -241,15 +241,15 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/settings.cpp"
     "../../src/parsers/bitcoind_query.cpp"
     "../../src/parsers/bitcoind_target.cpp"
-    "../../src/parsers/explore_query.cpp"
-    "../../src/parsers/explore_target.cpp"
+    "../../src/parsers/native_query.cpp"
+    "../../src/parsers/native_target.cpp"
     "../../src/protocols/protocol_bitcoind_rest.cpp"
     "../../src/protocols/protocol_bitcoind_rpc.cpp"
     "../../src/protocols/protocol_electrum.cpp"
     "../../src/protocols/protocol_electrum_version.cpp"
-    "../../src/protocols/protocol_explore.cpp"
     "../../src/protocols/protocol_html.cpp"
     "../../src/protocols/protocol_http.cpp"
+    "../../src/protocols/protocol_native.cpp"
     "../../src/protocols/protocol_stratum_v1.cpp" )
 
 # ${CANONICAL_LIB_NAME} project specific include directory normalization for build.
@@ -294,8 +294,8 @@ if (with-tests)
         "../../test/test.hpp"
         "../../test/parsers/bitcoind_query.cpp"
         "../../test/parsers/bitcoind_target.cpp"
-        "../../test/parsers/explore_query.cpp"
-        "../../test/parsers/explore_target.cpp" )
+        "../../test/parsers/native_query.cpp"
+        "../../test/parsers/native_target.cpp" )
 
     add_test( NAME libbitcoin-server-test COMMAND libbitcoin-server-test
             --run_test=*
@@ -339,17 +339,17 @@ if (with-console)
         "../../console/main.cpp"
         "../../console/stack_trace.cpp"
         "../../console/stack_trace.hpp"
+        "../../console/embedded/admin_css.cpp"
+        "../../console/embedded/admin_font.cpp"
+        "../../console/embedded/admin_html.cpp"
+        "../../console/embedded/admin_icon.cpp"
+        "../../console/embedded/amin_ecma.cpp"
         "../../console/embedded/embedded.hpp"
-        "../../console/embedded/explore_css.cpp"
-        "../../console/embedded/explore_ecma.cpp"
-        "../../console/embedded/explore_font.cpp"
-        "../../console/embedded/explore_html.cpp"
-        "../../console/embedded/explore_icon.cpp"
-        "../../console/embedded/web_css.cpp"
-        "../../console/embedded/web_ecma.cpp"
-        "../../console/embedded/web_font.cpp"
-        "../../console/embedded/web_html.cpp"
-        "../../console/embedded/web_icon.cpp" )
+        "../../console/embedded/native_css.cpp"
+        "../../console/embedded/native_ecma.cpp"
+        "../../console/embedded/native_font.cpp"
+        "../../console/embedded/native_html.cpp"
+        "../../console/embedded/native_icon.cpp" )
 
 #     bs project specific include directories.
 #------------------------------------------------------------------------------

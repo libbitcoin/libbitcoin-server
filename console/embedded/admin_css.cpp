@@ -21,26 +21,13 @@
 namespace libbitcoin {
 namespace server {
 
-// Simple test html for embedded page, links in css and page icon.
-DEFINE_EMBEDDED_PAGE(explore_pages, char, html,
-    R"DELIM(<!doctype html>
-<html lang="en" class="h-full">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A modern blockchain explorer for Libbitcoin." />
-    <meta name="theme-color" content="#272822" />
-    <title>libbitcoin Explorer</title>
-    <script type="module" crossorigin src="/script.js"></script>
-    <link rel="stylesheet" crossorigin href="/style.css">
-  </head>
-  <body class="bg-background h-full text-white">
-    <div id="root" class="h-full"></div>
-  </body>
-</html>
-)DELIM"
-
-)
+// Simple test css for embedded page, links in font.
+DEFINE_EMBEDDED_PAGE(admin_pages, char, css,
+R"(@font-face
+{
+    font-family: 'Boston';
+    src: url('boston.woff2');
+})")
 
 } // namespace server
 } // namespace libbitcoin

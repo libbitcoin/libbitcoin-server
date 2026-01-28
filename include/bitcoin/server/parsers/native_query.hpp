@@ -16,32 +16,41 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_WEB_HPP
-#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_WEB_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_NATIVE_QUERY_HPP
+#define LIBBITCOIN_SERVER_PARSERS_NATIVE_QUERY_HPP
 
-#include <memory>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/protocols/protocol_html.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Administrative web site for the node (currently just page server).
-class BCS_API protocol_web
-  : public protocol_html,
-    protected network::tracker<protocol_web>
+// Query string tokens.
+namespace token
 {
-public:
-    typedef std::shared_ptr<protocol_web> ptr;
+    // Names.
+    constexpr auto turbo = "turbo";
+    constexpr auto format = "format";
+    constexpr auto witness = "witness";
 
-    inline protocol_web(const auto& session,
-        const network::channel::ptr& channel,
-        const options_t& options) NOEXCEPT
-      : protocol_html(session, channel, options),
-        network::tracker<protocol_web>(session->log)
+    // Boolean values.
+    constexpr auto true_ = "true";
+    constexpr auto false_ = "false";
+
+    // Format values.
+    namespace formats
     {
+        constexpr auto html = "html";
+        constexpr auto text = "text";
+        constexpr auto json = "json";
+        constexpr auto data = "data";
     }
-};
+}
+
+BCS_API bool native_query(network::rpc::request_t& out,
+    const network::http::request& request) NOEXCEPT;
+
+BCS_API network::http::media_type get_media(
+    const network::rpc::request_t& model) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

@@ -52,8 +52,8 @@ span_value container::name() const NOEXCEPT \
 namespace libbitcoin {
 namespace server {
 
-DECLARE_EMBEDDED_PAGES(web_pages);
-DECLARE_EMBEDDED_PAGES(explore_pages);
+DECLARE_EMBEDDED_PAGES(admin_pages);
+DECLARE_EMBEDDED_PAGES(native_pages);
 
 } // namespace server
 } // namespace libbitcoin

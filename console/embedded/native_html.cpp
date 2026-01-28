@@ -16,43 +16,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_EXPLORE_QUERY_HPP
-#define LIBBITCOIN_SERVER_PARSERS_EXPLORE_QUERY_HPP
-
-#include <bitcoin/server/define.hpp>
+#include "../embedded/embedded.hpp"
 
 namespace libbitcoin {
 namespace server {
 
-// Query string tokens.
-namespace token
-{
-    // Names.
-    constexpr auto turbo = "turbo";
-    constexpr auto format = "format";
-    constexpr auto witness = "witness";
+// Simple test html for embedded page, links in css and page icon.
+DEFINE_EMBEDDED_PAGE(native_pages, char, html,
+    R"DELIM(<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A modern blockchain explorer for Libbitcoin." />
+    <meta name="theme-color" content="#272822" />
+    <title>libbitcoin Explorer</title>
+    <script type="module" crossorigin src="/script.js"></script>
+    <link rel="stylesheet" crossorigin href="/style.css">
+  </head>
+  <body class="bg-background h-full text-white">
+    <div id="root" class="h-full"></div>
+  </body>
+</html>
+)DELIM"
 
-    // Boolean values.
-    constexpr auto true_ = "true";
-    constexpr auto false_ = "false";
-
-    // Format values.
-    namespace formats
-    {
-        constexpr auto html = "html";
-        constexpr auto text = "text";
-        constexpr auto json = "json";
-        constexpr auto data = "data";
-    }
-}
-
-BCS_API bool explore_query(network::rpc::request_t& out,
-    const network::http::request& request) NOEXCEPT;
-
-BCS_API network::http::media_type get_media(
-    const network::rpc::request_t& model) NOEXCEPT;
+)
 
 } // namespace server
 } // namespace libbitcoin
-
-#endif

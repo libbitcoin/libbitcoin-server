@@ -72,10 +72,10 @@ void server_node::do_run(const result_handler& handler) NOEXCEPT
     BC_ASSERT(stranded());
 
     // Start services after node is running.
-    full_node::do_run(std::bind(&server_node::start_web, this, _1, handler));
+    full_node::do_run(std::bind(&server_node::start_admin, this, _1, handler));
 }
 
-void server_node::start_web(const code& ec,
+void server_node::start_admin(const code& ec,
     const result_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -86,11 +86,11 @@ void server_node::start_web(const code& ec,
         return;
     }
 
-    attach_web_session()->start(
-        std::bind(&server_node::start_explore, this, _1, handler));
+    attach_admin_session()->start(
+        std::bind(&server_node::start_native, this, _1, handler));
 }
 
-void server_node::start_explore(const code& ec,
+void server_node::start_native(const code& ec,
     const result_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -101,7 +101,7 @@ void server_node::start_explore(const code& ec,
         return;
     }
 
-    attach_explore_session()->start(
+    attach_native_session()->start(
         std::bind(&server_node::start_bitcoind, this, _1, handler));
 }
 
@@ -167,16 +167,16 @@ void server_node::start_stratum_v2(const code& ec,
 // Session attachments.
 // ----------------------------------------------------------------------------
 
-session_web::ptr server_node::attach_web_session() NOEXCEPT
+session_admin::ptr server_node::attach_admin_session() NOEXCEPT
 {
-    return net::attach<session_web>(*this, config_,
-        config_.server.web);
+    return net::attach<session_admin>(*this, config_,
+        config_.server.admin);
 }
 
-session_explore::ptr server_node::attach_explore_session() NOEXCEPT
+session_native::ptr server_node::attach_native_session() NOEXCEPT
 {
-    return net::attach<session_explore>(*this, config_,
-        config_.server.explore);
+    return net::attach<session_native>(*this, config_,
+        config_.server.native);
 }
 
 session_bitcoind::ptr server_node::attach_bitcoind_session() NOEXCEPT

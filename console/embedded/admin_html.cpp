@@ -16,16 +16,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../test.hpp"
+#include "../embedded/embedded.hpp"
 
-BOOST_AUTO_TEST_SUITE(explore_query_tests)
+namespace libbitcoin {
+namespace server {
 
-using namespace network::http;
+// Simple test html for embedded page, links in css and page icon.
+DEFINE_EMBEDDED_PAGE(admin_pages, char, html,
+R"(<html>
+<head>
+    <title>Libbitcoin Server</title>
+    <meta charset="utf-8">
+    <meta name="description" content="libbitcoin server admin site">
+    <link rel="stylesheet" href="style.css"/>
+    <link rel="icon" href="icon.png" type="image/png"/>
+    <link rel="preload" href="boston.woff2" type="font/woff2" as="font">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <p>Hello world!</p>
+</body>
+</html>)")
 
-BOOST_AUTO_TEST_CASE(parsers__explore_query__empty__false)
-{
-    network::rpc::request_t out{};
-    BOOST_REQUIRE(!explore_query(out, network::http::request{}));
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+} // namespace server
+} // namespace libbitcoin

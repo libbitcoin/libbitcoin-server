@@ -16,27 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../embedded/embedded.hpp"
+#ifndef LIBBITCOIN_SERVER_PARSERS_NATIVE_TARGET_HPP
+#define LIBBITCOIN_SERVER_PARSERS_NATIVE_TARGET_HPP
+
+#include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-// Simple test html for embedded page, links in css and page icon.
-DEFINE_EMBEDDED_PAGE(web_pages, char, html,
-R"(<html>
-<head>
-    <title>Libbitcoin Server</title>
-    <meta charset="utf-8">
-    <meta name="description" content="libbitcoin server admin site">
-    <link rel="stylesheet" href="style.css"/>
-    <link rel="icon" href="icon.png" type="image/png"/>
-    <link rel="preload" href="boston.woff2" type="font/woff2" as="font">
-    <script src="script.js" defer></script>
-</head>
-<body>
-    <p>Hello world!</p>
-</body>
-</html>)")
+BCS_API code native_target(network::rpc::request_t& out,
+    const std::string_view& path) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin
+
+#endif

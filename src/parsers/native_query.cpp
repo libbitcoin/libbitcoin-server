@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/parsers/explore_query.hpp>
+#include <bitcoin/server/parsers/native_query.hpp>
 
 #include <bitcoin/server/define.hpp>
 
@@ -45,7 +45,7 @@ inline void set_media(rpc::object_t& params, media_type media) NOEXCEPT
     params["media"] = to_value(media);
 }
 
-bool explore_query(rpc::request_t& out, const request& request) NOEXCEPT
+bool native_query(rpc::request_t& out, const request& request) NOEXCEPT
 {
     wallet::uri uri{};
     if (!uri.decode(request.target()))

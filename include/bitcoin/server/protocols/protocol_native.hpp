@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_EXPLORE_HPP
-#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_EXPLORE_HPP
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_NATIVE_HPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_NATIVE_HPP
 
 #include <atomic>
 #include <memory>
@@ -30,20 +30,20 @@
 namespace libbitcoin {
 namespace server {
 
-class BCS_API protocol_explore
+class BCS_API protocol_native
   : public protocol_html,
-    protected network::tracker<protocol_explore>
+    protected network::tracker<protocol_native>
 {
 public:
-    typedef std::shared_ptr<protocol_explore> ptr;
-    using interface = server::interface::explore;
+    typedef std::shared_ptr<protocol_native> ptr;
+    using interface = server::interface::native;
     using dispatcher = network::rpc::dispatcher<interface>;
 
-    inline protocol_explore(const auto& session,
+    inline protocol_native(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_html(session, channel, options),
-        network::tracker<protocol_explore>(session->log)
+        network::tracker<protocol_native>(session->log)
     {
     }
 
@@ -62,6 +62,7 @@ protected:
         const network::http::request& request) NOEXCEPT override;
 
     /// REST interface handlers.
+    /// -----------------------------------------------------------------------
 
     bool handle_get_configuration(const code& ec, interface::configuration,
         uint8_t version, uint8_t media) NOEXCEPT;
@@ -154,6 +155,32 @@ protected:
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
 
 private:
+    // Serializers.
+    // ------------------------------------------------------------------------
+    // private/static
+
+    template <typename Object, typename ...Args>
+    inline static system::data_chunk to_bin(const Object& object, size_t size,
+        Args&&... args) NOEXCEPT;
+    template <typename Object, typename ...Args>
+    inline static std::string to_hex(const Object& object, size_t size,
+        Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static system::data_chunk to_bin_array(const Collection& collection,
+        size_t size, Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static std::string to_hex_array(const Collection& collection,
+        size_t size, Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static system::data_chunk to_bin_ptr_array(
+        const Collection& collection, size_t size, Args&&... args) NOEXCEPT;
+    template <typename Collection, typename ...Args>
+    inline static std::string to_hex_ptr_array(const Collection& collection,
+        size_t size, Args&&... args) NOEXCEPT;
+
+    // Completion handlers (for asynchronous query).
+    // ------------------------------------------------------------------------
+
     void do_get_address(uint8_t media, bool turbo,
         const system::hash_cptr& hash) NOEXCEPT;
     void do_get_address_confirmed(uint8_t media, bool turbo,
@@ -167,6 +194,9 @@ private:
         const system::hash_cptr& hash) NOEXCEPT;
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance) NOEXCEPT;
+
+    // Utilities.
+    // ------------------------------------------------------------------------
 
     void inject(boost::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
@@ -183,5 +213,7 @@ private:
 
 } // namespace server
 } // namespace libbitcoin
+
+#include <bitcoin/server/impl/protocols/protocol_native.ipp>
 
 #endif

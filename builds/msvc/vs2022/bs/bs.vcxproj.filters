@@ -18,34 +18,34 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\console\embedded\explore_css.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\explore_ecma.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\explore_font.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\explore_html.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\explore_icon.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\web_css.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\web_ecma.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\web_font.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\web_html.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\web_icon.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor.cpp">

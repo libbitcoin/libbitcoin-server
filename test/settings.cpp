@@ -90,15 +90,15 @@ BOOST_AUTO_TEST_CASE(server__html_server__defaults__expected)
     BOOST_REQUIRE_EQUAL(instance.default_, "index.html");
 }
 
-BOOST_AUTO_TEST_CASE(server__web_server__defaults__expected)
+BOOST_AUTO_TEST_CASE(server__admin_server__defaults__expected)
 {
-    const server::settings::embedded_pages web{};
-    const server::settings::embedded_pages explorer{};
-    const server::settings instance{ selection::none, explorer, web };
-    const auto& server = instance.web;
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
+    const auto& server = instance.admin;
 
     // tcp_server
-    BOOST_REQUIRE_EQUAL(server.name, "web");
+    BOOST_REQUIRE_EQUAL(server.name, "admin");
     BOOST_REQUIRE(server.binds.empty());
     BOOST_REQUIRE_EQUAL(server.connections, 0u);
     BOOST_REQUIRE_EQUAL(server.inactivity_minutes, 10u);
@@ -132,15 +132,15 @@ BOOST_AUTO_TEST_CASE(server__web_server__defaults__expected)
     BOOST_REQUIRE_EQUAL(server.default_, "index.html");
 }
 
-BOOST_AUTO_TEST_CASE(server__explore_server__defaults__expected)
+BOOST_AUTO_TEST_CASE(server__native_server__defaults__expected)
 {
-    const server::settings::embedded_pages web{};
-    const server::settings::embedded_pages explorer{};
-    const server::settings instance{ selection::none, explorer, web };
-    const auto& server = instance.explore;
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
+    const auto& server = instance.native;
 
     // tcp_server
-    BOOST_REQUIRE_EQUAL(server.name, "explore");
+    BOOST_REQUIRE_EQUAL(server.name, "native");
     BOOST_REQUIRE(server.binds.empty());
     BOOST_REQUIRE_EQUAL(server.connections, 0u);
     BOOST_REQUIRE_EQUAL(server.inactivity_minutes, 10u);
@@ -177,9 +177,9 @@ BOOST_AUTO_TEST_CASE(server__explore_server__defaults__expected)
 // TODO: could add websocket under bitcoind as a custom property.
 BOOST_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
 {
-    const server::settings::embedded_pages web{};
-    const server::settings::embedded_pages explorer{};
-    const server::settings instance{ selection::none, explorer, web };
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
     const auto& server = instance.bitcoind;
 
     // tcp_server
@@ -208,9 +208,9 @@ BOOST_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
 
 BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
 {
-    const server::settings::embedded_pages web{};
-    const server::settings::embedded_pages explorer{};
-    const server::settings instance{ selection::none, explorer, web };
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
     const auto& server = instance.electrum;
 
     // tcp_server
@@ -234,9 +234,9 @@ BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
 
 BOOST_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
 {
-    const server::settings::embedded_pages web{};
-    const server::settings::embedded_pages explorer{};
-    const server::settings instance{ selection::none, explorer, web };
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
     const auto& server = instance.stratum_v1;
 
     // tcp_server
@@ -260,9 +260,9 @@ BOOST_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
 
 BOOST_AUTO_TEST_CASE(server__stratum_v2_server__defaults__expected)
 {
-    const server::settings::embedded_pages web{};
-    const server::settings::embedded_pages explorer{};
-    const server::settings instance{ selection::none, explorer, web };
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
     const auto& server = instance.stratum_v2;
 
     // tcp_server

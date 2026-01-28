@@ -38,33 +38,20 @@ class executor
 public:
     DELETE_COPY(executor);
 
+    // Construct.
     executor(parser& metadata, std::istream&, std::ostream& output,
         std::ostream& error);
 
+    // Called from main.
     bool dispatch();
 
 private:
-    void logger(const auto& message) const
-    {
-        if (log_.stopped())
-            output_ << message << std::endl;
-        else
-            log_.write(network::levels::application) << message << std::endl;
-    }
-
-    void stopper(const auto& message)
-    {
-        capture_.stop();
-        log_.stop(message, network::levels::application);
-        stopped_.get_future().wait();
-    }
-
-    // Stop signal.
+    // Executor (static).
     static void initialize_stop();
     static void stop(const system::code& ec);
     static void handle_stop(int code);
 
-    // Event handlers.
+    // Executor.
     void handle_started(const system::code& ec);
     void handle_subscribed(const system::code& ec, size_t key);
     void handle_running(const system::code& ec);
@@ -136,8 +123,11 @@ private:
     system::ofstream create_event_sink() const;
     void subscribe_log(std::ostream& sink);
     void subscribe_events(std::ostream& sink);
+    void logger(const boost::format& message) const;
+    void logger(const std::string& message) const;
 
     // Runner.
+    void stopper(const std::string& message);
     void subscribe_connect();
     void subscribe_close();
     bool do_run();

@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_INTERFACES_EXPLORE_HPP
-#define LIBBITCOIN_SERVER_INTERFACES_EXPLORE_HPP
+#ifndef LIBBITCOIN_SERVER_INTERFACES_NATIVE_HPP
+#define LIBBITCOIN_SERVER_INTERFACES_NATIVE_HPP
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
@@ -26,7 +26,7 @@ namespace libbitcoin {
 namespace server {
 namespace interface {
 
-struct explore_methods
+struct native_methods
 {
     static constexpr std::tuple methods
     {

@@ -16,17 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../embedded/embedded.hpp"
+#include "../test.hpp"
 
-namespace libbitcoin {
-namespace server {
+BOOST_AUTO_TEST_SUITE(native_query_tests)
 
-// Simple test ecma script for embedded page.
-DEFINE_EMBEDDED_PAGE(web_pages, char, ecma,
-R"(document.addEventListener('DOMContentLoaded', function()
+using namespace network::http;
+
+BOOST_AUTO_TEST_CASE(parsers__native_query__empty__false)
 {
-    console.log('ping');
-});)")
+    network::rpc::request_t out{};
+    BOOST_REQUIRE(!native_query(out, network::http::request{}));
+}
 
-} // namespace server
-} // namespace libbitcoin
+BOOST_AUTO_TEST_SUITE_END()
