@@ -20,9 +20,10 @@
 #include "localize.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <csignal>
 #include <future>
-#include <mutex>
+#include <thread>
 
 namespace libbitcoin {
 namespace server {
@@ -30,11 +31,9 @@ namespace server {
 using boost::format;
 using namespace std::placeholders;
 
-// non-const member static (global for non-blocking interrupt handling).
 std::atomic_bool executor::cancel_{};
-
-// non-const member static (global for blocking interrupt handling).
-std::promise<code> executor::stopping_{};
+std::thread executor::stop_poller_{};
+std::promise<bool> executor::stopping_{};
 
 executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     std::ostream&)
@@ -63,31 +62,95 @@ executor::executor(parser& metadata, std::istream& input, std::ostream& output,
 // Stop signal.
 // ----------------------------------------------------------------------------
 
-// Capture <ctrl-c>.
+#if defined(HAVE_MSC)
+BOOL WINAPI executor::win32_handler(DWORD signal)
+{
+    ////if (auto* log = fopen("shutdown.log", "a"))
+    ////{
+    ////    fprintf(log, "Signal %lu at %llu\n", signal, GetTickCount64());
+    ////    fflush(log);
+    ////    fclose(log);
+    ////}
+
+    switch (signal)
+    {
+        case CTRL_C_EVENT:
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+        case CTRL_LOGOFF_EVENT:
+        case CTRL_SHUTDOWN_EVENT:
+            executor::handle_stop({});
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
+#endif
+
+// Call only once.
 void executor::initialize_stop()
 {
-    std::signal(SIGINT, handle_stop);
-    std::signal(SIGTERM, handle_stop);
+    poll_for_stopping();
+
+#if defined(HAVE_MSC)
+    // TODO: use RegisterServiceCtrlHandlerEx for service registration.
+    ::SetConsoleCtrlHandler(&executor::win32_handler, TRUE);
+#else
+    // Restart interrupted system calls.
+    struct sigaction action
+    {
+        .sa_handler = handle_stop,
+        .sa_flags = SA_RESTART
+    };
+
+    // Set masking.
+    sigemptyset(&action.sa_mask);
+
+    // Block during handling to prevent reentrancy.
+    sigaddset(&action.sa_mask, SIGINT);
+    sigaddset(&action.sa_mask, SIGTERM);
+    sigaddset(&action.sa_mask, SIGHUP);
+    sigaddset(&action.sa_mask, SIGUSR2);
+
+    sigaction(SIGINT,  &action, nullptr);
+    sigaction(SIGTERM, &action, nullptr);
+    sigaction(SIGHUP,  &action, nullptr);
+    sigaction(SIGUSR2, &action, nullptr);
+
+    #if defined(HAVE_LINUX)
+    sigaction(SIGPWR,  &action, nullptr);
+    #endif
+#endif
 }
 
+void executor::poll_for_stopping()
+{
+    stop_poller_ = std::thread([]()
+    {
+        while (!cancel_.load(std::memory_order_acquire))
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        stopping_.set_value(true);
+    });
+}
+
+void executor::wait_for_stopping()
+{
+    stopping_.get_future().wait();
+    if (stop_poller_.joinable())
+        stop_poller_.join();
+}
+
+// Implementation is limited to signal safe code.
 void executor::handle_stop(int)
 {
-    initialize_stop();
-    stop(error::success);
+    stop();
 }
 
 // Manage the race between console stop and server stop.
-void executor::stop(const code& ec)
+void executor::stop()
 {
-    static std::once_flag stop_mutex{};
-    std::call_once(stop_mutex, [&]()
-    {
-        // Only for tool cancelation (scan/read/writer).
-        cancel_.store(true);
-
-        // Unblock monitor thread (do_run).
-        stopping_.set_value(ec);
-    });
+    cancel_.store(true, std::memory_order_release);
 }
 
 // Event handlers.
@@ -103,7 +166,7 @@ void executor::handle_started(const code& ec)
         else
             logger(format(BS_NODE_START_FAIL) % ec.message());
 
-        stop(ec);
+        stop();
         return;
     }
 
@@ -120,7 +183,7 @@ void executor::handle_subscribed(const code& ec, size_t)
     if (ec)
     {
         logger(format(BS_NODE_START_FAIL) % ec.message());
-        stop(ec);
+        stop();
         return;
     }
 
@@ -132,7 +195,7 @@ void executor::handle_running(const code& ec)
     if (ec)
     {
         logger(format(BS_NODE_START_FAIL) % ec.message());
-        stop(ec);
+        stop();
         return;
     }
 
@@ -145,7 +208,7 @@ bool executor::handle_stopped(const code& ec)
         logger(format(BS_NODE_STOP_CODE) % ec.message());
 
     // Signal stop (simulates <ctrl-c>).
-    stop(ec);
+    stop();
     return false;
 }
 

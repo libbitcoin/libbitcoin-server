@@ -39,7 +39,7 @@ void executor::stopper(const std::string& message)
     log_.stop(message, network::levels::application);
 
     // Suspend process termination until final message is buffered.
-    logging_complete_.get_future().wait();
+    log_suspended_.get_future().wait();
 }
 
 void executor::subscribe_connect()
@@ -163,7 +163,7 @@ bool executor::do_run()
     node_->start(std::bind(&executor::handle_started, this, _1));
 
     // Wait on signal to stop node (<ctrl-c>).
-    stopping_.get_future().wait();
+    wait_for_stopping();
     toggle_.at(levels::protocol) = false;
     logger(BS_NETWORK_STOPPING);
 

@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <future>
+#include <thread>
 #include <unordered_map>
 
 // Must pull in any base boost configuration before including boost.
@@ -48,8 +49,13 @@ public:
 private:
     // Executor (static).
     static void initialize_stop();
-    static void stop(const system::code& ec);
+    static void poll_for_stopping();
+    static void wait_for_stopping();
     static void handle_stop(int code);
+    static void stop();
+#if defined(HAVE_MSC)
+    static BOOL WINAPI win32_handler(DWORD signal);
+#endif
 
     // Executor.
     void handle_started(const system::code& ec);
@@ -150,8 +156,9 @@ private:
 
     // Shutdown.
     static std::atomic_bool cancel_;
-    static std::promise<system::code> stopping_;
-    std::promise<system::code> logging_complete_{};
+    static std::thread stop_poller_;
+    static std::promise<bool> stopping_;
+    std::promise<bool> log_suspended_{};
 
     parser& metadata_;
     server_node::ptr node_{};

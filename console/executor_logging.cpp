@@ -91,7 +91,7 @@ void executor::subscribe_log(std::ostream& sink)
                 // only after all logging work is completed. After the above
                 // message is queued, no more are accepted, and the executor
                 // may initiate its own (and thereby this log's) destruction.
-                logging_complete_.set_value(ec);
+                log_suspended_.set_value(true);
                 return false;
             }
             else
