@@ -123,8 +123,8 @@
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
-    <ClCompile Include="..\..\..\..\test\parsers\explore_query.cpp" />
-    <ClCompile Include="..\..\..\..\test\parsers\explore_target.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp" />
   </ItemGroup>

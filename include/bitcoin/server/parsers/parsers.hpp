@@ -22,7 +22,7 @@
 #include <bitcoin/server/parsers/bitcoind_query.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/electrum_version.hpp>
-#include <bitcoin/server/parsers/explore_query.hpp>
-#include <bitcoin/server/parsers/explore_target.hpp>
+#include <bitcoin/server/parsers/native_query.hpp>
+#include <bitcoin/server/parsers/native_target.hpp>
 
 #endif

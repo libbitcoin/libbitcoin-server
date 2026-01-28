@@ -16,16 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../test.hpp"
+#ifndef LIBBITCOIN_SERVER_PARSERS_NATIVE_TARGET_HPP
+#define LIBBITCOIN_SERVER_PARSERS_NATIVE_TARGET_HPP
 
-BOOST_AUTO_TEST_SUITE(explore_query_tests)
+#include <bitcoin/server/define.hpp>
 
-using namespace network::http;
+namespace libbitcoin {
+namespace server {
 
-BOOST_AUTO_TEST_CASE(parsers__explore_query__empty__false)
-{
-    network::rpc::request_t out{};
-    BOOST_REQUIRE(!explore_query(out, network::http::request{}));
-}
+BCS_API code native_target(network::rpc::request_t& out,
+    const std::string_view& path) NOEXCEPT;
 
-BOOST_AUTO_TEST_SUITE_END()
+} // namespace server
+} // namespace libbitcoin
+
+#endif

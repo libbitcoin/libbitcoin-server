@@ -24,7 +24,7 @@
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
-#include <bitcoin/server/protocols/protocol_explore.hpp>
+#include <bitcoin/server/protocols/protocol_native.hpp>
 #include <bitcoin/server/protocols/protocol_html.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>

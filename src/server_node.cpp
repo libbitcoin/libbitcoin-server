@@ -87,10 +87,10 @@ void server_node::start_web(const code& ec,
     }
 
     attach_web_session()->start(
-        std::bind(&server_node::start_explore, this, _1, handler));
+        std::bind(&server_node::start_native, this, _1, handler));
 }
 
-void server_node::start_explore(const code& ec,
+void server_node::start_native(const code& ec,
     const result_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -101,7 +101,7 @@ void server_node::start_explore(const code& ec,
         return;
     }
 
-    attach_explore_session()->start(
+    attach_native_session()->start(
         std::bind(&server_node::start_bitcoind, this, _1, handler));
 }
 
@@ -173,10 +173,10 @@ session_web::ptr server_node::attach_web_session() NOEXCEPT
         config_.server.web);
 }
 
-session_explore::ptr server_node::attach_explore_session() NOEXCEPT
+session_native::ptr server_node::attach_native_session() NOEXCEPT
 {
-    return net::attach<session_explore>(*this, config_,
-        config_.server.explore);
+    return net::attach<session_native>(*this, config_,
+        config_.server.native);
 }
 
 session_bitcoind::ptr server_node::attach_bitcoind_session() NOEXCEPT

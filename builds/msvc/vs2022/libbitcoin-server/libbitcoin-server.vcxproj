@@ -126,15 +126,15 @@
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
-    <ClCompile Include="..\..\..\..\src\parsers\explore_query.cpp" />
-    <ClCompile Include="..\..\..\..\src\parsers\explore_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_electrum.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_electrum_version.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_explore.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_html.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_native.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_stratum_v1.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
@@ -153,8 +153,8 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rest.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\electrum.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\explore.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\interfaces.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\native.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\types.hpp" />
@@ -162,17 +162,17 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\explore_query.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\explore_target.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rest.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_explore.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_html.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_http.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_native.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
@@ -187,7 +187,7 @@
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_explore.ipp" />
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

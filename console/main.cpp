@@ -88,10 +88,9 @@ int bc::system::main(int argc, char* argv[])
     std::ios_base::sync_with_stdio(false);
     set_utf8_stdio();
 
-    const web_pages web_server{};
-    const explore_pages block_explorer{};
-    server::parser metadata(chain::selection::mainnet, block_explorer,
-        web_server);
+    const web_pages web{};
+    const native_pages native{};
+    server::parser metadata(chain::selection::mainnet, native, web);
 
     const auto& args = const_cast<const char**>(argv);
     if (!metadata.parse(argc, args, cerr))

@@ -26,11 +26,11 @@ namespace server {
 
 // Construct with defaults derived from given context.
 configuration::configuration(system::chain::selection context,
-    const server::settings::embedded_pages& explore,
+    const server::settings::embedded_pages& native,
     const server::settings::embedded_pages& web) NOEXCEPT
   : node::configuration(context),
     log(context),
-    server(context, explore, web)
+    server(context, native, web)
 {
 }
 

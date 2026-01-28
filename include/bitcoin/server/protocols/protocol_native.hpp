@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_EXPLORE_HPP
-#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_EXPLORE_HPP
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_NATIVE_HPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_NATIVE_HPP
 
 #include <atomic>
 #include <memory>
@@ -30,20 +30,20 @@
 namespace libbitcoin {
 namespace server {
 
-class BCS_API protocol_explore
+class BCS_API protocol_native
   : public protocol_html,
-    protected network::tracker<protocol_explore>
+    protected network::tracker<protocol_native>
 {
 public:
-    typedef std::shared_ptr<protocol_explore> ptr;
-    using interface = server::interface::explore;
+    typedef std::shared_ptr<protocol_native> ptr;
+    using interface = server::interface::native;
     using dispatcher = network::rpc::dispatcher<interface>;
 
-    inline protocol_explore(const auto& session,
+    inline protocol_native(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_html(session, channel, options),
-        network::tracker<protocol_explore>(session->log)
+        network::tracker<protocol_native>(session->log)
     {
     }
 
@@ -214,6 +214,6 @@ private:
 } // namespace server
 } // namespace libbitcoin
 
-#include <bitcoin/server/impl/protocols/protocol_explore.ipp>
+#include <bitcoin/server/impl/protocols/protocol_native.ipp>
 
 #endif

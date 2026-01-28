@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_explore.hpp>
+#include <bitcoin/server/protocols/protocol_native.hpp>
 
 #include <algorithm>
 #include <optional>
@@ -31,8 +31,8 @@
 namespace libbitcoin {
 namespace server {
 
-#define CLASS protocol_explore
-#define SUBSCRIBE_EXPLORE(method, ...) \
+#define CLASS protocol_native
+#define SUBSCRIBE_NATIVE(method, ...) \
     subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
     
 using namespace system;
@@ -57,49 +57,49 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Start.
 // ----------------------------------------------------------------------------
 
-void protocol_explore::start() NOEXCEPT
+void protocol_native::start() NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (started())
         return;
 
-    SUBSCRIBE_EXPLORE(handle_get_configuration, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_configuration, _1, _2, _3, _4);
 
-    SUBSCRIBE_EXPLORE(handle_get_top, _1, _2, _3, _4);
-    SUBSCRIBE_EXPLORE(handle_get_block, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_EXPLORE(handle_get_block_header, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_block_header_context, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_block_details, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_block_txs, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_block_filter, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_EXPLORE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_EXPLORE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_EXPLORE(handle_get_block_tx, _1, _2, _3, _4, _5, _6, _7, _8);
+    SUBSCRIBE_NATIVE(handle_get_top, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_block, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_header, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_block_header_context, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_block_details, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_block_txs, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_block_filter, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_tx, _1, _2, _3, _4, _5, _6, _7, _8);
 
-    SUBSCRIBE_EXPLORE(handle_get_tx, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_tx_header, _1, _2, _3, _4, _5);
-    SUBSCRIBE_EXPLORE(handle_get_tx_details, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_tx, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_tx_header, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_tx_details, _1, _2, _3, _4, _5);
 
-    SUBSCRIBE_EXPLORE(handle_get_inputs, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_input, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_EXPLORE(handle_get_input_script, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_input_witness, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_inputs, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_input, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_input_script, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_input_witness, _1, _2, _3, _4, _5, _6);
 
-    SUBSCRIBE_EXPLORE(handle_get_outputs, _1, _2, _3, _4, _5);
-    SUBSCRIBE_EXPLORE(handle_get_output, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_output_script, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_output_spender, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_output_spenders, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_outputs, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_output, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_output_script, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_output_spender, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_output_spenders, _1, _2, _3, _4, _5, _6);
 
-    SUBSCRIBE_EXPLORE(handle_get_address, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_address_confirmed, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_address_unconfirmed, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_EXPLORE(handle_get_address_balance, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_address, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_address_confirmed, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_address_unconfirmed, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_address_balance, _1, _2, _3, _4, _5, _6);
     protocol_html::start();
 }
 
-void protocol_explore::stopping(const code& ec) NOEXCEPT
+void protocol_native::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     stopping_.store(true);
@@ -110,18 +110,18 @@ void protocol_explore::stopping(const code& ec) NOEXCEPT
 // Dispatch.
 // ----------------------------------------------------------------------------
 
-bool protocol_explore::try_dispatch_object(const http::request& request) NOEXCEPT
+bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     rpc::request_t model{};
-    if (const auto ec = explore_target(model, request.target()))
+    if (const auto ec = native_target(model, request.target()))
     {
         LOGA("Request parse [" << request.target() << "] " << ec.message());
         return !ec;
     }
 
-    if (!explore_query(model, request))
+    if (!native_query(model, request))
     {
         send_not_acceptable(request);
         return true;
@@ -147,7 +147,7 @@ constexpr auto data = to_value(http::media_type::application_octet_stream);
 // Handlers.
 // ----------------------------------------------------------------------------
 
-bool protocol_explore::handle_get_configuration(const code& ec,
+bool protocol_native::handle_get_configuration(const code& ec,
     interface::configuration, uint8_t, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
@@ -173,7 +173,7 @@ bool protocol_explore::handle_get_configuration(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_top(const code& ec, interface::top,
+bool protocol_native::handle_get_top(const code& ec, interface::top,
     uint8_t, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
@@ -197,7 +197,7 @@ bool protocol_explore::handle_get_top(const code& ec, interface::top,
     return true;
 }
 
-bool protocol_explore::handle_get_block(const code& ec, interface::block,
+bool protocol_native::handle_get_block(const code& ec, interface::block,
     uint8_t, uint8_t media, std::optional<hash_cptr> hash,
     std::optional<uint32_t> height, bool witness) NOEXCEPT
 {
@@ -228,7 +228,7 @@ bool protocol_explore::handle_get_block(const code& ec, interface::block,
     return true;
 }
 
-bool protocol_explore::handle_get_block_header(const code& ec,
+bool protocol_native::handle_get_block_header(const code& ec,
     interface::block_header, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
 {
@@ -259,7 +259,7 @@ bool protocol_explore::handle_get_block_header(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_block_header_context(const code& ec,
+bool protocol_native::handle_get_block_header_context(const code& ec,
     interface::block_header_context, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
 {
@@ -328,7 +328,7 @@ bool protocol_explore::handle_get_block_header_context(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_block_details(const code& ec,
+bool protocol_native::handle_get_block_details(const code& ec,
     interface::block_details, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
 {
@@ -399,7 +399,7 @@ bool protocol_explore::handle_get_block_details(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_block_txs(const code& ec,
+bool protocol_native::handle_get_block_txs(const code& ec,
     interface::block_txs, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
 {
@@ -440,7 +440,7 @@ bool protocol_explore::handle_get_block_txs(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_block_filter(const code& ec,
+bool protocol_native::handle_get_block_filter(const code& ec,
     interface::block_filter, uint8_t, uint8_t media, uint8_t type,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
 {
@@ -476,7 +476,7 @@ bool protocol_explore::handle_get_block_filter(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_block_filter_hash(const code& ec,
+bool protocol_native::handle_get_block_filter_hash(const code& ec,
     interface::block_filter_hash, uint8_t, uint8_t media, uint8_t type,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
 {
@@ -512,7 +512,7 @@ bool protocol_explore::handle_get_block_filter_hash(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_block_filter_header(const code& ec,
+bool protocol_native::handle_get_block_filter_header(const code& ec,
     interface::block_filter_header, uint8_t, uint8_t media, uint8_t type,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
 {
@@ -548,7 +548,7 @@ bool protocol_explore::handle_get_block_filter_header(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_block_tx(const code& ec, interface::block_tx,
+bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
     uint8_t, uint8_t media, uint32_t position, std::optional<hash_cptr> hash,
     std::optional<uint32_t> height, bool witness) NOEXCEPT
 {
@@ -578,7 +578,7 @@ bool protocol_explore::handle_get_block_tx(const code& ec, interface::block_tx,
     return true;
 }
 
-bool protocol_explore::handle_get_tx(const code& ec, interface::tx, uint8_t,
+bool protocol_native::handle_get_tx(const code& ec, interface::tx, uint8_t,
     uint8_t media, const hash_cptr& hash, bool witness) NOEXCEPT
 {
     if (stopped(ec))
@@ -606,7 +606,7 @@ bool protocol_explore::handle_get_tx(const code& ec, interface::tx, uint8_t,
     return true;
 }
 
-bool protocol_explore::handle_get_tx_header(const code& ec,
+bool protocol_native::handle_get_tx_header(const code& ec,
     interface::tx_header, uint8_t, uint8_t media,
     const hash_cptr& hash) NOEXCEPT
 {
@@ -648,7 +648,7 @@ bool protocol_explore::handle_get_tx_header(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_tx_details(const code& ec,
+bool protocol_native::handle_get_tx_details(const code& ec,
     interface::tx_details, uint8_t, uint8_t media,
     const hash_cptr& hash) NOEXCEPT
 {
@@ -717,7 +717,7 @@ bool protocol_explore::handle_get_tx_details(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_inputs(const code& ec, interface::inputs,
+bool protocol_native::handle_get_inputs(const code& ec, interface::inputs,
     uint8_t, uint8_t media, const hash_cptr& hash, bool witness) NOEXCEPT
 {
     if (stopped(ec))
@@ -761,7 +761,7 @@ bool protocol_explore::handle_get_inputs(const code& ec, interface::inputs,
     return true;
 }
 
-bool protocol_explore::handle_get_input(const code& ec, interface::input,
+bool protocol_native::handle_get_input(const code& ec, interface::input,
     uint8_t, uint8_t media, const hash_cptr& hash, uint32_t index,
     bool witness) NOEXCEPT
 {
@@ -793,7 +793,7 @@ bool protocol_explore::handle_get_input(const code& ec, interface::input,
     return true;
 }
 
-bool protocol_explore::handle_get_input_script(const code& ec,
+bool protocol_native::handle_get_input_script(const code& ec,
     interface::input_script, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
@@ -823,7 +823,7 @@ bool protocol_explore::handle_get_input_script(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_input_witness(const code& ec,
+bool protocol_native::handle_get_input_witness(const code& ec,
     interface::input_witness, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
@@ -854,7 +854,7 @@ bool protocol_explore::handle_get_input_witness(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_outputs(const code& ec, interface::outputs,
+bool protocol_native::handle_get_outputs(const code& ec, interface::outputs,
     uint8_t, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
@@ -897,7 +897,7 @@ bool protocol_explore::handle_get_outputs(const code& ec, interface::outputs,
     return true;
 }
 
-bool protocol_explore::handle_get_output(const code& ec, interface::output,
+bool protocol_native::handle_get_output(const code& ec, interface::output,
     uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
@@ -926,7 +926,7 @@ bool protocol_explore::handle_get_output(const code& ec, interface::output,
     return true;
 }
 
-bool protocol_explore::handle_get_output_script(const code& ec,
+bool protocol_native::handle_get_output_script(const code& ec,
     interface::output_script, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
@@ -956,7 +956,7 @@ bool protocol_explore::handle_get_output_script(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_output_spender(const code& ec,
+bool protocol_native::handle_get_output_spender(const code& ec,
     interface::output_spender, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
@@ -990,7 +990,7 @@ bool protocol_explore::handle_get_output_spender(const code& ec,
     return true;
 }
 
-bool protocol_explore::handle_get_output_spenders(const code& ec,
+bool protocol_native::handle_get_output_spenders(const code& ec,
     interface::output_spenders, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
@@ -1025,7 +1025,7 @@ bool protocol_explore::handle_get_output_spenders(const code& ec,
 // handle_get_address
 // ----------------------------------------------------------------------------
 
-bool protocol_explore::handle_get_address(const code& ec, interface::address,
+bool protocol_native::handle_get_address(const code& ec, interface::address,
     uint8_t, uint8_t media, const hash_cptr& hash, bool turbo) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -1047,7 +1047,7 @@ bool protocol_explore::handle_get_address(const code& ec, interface::address,
 }
 
 // private
-void protocol_explore::do_get_address(uint8_t media, bool turbo,
+void protocol_native::do_get_address(uint8_t media, bool turbo,
     const hash_cptr& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
@@ -1059,7 +1059,7 @@ void protocol_explore::do_get_address(uint8_t media, bool turbo,
 }
 
 // This is shared by the three get_address... methods.
-void protocol_explore::complete_get_address(const code& ec, uint8_t media,
+void protocol_native::complete_get_address(const code& ec, uint8_t media,
     const outpoints& set) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -1102,7 +1102,7 @@ void protocol_explore::complete_get_address(const code& ec, uint8_t media,
 // handle_get_address_confirmed
 // ----------------------------------------------------------------------------
 
-bool protocol_explore::handle_get_address_confirmed(const code& ec,
+bool protocol_native::handle_get_address_confirmed(const code& ec,
     interface::address_confirmed, uint8_t, uint8_t media,
     const hash_cptr& hash, bool turbo) NOEXCEPT
 {
@@ -1125,7 +1125,7 @@ bool protocol_explore::handle_get_address_confirmed(const code& ec,
 }
 
 // private
-void protocol_explore::do_get_address_confirmed(uint8_t media, bool turbo,
+void protocol_native::do_get_address_confirmed(uint8_t media, bool turbo,
     const hash_cptr& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
@@ -1139,7 +1139,7 @@ void protocol_explore::do_get_address_confirmed(uint8_t media, bool turbo,
 // handle_get_address_unconfirmed
 // ----------------------------------------------------------------------------
 
-bool protocol_explore::handle_get_address_unconfirmed(const code& ec,
+bool protocol_native::handle_get_address_unconfirmed(const code& ec,
     interface::address_unconfirmed, uint8_t, uint8_t,
     const hash_cptr&, bool) NOEXCEPT
 {
@@ -1156,7 +1156,7 @@ bool protocol_explore::handle_get_address_unconfirmed(const code& ec,
 // handle_get_address_balance
 // ----------------------------------------------------------------------------
 
-bool protocol_explore::handle_get_address_balance(const code& ec,
+bool protocol_native::handle_get_address_balance(const code& ec,
     interface::address_balance, uint8_t, uint8_t media,
     const hash_cptr& hash, bool turbo) NOEXCEPT
 {
@@ -1179,7 +1179,7 @@ bool protocol_explore::handle_get_address_balance(const code& ec,
     return true;
 }
 
-void protocol_explore::do_get_address_balance(uint8_t media, bool turbo,
+void protocol_native::do_get_address_balance(uint8_t media, bool turbo,
     const hash_cptr& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
@@ -1190,7 +1190,7 @@ void protocol_explore::do_get_address_balance(uint8_t media, bool turbo,
     POST(complete_get_address_balance, ec, media, balance);
 }
 
-void protocol_explore::complete_get_address_balance(const code& ec,
+void protocol_native::complete_get_address_balance(const code& ec,
     uint8_t media, uint64_t balance) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -1228,14 +1228,14 @@ void protocol_explore::complete_get_address_balance(const code& ec,
 // ----------------------------------------------------------------------------
 // private
 
-void protocol_explore::inject(value& out, std::optional<uint32_t> height,
+void protocol_native::inject(value& out, std::optional<uint32_t> height,
     const database::header_link& link) const NOEXCEPT
 {
     out.as_object().emplace("height", height.has_value() ? height.value() :
         archive().get_height(link).value);
 }
 
-database::header_link protocol_explore::to_header(
+database::header_link protocol_native::to_header(
     const std::optional<uint32_t>& height,
     const std::optional<hash_cptr>& hash) NOEXCEPT
 {

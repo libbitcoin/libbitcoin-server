@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_EXPLORE_IPP
-#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_EXPLORE_IPP
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_NATIVE_IPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_NATIVE_IPP
 
 #include <bitcoin/server/define.hpp>
 
@@ -25,7 +25,7 @@ namespace libbitcoin {
 namespace server {
 
 template <typename Object, typename ...Args>
-inline system::data_chunk protocol_explore::to_bin(const Object& object,
+inline system::data_chunk protocol_native::to_bin(const Object& object,
     size_t size, Args&&... args) NOEXCEPT
 {
     using namespace system;
@@ -38,7 +38,7 @@ inline system::data_chunk protocol_explore::to_bin(const Object& object,
 }
 
 template <typename Object, typename ...Args>
-inline std::string protocol_explore::to_hex(const Object& object, size_t size,
+inline std::string protocol_native::to_hex(const Object& object, size_t size,
     Args&&... args) NOEXCEPT
 {
     using namespace system;
@@ -51,7 +51,7 @@ inline std::string protocol_explore::to_hex(const Object& object, size_t size,
 }
 
 template <typename Collection, typename ...Args>
-inline system::data_chunk protocol_explore::to_bin_array(
+inline system::data_chunk protocol_native::to_bin_array(
     const Collection& collection, size_t size, Args&&... args) NOEXCEPT
 {
     using namespace system;
@@ -66,7 +66,7 @@ inline system::data_chunk protocol_explore::to_bin_array(
 }
 
 template <typename Collection, typename ...Args>
-inline std::string protocol_explore::to_hex_array(const Collection& collection,
+inline std::string protocol_native::to_hex_array(const Collection& collection,
     size_t size, Args&&... args) NOEXCEPT
 {
     using namespace system;
@@ -81,7 +81,7 @@ inline std::string protocol_explore::to_hex_array(const Collection& collection,
 }
 
 template <typename Collection, typename ...Args>
-inline system::data_chunk protocol_explore::to_bin_ptr_array(
+inline system::data_chunk protocol_native::to_bin_ptr_array(
     const Collection& collection, size_t size, Args&&... args) NOEXCEPT
 {
     using namespace system;
@@ -96,7 +96,7 @@ inline system::data_chunk protocol_explore::to_bin_ptr_array(
 }
 
 template <typename Collection, typename ...Args>
-inline std::string protocol_explore::to_hex_ptr_array(
+inline std::string protocol_native::to_hex_ptr_array(
     const Collection& collection, size_t size, Args&&... args) NOEXCEPT
 {
     using namespace system;

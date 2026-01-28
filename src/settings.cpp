@@ -82,9 +82,9 @@ std::filesystem::path settings::events_file() const NOEXCEPT
 namespace server {
 
 // settings::settings
-settings::settings(system::chain::selection, const embedded_pages& explore,
+settings::settings(system::chain::selection, const embedded_pages& native,
     const embedded_pages& web) NOEXCEPT
-  : explore("explore", explore),
+  : native("native", native),
     web("web", web)    
 {
 }

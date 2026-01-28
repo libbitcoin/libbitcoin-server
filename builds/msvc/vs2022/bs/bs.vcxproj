@@ -118,11 +118,11 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\console\embedded\explore_css.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\explore_ecma.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\explore_font.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\explore_html.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\explore_icon.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\web_css.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\web_ecma.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\web_font.cpp" />

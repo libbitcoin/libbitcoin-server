@@ -23,8 +23,8 @@ BOOST_AUTO_TEST_SUITE(configuration_tests)
 BOOST_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
 {
     const settings::embedded_pages web{};
-    const settings::embedded_pages explorer{};
-    const configuration instance(system::chain::selection::none, explorer, web);
+    const settings::embedded_pages native{};
+    const configuration instance(system::chain::selection::none, native, web);
 
     BOOST_REQUIRE(instance.file.empty());
     BOOST_REQUIRE(!instance.help);

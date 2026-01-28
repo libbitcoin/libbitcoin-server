@@ -70,7 +70,7 @@ protected:
 
     /// Attach server sessions (base net doesn't specialize or start these).
     virtual session_web::ptr attach_web_session() NOEXCEPT;
-    virtual session_explore::ptr attach_explore_session() NOEXCEPT;
+    virtual session_native::ptr attach_native_session() NOEXCEPT;
     virtual session_bitcoind::ptr attach_bitcoind_session() NOEXCEPT;
     virtual session_electrum::ptr attach_electrum_session() NOEXCEPT;
     virtual session_stratum_v1::ptr attach_stratum_v1_session() NOEXCEPT;
@@ -82,7 +82,7 @@ protected:
 
 private:
     void start_web(const code& ec, const result_handler& handler) NOEXCEPT;
-    void start_explore(const code& ec, const result_handler& handler) NOEXCEPT;
+    void start_native(const code& ec, const result_handler& handler) NOEXCEPT;
     void start_bitcoind(const code& ec, const result_handler& handler) NOEXCEPT;
     void start_electrum(const code& ec, const result_handler& handler) NOEXCEPT;
     void start_stratum_v1(const code& ec, const result_handler& handler) NOEXCEPT;

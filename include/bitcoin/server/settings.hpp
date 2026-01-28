@@ -115,14 +115,14 @@ public:
     // html_server precludes copy.
     DELETE_COPY(settings);
 
-    settings(system::chain::selection context, const embedded_pages& explore,
+    settings(system::chain::selection context, const embedded_pages& native,
         const embedded_pages& web) NOEXCEPT;
 
-    /// native admin web interface, isolated (http/s, stateless html)
+    /// admin web interface, isolated (http/s, stateless html)
     server::settings::html_server web;
 
-    /// native RESTful block explorer (http/s, stateless html/websocket)
-    server::settings::html_server explore;
+    /// RESTful block explorer (http/s, stateless html/websocket)
+    server::settings::html_server native;
 
     /// bitcoind compat interface (http/s, stateless json-rpc-v2)
     network::settings::http_server bitcoind{ "bitcoind" };

@@ -42,15 +42,15 @@ src_libbitcoin_server_la_SOURCES = \
     src/settings.cpp \
     src/parsers/bitcoind_query.cpp \
     src/parsers/bitcoind_target.cpp \
-    src/parsers/explore_query.cpp \
-    src/parsers/explore_target.cpp \
+    src/parsers/native_query.cpp \
+    src/parsers/native_target.cpp \
     src/protocols/protocol_bitcoind_rest.cpp \
     src/protocols/protocol_bitcoind_rpc.cpp \
     src/protocols/protocol_electrum.cpp \
     src/protocols/protocol_electrum_version.cpp \
-    src/protocols/protocol_explore.cpp \
     src/protocols/protocol_html.cpp \
     src/protocols/protocol_http.cpp \
+    src/protocols/protocol_native.cpp \
     src/protocols/protocol_stratum_v1.cpp
 
 # local: test/libbitcoin-server-test
@@ -71,8 +71,8 @@ test_libbitcoin_server_test_SOURCES = \
     test/test.hpp \
     test/parsers/bitcoind_query.cpp \
     test/parsers/bitcoind_target.cpp \
-    test/parsers/explore_query.cpp \
-    test/parsers/explore_target.cpp
+    test/parsers/native_query.cpp \
+    test/parsers/native_target.cpp
 
 endif WITH_TESTS
 
@@ -101,11 +101,11 @@ console_bs_SOURCES = \
     console/stack_trace.cpp \
     console/stack_trace.hpp \
     console/embedded/embedded.hpp \
-    console/embedded/explore_css.cpp \
-    console/embedded/explore_ecma.cpp \
-    console/embedded/explore_font.cpp \
-    console/embedded/explore_html.cpp \
-    console/embedded/explore_icon.cpp \
+    console/embedded/native_css.cpp \
+    console/embedded/native_ecma.cpp \
+    console/embedded/native_font.cpp \
+    console/embedded/native_html.cpp \
+    console/embedded/native_icon.cpp \
     console/embedded/web_css.cpp \
     console/embedded/web_ecma.cpp \
     console/embedded/web_font.cpp \
@@ -141,15 +141,15 @@ include_bitcoin_server_channels_HEADERS = \
 
 include_bitcoin_server_impl_protocolsdir = ${includedir}/bitcoin/server/impl/protocols
 include_bitcoin_server_impl_protocols_HEADERS = \
-    include/bitcoin/server/impl/protocols/protocol_explore.ipp
+    include/bitcoin/server/impl/protocols/protocol_native.ipp
 
 include_bitcoin_server_interfacesdir = ${includedir}/bitcoin/server/interfaces
 include_bitcoin_server_interfaces_HEADERS = \
     include/bitcoin/server/interfaces/bitcoind_rest.hpp \
     include/bitcoin/server/interfaces/bitcoind_rpc.hpp \
     include/bitcoin/server/interfaces/electrum.hpp \
-    include/bitcoin/server/interfaces/explore.hpp \
     include/bitcoin/server/interfaces/interfaces.hpp \
+    include/bitcoin/server/interfaces/native.hpp \
     include/bitcoin/server/interfaces/stratum_v1.hpp \
     include/bitcoin/server/interfaces/stratum_v2.hpp \
     include/bitcoin/server/interfaces/types.hpp
@@ -159,8 +159,8 @@ include_bitcoin_server_parsers_HEADERS = \
     include/bitcoin/server/parsers/bitcoind_query.hpp \
     include/bitcoin/server/parsers/bitcoind_target.hpp \
     include/bitcoin/server/parsers/electrum_version.hpp \
-    include/bitcoin/server/parsers/explore_query.hpp \
-    include/bitcoin/server/parsers/explore_target.hpp \
+    include/bitcoin/server/parsers/native_query.hpp \
+    include/bitcoin/server/parsers/native_target.hpp \
     include/bitcoin/server/parsers/parsers.hpp
 
 include_bitcoin_server_protocolsdir = ${includedir}/bitcoin/server/protocols
@@ -170,9 +170,9 @@ include_bitcoin_server_protocols_HEADERS = \
     include/bitcoin/server/protocols/protocol_bitcoind_rpc.hpp \
     include/bitcoin/server/protocols/protocol_electrum.hpp \
     include/bitcoin/server/protocols/protocol_electrum_version.hpp \
-    include/bitcoin/server/protocols/protocol_explore.hpp \
     include/bitcoin/server/protocols/protocol_html.hpp \
     include/bitcoin/server/protocols/protocol_http.hpp \
+    include/bitcoin/server/protocols/protocol_native.hpp \
     include/bitcoin/server/protocols/protocol_rpc.hpp \
     include/bitcoin/server/protocols/protocol_stratum_v1.hpp \
     include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
