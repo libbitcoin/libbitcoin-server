@@ -147,14 +147,16 @@ private:
 
     // Runtime events.
     static const std::unordered_map<uint8_t, std::string> fired_;
-    static std::promise<system::code> stopping_;
+
+    // Shutdown.
     static std::atomic_bool cancel_;
+    static std::promise<system::code> stopping_;
+    std::promise<system::code> logging_complete_{};
 
     parser& metadata_;
     server_node::ptr node_{};
     server_node::store store_;
     server_node::query query_;
-    std::promise<system::code> stopped_{};
     node::count_t sequence_{};
 
     std::istream& input_;

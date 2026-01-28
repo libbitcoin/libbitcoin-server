@@ -32,9 +32,14 @@ using namespace std::placeholders;
 
 void executor::stopper(const std::string& message)
 {
+    // Stop capturing console evens and join its thread.
     capture_.stop();
+
+    // Stop log, causing final message to be buffered by handler.
     log_.stop(message, network::levels::application);
-    stopped_.get_future().wait();
+
+    // Suspend process termination until final message is buffered.
+    logging_complete_.get_future().wait();
 }
 
 void executor::subscribe_connect()
@@ -163,6 +168,7 @@ bool executor::do_run()
     logger(BS_NETWORK_STOPPING);
 
     // Stop network (if not already stopped by self).
+    // Blocks on join of server/node/network threadpool.
     node_->close();
 
     // Sizes and records change, buckets don't.
@@ -177,6 +183,7 @@ bool executor::do_run()
         return false;
     }
 
+    // Stop console capture and issue terminating log message.
     stopper(BS_NODE_STOPPED);
     return true; 
 }

@@ -85,7 +85,13 @@ void executor::subscribe_log(std::ostream& sink)
                 sink << prefix << BS_NODE_FOOTER << std::endl;
                 output_ << prefix << BS_NODE_FOOTER << std::endl;
                 output_ << prefix << BS_NODE_TERMINATE << std::endl;
-                stopped_.set_value(ec);
+
+                // Release subscription and signal termination of log.
+                // Log destruct blocks on its own threadpool join, which occurs
+                // only after all logging work is completed. After the above
+                // message is queued, no more are accepted, and the executor
+                // may initiate its own (and thereby this log's) destruction.
+                logging_complete_.set_value(ec);
                 return false;
             }
             else

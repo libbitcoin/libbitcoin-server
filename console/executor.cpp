@@ -30,11 +30,11 @@ namespace server {
 using boost::format;
 using namespace std::placeholders;
 
-// non-const member static (global for blocking interrupt handling).
-std::promise<code> executor::stopping_{};
-
 // non-const member static (global for non-blocking interrupt handling).
 std::atomic_bool executor::cancel_{};
+
+// non-const member static (global for blocking interrupt handling).
+std::promise<code> executor::stopping_{};
 
 executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     std::ostream&)
@@ -82,7 +82,10 @@ void executor::stop(const code& ec)
     static std::once_flag stop_mutex{};
     std::call_once(stop_mutex, [&]()
     {
+        // Only for tool cancelation (scan/read/writer).
         cancel_.store(true);
+
+        // Unblock monitor thread (do_run).
         stopping_.set_value(ec);
     });
 }
@@ -106,6 +109,7 @@ void executor::handle_started(const code& ec)
 
     logger(BS_NODE_STARTED);
 
+    // Invokes handle_stopped(ec), which invokes stop(ec), unblocking monitor.
     node_->subscribe_close(
         std::bind(&executor::handle_stopped, this, _1),
         std::bind(&executor::handle_subscribed, this, _1, _2));
