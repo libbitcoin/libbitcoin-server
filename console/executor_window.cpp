@@ -92,6 +92,7 @@ void executor::create_hidden_window()
 
         MSG message{};
         BOOL result{};
+        ready_.set_value(true);
         while (!is_zero(result = ::GetMessageW(&message, NULL, 0, 0)))
         {
             // fault
@@ -106,6 +107,9 @@ void executor::create_hidden_window()
 
 void executor::destroy_hidden_window()
 {
+    // Wait until window is accepting messages, so WM_QUIT isn't missed.
+    ready_.get_future().wait();
+
     if (!is_null(window_))
         ::PostMessageW(window_, WM_QUIT, 0, 0);
 
