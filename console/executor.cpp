@@ -29,6 +29,7 @@ namespace libbitcoin {
 namespace server {
 
 using boost::format;
+using namespace system;
 using namespace std::placeholders;
 
 // static initializers.
@@ -80,6 +81,34 @@ executor::~executor()
 // Stop signal.
 // ----------------------------------------------------------------------------
 // static
+
+#if defined(HAVE_MSC)
+BOOL WINAPI executor::control_handler(DWORD signal)
+{
+    switch (signal)
+    {
+        // Keyboard events. These prevent exit altogether when TRUE returned.
+        // handle_stop(signal) therefore shuts down gracefully/completely.
+        case CTRL_C_EVENT:
+        case CTRL_BREAK_EVENT:
+
+        // A signal that the system sends to all processes attached to a
+        // console when the user closes the console (by clicking Close on the
+        // console window's window menu). Returning TRUE here does not
+        // materially delay exit, so aside from capture this is a noop.
+        case CTRL_CLOSE_EVENT:
+            executor::handle_stop(possible_narrow_sign_cast<int>(signal));
+            return TRUE;
+
+        ////// Only services receive this (*any* user is logging off).
+        ////case CTRL_LOGOFF_EVENT:
+        ////// Only services receive this (all users already logged off).
+        ////case CTRL_SHUTDOWN_EVENT:
+        default:
+            return FALSE;
+    }
+}
+#endif
 
 void executor::initialize_stop()
 {
