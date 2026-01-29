@@ -36,7 +36,7 @@ void executor::read_test(const hash_digest&) const
     const auto concurrency = metadata_.configured.node.maximum_concurrency_();
 
     size_t size{};
-    for (auto height = zero; !cancel_ && height <= top; ++height)
+    for (auto height = zero; !canceled() && height <= top; ++height)
     {
         const auto link = query_.to_candidate(height);
         if (link.is_terminal())
@@ -89,7 +89,7 @@ void executor::read_test(const hash_digest&) const
     logger(format("Getting first [%1%] output address hashes.") % target_count);
 
     auto start = fine_clock::now();
-    while (!cancel_ && keys.size() < target_count)
+    while (!canceled() && keys.size() < target_count)
     {
         const auto outputs = query_.get_outputs(tx++);
         if (is_null(outputs))
@@ -101,7 +101,7 @@ void executor::read_test(const hash_digest&) const
         for (const auto& put: *outputs)
         {
             keys.emplace(put->script().hash());
-            if (cancel_ || keys.size() == target_count)
+            if (canceled() || keys.size() == target_count)
                 break;
         }
     }
@@ -138,7 +138,7 @@ void executor::read_test(const hash_digest&) const
     start = fine_clock::now();
     for (auto& key: keys)
     {
-        if (cancel_)
+        if (canceled())
             return;
 
         ////size_t found{};
@@ -151,7 +151,7 @@ void executor::read_test(const hash_digest&) const
 
         do
         {
-            if (cancel_)
+            if (canceled())
                 break;
 
             table::address::record address{};
@@ -276,7 +276,7 @@ void executor::read_test(const hash_digest&) const
 
     for (const auto& row: outs)
     {
-        if (cancel_)
+        if (canceled())
             break;
 
         const auto output = !row.output ? "{error}" :
@@ -322,7 +322,7 @@ void executor::read_test(const hash_digest&) const
     uint32_t block{ one };
 
     logger("Find strong blocks.");
-    while (!cancel_ && (block < count) && query_.is_strong_block(block))
+    while (!canceled() && (block < count) && query_.is_strong_block(block))
     {
         ++block;
     }
@@ -334,7 +334,7 @@ void executor::read_test(const hash_digest&) const
     uint32_t milestone{ 295'001 };
 
     logger("Find milestone blocks.");
-    while (!cancel_ && (milestone < count) && query_.is_milestone(milestone))
+    while (!canceled() && (milestone < count) && query_.is_milestone(milestone))
     {
         ++milestone;
     }
@@ -346,7 +346,7 @@ void executor::read_test(const hash_digest&) const
 
     logger("Find strong txs.");
     count = query_.tx_records();
-    while (!cancel_ && (tx < count) && query_.is_strong_tx(tx))
+    while (!canceled() && (tx < count) && query_.is_strong_tx(tx))
     {
         ++tx;
     }
@@ -366,7 +366,7 @@ void executor::read_test(const hash_digest&) const
     size_t total{};
 
     logger("Get all coinbases.");
-    while (!cancel_ && (block <= top))
+    while (!canceled() && (block <= top))
     {
         const auto count = query_.get_tx_count(query_.to_candidate(block++));
         if (is_zero(count))
@@ -422,7 +422,7 @@ void executor::read_test(const hash_digest&) const
 
     database::tx_link spender_link{};
     const auto hash_spender = system::base16_hash("1ff970ec310c000595929bd290bbc8f4603ee18b2b4e3239dfb072aaca012b28");
-    for (auto position = zero; !cancel_ && position < txs.size(); ++position)
+    for (auto position = zero; !canceled() && position < txs.size(); ++position)
     {
         const auto temp = txs.at(position);
         if (query_.get_tx_key(temp) == hash_spender)
@@ -466,7 +466,7 @@ void executor::read_test(const hash_digest&) const
 
     database::tx_link spent_link{};
     const auto hash_spent = system::base16_hash("85f65b57b88b74fd945a66a6ba392a5f3c8a7c0f78c8397228dece885d788841");
-    for (auto position = zero; !cancel_ && position < txs.size(); ++position)
+    for (auto position = zero; !canceled() && position < txs.size(); ++position)
     {
         const auto temp = txs.at(position);
         if (query_.get_tx_key(temp) == hash_spent)
@@ -640,7 +640,7 @@ void executor::read_test(const hash_digest&) const
     auto tx = 664'400'000_size;
 
     // Read all data except genesis (ie. for validation).
-    while (!cancel_ && (++tx < query_.tx_records()))
+    while (!canceled() && (++tx < query_.tx_records()))
     {
         const tx_link link{
             system::possible_narrow_cast<tx_link::integer>(tx) };
@@ -681,7 +681,7 @@ void executor::read_test(const hash_digest&) const
                 duration_cast<seconds>(fine_clock::now() - start).count());
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<seconds>(fine_clock::now() - start);
@@ -698,7 +698,7 @@ void executor::read_test(const hash_digest&) const
     std::getline(input_, line);
     const auto start = fine_clock::now();
 
-    for (size_t height = 492'224; (height <= 492'224) && !cancel_; ++height)
+    for (size_t height = 492'224; (height <= 492'224) && !canceled(); ++height)
     {
         // 2s 0s
         const auto link = query_.to_header(hash492224);

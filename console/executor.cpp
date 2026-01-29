@@ -31,9 +31,11 @@ namespace server {
 using boost::format;
 using namespace std::placeholders;
 
-std::atomic_bool executor::cancel_{};
+// static initializers.
 std::thread executor::stop_poller_{};
 std::promise<bool> executor::stopping_{};
+std::atomic<bool> executor::initialized_{};
+std::atomic<int> executor::signal_{ unsignalled };
 
 executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     std::ostream&)
@@ -56,45 +58,35 @@ executor::executor(parser& metadata, std::istream& input, std::ostream& output,
         metadata.configured.log.verbose
     }
 {
+    BC_ASSERT(!initialized_);
+    initialized_ = true;
+
     initialize_stop();
+
+#if defined(HAVE_MSC)
+    create_hidden_window();
+#endif
+}
+
+executor::~executor()
+{
+    initialized_ = false;
+
+#if defined(HAVE_MSC)
+    destroy_hidden_window();
+#endif
 }
 
 // Stop signal.
 // ----------------------------------------------------------------------------
+// static
 
-#if defined(HAVE_MSC)
-BOOL WINAPI executor::win32_handler(DWORD signal)
-{
-    ////if (auto* log = fopen("shutdown.log", "a"))
-    ////{
-    ////    fprintf(log, "Signal %lu at %llu\n", signal, GetTickCount64());
-    ////    fflush(log);
-    ////    fclose(log);
-    ////}
-
-    switch (signal)
-    {
-        case CTRL_C_EVENT:
-        case CTRL_BREAK_EVENT:
-        case CTRL_CLOSE_EVENT:
-        case CTRL_LOGOFF_EVENT:
-        case CTRL_SHUTDOWN_EVENT:
-            executor::handle_stop({});
-            return TRUE;
-        default:
-            return FALSE;
-    }
-}
-#endif
-
-// Call only once.
 void executor::initialize_stop()
 {
     poll_for_stopping();
 
 #if defined(HAVE_MSC)
-    // TODO: use RegisterServiceCtrlHandlerEx for service registration.
-    ::SetConsoleCtrlHandler(&executor::win32_handler, TRUE);
+    ::SetConsoleCtrlHandler(&executor::control_handler, TRUE);
 #else
     // Restart interrupted system calls.
     struct sigaction action
@@ -123,17 +115,51 @@ void executor::initialize_stop()
 #endif
 }
 
+// Handle the stop signal and invoke stop method (requries signal safe code).
+void executor::handle_stop(int signal)
+{
+    stop(signal);
+}
+
+// Manage race between console stop and server stop.
+void executor::stop(int signal)
+{
+    ////if (auto* log = fopen("shutdown.log", "a"))
+    ////{
+    ////    fprintf(log, "stop %lu at %llu\n", signal, GetTickCount64());
+    ////    fflush(log);
+    ////    fclose(log);
+    ////}
+
+    // Implementation is limited to signal safe code.
+    static_assert(std::atomic<int>::is_always_lock_free);
+
+    // Capture first handled signal value.
+    auto unset = unsignalled;
+    signal_.compare_exchange_strong(unset, signal, std::memory_order_acq_rel);
+}
+
+// Any thread can monitor this for stopping.
+bool executor::canceled()
+{
+    return signal_.load(std::memory_order_acquire) != unsignalled;
+}
+
+// Spinning must be used in signal handler, cannot wait on a promise.
 void executor::poll_for_stopping()
 {
+    using namespace std::this_thread;
+
     stop_poller_ = std::thread([]()
     {
-        while (!cancel_.load(std::memory_order_acquire))
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        while (!canceled())
+            sleep_for(std::chrono::milliseconds(10));
 
         stopping_.set_value(true);
     });
 }
 
+// Blocks until stopping is signalled by poller.
 void executor::wait_for_stopping()
 {
     stopping_.get_future().wait();
@@ -141,16 +167,20 @@ void executor::wait_for_stopping()
         stop_poller_.join();
 }
 
-// Implementation is limited to signal safe code.
-void executor::handle_stop(int)
+// Suspend verbose logging and log the stop signal.
+void executor::log_stopping()
 {
-    stop();
-}
+    const auto signal = signal_.load();
+    if (signal == signal_none)
+        return;
 
-// Manage the race between console stop and server stop.
-void executor::stop()
-{
-    cancel_.store(true, std::memory_order_release);
+    // A high level of consolve logging can obscure and delay stop.
+    toggle_.at(network::levels::protocol) = false;
+    toggle_.at(network::levels::verbose) = false;
+    toggle_.at(network::levels::proxy) = false;
+
+    logger(format(BS_NODE_INTERRUPTED) % signal);
+    logger(BS_NETWORK_STOPPING);
 }
 
 // Event handlers.

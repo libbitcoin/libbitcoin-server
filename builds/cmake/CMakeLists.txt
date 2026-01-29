@@ -334,6 +334,7 @@ if (with-console)
         "../../console/executor_store.cpp"
         "../../console/executor_test_reader.cpp"
         "../../console/executor_test_writer.cpp"
+        "../../console/executor_windows.cpp"
         "../../console/libbitcoin.ico"
         "../../console/localize.hpp"
         "../../console/main.cpp"

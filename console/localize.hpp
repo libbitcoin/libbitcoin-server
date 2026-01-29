@@ -180,6 +180,8 @@ namespace server {
     "Node failed to start with error '%1%'."
 #define BS_NODE_UNAVAILABLE \
     "Command not available until node started."
+#define BS_NODE_INTERRUPTED \
+    "Node was interrupted by signal (%1%)."
 
 #define BS_NODE_BACKUP_STARTED \
     "Snapshot is started."
