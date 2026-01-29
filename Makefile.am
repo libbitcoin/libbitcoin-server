@@ -96,6 +96,7 @@ console_bs_SOURCES = \
     console/executor_store.cpp \
     console/executor_test_reader.cpp \
     console/executor_test_writer.cpp \
+    console/executor_windows.cpp \
     console/localize.hpp \
     console/main.cpp \
     console/stack_trace.cpp \

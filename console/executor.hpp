@@ -28,12 +28,10 @@
 #include <bitcoin/server.hpp>
 #include <boost/format.hpp>
 
-// This class is just an ad-hoc user interface wrapper on the node.
-// It will be factored and cleaned up for final release.
-
 namespace libbitcoin {
 namespace server {
 
+// This class is just an ad-hoc user interface wrapper on the node.
 class executor
 {
 public:
@@ -43,21 +41,38 @@ public:
     executor(parser& metadata, std::istream&, std::ostream& output,
         std::ostream& error);
 
+    // Clean up.
+    ~executor();
+
     // Called from main.
     bool dispatch();
 
 private:
+    static constexpr int unsignalled{ -1 };
+    static constexpr int signal_none{ -2 };
+
     // Executor (static).
     static void initialize_stop();
     static void poll_for_stopping();
     static void wait_for_stopping();
     static void handle_stop(int code);
-    static void stop();
+    static void stop(int signal=signal_none);
+    static bool canceled();
+
 #if defined(HAVE_MSC)
-    static BOOL WINAPI win32_handler(DWORD signal);
+    static BOOL WINAPI control_handler(DWORD signal);
+    static LRESULT CALLBACK window_proc(HWND handle, UINT message,
+        WPARAM wparam, LPARAM lparam);
+
+    void create_hidden_window();
+    void destroy_hidden_window();
+
+    HWND window_{};
+    std::thread thread_{};
 #endif
 
     // Executor.
+    void log_stopping();
     void handle_started(const system::code& ec);
     void handle_subscribed(const system::code& ec, size_t key);
     void handle_running(const system::code& ec);
@@ -155,8 +170,9 @@ private:
     static const std::unordered_map<uint8_t, std::string> fired_;
 
     // Shutdown.
-    static std::atomic_bool cancel_;
     static std::thread stop_poller_;
+    static std::atomic<int> signal_;
+    static std::atomic<bool> initialized_;
     static std::promise<bool> stopping_;
     std::promise<bool> log_suspended_{};
 

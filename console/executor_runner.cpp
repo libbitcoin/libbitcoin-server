@@ -36,7 +36,7 @@ void executor::stopper(const std::string& message)
     capture_.stop();
 
     // Stop log, causing final message to be buffered by handler.
-    log_.stop(message, network::levels::application);
+    log_.stop(message,levels::application);
 
     // Suspend process termination until final message is buffered.
     log_suspended_.get_future().wait();
@@ -46,7 +46,7 @@ void executor::subscribe_connect()
 {
     node_->subscribe_connect
     (
-        [&](const code&, const network::channel::ptr&)
+        [&](const code&, const channel::ptr&)
         {
             log_.write(levels::verbose) <<
                 "{in:" << node_->inbound_channel_count() << "}"
@@ -162,13 +162,12 @@ bool executor::do_run()
     logger(BS_NETWORK_STARTING);
     node_->start(std::bind(&executor::handle_started, this, _1));
 
-    // Wait on signal to stop node (<ctrl-c>).
+    // Wait on signal to stop node (<ctrl-c>, etc).
     wait_for_stopping();
-    toggle_.at(levels::protocol) = false;
-    logger(BS_NETWORK_STOPPING);
 
     // Stop network (if not already stopped by self).
     // Blocks on join of server/node/network threadpool.
+    log_stopping();
     node_->close();
 
     // Sizes and records change, buckets don't.

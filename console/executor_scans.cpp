@@ -45,7 +45,7 @@ void executor::scan_flags() const
 
     logger(BS_OPERATION_INTERRUPT);
 
-    for (size_t height{}; !cancel_ && height <= top; ++height)
+    for (size_t height{}; !canceled() && height <= top; ++height)
     {
         database::context ctx{};
         const auto link = query_.to_candidate(height);
@@ -65,7 +65,7 @@ void executor::scan_flags() const
         }
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<milliseconds>(logger::now() - start);
@@ -86,7 +86,7 @@ void executor::scan_slabs() const
     // Tx (record) links are sequential and so iterable, however the terminal
     // condition assumes all tx entries fully written (ok for stopped node).
     // A running node cannot safely iterate over record links, but stopped can.
-    for (auto puts = query_.put_counts(link); to_bool(puts.first) && !cancel_;
+    for (auto puts = query_.put_counts(link); to_bool(puts.first) && !canceled();
         puts = query_.put_counts(++link))
     {
         inputs += puts.first;
@@ -95,7 +95,7 @@ void executor::scan_slabs() const
             logger(format(BS_MEASURE_SLABS_ROW) % link % inputs % outputs);
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<seconds>(logger::now() - start);
@@ -114,7 +114,7 @@ void executor::scan_buckets() const
     auto filled = zero;
     auto bucket = max_size_t;
     auto start = logger::now();
-    while (!cancel_ && (++bucket < query_.header_buckets()))
+    while (!canceled() && (++bucket < query_.header_buckets()))
     {
         const auto top = query_.top_header(bucket);
         if (!top.is_terminal())
@@ -125,7 +125,7 @@ void executor::scan_buckets() const
                 duration_cast<seconds>(logger::now() - start).count());
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     auto span = duration_cast<seconds>(logger::now() - start);
@@ -137,7 +137,7 @@ void executor::scan_buckets() const
     filled = zero;
     bucket = max_size_t;
     start = logger::now();
-    while (!cancel_ && (++bucket < query_.tx_buckets()))
+    while (!canceled() && (++bucket < query_.tx_buckets()))
     {
         const auto top = query_.top_tx(bucket);
         if (!top.is_terminal())
@@ -148,7 +148,7 @@ void executor::scan_buckets() const
                 duration_cast<seconds>(logger::now() - start).count());
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     span = duration_cast<seconds>(logger::now() - start);
@@ -160,7 +160,7 @@ void executor::scan_buckets() const
     filled = zero;
     bucket = max_size_t;
     start = logger::now();
-    while (!cancel_ && (++bucket < query_.point_buckets()))
+    while (!canceled() && (++bucket < query_.point_buckets()))
     {
         const auto top = query_.top_point(bucket);
         if (!top.is_terminal())
@@ -171,7 +171,7 @@ void executor::scan_buckets() const
                 duration_cast<seconds>(logger::now() - start).count());
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     span = duration_cast<seconds>(logger::now() - start);
@@ -219,7 +219,7 @@ void executor::scan_collisions() const
     const auto header_records = query_.header_records();
     std_vector<size_t> header(header_buckets, empty);
     std_vector<size_t> txs(header_buckets, empty);
-    while (!cancel_ && (++index < header_records))
+    while (!canceled() && (++index < header_records))
     {
         const header_link link{ possible_narrow_cast<hint>(index) };
         const auto key = query_.get_header_key(link.value);
@@ -233,7 +233,7 @@ void executor::scan_collisions() const
                 duration_cast<seconds>(logger::now() - start).count());
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     // ........................................................................
@@ -275,7 +275,7 @@ void executor::scan_collisions() const
     const auto tx_records = query_.tx_records();
     std_vector<size_t> tx(tx_buckets, empty);
     std_vector<size_t> strong_tx(tx_buckets, empty);
-    while (!cancel_ && (++index < tx_records))
+    while (!canceled() && (++index < tx_records))
     {
         const tx_link link{ possible_narrow_cast<tx_link::integer>(index) };
         const auto key = query_.get_tx_key(link.value);
@@ -288,7 +288,7 @@ void executor::scan_collisions() const
                 duration_cast<seconds>(logger::now() - start).count());
     }
     
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
     
     // ........................................................................
@@ -352,7 +352,7 @@ void executor::scan_collisions() const
     size_t window{};
 
     const auto top = query_.get_top_associated();
-    for (index = zero; index <= top && !cancel_; ++index)
+    for (index = zero; index <= top && !canceled(); ++index)
     {
         ++coinbases;
         const auto link = query_.to_candidate(index);
@@ -404,7 +404,7 @@ void executor::scan_collisions() const
         }
     }
 
-    if (cancel_)
+    if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     // ........................................................................
