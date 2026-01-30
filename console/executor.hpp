@@ -69,6 +69,7 @@ private:
 
     HWND window_{};
     std::thread thread_{};
+    std::promise<bool> ready_{};
 #endif
 
     // Executor.

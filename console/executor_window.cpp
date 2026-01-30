@@ -26,37 +26,9 @@ namespace server {
 // TODO: use RegisterServiceCtrlHandlerEx for service registration.
 
 using namespace system;
-
 constexpr auto window_name = L"HiddenShutdownWindow";
 constexpr auto window_text = L"Flushing tables...";
 constexpr auto window_title = L"Libbitcoin Server";
-
-// static
-BOOL WINAPI executor::control_handler(DWORD signal)
-{
-    switch (signal)
-    {
-        // Keyboard events. These prevent exit altogether when TRUE returned.
-        // handle_stop(signal) therefore shuts down gracefully/completely.
-        case CTRL_C_EVENT:
-        case CTRL_BREAK_EVENT:
-
-        // A signal that the system sends to all processes attached to a
-        // console when the user closes the console (by clicking Close on the
-        // console window's window menu). Returning TRUE here does not
-        // materially delay exit, so aside from capture this is a noop.
-        case CTRL_CLOSE_EVENT:
-            executor::handle_stop(possible_narrow_sign_cast<int>(signal));
-            return TRUE;
-
-        ////// Only services receive this (*any* user is logging off).
-        ////case CTRL_LOGOFF_EVENT:
-        ////// Only services receive this (all users already logged off).
-        ////case CTRL_SHUTDOWN_EVENT:
-        default:
-            return FALSE;
-    }
-}
 
 // static
 LRESULT CALLBACK executor::window_proc(HWND handle, UINT message,
@@ -120,6 +92,7 @@ void executor::create_hidden_window()
 
         MSG message{};
         BOOL result{};
+        ready_.set_value(true);
         while (!is_zero(result = ::GetMessageW(&message, NULL, 0, 0)))
         {
             // fault
@@ -134,6 +107,9 @@ void executor::create_hidden_window()
 
 void executor::destroy_hidden_window()
 {
+    // Wait until window is accepting messages, so WM_QUIT isn't missed.
+    ready_.get_future().wait();
+
     if (!is_null(window_))
         ::PostMessageW(window_, WM_QUIT, 0, 0);
 

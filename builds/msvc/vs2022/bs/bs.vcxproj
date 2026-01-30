@@ -139,7 +139,7 @@
     <ClCompile Include="..\..\..\..\console\executor_store.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_test_reader.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp" />
-    <ClCompile Include="..\..\..\..\console\executor_windows.cpp" />
+    <ClCompile Include="..\..\..\..\console\executor_window.cpp" />
     <ClCompile Include="..\..\..\..\console\main.cpp" />
     <ClCompile Include="..\..\..\..\console\stack_trace.cpp" />
   </ItemGroup>
