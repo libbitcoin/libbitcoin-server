@@ -118,11 +118,11 @@ void executor::initialize_stop()
     ::SetConsoleCtrlHandler(&executor::control_handler, TRUE);
 #else
     // Restart interrupted system calls.
-    struct sigaction action
-    {
-        .sa_handler = handle_stop,
-        .sa_flags = SA_RESTART
-    };
+    sigaction action{};
+    action.sa_flags = SA_RESTART;
+
+    // sa_handler is actually a macro :o
+    action.sa_handler = handle_stop;
 
     // Set masking.
     sigemptyset(&action.sa_mask);
