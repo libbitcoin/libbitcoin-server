@@ -117,8 +117,10 @@ void executor::initialize_stop()
 #if defined(HAVE_MSC)
     ::SetConsoleCtrlHandler(&executor::control_handler, TRUE);
 #else
+    // struct keywork avoids name conflict with posix function sigaction.
+    struct sigaction action{};
+
     // Restart interrupted system calls.
-    sigaction action{};
     action.sa_flags = SA_RESTART;
 
     // sa_handler is actually a macro :o
