@@ -207,7 +207,7 @@ jobs:
 
       - name: Execute install.sh
         run: >
-          CXXFLAGS="${CXXFLAGS} -I${{ env.LIBBITCOIN_SRC_PATH }}prefix/include/bitcoin/ssl" ./install.sh
+          ./install.sh
           --build-dir=${{ env.LIBBITCOIN_SRC_PATH }} ${{ matrix.options }}
           --prefix=${{ env.LIBBITCOIN_SRC_PATH }}prefix
           ${{ env.LINKAGE }}
@@ -481,7 +481,7 @@ jobs:
 
       - name: Execute install-cmake.sh
         run: >
-          CXXFLAGS="${CXXFLAGS} -I${{ env.LIBBITCOIN_SRC_PATH }}prefix/include/bitcoin/ssl" ./install-cmake.sh
+          ./install-cmake.sh
           --build-dir=${{ env.LIBBITCOIN_SRC_PATH }} ${{ matrix.options }}
           --prefix=${{ env.LIBBITCOIN_SRC_PATH }}prefix
           ${{ env.LINKAGE }}
@@ -717,7 +717,7 @@ jobs:
 
       - name: Execute install-cmakepresets.sh
         run: >
-          CXXFLAGS="${CXXFLAGS} -I${{ env.LIBBITCOIN_SRC_PATH }}prefix/include/bitcoin/ssl" ./install-cmakepresets.sh
+          ./install-cmakepresets.sh
           --build-dir=${{ env.LIBBITCOIN_SRC_PATH }} ${{ matrix.options }}
           --prefix=${{ env.LIBBITCOIN_SRC_PATH }}prefix/${{ matrix.preset }}
           --preset=${{ matrix.preset }}
