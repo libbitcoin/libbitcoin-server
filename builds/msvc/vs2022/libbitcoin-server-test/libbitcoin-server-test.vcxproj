@@ -126,7 +126,9 @@
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
-    <ClCompile Include="..\..\..\..\test\test.cpp" />
+    <ClCompile Include="..\..\..\..\test\test.cpp">
+      <ObjectFileName>$(IntDir)test_test.obj</ObjectFileName>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\test.hpp" />

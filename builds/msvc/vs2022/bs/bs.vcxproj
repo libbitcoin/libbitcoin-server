@@ -128,7 +128,9 @@
     <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp" />
-    <ClCompile Include="..\..\..\..\console\executor.cpp" />
+    <ClCompile Include="..\..\..\..\console\executor.cpp">
+      <ObjectFileName>$(IntDir)console_executor.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_commands.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_dumps.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_events.cpp" />
@@ -141,7 +143,9 @@
     <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_window.cpp" />
     <ClCompile Include="..\..\..\..\console\main.cpp" />
-    <ClCompile Include="..\..\..\..\console\stack_trace.cpp" />
+    <ClCompile Include="..\..\..\..\console\stack_trace.cpp">
+      <ObjectFileName>$(IntDir)console_stack_trace.obj</ObjectFileName>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\console\embedded\embedded.hpp" />
