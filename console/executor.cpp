@@ -33,10 +33,10 @@ using namespace system;
 using namespace std::placeholders;
 
 // static initializers.
-std::thread executor::stop_poller_{};
 std::promise<bool> executor::stopping_{};
 std::atomic<bool> executor::initialized_{};
 std::atomic<int> executor::signal_{ unsignalled };
+std::unique_ptr<std::thread> executor::stop_poller_{};
 
 executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     std::ostream&)
@@ -59,9 +59,6 @@ executor::executor(parser& metadata, std::istream& input, std::ostream& output,
         metadata.configured.log.verbose
     }
 {
-    BC_ASSERT(!initialized_);
-    initialized_ = true;
-
     initialize_stop();
 
 #if defined(HAVE_MSC)
@@ -71,11 +68,11 @@ executor::executor(parser& metadata, std::istream& input, std::ostream& output,
 
 executor::~executor()
 {
-    initialized_ = false;
-
 #if defined(HAVE_MSC)
     destroy_hidden_window();
 #endif
+
+    uninitialize_stop();
 }
 
 // Stop signal.
@@ -112,6 +109,9 @@ BOOL WINAPI executor::control_handler(DWORD signal)
 
 void executor::initialize_stop()
 {
+    BC_ASSERT(!initialized_);
+    initialized_ = true;
+
     poll_for_stopping();
 
 #if defined(HAVE_MSC)
@@ -144,6 +144,19 @@ void executor::initialize_stop()
     sigaction(SIGPWR,  &action, nullptr);
     #endif
 #endif
+}
+
+void executor::uninitialize_stop()
+{
+    BC_ASSERT(initialized_);
+    initialized_ = false;
+
+    stop();
+    if (stop_poller_ && stop_poller_->joinable())
+    {
+        stop_poller_->join();
+        stop_poller_.reset();
+    }
 }
 
 // Handle the stop signal and invoke stop method (requries signal safe code).
@@ -179,12 +192,10 @@ bool executor::canceled()
 // Spinning must be used in signal handler, cannot wait on a promise.
 void executor::poll_for_stopping()
 {
-    using namespace std::this_thread;
-
-    stop_poller_ = std::thread([]()
+    stop_poller_ = std::make_unique<std::thread>([]()
     {
         while (!canceled())
-            sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         stopping_.set_value(true);
     });
@@ -194,8 +205,6 @@ void executor::poll_for_stopping()
 void executor::wait_for_stopping()
 {
     stopping_.get_future().wait();
-    if (stop_poller_.joinable())
-        stop_poller_.join();
 }
 
 // Suspend verbose logging and log the stop signal.
