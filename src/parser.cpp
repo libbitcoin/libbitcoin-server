@@ -1028,6 +1028,16 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "bitcoind.username",
+        value<std::string>(&configured.server.bitcoind.username),
+        "The http basic authorization username (not secure)."
+    )
+    (
+        "bitcoind.password",
+        value<std::string>(&configured.server.bitcoind.password),
+        "The http basic authorization password (not secure)."
+    )
+    (
         "bitcoind.connections",
         value<uint16_t>(&configured.server.bitcoind.connections),
         "The required maximum number of connections, defaults to '0'."

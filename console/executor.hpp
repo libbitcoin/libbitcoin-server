@@ -53,6 +53,7 @@ private:
 
     // Executor (static).
     static void initialize_stop();
+    static void uninitialize_stop();
     static void poll_for_stopping();
     static void wait_for_stopping();
     static void handle_stop(int code);
@@ -171,10 +172,10 @@ private:
     static const std::unordered_map<uint8_t, std::string> fired_;
 
     // Shutdown.
-    static std::thread stop_poller_;
     static std::atomic<int> signal_;
     static std::atomic<bool> initialized_;
     static std::promise<bool> stopping_;
+    static std::unique_ptr<std::thread> stop_poller_;
     std::promise<bool> log_suspended_{};
 
     parser& metadata_;
