@@ -138,6 +138,7 @@
     <ClCompile Include="..\..\..\..\console\executor_options.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_runner.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_scans.cpp" />
+    <ClCompile Include="..\..\..\..\console\executor_signals.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_store.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_test_reader.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp" />

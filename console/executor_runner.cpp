@@ -39,7 +39,7 @@ void executor::stopper(const std::string& message)
     log_.stop(message,levels::application);
 
     // Suspend process termination until final message is buffered.
-    log_suspended_.get_future().wait();
+    stopped_.get_future().wait();
 }
 
 void executor::subscribe_connect()

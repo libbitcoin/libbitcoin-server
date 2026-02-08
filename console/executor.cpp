@@ -21,9 +21,8 @@
 
 #include <atomic>
 #include <chrono>
-#include <csignal>
 #include <future>
-#include <thread>
+#include <optional>
 
 namespace libbitcoin {
 namespace server {
@@ -32,12 +31,24 @@ using boost::format;
 using namespace system;
 using namespace std::placeholders;
 
-// static initializers.
-std::promise<bool> executor::stopping_{};
-std::atomic<bool> executor::initialized_{};
-std::atomic<int> executor::signal_{ unsignalled };
-std::unique_ptr<std::thread> executor::stop_poller_{};
+// Construction.
+// ----------------------------------------------------------------------------
 
+// static initializers.
+std::promise<bool> executor::stopped_{};
+std::promise<bool> executor::stopping_{};
+std::atomic<int> executor::signal_{ unsignalled };
+std::optional<std::thread> executor::poller_thread_{};
+
+// class factory (singleton)
+executor& executor::factory(parser& metadata, std::istream& input,
+    std::ostream& output, std::ostream& error)
+{
+    static executor instance(metadata, input, output, error);
+    return instance;
+}
+
+// private constructor (singleton)
 executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     std::ostream&)
   : metadata_(metadata),
@@ -60,18 +71,11 @@ executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     }
 {
     initialize_stop();
-
-#if defined(HAVE_MSC)
-    create_hidden_window();
-#endif
 }
 
+// 
 executor::~executor()
 {
-#if defined(HAVE_MSC)
-    destroy_hidden_window();
-#endif
-
     uninitialize_stop();
 }
 
@@ -79,84 +83,23 @@ executor::~executor()
 // ----------------------------------------------------------------------------
 // static
 
-#if defined(HAVE_MSC)
-BOOL WINAPI executor::control_handler(DWORD signal)
-{
-    switch (signal)
-    {
-        // Keyboard events. These prevent exit altogether when TRUE returned.
-        // handle_stop(signal) therefore shuts down gracefully/completely.
-        case CTRL_C_EVENT:
-        case CTRL_BREAK_EVENT:
-
-        // A signal that the system sends to all processes attached to a
-        // console when the user closes the console (by clicking Close on the
-        // console window's window menu). Returning TRUE here does not
-        // materially delay exit, so aside from capture this is a noop.
-        case CTRL_CLOSE_EVENT:
-            executor::handle_stop(possible_narrow_sign_cast<int>(signal));
-            return TRUE;
-
-        ////// Only services receive this (*any* user is logging off).
-        ////case CTRL_LOGOFF_EVENT:
-        ////// Only services receive this (all users already logged off).
-        ////case CTRL_SHUTDOWN_EVENT:
-        default:
-            return FALSE;
-    }
-}
-#endif
-
 void executor::initialize_stop()
 {
-    BC_ASSERT(!initialized_);
-    initialized_ = true;
-
     poll_for_stopping();
-
-#if defined(HAVE_MSC)
-    ::SetConsoleCtrlHandler(&executor::control_handler, TRUE);
-#else
-    // struct keywork avoids name conflict with posix function sigaction.
-    struct sigaction action{};
-
-    // Restart interrupted system calls.
-    action.sa_flags = SA_RESTART;
-
-    // sa_handler is actually a macro :o
-    action.sa_handler = handle_stop;
-
-    // Set masking.
-    sigemptyset(&action.sa_mask);
-
-    // Block during handling to prevent reentrancy.
-    sigaddset(&action.sa_mask, SIGINT);
-    sigaddset(&action.sa_mask, SIGTERM);
-    sigaddset(&action.sa_mask, SIGHUP);
-    sigaddset(&action.sa_mask, SIGUSR2);
-
-    sigaction(SIGINT,  &action, nullptr);
-    sigaction(SIGTERM, &action, nullptr);
-    sigaction(SIGHUP,  &action, nullptr);
-    sigaction(SIGUSR2, &action, nullptr);
-
-    #if defined(HAVE_LINUX)
-    sigaction(SIGPWR,  &action, nullptr);
-    #endif
-#endif
+    create_hidden_window();
+    set_signal_handlers();
 }
 
 void executor::uninitialize_stop()
 {
-    BC_ASSERT(initialized_);
-    initialized_ = false;
-
     stop();
-    if (stop_poller_ && stop_poller_->joinable())
+    if (poller_thread_.has_value() && poller_thread_.value().joinable())
     {
-        stop_poller_->join();
-        stop_poller_.reset();
+        poller_thread_.value().join();
+        poller_thread_.reset();
     }
+
+    destroy_hidden_window();
 }
 
 // Handle the stop signal and invoke stop method (requries signal safe code).
@@ -192,35 +135,19 @@ bool executor::canceled()
 // Spinning must be used in signal handler, cannot wait on a promise.
 void executor::poll_for_stopping()
 {
-    stop_poller_ = std::make_unique<std::thread>([]()
+    poller_thread_.emplace(std::thread([]()
     {
         while (!canceled())
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         stopping_.set_value(true);
-    });
+    }));
 }
 
 // Blocks until stopping is signalled by poller.
 void executor::wait_for_stopping()
 {
     stopping_.get_future().wait();
-}
-
-// Suspend verbose logging and log the stop signal.
-void executor::log_stopping()
-{
-    const auto signal = signal_.load();
-    if (signal == signal_none)
-        return;
-
-    // A high level of consolve logging can obscure and delay stop.
-    toggle_.at(network::levels::protocol) = false;
-    toggle_.at(network::levels::verbose) = false;
-    toggle_.at(network::levels::proxy) = false;
-
-    logger(format(BS_NODE_INTERRUPTED) % signal);
-    logger(BS_NETWORK_STOPPING);
 }
 
 // Event handlers.

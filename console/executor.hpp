@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <future>
+#include <optional>
 #include <thread>
 #include <unordered_map>
 
@@ -34,47 +35,26 @@ namespace server {
 // This class is just an ad-hoc user interface wrapper on the node.
 class executor
 {
-public:
-    DELETE_COPY(executor);
-
-    // Construct.
+private:
+    // Singleton, private constructor.
     executor(parser& metadata, std::istream&, std::ostream& output,
         std::ostream& error);
 
-    // Clean up.
-    ~executor();
+public:
+    DELETE_COPY_MOVE(executor);
+
+    // Get the singleton instance.
+    static executor& factory(parser& metadata, std::istream& input,
+        std::ostream& output, std::ostream& error);
 
     // Called from main.
     bool dispatch();
 
+    // Release shutdown monitor.
+    ~executor();
+
 private:
-    static constexpr int unsignalled{ -1 };
-    static constexpr int signal_none{ -2 };
-
-    // Executor (static).
-    static void initialize_stop();
-    static void uninitialize_stop();
-    static void poll_for_stopping();
-    static void wait_for_stopping();
-    static void handle_stop(int code);
-    static void stop(int signal=signal_none);
-    static bool canceled();
-
-#if defined(HAVE_MSC)
-    static BOOL WINAPI control_handler(DWORD signal);
-    static LRESULT CALLBACK window_proc(HWND handle, UINT message,
-        WPARAM wparam, LPARAM lparam);
-
-    void create_hidden_window();
-    void destroy_hidden_window();
-
-    HWND window_{};
-    std::thread thread_{};
-    std::promise<bool> ready_{};
-#endif
-
     // Executor.
-    void log_stopping();
     void handle_started(const system::code& ec);
     void handle_subscribed(const system::code& ec, size_t key);
     void handle_running(const system::code& ec);
@@ -148,6 +128,7 @@ private:
     void subscribe_events(std::ostream& sink);
     void logger(const boost::format& message) const;
     void logger(const std::string& message) const;
+    void log_stopping();
 
     // Runner.
     void stopper(const std::string& message);
@@ -171,13 +152,6 @@ private:
     // Runtime events.
     static const std::unordered_map<uint8_t, std::string> fired_;
 
-    // Shutdown.
-    static std::atomic<int> signal_;
-    static std::atomic<bool> initialized_;
-    static std::promise<bool> stopping_;
-    static std::unique_ptr<std::thread> stop_poller_;
-    std::promise<bool> log_suspended_{};
-
     parser& metadata_;
     server_node::ptr node_{};
     server_node::store store_;
@@ -189,6 +163,37 @@ private:
     network::logger log_{};
     network::capture capture_{ input_, close_ };
     std_array<std::atomic_bool, add1(network::levels::verbose)> toggle_;
+
+    // Shutdown.
+    // ------------------------------------------------------------------------
+
+    static constexpr int unsignalled{ -1 };
+    static constexpr int signal_none{ -2 };
+
+    static std::atomic<int> signal_;
+    static std::promise<bool> stopped_;
+    static std::promise<bool> stopping_;
+    static std::optional<std::thread> poller_thread_;
+
+    static void initialize_stop();
+    static void uninitialize_stop();
+    static void poll_for_stopping();
+    static void wait_for_stopping();
+    static void set_signal_handlers();
+    static void create_hidden_window();
+    static void destroy_hidden_window();
+    static void stop(int signal=signal_none);
+    static void handle_stop(int code);
+    static bool canceled();
+
+#if defined(HAVE_MSC)
+    static HWND window_handle_;
+    static std::promise<bool> window_ready_;
+    static std::optional<std::thread> window_thread_;
+    static BOOL WINAPI control_handler(DWORD signal);
+    static LRESULT CALLBACK window_proc(HWND handle, UINT message,
+        WPARAM wparam, LPARAM lparam);
+#endif
 };
 
 } // namespace server

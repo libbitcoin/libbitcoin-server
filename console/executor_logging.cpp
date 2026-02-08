@@ -91,7 +91,7 @@ void executor::subscribe_log(std::ostream& sink)
                 // only after all logging work is completed. After the above
                 // message is queued, no more are accepted, and the executor
                 // may initiate its own (and thereby this log's) destruction.
-                log_suspended_.set_value(true);
+                stopped_.set_value(true);
                 return false;
             }
             else
@@ -103,6 +103,22 @@ void executor::subscribe_log(std::ostream& sink)
             }
         }
     );
+}
+
+// Suspend verbose logging and log the stop signal.
+void executor::log_stopping()
+{
+    const auto signal = signal_.load();
+    if (signal == signal_none)
+        return;
+
+    // A high level of consolve logging can obscure and delay stop.
+    toggle_.at(network::levels::protocol) = false;
+    toggle_.at(network::levels::verbose) = false;
+    toggle_.at(network::levels::proxy) = false;
+
+    logger(boost::format(BS_NODE_INTERRUPTED) % signal);
+    logger(BS_NETWORK_STOPPING);
 }
 
 void executor::logger(const std::string& message) const
