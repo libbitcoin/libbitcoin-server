@@ -21,8 +21,8 @@
 
 /// Localizable messages.
 
-namespace libbitcoin {
-namespace server {
+#define BS_WINDOW_TITLE L"Libbitcoin Server"
+#define BS_WINDOW_TEXT L"Flushing tables..."
 
 #define BS_OPERATION_INTERRUPT \
     "Press CTRL-C to cancel operation."
@@ -272,8 +272,5 @@ namespace server {
     "====================== shutdown ======================"
 #define BS_NODE_TERMINATE \
     "Press <enter> to exit..."
-
-} // namespace server
-} // namespace libbitcoin
 
 #endif

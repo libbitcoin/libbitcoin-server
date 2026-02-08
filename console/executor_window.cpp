@@ -18,19 +18,15 @@
  */
 #include "executor.hpp"
 
+#include <future>
+#include <optional>
+#include <thread>
+#include "localize.hpp"
+
 namespace libbitcoin {
 namespace server {
 
 #if defined(HAVE_MSC)
-
-// TODO: use RegisterServiceCtrlHandlerEx for service registration.
-
-using namespace system;
-constexpr auto window_name = L"HiddenShutdownWindow";
-constexpr auto window_text = L"Flushing tables...";
-constexpr auto window_title = L"Libbitcoin Server";
-
-// static
 LRESULT CALLBACK executor::window_proc(HWND handle, UINT message,
     WPARAM wparam, LPARAM lparam)
 {
@@ -40,8 +36,9 @@ LRESULT CALLBACK executor::window_proc(HWND handle, UINT message,
         // provide reason text that the operating system may show to the user.
         case WM_QUERYENDSESSION:
         {
-            ::ShutdownBlockReasonCreate(handle, window_text);
-            executor::handle_stop(possible_narrow_sign_cast<int>(message));
+            ::ShutdownBlockReasonCreate(handle, BS_WINDOW_TEXT);
+            const auto value = system::possible_narrow_sign_cast<int>(message);
+            executor::handle_stop(value);
             return FALSE;
         }
         default:
@@ -50,17 +47,29 @@ LRESULT CALLBACK executor::window_proc(HWND handle, UINT message,
         }
     }
 }
+#endif
 
+// static initializers.
+#if defined(HAVE_MSC)
+HWND executor::window_handle_{};
+std::promise<bool> executor::window_ready_{};
+std::optional<std::thread> executor::window_thread_{};
+#endif
+
+// static
 void executor::create_hidden_window()
 {
-    thread_ = std::thread([this]()
+#if defined(HAVE_MSC)
+    static constexpr auto window_name = L"HiddenShutdownWindow";
+
+    window_thread_.emplace(std::thread([]()
     {
         const auto instance = ::GetModuleHandleW(NULL);
         const WNDCLASSEXW window_class
         {
             .cbSize = sizeof(WNDCLASSEXW),
             .style = CS_HREDRAW | CS_VREDRAW,
-            .lpfnWndProc = &executor::window_proc,
+            .lpfnWndProc = &window_proc,
             .hInstance = instance,
             .hIcon = ::LoadIconW(instance, MAKEINTRESOURCEW(101)),
             .lpszClassName = window_name,
@@ -74,11 +83,11 @@ void executor::create_hidden_window()
         // Zero sizing results in title bar only.
         // WS_EX_NOACTIVATE: prevents focus-stealing.
         // WS_VISIBLE: required to capture WM_QUERYENDSESSION.
-        window_ = ::CreateWindowExW
+        window_handle_ = ::CreateWindowExW
         (
             WS_EX_NOACTIVATE,
             window_name,
-            window_title,
+            BS_WINDOW_TITLE,
             WS_VISIBLE,
             0, 0, 0, 0,
             NULL,
@@ -87,47 +96,51 @@ void executor::create_hidden_window()
             NULL);
 
         // fault
-        if (is_null(window_))
+        if (is_null(window_handle_))
             return;
 
         MSG message{};
         BOOL result{};
-        ready_.set_value(true);
+        window_ready_.set_value(true);
         while (!is_zero(result = ::GetMessageW(&message, NULL, 0, 0)))
         {
             // fault
-            if (is_negative(result))
+            if (system::is_negative(result))
                 return;
 
             ::TranslateMessage(&message);
             ::DispatchMessageW(&message);
         }
-    });
+    }));
+#endif
 }
 
 void executor::destroy_hidden_window()
 {
+#if defined(HAVE_MSC)
     // Wait until window is accepting messages, so WM_QUIT isn't missed.
-    ready_.get_future().wait();
+    window_ready_.get_future().wait();
 
-    if (!is_null(window_))
-        ::PostMessageW(window_, WM_QUIT, 0, 0);
+    if (!is_null(window_handle_))
+        ::PostMessageW(window_handle_, WM_QUIT, 0, 0);
 
-    if (thread_.joinable())
-        thread_.join();
-
-    if (!is_null(window_))
+    if (window_thread_.has_value() && window_thread_.value().joinable())
     {
-        ::DestroyWindow(window_);
-        window_ = NULL;
+        window_thread_.value().join();
+        window_thread_.reset();
+    }
+
+    if (!is_null(window_handle_))
+    {
+        ::DestroyWindow(window_handle_);
+        window_handle_ = NULL;
     }
 
     const auto handle = ::GetConsoleWindow();
     if (!is_null(handle))
         ::ShutdownBlockReasonDestroy(handle);
+#endif
 }
-
-#endif // HAVE_MSC
 
 } // namespace server
 } // namespace libbitcoin

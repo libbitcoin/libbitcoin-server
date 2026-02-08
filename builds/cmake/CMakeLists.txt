@@ -331,6 +331,7 @@ if (with-console)
         "../../console/executor_options.cpp"
         "../../console/executor_runner.cpp"
         "../../console/executor_scans.cpp"
+        "../../console/executor_signals.cpp"
         "../../console/executor_store.cpp"
         "../../console/executor_test_reader.cpp"
         "../../console/executor_test_writer.cpp"

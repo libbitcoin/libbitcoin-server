@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\..\..\console\executor_scans.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_signals.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_store.cpp">
       <Filter>src</Filter>
     </ClCompile>
