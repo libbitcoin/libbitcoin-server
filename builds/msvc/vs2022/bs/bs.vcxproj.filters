@@ -54,6 +54,9 @@
     <ClCompile Include="..\..\..\..\console\executor_commands.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_daemon.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_dumps.cpp">
       <Filter>src</Filter>
     </ClCompile>

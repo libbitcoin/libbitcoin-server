@@ -132,6 +132,7 @@
       <ObjectFileName>$(IntDir)console_executor.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_commands.cpp" />
+    <ClCompile Include="..\..\..\..\console\executor_daemon.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_dumps.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_events.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_logging.cpp" />
