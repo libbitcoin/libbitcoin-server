@@ -128,6 +128,8 @@ media_type get_media(const rpc::request_t& model) NOEXCEPT
                 case media_type::application_json:
                 case media_type::application_octet_stream:
                     return value;
+                default:
+                    return media_type::unknown;
             }
         }
     }

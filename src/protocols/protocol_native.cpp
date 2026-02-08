@@ -139,7 +139,7 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
 // Serialization.
 // ----------------------------------------------------------------------------
 
-constexpr auto html = to_value(http::media_type::text_html);
+////constexpr auto html = to_value(http::media_type::text_html);
 constexpr auto text = to_value(http::media_type::text_plain);
 constexpr auto json = to_value(http::media_type::application_json);
 constexpr auto data = to_value(http::media_type::application_octet_stream);
