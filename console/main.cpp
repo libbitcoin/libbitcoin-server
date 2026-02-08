@@ -78,10 +78,8 @@ BC_USE_LIBBITCOIN_MAIN
 /// All console input and output streams for the application originate here.
 int bc::system::main(int argc, char* argv[])
 {
-    using namespace bc;
     using namespace bc::system;
     using namespace bc::network;
-    using namespace bc::node;
     using namespace bc::server;
 
     // en.cppreference.com/w/cpp/io/ios_base/sync_with_stdio
