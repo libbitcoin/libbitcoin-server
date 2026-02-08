@@ -120,9 +120,9 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     header->to_data(writer);
     BC_ASSERT(writer);
 
-    // TODO: subscribe to block confirmation (idempotent).
-    // TODO: upon notification send just the notifying header.
-    // TODO: it is client responsiblity to deal with reorgs and race gaps.
+    // TODO: idempotent subscribe to chase::organized via session/chaser/node.
+    // TODO: upon notification send just the header notified by the link.
+    // TODO: it is client responsibility to deal with reorgs and race gaps.
     send_result(value_t
         {
             object_t
@@ -142,7 +142,7 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
 
     // TODO: estimate fees from blocks based on expected block inclusion.
     // TODO: this can be computed from recent blocks and cached by the server.
-    // TODO: update the cache before boradcasting header notifications.
+    // TODO: update the cache before broadcasting header notifications.
     send_result(number, 70, BIND(complete, _1));
 }
 
