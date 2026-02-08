@@ -40,7 +40,7 @@ struct electrum_methods
         method<"blockchain.scripthash.get_balance", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_history", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_mempool", string_t>{ "scripthash" },
-        method<"blockchain.scripthash.listunspent", string_t>{ "scripthash" },
+        method<"blockchain.scripthash.list_unspent", string_t>{ "scripthash" },
         method<"blockchain.scripthash.subscribe", string_t>{ "scripthash" },
         method<"blockchain.scripthash.unsubscribe", string_t>{ "scripthash" },
         method<"blockchain.transaction.broadcast", string_t>{ "raw_tx" },
@@ -76,7 +76,7 @@ struct electrum_methods
     using blockchain_scripthash_get_balance = at<5>;
     using blockchain_scripthash_get_history = at<6>;
     using blockchain_scripthash_get_mempool = at<7>;
-    using blockchain_scripthash_listunspent = at<8>;
+    using blockchain_scripthash_list_unspent = at<8>;
     using blockchain_scripthash_subscribe = at<9>;
     using blockchain_scripthash_unsubscribe = at<10>;
     using blockchain_transaction_broadcast = at<11>;

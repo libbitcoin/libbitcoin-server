@@ -56,7 +56,7 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_balance, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_history, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_mempool, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_blockchain_scripthash_listunspent, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_scripthash_list_unspent, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_subscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_unsubscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast, _1, _2, _3);
@@ -180,8 +180,8 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     send_code(error::not_implemented);
 }
 
-void protocol_electrum::handle_blockchain_scripthash_listunspent(const code& ec,
-    rpc_interface::blockchain_scripthash_listunspent,
+void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec,
+    rpc_interface::blockchain_scripthash_list_unspent,
     const std::string& ) NOEXCEPT
 {
     if (stopped(ec)) return;

@@ -126,7 +126,7 @@ struct bitcoind_rpc_methods
         ////method<"listreceivedbyaddress", optional<1>, optional<false>, optional<false>, optional<""_t>>{ "minconf", "include_empty", "include_watchonly", "address_filter" },
         ////method<"listreceivedbylabel", optional<1>, optional<false>, optional<false>>{ "minconf", "include_empty", "include_watchonly" },
         ////method<"listtransactions", optional<""_t>, optional<10>, optional<0>, optional<false>>{ "label", "count", "skip", "include_watchonly" },
-        ////method<"listunspent", optional<1>, optional<empty::array>, optional<true>, optional<false>>{ "minconf", "addresses", "include_unsafe", "query_options" },
+        ////method<"list_unspent", optional<1>, optional<empty::array>, optional<true>, optional<false>>{ "minconf", "addresses", "include_unsafe", "query_options" },
         ////method<"loadwallet", string_t, optional<false>>{ "filename", "load_on_startup" },
         ////method<"lockunspent", boolean_t, optional<empty::array>>{ "unlock", "transactions" },
         ////method<"removeprunedfunds", string_t>{ "txid" },

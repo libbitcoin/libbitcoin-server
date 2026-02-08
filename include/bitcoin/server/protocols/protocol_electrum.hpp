@@ -73,8 +73,8 @@ protected:
     void handle_blockchain_scripthash_get_mempool(const code& ec,
         rpc_interface::blockchain_scripthash_get_mempool,
         const std::string& scripthash) NOEXCEPT;
-    void handle_blockchain_scripthash_listunspent(const code& ec,
-        rpc_interface::blockchain_scripthash_listunspent,
+    void handle_blockchain_scripthash_list_unspent(const code& ec,
+        rpc_interface::blockchain_scripthash_list_unspent,
         const std::string& scripthash) NOEXCEPT;
     void handle_blockchain_scripthash_subscribe(const code& ec,
         rpc_interface::blockchain_scripthash_subscribe,
