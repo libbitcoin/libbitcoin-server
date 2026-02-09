@@ -59,10 +59,11 @@ protected:
         double count, double cp_height) NOEXCEPT;
     void handle_blockchain_headers_subscribe(const code& ec,
         rpc_interface::blockchain_headers_subscribe) NOEXCEPT;
-    void handle_blockchain_estimatefee(const code& ec,
-        rpc_interface::blockchain_estimatefee, double) NOEXCEPT;
-    void handle_blockchain_relayfee(const code& ec,
-        rpc_interface::blockchain_relayfee) NOEXCEPT;
+    void handle_blockchain_estimate_fee(const code& ec,
+        rpc_interface::blockchain_estimate_fee, double number,
+        const std::string& mode) NOEXCEPT;
+    void handle_blockchain_relay_fee(const code& ec,
+        rpc_interface::blockchain_relay_fee) NOEXCEPT;
     void handle_blockchain_scripthash_get_balance(const code& ec,
         rpc_interface::blockchain_scripthash_get_balance,
         const std::string& scripthash) NOEXCEPT;
@@ -72,8 +73,8 @@ protected:
     void handle_blockchain_scripthash_get_mempool(const code& ec,
         rpc_interface::blockchain_scripthash_get_mempool,
         const std::string& scripthash) NOEXCEPT;
-    void handle_blockchain_scripthash_listunspent(const code& ec,
-        rpc_interface::blockchain_scripthash_listunspent,
+    void handle_blockchain_scripthash_list_unspent(const code& ec,
+        rpc_interface::blockchain_scripthash_list_unspent,
         const std::string& scripthash) NOEXCEPT;
     void handle_blockchain_scripthash_subscribe(const code& ec,
         rpc_interface::blockchain_scripthash_subscribe,

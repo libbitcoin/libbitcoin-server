@@ -87,6 +87,7 @@ console_bs_SOURCES = \
     console/executor.cpp \
     console/executor.hpp \
     console/executor_commands.cpp \
+    console/executor_daemon.cpp \
     console/executor_dumps.cpp \
     console/executor_events.cpp \
     console/executor_logging.cpp \

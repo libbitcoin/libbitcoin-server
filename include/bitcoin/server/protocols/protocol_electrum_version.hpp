@@ -48,7 +48,7 @@ public:
     }
 
     virtual void shake(network::result_handler&& handler) NOEXCEPT;
-    virtual void complete(const code& ec, const code& shake) NOEXCEPT;
+    virtual void finished(const code& ec, const code& shake) NOEXCEPT;
 
 protected:
     static constexpr electrum_version minimum = electrum_version::v1_4;

@@ -38,7 +38,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Start/complete (handshake).
+// Start/finished (handshake).
 // ----------------------------------------------------------------------------
 
 // Session resumes the channel following return from start().
@@ -59,7 +59,7 @@ void protocol_electrum_version::shake(result_handler&& handler) NOEXCEPT
     protocol_rpc<channel_electrum>::start();
 }
 
-void protocol_electrum_version::complete(const code& ec,
+void protocol_electrum_version::finished(const code& ec,
     const code& shake) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -92,7 +92,7 @@ void protocol_electrum_version::handle_server_version(const code& ec,
         (!set_client(client_name) || !set_version(protocol_version)))
     {
         const auto reason = error::invalid_argument;
-        send_code(reason, BIND(complete, _1, reason));
+        send_code(reason, BIND(finished, _1, reason));
     }
     else
     {
@@ -103,7 +103,7 @@ void protocol_electrum_version::handle_server_version(const code& ec,
                     { string_t{ server_name() } },
                     { string_t{ negotiated_version() } }
                 }
-            }, 70, BIND(complete, _1, error::success));
+            }, 70, BIND(finished, _1, error::success));
     }
 
     // Handshake must leave channel paused, before leaving stranded handler.
@@ -225,6 +225,7 @@ std::string_view protocol_electrum_version::version_to_string(
 {
     static const std::unordered_map<electrum_version, std::string_view> map
     {
+        { electrum_version::v0_0,   "0.0" },
         { electrum_version::v0_6,   "0.6" },
         { electrum_version::v0_8,   "0.8" },
         { electrum_version::v0_9,   "0.9" },
@@ -236,8 +237,7 @@ std::string_view protocol_electrum_version::version_to_string(
         { electrum_version::v1_4,   "1.4" },
         { electrum_version::v1_4_1, "1.4.1" },
         { electrum_version::v1_4_2, "1.4.2" },
-        { electrum_version::v1_6,   "1.6" },
-        { electrum_version::v0_0,   "0.0" }
+        { electrum_version::v1_6,   "1.6" }
     };
 
     const auto it = map.find(version);
@@ -250,6 +250,7 @@ electrum_version protocol_electrum_version::version_from_string(
 {
     static const std::unordered_map<std::string_view, electrum_version> map
     {
+        { "0.0",   electrum_version::v0_0 },
         { "0.6",   electrum_version::v0_6 },
         { "0.8",   electrum_version::v0_8 },
         { "0.9",   electrum_version::v0_9 },
@@ -261,8 +262,7 @@ electrum_version protocol_electrum_version::version_from_string(
         { "1.4",   electrum_version::v1_4 },
         { "1.4.1", electrum_version::v1_4_1 },
         { "1.4.2", electrum_version::v1_4_2 },
-        { "1.6",   electrum_version::v1_6 },
-        { "0.0",   electrum_version::v0_0 }
+        { "1.6",   electrum_version::v1_6 }
     };
 
     const auto it = map.find(version);

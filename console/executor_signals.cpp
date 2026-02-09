@@ -62,7 +62,7 @@ void executor::set_signal_handlers()
 #if defined(HAVE_MSC)
     ::SetConsoleCtrlHandler(&executor::control_handler, TRUE);
 #else
-    // struct keywork avoids name conflict with posix function sigaction.
+    // struct keyword avoids name conflict with posix function sigaction.
     struct sigaction action{};
 
     // Restart interrupted system calls.

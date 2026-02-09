@@ -35,12 +35,12 @@ struct electrum_methods
         method<"blockchain.block.header", number_t, number_t>{ "height", "cp_height" },
         method<"blockchain.block.headers", number_t, number_t, number_t>{ "start_height", "count", "cp_height" },
         method<"blockchain.headers.subscribe">{},
-        method<"blockchain.estimatefee", number_t>{ "number" },
+        method<"blockchain.estimatefee", number_t, optional<""_t>>{ "number", "mode" },
         method<"blockchain.relayfee">{},
         method<"blockchain.scripthash.get_balance", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_history", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_mempool", string_t>{ "scripthash" },
-        method<"blockchain.scripthash.listunspent", string_t>{ "scripthash" },
+        method<"blockchain.scripthash.list_unspent", string_t>{ "scripthash" },
         method<"blockchain.scripthash.subscribe", string_t>{ "scripthash" },
         method<"blockchain.scripthash.unsubscribe", string_t>{ "scripthash" },
         method<"blockchain.transaction.broadcast", string_t>{ "raw_tx" },
@@ -71,12 +71,12 @@ struct electrum_methods
     using blockchain_block_header = at<0>;
     using blockchain_block_headers = at<1>;
     using blockchain_headers_subscribe = at<2>;
-    using blockchain_estimatefee = at<3>;
-    using blockchain_relayfee = at<4>;
+    using blockchain_estimate_fee = at<3>;
+    using blockchain_relay_fee = at<4>;
     using blockchain_scripthash_get_balance = at<5>;
     using blockchain_scripthash_get_history = at<6>;
     using blockchain_scripthash_get_mempool = at<7>;
-    using blockchain_scripthash_listunspent = at<8>;
+    using blockchain_scripthash_list_unspent = at<8>;
     using blockchain_scripthash_subscribe = at<9>;
     using blockchain_scripthash_unsubscribe = at<10>;
     using blockchain_transaction_broadcast = at<11>;

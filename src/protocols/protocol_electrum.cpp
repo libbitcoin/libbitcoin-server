@@ -29,6 +29,7 @@ namespace server {
 
 #define CLASS protocol_electrum
 
+using namespace system;
 using namespace interface;
 using namespace std::placeholders;
 
@@ -50,12 +51,12 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_block_header, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_block_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_RPC(handle_blockchain_headers_subscribe, _1, _2);
-    SUBSCRIBE_RPC(handle_blockchain_estimatefee, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_blockchain_relayfee, _1, _2);
+    SUBSCRIBE_RPC(handle_blockchain_estimate_fee, _1, _2, _3, _4);
+    SUBSCRIBE_RPC(handle_blockchain_relay_fee, _1, _2);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_balance, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_history, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_mempool, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_blockchain_scripthash_listunspent, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_scripthash_list_unspent, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_subscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_unsubscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast, _1, _2, _3);
@@ -99,22 +100,60 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
 void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     rpc_interface::blockchain_headers_subscribe) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    const auto& query = archive();
+    const auto link = query.to_header(query.get_top_confirmed_hash());
+    const auto height = query.get_height(link);
+    const auto header = query.get_header(link);
+    if (height.is_terminal() || !header)
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    // See protocol_native::to_hex().
+    std::string hex(two * chain::header::serialized_size(), '\0');
+    stream::out::fast sink{ hex };
+    write::base16::fast writer{ sink };
+    header->to_data(writer);
+    BC_ASSERT(writer);
+
+    // TODO: idempotent subscribe to chase::organized via session/chaser/node.
+    // TODO: upon notification send just the header notified by the link.
+    // TODO: it is client responsibility to deal with reorgs and race gaps.
+    send_result(value_t
+        {
+            object_t
+            {
+                { "height", height.value },
+                { "hex", hex }
+            }
+        }, 256, BIND(complete, _1));
 }
 
-void protocol_electrum::handle_blockchain_estimatefee(const code& ec,
-    rpc_interface::blockchain_estimatefee, double ) NOEXCEPT
+void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
+    rpc_interface::blockchain_estimate_fee, double number,
+    const std::string& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    // TODO: estimate fees from blocks based on expected block inclusion.
+    // TODO: this can be computed from recent blocks and cached by the server.
+    // TODO: update the cache before broadcasting header notifications.
+    send_result(number, 70, BIND(complete, _1));
 }
 
-void protocol_electrum::handle_blockchain_relayfee(const code& ec,
-    rpc_interface::blockchain_relayfee) NOEXCEPT
+void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
+    rpc_interface::blockchain_relay_fee) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    // TODO: implement from [node] config, removed in protocol 1.6.
+    send_result(0.00000001, 70, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
@@ -141,8 +180,8 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     send_code(error::not_implemented);
 }
 
-void protocol_electrum::handle_blockchain_scripthash_listunspent(const code& ec,
-    rpc_interface::blockchain_scripthash_listunspent,
+void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec,
+    rpc_interface::blockchain_scripthash_list_unspent,
     const std::string& ) NOEXCEPT
 {
     if (stopped(ec)) return;
@@ -210,8 +249,10 @@ void protocol_electrum::handle_server_add_peer(const code& ec,
 void protocol_electrum::handle_server_banner(const code& ec,
     rpc_interface::server_banner) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    send_result(network_settings().user_agent, 70, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_server_donation_address(const code& ec,
@@ -248,8 +289,19 @@ void protocol_electrum::handle_server_ping(const code& ec,
 void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     rpc_interface::mempool_get_fee_histogram) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    // TODO: requires tx pool metadata graph.
+    send_result(value_t
+        {
+            array_t
+            {
+                array_t{ 1, 1024 },
+                array_t{ 2, 2048 },
+                array_t{ 4, 4096 }
+            }
+        }, 256, BIND(complete, _1));
 }
 
 BC_POP_WARNING()
