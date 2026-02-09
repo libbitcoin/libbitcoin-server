@@ -23,7 +23,7 @@ namespace server {
 
 // Simple test html for embedded page, links in css and page icon.
 DEFINE_EMBEDDED_PAGE(native_pages, char, html,
-    R"DELIM(<!doctype html>
+R"DELIM(<!doctype html>
 <html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
