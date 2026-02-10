@@ -223,7 +223,7 @@ Options (named):
 -w [--write]         Run built-in write test and display.
 ```
 
-Did you check if all supported [CPU Extensions](#cpu-extensions) are built in (`./bn --hardware`)?
+Did you check if all supported [CPU Extensions](#cpu-extensions) are built in (`./bs --hardware`)?
 
 ### Startup Process
 
