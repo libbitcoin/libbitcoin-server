@@ -32,7 +32,6 @@ class BCS_API channel
 public:
     typedef std::shared_ptr<channel> ptr;
     using base = node::channel;
-        
     using base::channel;
 };
 
