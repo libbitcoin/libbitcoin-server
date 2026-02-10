@@ -22,6 +22,7 @@
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 #include <bitcoin/server/version.hpp>
+#include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
@@ -55,6 +56,7 @@
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
+#include <bitcoin/server/sessions/session.hpp>
 #include <bitcoin/server/sessions/session_handshake.hpp>
 #include <bitcoin/server/sessions/session_server.hpp>
 #include <bitcoin/server/sessions/sessions.hpp>

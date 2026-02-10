@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNELS_HPP
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNELS_HPP
 
+#include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
@@ -27,3 +28,32 @@
 
 #endif
 
+/*
+
+Network provides the base for all channels as rpc, http, peer. Websocket and
+html are not fully independent subclasses (operate within http).
+
+network::channel
+├── [server::channel_stratum_v2]
+├── channel_rpc<Interface>
+│   └── [server::channel_stratum_v1]
+│   └── [server::channel_electrum]
+├── channel_http
+│   ├── [server::channel_http]
+│   └── channel_ws
+│       └── [server::channel_ws]
+└── channel_peer
+    └── [node::channel_peer]
+
+node::channel
+├── [server::channel]
+└── channel_peer       → network::channel_peer
+
+server::channel → node::channel
+├── channel_stratum_v2 → network::channel
+├── channel_stratum_v1 → network::channel_rpc<interface::stratum_v1>
+├── channel_electrum   → network::channel_rpc<interface::electrum>
+├── channel_http       → network::channel_http
+└── channel_ws         → network::channel_ws
+
+*/

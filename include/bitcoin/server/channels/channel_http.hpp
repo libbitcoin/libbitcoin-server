@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_HTTP_HPP
 
 #include <memory>
+#include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 
@@ -27,7 +28,7 @@ namespace libbitcoin {
 namespace server {
 
 class BCS_API channel_http
-  : public node::channel,
+  : public server::channel,
     public network::channel_http,
     protected network::tracker<channel_http>
 {
@@ -37,7 +38,7 @@ public:
     inline channel_http(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
-      : node::channel(log, socket, identifier, config),
+      : server::channel(log, socket, identifier, config),
         network::channel_http(log, socket, identifier, config.network, options),
         network::tracker<channel_http>(log)
     {

@@ -46,7 +46,7 @@ void executor::subscribe_connect()
 {
     node_->subscribe_connect
     (
-        [&](const code&, const channel::ptr&)
+        [&](const code&, const network::channel::ptr&)
         {
             log_.write(levels::verbose) <<
                 "{in:" << node_->inbound_channel_count() << "}"

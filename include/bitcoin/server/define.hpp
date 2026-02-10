@@ -37,6 +37,9 @@
     #define BCS_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
+/// Prevent bogus vc++ warnings on protocol.
+BC_DISABLE_WARNING(DIAMOND_INHERITANCE)
+
 /// Augment limited xcode placeholder defines (10 vs. common 20).
 /// ---------------------------------------------------------------------------
 #if defined (HAVE_XCODE)

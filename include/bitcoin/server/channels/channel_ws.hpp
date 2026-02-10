@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_WS_HPP
 
 #include <memory>
+#include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 
@@ -27,7 +28,7 @@ namespace libbitcoin {
 namespace server {
 
 class BCS_API channel_ws
-  : public node::channel,
+  : public server::channel,
     public network::channel_ws,
     protected network::tracker<channel_ws>
 {
@@ -72,7 +73,7 @@ public:
     inline channel_ws(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
-      : node::channel(log, socket, identifier, config),
+      : server::channel(log, socket, identifier, config),
         network::channel_ws(log, socket, identifier, config.network, options),
         network::tracker<channel_ws>(log)
     {

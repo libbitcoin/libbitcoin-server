@@ -135,6 +135,7 @@ include_bitcoin_server_HEADERS = \
 
 include_bitcoin_server_channelsdir = ${includedir}/bitcoin/server/channels
 include_bitcoin_server_channels_HEADERS = \
+    include/bitcoin/server/channels/channel.hpp \
     include/bitcoin/server/channels/channel_electrum.hpp \
     include/bitcoin/server/channels/channel_http.hpp \
     include/bitcoin/server/channels/channel_stratum_v1.hpp \
@@ -184,6 +185,7 @@ include_bitcoin_server_protocols_HEADERS = \
 
 include_bitcoin_server_sessionsdir = ${includedir}/bitcoin/server/sessions
 include_bitcoin_server_sessions_HEADERS = \
+    include/bitcoin/server/sessions/session.hpp \
     include/bitcoin/server/sessions/session_handshake.hpp \
     include/bitcoin/server/sessions/session_server.hpp \
     include/bitcoin/server/sessions/sessions.hpp

@@ -23,6 +23,7 @@
 #include <utility>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/sessions/session.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -40,7 +41,7 @@ class server_node;
 /// other protocols.
 template <typename ...Protocols>
 class session_server
-  : public node::session,
+  : public server::session,
     public network::session_server,
     protected network::tracker<session_server<Protocols...>>
 {
@@ -59,23 +60,11 @@ public:
     /// Construct an instance (network should be started).
     inline session_server(server_node& node, uint64_t identifier,
         const configuration& config, const options_t& options) NOEXCEPT
-      : node::session((node::full_node&)node),
+      : server::session(node, config),
         network::session_server((network::net&)node, identifier, options),
-        config_(config), options_(options),
+        options_(options),
         network::tracker<session_server<Protocols...>>(node)
     {
-    }
-
-    /// Configuration settings for all server libraries.
-    inline const configuration& server_config() const NOEXCEPT
-    {
-        return config_;
-    }
-
-    /// Server config settings.
-    inline const settings& server_settings() const NOEXCEPT
-    {
-        return server_config().server;
     }
 
 protected:
@@ -124,8 +113,7 @@ protected:
     }
 
 protected:
-    // These are thread safe.
-    const configuration& config_;
+    // This is thread safe.
     const options_t& options_;
 };
 

@@ -141,6 +141,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_handshake.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\sessions.hpp" />

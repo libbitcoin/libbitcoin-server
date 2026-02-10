@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V1_HPP
 
 #include <memory>
+#include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -29,7 +30,7 @@ namespace server {
 
 /// Channel for stratum v1 channels (non-http json-rpc).
 class BCS_API channel_stratum_v1
-  : public node::channel,
+  : public server::channel,
     public network::channel_rpc<interface::stratum_v1>,
     protected network::tracker<channel_stratum_v1>
 {
@@ -41,7 +42,7 @@ public:
     inline channel_stratum_v1(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
-      : node::channel(log, socket, identifier, config),
+      : server::channel(log, socket, identifier, config),
         network::channel_rpc<interface::stratum_v1>(log, socket, identifier,
             config.network, options),
         network::tracker<channel_stratum_v1>(log)

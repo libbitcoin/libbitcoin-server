@@ -16,34 +16,49 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V2_HPP
-#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V2_HPP
+#ifndef LIBBITCOIN_SERVER_SESSIONS_SESSION_HPP
+#define LIBBITCOIN_SERVER_SESSIONS_SESSION_HPP
 
 #include <memory>
-#include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Channel for stratum v2 (custom protocol, not implemented).
-class BCS_API channel_stratum_v2
-  : public server::channel,
-    public network::channel,
-    protected network::tracker<channel_stratum_v2>
+class server_node;
+
+/// Intermediate base class for future server injection.
+class session
+  : public node::session,
+    protected network::tracker<session>
 {
 public:
-    typedef std::shared_ptr<channel_stratum_v2> ptr;
+    typedef std::shared_ptr<session> ptr;
 
-    inline channel_stratum_v2(const network::logger& log,
-        const network::socket::ptr& socket, uint64_t identifier,
-        const node::configuration& config, const options_t& options) NOEXCEPT
-      : server::channel(log, socket, identifier, config),
-        network::channel(log, socket, identifier, config.network, options),
-        network::tracker<channel_stratum_v2>(log)
+    /// Construct an instance (network should be started).
+    inline session(server_node& node, const configuration& config) NOEXCEPT
+      : node::session((node::full_node&)node), config_(config),
+        network::tracker<session>((network::net&)node)
     {
     }
+
+    /// Configuration settings for all server libraries.
+    inline const configuration& server_config() const NOEXCEPT
+    {
+        return config_;
+    }
+
+    /// Server config settings.
+    inline const settings& server_settings() const NOEXCEPT
+    {
+        return server_config().server;
+    }
+
+private:
+    // This is thread safe.
+    const configuration& config_;
 };
 
 } // namespace server
