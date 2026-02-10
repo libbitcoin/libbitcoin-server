@@ -33,3 +33,67 @@
 #include <bitcoin/server/protocols/protocol_admin.hpp>
 
 #endif
+
+/*
+
+Network provides the base for all protocols as rpc, http, peer. However node
+and server do not inherit directly from network. Server extends node, but
+neither inherit from network until a subclass is defined (rpc, http, peer).
+Since stratum_v2 is just a stub it doesn't yet have its own subclass. Websocket
+and html are not independent subclasses (operate within http).
+
+network::protocol
+├── [server:protocol_stratum_v2]
+├── protocol_rpc<Channel>
+│   └── [server::protocol_rpc<server::channel_stratum_v1>]
+│   └── [server::protocol_rpc<server::channel_electrum>]
+├── protocol_http
+│   ├── [server::protocol_bitcoind_rpc]
+│   └── protocol_ws
+│       └── [server::protocol_html]
+└── protocol_peer
+    ├── [node::protocol_peer]
+    ├── protocol_alert_311
+    ├── protocol_reject_70002
+    ├── protocol_seed_209
+    ├── protocol_address_in_209
+    ├── protocol_address_out_209
+    ├── protocol_ping_106
+    │   └── protocol_ping_60001
+    └── protocol_version_106
+        └── protocol_version_70001
+            └── protocol_version_70002
+                └── protocol_version_70016
+
+node::protocol
+├── [server::protocol]
+└── protocol_peer → network::protocol_peer
+    ├── protocol_observer
+    ├── protocol_filter_out_70015
+    ├── protocol_block_in_106
+    ├── protocol_performer
+    │   └── protocol_block_in_31800
+    ├── protocol_block_out_106
+    │   └── protocol_block_out_70012
+    ├── protocol_header_in_31800
+    │   └── protocol_header_in_70012
+    ├── protocol_header_out_31800
+    │   └── protocol_header_out_70012
+    ├── protocol_transaction_in_106
+    └── protocol_transaction_out_106
+
+server::protocol → node::protocol
+├── protocol_stratum_v2              → network::protocol
+├── protocol_rpc<channel_stratum_v1> → network::protocol_rpc<channel_stratum_v1>
+│   └── protocol_stratum_v1
+├── protocol_rpc<channel_electrum>   → network::protocol_rpc<channel_electrum>
+│   ├── protocol_electrum
+│   └── protocol_electrum_version
+└── protocol_http
+    ├── protocol_html                → network::protocol_ws
+    │   ├── protocol_admin
+    │   └── protocol_native
+    └── protocol_bitcoind_rpc        → network::protocol_http
+        └── protocol_bitcoind_rest
+
+*/

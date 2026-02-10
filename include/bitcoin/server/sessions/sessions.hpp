@@ -41,3 +41,43 @@ using session_electrum = session_handshake<protocol_electrum_version,
 } // namespace libbitcoin
 
 #endif
+
+/*
+
+Network provides the base for all channels as client-server (server) and
+peer-to-peer (peer). ══ represents template instantiation (vs. derivation).
+
+network::session
+├── session_server
+│   └── [server::session_server<...Protocols>]
+└── session_peer
+    ├── session_seed
+    ├── session_inbound
+    │   └── [node::session_peer<network::session_inbound>]
+    ├── session_outbound
+    │   └── [node::session_peer<network::session_outbound>]
+    └── session_manual
+        └── [node::session_peer<network::session_manual>]
+
+node::session
+├── [server::session]
+└── session_peer<NetworkSession> → NetworkSession
+    ╞══ session_peer<network::session_inbound>
+    │   └── session_inbound
+    ╞══ session_peer<network::session_outbound>
+    │   └── session_outbound
+    ╘══ session_peer<network::session_manual>
+        └── session_manual
+
+server::session → node::session
+└── server::session_server<...Protocols> → network::session_server
+    ╞══ session_admin      = server::session_server<protocol_admin>         
+    ╞══ session_native     = server::session_server<protocol_native>
+    ╞══ session_bitcoind   = server::session_server<protocol_bitcoind_rest>
+    ╞══ session_stratum_v1 = server::session_server<protocol_stratum_v1>
+    ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
+    └── server::session_handshake<...Protocols>
+        ╘══ session_electrum = server::session_handshake<
+                protocol_electrum_version, protocol_electrum>
+
+*/
