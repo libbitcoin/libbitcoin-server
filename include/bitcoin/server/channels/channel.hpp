@@ -16,34 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V2_HPP
-#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V2_HPP
+#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_HPP
+#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_HPP
 
 #include <memory>
-#include <bitcoin/server/channels/channel.hpp>
-#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Channel for stratum v2 (custom protocol, not implemented).
-class BCS_API channel_stratum_v2
-  : public server::channel,
-    public network::channel,
-    protected network::tracker<channel_stratum_v2>
+/// Intermediate base class for future server injection.
+class BCS_API channel
+  : public node::channel
 {
 public:
-    typedef std::shared_ptr<channel_stratum_v2> ptr;
-
-    inline channel_stratum_v2(const network::logger& log,
-        const network::socket::ptr& socket, uint64_t identifier,
-        const node::configuration& config, const options_t& options) NOEXCEPT
-      : server::channel(log, socket, identifier, config),
-        network::channel(log, socket, identifier, config.network, options),
-        network::tracker<channel_stratum_v2>(log)
-    {
-    }
+    typedef std::shared_ptr<channel> ptr;
+    using base = node::channel;
+        
+    using base::channel;
 };
 
 } // namespace server

@@ -135,6 +135,7 @@ include_bitcoin_server_HEADERS = \
 
 include_bitcoin_server_channelsdir = ${includedir}/bitcoin/server/channels
 include_bitcoin_server_channels_HEADERS = \
+    include/bitcoin/server/channels/channel.hpp \
     include/bitcoin/server/channels/channel_electrum.hpp \
     include/bitcoin/server/channels/channel_http.hpp \
     include/bitcoin/server/channels/channel_stratum_v1.hpp \

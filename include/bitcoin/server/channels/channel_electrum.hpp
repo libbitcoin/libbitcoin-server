@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_ELECTRUM_HPP
 
 #include <memory>
+#include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -31,7 +32,7 @@ namespace server {
 // TODO: strip extraneous args before electrum version dispatch.
 /// Channel for electrum channels (non-http json-rpc).
 class BCS_API channel_electrum
-  : public node::channel,
+  : public server::channel,
     public network::channel_rpc<interface::electrum>,
     protected network::tracker<channel_electrum>
 {
@@ -43,7 +44,7 @@ public:
     inline channel_electrum(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
-      : node::channel(log, socket, identifier, config),
+      : server::channel(log, socket, identifier, config),
         network::channel_rpc<interface::electrum>(log, socket, identifier,
             config.network, options),
         network::tracker<channel_electrum>(log)
