@@ -185,6 +185,7 @@ include_bitcoin_server_protocols_HEADERS = \
 
 include_bitcoin_server_sessionsdir = ${includedir}/bitcoin/server/sessions
 include_bitcoin_server_sessions_HEADERS = \
+    include/bitcoin/server/sessions/session.hpp \
     include/bitcoin/server/sessions/session_handshake.hpp \
     include/bitcoin/server/sessions/session_server.hpp \
     include/bitcoin/server/sessions/sessions.hpp

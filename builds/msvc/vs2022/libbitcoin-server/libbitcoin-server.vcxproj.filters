@@ -224,6 +224,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session.hpp">
+      <Filter>include\bitcoin\server\sessions</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_handshake.hpp">
       <Filter>include\bitcoin\server\sessions</Filter>
     </ClInclude>

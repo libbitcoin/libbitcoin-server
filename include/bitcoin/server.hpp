@@ -56,6 +56,7 @@
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
+#include <bitcoin/server/sessions/session.hpp>
 #include <bitcoin/server/sessions/session_handshake.hpp>
 #include <bitcoin/server/sessions/session_server.hpp>
 #include <bitcoin/server/sessions/sessions.hpp>

@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_SESSIONS_SESSIONS_HPP
 #define LIBBITCOIN_SERVER_SESSIONS_SESSIONS_HPP
 
+#include <bitcoin/server/sessions/session.hpp>
 #include <bitcoin/server/sessions/session_handshake.hpp>
 #include <bitcoin/server/sessions/session_server.hpp>
 
