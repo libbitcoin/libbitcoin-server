@@ -48,8 +48,13 @@ public:
     }
 
     void start() NOEXCEPT override;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// Handlers (event subscription).
+    bool handle_event(const code&, node::chase event_,
+        node::event_value) NOEXCEPT;
+
     /// Handlers (blockchain).
     void handle_blockchain_block_header(const code& ec,
         rpc_interface::blockchain_block_header, double height,
