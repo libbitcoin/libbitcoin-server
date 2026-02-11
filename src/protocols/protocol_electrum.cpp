@@ -47,6 +47,9 @@ void protocol_electrum::start() NOEXCEPT
     if (started())
         return;
 
+    // Events subscription is asynchronous, events may be missed.
+    subscribe_events(BIND(handle_event, _1, _2, _3));
+
     // Blockchain methods.
     SUBSCRIBE_RPC(handle_blockchain_block_header, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_block_headers, _1, _2, _3, _4, _5);
@@ -76,6 +79,39 @@ void protocol_electrum::start() NOEXCEPT
     // Mempool methods.
     SUBSCRIBE_RPC(handle_mempool_get_fee_histogram, _1, _2);
     protocol_rpc<channel_electrum>::start();
+}
+
+void protocol_electrum::stopping(const code& ec) NOEXCEPT
+{
+    // Unsubscriber race is ok.
+    BC_ASSERT(stranded());
+    unsubscribe_events();
+    protocol_rpc<channel_electrum>::stopping(ec);
+}
+
+// Handlers (event subscription).
+// ----------------------------------------------------------------------------
+
+bool protocol_electrum::handle_event(const code&, node::chase event_,
+    node::event_value) NOEXCEPT
+{
+    // Do not pass ec to stopped as it is not a call status.
+    if (stopped())
+        return false;
+
+    switch (event_)
+    {
+        case node::chase::suspend:
+        {
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+
+    return true;
 }
 
 // Handlers (blockchain).
@@ -119,6 +155,8 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     write::base16::fast writer{ sink };
     header->to_data(writer);
     BC_ASSERT(writer);
+
+    // TODO: signal header subscription.
 
     // TODO: idempotent subscribe to chase::organized via session/chaser/node.
     // TODO: upon notification send just the header notified by the link.
@@ -269,6 +307,7 @@ void protocol_electrum::handle_server_features(const code& ec,
     send_code(error::not_implemented);
 }
 
+// This is not actually a subscription method.
 void protocol_electrum::handle_server_peers_subscribe(const code& ec,
     rpc_interface::server_peers_subscribe) NOEXCEPT
 {
