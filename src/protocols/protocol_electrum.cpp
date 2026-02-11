@@ -119,11 +119,10 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 
 // electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
 void protocol_electrum::handle_blockchain_block_header(const code& ec,
-    rpc_interface::blockchain_block_header, double ,
-    double ) NOEXCEPT
+    rpc_interface::blockchain_block_header, double height,
+    double cp_height) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    handle_blockchain_block_headers(ec, {}, height, 1, cp_height);
 }
 
 // electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
