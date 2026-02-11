@@ -117,6 +117,7 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 // Handlers (blockchain).
 // ----------------------------------------------------------------------------
 
+// electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
 void protocol_electrum::handle_blockchain_block_header(const code& ec,
     rpc_interface::blockchain_block_header, double ,
     double ) NOEXCEPT
@@ -125,6 +126,7 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
     send_code(error::not_implemented);
 }
 
+// electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
 void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     rpc_interface::blockchain_block_headers, double ,
     double , double ) NOEXCEPT
