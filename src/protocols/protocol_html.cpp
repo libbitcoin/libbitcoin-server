@@ -101,7 +101,7 @@ bool protocol_html::try_dispatch_object(const request&) NOEXCEPT
 // The content-type field is determined by the requested file extension.
 void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
 {
-    const auto& pages = server_settings().native.pages;
+    const auto& pages = options_.pages;
     switch (const auto media = file_media_type(to_path(request.target()),
         media_type::text_html))
     {
