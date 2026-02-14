@@ -114,6 +114,31 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     return true;
 }
 
+// Utility.
+// ----------------------------------------------------------------------------
+
+// TODO: move to system/math.
+template <typename Integer, if_integer<Integer> = true>
+bool to_integer(Integer& out, double value) NOEXCEPT
+{
+    if (!std::isfinite(value))
+        return false;
+
+    double integral{};
+    const double fractional = std::modf(value, &integral);
+    if (fractional != 0.0)
+        return false;
+
+    if (integral > static_cast<double>(system::maximum<Integer>) ||
+        integral < static_cast<double>(system::minimum<Integer>))
+        return false;
+
+    BC_PUSH_WARNING(NO_STATIC_CAST)
+    out = static_cast<Integer>(integral);
+    BC_POP_WARNING()
+    return true;
+}
+
 // Handlers (blockchain).
 // ----------------------------------------------------------------------------
 
@@ -127,10 +152,23 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
 
 // electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
 void protocol_electrum::handle_blockchain_block_headers(const code& ec,
-    rpc_interface::blockchain_block_headers, double ,
-    double , double ) NOEXCEPT
+    rpc_interface::blockchain_block_headers, double start_height, double count,
+    double cp_height) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    size_t quantity{};
+    size_t waypoint{};
+    size_t starting{};
+    if (!to_integer(quantity, count) ||
+        !to_integer(waypoint, cp_height) ||
+        !to_integer(starting, start_height))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
