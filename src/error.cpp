@@ -49,8 +49,8 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
 
     // server (rpc response codes)
     { not_found, "not_found" },
-    { invalid_argument, "invalid_argument" },
-    { not_implemented, "not_implemented" }
+    { not_implemented, "not_implemented" },
+    { invalid_argument, "invalid_argument" }
 };
 
 DEFINE_ERROR_T_CATEGORY(error, "server", "server code")
