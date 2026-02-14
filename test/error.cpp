@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_SUITE(error_tests)
 
 // general
 
-BOOST_AUTO_TEST_CASE(error_t__code__success__false_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__success__false_expected_message)
 {
     constexpr auto value = error::success;
     const auto ec = code(value);
@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__success__false_exected_message)
 
 // server (url parse codes)
 
-BOOST_AUTO_TEST_CASE(error_t__code__empty_path__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__empty_path__true_expected_message)
 {
     constexpr auto value = error::empty_path;
     const auto ec = code(value);
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__empty_path__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "empty_path");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__invalid_number__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__invalid_number__true_expected_message)
 {
     constexpr auto value = error::invalid_number;
     const auto ec = code(value);
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_number__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_number");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__invalid_hash__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__invalid_hash__true_expected_message)
 {
     constexpr auto value = error::invalid_hash;
     const auto ec = code(value);
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_hash__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_hash");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_version__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_version__true_expected_message)
 {
     constexpr auto value = error::missing_version;
     const auto ec = code(value);
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_version__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_version");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_target__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_target__true_expected_message)
 {
     constexpr auto value = error::missing_target;
     const auto ec = code(value);
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_target__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_target");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__invalid_target__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__invalid_target__true_expected_message)
 {
     constexpr auto value = error::invalid_target;
     const auto ec = code(value);
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_target__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_target");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_hash__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_hash__true_expected_message)
 {
     constexpr auto value = error::missing_hash;
     const auto ec = code(value);
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_hash__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_hash");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_height__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_height__true_expected_message)
 {
     constexpr auto value = error::missing_height;
     const auto ec = code(value);
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_height__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_height");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_position__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_position__true_expected_message)
 {
     constexpr auto value = error::missing_position;
     const auto ec = code(value);
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_position__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_position");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_id_type__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_id_type__true_expected_message)
 {
     constexpr auto value = error::missing_id_type;
     const auto ec = code(value);
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_id_type__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_id_type");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__invalid_id_type__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__invalid_id_type__true_expected_message)
 {
     constexpr auto value = error::invalid_id_type;
     const auto ec = code(value);
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_id_type__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_id_type");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_type_id__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_type_id__true_expected_message)
 {
     constexpr auto value = error::missing_type_id;
     const auto ec = code(value);
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_type_id__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_type_id");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__missing_component__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__missing_component__true_expected_message)
 {
     constexpr auto value = error::missing_component;
     const auto ec = code(value);
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__missing_component__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "missing_component");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__invalid_component__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__invalid_component__true_expected_message)
 {
     constexpr auto value = error::invalid_component;
     const auto ec = code(value);
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_component__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_component");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__invalid_subcomponent__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__invalid_subcomponent__true_expected_message)
 {
     constexpr auto value = error::invalid_subcomponent;
     const auto ec = code(value);
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_subcomponent__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_subcomponent");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__extra_segment__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__extra_segment__true_expected_message)
 {
     constexpr auto value = error::extra_segment;
     const auto ec = code(value);
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__extra_segment__true_exected_message)
 
 // server (rpc response codes)
 
-BOOST_AUTO_TEST_CASE(error_t__code__not_found__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__not_found__true_expected_message)
 {
     constexpr auto value = error::not_found;
     const auto ec = code(value);
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__not_found__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "not_found");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__invalid_argument__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__invalid_argument__true_expected_message)
 {
     constexpr auto value = error::invalid_argument;
     const auto ec = code(value);
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_argument__true_exected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_argument");
 }
 
-BOOST_AUTO_TEST_CASE(error_t__code__not_implemented__true_exected_message)
+BOOST_AUTO_TEST_CASE(error_t__code__not_implemented__true_expected_message)
 {
     constexpr auto value = error::not_implemented;
     const auto ec = code(value);
