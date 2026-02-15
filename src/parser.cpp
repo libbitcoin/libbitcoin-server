@@ -1129,6 +1129,11 @@ options_metadata parser::load_settings() THROWS
         value<uint32_t>(&configured.server.electrum.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
     )
+    (
+        "electrum.maximum_headers",
+        value<uint32_t>(&configured.server.electrum.maximum_headers),
+        "The maximum allowed header request cound, defaults to '20160'."
+    )
 
     /* [stratum_v1] */
     (
