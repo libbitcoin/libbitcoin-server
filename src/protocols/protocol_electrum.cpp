@@ -139,6 +139,18 @@ bool to_integer(Integer& out, double value) NOEXCEPT
     return true;
 }
 
+// TODO: centralize in server (also used in bitcoind and native interfaces).
+template <typename Object, typename ...Args>
+std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
+{
+    std::string out(two * size, '\0');
+    stream::out::fast sink{ out };
+    write::base16::fast writer{ sink };
+    object.to_data(writer, std::forward<Args>(args)...);
+    BC_ASSERT(writer);
+    return out;
+}
+
 // Handlers (blockchain).
 // ----------------------------------------------------------------------------
 
@@ -179,21 +191,22 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
 
     const auto& query = archive();
-    const auto link = query.to_header(query.get_top_confirmed_hash());
-    const auto height = query.get_height(link);
-    const auto header = query.get_header(link);
-    if (height.is_terminal() || !header)
+    const auto top = query.get_top_confirmed();
+    const auto link = query.to_confirmed(top);
+
+    // This is unlikely but possible due to a race condition during reorg.
+    if (!link.is_terminal())
     {
         send_code(error::not_found);
         return;
     }
 
-    // See protocol_native::to_hex().
-    std::string hex(two * chain::header::serialized_size(), '\0');
-    stream::out::fast sink{ hex };
-    write::base16::fast writer{ sink };
-    header->to_data(writer);
-    BC_ASSERT(writer);
+    const auto header = query.get_header(link);
+    if (!header)
+    {
+        send_code(error::server_error);
+        return;
+    }
 
     // TODO: signal header subscription.
 
@@ -204,8 +217,8 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         {
             object_t
             {
-                { "height", height.value },
-                { "hex", hex }
+                { "height", top },
+                { "hex", to_hex(*header, chain::header::serialized_size()) }
             }
         }, 256, BIND(complete, _1));
 }
