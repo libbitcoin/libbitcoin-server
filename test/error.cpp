@@ -209,4 +209,31 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_argument__true_expected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_argument");
 }
 
+BOOST_AUTO_TEST_CASE(error_t__code__argument_overflow__true_expected_message)
+{
+    constexpr auto value = error::argument_overflow;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "argument_overflow");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__code__target_overflow__true_expected_message)
+{
+    constexpr auto value = error::target_overflow;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "target_overflow");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__code__server_error__true_expected_message)
+{
+    constexpr auto value = error::server_error;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "server_error");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
