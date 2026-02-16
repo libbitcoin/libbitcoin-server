@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
 #include <algorithm>
+#include <ranges>
 #include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -114,6 +115,43 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     return true;
 }
 
+// Utility.
+// ----------------------------------------------------------------------------
+
+// TODO: move to system/math.
+template <typename Integer, if_integer<Integer> = true>
+bool to_integer(Integer& out, double value) NOEXCEPT
+{
+    if (!std::isfinite(value))
+        return false;
+
+    double integral{};
+    const double fractional = std::modf(value, &integral);
+    if (fractional != 0.0)
+        return false;
+
+    if (integral > static_cast<double>(system::maximum<Integer>) ||
+        integral < static_cast<double>(system::minimum<Integer>))
+        return false;
+
+    BC_PUSH_WARNING(NO_STATIC_CAST)
+    out = static_cast<Integer>(integral);
+    BC_POP_WARNING()
+    return true;
+}
+
+// TODO: centralize in server (also used in bitcoind and native interfaces).
+template <typename Object, typename ...Args>
+std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
+{
+    std::string out(two * size, '\0');
+    stream::out::fast sink{ out };
+    write::base16::fast writer{ sink };
+    object.to_data(writer, std::forward<Args>(args)...);
+    BC_ASSERT(writer);
+    return out;
+}
+
 // Handlers (blockchain).
 // ----------------------------------------------------------------------------
 
@@ -127,11 +165,104 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
 
 // electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
 void protocol_electrum::handle_blockchain_block_headers(const code& ec,
-    rpc_interface::blockchain_block_headers, double ,
-    double , double ) NOEXCEPT
+    rpc_interface::blockchain_block_headers, double start_height, double count,
+    double cp_height) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    using namespace system;
+    if (stopped(ec))
+        return;
+
+    size_t quantity{};
+    size_t waypoint{};
+    size_t starting{};
+    if (!to_integer(quantity, count) ||
+        !to_integer(waypoint, cp_height) ||
+        !to_integer(starting, start_height))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    if (is_add_overflow(starting, quantity))
+    {
+        send_code(error::argument_overflow);
+        return;
+    }
+
+    // The documented requirement: `start_height + (count - 1) <= cp_height` is
+    // ambiguous at count = 0 so guard must be applied to both args and prover.
+    const auto target = starting + sub1(quantity);
+    const auto prove = !is_zero(quantity) && !is_zero(waypoint);
+    if (prove && target > waypoint)
+    {
+        send_code(error::target_overflow);
+        return;
+    }
+
+    // Recommended to be at least one difficulty retarget period, e.g. 2016.
+    // The maximum number of headers the server will return in single request.
+    const auto maximum = server_settings().electrum.maximum_headers;
+
+    // Returned headers are assured to be contiguous despite intervening reorg.
+    // No headers may be returned, which implies start > confirmed top block.
+    const auto& query = archive();
+    const auto bound = limit(quantity, maximum);
+    const auto links = query.get_confirmed_headers(starting, bound);
+    constexpr auto header_size = chain::header::serialized_size();
+    auto size = two * header_size * links.size();
+
+    // Fetch and serialize headers.
+    array_t headers{};
+    headers.reserve(links.size());
+    for (const auto& link: links)
+    {
+        if (const auto header = query.get_header(link); header)
+        {
+            // TODO: optimize by query directly returning wire serialization.
+            headers.push_back(to_hex(*header, header_size));
+        }
+        else
+        {
+            send_code(error::server_error);
+            return;
+        }
+    };
+
+    value_t value
+    {
+        object_t
+        {
+            { "count", quantity },
+            { "headers", std::move(headers) },
+            { "max", maximum }
+        }
+    };
+
+    // There is a very slim change of inconsistency given an intervening reorg
+    // because of get_merkle_root_and_proof() use of height-based calculations.
+    // This is acceptable as it must be verified by caller in any case.
+    if (prove)
+    {
+        hashes proof{};
+        hash_digest root{};
+        if (const auto code = query.get_merkle_root_and_proof(root, proof,
+            target, waypoint))
+        {
+            send_code(code);
+            return;
+        }
+
+        array_t branch(proof.size());
+        std::ranges::transform(proof, branch.begin(),
+            [](const auto& hash) { return encode_base16(hash); });
+
+        auto& result = std::get<object_t>(value.value());
+        result["root"] = encode_base16(root);
+        result["branch"] = std::move(branch);
+        size += two * hash_size * add1(proof.size());
+    }
+
+    send_result(std::move(value), size + 42u, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
@@ -141,21 +272,22 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
 
     const auto& query = archive();
-    const auto link = query.to_header(query.get_top_confirmed_hash());
-    const auto height = query.get_height(link);
-    const auto header = query.get_header(link);
-    if (height.is_terminal() || !header)
+    const auto top = query.get_top_confirmed();
+    const auto link = query.to_confirmed(top);
+
+    // This is unlikely but possible due to a race condition during reorg.
+    if (!link.is_terminal())
     {
         send_code(error::not_found);
         return;
     }
 
-    // See protocol_native::to_hex().
-    std::string hex(two * chain::header::serialized_size(), '\0');
-    stream::out::fast sink{ hex };
-    write::base16::fast writer{ sink };
-    header->to_data(writer);
-    BC_ASSERT(writer);
+    const auto header = query.get_header(link);
+    if (!header)
+    {
+        send_code(error::server_error);
+        return;
+    }
 
     // TODO: signal header subscription.
 
@@ -166,8 +298,8 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         {
             object_t
             {
-                { "height", height.value },
-                { "hex", hex }
+                { "height", top },
+                { "hex", to_hex(*header, chain::header::serialized_size()) }
             }
         }, 256, BIND(complete, _1));
 }

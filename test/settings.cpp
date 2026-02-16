@@ -230,6 +230,9 @@ BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
     BOOST_REQUIRE(server.cert_path.empty());
     BOOST_REQUIRE(server.key_path.empty());
     BOOST_REQUIRE(server.key_pass.empty());
+
+    // electrum_server
+    BOOST_REQUIRE_EQUAL(server.maximum_headers, 10u * 2016u);
 }
 
 BOOST_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)

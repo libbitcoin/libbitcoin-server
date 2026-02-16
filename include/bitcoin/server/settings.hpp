@@ -84,6 +84,17 @@ public:
         virtual bool enabled() const NOEXCEPT;
     };
 
+    struct electrum_server
+      : public network::settings::tls_server
+    {
+        using base = network::settings::tls_server;
+        using base::base;
+
+        // Maximum number of headers the server will return in single request.
+        // Recommended to be multiple of difficulty retarget period, e.g. 2016.
+        uint32_t maximum_headers{ 10 * 2016 };
+    };
+
     /// html (http/s) document server settings (has directory/default).
     /// This is for web servers that expose a local file system directory.
     struct html_server
@@ -128,7 +139,7 @@ public:
     network::settings::http_server bitcoind{ "bitcoind" };
 
     /// electrum compat interface (tcp/s, json-rpc-v2)
-    network::settings::tls_server electrum{ "electrum" };
+    electrum_server electrum{ "electrum" };
 
     /// stratum v1 compat interface (tcp/s, json-rpc-v1, auth handshake)
     network::settings::tls_server stratum_v1{ "stratum_v1" };

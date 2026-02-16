@@ -59,8 +59,11 @@ enum error_t : uint8_t
 
     /// server (rpc response codes)
     not_found,
+    not_implemented,
     invalid_argument,
-    not_implemented
+    argument_overflow,
+    target_overflow,
+    server_error
 };
 
 // No current need for error_code equivalence mapping.
