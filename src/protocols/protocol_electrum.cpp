@@ -155,7 +155,6 @@ std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
 // Handlers (blockchain).
 // ----------------------------------------------------------------------------
 
-// electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
 void protocol_electrum::handle_blockchain_block_header(const code& ec,
     rpc_interface::blockchain_block_header, double height,
     double cp_height) NOEXCEPT
@@ -163,7 +162,6 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
     handle_blockchain_block_headers(ec, {}, height, 1, cp_height);
 }
 
-// electrum-protocol.readthedocs.io/en/latest/protocol-basics.html#block-headers
 void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     rpc_interface::blockchain_block_headers, double start_height, double count,
     double cp_height) NOEXCEPT
