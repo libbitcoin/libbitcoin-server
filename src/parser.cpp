@@ -1333,6 +1333,11 @@ options_metadata parser::load_settings() THROWS
         value<bool>(&configured.database.turbo),
         "Allow indiviudal non-validation queries to use all CPUs, defaults to false."
     )
+    (
+        "database.interval_depth",
+        value<uint8_t>(&configured.database.interval_depth),
+        "The interval depth for merkle proof optimization, defaults to '255' (disabled)."
+    )
 
     /* header */
     (
