@@ -32,7 +32,7 @@
 // --settings
 #define BS_SETTINGS_MESSAGE \
     "These are the configuration settings that can be set."
-#define BS_INFORMATION_MESSAGE \
+#define BS_DETAIL_MESSAGE \
     "Runs a full bitcoin node server."
 
 // --initchain
@@ -67,8 +67,12 @@
 #define BS_RESTORE_COMPLETE \
     "Restored the database in %1% secs."
 
-// --measure
-#define BS_MEASURE_SIZES \
+// --information
+#define BS_INFORMATION_START \
+    "Configuration...\n" \
+    "   dirty     :%1%\n" \
+    "   interval  :%2%"
+#define BS_INFORMATION_SIZES \
     "Body sizes...\n" \
     "   header    :%1%\n" \
     "   txs       :%2%\n" \
@@ -88,7 +92,7 @@
     "   filter_bk :%16%\n" \
     "   filter_tx :%17%\n" \
     "   address   :%18%"
-#define BS_MEASURE_RECORDS \
+#define BS_INFORMATION_RECORDS \
     "Table records...\n" \
     "   header    :%1%\n" \
     "   tx        :%2%\n" \
@@ -101,15 +105,15 @@
     "   strong_tx :%9%\n" \
     "   filter_bk :%10%\n" \
     "   address   :%11%"
-#define BS_MEASURE_SLABS \
+#define BS_INFORMATION_SLABS \
     "Table slabs..."
-#define BS_MEASURE_SLABS_ROW \
+#define BS_INFORMATION_SLABS_ROW \
     "   @tx       :%1%, inputs:%2%, outputs:%3%"
-#define BS_MEASURE_STOP \
+#define BS_INFORMATION_STOP \
     "   input     :%1%\n" \
     "   output    :%2%\n" \
     "   seconds   :%3%"
-#define BS_MEASURE_BUCKETS \
+#define BS_INFORMATION_BUCKETS \
     "Head buckets...\n" \
     "   header    :%1%\n" \
     "   txs       :%2%\n" \
@@ -123,7 +127,7 @@
     "   filter_bk :%10%\n" \
     "   filter_tx :%11%\n" \
     "   address   :%12%"
-#define BS_MEASURE_COLLISION_RATES \
+#define BS_INFORMATION_COLLISION_RATES \
     "Collision rates...\n" \
     "   header    :%1%\n" \
     "   tx        :%2%\n" \
@@ -131,9 +135,9 @@
     "   strong_tx :%4%\n" \
     "   valid_tx  :%5%\n" \
     "   address   :%6%"
-#define BS_MEASURE_PROGRESS_START \
+#define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
-#define BS_MEASURE_PROGRESS \
+#define BS_INFORMATION_PROGRESS \
     "Chain progress...\n" \
     "   fork pt   :%1%\n" \
     "   top conf  :%2%:%3%\n" \
@@ -171,9 +175,7 @@
 #define BS_NODE_INTERRUPT \
     "Press CTRL-C to stop the node."
 #define BS_DATABASE_STARTED \
-    "Database is started (clean)."
-#define BS_DATABASE_STARTED_DIRTY \
-    "Database is started (dirty)."
+    "Database is started."
 #define BS_NETWORK_STARTING \
     "Please wait while network is starting..."
 #define BS_NODE_START_FAIL \

@@ -230,7 +230,7 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     {
         object_t
         {
-            { "count", quantity },
+            { "count", uint64_t{ quantity } },
             { "headers", std::move(headers) },
             { "max", maximum }
         }
@@ -296,7 +296,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         {
             object_t
             {
-                { "height", top },
+                { "height", uint64_t{ top } },
                 { "hex", to_hex(*header, chain::header::serialized_size()) }
             }
         }, 256, BIND(complete, _1));

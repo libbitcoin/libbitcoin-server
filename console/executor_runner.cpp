@@ -140,7 +140,7 @@ bool executor::do_run()
     dump_body_sizes();
     dump_records();
     dump_buckets();
-    ////logger(BS_MEASURE_PROGRESS_START);
+    ////logger(BS_INFORMATION_PROGRESS_START);
     ////dump_progress();
 
     // Stopped by stopper.
@@ -173,7 +173,7 @@ bool executor::do_run()
     // Sizes and records change, buckets don't.
     dump_body_sizes();
     dump_records();
-    ////logger(BS_MEASURE_PROGRESS_START);
+    ////logger(BS_INFORMATION_PROGRESS_START);
     ////dump_progress();
 
     if (!close_store(true))

@@ -113,7 +113,7 @@ code executor::open_store_coded(bool details)
         return ec;
     }
 
-    logger(store_.is_dirty() ? BS_DATABASE_STARTED_DIRTY : BS_DATABASE_STARTED);
+    logger(BS_DATABASE_STARTED);
     return error::success;
 }
 
