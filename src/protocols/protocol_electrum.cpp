@@ -321,8 +321,8 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
     if (stopped(ec))
         return;
 
-    // TODO: implement from [node] config, removed in protocol 1.6.
-    send_result(0.00000001, 70, BIND(complete, _1));
+    // TODO: deprecated in 1.4.2, removed in 1.6.
+    send_result(node_settings().minimum_free_rate, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,

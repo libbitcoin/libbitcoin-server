@@ -1251,6 +1251,16 @@ options_metadata parser::load_settings() THROWS
     ////    "Obtain current header chain before obtaining associated blocks, defaults to 'true'."
     ////)
     (
+        "node.minimum_free_rate",
+        value<float>(&configured.node.minimum_free_rate),
+        "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.0'."
+    )
+    (
+        "node.minimum_bump_rate",
+        value<float>(&configured.node.minimum_bump_rate),
+        "Minimum fee rate increment for conflicting tx acceptance, defaults to '0.0'."
+    )
+    (
         "node.allowed_deviation",
         value<float>(&configured.node.allowed_deviation),
         "Allowable underperformance standard deviation, defaults to '1.5' (0 disables)."
