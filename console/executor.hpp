@@ -64,12 +64,12 @@ private:
     void dump_version() const;
     void dump_hardware() const;
     void dump_options() const;
+    void dump_configuration() const;
     void dump_body_sizes() const;
     void dump_records() const;
     void dump_buckets() const;
     void dump_progress() const;
     void dump_collisions() const;
-    void dump_sizes() const;
 
     // Store functions.
     bool check_store_path(bool create=false) const;

@@ -33,7 +33,7 @@ const std::string executor::name_{ "bs" };
 bool executor::do_help()
 {
     log_.stop();
-    printer help(metadata_.load_options(), name_, BS_INFORMATION_MESSAGE);
+    printer help(metadata_.load_options(), name_, BS_DETAIL_MESSAGE);
     help.initialize();
     help.commandline(output_);
     return true;
@@ -124,7 +124,14 @@ bool executor::do_information()
         !open_store())
         return false;
 
-    dump_sizes();
+    dump_body_sizes();
+    dump_records();
+    dump_buckets();
+    dump_collisions();
+
+    // This one can take a few seconds on cold iron.
+    logger(BS_INFORMATION_PROGRESS_START);
+    dump_progress();
     return close_store();
 }
 

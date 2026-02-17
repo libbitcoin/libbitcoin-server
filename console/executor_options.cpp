@@ -176,11 +176,11 @@ void executor::do_resume()
 // [i]nfo
 void executor::do_info() const
 {
+    dump_configuration();
     dump_body_sizes();
     dump_records();
     dump_buckets();
     dump_collisions();
-    ////dump_progress();
 }
 
 // [m]enu

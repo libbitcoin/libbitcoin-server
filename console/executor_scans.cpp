@@ -76,7 +76,7 @@ void executor::scan_flags() const
 // input and output table slab counts.
 void executor::scan_slabs() const
 {
-    logger(BS_MEASURE_SLABS);
+    logger(BS_INFORMATION_SLABS);
     logger(BS_OPERATION_INTERRUPT);
     database::tx_link::integer link{};
     size_t inputs{}, outputs{};
@@ -92,14 +92,14 @@ void executor::scan_slabs() const
         inputs += puts.first;
         outputs += puts.second;
         if (is_zero(link % frequency))
-            logger(format(BS_MEASURE_SLABS_ROW) % link % inputs % outputs);
+            logger(format(BS_INFORMATION_SLABS_ROW) % link % inputs % outputs);
     }
 
     if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_MEASURE_STOP) % inputs % outputs % span.count());
+    logger(format(BS_INFORMATION_STOP) % inputs % outputs % span.count());
 }
 
 // hashmap bucket fill rates.

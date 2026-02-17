@@ -75,9 +75,17 @@ void executor::dump_options() const
     logger(format("[v]erbose...... " BS_LOG_TABLE) % levels::verbose_defined % toggle_.at(levels::verbose));
 }
 
+// query_ not valid unless store is loaded.
+void executor::dump_configuration() const
+{
+    logger(format(BS_INFORMATION_START)
+        % store_.is_dirty()
+        % query_.interval_span());
+}
+
 void executor::dump_body_sizes() const
 {
-    logger(format(BS_MEASURE_SIZES) %
+    logger(format(BS_INFORMATION_SIZES) %
         query_.header_body_size() %
         query_.txs_body_size() %
         query_.tx_body_size() %
@@ -100,7 +108,7 @@ void executor::dump_body_sizes() const
 
 void executor::dump_records() const
 {
-    logger(format(BS_MEASURE_RECORDS) %
+    logger(format(BS_INFORMATION_RECORDS) %
         query_.header_records() %
         query_.tx_records() %
         query_.point_records() %
@@ -116,7 +124,7 @@ void executor::dump_records() const
 
 void executor::dump_buckets() const
 {
-    logger(format(BS_MEASURE_BUCKETS) %
+    logger(format(BS_INFORMATION_BUCKETS) %
         query_.header_buckets() %
         query_.txs_buckets() %
         query_.tx_buckets() %
@@ -133,7 +141,7 @@ void executor::dump_buckets() const
 
 void executor::dump_collisions() const
 {
-    logger(format(BS_MEASURE_COLLISION_RATES) %
+    logger(format(BS_INFORMATION_COLLISION_RATES) %
         (to_double(query_.header_records()) / query_.header_buckets()) %
         (to_double(query_.tx_records()) / query_.tx_buckets()) %
         (to_double(query_.point_records()) / query_.point_buckets()) %
@@ -147,7 +155,7 @@ void executor::dump_progress() const
 {
     using namespace system;
 
-    logger(format(BS_MEASURE_PROGRESS) %
+    logger(format(BS_INFORMATION_PROGRESS) %
         query_.get_fork() %
         query_.get_top_confirmed() %
         encode_hash(query_.get_top_confirmed_hash()) %
@@ -157,19 +165,6 @@ void executor::dump_progress() const
         (query_.get_top_candidate() - query_.get_unassociated_count()) %
         query_.get_confirmed_size() %
         query_.get_candidate_size());
-}
-
-// file and logical sizes.
-void executor::dump_sizes() const
-{
-    dump_body_sizes();
-    dump_records();
-    dump_buckets();
-    dump_collisions();
-
-    // This one can take a few seconds on cold iron.
-    logger(BS_MEASURE_PROGRESS_START);
-    dump_progress();
 }
 
 } // namespace server
