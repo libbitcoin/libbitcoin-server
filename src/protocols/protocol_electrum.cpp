@@ -118,28 +118,6 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 // Utility.
 // ----------------------------------------------------------------------------
 
-// TODO: move to system/math.
-template <typename Integer, if_integer<Integer> = true>
-bool to_integer(Integer& out, double value) NOEXCEPT
-{
-    if (!std::isfinite(value))
-        return false;
-
-    double integral{};
-    const double fractional = std::modf(value, &integral);
-    if (fractional != 0.0)
-        return false;
-
-    if (integral > static_cast<double>(system::maximum<Integer>) ||
-        integral < static_cast<double>(system::minimum<Integer>))
-        return false;
-
-    BC_PUSH_WARNING(NO_STATIC_CAST)
-    out = static_cast<Integer>(integral);
-    BC_POP_WARNING()
-    return true;
-}
-
 // TODO: centralize in server (also used in bitcoind and native interfaces).
 template <typename Object, typename ...Args>
 std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
@@ -309,9 +287,7 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
     if (stopped(ec))
         return;
 
-    // TODO: estimate fees from blocks based on expected block inclusion.
-    // TODO: this can be computed from recent blocks and cached by the server.
-    // TODO: update the cache before broadcasting header notifications.
+    // TODO: mode argument added in 1.6.
     send_result(number, 70, BIND(complete, _1));
 }
 
