@@ -8,12 +8,12 @@ This directory contains Python-based integration tests for all libbitcoin-server
 
 | Interface | Protocol | Test File | Status |
 |-----------|----------|-----------|--------|
-| **Native REST** | HTTP/S + JSON | `native.py` | 🔧 In Progress |
-| **bitcoind RPC** | HTTP/S + JSON-RPC 2.0 | `bitcoind_rpc.py` | 🔧 In Progress |
-| **Electrum** | TCP + JSON-RPC 2.0 | `electrum.py` | 🔧 In Progress |
-| **bitcoind REST** | HTTP/S + JSON/Binary | `bitcoind_rest.py` | 🚧 Planned |
-| **Stratum v1** | TCP + JSON-RPC 1.0 | `stratum_v1.py` | 🚧 Planned |
-| **Stratum v2** | TCP + Binary | `stratum_v2.py` | 🚧 Planned |
+| **Native REST** | HTTP/S + JSON | `test_native.py` | 🔧 In Progress |
+| **bitcoind RPC** | HTTP/S + JSON-RPC 2.0 | `test_bitcoind_rpc.py` | 🔧 In Progress |
+| **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | 🔧 In Progress |
+| **bitcoind REST** | HTTP/S + JSON/Binary | `test_bitcoind_rest.py` | 🚧 Planned |
+| **Stratum v1** | TCP + JSON-RPC 1.0 | `test_stratum_v1.py` | 🚧 Planned |
+| **Stratum v2** | TCP + Binary | `test_stratum_v2.py` | 🚧 Planned |
 
 ## Prerequisites
 
@@ -74,19 +74,19 @@ This uses default localhost endpoints:
 
 ```bash
 # Test only native REST
-pytest native.py
+pytest test_native.py
 
 # Test only bitcoind RPC
-pytest bitcoind_rpc.py
+pytest test_bitcoind_rpc.py
 
 # Test only Electrum protocol
-pytest electrum.py
+pytest test_electrum.py
 ```
 
 ### Run with Verbose Output
 
 ```bash
-pytest -v native.py
+pytest -v test_native.py
 pytest -v --tb=short  # Shorter tracebacks
 pytest -vv  # Very verbose
 ```
@@ -98,7 +98,7 @@ All tests accept command-line parameters to specify target hosts and ports.
 ### Native / REST Options
 
 ```bash
-pytest native.py \
+pytest test_native.py \
   --native-host=192.168.1.100 \
   --native-port=8181
 ```
@@ -110,7 +110,7 @@ pytest native.py \
 ### bitcoind RPC Options
 
 ```bash
-pytest bitcoind_rpc.py \
+pytest test_bitcoind_rpc.py \
   --bitcoind-rpc-host=localhost \
   --bitcoind-rpc-port=8332
 ```
@@ -118,7 +118,7 @@ pytest bitcoind_rpc.py \
 **With authentication (for Bitcoin Core):**
 
 ```bash
-pytest bitcoind_rpc.py \
+pytest test_bitcoind_rpc.py \
   --bitcoind-auth \
   --bitcoind-cookie=/path/to/.cookie
 ```
@@ -132,7 +132,7 @@ pytest bitcoind_rpc.py \
 ### Electrum Protocol Options
 
 ```bash
-pytest electrum.py \
+pytest test_electrum.py \
   --electrum-host=localhost \
   --electrum-port=50001
 ```
@@ -140,7 +140,7 @@ pytest electrum.py \
 **Test against public Electrum server:**
 
 ```bash
-pytest electrum.py \
+pytest test_electrum.py \
   --electrum-host=fulcrum.sethforprivacy.com \
   --electrum-port=50001
 ```
@@ -156,7 +156,7 @@ pytest electrum.py \
 pytest --timeout=60
 
 # Combine multiple options
-pytest native.py \
+pytest test_native.py \
   --native-host=192.168.1.100 \
   --native-port=8181 \
   --timeout=30
@@ -164,7 +164,7 @@ pytest native.py \
 
 ## Test Organization
 
-### native.py - Native REST
+### test_native.py - Native REST
 
 Tests the `/v1/` HTTP REST endpoints for blockchain exploration.
 
@@ -181,19 +181,19 @@ Tests the `/v1/` HTTP REST endpoints for blockchain exploration.
 
 ```bash
 # Run all native tests
-pytest native.py
+pytest test_native.py
 
 # Run only block-related tests
-pytest native.py -k "block"
+pytest test_native.py -k "block"
 
 # Run only transaction tests
-pytest native.py -k "tx"
+pytest test_native.py -k "tx"
 
 # Skip slow address tests
-pytest native.py -k "not address"
+pytest test_native.py -k "not address"
 ```
 
-### bitcoind_rpc.py - bitcoind RPC Compatibility
+### test_bitcoind_rpc.py - bitcoind RPC Compatibility
 
 Tests JSON-RPC 2.0 interface compatible with Bitcoin Core RPC.
 
@@ -214,19 +214,19 @@ Tests JSON-RPC 2.0 interface compatible with Bitcoin Core RPC.
 
 ```bash
 # Test against libbitcoin-server
-pytest bitcoind_rpc.py
+pytest test_bitcoind_rpc.py
 
 # Test against Bitcoin Core (with auth)
-pytest bitcoind_rpc.py \
+pytest test_bitcoind_rpc.py \
   --bitcoind-rpc-port=9333 \
   --bitcoind-auth \
   --bitcoind-cookie=/path/to/.cookie
 
 # Run only getblock* methods
-pytest bitcoind_rpc.py -k "getblock"
+pytest test_bitcoind_rpc.py -k "getblock"
 ```
 
-### electrum.py - Electrum Protocol
+### test_electrum.py - Electrum Protocol
 
 Tests Electrum Protocol 1.4.2 JSON-RPC over TCP.
 
@@ -241,15 +241,15 @@ Tests Electrum Protocol 1.4.2 JSON-RPC over TCP.
 
 ```bash
 # Test against local Electrum server
-pytest electrum.py
+pytest test_electrum.py
 
 # Test against public server
-pytest electrum.py \
+pytest test_electrum.py \
   --electrum-host=electrum.blockstream.info \
   --electrum-port=50001
 
 # Run only server methods
-pytest electrum.py -k "server"
+pytest test_electrum.py -k "server"
 ```
 
 ## Advanced Usage
@@ -258,26 +258,26 @@ pytest electrum.py -k "server"
 
 ```bash
 # Run a single test by name
-pytest native.py::test_configuration
+pytest test_native.py::test_configuration
 
 # Run multiple specific tests
-pytest native.py::test_block_by_hash test_native.py::test_block_by_height
+pytest test_native.py::test_block_by_hash test_native.py::test_block_by_height
 
 # Run tests matching pattern
-pytest native.py -k "block_filter"
+pytest test_native.py -k "block_filter"
 ```
 
 ### Pytest Markers
 
 ```bash
 # Skip marked tests
-pytest native.py -m "not skip"
+pytest test_native.py -m "not skip"
 
 # Run only slow tests
-pytest native.py -m "slow"
+pytest test_native.py -m "slow"
 
 # Run parametrized tests with specific parameter
-pytest native.py -k "filter_type-bloom"
+pytest test_native.py -k "filter_type-bloom"
 ```
 
 ### Output Formats
