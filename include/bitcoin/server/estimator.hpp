@@ -129,6 +129,7 @@ protected:
         return std::pow(decay_rate(), push ? +1.0 : -1.0);
     }
 
+    accumulator& history() NOEXCEPT;
     const accumulator& history() const NOEXCEPT;
     bool initialize(const rate_sets& blocks) NOEXCEPT;
     bool push(const rates& block) NOEXCEPT;

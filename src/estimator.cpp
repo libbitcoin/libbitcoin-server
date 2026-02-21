@@ -128,6 +128,11 @@ size_t estimator::top_height() const NOEXCEPT
 // protected
 // ----------------------------------------------------------------------------
 
+estimator::accumulator& estimator::history() NOEXCEPT
+{
+    return fees_;
+}
+
 const estimator::accumulator& estimator::history() const NOEXCEPT
 {
     return fees_;
