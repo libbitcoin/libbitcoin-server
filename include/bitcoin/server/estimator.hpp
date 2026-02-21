@@ -45,9 +45,9 @@ public:
     /// Pass zero to target next block for confirmation, range:0..1007.
     uint64_t estimate(size_t target, mode mode) const NOEXCEPT;
 
-    /// Populate accumulator.
+    /// Populate accumulator with count blocks up to the top confirmed block.
     bool initialize(std::atomic_bool& cancel, const node::query& query,
-        size_t top, size_t count) NOEXCEPT;
+        size_t count) NOEXCEPT;
 
     /// Update accumulator.
     bool push(const node::query& query) NOEXCEPT;
@@ -60,20 +60,12 @@ protected:
     using rates = database::fee_rates;
     using rate_sets = database::fee_rate_sets;
 
-    /// Bucket count sizing parameters.
+    /// Bucket depth sizing parameters.
     enum horizon : size_t
     {
         small  = 12,
         medium = 48,
         large  = 1008
-    };
-
-    /// Estimation confidences.
-    struct confidence
-    {
-        static constexpr double low  = 0.60;
-        static constexpr double mid  = 0.85;
-        static constexpr double high = 0.95;
     };
 
     /// Bucket count sizing parameters.
@@ -87,17 +79,25 @@ protected:
         static constexpr size_t count = 283;
     };
 
+    /// Estimation confidences.
+    struct confidence
+    {
+        static constexpr double low = 0.60;
+        static constexpr double mid = 0.85;
+        static constexpr double high = 0.95;
+    };
+
     /// Accumulator (persistent, decay-weighted counters).
     struct accumulator
     {
-        template <size_t Depth>
+        template <size_t Horizon>
         struct bucket
         {
             /// Total scaled txs in bucket.
             std::atomic<size_t> total{};
 
             /// confirmed[n]: scaled txs confirmed in > n blocks.
-            std::array<std::atomic<size_t>, Depth> confirmed;
+            std::array<std::atomic<size_t>, Horizon> confirmed;
         };
 
         /// Current block height of accumulated state.
