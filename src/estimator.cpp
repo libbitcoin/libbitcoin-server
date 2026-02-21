@@ -52,7 +52,7 @@ uint64_t estimator::estimate(size_t target, mode mode) const NOEXCEPT
             estimate = compute(target, confidence::high);
             break;
         }
-        case mode::markov:
+        case mode::geometric:
         {
             estimate = compute(target, confidence::high, true);
             break;
@@ -88,7 +88,7 @@ bool estimator::initialize(std::atomic_bool& cancel, const node::query& query,
     size_t top, size_t count) NOEXCEPT
 {
     rate_sets blocks{};
-    return query.get_block_fees(cancel, blocks, top, count) &&
+    return query.get_branch_fees(cancel, blocks, top, count) &&
         initialize(blocks);
 }
 
@@ -160,7 +160,7 @@ bool estimator::pop(const rates& block) NOEXCEPT
 }
 
 uint64_t estimator::compute(size_t target, double confidence,
-    bool markov) const NOEXCEPT
+    bool geometric) const NOEXCEPT
 {
     const auto threshold = [](double part, double total, size_t) NOEXCEPT
     {
@@ -168,17 +168,19 @@ uint64_t estimator::compute(size_t target, double confidence,
     };
 
     // Geometric distribution approximation, not a full Markov process.
-    const auto geometric = [](double part, double total, size_t target) NOEXCEPT
+    const auto markov = [](double part, double total, size_t target) NOEXCEPT
     {
         return system::power(part / total, target);
     };
 
     const auto call = [&](const auto& buckets) NOEXCEPT
     {
+        BC_PUSH_WARNING(NO_UNGUARDED_POINTERS)
+        const auto& contribution = geometric ? markov : threshold;
+        BC_POP_WARNING()
+
         constexpr auto magic_number = 2u;
         const auto at_least_four = magic_number * add1(target);
-        const auto& contribution = markov ? geometric : threshold;
-
         double total{}, part{};
         auto index = buckets.size();
         auto found = index;
@@ -186,7 +188,7 @@ uint64_t estimator::compute(size_t target, double confidence,
         {
             --index;
             total += to_floating(bucket.total.load(relaxed));
-            part += to_floating(bucket.confirmed[target].load(relaxed));
+            part += to_floating(bucket.confirmed.at(target).load(relaxed));
             if (total < at_least_four)
                 continue;
 
@@ -258,7 +260,7 @@ bool estimator::update(const rates& block, size_t height, bool push) NOEXCEPT
 
         // Clamp overflow to last bin.
         const auto bin = std::log(rate / sizing::min) / growth;
-        ++counts[std::min(to_floored_integer(bin), sub1(sizing::count))];
+        ++counts.at(std::min(to_floored_integer(bin), sub1(sizing::count)));
     }
 
     // At age zero scale term is one.
@@ -278,13 +280,13 @@ bool estimator::update(const rates& block, size_t height, bool push) NOEXCEPT
                 continue;
             }
 
-            auto& bucket = buckets[bin++];
+            auto& bucket = buckets.at(bin++);
             const auto scaled = to_floored_integer(count * scale);
             const auto signed_term = push ? scaled : twos_complement(scaled);
 
             bucket.total.fetch_add(signed_term, relaxed);
             for (auto target = age; target < depth; ++target)
-                bucket.confirmed[target].fetch_add(signed_term, relaxed);
+                bucket.confirmed.at(target).fetch_add(signed_term, relaxed);
         }
     };
 
