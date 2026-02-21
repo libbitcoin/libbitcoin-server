@@ -34,7 +34,7 @@ public:
     enum class mode
     {
         basic,
-        markov,
+        geometric,
         economical,
         conservative
     };
@@ -110,18 +110,20 @@ protected:
         std::array<bucket<horizon::large>,  sizing::count> large{};
     };
 
-    // C++23: make consteval (std::pow).
+    // C++23: make consteval.
     static inline double decay_rate() NOEXCEPT
     {
         static const auto rate = std::pow(0.5, 1.0 / sizing::count);
         return rate;
     }
 
+    // C++23: make constexpr.
     static inline double to_scale_term(size_t age) NOEXCEPT
     {
         return std::pow(decay_rate(), age);
     }
 
+    // C++23: make constexpr.
     static inline double to_scale_factor(bool push) NOEXCEPT
     {
         return std::pow(decay_rate(), push ? +1.0 : -1.0);
@@ -132,7 +134,7 @@ protected:
     bool push(const rates& block) NOEXCEPT;
     bool pop(const rates& block) NOEXCEPT;
     uint64_t compute(size_t target, double confidence,
-        bool markov=false) const NOEXCEPT;
+        bool geometric=false) const NOEXCEPT;
 
 private:
     bool update(const rates& block, size_t height, bool push) NOEXCEPT;
