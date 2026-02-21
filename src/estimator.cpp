@@ -85,10 +85,18 @@ uint64_t estimator::estimate(size_t target, mode mode) const NOEXCEPT
 }
 
 bool estimator::initialize(std::atomic_bool& cancel, const node::query& query,
-    size_t top, size_t count) NOEXCEPT
+    size_t count) NOEXCEPT
 {
+    if (is_zero(count))
+        return true;
+
+    const auto top = query.get_top_confirmed();
+    if (sub1(count) > top)
+        return false;
+
     rate_sets blocks{};
-    return query.get_branch_fees(cancel, blocks, top, count) &&
+    const auto start = top - sub1(count);
+    return query.get_branch_fees(cancel, blocks, start, count) &&
         initialize(blocks);
 }
 
@@ -269,7 +277,7 @@ bool estimator::update(const rates& block, size_t height, bool push) NOEXCEPT
     const auto call = [&](auto& buckets) NOEXCEPT
     {
         // The array count of the buckets element type.
-        const auto depth = buckets.front().confirmed.size();
+        const auto horizon = buckets.front().confirmed.size();
 
         size_t bin{};
         for (const auto count: counts)
@@ -285,7 +293,7 @@ bool estimator::update(const rates& block, size_t height, bool push) NOEXCEPT
             const auto signed_term = push ? scaled : twos_complement(scaled);
 
             bucket.total.fetch_add(signed_term, relaxed);
-            for (auto target = age; target < depth; ++target)
+            for (auto target = age; target < horizon; ++target)
                 bucket.confirmed.at(target).fetch_add(signed_term, relaxed);
         }
     };
