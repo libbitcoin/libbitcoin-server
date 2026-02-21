@@ -18,6 +18,7 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/error.hpp>
+#include <bitcoin/server/estimator.hpp>
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>

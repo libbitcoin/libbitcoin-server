@@ -37,6 +37,7 @@ src_libbitcoin_server_la_LIBADD = ${bitcoin_node_LIBS}
 src_libbitcoin_server_la_SOURCES = \
     src/configuration.cpp \
     src/error.cpp \
+    src/estimator.cpp \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
@@ -65,6 +66,7 @@ test_libbitcoin_server_test_LDADD = src/libbitcoin-server.la ${boost_unit_test_f
 test_libbitcoin_server_test_SOURCES = \
     test/configuration.cpp \
     test/error.cpp \
+    test/estimator.cpp \
     test/main.cpp \
     test/settings.cpp \
     test/test.cpp \
@@ -128,6 +130,7 @@ include_bitcoin_server_HEADERS = \
     include/bitcoin/server/configuration.hpp \
     include/bitcoin/server/define.hpp \
     include/bitcoin/server/error.hpp \
+    include/bitcoin/server/estimator.hpp \
     include/bitcoin/server/parser.hpp \
     include/bitcoin/server/server_node.hpp \
     include/bitcoin/server/settings.hpp \
