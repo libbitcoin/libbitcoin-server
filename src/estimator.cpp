@@ -35,6 +35,11 @@ constexpr auto relaxed = std::memory_order_relaxed;
 // public
 // ----------------------------------------------------------------------------
 
+estimator::ptr estimator::create() NOEXCEPT
+{
+    return { new estimator{} ,[](estimator* ptr) NOEXCEPT { delete ptr; } };
+}
+
 uint64_t estimator::estimate(size_t target, mode mode) const NOEXCEPT
 {
     // max_uint64 is failure sentinel (and unachievable/invalid as a fee).
@@ -144,10 +149,11 @@ bool estimator::initialize(const rate_sets& blocks) NOEXCEPT
     if (is_zero(count))
         return true;
 
-    const auto top = top_height();
-    auto height = top - sub1(count);
-    if (system::is_subtract_overflow(top, sub1(count)))
+    if (system::is_add_overflow(fees_.top_height, sub1(count)))
         return false;
+
+    auto height = fees_.top_height;
+    fees_.top_height += sub1(count);
 
     // TODO: could be parallel by block.
     for (const auto& block: blocks)
@@ -167,8 +173,9 @@ bool estimator::push(const rates& block) NOEXCEPT
 // Blocks must be pushed in order (but independent of chain index).
 bool estimator::pop(const rates& block) NOEXCEPT
 {
-    const auto result = update(block, fees_.top_height--, false);
+    const auto result = update(block, fees_.top_height, false);
     decay(false);
+    --fees_.top_height;
     return result;
 }
 
