@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_ESTIMATOR_HPP
 
 #include <atomic>
+#include <memory>
 #include <bitcoin/server.hpp>
 
 namespace libbitcoin {
@@ -28,6 +29,8 @@ namespace server {
 class BCS_API estimator
 {
 public:
+    typedef std::shared_ptr<estimator> ptr;
+
     DELETE_COPY_MOVE_DESTRUCT(estimator);
 
     /// Estimation modes.
@@ -39,7 +42,8 @@ public:
         conservative
     };
 
-    estimator() NOEXCEPT {};
+    /// Factory method to create a shared instance on the heap.
+    static ptr create() NOEXCEPT;
 
     /// Fee estimation in satoshis / transaction virtual size.
     /// Pass zero to target next block for confirmation, range:0..1007.
@@ -120,7 +124,7 @@ protected:
     // C++23: make constexpr.
     static inline double to_scale_term(size_t age) NOEXCEPT
     {
-        return std::pow(decay_rate(), age);
+        return system::power(decay_rate(), age);
     }
 
     // C++23: make constexpr.
@@ -129,6 +133,8 @@ protected:
         return std::pow(decay_rate(), push ? +1.0 : -1.0);
     }
 
+    estimator() NOEXCEPT {};
+    accumulator& history() NOEXCEPT;
     const accumulator& history() const NOEXCEPT;
     bool initialize(const rate_sets& blocks) NOEXCEPT;
     bool push(const rates& block) NOEXCEPT;
