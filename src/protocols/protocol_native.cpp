@@ -295,8 +295,9 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
         const auto bypass = context.height < check || query.is_milestone(link);
         object["state"] = boost::json::object
         {
-            { "wire", query.get_block_size(link) },
             { "count", query.get_tx_count(link) },
+            { "size", query.get_block_size(link, true) },
+            { "weight", query.get_block_size(link, false) },
             { "validated", bypass || query.is_validated(link) },
             { "confirmed", check || query.is_confirmed_block(link) },
             { "confirmable", bypass || query.is_confirmable(link) },
