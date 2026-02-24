@@ -1251,8 +1251,8 @@ options_metadata parser::load_settings() THROWS
     ////    "Obtain current header chain before obtaining associated blocks, defaults to 'true'."
     ////)
     (
-        "node.minimum_free_rate",
-        value<float>(&configured.node.minimum_free_rate),
+        "node.minimum_fee_rate",
+        value<float>(&configured.node.minimum_fee_rate),
         "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.0'."
     )
     (

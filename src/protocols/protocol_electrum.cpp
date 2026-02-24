@@ -252,7 +252,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     const auto link = query.to_confirmed(top);
 
     // This is unlikely but possible due to a race condition during reorg.
-    if (!link.is_terminal())
+    if (link.is_terminal())
     {
         send_code(error::not_found);
         return;
@@ -298,7 +298,7 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
         return;
 
     // TODO: deprecated in 1.4.2, removed in 1.6.
-    send_result(node_settings().minimum_free_rate, 42, BIND(complete, _1));
+    send_result(node_settings().minimum_fee_rate, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
