@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2023 libbitcoin developers (see COPYING).
+#  Copyright (c) 2014-2026 libbitcoin developers (see COPYING).
 #
 ###############################################################################
 # FindMbedtls
