@@ -681,10 +681,11 @@ bool protocol_native::handle_get_tx_details(const code& ec,
 
     uint64_t value{}, spend{};
     size_t nominal{}, maximal{};
+    const auto coinbase = query.is_coinbase(link);
     if (!query.get_tx_sizes(nominal, maximal, link) ||
         !query.get_tx_value(value, link) ||
         !query.get_tx_spend(spend, link) ||
-        is_subtract_overflow(value, spend))
+        (!coinbase && is_subtract_overflow(value, spend)))
     {
         send_internal_server_error(database::error::integrity);
         return true;
@@ -694,7 +695,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
     boost::json::object object
     {
         { "segregated", maximal != nominal },
-        { "coinbase", query.is_coinbase(link) },
+        { "coinbase", coinbase },
         { "nominal", nominal },
         { "maximal", maximal },
         { "weight", chain::weighted_size(nominal, maximal) },
