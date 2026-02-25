@@ -64,11 +64,16 @@ protected:
     using rates = database::fee_rates;
     using rate_sets = database::fee_rate_sets;
 
-    /// Bucket depth sizing parameters.
+    /// Bucket depth sizing parameters (number of blocks).
     enum horizon : size_t
     {
+        /// 2 hrs × 60 mins/hr / 10 mins/block = 12 blocks.
         small  = 12,
+
+        /// 8 hrs × 60 mins/hr / 10 mins/block = 48 blocks.
         medium = 48,
+
+        /// 7 days * 24 hrs/day × 60 mins/hr / 10 mins/block = 1008 blocks.
         large  = 1008
     };
 
