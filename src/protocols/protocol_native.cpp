@@ -397,10 +397,10 @@ bool protocol_native::handle_get_block_details(const code& ec,
         { "weight", chain::weighted_size(nominal, maximal) },
         { "virtual", chain::virtual_size(nominal, maximal) },
         { "value", value },
-        { "claim", claim },
         { "fees", fees },
         { "subsidy", subsidy },
-        { "reward", ceilinged_add(fees, subsidy) }
+        { "reward", ceilinged_add(fees, subsidy) },
+        { "claim", claim }
     };
 
     send_json(std::move(object), 512);
