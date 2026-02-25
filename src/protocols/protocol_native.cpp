@@ -716,8 +716,8 @@ bool protocol_native::handle_get_tx_details(const code& ec,
         const auto bip141 = context.is_enabled(chain::flags::bip141_rule);
         object["confirmed"] = boost::json::object
         {
-            { "height",  context.height },
-            { "position",  position },
+            { "height", context.height },
+            { "position", position },
             { "sigops",  tx->signature_operations(bip16, bip141) }
         };
     }
