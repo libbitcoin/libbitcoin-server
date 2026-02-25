@@ -350,58 +350,57 @@ bool protocol_native::handle_get_block_details(const code& ec,
         return true;
     }
 
-    database::context context{};
     const auto& query = archive();
     const auto link = to_header(height, hash);
 
-    // Missing header.
-    if (!query.get_context(context, link))
+    // Missing block.
+    if (!query.is_associated(link))
     {
         send_not_found();
         return true;
     }
 
-    const auto block = query.get_block(link, true);
+    const auto count = query.get_tx_count(link);
+    const auto key = hash.has_value() ? *hash.value() :
+        query.get_header_key(link);
 
-    // Unassociated header.
-    if (!block)
+    database::context context{};
+    size_t nominal{}, maximal{};
+    uint64_t value{}, spend{}, claim{};
+    if (is_zero(count) || key == system::null_hash ||
+        !query.get_tx_spend(claim, query.to_coinbase(link)) ||
+        !query.get_block_sizes(nominal, maximal, link) ||
+        !query.get_block_value(value, link) ||
+        !query.get_block_spend(spend, link) ||
+        !query.get_context(context, link) ||
+        is_subtract_overflow(value, spend))
     {
-        send_not_found();
+        send_internal_server_error(database::error::integrity);
         return true;
     }
 
-    // Internal population (optimization).
-    block->populate();
-
-    // Missing prevouts (not ready).
-    if (!query.populate_without_metadata(*block))
-    {
-        send_not_found();
-        return true;
-    }
-
-    const auto fees = block->fees();
+    const auto fees = floored_subtract(value, spend);
     const auto& settings = system_settings();
-    const auto bip16 = context.is_enabled(chain::flags::bip16_rule);
     const auto bip42 = context.is_enabled(chain::flags::bip42_rule);
-    const auto bip141 = context.is_enabled(chain::flags::bip141_rule);
     const auto subsidy = chain::block::subsidy(context.height,
         settings.subsidy_interval_blocks, settings.initial_subsidy(), bip42);
 
+    // sigops is not cached, so removed for now.
     boost::json::object object
     {
-        { "hash", encode_hash(block->hash()) },
+        { "hash", encode_hash(key) },
         { "height", context.height },
-        { "count", block->transactions() },
-        { "sigops", block->signature_operations(bip16, bip141) },
-        { "segregated", block->is_segregated() },
-        { "nominal", block->serialized_size(false) },
-        { "maximal", block->serialized_size(true) },
-        { "weight", block->weight() },
+        { "count", count },
+        { "segregated", maximal != maximal },
+        { "nominal", nominal },
+        { "maximal", maximal },
+        { "weight", chain::weighted_size(nominal, maximal) },
+        { "virtual", chain::virtual_size(nominal, maximal) },
+        { "value", value },
+        { "claim", claim },
         { "fees", fees },
         { "subsidy", subsidy },
-        { "reward", ceilinged_add(fees, subsidy) },
-        { "claim", block->claim() },
+        { "reward", ceilinged_add(fees, subsidy) }
     };
 
     send_json(std::move(object), 512);
@@ -672,36 +671,39 @@ bool protocol_native::handle_get_tx_details(const code& ec,
 
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
-    const auto tx = query.get_transaction(link, true);
 
     // Missing tx.
-    if (!tx)
+    if (link.is_terminal())
     {
         send_not_found();
         return true;
     }
 
-    // Non-coinbase missing prevouts (not ready).
-    const auto coinbase = query.is_coinbase(link);
-    if (!coinbase && !query.populate_without_metadata(*tx))
+    uint64_t value{}, spend{};
+    size_t nominal{}, maximal{};
+    if (!query.get_tx_sizes(nominal, maximal, link) ||
+        !query.get_tx_value(value, link) ||
+        !query.get_tx_spend(spend, link) ||
+        is_subtract_overflow(value, spend))
     {
-        send_not_found();
+        send_internal_server_error(database::error::integrity);
         return true;
     }
 
+    // sigops and wtxid are not cached, so removed for now.
     boost::json::object object
     {
-        { "wtxid", encode_hash(tx->get_hash(true)) },
-        { "segregated", tx->is_segregated() },
-        { "coinbase", coinbase },
-        { "nominal", tx->serialized_size(false) },
-        { "maximal", tx->serialized_size(true) },
-        { "weight", tx->weight() },
-        { "value", tx->value() },
-        { "spend", tx->spend() },
-        { "fee", tx->fee() }
+        { "segregated", maximal != maximal },
+        { "coinbase", query.is_coinbase(link) },
+        { "nominal", nominal },
+        { "maximal", maximal },
+        { "weight", chain::weighted_size(nominal, maximal) },
+        { "virtual", chain::virtual_size(nominal, maximal) },
+        { "value", value },
+        { "spend", spend },
+        { "fee", floored_subtract(value, spend) }
     };
-    
+
     size_t position{};
     if (query.get_tx_position(position, link))
     {
@@ -712,13 +714,10 @@ bool protocol_native::handle_get_tx_details(const code& ec,
             return true;
         }
 
-        const auto bip16 = context.is_enabled(chain::flags::bip16_rule);
-        const auto bip141 = context.is_enabled(chain::flags::bip141_rule);
         object["confirmed"] = boost::json::object
         {
             { "height", context.height },
-            { "position", position },
-            { "sigops",  tx->signature_operations(bip16, bip141) }
+            { "position", position }
         };
     }
 
