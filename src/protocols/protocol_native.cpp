@@ -391,7 +391,7 @@ bool protocol_native::handle_get_block_details(const code& ec,
         { "hash", encode_hash(key) },
         { "height", context.height },
         { "count", count },
-        { "segregated", maximal != maximal },
+        { "segregated", maximal != nominal },
         { "nominal", nominal },
         { "maximal", maximal },
         { "weight", chain::weighted_size(nominal, maximal) },
@@ -693,7 +693,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
     // sigops and wtxid are not cached, so removed for now.
     boost::json::object object
     {
-        { "segregated", maximal != maximal },
+        { "segregated", maximal != nominal },
         { "coinbase", query.is_coinbase(link) },
         { "nominal", nominal },
         { "maximal", maximal },
