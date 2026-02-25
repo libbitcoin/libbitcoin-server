@@ -291,13 +291,21 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
     // The "state" element implies transactions are associated.
     if (query.is_associated(link))
     {
+        size_t size{}, weight{};
+        if (!query.get_block_sizes(size, weight, link))
+        {
+            send_internal_server_error(database::error::integrity);
+            return true;
+        }
+
         const auto check = system_settings().top_checkpoint().height();
         const auto bypass = context.height < check || query.is_milestone(link);
+
         object["state"] = boost::json::object
         {
+            { "size", size },
+            { "weight", weight },
             { "count", query.get_tx_count(link) },
-            { "size", query.get_block_size(link, true) },
-            { "weight", query.get_block_size(link, false) },
             { "validated", bypass || query.is_validated(link) },
             { "confirmed", check || query.is_confirmed_block(link) },
             { "confirmable", bypass || query.is_confirmable(link) },
@@ -708,8 +716,8 @@ bool protocol_native::handle_get_tx_details(const code& ec,
         const auto bip141 = context.is_enabled(chain::flags::bip141_rule);
         object["confirmed"] = boost::json::object
         {
-            { "height",  context.height },
-            { "position",  position },
+            { "height", context.height },
+            { "position", position },
             { "sigops",  tx->signature_operations(bip16, bip141) }
         };
     }

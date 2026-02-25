@@ -45,8 +45,8 @@ void executor::read_test(const hash_digest&) const
             return;
         }
 
-        const auto bytes = query_.get_block_size(link, true);
-        if (is_zero(bytes))
+        size_t bytes{};
+        if (!query_.get_block_size(bytes, link, true))
         {
             logger(format("Block (%1%) is not associated.") % height);
             return;
