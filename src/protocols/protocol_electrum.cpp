@@ -212,8 +212,15 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
             { "headers", std::move(headers) },
             { "max", maximum }
         }
+
+        // BUGBUG: for handle_blockchain_block_header:
+        ////object_t
+        ////{
+        ////    { "header", headers.front() },
+        ////}
     };
 
+    // BUGBUG: difference in get_merkle_root_and_proof vs. electrumx.
     // There is a very slim change of inconsistency given an intervening reorg
     // because of get_merkle_root_and_proof() use of height-based calculations.
     // This is acceptable as it must be verified by caller in any case.
