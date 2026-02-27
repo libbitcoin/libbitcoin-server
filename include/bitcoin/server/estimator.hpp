@@ -19,17 +19,23 @@
 #ifndef LIBBITCOIN_SERVER_ESTIMATOR_HPP
 #define LIBBITCOIN_SERVER_ESTIMATOR_HPP
 
-#include <atomic>
 #include <memory>
-#include <bitcoin/server.hpp>
+#include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
+/// Fee estimator with contained accumulator.
+/// Accumulator is typically too large for stack creation.
+/// Thread safe, blocking calls to estimate() during updates.
+/// Initialize on chain current coalesce after snapshot/prune.
+/// If chain falls > 1008/2 (?) blocks behind, reset and wait for coalesce.
+/// When validating still use query-based fee rate population (compact blocks).
 class BCS_API estimator
 {
 public:
     typedef std::shared_ptr<estimator> ptr;
+    static constexpr size_t maximum_horizon = 1008;
 
     DELETE_COPY_MOVE_DESTRUCT(estimator);
 
@@ -42,8 +48,8 @@ public:
         conservative
     };
 
-    /// Factory method to create a shared instance on the heap.
-    static ptr create() NOEXCEPT;
+    /// Construct (use heap allocation).
+    estimator() NOEXCEPT {};
 
     /// Fee estimation in satoshis / transaction virtual size.
     /// Pass zero to target next block for confirmation, range:0..1007.
@@ -51,7 +57,7 @@ public:
 
     /// Populate accumulator with count blocks up to the top confirmed block.
     bool initialize(std::atomic_bool& cancel, const node::query& query,
-        size_t count) NOEXCEPT;
+        size_t count=maximum_horizon) NOEXCEPT;
 
     /// Update accumulator.
     bool push(const node::query& query) NOEXCEPT;
@@ -64,12 +70,17 @@ protected:
     using rates = database::fee_rates;
     using rate_sets = database::fee_rate_sets;
 
-    /// Bucket depth sizing parameters.
+    /// Bucket depth sizing parameters (number of blocks).
     enum horizon : size_t
     {
+        /// 2 hrs × 60 mins/hr / 10 mins/block = 12 blocks.
         small  = 12,
+
+        /// 8 hrs × 60 mins/hr / 10 mins/block = 48 blocks.
         medium = 48,
-        large  = 1008
+
+        /// 7 days * 24 hrs/day × 60 mins/hr / 10 mins/block = 1008 blocks.
+        large  = maximum_horizon
     };
 
     /// Bucket count sizing parameters.
@@ -98,10 +109,10 @@ protected:
         struct bucket
         {
             /// Total scaled txs in bucket.
-            std::atomic<size_t> total{};
+            size_t total{};
 
             /// confirmed[n]: scaled txs confirmed in > n blocks.
-            std::array<std::atomic<size_t>, Horizon> confirmed;
+            std::array<size_t, Horizon> confirmed;
         };
 
         /// Current block height of accumulated state.
@@ -133,7 +144,6 @@ protected:
         return std::pow(decay_rate(), push ? +1.0 : -1.0);
     }
 
-    estimator() NOEXCEPT {};
     accumulator& history() NOEXCEPT;
     const accumulator& history() const NOEXCEPT;
     bool initialize(const rate_sets& blocks) NOEXCEPT;

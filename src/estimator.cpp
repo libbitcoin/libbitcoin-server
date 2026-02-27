@@ -30,15 +30,9 @@ namespace libbitcoin {
 namespace server {
 
 using namespace system;
-constexpr auto relaxed = std::memory_order_relaxed;
 
 // public
 // ----------------------------------------------------------------------------
-
-estimator::ptr estimator::create() NOEXCEPT
-{
-    return { new estimator{} ,[](estimator* ptr) NOEXCEPT { delete ptr; } };
-}
 
 uint64_t estimator::estimate(size_t target, mode mode) const NOEXCEPT
 {
@@ -155,7 +149,7 @@ bool estimator::initialize(const rate_sets& blocks) NOEXCEPT
     auto height = fees_.top_height;
     fees_.top_height += sub1(count);
 
-    // TODO: could be parallel by block.
+    // 3-4 secs slower when parallel at 1008 blocks.
     for (const auto& block: blocks)
         if (!update(block, height++, true))
             return false;
@@ -190,7 +184,7 @@ uint64_t estimator::compute(size_t target, double confidence,
     // Geometric distribution approximation, not a full Markov process.
     const auto markov = [](double part, double total, size_t target) NOEXCEPT
     {
-        return system::power(part / total, target);
+        return power(part / total, target);
     };
 
     const auto call = [&](const auto& buckets) NOEXCEPT
@@ -207,8 +201,8 @@ uint64_t estimator::compute(size_t target, double confidence,
         for (const auto& bucket: std::views::reverse(buckets))
         {
             --index;
-            total += to_floating(bucket.total.load(relaxed));
-            part += to_floating(bucket.confirmed.at(target).load(relaxed));
+            total += to_floating(bucket.total);
+            part += to_floating(bucket.confirmed.at(target));
             if (total < at_least_four)
                 continue;
 
@@ -236,7 +230,6 @@ uint64_t estimator::compute(size_t target, double confidence,
 
 void estimator::decay(bool push) NOEXCEPT
 {
-    // Not thread safe (use sequentially by block).
     const auto factor = to_scale_factor(push);
     decay(fees_.large, factor);
     decay(fees_.medium, factor);
@@ -245,18 +238,11 @@ void estimator::decay(bool push) NOEXCEPT
 
 void estimator::decay(auto& buckets, double factor) NOEXCEPT
 {
-    // Not thread safe (apply sequentially by block).
-    const auto call = [factor](auto& count) NOEXCEPT
-    {
-        const auto value = count.load(relaxed);
-        count.store(system::to_floored_integer(value * factor), relaxed);
-    };
-
     for (auto& bucket: buckets)
     {
-        call(bucket.total);
+        bucket.total = to_floored_integer(bucket.total * factor);
         for (auto& count: bucket.confirmed)
-            call(count);
+            count = to_floored_integer(count * factor);
     }
 }
 
@@ -304,9 +290,9 @@ bool estimator::update(const rates& block, size_t height, bool push) NOEXCEPT
             const auto scaled = to_floored_integer(count * scale);
             const auto signed_term = push ? scaled : twos_complement(scaled);
 
-            bucket.total.fetch_add(signed_term, relaxed);
+            bucket.total += signed_term;
             for (auto target = age; target < horizon; ++target)
-                bucket.confirmed.at(target).fetch_add(signed_term, relaxed);
+                bucket.confirmed.at(target) += signed_term;
         }
     };
 
