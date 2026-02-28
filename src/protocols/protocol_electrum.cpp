@@ -252,10 +252,10 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
         array_t branch(proof.size());
         std::ranges::transform(proof, branch.begin(),
-            [](const auto& hash) { return encode_base16(hash); });
+            [](const auto& hash) { return encode_hash(hash); });
 
         result["branch"] = std::move(branch);
-        result["root"] = encode_base16(root);
+        result["root"] = encode_hash(root);
         size += two * hash_size * add1(proof.size());
     }
 
