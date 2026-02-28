@@ -236,7 +236,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         result["header"] = headers.front();
     }
 
-    // There is a very slim change of inconsistency given an intervening reorg
+    // There is a very slim chance of inconsistency given an intervening reorg
     // because of get_merkle_root_and_proof() use of height-based calculations.
     // This is acceptable as it must be verified by caller in any case.
     if (prove)
