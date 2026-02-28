@@ -223,7 +223,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         return;
     };
 
-    value_t value{};
+    value_t value{ object_t{} };
     auto& result = std::get<object_t>(value.value());
     if (multiplicity)
     {
