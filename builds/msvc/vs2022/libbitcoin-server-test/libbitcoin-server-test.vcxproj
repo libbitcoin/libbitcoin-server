@@ -118,9 +118,7 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\configuration.cpp">
-      <ObjectFileName>$(IntDir)test_configuration.obj</ObjectFileName>
-    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\configuration.cpp" />
     <ClCompile Include="..\..\..\..\test\error.cpp" />
     <ClCompile Include="..\..\..\..\test\estimator.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
