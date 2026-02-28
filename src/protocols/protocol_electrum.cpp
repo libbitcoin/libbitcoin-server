@@ -137,7 +137,20 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
     rpc_interface::blockchain_block_header, double height,
     double cp_height) NOEXCEPT
 {
-    handle_blockchain_block_headers(ec, {}, height, 1, cp_height);
+    using namespace system;
+    if (stopped(ec))
+        return;
+
+    size_t starting{};
+    size_t waypoint{};
+    if (!to_integer(starting, height) ||
+        !to_integer(waypoint, cp_height))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    blockchain_block_headers(starting, one, waypoint, false);
 }
 
 void protocol_electrum::handle_blockchain_block_headers(const code& ec,
@@ -159,6 +172,14 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
         return;
     }
 
+    blockchain_block_headers(starting, quantity, waypoint, true);
+}
+
+// Common implementation for block_header/s.
+void protocol_electrum::blockchain_block_headers(size_t starting,
+    size_t quantity, size_t waypoint, bool multiplicity) NOEXCEPT
+{
+    using namespace system;
     if (is_add_overflow(starting, quantity))
     {
         send_code(error::argument_overflow);
@@ -182,8 +203,8 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     // Returned headers are assured to be contiguous despite intervening reorg.
     // No headers may be returned, which implies start > confirmed top block.
     const auto& query = archive();
-    const auto bound = limit(quantity, maximum);
-    const auto links = query.get_confirmed_headers(starting, bound);
+    const auto count = limit(quantity, maximum);
+    const auto links = query.get_confirmed_headers(starting, count);
     constexpr auto header_size = chain::header::serialized_size();
     auto size = two * header_size * links.size();
 
@@ -194,33 +215,27 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     {
         if (const auto header = query.get_header(link); header)
         {
-            // TODO: optimize by query directly returning wire serialization.
             headers.push_back(to_hex(*header, header_size));
+            continue;
         }
-        else
-        {
-            send_code(error::server_error);
-            return;
-        }
+
+        send_code(error::server_error);
+        return;
     };
 
-    value_t value
+    value_t value{};
+    auto& result = std::get<object_t>(value.value());
+    if (multiplicity)
     {
-        object_t
-        {
-            { "count", uint64_t{ quantity } },
-            { "headers", std::move(headers) },
-            { "max", maximum }
-        }
+        result["headers"] = std::move(headers);
+        result["count"] = uint64_t{ quantity };
+        result["max"] = maximum;
+    }
+    else
+    {
+        result["header"] = headers.front();
+    }
 
-        // BUGBUG: for handle_blockchain_block_header:
-        ////object_t
-        ////{
-        ////    { "header", headers.front() },
-        ////}
-    };
-
-    // BUGBUG: difference in get_merkle_root_and_proof vs. electrumx.
     // There is a very slim change of inconsistency given an intervening reorg
     // because of get_merkle_root_and_proof() use of height-based calculations.
     // This is acceptable as it must be verified by caller in any case.
@@ -239,9 +254,8 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
         std::ranges::transform(proof, branch.begin(),
             [](const auto& hash) { return encode_base16(hash); });
 
-        auto& result = std::get<object_t>(value.value());
-        result["root"] = encode_base16(root);
         result["branch"] = std::move(branch);
+        result["root"] = encode_base16(root);
         size += two * hash_size * add1(proof.size());
     }
 

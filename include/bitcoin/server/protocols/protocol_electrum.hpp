@@ -123,6 +123,10 @@ protected:
         rpc_interface::mempool_get_fee_histogram) NOEXCEPT;
 
 protected:
+    /// Common implementation for block_header/s.
+    void blockchain_block_headers(size_t starting, size_t quantity,
+        size_t waypoint, bool multiplicity) NOEXCEPT;
+
     inline bool is_version(electrum_version version) const NOEXCEPT
     {
         return channel_->version() >= version;
