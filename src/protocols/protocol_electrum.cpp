@@ -227,9 +227,9 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     auto& result = std::get<object_t>(value.value());
     if (multiplicity)
     {
-        result["headers"] = std::move(headers);
-        result["count"] = headers.size();
         result["max"] = maximum;
+        result["count"] = headers.size();
+        result["headers"] = std::move(headers);
     }
     else
     {
