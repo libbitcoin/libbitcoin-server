@@ -20,11 +20,6 @@
 
 #include <future>
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, test::directory_setup_fixture)
-
-// nop event handler.
-const auto events = [](auto, auto) {};
-
 using namespace system;
 
 constexpr auto block1_hash = base16_hash("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048");
@@ -46,115 +41,158 @@ constexpr auto block6_data = base16_array("01000000fc33f596f822a0a1951ffdbf2a897
 constexpr auto block7_data = base16_array("010000008d778fdc15a2d3fb76b7122a3b5582bea4f21f5a0c693537e7a03130000000003f674005103b42f984169c7d008370967e91920a6a5d64fd51282f75bc73a68af1c66649ffff001d39a59c860101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d012bffffffff0100f2052a01000000434104a59e64c774923d003fae7491b2a7f75d6b7aa3f35606a8ff1cf06cd3317d16a41aa16928b1df1f631f31f28c7da35d4edad3603adb2338c4d4dd268f31530555ac00000000");
 constexpr auto block8_data = base16_array("010000004494c8cf4154bdcc0720cd4a59d9c9b285e4b146d45f061d2b6c967100000000e3855ed886605b6d4a99d5fa2ef2e9b0b164e63df3c4136bebf2d0dac0f1f7a667c86649ffff001d1c4b56660101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d012cffffffff0100f2052a01000000434104cc8d85f5e7933cb18f13b97d165e1189c1fb3e9c98b0dd5446b2a1989883ff9e740a8a75da99cc59a21016caf7a7afd3e4e9e7952983e18d1ff70529d62e0ba1ac00000000");
 
-const auto genesis = system::settings{ chain::selection::mainnet }.genesis_block;
-const chain::block block1{ block1_data, true };
-const chain::block block2{ block2_data, true };
-const chain::block block3{ block3_data, true };
-const chain::block block4{ block4_data, true };
-const chain::block block5{ block5_data, true };
-const chain::block block6{ block6_data, true };
-const chain::block block7{ block7_data, true };
-const chain::block block8{ block8_data, true };
+static const auto genesis = system::settings{ chain::selection::mainnet }.genesis_block;
+static const chain::block block1{ block1_data, true };
+static const chain::block block2{ block2_data, true };
+static const chain::block block3{ block3_data, true };
+static const chain::block block4{ block4_data, true };
+static const chain::block block5{ block5_data, true };
+static const chain::block block6{ block6_data, true };
+static const chain::block block7{ block7_data, true };
+static const chain::block block8{ block8_data, true };
 
-using context_t = database::context;
-using store_t = database::store<database::map>;
-using query_t = database::query<database::store<database::map>>;
 static const server::settings::embedded_pages admin{};
 static const server::settings::embedded_pages native{};
 
-bool setup_eight_block_store(query_t& query) NOEXCEPT
+struct electrum_setup_fixture
 {
-    return query.initialize(genesis) &&
-        query.set(block1, context_t{ 0, 1, 0 }, false, false) &&
-        query.set(block2, context_t{ 0, 2, 0 }, false, false) &&
-        query.set(block3, context_t{ 0, 3, 0 }, false, false) &&
-        query.set(block4, context_t{ 0, 4, 0 }, false, false) &&
-        query.set(block5, context_t{ 0, 5, 0 }, false, false) &&
-        query.set(block6, context_t{ 0, 6, 0 }, false, false) &&
-        query.set(block7, context_t{ 0, 7, 0 }, false, false) &&
-        query.set(block8, context_t{ 0, 8, 0 }, false, false) &&
-        query.push_confirmed(query.to_header(block1_hash), false) &&
-        query.push_confirmed(query.to_header(block2_hash), false) &&
-        query.push_confirmed(query.to_header(block3_hash), false) &&
-        query.push_confirmed(query.to_header(block4_hash), false) &&
-        query.push_confirmed(query.to_header(block5_hash), false) &&
-        query.push_confirmed(query.to_header(block6_hash), false) &&
-        query.push_confirmed(query.to_header(block7_hash), false) &&
-        query.push_confirmed(query.to_header(block8_hash), false);
-}
+    using context_t = database::context;
+    using store_t = database::store<database::map>;
+    using query_t = database::query<database::store<database::map>>;
 
-// TODO: move server setup to fixiture for all electrum tests.
-// TODO: make test utilities for server setup, start, request, response, close.
-BOOST_AUTO_TEST_CASE(endpoint_electrum_test)
-{
-    const network::config::authority authority{ "127.0.0.1:65000" };
-    const std::string request{ R"({"id":1,"method":"server.version","params":["test_client","1.4"]})" "\n" };
+    DELETE_COPY_MOVE(electrum_setup_fixture);
 
-    // Create base configuration.
-    configuration configure(chain::selection::mainnet, native, admin);
-    auto& database_settings = configure.database;
-    auto& network_settings = configure.network;
-    auto& server_settings = configure.server;
-    auto& node_settings = configure.node;
-    auto& electrum = server_settings.electrum;
-
-    // Create and populate the store.
-    database_settings.path = TEST_DIRECTORY;
-    database_settings.interval_depth = 2;
-    store_t store{ database_settings };
-    query_t query{ store };
-    BOOST_REQUIRE(!store.create(events));
-    BOOST_REQUIRE(setup_eight_block_store(query));
-
-    // Create the server with a reference to the store, config and log.
-    network::logger log{};
-    node_settings.delay_inbound = false;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-    electrum.connections = 1;
-    electrum.maximum_headers = 100;
-    electrum.binds.push_back(authority);
-    server::server_node server{ query, configure, log };
-
-    // Run the server, start is not required here (seeding, manual, and chasers).
-    std::promise<code> running{};
-    server.run([&](const code& ec) NOEXCEPT
+    electrum_setup_fixture() NOEXCEPT
+      : config_{ chain::selection::mainnet, native, admin },
+        store_
+        {
+            [&]() NOEXCEPT -> const database::settings&
+            {
+                config_.database.path = TEST_DIRECTORY;
+                return config_.database;
+            }()
+        },
+        query_{ store_ }, log_{},
+        server_{ query_, config_, log_ }
     {
-        running.set_value(ec);
-    });
+        BOOST_REQUIRE(test::clear(test::directory));
 
-    // Blocks until server is running.
-    BOOST_REQUIRE(!running.get_future().get());
+        auto& database_settings = config_.database;
+        auto& network_settings = config_.network;
+        auto& node_settings = config_.node;
+        auto& server_settings = config_.server;
+        auto& electrum = server_settings.electrum;
 
-    // Connect, send request, and capture response.
+        // >>>>>>>>>>>>>>> REQUIRES LOCALHOST TCP PORT 65000. <<<<<<<<<<<<<<<
+        electrum.binds = { { "127.0.0.1:65000" } };
+        electrum.maximum_headers = 5;
+        electrum.connections = 1;
+        database_settings.interval_depth = 2;
+        node_settings.delay_inbound = false;
+        network_settings.inbound.connections = 0;
+        network_settings.outbound.connections = 0;
+
+        // Create and populate the store.
+        BOOST_REQUIRE(!store_.create([](auto, auto){}));
+        BOOST_REQUIRE(setup_eight_block_store());
+
+        // Run the server.
+        std::promise<code> running{};
+        server_.run([&](const code& ec) NOEXCEPT
+        {
+            running.set_value(ec);
+        });
+
+        // Block until server is running.
+        BOOST_REQUIRE(!running.get_future().get());
+        socket_.connect(electrum.binds.back().to_endpoint());
+    }
+
+    ~electrum_setup_fixture() NOEXCEPT
+    {
+        socket_.close();
+        server_.close();
+        BOOST_REQUIRE(!store_.close([](auto, auto){}));
+        BOOST_REQUIRE(test::clear(test::directory));
+    }
+
+    const configuration& config() const NOEXCEPT
+    {
+        return config_;
+    }
+
+    auto get(const std::string& request) NOEXCEPT
+    {
+        socket_.send(boost::asio::buffer(request));
+        boost::asio::streambuf stream{};
+        read_until(socket_, stream, '\n');
+
+        std::string response{};
+        std::istream response_stream{ &stream };
+        std::getline(response_stream, response);
+
+        return boost::json::parse(response);
+    }
+
+private:
+    bool setup_eight_block_store() NOEXCEPT
+    {
+        return query_.initialize(genesis) &&
+            query_.set(block1, context_t{ 0, 1, 0 }, false, false) &&
+            query_.set(block2, context_t{ 0, 2, 0 }, false, false) &&
+            query_.set(block3, context_t{ 0, 3, 0 }, false, false) &&
+            query_.set(block4, context_t{ 0, 4, 0 }, false, false) &&
+            query_.set(block5, context_t{ 0, 5, 0 }, false, false) &&
+            query_.set(block6, context_t{ 0, 6, 0 }, false, false) &&
+            query_.set(block7, context_t{ 0, 7, 0 }, false, false) &&
+            query_.set(block8, context_t{ 0, 8, 0 }, false, false) &&
+            query_.push_confirmed(query_.to_header(block1_hash), false) &&
+            query_.push_confirmed(query_.to_header(block2_hash), false) &&
+            query_.push_confirmed(query_.to_header(block3_hash), false) &&
+            query_.push_confirmed(query_.to_header(block4_hash), false) &&
+            query_.push_confirmed(query_.to_header(block5_hash), false) &&
+            query_.push_confirmed(query_.to_header(block6_hash), false) &&
+            query_.push_confirmed(query_.to_header(block7_hash), false) &&
+            query_.push_confirmed(query_.to_header(block8_hash), false);
+    }
+
+    configuration config_;
+    store_t store_;
+    query_t query_;
+    network::logger log_;
+    server::server_node server_;
     boost::asio::io_context io{};
-    boost::asio::ip::tcp::socket sock{ io };
-    sock.connect(electrum.binds.back().to_endpoint());
-    sock.send(boost::asio::buffer(request));
-    boost::asio::streambuf stream{};
-    read_until(sock, stream, '\n');
-    sock.close();
+    boost::asio::ip::tcp::socket socket_{ io };
+};
 
-    // Parser and verify server response.
-    std::string response{};
-    std::istream response_stream{ &stream };
-    std::getline(response_stream, response);
+BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
-    const auto parsed = boost::json::parse(response);
-    BOOST_REQUIRE_EQUAL(parsed.at("id").as_int64(), 1);
-    BOOST_REQUIRE(parsed.at("result").is_array());
+BOOST_AUTO_TEST_CASE(electrum__server_version__default__1_4)
+{
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar"]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 42);
+    BOOST_REQUIRE(response.at("result").is_array());
 
-    const auto& result = parsed.at("result").as_array();
+    const auto& result = response.at("result").as_array();
     BOOST_REQUIRE_EQUAL(result.size(), 2u);
     BOOST_REQUIRE(result.at(0).is_string());
     BOOST_REQUIRE(result.at(1).is_string());
-    BOOST_TEST_MESSAGE("Version response: " + response);
+    BOOST_REQUIRE_EQUAL(result.at(0).as_string(), config().network.user_agent);
+    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.4");
+}
 
-    // Server close blocks until all threads joined.
-    server.close();
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis__expected)
+{
+    get(R"({"id":"name","method":"server.version","params":["foobar","1.4"]})" "\n");
 
-    // Store close is required as well.
-    BOOST_REQUIRE(!store.close(events));
+    const auto response = get(R"({"id":43,"method":"blockchain.block.header","params":[0]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 43);
+    BOOST_REQUIRE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+    BOOST_REQUIRE(result.at("header").is_string());
+    BOOST_REQUIRE_EQUAL(result.at("header").as_string(), encode_base16(genesis.header().to_data()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
