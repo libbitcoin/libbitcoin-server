@@ -179,20 +179,26 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
 void protocol_electrum::blockchain_block_headers(size_t starting,
     size_t quantity, size_t waypoint, bool multiplicity) NOEXCEPT
 {
+    const auto prove = !is_zero(quantity) && !is_zero(waypoint);
+    const auto target = starting + sub1(quantity);
+    const auto& query = archive();
     using namespace system;
+
+    // The documented requirement: `start_height + (count - 1) <= cp_height` is
+    // ambiguous at count = 0 so guard must be applied to both args and prover.
     if (is_add_overflow(starting, quantity))
     {
         send_code(error::argument_overflow);
         return;
     }
-
-    // The documented requirement: `start_height + (count - 1) <= cp_height` is
-    // ambiguous at count = 0 so guard must be applied to both args and prover.
-    const auto target = starting + sub1(quantity);
-    const auto prove = !is_zero(quantity) && !is_zero(waypoint);
-    if (prove && target > waypoint)
+    else if (prove && target > waypoint)
     {
         send_code(error::target_overflow);
+        return;
+    }
+    else if (prove && waypoint > query.get_top_confirmed())
+    {
+        send_code(error::not_found);
         return;
     }
 
@@ -202,7 +208,6 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
     // Returned headers are assured to be contiguous despite intervening reorg.
     // No headers may be returned, which implies start > confirmed top block.
-    const auto& query = archive();
     const auto count = limit(quantity, maximum);
     const auto links = query.get_confirmed_headers(starting, count);
     constexpr auto header_size = chain::header::serialized_size();
@@ -228,7 +233,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     if (multiplicity)
     {
         result["max"] = maximum;
-        result["count"] = headers.size();
+        result["count"] = uint64_t{ headers.size() };
         result["headers"] = std::move(headers);
     }
     else

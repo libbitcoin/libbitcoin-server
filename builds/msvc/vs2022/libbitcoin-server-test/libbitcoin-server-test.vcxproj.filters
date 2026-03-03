@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\..\..\test\configuration.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\endpoints\electrum.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\error.cpp">
       <Filter>src</Filter>
     </ClCompile>

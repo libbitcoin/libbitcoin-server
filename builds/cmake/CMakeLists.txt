@@ -296,6 +296,7 @@ if (with-tests)
         "../../test/test.hpp"
         "../../test/endpoints/README.md"
         "../../test/endpoints/conftest.py"
+        "../../test/endpoints/electrum.cpp"
         "../../test/endpoints/test_bitcoind_rpc.py"
         "../../test/endpoints/test_electrum.py"
         "../../test/endpoints/test_native.py"
