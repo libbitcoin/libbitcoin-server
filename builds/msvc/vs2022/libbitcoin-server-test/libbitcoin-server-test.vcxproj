@@ -119,6 +119,7 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\configuration.cpp" />
+    <ClCompile Include="..\..\..\..\test\endpoints\electrum.cpp" />
     <ClCompile Include="..\..\..\..\test\error.cpp" />
     <ClCompile Include="..\..\..\..\test\estimator.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
