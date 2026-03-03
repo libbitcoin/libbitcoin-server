@@ -27,7 +27,6 @@ const auto events = [](auto, auto) {};
 
 using namespace system;
 
-constexpr auto block0_hash = base16_hash("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
 constexpr auto block1_hash = base16_hash("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048");
 constexpr auto block2_hash = base16_hash("000000006a625f06636b8bb6ac7b960a8d03705d1ace08b1a19da3fdcc99ddbd");
 constexpr auto block3_hash = base16_hash("0000000082b5015589a3fdf2d4baff403e6f0be035a5d9742c1cae6295464449");
