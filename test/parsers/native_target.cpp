@@ -1341,5 +1341,4 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__block_details_hash_extra_segment__e
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
-
 BOOST_AUTO_TEST_SUITE_END()
