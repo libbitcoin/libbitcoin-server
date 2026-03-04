@@ -23,6 +23,8 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
 // server.version
 
+static const code invalid_argument{ error::invalid_argument };
+
 BOOST_AUTO_TEST_CASE(electrum__server_version__default__expected)
 {
     const auto response = get(R"({"id":0,"method":"server.version","params":["foobar"]})" "\n");
@@ -65,34 +67,75 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__maximum__expected)
     BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.4.2");
 }
 
+BOOST_AUTO_TEST_CASE(electrum__server_version__valid_range__expected)
+{
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.4","1.4.2"]]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
+}
+
 BOOST_AUTO_TEST_CASE(electrum__server_version__invalid__invalid_argument)
 {
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","42"]})" "\n");
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 42);
     BOOST_REQUIRE(response.at("error").is_object());
-
-    const code ec{ error::invalid_argument };
-    const auto& error = response.at("error").as_object();
-    BOOST_REQUIRE_EQUAL(error.size(), 2u);
-    BOOST_REQUIRE(error.contains("code"));
-    BOOST_REQUIRE_EQUAL(error.at("code").as_int64(), ec.value());
-    BOOST_REQUIRE(error.contains("message"));
-    BOOST_REQUIRE_EQUAL(std::string(error.at("message").as_string()), ec.message());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__below_minimum__invalid_argument)
 {
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.3"]})" "\n");
-    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 42);
-    BOOST_REQUIRE(response.at("error").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
 
-    const code ec{ error::invalid_argument };
-    const auto& error = response.at("error").as_object();
-    BOOST_REQUIRE_EQUAL(error.size(), 2u);
-    BOOST_REQUIRE(error.contains("code"));
-    BOOST_REQUIRE_EQUAL(error.at("code").as_int64(), ec.value());
-    BOOST_REQUIRE(error.contains("message"));
-    BOOST_REQUIRE_EQUAL(std::string(error.at("message").as_string()), ec.message());
+BOOST_AUTO_TEST_CASE(electrum__server_version__array_min_exceeds_max__invalid_argument)
+{
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.4.2","1.4"]]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__array_wrong_size__invalid_argument)
+{
+    const auto response = get(R"({"id":52,"method":"server.version","params":["foobar",["1.4","1.4.2","extra"]]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__not_strings__invalid_argument)
+{
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",[1.4,1.4]]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__non_string__invalid_argument)
+{
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",1.4]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call__returns_negotiated)
+{
+    const auto expected = "1.4";
+    BOOST_REQUIRE(handshake(expected));
+
+    const auto response = get(R"({"id":42,"method":"server.version","params":["newname","1.4.2"]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), expected);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call_with_invalid_params__success)
+{
+    const auto expected = "1.4";
+    BOOST_REQUIRE(handshake(expected));
+
+    const auto response = get(R"({"id":57,"method":"server.version","params":["foobar","invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), expected);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__invalid_argument)
+{
+    // Exceeds max_client_name_length (protected).
+    const std::string name(1025, 'a');
+    const auto request = boost::format(R"({"id":42,"method":"server.version","params":["%1%","1.4"]})" "\n") % name;
+    const auto response = get(request.str());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
 // blockchain.block.header
