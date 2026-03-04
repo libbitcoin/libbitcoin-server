@@ -42,6 +42,7 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_rpc<channel_electrum>(session, channel, options),
+        options_(options),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         network::tracker<protocol_electrum>(session->log)
     {
@@ -132,7 +133,15 @@ protected:
         return channel_->version() >= version;
     }
 
+    inline const options_t& options() const NOEXCEPT
+    {
+        return options_;
+    }
+
 private:
+    // This is thread safe.
+    const options_t& options_;
+
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
 };
