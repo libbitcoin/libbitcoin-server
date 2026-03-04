@@ -119,12 +119,6 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\configuration.cpp" />
-    <ClCompile Include="..\..\..\..\test\endpoints\blocks.cpp">
-      <ObjectFileName>$(IntDir)test_endpoints_blocks.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\endpoints\electrum.cpp">
-      <ObjectFileName>$(IntDir)test_endpoints_electrum.obj</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\error.cpp" />
     <ClCompile Include="..\..\..\..\test\estimator.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
@@ -133,14 +127,22 @@
     <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\blocks.cpp">
+      <ObjectFileName>$(IntDir)test_protocols_blocks.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum.cpp">
+      <ObjectFileName>$(IntDir)test_protocols_electrum_electrum.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_block_header.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server_version.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp">
       <ObjectFileName>$(IntDir)test_test.obj</ObjectFileName>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\endpoints\blocks.hpp" />
-    <ClInclude Include="..\..\..\..\test\endpoints\electrum.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\blocks.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum.hpp" />
     <ClInclude Include="..\..\..\..\test\test.hpp" />
   </ItemGroup>
   <ItemGroup>

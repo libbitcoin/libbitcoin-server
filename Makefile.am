@@ -72,15 +72,17 @@ test_libbitcoin_server_test_SOURCES = \
     test/settings.cpp \
     test/test.cpp \
     test/test.hpp \
-    test/endpoints/blocks.cpp \
-    test/endpoints/blocks.hpp \
-    test/endpoints/electrum.cpp \
-    test/endpoints/electrum.hpp \
     test/parsers/bitcoind_query.cpp \
     test/parsers/bitcoind_target.cpp \
     test/parsers/electrum_version.cpp \
     test/parsers/native_query.cpp \
-    test/parsers/native_target.cpp
+    test/parsers/native_target.cpp \
+    test/protocols/blocks.cpp \
+    test/protocols/blocks.hpp \
+    test/protocols/electrum/electrum.cpp \
+    test/protocols/electrum/electrum.hpp \
+    test/protocols/electrum/electrum_block_header.cpp \
+    test/protocols/electrum/electrum_server_version.cpp
 
 endif WITH_TESTS
 

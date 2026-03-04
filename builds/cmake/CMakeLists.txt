@@ -296,11 +296,7 @@ if (with-tests)
         "../../test/test.cpp"
         "../../test/test.hpp"
         "../../test/endpoints/README.md"
-        "../../test/endpoints/blocks.cpp"
-        "../../test/endpoints/blocks.hpp"
         "../../test/endpoints/conftest.py"
-        "../../test/endpoints/electrum.cpp"
-        "../../test/endpoints/electrum.hpp"
         "../../test/endpoints/test_bitcoind_rpc.py"
         "../../test/endpoints/test_electrum.py"
         "../../test/endpoints/test_native.py"
@@ -309,7 +305,13 @@ if (with-tests)
         "../../test/parsers/bitcoind_target.cpp"
         "../../test/parsers/electrum_version.cpp"
         "../../test/parsers/native_query.cpp"
-        "../../test/parsers/native_target.cpp" )
+        "../../test/parsers/native_target.cpp"
+        "../../test/protocols/blocks.cpp"
+        "../../test/protocols/blocks.hpp"
+        "../../test/protocols/electrum/electrum.cpp"
+        "../../test/protocols/electrum/electrum.hpp"
+        "../../test/protocols/electrum/electrum_block_header.cpp"
+        "../../test/protocols/electrum/electrum_server_version.cpp" )
 
     add_test( NAME libbitcoin-server-test COMMAND libbitcoin-server-test
             --run_test=*

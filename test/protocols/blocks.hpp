@@ -16,16 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_BLOCKS
+#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BLOCKS
+
 #include "../test.hpp"
 
-constexpr size_t small_header_size = 215;
-using header_t = system::data_array<small_header_size>;
+using block_data = system::data_array<215>;
+using header_data = system::data_array<80>;
 using store_t = database::store<database::map>;
 using query_t = database::query<database::store<database::map>>;
 
 extern const server::settings::embedded_pages admin;
 extern const server::settings::embedded_pages native;
 
+extern const system::hash_digest block0_hash;
 extern const system::hash_digest block1_hash;
 extern const system::hash_digest block2_hash;
 extern const system::hash_digest block3_hash;
@@ -36,15 +40,38 @@ extern const system::hash_digest block7_hash;
 extern const system::hash_digest block8_hash;
 extern const system::hash_digest block9_hash;
 
-extern const header_t block1_data;
-extern const header_t block2_data;
-extern const header_t block3_data;
-extern const header_t block4_data;
-extern const header_t block5_data;
-extern const header_t block6_data;
-extern const header_t block7_data;
-extern const header_t block8_data;
-extern const header_t block9_data;
+extern const system::hash_digest root01;
+extern const system::hash_digest root23;
+extern const system::hash_digest root03;
+extern const system::hash_digest root45;
+extern const system::hash_digest root67;
+extern const system::hash_digest root47;
+extern const system::hash_digest root07;
+extern const system::hash_digest root82;
+extern const system::hash_digest root84;
+extern const system::hash_digest root88;
+extern const system::hash_digest root08;
+
+extern const header_data header0_data;
+extern const header_data header1_data;
+extern const header_data header2_data;
+extern const header_data header3_data;
+extern const header_data header4_data;
+extern const header_data header5_data;
+extern const header_data header6_data;
+extern const header_data header7_data;
+extern const header_data header8_data;
+extern const header_data header9_data;
+
+extern const block_data block1_data;
+extern const block_data block2_data;
+extern const block_data block3_data;
+extern const block_data block4_data;
+extern const block_data block5_data;
+extern const block_data block6_data;
+extern const block_data block7_data;
+extern const block_data block8_data;
+extern const block_data block9_data;
 
 extern const system::chain::block genesis;
 extern const system::chain::block block1;
@@ -56,3 +83,7 @@ extern const system::chain::block block6;
 extern const system::chain::block block7;
 extern const system::chain::block block8;
 extern const system::chain::block block9;
+
+bool setup_eight_block_store(query_t& query) NOEXCEPT;
+
+#endif
