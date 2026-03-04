@@ -44,6 +44,10 @@ electrum_setup_fixture::electrum_setup_fixture()
     auto& electrum = server_settings.electrum;
 
     electrum.binds = { { ELECTRUM_ENDPOINT } };
+    electrum.server_name = "server_name";
+    electrum.banner_message = "banner_message";
+    electrum.donation_address = "donation_address";
+    electrum.maximum_subscriptions = 3;
     electrum.maximum_headers = 5;
     electrum.connections = 1;
     database_settings.interval_depth = 2;
@@ -95,7 +99,7 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
     catch (const boost::system::system_error& e)
     {
         BOOST_WARN_MESSAGE(false, e.what());
-        return {};
+        return boost::json::parse(R"({"dropped":true})");
     }
 
     std::string response{};
@@ -113,15 +117,14 @@ bool electrum_setup_fixture::handshake(const std::string& version,
     ) % id % name % version;
 
     const auto response = get(request.str());
-    if (!response.at("result").is_array() ||
-        !response.at("id").is_int64() ||
-            response.at("id").as_int64() != id)
+    if (!response.at("id").is_int64() || response.at("id").as_int64() != id ||
+        !response.at("result").is_array())
         return false;
 
     // Assumes server always accepts proposed version.
     const auto& result = response.at("result").as_array();
     return (result.size() == two) &&
         (result.at(0).is_string() && result.at(1).is_string()) &&
-        (result.at(0).as_string() == config().network.user_agent) &&
+        (result.at(0).as_string() == config().server.electrum.server_name) &&
         (result.at(1).as_string() == version);
 }

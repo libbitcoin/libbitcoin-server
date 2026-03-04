@@ -82,6 +82,7 @@ test_libbitcoin_server_test_SOURCES = \
     test/protocols/electrum/electrum.cpp \
     test/protocols/electrum/electrum.hpp \
     test/protocols/electrum/electrum_block_header.cpp \
+    test/protocols/electrum/electrum_server.cpp \
     test/protocols/electrum/electrum_server_version.cpp
 
 endif WITH_TESTS

@@ -115,7 +115,7 @@ void protocol_electrum_version::handle_server_version(const code& ec,
 
 std::string_view protocol_electrum_version::server_name() const NOEXCEPT
 {
-    return network_settings().user_agent;
+    return options().server_name;
 }
 
 std::string_view protocol_electrum_version::client_name() const NOEXCEPT

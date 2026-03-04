@@ -311,6 +311,7 @@ if (with-tests)
         "../../test/protocols/electrum/electrum.cpp"
         "../../test/protocols/electrum/electrum.hpp"
         "../../test/protocols/electrum/electrum_block_header.cpp"
+        "../../test/protocols/electrum/electrum_server.cpp"
         "../../test/protocols/electrum/electrum_server_version.cpp" )
 
     add_test( NAME libbitcoin-server-test COMMAND libbitcoin-server-test

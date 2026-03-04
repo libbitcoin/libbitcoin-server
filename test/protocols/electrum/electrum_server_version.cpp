@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__default__expected)
     BOOST_CHECK_EQUAL(result.size(), 2u);
     BOOST_CHECK(result.at(0).is_string());
     BOOST_CHECK(result.at(1).is_string());
-    BOOST_CHECK_EQUAL(result.at(0).as_string(), config().network.user_agent);
+    BOOST_CHECK_EQUAL(result.at(0).as_string(), "server_name");
     BOOST_CHECK_EQUAL(result.at(1).as_string(), "1.4");
 }
 
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__minimum__expected)
     BOOST_CHECK_EQUAL(result.size(), 2u);
     BOOST_CHECK(result.at(0).is_string());
     BOOST_CHECK(result.at(1).is_string());
-    BOOST_CHECK_EQUAL(result.at(0).as_string(), config().network.user_agent);
+    BOOST_CHECK_EQUAL(result.at(0).as_string(), "server_name");
     BOOST_CHECK_EQUAL(result.at(1).as_string(), "1.4");
 }
 
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__maximum__expected)
     BOOST_CHECK_EQUAL(result.size(), 2u);
     BOOST_CHECK(result.at(0).is_string());
     BOOST_CHECK(result.at(1).is_string());
-    BOOST_CHECK_EQUAL(result.at(0).as_string(), config().network.user_agent);
+    BOOST_CHECK_EQUAL(result.at(0).as_string(), "server_name");
     BOOST_CHECK_EQUAL(result.at(1).as_string(), "1.4.2");
 }
 
