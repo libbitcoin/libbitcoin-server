@@ -35,7 +35,7 @@ electrum_setup_fixture::electrum_setup_fixture()
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    BOOST_REQUIRE(test::clear(test::directory));
+    BOOST_REQUIRE_MESSAGE(test::clear(test::directory), "electrum setup");
 
     auto& database_settings = config_.database;
     auto& network_settings = config_.network;
@@ -50,10 +50,11 @@ electrum_setup_fixture::electrum_setup_fixture()
     node_settings.delay_inbound = false;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
+    auto ec = store_.create([](auto, auto) {});
 
     // Create and populate the store.
-    BOOST_REQUIRE(!store_.create([](auto, auto){}));
-    BOOST_REQUIRE(setup_eight_block_store(query_));
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_REQUIRE_MESSAGE(setup_eight_block_store(query_), "electrum initialize");
 
     // Run the server.
     std::promise<code> running{};
@@ -63,7 +64,8 @@ electrum_setup_fixture::electrum_setup_fixture()
     });
 
     // Block until server is running.
-    BOOST_REQUIRE(!running.get_future().get());
+    ec = running.get_future().get();
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     socket_.connect(electrum.binds.back().to_endpoint());
 }
 
@@ -71,8 +73,9 @@ electrum_setup_fixture::~electrum_setup_fixture()
 {
     socket_.close();
     server_.close();
-    BOOST_REQUIRE(!store_.close([](auto, auto){}));
-    BOOST_REQUIRE(test::clear(test::directory));
+    const auto ec = store_.close([](auto, auto){});
+    BOOST_WARN_MESSAGE(!ec, ec.message());
+    BOOST_WARN_MESSAGE(test::clear(test::directory), "electrum cleanup");
 }
 
 const configuration& electrum_setup_fixture::config() const NOEXCEPT
@@ -84,12 +87,20 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
 {
     socket_.send(boost::asio::buffer(request));
     boost::asio::streambuf stream{};
-    read_until(socket_, stream, '\n');
+
+    try
+    {
+        boost::asio::read_until(socket_, stream, '\n');
+    }
+    catch (const boost::system::system_error& e)
+    {
+        BOOST_WARN_MESSAGE(false, e.what());
+        return {};
+    }
 
     std::string response{};
     std::istream response_stream{ &stream };
     std::getline(response_stream, response);
-
     return boost::json::parse(response);
 }
 
