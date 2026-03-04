@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_example__expected)
     BOOST_CHECK_EQUAL(branch.at(3).as_string(), expected_branch[3]);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__cp_below_height__target_overflow)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__checkpoint_below_height__target_overflow)
 {
     BOOST_CHECK(handshake());
 
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__above_top__not_found)
     BOOST_CHECK_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__cp_above_top__not_found)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__checkpoint_above_top__not_found)
 {
     BOOST_CHECK(handshake());
 
