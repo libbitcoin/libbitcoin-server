@@ -1132,7 +1132,27 @@ options_metadata parser::load_settings() THROWS
     (
         "electrum.maximum_headers",
         value<uint32_t>(&configured.server.electrum.maximum_headers),
-        "The maximum allowed header request cound, defaults to '20160'."
+        "The maximum allowed headers returned per request, defaults to '20160'."
+    )
+    (
+        "electrum.maximum_subscriptions",
+        value<uint32_t>(&configured.server.electrum.maximum_subscriptions),
+        "The maximum allowed address subscriptions per channel, defaults to '1000000'."
+    )
+    (
+        "electrum.server_name",
+        value<std::string>(&configured.server.electrum.server_name),
+        "String returned by server.version, defaults to '" BC_USER_AGENT "'."
+    )
+    (
+        "electrum.donation_address",
+        value<std::string>(&configured.server.electrum.donation_address),
+        "String returned by server.donation_address, defaults to empty."
+    )
+    (
+        "electrum.banner_message",
+        value<std::string>(&configured.server.electrum.banner_message),
+        "String returned by server.banner, defaults to empty."
     )
 
     /* [stratum_v1] */

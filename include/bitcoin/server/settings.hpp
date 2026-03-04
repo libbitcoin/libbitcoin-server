@@ -90,9 +90,21 @@ public:
         using base = network::settings::tls_server;
         using base::base;
 
-        // Maximum number of headers the server will return in single request.
-        // Recommended to be multiple of difficulty retarget period, e.g. 2016.
+        /// Maximum number of headers the server will return in single request.
+        /// Recommended to be a multiple of the difficulty retarget period.
         uint32_t maximum_headers{ 10 * 2016 };
+
+        /// Maximum cumulative number of address subscriptions per channel.
+        uint32_t maximum_subscriptions{ 1'000'000 };
+
+        /// Arbitrary server name returned by server.version.
+        std::string server_name{ BC_USER_AGENT };
+
+        /// Arbitrary string returned by server.donation_address.
+        std::string donation_address{};
+
+        /// Arbitrary string returned by server.banner.
+        std::string banner_message{};
     };
 
     /// html (http/s) document server settings (has directory/default).
