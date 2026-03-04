@@ -43,6 +43,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/settings.cpp \
     src/parsers/bitcoind_query.cpp \
     src/parsers/bitcoind_target.cpp \
+    src/parsers/electrum_version.cpp \
     src/parsers/native_query.cpp \
     src/parsers/native_target.cpp \
     src/protocols/protocol_bitcoind_rest.cpp \
@@ -71,9 +72,13 @@ test_libbitcoin_server_test_SOURCES = \
     test/settings.cpp \
     test/test.cpp \
     test/test.hpp \
+    test/endpoints/blocks.cpp \
+    test/endpoints/blocks.hpp \
     test/endpoints/electrum.cpp \
+    test/endpoints/electrum.hpp \
     test/parsers/bitcoind_query.cpp \
     test/parsers/bitcoind_target.cpp \
+    test/parsers/electrum_version.cpp \
     test/parsers/native_query.cpp \
     test/parsers/native_target.cpp
 

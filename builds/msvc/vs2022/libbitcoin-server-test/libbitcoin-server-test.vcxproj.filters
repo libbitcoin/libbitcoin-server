@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\..\..\test\configuration.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\endpoints\blocks.cpp">
+      <Filter>src\endpoints</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\endpoints\electrum.cpp">
       <Filter>src\endpoints</Filter>
     </ClCompile>
@@ -39,6 +42,9 @@
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -53,6 +59,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\endpoints\blocks.hpp">
+      <Filter>src\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\endpoints\electrum.hpp">
+      <Filter>src\endpoints</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\test\test.hpp">
       <Filter>src</Filter>
     </ClInclude>

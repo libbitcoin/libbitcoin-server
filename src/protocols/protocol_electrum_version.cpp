@@ -29,9 +29,9 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_electrum_version
-
+    
 using namespace network;
-using namespace interface;
+using namespace network::rpc;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
@@ -88,7 +88,7 @@ void protocol_electrum_version::handle_server_version(const code& ec,
         return;
 
     // v0_0 implies version has not been set (first call).
-    if ((channel_->version() == electrum_version::v0_0) &&
+    if ((channel_->version() == electrum::version::v0_0) &&
         (!set_client(client_name) || !set_version(protocol_version)))
     {
         const auto reason = error::invalid_argument;
@@ -152,13 +152,13 @@ std::string protocol_electrum_version::escape_client(
 
 std::string_view protocol_electrum_version::negotiated_version() const NOEXCEPT
 {
-    return version_to_string(channel_->version());
+    return electrum::version_to_string(channel_->version());
 }
 
 bool protocol_electrum_version::set_version(const value_t& version) NOEXCEPT
 {
-    electrum_version client_min{};
-    electrum_version client_max{};
+    electrum::version client_min{};
+    electrum::version client_max{};
     if (!get_versions(client_min, client_max, version))
         return false;
 
@@ -168,14 +168,14 @@ bool protocol_electrum_version::set_version(const value_t& version) NOEXCEPT
         return false;
 
     LOGA("Electrum [" << opposite() << "] version ("
-        << version_to_string(client_max) << ") " << client_name());
+        << electrum::version_to_string(client_max) << ") " << client_name());
 
     channel_->set_version(upper);
     return true;
 }
 
-bool protocol_electrum_version::get_versions(electrum_version& min,
-    electrum_version& max, const interface::value_t& version) NOEXCEPT
+bool protocol_electrum_version::get_versions(electrum::version& min,
+    electrum::version& max, const interface::value_t& version) NOEXCEPT
 {
     // Optional value_t can be string_t or array_t of two string_t.
     const auto& value = version.value();
@@ -184,7 +184,7 @@ bool protocol_electrum_version::get_versions(electrum_version& min,
     if (std::holds_alternative<null_t>(value))
     {
         // An interface default can't be set for optional<value_t>.
-        max = min = electrum_version::v1_4;
+        max = min = electrum::version::v1_4;
         return true;
     }
 
@@ -192,8 +192,8 @@ bool protocol_electrum_version::get_versions(electrum_version& min,
     if (std::holds_alternative<string_t>(value))
     {
         // A single value implies minimum is the same as maximum.
-        max = min = version_from_string(std::get<string_t>(value));
-        return min != electrum_version::v0_0;
+        max = min = electrum::version_from_string(std::get<string_t>(value));
+        return min != electrum::version::v0_0;
     }
 
     // Two versions.
@@ -210,63 +210,13 @@ bool protocol_electrum_version::get_versions(electrum_version& min,
             !std::holds_alternative<string_t>(max_version))
             return false;
 
-        min = version_from_string(std::get<string_t>(min_version));
-        max = version_from_string(std::get<string_t>(max_version));
-        return min != electrum_version::v0_0
-            && max != electrum_version::v0_0;
+        min = electrum::version_from_string(std::get<string_t>(min_version));
+        max = electrum::version_from_string(std::get<string_t>(max_version));
+        return min != electrum::version::v0_0
+            && max != electrum::version::v0_0;
     }
 
     return false;
-}
-
-// private/static
-std::string_view protocol_electrum_version::version_to_string(
-    electrum_version version) NOEXCEPT
-{
-    static const std::unordered_map<electrum_version, std::string_view> map
-    {
-        { electrum_version::v0_0,   "0.0" },
-        { electrum_version::v0_6,   "0.6" },
-        { electrum_version::v0_8,   "0.8" },
-        { electrum_version::v0_9,   "0.9" },
-        { electrum_version::v0_10,  "0.10" },
-        { electrum_version::v1_0,   "1.0" },
-        { electrum_version::v1_1,   "1.1" },
-        { electrum_version::v1_2,   "1.2" },
-        { electrum_version::v1_3,   "1.3" },
-        { electrum_version::v1_4,   "1.4" },
-        { electrum_version::v1_4_1, "1.4.1" },
-        { electrum_version::v1_4_2, "1.4.2" },
-        { electrum_version::v1_6,   "1.6" }
-    };
-
-    const auto it = map.find(version);
-    return it != map.end() ? it->second : "0.0";
-}
-
-// private/static
-electrum_version protocol_electrum_version::version_from_string(
-    const std::string_view& version) NOEXCEPT
-{
-    static const std::unordered_map<std::string_view, electrum_version> map
-    {
-        { "0.0",   electrum_version::v0_0 },
-        { "0.6",   electrum_version::v0_6 },
-        { "0.8",   electrum_version::v0_8 },
-        { "0.9",   electrum_version::v0_9 },
-        { "0.10",  electrum_version::v0_10 },
-        { "1.0",   electrum_version::v1_0 },
-        { "1.1",   electrum_version::v1_1 },
-        { "1.2",   electrum_version::v1_2 },
-        { "1.3",   electrum_version::v1_3 },
-        { "1.4",   electrum_version::v1_4 },
-        { "1.4.1", electrum_version::v1_4_1 },
-        { "1.4.2", electrum_version::v1_4_2 },
-        { "1.6",   electrum_version::v1_6 }
-    };
-
-    const auto it = map.find(version);
-    return it != map.end() ? it->second : electrum_version::v0_0;
 }
 
 BC_POP_WARNING()

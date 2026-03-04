@@ -64,19 +64,19 @@ public:
         return name_;
     }
 
-    inline void set_version(electrum_version version) NOEXCEPT
+    inline void set_version(electrum::version version) NOEXCEPT
     {
         version_ = version;
     }
 
-    inline electrum_version version() const NOEXCEPT
+    inline electrum::version version() const NOEXCEPT
     {
         return version_;
     }
 
 private:
     // These are protected by strand.
-    electrum_version version_{ electrum_version::v0_0 };
+    electrum::version version_{ electrum::version::v0_0 };
     std::string name_{};
 };
 
