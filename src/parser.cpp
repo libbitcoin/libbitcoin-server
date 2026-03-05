@@ -891,7 +891,7 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.allow_opaque_origin",
         value<bool>(&configured.server.admin.allow_opaque_origin),
-        "Allow requests from opaue origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
     )
     (
         "admin.path",
@@ -978,7 +978,7 @@ options_metadata parser::load_settings() THROWS
     (
         "native.allow_opaque_origin",
         value<bool>(&configured.server.native.allow_opaque_origin),
-        "Allow requests from opaue origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
     )
     (
         "native.path",
@@ -1080,7 +1080,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.allow_opaque_origin",
         value<bool>(&configured.server.bitcoind.allow_opaque_origin),
-        "Allow requests from opaue origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
     )
 
     /* [electrum] */
