@@ -9,6 +9,9 @@ Run with:
     pytest test_native.py --native-host=192.168.1.100 --native-port=8181
 """
 
+import json
+import os
+import time
 import pytest
 import requests
 from typing import Any, Dict, List, Union
@@ -29,8 +32,19 @@ def get_json(
     """GET → JSON with latency logging and auto-unwrap of [dict] → dict"""
     url = f"{base_url}/{endpoint}?format=json"
 
+    if os.getenv("NATIVE_DEBUG"):
+        print(f">>> GET {url}", flush=True)
+
+    _t0 = time.monotonic()
     try:
         resp = requests.get(url, timeout=timeout, headers={"Connection": "close"})
+        _elapsed = time.monotonic() - _t0
+
+        if os.getenv("NATIVE_DEBUG"):
+            try:
+                print(f"<<< {endpoint} ({_elapsed * 1000:.1f} ms):", json.dumps(resp.json(), indent=2), flush=True)
+            except Exception:
+                pass
 
         if resp.status_code in allow_error_status:
             if allow_404 and resp.status_code == 404:

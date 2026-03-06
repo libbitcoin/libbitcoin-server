@@ -8,9 +8,9 @@ This directory contains Python-based integration tests for all libbitcoin-server
 
 | Interface | Protocol | Test File | Status |
 |-----------|----------|-----------|--------|
-| **Native REST** | HTTP/S + JSON | `test_native.py` | 🔧 In Progress |
-| **bitcoind RPC** | HTTP/S + JSON-RPC 2.0 | `test_bitcoind_rpc.py` | 🔧 In Progress |
-| **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | 🔧 In Progress |
+| **Native REST** | HTTP/S + JSON | `test_native.py` | ✅ Active |
+| **bitcoind RPC** | HTTP/S + JSON-RPC 2.0 | `test_bitcoind_rpc.py` | ✅ Active |
+| **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | ✅ Active |
 | **bitcoind REST** | HTTP/S + JSON/Binary | `test_bitcoind_rest.py` | 🚧 Planned |
 | **Stratum v1** | TCP + JSON-RPC 1.0 | `test_stratum_v1.py` | 🚧 Planned |
 | **Stratum v2** | TCP + Binary | `test_stratum_v2.py` | 🚧 Planned |
@@ -231,10 +231,10 @@ pytest test_bitcoind_rpc.py -k "getblock"
 Tests Electrum Protocol 1.4.2 JSON-RPC over TCP.
 
 **Coverage:**
-- ✅ Server methods (version, banner, features, ping)
-- ✅ Blockchain methods (headers, estimatefee, relayfee)
-- ✅ Scripthash methods (balance, history, mempool, listunspent, subscribe)
-- ✅ Transaction methods (get, id_from_pos)
+- ✅ Server methods (version, banner, features, ping, add_peer, donation_address, peers.subscribe)
+- ✅ Blockchain methods (block.header, block.headers, headers.subscribe, estimatefee, relayfee)
+- ✅ Scripthash methods (balance, history, mempool, listunspent, subscribe, unsubscribe)
+- ✅ Transaction methods (get, get_merkle, id_from_pos, broadcast)
 - ✅ Mempool methods (fee_histogram)
 
 **Example test runs:**
@@ -359,6 +359,32 @@ RuntimeError: RPC connection error: 401 Unauthorized
 ModuleNotFoundError: No module named 'utils'
 ```
 **Solution:** Run pytest from the `test/endpoints/` directory or install package in development mode.
+
+### Request/Response Debug Output
+
+Each test module supports a dedicated environment variable that enables pretty-printed JSON logging of every request and response:
+
+| Test file | Variable | Prints |
+|-----------|----------|--------|
+| `test_electrum.py` | `ELECTRUM_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response with elapsed time |
+| `test_native.py` | `NATIVE_DEBUG=1` | `>>> GET <url>` / `<<<` response JSON with elapsed time |
+| `test_bitcoind_rpc.py` | `BITCOIND_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response with elapsed time |
+
+```bash
+# Electrum — pretty-print all requests and responses
+ELECTRUM_DEBUG=1 pytest test_electrum.py -s
+
+# Native REST
+NATIVE_DEBUG=1 pytest test_native.py -s
+
+# bitcoind RPC
+BITCOIND_DEBUG=1 pytest test_bitcoind_rpc.py -s
+
+# Combine with -k to focus on a single test
+ELECTRUM_DEBUG=1 pytest test_electrum.py -s -k "block_headers_20000"
+```
+
+> **Note:** Use `-s` (or `--capture=no`) together with the debug variable so pytest does not suppress stdout.
 
 ### Debug Mode
 

@@ -10,6 +10,8 @@ Run with:
     pytest test_bitcoind_rpc.py --bitcoind-auth --bitcoind-cookie=/path/to/.cookie
 """
 
+import os
+import time
 import pytest
 import requests
 import json
@@ -46,6 +48,10 @@ def send_rpc(
         "params": params if params is not None else [],
     }
 
+    if os.getenv("BITCOIND_DEBUG"):
+        print(">>>", json.dumps(payload, indent=2), flush=True)
+
+    _t0 = time.monotonic()
     try:
         response = requests.post(
             config["url"],
@@ -57,11 +63,18 @@ def send_rpc(
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         raise RuntimeError(f"RPC connection error: {e}")
+    _elapsed = time.monotonic() - _t0
 
     try:
         data = response.json()
     except ValueError:
         raise RuntimeError("Invalid JSON response from RPC server")
+
+    if os.getenv("BITCOIND_DEBUG"):
+        try:
+            print(f"<<< {method} ({_elapsed * 1000:.1f} ms):", json.dumps(data, indent=2), flush=True)
+        except Exception:
+            pass
 
     # Check for error in response
     if "error" in data and data["error"] is not None:
