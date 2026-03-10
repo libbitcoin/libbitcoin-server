@@ -588,7 +588,7 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.enable_compact",
         value<bool>(&configured.network.enable_compact),
-        "Enable enable compact block messages, defaults to 'false'."
+        "Enable compact block messages, defaults to 'false'."
     )
     (
         "peer.enable_alert",
@@ -705,7 +705,7 @@ options_metadata parser::load_settings() THROWS
     (
         "outbound.password",
         value<std::string>(&configured.network.outbound.password),
-        "The socks5 proxy username (optional)."
+        "The socks5 proxy password (optional)."
     )
     (
         "outbound.socks",
@@ -809,7 +809,7 @@ options_metadata parser::load_settings() THROWS
     (
         "manual.password",
         value<std::string>(&configured.network.manual.password),
-        "The socks5 proxy username (optional)."
+        "The socks5 proxy password (optional)."
     )
     (
         "manual.socks",
