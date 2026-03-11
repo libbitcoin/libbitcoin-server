@@ -96,9 +96,9 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
     {
         boost::asio::read_until(socket_, stream, '\n');
     }
-    catch (const boost::system::system_error& e)
+    catch (const boost::system::system_error&)
     {
-        BOOST_WARN_MESSAGE(false, e.what());
+        ////BOOST_WARN_MESSAGE(false, e.what());
         return boost::json::parse(R"({"dropped":true})");
     }
 
