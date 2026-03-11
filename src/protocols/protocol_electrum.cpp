@@ -182,6 +182,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     const auto prove = !is_zero(quantity) && !is_zero(waypoint);
     const auto target = starting + sub1(quantity);
     const auto& query = archive();
+    const auto top = query.get_top_confirmed();
     using namespace system;
 
     // The documented requirement: `start_height + (count - 1) <= cp_height` is
@@ -191,14 +192,19 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         send_code(error::argument_overflow);
         return;
     }
+    else if (starting > top)
+    {
+        send_code(error::not_found);
+        return;
+    }
+    else if (prove && waypoint > top)
+    {
+        send_code(error::not_found);
+        return;
+    }
     else if (prove && target > waypoint)
     {
         send_code(error::target_overflow);
-        return;
-    }
-    else if (prove && waypoint > query.get_top_confirmed())
-    {
-        send_code(error::not_found);
         return;
     }
 
@@ -236,7 +242,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         result["count"] = uint64_t{ headers.size() };
         result["headers"] = std::move(headers);
     }
-    else
+    else if (!headers.empty())
     {
         result["header"] = headers.front();
     }
@@ -423,14 +429,16 @@ void protocol_electrum::handle_server_banner(const code& ec,
     if (stopped(ec))
         return;
 
-    send_result(network_settings().user_agent, 70, BIND(complete, _1));
+    send_result({ options().banner_message }, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_server_donation_address(const code& ec,
     rpc_interface::server_donation_address) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    send_result({ options().donation_address }, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_server_features(const code& ec,
@@ -451,8 +459,11 @@ void protocol_electrum::handle_server_peers_subscribe(const code& ec,
 void protocol_electrum::handle_server_ping(const code& ec,
     rpc_interface::server_ping) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    // Any receive, including ping, resets the base channel inactivity timer.
+    send_result({ null_t{} }, 42, BIND(complete, _1));
 }
 
 // Handlers (mempool).

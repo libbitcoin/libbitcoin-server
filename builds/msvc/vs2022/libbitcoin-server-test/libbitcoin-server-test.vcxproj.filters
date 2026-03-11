@@ -16,13 +16,16 @@
     <Filter Include="src\parsers">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000002}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\protocols">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\electrum">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000004}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\configuration.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\endpoints\electrum.cpp">
-      <Filter>src\endpoints</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\error.cpp">
       <Filter>src</Filter>
@@ -39,11 +42,29 @@
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\blocks.cpp">
+      <Filter>src\protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_block_header.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server_version.cpp">
+      <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\settings.cpp">
       <Filter>src</Filter>
@@ -53,6 +74,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\protocols\blocks.hpp">
+      <Filter>src\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum.hpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\test\test.hpp">
       <Filter>src</Filter>
     </ClInclude>

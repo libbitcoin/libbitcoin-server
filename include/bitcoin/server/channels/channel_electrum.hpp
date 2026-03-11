@@ -39,12 +39,13 @@ class BCS_API channel_electrum
 public:
     typedef std::shared_ptr<channel_electrum> ptr;
     using interface_t = interface::electrum;
-    using options_t = typename network::channel_rpc<interface_t>::options_t;
+    using options_t = settings::electrum_server;
 
     inline channel_electrum(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
+        options_(options),
         network::channel_rpc<interface::electrum>(log, socket, identifier,
             config.network, options),
         network::tracker<channel_electrum>(log)
@@ -64,19 +65,27 @@ public:
         return name_;
     }
 
-    inline void set_version(electrum_version version) NOEXCEPT
+    inline void set_version(electrum::version version) NOEXCEPT
     {
         version_ = version;
     }
 
-    inline electrum_version version() const NOEXCEPT
+    inline electrum::version version() const NOEXCEPT
     {
         return version_;
     }
 
+    inline const options_t& options() const NOEXCEPT
+    {
+        return options_;
+    }
+
 private:
+    // This is thread safe.
+    const options_t& options_;
+
     // These are protected by strand.
-    electrum_version version_{ electrum_version::v0_0 };
+    electrum::version version_{ electrum::version::v0_0 };
     std::string name_{};
 };
 

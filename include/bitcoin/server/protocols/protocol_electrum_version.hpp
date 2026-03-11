@@ -20,7 +20,6 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ELECTRUM_VERSION_HPP
 
 #include <memory>
-#include <unordered_map>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -42,6 +41,7 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_rpc<channel_electrum>(session, channel, options),
+        options_(options),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         network::tracker<protocol_electrum_version>(session->log)
     {
@@ -51,18 +51,18 @@ public:
     virtual void finished(const code& ec, const code& shake) NOEXCEPT;
 
 protected:
-    static constexpr electrum_version minimum = electrum_version::v1_4;
-    static constexpr electrum_version maximum = electrum_version::v1_4_2;
+    static constexpr electrum::version minimum = electrum::version::v1_4;
+    static constexpr electrum::version maximum = electrum::version::v1_4_2;
     static constexpr size_t max_client_name_length = 1024;
 
     void handle_server_version(const code& ec,
         rpc_interface::server_version, const std::string& client_name,
         const interface::value_t& protocol_version) NOEXCEPT;
 
-    electrum_version version() const NOEXCEPT;
+    electrum::version version() const NOEXCEPT;
     std::string_view negotiated_version() const NOEXCEPT;
     bool set_version(const interface::value_t& version) NOEXCEPT;
-    bool get_versions(electrum_version& min, electrum_version& max,
+    bool get_versions(electrum::version& min, electrum::version& max,
         const interface::value_t& version) NOEXCEPT;
 
     std::string_view server_name() const NOEXCEPT;
@@ -70,11 +70,14 @@ protected:
     std::string escape_client(const std::string& in) NOEXCEPT;
     bool set_client(const std::string& name) NOEXCEPT;
 
+    inline const options_t& options() const NOEXCEPT
+    {
+        return options_;
+    }
+
 private:
-    static std::string_view version_to_string(
-        electrum_version version) NOEXCEPT;
-    static electrum_version version_from_string(
-        const std::string_view& version) NOEXCEPT;
+    // This is thread safe.
+    const options_t& options_;
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;

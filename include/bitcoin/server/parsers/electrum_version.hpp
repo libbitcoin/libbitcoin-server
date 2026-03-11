@@ -19,12 +19,14 @@
 #ifndef LIBBITCOIN_SERVER_PARSERS_ELECTRUM_VERSION_HPP
 #define LIBBITCOIN_SERVER_PARSERS_ELECTRUM_VERSION_HPP
 
+#include <unordered_map>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
+namespace electrum {
 
-enum class electrum_version
+enum class version
 {
     /// Invalid version.
     v0_0,
@@ -66,6 +68,10 @@ enum class electrum_version
     v1_6
 };
 
+std::string_view version_to_string(version value) NOEXCEPT;
+version version_from_string(const std::string_view& value) NOEXCEPT;
+
+} // namespace electrum
 } // namespace server
 } // namespace libbitcoin
 

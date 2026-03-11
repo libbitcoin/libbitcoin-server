@@ -242,6 +242,7 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/settings.cpp"
     "../../src/parsers/bitcoind_query.cpp"
     "../../src/parsers/bitcoind_target.cpp"
+    "../../src/parsers/electrum_version.cpp"
     "../../src/parsers/native_query.cpp"
     "../../src/parsers/native_target.cpp"
     "../../src/protocols/protocol_bitcoind_rest.cpp"
@@ -296,15 +297,22 @@ if (with-tests)
         "../../test/test.hpp"
         "../../test/endpoints/README.md"
         "../../test/endpoints/conftest.py"
-        "../../test/endpoints/electrum.cpp"
         "../../test/endpoints/test_bitcoind_rpc.py"
         "../../test/endpoints/test_electrum.py"
         "../../test/endpoints/test_native.py"
         "../../test/endpoints/utils.py"
         "../../test/parsers/bitcoind_query.cpp"
         "../../test/parsers/bitcoind_target.cpp"
+        "../../test/parsers/electrum_version.cpp"
         "../../test/parsers/native_query.cpp"
-        "../../test/parsers/native_target.cpp" )
+        "../../test/parsers/native_target.cpp"
+        "../../test/protocols/blocks.cpp"
+        "../../test/protocols/blocks.hpp"
+        "../../test/protocols/electrum/electrum.cpp"
+        "../../test/protocols/electrum/electrum.hpp"
+        "../../test/protocols/electrum/electrum_block_header.cpp"
+        "../../test/protocols/electrum/electrum_server.cpp"
+        "../../test/protocols/electrum/electrum_server_version.cpp" )
 
     add_test( NAME libbitcoin-server-test COMMAND libbitcoin-server-test
             --run_test=*
