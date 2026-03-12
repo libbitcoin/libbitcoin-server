@@ -311,6 +311,8 @@ if (with-tests)
         "../../test/protocols/electrum/electrum.cpp"
         "../../test/protocols/electrum/electrum.hpp"
         "../../test/protocols/electrum/electrum_block_header.cpp"
+        "../../test/protocols/electrum/electrum_block_headers.cpp"
+        "../../test/protocols/electrum/electrum_headers_subscribe.cpp"
         "../../test/protocols/electrum/electrum_server.cpp"
         "../../test/protocols/electrum/electrum_server_version.cpp" )
 

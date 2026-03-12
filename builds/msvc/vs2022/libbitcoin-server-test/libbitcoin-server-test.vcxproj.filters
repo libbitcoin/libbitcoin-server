@@ -60,6 +60,12 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_block_header.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_block_headers.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_headers_subscribe.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>

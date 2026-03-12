@@ -94,7 +94,7 @@ void protocol_electrum::stopping(const code& ec) NOEXCEPT
 // ----------------------------------------------------------------------------
 
 bool protocol_electrum::handle_event(const code&, node::chase event_,
-    node::event_value) NOEXCEPT
+    node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
     if (stopped())
@@ -102,8 +102,14 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 
     switch (event_)
     {
-        case node::chase::suspend:
+        case node::chase::organized:
         {
+            if (subscribed_.load(std::memory_order_relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_header, std::get<node::header_t>(value));
+            }
+
             break;
         }
         default:
@@ -297,19 +303,39 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    // TODO: signal header subscription.
-
-    // TODO: idempotent subscribe to chase::organized via session/chaser/node.
-    // TODO: upon notification send just the header notified by the link.
-    // TODO: it is client responsibility to deal with reorgs and race gaps.
-    send_result(value_t
+    subscribed_.store(true, std::memory_order_relaxed);
+    send_result(
+    {
+        object_t
         {
-            object_t
-            {
-                { "height", uint64_t{ top } },
-                { "hex", to_hex(*header, chain::header::serialized_size()) }
-            }
-        }, 256, BIND(complete, _1));
+            { "height", uint64_t{ top } },
+            { "hex", to_hex(*header, chain::header::serialized_size()) }
+        }
+    }, 256, BIND(complete, _1));
+}
+
+void protocol_electrum::do_header(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto height = query.get_height(link);
+    const auto header = query.get_header(link);
+
+    if (height.is_terminal() || !header)
+    {
+        LOGF("Electrum::do_header, object not found (" << link << ").");
+        return;
+    }
+
+    send_notification("blockchain.headers.subscribe",
+    {
+        object_t
+        {
+            { "height", height.value },
+            { "hex", to_hex(*header, chain::header::serialized_size()) }
+        }
+    }, 100, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
@@ -477,14 +503,14 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
 
     // TODO: requires tx pool metadata graph.
     send_result(value_t
+    {
+        array_t
         {
-            array_t
-            {
-                array_t{ 1, 1024 },
-                array_t{ 2, 2048 },
-                array_t{ 4, 4096 }
-            }
-        }, 256, BIND(complete, _1));
+            array_t{ 1, 1024 },
+            array_t{ 2, 2048 },
+            array_t{ 4, 4096 }
+        }
+    }, 256, BIND(complete, _1));
 }
 
 BC_POP_WARNING()
