@@ -75,7 +75,7 @@ const chain::block block5{ block5_data, true };
 const chain::block block6{ block6_data, true };
 const chain::block block7{ block7_data, true };
 const chain::block block8{ block8_data, true };
-const chain::block block9{ block8_data, true };
+const chain::block block9{ block9_data, true };
 
 const server::settings::embedded_pages admin{};
 const server::settings::embedded_pages native{};

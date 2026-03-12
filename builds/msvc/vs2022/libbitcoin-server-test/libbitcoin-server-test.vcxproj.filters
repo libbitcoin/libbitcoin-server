@@ -57,13 +57,22 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_block_header.cpp">
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_fees.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_headers.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server_version.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_transactions.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\settings.cpp">

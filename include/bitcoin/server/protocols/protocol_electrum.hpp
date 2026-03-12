@@ -128,7 +128,10 @@ protected:
     void blockchain_block_headers(size_t starting, size_t quantity,
         size_t waypoint, bool multiplicity) NOEXCEPT;
 
-    inline bool is_version(electrum::version version) const NOEXCEPT
+    /// Notify client of new header.
+    void do_header(node::header_t link) NOEXCEPT;
+
+    inline bool is_version(server::electrum::version version) const NOEXCEPT
     {
         return channel_->version() >= version;
     }
@@ -139,8 +142,9 @@ protected:
     }
 
 private:
-    // This is thread safe.
+    // These are thread safe.
     const options_t& options_;
+    std::atomic_bool subscribed_{};
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
