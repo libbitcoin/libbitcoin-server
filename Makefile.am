@@ -81,11 +81,12 @@ test_libbitcoin_server_test_SOURCES = \
     test/protocols/blocks.hpp \
     test/protocols/electrum/electrum.cpp \
     test/protocols/electrum/electrum.hpp \
-    test/protocols/electrum/electrum_block_header.cpp \
-    test/protocols/electrum/electrum_block_headers.cpp \
-    test/protocols/electrum/electrum_headers_subscribe.cpp \
+    test/protocols/electrum/electrum_addresses.cpp \
+    test/protocols/electrum/electrum_fees.cpp \
+    test/protocols/electrum/electrum_headers.cpp \
     test/protocols/electrum/electrum_server.cpp \
-    test/protocols/electrum/electrum_server_version.cpp
+    test/protocols/electrum/electrum_server_version.cpp \
+    test/protocols/electrum/electrum_transactions.cpp
 
 endif WITH_TESTS
 

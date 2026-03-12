@@ -133,11 +133,12 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum.cpp">
       <ObjectFileName>$(IntDir)test_protocols_electrum_electrum.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_block_header.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_block_headers.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_headers_subscribe.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_fees.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_headers.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server_version.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_transactions.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp">
       <ObjectFileName>$(IntDir)test_test.obj</ObjectFileName>

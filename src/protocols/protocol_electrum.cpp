@@ -407,6 +407,8 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     send_code(error::not_implemented);
 }
 
+// TODO: requires tx pool in order to validate against unconfirmed txs.
+// TODO: requires that p2p channels subscribe to transaction broadcast.
 void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     rpc_interface::blockchain_transaction_broadcast,
     const std::string& ) NOEXCEPT
