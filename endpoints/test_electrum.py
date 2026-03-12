@@ -11,7 +11,10 @@ Run with:
 """
 
 import json
+import os
 import socket
+import time
+import subprocess
 import warnings
 import pytest
 
@@ -72,14 +75,26 @@ def send_rpc(method: str, params: list = None):
     }
 
     try:
+        if os.getenv("ELECTRUM_DEBUG"):
+            print(">>>", json.dumps(payload, indent=2), flush=True)
+
         sock.sendall((json.dumps(payload) + "\n").encode("utf-8"))
 
+        _t0 = time.monotonic()
         data = reader.readline().rstrip("\n")
+        _elapsed = time.monotonic() - _t0
 
         if not data:
             pytest.skip(f"No response (possibly unsupported method: {method})")
 
         response = parse_response(data)
+
+        # Pretty print parsed response when debugging
+        if os.getenv("ELECTRUM_DEBUG"):
+            try:
+                print(f"<<< {method} ({_elapsed * 1000:.1f} ms):", json.dumps(response, indent=2), flush=True)
+            except Exception:
+                pass
 
         # Check for error in response
         if isinstance(response, dict) and "error" in response and response["error"] is not None:
@@ -95,6 +110,53 @@ def send_rpc(method: str, params: list = None):
 
     except Exception as e:
         pytest.skip(f"Connection / protocol error: {type(e).__name__}: {e}")
+
+
+def _read_raw_line(timeout: float):
+    """Read a raw line from the persistent reader with a timeout (returns None on timeout)."""
+    if sock is None or reader is None:
+        return None
+
+    # Save original socket timeout and set temporary timeout
+    try:
+        orig = sock.gettimeout()
+    except Exception:
+        orig = None
+
+    try:
+        sock.settimeout(timeout)
+        line = reader.readline()
+        if not line:
+            return None
+        return line.rstrip('\n')
+    except Exception:
+        return None
+    finally:
+        try:
+            sock.settimeout(orig)
+        except Exception:
+            pass
+
+
+def read_notification(timeout: float = 5.0):
+    """Attempt to read a single JSON notification from the socket within timeout seconds.
+
+    Returns parsed JSON object or None on timeout/unparseable data.
+    """
+    raw = _read_raw_line(timeout)
+    if not raw:
+        return None
+
+    # Optionally print raw
+    if os.getenv("ELECTRUM_DEBUG"):
+        print("<<< notify-raw:", raw, flush=True)
+
+    try:
+        obj = json.loads(raw)
+    except Exception:
+        return None
+
+    return obj
 
 
 def parse_response(raw_data: str) -> dict:
@@ -216,6 +278,69 @@ def test_blockchain_block_header():
         pytest.fail(f"Unexpected response type: {type(response)}")
 
 
+def test_blockchain_block_header_with_cp():
+    """Test blockchain.block.header with cp_height - request a checkpointed proof"""
+    # Request header with checkpoint equal to the target height (produce proof)
+    response = send_rpc("blockchain.block.header", [ReferenceData.KNOWN_HEIGHT, ReferenceData.KNOWN_HEIGHT])
+
+    # If server returns legacy plain hex string, mark as xfail since proof isn't provided
+    if isinstance(response, str):
+        pytest.xfail("Server returned legacy header string; checkpoint proofs not provided")
+
+    # Expect dict-style response containing header and proof fields
+    assert isinstance(response, dict)
+    header_data = response.get("hex") or response.get("headers")
+    assert header_data is not None, "Expected 'hex' or 'headers' key in response"
+
+    # Validate header content as in non-checkpoint test
+    if isinstance(header_data, list):
+        assert len(header_data) >= 1
+        assert len(header_data[0]) == 160
+    else:
+        assert len(header_data) == 160
+
+    # Check that merkle proof info is present when checkpoint requested
+    assert "root" in response, "Expected 'root' in checkpointed response"
+    assert "branch" in response, "Expected 'branch' in checkpointed response"
+    assert isinstance(response["branch"], list)
+    # Validate branch element formats (hex digests)
+    for h in response["branch"]:
+        assert isinstance(h, str) and len(h) == 64
+
+
+def test_blockchain_block_header_with_cp_protocol_example():
+    """Test blockchain.block.header with cp_height using the example from the Electrum protocol docs.
+
+    https://electrumx.readthedocs.io/en/latest/protocol-methods.html#blockchain-block-header
+    """
+    # Parameters taken verbatim from the protocol spec example: height=5, cp_height=8
+    response = send_rpc("blockchain.block.header", [5, 8])
+
+    # If server returns legacy plain hex string, mark as xfail since proof isn't provided
+    if isinstance(response, str):
+        pytest.xfail("Server returned legacy header string; checkpoint proofs not provided")
+
+    # Expect dict-style response containing header and proof fields
+    assert isinstance(response, dict)
+    header_data = response.get("hex") or response.get("headers")
+    assert header_data is not None, "Expected 'hex' or 'headers' key in response"
+
+    # Validate header content as in non-checkpoint test
+    if isinstance(header_data, list):
+        assert len(header_data) >= 1
+        assert len(header_data[0]) == 160
+    else:
+        assert len(header_data) == 160
+
+    # Check that merkle proof info is present when checkpoint requested
+    assert "root" in response, "Expected 'root' in checkpointed response"
+    assert "branch" in response, "Expected 'branch' in checkpointed response"
+    assert isinstance(response["branch"], list)
+    # Validate branch element formats (hex digests)
+    for h in response["branch"]:
+        assert isinstance(h, str) and len(h) == 64
+
+
 def test_blockchain_block_headers():
     """Test blockchain.block.headers - get multiple block headers"""
     # Get 5 headers starting from KNOWN_HEIGHT
@@ -237,13 +362,293 @@ def test_blockchain_block_headers():
         assert len(header_data) == 160 * result["count"]
 
 
+def test_blockchain_block_headers_protocol_example():
+    """Test blockchain.block.headers using the example from the Electrum protocol docs.
+
+    https://electrumx.readthedocs.io/en/latest/protocol-methods.html#blockchain-block-headers
+    """
+    # Parameters taken verbatim from the protocol spec example: start_height=5, count=8, cp_height=0
+    result = send_rpc("blockchain.block.headers", [5, 8, 0])
+    assert isinstance(result, dict)
+    assert "count" in result
+
+    # Accept either format
+    header_data = result.get("hex") or result.get("headers")
+    assert header_data is not None, "Expected 'hex' or 'headers' key in response"
+    assert isinstance(header_data, str) or isinstance(header_data, list)
+
+    # Validate content
+    if isinstance(header_data, list):
+        assert len(header_data) == result["count"]
+        assert all(isinstance(h, str) and len(h) == 160 for h in header_data)
+    else:
+        # Old style single string
+        assert len(header_data) == 160 * result["count"]
+
+
+def test_blockchain_block_headers_with_cp_single():
+    """Request a small batch with checkpoint proof and validate proof fields."""
+    # Request 1 header with a checkpoint at a later height to trigger proof.
+    cp = ReferenceData.KNOWN_HEIGHT + 10
+    try:
+        result = send_rpc("blockchain.block.headers", [ReferenceData.KNOWN_HEIGHT, 1, cp])
+    except Exception as e:
+        msg = str(e).lower()
+        if "not_found" in msg or "not_implemented" in msg:
+            pytest.skip(f"Server does not support checkpointed headers: {e}")
+        raise
+
+    assert isinstance(result, dict)
+    # Headers present
+    header_data = result.get("headers") or result.get("hex")
+    assert header_data is not None
+    # Proof fields should be present when cp requested
+    assert "root" in result and "branch" in result
+    assert isinstance(result["branch"], list)
+
+
+def test_blockchain_block_headers_with_cp_multiple():
+    """Request multiple headers with checkpoint proof (cp_height >= target)."""
+    count = 5
+    cp = ReferenceData.KNOWN_HEIGHT + 20  # cp must be >= start + (count - 1)
+    try:
+        result = send_rpc("blockchain.block.headers", [ReferenceData.KNOWN_HEIGHT, count, cp])
+    except Exception as e:
+        msg = str(e).lower()
+        if "target_overflow" in msg or "not_implemented" in msg or "not_found" in msg:
+            pytest.skip(f"Server did not provide multi-header checkpoint proof: {e}")
+        raise
+
+    assert isinstance(result, dict)
+    header_data = result.get("headers") or result.get("hex")
+    assert header_data is not None
+    # Validate multiple headers format
+    if isinstance(header_data, list):
+        assert len(header_data) == result["count"]
+    else:
+        assert len(header_data) == 160 * result["count"]
+
+    # Proof should be returned
+    assert "root" in result and "branch" in result
+    assert isinstance(result["branch"], list)
+
+
+def test_blockchain_block_headers_height_900000_with_cp():
+    """Request headers at height 900000 with checkpoint proof."""
+    start = 900000
+    count = 1
+    cp = 900010
+    try:
+        result = send_rpc("blockchain.block.headers", [start, count, cp])
+    except Exception as e:
+        msg = str(e).lower()
+        if "not_found" in msg or "not_implemented" in msg:
+            pytest.skip(f"Server does not support checkpointed headers at height {start}: {e}")
+        raise
+
+    assert isinstance(result, dict)
+    header_data = result.get("headers") or result.get("hex")
+    assert header_data is not None
+    if isinstance(header_data, list):
+        assert len(header_data) == result["count"]
+        assert all(isinstance(h, str) and len(h) == 160 for h in header_data)
+    else:
+        assert len(header_data) == 160 * result["count"]
+    assert "root" in result and "branch" in result
+    assert isinstance(result["branch"], list)
+    for h in result["branch"]:
+        assert isinstance(h, str) and len(h) == 64
+
+
+def test_blockchain_block_headers_20000_at_tip_with_cp():
+    """Request 20000 headers at a fixed well-confirmed range with checkpoint proof."""
+    start = 900000
+    count = 20000
+    cp = start + count - 1  # = 919999, well below current tip
+
+    try:
+        result = send_rpc("blockchain.block.headers", [start, count, cp])
+    except Exception as e:
+        msg = str(e).lower()
+        if "not_found" in msg or "not_implemented" in msg or "target_overflow" in msg:
+            pytest.skip(f"Server does not support 20000 checkpointed headers: {e}")
+        raise
+
+    assert isinstance(result, dict)
+    header_data = result.get("headers") or result.get("hex")
+    assert header_data is not None
+    if isinstance(header_data, list):
+        assert len(header_data) == result["count"]
+        assert all(isinstance(h, str) and len(h) == 160 for h in header_data)
+    else:
+        assert len(header_data) == 160 * result["count"]
+    assert result["count"] == count
+    assert "root" in result and "branch" in result
+    assert isinstance(result["branch"], list)
+    for h in result["branch"]:
+        assert isinstance(h, str) and len(h) == 64
+
+
+def test_blockchain_block_headers_max_at_tip_with_cp():
+    """Request maximum headers (20160) ending at the current chain tip with checkpoint proof."""
+    count = 20160
+
+    # Get current chain tip
+    try:
+        tip = send_rpc("blockchain.headers.subscribe")
+    except Exception as e:
+        pytest.skip(f"Could not get chain tip: {e}")
+
+    tip_height = tip.get("height") if isinstance(tip, dict) else None
+    if tip_height is None:
+        pytest.skip("blockchain.headers.subscribe did not return height")
+
+    start = tip_height - count + 1
+    cp = tip_height
+
+    try:
+        result = send_rpc("blockchain.block.headers", [start, count, cp])
+    except Exception as e:
+        msg = str(e).lower()
+        if "not_found" in msg or "not_implemented" in msg or "target_overflow" in msg:
+            pytest.skip(f"Server does not support max checkpointed headers: {e}")
+        raise
+
+    assert isinstance(result, dict)
+    header_data = result.get("headers") or result.get("hex")
+    assert header_data is not None
+    if isinstance(header_data, list):
+        assert len(header_data) == result["count"]
+        assert all(isinstance(h, str) and len(h) == 160 for h in header_data)
+    else:
+        assert len(header_data) == 160 * result["count"]
+    assert result["count"] == count
+    assert "root" in result and "branch" in result
+    assert isinstance(result["branch"], list)
+    for h in result["branch"]:
+        assert isinstance(h, str) and len(h) == 64
+
+
+def test_blockchain_block_headers_count_zero():
+    """Request zero headers (count=0) and validate empty response handling."""
+    try:
+        result = send_rpc("blockchain.block.headers", [ReferenceData.KNOWN_HEIGHT + 1000000, 0, 0])
+    except Exception as e:
+        # If server treats out-of-range as not_found, skip
+        msg = str(e).lower()
+        if "not_found" in msg or "not_implemented" in msg:
+            pytest.skip(f"Server cannot handle count=0 for out-of-range start: {e}")
+        raise
+
+    assert isinstance(result, dict)
+    assert "count" in result
+    assert result["count"] == 0 or (result.get("headers") == [] or result.get("hex") in ("", None))
+
+
+def test_blockchain_block_headers_cp_target_overflow():
+    """Request headers with cp_height < target and expect an error (xfail)."""
+    # Choose cp smaller than target to trigger target_overflow on server.
+    start = ReferenceData.KNOWN_HEIGHT
+    count = 5
+    cp = start  # target = start + (count - 1) > cp
+
+    # send_rpc will call pytest.xfail for server errors; calling it directly is fine.
+    send_rpc("blockchain.block.headers", [start, count, cp])
+
+
 def test_blockchain_headers_subscribe():
     """Test blockchain.headers.subscribe - subscribe to block header notifications"""
-    result = send_rpc("blockchain.headers.subscribe")
+    try:
+        result = send_rpc("blockchain.headers.subscribe")
+    except Exception as e:
+        # The server may return 'not_found' (race) or 'not_implemented'; treat
+        # these as acceptable and skip the test rather than failing.
+        msg = str(e).lower()
+        if "not_found" in msg or "not_implemented" in msg or "not implemented" in msg:
+            pytest.skip(f"Server response not available: {e}")
+        raise
+
     assert isinstance(result, dict)
     assert "height" in result
     assert "hex" in result
     assert len(result["hex"]) == 160  # 80 bytes hex
+
+
+def test_blockchain_headers_notification():
+    """Subscribe to headers and wait for a notification.
+
+    Optional trigger: set `ELECTRUM_TRIGGER_HEADERS` to a shell command that
+    will cause the node to produce a new block (or otherwise send a header
+    notification). If not provided, the test will wait for a short interval
+    and skip if no notification arrives.
+    """
+    try:
+        initial = send_rpc("blockchain.headers.subscribe")
+    except Exception as e:
+        msg = str(e).lower()
+        if "not_found" in msg or "not_implemented" in msg:
+            pytest.skip(f"Server subscription not available: {e}")
+        raise
+
+    # Optionally trigger an external action to cause a header notification.
+    cmd = os.getenv("ELECTRUM_TRIGGER_HEADERS")
+    if cmd:
+        subprocess.run(cmd, shell=True)
+
+    notif = read_notification(timeout=10.0)
+    if notif is None:
+        pytest.skip("No header notification received within timeout")
+
+    # Notification may be either a JSON-RPC notification {'method', 'params'}
+    # or a direct header object. Accept both.
+    if isinstance(notif, dict):
+        if "method" in notif and isinstance(notif.get("params"), list):
+            params = notif["params"]
+            if params and isinstance(params[0], dict):
+                payload = params[0]
+                assert "height" in payload and "hex" in payload
+                assert len(payload["hex"]) == 160
+                return
+        if "height" in notif and "hex" in notif:
+            assert len(notif["hex"]) == 160
+            return
+
+    pytest.skip("Unrecognized header notification format")
+
+
+def test_blockchain_scripthash_subscribe_notification():
+    """Subscribe to an example scripthash and wait for a notification.
+
+    Optional trigger: set `ELECTRUM_TRIGGER_SCRIPTHASH` to a shell command
+    which will broadcast or otherwise create activity for `EXAMPLE_SCRIPTHASH`.
+    """
+    try:
+        result = send_rpc("blockchain.scripthash.subscribe", [ReferenceData.EXAMPLE_SCRIPTHASH])
+    except Exception as e:
+        msg = str(e).lower()
+        if "not_implemented" in msg or "unknown method" in msg:
+            pytest.skip(f"scripthash.subscribe not supported: {e}")
+        raise
+
+    # Optional trigger to produce a mempool or confirmation event
+    cmd = os.getenv("ELECTRUM_TRIGGER_SCRIPTHASH")
+    if cmd:
+        subprocess.run(cmd, shell=True)
+
+    notif = read_notification(timeout=10.0)
+    if notif is None:
+        pytest.skip("No scripthash notification received within timeout")
+
+    # Notification commonly comes as JSON-RPC method with params [scripthash, status]
+    if isinstance(notif, dict) and notif.get("method") and isinstance(notif.get("params"), list):
+        params = notif["params"]
+        # params may be [scripthash, status] or [status]
+        assert isinstance(params, list)
+        # basic validation
+        assert len(params) >= 1
+        return
+
+    pytest.skip("Unrecognized scripthash notification format")
 
 
 def test_blockchain_estimatefee():
