@@ -84,8 +84,9 @@ void protocol_electrum::start() NOEXCEPT
 
 void protocol_electrum::stopping(const code& ec) NOEXCEPT
 {
-    // Unsubscriber race is ok.
     BC_ASSERT(stranded());
+
+    // Unsubscription is asynchronous, race is ok.
     unsubscribe_events();
     protocol_rpc<channel_electrum>::stopping(ec);
 }
@@ -181,7 +182,7 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     blockchain_block_headers(starting, quantity, waypoint, true);
 }
 
-// Common implementation for block_header/s.
+// Common implementation for blockchain_block_header/s.
 void protocol_electrum::blockchain_block_headers(size_t starting,
     size_t quantity, size_t waypoint, bool multiplicity) NOEXCEPT
 {
@@ -314,6 +315,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     }, 256, BIND(complete, _1));
 }
 
+// Notifier for blockchain_headers_subscribe events.
 void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
