@@ -409,14 +409,41 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     send_code(error::not_implemented);
 }
 
-// TODO: requires tx pool in order to validate against unconfirmed txs.
-// TODO: requires that p2p channels subscribe to transaction broadcast.
 void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     rpc_interface::blockchain_transaction_broadcast,
-    const std::string& ) NOEXCEPT
+    const std::string& raw_tx) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    // ElectrumX changed in version 1.1 to return error vs. bitcoind result.
+    // Previously it returned text string (bitcoind message) in the error case.
+
+    data_chunk tx_data{};
+    if (!decode_base16(tx_data, raw_tx))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    const auto tx = to_shared<chain::transaction>(tx_data, true);
+    if (!tx->is_valid())
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    // TODO: handle just as any peer annoucement, validate and relay.
+    // TODO: requires tx pool in order to validate against unconfirmed txs.
+    constexpr auto confirmable = false;
+    if (!confirmable)
+    {
+        send_code(error::unconfirmable_transaction);
+        return;
+    }
+
+    constexpr auto size = two * hash_size;
+    send_result(encode_base16(tx->hash(false)), size, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
