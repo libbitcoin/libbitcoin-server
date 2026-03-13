@@ -218,6 +218,15 @@ BOOST_AUTO_TEST_CASE(error_t__code__argument_overflow__true_expected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "argument_overflow");
 }
 
+BOOST_AUTO_TEST_CASE(error_t__code__unconfirmable_transaction__true_expected_message)
+{
+    constexpr auto value = error::unconfirmable_transaction;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "unconfirmable_transaction");
+}
+
 BOOST_AUTO_TEST_CASE(error_t__code__target_overflow__true_expected_message)
 {
     constexpr auto value = error::target_overflow;
