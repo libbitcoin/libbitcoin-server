@@ -8,16 +8,6 @@
 # Script to build and install libbitcoin-server.
 #
 # Script options:
-# --with-icu               Compile with International Components for Unicode.
-#                            Since the addition of BIP-39 and later BIP-38
-#                            support, libbitcoin conditionally incorporates ICU
-#                            to provide BIP-38 and BIP-39 passphrase
-#                            normalization features. Currently
-#                            libbitcoin-explorer is the only other library that
-#                            accesses this feature, so if you do not intend to
-#                            use passphrase normalization this dependency can
-#                            be avoided.
-# --build-icu              Builds ICU libraries.
 # --build-boost            Builds Boost libraries.
 # --build-dir=<path>       Location of downloaded and intermediate files.
 # --preset=<label>         CMakePreset label.
@@ -70,11 +60,6 @@ fi
 BUILD_SRC_DIR="build-libbitcoin-server"
 
 PRESUMED_CI_PROJECT_PATH=$(pwd)
-
-# ICU archive.
-#------------------------------------------------------------------------------
-ICU_URL="https://github.com/unicode-org/icu/releases/download/release-78.2/icu4c-78.2-sources.tgz"
-ICU_ARCHIVE="icu4c-78.2-sources.tgz"
 
 # Boost archive.
 #------------------------------------------------------------------------------
@@ -233,16 +218,6 @@ display_help()
     display_message "Usage: ./install.sh [OPTION]..."
     display_message "Manage the installation of libbitcoin-server."
     display_message "Script options:"
-    display_message "  --with-icu               Compile with International Components for Unicode."
-    display_message "                             Since the addition of BIP-39 and later BIP-38 "
-    display_message "                             support, libbitcoin conditionally incorporates ICU "
-    display_message "                             to provide BIP-38 and BIP-39 passphrase "
-    display_message "                             normalization features. Currently "
-    display_message "                             libbitcoin-explorer is the only other library that "
-    display_message "                             accesses this feature, so if you do not intend to "
-    display_message "                             use passphrase normalization this dependency can "
-    display_message "                             be avoided."
-    display_message "  --build-icu              Build ICU libraries."
     display_message "  --build-boost            Build Boost libraries."
     display_message "  --build-secp256k1        Build libsecp256k1 libraries."
     display_message "  --build-dir=<path>       Location of downloaded and intermediate files."
@@ -272,10 +247,8 @@ parse_command_line_options()
             (--disable-static)      DISABLE_STATIC="yes";;
 
             # Common project options.
-            (--with-icu)            WITH_ICU="yes";;
 
             # Custom build options.
-            (--build-icu)                              BUILD_ICU="yes";;
             (--build-boost)                            BUILD_BOOST="yes";;
             (--build-secp256k1)                        BUILD_SECP256K1="yes";;
 
@@ -513,8 +486,6 @@ display_configuration()
     display_message "CXXFLAGS              : $CXXFLAGS"
     display_message "LDFLAGS               : $LDFLAGS"
     display_message "LDLIBS                : $LDLIBS"
-    display_message "WITH_ICU              : $WITH_ICU"
-    display_message "BUILD_ICU             : $BUILD_ICU"
     display_message "BUILD_BOOST           : $BUILD_BOOST"
     display_message "BUILD_SECP256K1       : $BUILD_SECP256K1"
     display_message "BOOST_ROOT            : $BOOST_ROOT"
@@ -962,11 +933,6 @@ build_from_tarball_boost()
 #==============================================================================
 build_all()
 {
-    unpack_from_tarball "$ICU_ARCHIVE" "$ICU_URL" gzip "$BUILD_ICU"
-    local SAVE_CPPFLAGS="$CPPFLAGS"
-    export CPPFLAGS="$CPPFLAGS ${ICU_FLAGS[@]}"
-    build_from_tarball "$ICU_ARCHIVE" source "$PARALLEL" "$BUILD_ICU" "${ICU_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS
-    export CPPFLAGS=$SAVE_CPPFLAGS
     unpack_from_tarball "$BOOST_ARCHIVE" "$BOOST_URL" bzip2 "$BUILD_BOOST"
     local SAVE_CPPFLAGS="$CPPFLAGS"
     export CPPFLAGS="$CPPFLAGS ${BOOST_FLAGS[@]}"
@@ -1039,11 +1005,6 @@ remove_install_options
 
 # Define build flags.
 #==============================================================================
-# Define icu flags.
-#------------------------------------------------------------------------------
-ICU_FLAGS=(
-"-w")
-
 # Define boost flags.
 #------------------------------------------------------------------------------
 BOOST_FLAGS=(
@@ -1057,19 +1018,6 @@ SECP256K1_FLAGS=(
 
 # Define build options.
 #==============================================================================
-# Define icu options.
-#------------------------------------------------------------------------------
-ICU_OPTIONS=(
-"--enable-draft" \
-"--enable-rpath" \
-"--enable-tools" \
-"--disable-extras" \
-"--disable-icuio" \
-"--disable-layout" \
-"--disable-layoutex" \
-"--disable-tests" \
-"--disable-samples")
-
 # Define boost options.
 #------------------------------------------------------------------------------
 BOOST_OPTIONS=(

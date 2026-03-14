@@ -84,8 +84,9 @@ void protocol_electrum::start() NOEXCEPT
 
 void protocol_electrum::stopping(const code& ec) NOEXCEPT
 {
-    // Unsubscriber race is ok.
     BC_ASSERT(stranded());
+
+    // Unsubscription is asynchronous, race is ok.
     unsubscribe_events();
     protocol_rpc<channel_electrum>::stopping(ec);
 }
@@ -181,7 +182,7 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     blockchain_block_headers(starting, quantity, waypoint, true);
 }
 
-// Common implementation for block_header/s.
+// Common implementation for blockchain_block_header/s.
 void protocol_electrum::blockchain_block_headers(size_t starting,
     size_t quantity, size_t waypoint, bool multiplicity) NOEXCEPT
 {
@@ -314,6 +315,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     }, 256, BIND(complete, _1));
 }
 
+// Notifier for blockchain_headers_subscribe events.
 void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -407,14 +409,41 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     send_code(error::not_implemented);
 }
 
-// TODO: requires tx pool in order to validate against unconfirmed txs.
-// TODO: requires that p2p channels subscribe to transaction broadcast.
 void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     rpc_interface::blockchain_transaction_broadcast,
-    const std::string& ) NOEXCEPT
+    const std::string& raw_tx) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    // ElectrumX changed in version 1.1 to return error vs. bitcoind result.
+    // Previously it returned text string (bitcoind message) in the error case.
+
+    data_chunk tx_data{};
+    if (!decode_base16(tx_data, raw_tx))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    const auto tx = to_shared<chain::transaction>(tx_data, true);
+    if (!tx->is_valid())
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    // TODO: handle just as any peer annoucement, validate and relay.
+    // TODO: requires tx pool in order to validate against unconfirmed txs.
+    constexpr auto confirmable = false;
+    if (!confirmable)
+    {
+        send_code(error::unconfirmable_transaction);
+        return;
+    }
+
+    constexpr auto size = two * hash_size;
+    send_result(encode_base16(tx->hash(false)), size, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,

@@ -61,6 +61,7 @@ enum error_t : uint8_t
     not_found,
     not_implemented,
     invalid_argument,
+    unconfirmable_transaction,
     argument_overflow,
     target_overflow,
     server_error
