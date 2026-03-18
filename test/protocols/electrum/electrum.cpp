@@ -23,7 +23,7 @@
 #include <boost/format.hpp>
 
 electrum_setup_fixture::electrum_setup_fixture()
-  : config_{ system::chain::selection::mainnet, native, admin },
+  : config_{ system::chain::selection::mainnet, ::native, admin },
     store_
     {
         [&]() NOEXCEPT -> const database::settings&
