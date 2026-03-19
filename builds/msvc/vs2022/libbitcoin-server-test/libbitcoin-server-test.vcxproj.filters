@@ -11,13 +11,13 @@
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000000}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\parsers">
-      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000002}</UniqueIdentifier>
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000001}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\protocols">
-      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000003}</UniqueIdentifier>
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000002}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\protocols\electrum">
-      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000004}</UniqueIdentifier>
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000003}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
