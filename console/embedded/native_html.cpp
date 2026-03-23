@@ -21,16 +21,15 @@
 namespace libbitcoin {
 namespace server {
 
-// Simple test html for embedded page, links in css and page icon.
 DEFINE_EMBEDDED_PAGE(native_pages, char, html,
 R"DELIM(<!doctype html>
 <html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A modern blockchain explorer for Libbitcoin." />
+    <meta name="description" content="Libbitcoin integrated block explorer." />
     <meta name="theme-color" content="#272822" />
-    <title>libbitcoin Explorer</title>
+    <title>Libbitcoin Server</title>
     <script type="module" crossorigin src="/script.js"></script>
     <link rel="stylesheet" crossorigin href="/style.css">
   </head>
