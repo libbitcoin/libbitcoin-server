@@ -70,16 +70,6 @@ which brings up the following options:
 Usage: ./install.sh [OPTION]...
 Manage the installation of libbitcoin-server.
 Script options:
-  --with-icu               Compile with International Components for Unicode.
-                             Since the addition of BIP-39 and later BIP-38 
-                             support, libbitcoin conditionally incorporates ICU 
-                             to provide BIP-38 and BIP-39 passphrase 
-                             normalization features. Currently 
-                             libbitcoin-explorer is the only other library that 
-                             accesses this feature, so if you do not intend to 
-                             use passphrase normalization this dependency can 
-                             be avoided.
-  --build-icu              Build ICU libraries.
   --build-boost            Build Boost libraries.
   --build-secp256k1        Build libsecp256k1 libraries.
   --build-dir=<path>       Location of downloaded and intermediate files.
@@ -101,46 +91,49 @@ In order to successfully execute `install.sh` a few requirements need to be met.
 * [Automake](https://www.gnu.org/software/automake/)
 * [libtool](https://www.gnu.org/software/libtool/)
 * [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
+* [wget](https://www.gnu.org/software/wget/)
 * [git](https://git-scm.com/)
-* [curl](https://www.gnu.org/software/curl/)
 
 The corresponding packages can be installed with the following command:
 
 ```bash
-$ sudo apt install build-essential curl git autoconf automake pkg-config libtool
+$ sudo apt install build-essential wget git autoconf automake pkg-config libtool
 ```
 
 #### Build
-Create a new directory (e.g. `/home/user/libbitcoin`), then use git to fetch the latest repository from GitHub by issuing the following command from within this directory:
+Create a new project directory (e.g. `/home/user/libbitcoin-server`), then use wget to fetch the latest `install.sh`  from GitHub by issuing the following command from within this directory:
 
 ```bash
-git clone https://github.com/libbitcoin/libbitcoin-server
+wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/master/install.sh
+chmod +x install.sh
 ```
 
-Enter the project directory `cd libbitcoin-server` and start the build with the following command:
+Start the build with the following command:
 
 ```bash
-$ ./install.sh --prefix=/home/user/libbitcoin/build/release_static/ --build-secp256k1 --build-boost --disable-shared
+$ ./install.sh --prefix=/home/user/libbitcoin/install/release_static/ --build-dir=/home/user/libbitcoin/build --build-secp256k1 --build-boost --disable-shared
 ```
 
 This will build the libbitcoin-server executable as a static release with no [CPU extensions](#cpu-extensions) built in. Use only absolute path names for prefix dir. A successful build will create the following directory/file structure:
 
 ```
-~/bitcoin/libbitcoin/
-~/bitcoin/libbitcoin/build/
-~/bitcoin/libbitcoin/build/release_static/
-~/bitcoin/libbitcoin/build/release_static/bin/
-~/bitcoin/libbitcoin/build/release_static/etc/
-~/bitcoin/libbitcoin/build/release_static/include/
-~/bitcoin/libbitcoin/build/release_static/lib/
-~/bitcoin/libbitcoin/build/release_static/share/
-~/bitcoin/libbitcoin/build/release_static/share/doc/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-database/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-network/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-node/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-server/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-system/
-~/bitcoin/libbitcoin/libbitcoin-node
+~/libbitcoin/
+~/libbitcoin/build/
+...
+~/libbitcoin/install/
+~/libbitcoin/install/release_static/
+~/libbitcoin/install/release_static/bin/
+~/libbitcoin/install/release_static/etc/
+~/libbitcoin/install/release_static/include/
+~/libbitcoin/install/release_static/lib/
+~/libbitcoin/install/release_static/share/
+~/libbitcoin/install/release_static/share/doc/
+~/libbitcoin/install/release_static/share/doc/libbitcoin-database/
+~/libbitcoin/install/release_static/share/doc/libbitcoin-network/
+~/libbitcoin/install/release_static/share/doc/libbitcoin-node/
+~/libbitcoin/install/release_static/share/doc/libbitcoin-server/
+~/libbitcoin/install/release_static/share/doc/libbitcoin-system/
+~/libbitcoin/libbitcoin-server
 ```
 Now enter the bin directory and [fire up](#running-bs) your libbitcoin server.
 
@@ -162,7 +155,7 @@ To build libbitcoin-server with these extensions use the `--enable-feature` para
 This command will create a static release build with all supported CPU extensions (if supported by the system). Building libbitcoin with unsupported CPU extensions might work but will lead to crashes at runtime.
 
 ```bash
-$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/build/release_static/ --build-dir=/home/user/libbitcoin/build/temp --build-secp256k1 --build-boost --disable-shared --enable-ndebug --enable-shani --enable-avx2 --enable-sse41 --enable-isystem
+$ ./install.sh --prefix=/home/user/libbitcoin/install/release_static/ --build-dir=/home/user/libbitcoin/build --build-secp256k1 --build-boost --disable-shared --enable-ndebug --enable-shani --enable-avx2 --enable-sse41 --enable-isystem
 ```
 
 You can check if the optimizations have been built in your binary with the following command:
@@ -199,9 +192,9 @@ $ ./bs --help
 The response should look like this:
 
 ```
-Usage: bs [-abdfhiklnrstvw] [--config value]                             
+Usage: bs [-abdfhiklnrsv] [--config value] [--test value] [--write value]
 
-Info: Runs a full bitcoin server.                                          
+Info: Runs a full bitcoin node server.                                   
 
 Options (named):
 
