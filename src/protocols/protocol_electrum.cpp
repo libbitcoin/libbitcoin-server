@@ -447,11 +447,40 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
 }
 
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
-    rpc_interface::blockchain_transaction_get, const std::string& ,
-    bool ) NOEXCEPT
+    rpc_interface::blockchain_transaction_get, const std::string& tx_hash,
+    bool verbose) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    // Changed in version 1.2: verbose argument added.
+    // Changed in version 1.1: ignored argument height removed.
+
+    hash_digest hash{};
+    if (!decode_hash(hash, tx_hash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    const auto& query = archive();
+    const auto tx = query.get_transaction(query.to_tx(hash), true);
+    if (!tx)
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    const auto size = tx->serialized_size(true);
+    if (verbose)
+    {
+        // Verbose means whatever bitcoind returns for getrawtransaction, lolz.
+        send_result(value_from(bitcoind(*tx)), two * size, BIND(complete, _1));
+    }
+    else
+    {
+        send_result(to_hex(*tx, size, true), two * size, BIND(complete, _1));
+    }
 }
 
 void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
@@ -486,7 +515,7 @@ void protocol_electrum::handle_server_banner(const code& ec,
     if (stopped(ec))
         return;
 
-    send_result({ options().banner_message }, 42, BIND(complete, _1));
+    send_result(options().banner_message, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_server_donation_address(const code& ec,
@@ -495,7 +524,7 @@ void protocol_electrum::handle_server_donation_address(const code& ec,
     if (stopped(ec))
         return;
 
-    send_result({ options().donation_address }, 42, BIND(complete, _1));
+    send_result(options().donation_address, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_server_features(const code& ec,
@@ -520,7 +549,7 @@ void protocol_electrum::handle_server_ping(const code& ec,
         return;
 
     // Any receive, including ping, resets the base channel inactivity timer.
-    send_result({ null_t{} }, 42, BIND(complete, _1));
+    send_result(null_t{}, 42, BIND(complete, _1));
 }
 
 // Handlers (mempool).
