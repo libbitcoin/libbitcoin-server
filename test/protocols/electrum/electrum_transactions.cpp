@@ -26,6 +26,8 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 // blockchain.transaction.broadcast
 
 using namespace system;
+static const code not_found{ server::error::not_found };
+static const code not_implemented{ server::error::not_implemented };
 static const code invalid_argument{ server::error::invalid_argument };
 static const code unconfirmable_transaction{ server::error::unconfirmable_transaction };
 
@@ -62,5 +64,80 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbas
     const auto response = get((boost::format(request) % tx0_text).str());
     BOOST_CHECK_EQUAL(response.at("error").as_object().at("code").as_int64(), unconfirmable_transaction.value());
 }
+
+// blockchain.transaction.get
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__empty_hash__invalid_argument)
+{
+    BOOST_CHECK(handshake());
+
+    const auto response = get(R"({"id":77,"method":"blockchain.transaction.get","params":["",false]})" "\n");
+    BOOST_CHECK_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__invalid_hash__invalid_argument)
+{
+    BOOST_CHECK(handshake());
+
+    const auto response = get(R"({"id":78,"method":"blockchain.transaction.get","params":["deadbeef",false]})" "\n");
+    BOOST_CHECK_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__nonexistent_tx__not_found)
+{
+    BOOST_CHECK(handshake());
+
+    const auto bogus = "0000000000000000000000000000000000000000000000000000000000000042";
+    const auto request = R"({"id":79,"method":"blockchain.transaction.get","params":["%1%",false]})" "\n";
+    const auto response = get((boost::format(request) % bogus).str());
+    BOOST_CHECK_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__missing_param__dropped)
+{
+    BOOST_CHECK(handshake());
+
+    const auto& coinbase = *genesis.transactions_ptr()->front();
+    const auto tx_hash = encode_hash(coinbase.hash(false));
+    const auto request = R"({"id":80,"method":"blockchain.transaction.get","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % tx_hash).str());
+    BOOST_CHECK(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__extra_param__dropped)
+{
+    BOOST_CHECK(handshake());
+
+    const auto& coinbase = *genesis.transactions_ptr()->front();
+    const auto tx_hash = encode_hash(coinbase.hash(false));
+    const auto request = R"({"id":81,"method":"blockchain.transaction.get","params":["%1%",false,"extra"]})" "\n";
+    const auto response = get((boost::format(request) % tx_hash).str());
+    BOOST_CHECK(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verbose_false__expected)
+{
+    BOOST_CHECK(handshake());
+
+    const auto& coinbase = *genesis.transactions_ptr()->front();
+    const auto tx_hash = encode_hash(coinbase.hash(false));
+    const auto request = R"({"id":82,"method":"blockchain.transaction.get","params":["%1%",false]})" "\n";
+    const auto response = get((boost::format(request) % tx_hash).str());
+    BOOST_CHECK_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verbose_true__expected)
+{
+    BOOST_CHECK(handshake());
+
+    const auto& coinbase = *genesis.transactions_ptr()->front();
+    const auto tx_hash = encode_hash(coinbase.hash(false));
+    const auto request = R"({"id":83,"method":"blockchain.transaction.get","params":["%1%",true]})" "\n";
+    const auto response = get((boost::format(request) % tx_hash).str());
+    BOOST_CHECK_EQUAL(response.at("result").as_object(), value_from(bitcoind(coinbase)));
+}
+
+// blockchain.transaction.get_merkle
+// blockchain.transaction.id_from_pos
 
 BOOST_AUTO_TEST_SUITE_END()
