@@ -1328,7 +1328,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.currency_window_minutes",
         value<uint32_t>(&configured.node.currency_window_minutes),
-        "Time from present that blocks are considered current, defaults to '60' (0 disables)."
+        "Time from present that blocks are considered current, defaults to '1440' (0 disables)."
     )
     // #######################
     ////(
