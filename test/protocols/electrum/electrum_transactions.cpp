@@ -126,6 +126,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verb
     BOOST_CHECK_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
 }
 
+// TODO: the expectation doesn't acocunt for contextual tx properties.
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verbose_true__expected)
 {
     BOOST_CHECK(handshake());
