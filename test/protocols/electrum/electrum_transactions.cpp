@@ -126,7 +126,6 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verb
     BOOST_CHECK_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
 }
 
-// TODO: the expectation doesn't acocunt for contextual tx properties.
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verbose_true__expected)
 {
     BOOST_CHECK(handshake());
@@ -135,7 +134,19 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verb
     const auto tx_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":83,"method":"blockchain.transaction.get","params":["%1%",true]})" "\n";
     const auto response = get((boost::format(request) % tx_hash).str());
-    BOOST_CHECK_EQUAL(response.at("result").as_object(), value_from(bitcoind(coinbase)));
+
+    auto expected = value_from(bitcoind(coinbase));
+    BOOST_CHECK(expected.is_object());
+
+    // The test store is ten confirmed blocks, so top height of nine.
+    constexpr auto top = 9u;
+    auto& tx = expected.as_object();
+    tx["in_active_chain"] = true;
+    tx["blockhash"] = encode_hash(genesis.hash());
+    tx["confirmations"] = add1(top);
+    tx["blocktime"] = genesis.header().timestamp();
+    tx["time"] = genesis.header().timestamp();
+    BOOST_CHECK_EQUAL(response.at("result").as_object(), expected);
 }
 
 // blockchain.transaction.get_merkle
