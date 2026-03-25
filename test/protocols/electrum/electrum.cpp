@@ -59,7 +59,7 @@ electrum_setup_fixture::electrum_setup_fixture()
 
     // Create and populate the store.
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_MESSAGE(setup_eight_block_store(query_), "electrum initialize");
+    BOOST_REQUIRE_MESSAGE(setup_ten_block_store(query_), "electrum initialize");
 
     // Run the server.
     std::promise<code> running{};
