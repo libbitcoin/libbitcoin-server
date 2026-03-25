@@ -464,7 +464,8 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     }
 
     const auto& query = archive();
-    const auto tx = query.get_transaction(query.to_tx(hash), true);
+    const auto link = query.to_tx(hash);
+    const auto tx = query.get_transaction(link, true);
     if (!tx)
     {
         send_code(error::not_found);
@@ -474,9 +475,41 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     const auto size = tx->serialized_size(true);
     if (verbose)
     {
-        // TODO: inject contextual tx properties.
+        auto value = value_from(bitcoind(*tx));
+        if (!value.is_object())
+        {
+            send_code(error::server_error);
+            return;
+        }
+
+        if (const auto header = query.to_strong(link); !header.is_terminal())
+        {
+            using namespace system;
+            const auto top = query.get_top_confirmed();
+            const auto height = query.get_height(header);
+            const auto block_hash = query.get_header_key(header);
+
+            uint32_t timestamp{};
+            if (height.is_terminal() || (block_hash == null_hash) ||
+                !query.get_timestamp(timestamp, header))
+            {
+                send_code(error::server_error);
+                return;
+            }
+
+            // Floor manages race between getting confirmed top and height.
+            const auto confirmations = add1(floored_subtract(top, height.value));
+
+            auto& transaction = value.as_object();
+            transaction["in_active_chain"] = true;
+            transaction["blockhash"] = encode_hash(block_hash);
+            transaction["confirmations"] = confirmations;
+            transaction["blocktime"] = timestamp;
+            transaction["time"] = timestamp;
+        }
+
         // Verbose means whatever bitcoind returns for getrawtransaction, lolz.
-        send_result(value_from(bitcoind(*tx)), two * size, BIND(complete, _1));
+        send_result(std::move(value), two * size, BIND(complete, _1));
     }
     else
     {

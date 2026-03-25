@@ -80,7 +80,7 @@ const chain::block block9{ block9_data, true };
 const server::settings::embedded_pages admin{};
 const server::settings::embedded_pages native{};
 
-bool setup_eight_block_store(query_t& query) NOEXCEPT
+bool setup_ten_block_store(query_t& query) NOEXCEPT
 {
     using namespace database;
     return query.initialize(genesis) &&

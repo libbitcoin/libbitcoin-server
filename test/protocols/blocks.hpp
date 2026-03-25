@@ -84,6 +84,6 @@ extern const system::chain::block block7;
 extern const system::chain::block block8;
 extern const system::chain::block block9;
 
-bool setup_eight_block_store(query_t& query) NOEXCEPT;
+bool setup_ten_block_store(query_t& query) NOEXCEPT;
 
 #endif
