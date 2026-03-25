@@ -474,6 +474,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     const auto size = tx->serialized_size(true);
     if (verbose)
     {
+        // TODO: inject contextual tx properties.
         // Verbose means whatever bitcoind returns for getrawtransaction, lolz.
         send_result(value_from(bitcoind(*tx)), two * size, BIND(complete, _1));
     }
