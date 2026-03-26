@@ -182,7 +182,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_id_from_pos__merkle_proof_
     const auto& coinbase = *block9.transactions_ptr()->front();
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":92,"method":"blockchain.transaction.id_from_pos","params":[9,0,true]})" "\n";
-    const auto& object = get(request).at("result").as_object();
+    const auto response = get(request);
+    BOOST_CHECK(response.at("result").is_object());
+
+    const auto& object = response.at("result").as_object();
     BOOST_CHECK_EQUAL(object.at("tx_hash").as_string(), tx0_hash);
     BOOST_CHECK(object.at("merkle").as_array().empty());
 }
