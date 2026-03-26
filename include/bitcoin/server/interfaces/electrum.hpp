@@ -46,7 +46,7 @@ struct electrum_methods
         method<"blockchain.transaction.broadcast", string_t>{ "raw_tx" },
         method<"blockchain.transaction.get", string_t, boolean_t>{ "tx_hash", "verbose" },
         method<"blockchain.transaction.get_merkle", string_t, number_t>{ "tx_hash", "height" },
-        method<"blockchain.transaction.id_from_pos", number_t, number_t, boolean_t>{ "height", "tx_pos", "merkle" },
+        method<"blockchain.transaction.id_from_pos", number_t, number_t, optional<false>>{ "height", "tx_pos", "merkle" },
 
         /// Server methods.
         method<"server.add_peer", object_t>{ "features" },

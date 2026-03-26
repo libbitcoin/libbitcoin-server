@@ -270,7 +270,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
         array_t branch(proof.size());
         std::ranges::transform(proof, branch.begin(),
-            [](const auto& hash) { return encode_hash(hash); });
+            [](const auto& hash) NOEXCEPT { return encode_hash(hash); });
 
         result["branch"] = std::move(branch);
         result["root"] = encode_hash(root);
@@ -526,11 +526,73 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
 }
 
 void protocol_electrum::handle_blockchain_transaction_id_from_pos(const code& ec,
-    rpc_interface::blockchain_transaction_id_from_pos, double ,
-    double , bool ) NOEXCEPT
+    rpc_interface::blockchain_transaction_id_from_pos, double height,
+    double tx_pos, bool merkle) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    if (stopped(ec))
+        return;
+
+    size_t position{};
+    size_t block_height{};
+    if (!to_integer(block_height, height) ||
+        !to_integer(position, tx_pos))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    const auto& query = archive();
+    const auto block_link = query.to_confirmed(block_height);
+    const auto tx_link = query.get_position_tx(block_link, position);
+    if (tx_link.is_terminal())
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    using namespace system;
+    const auto hash = query.get_tx_key(tx_link);
+    if (hash == null_hash)
+    {
+        send_code(error::server_error);
+        return;
+    }
+
+    if (!merkle)
+    {
+        send_result(encode_hash(hash), two * hash_size, BIND(complete, _1));
+    }
+    else
+    {
+        auto hashes = query.get_tx_keys(block_link);
+        if (hashes.empty())
+        {
+            send_code(error::server_error);
+            return;
+        }
+
+        if (position >= hashes.size())
+        {
+            send_code(error::not_found);
+            return;
+        }
+
+        using namespace chain;
+        const auto proof = block::merkle_branch(position, std::move(hashes));
+
+        array_t branch(proof.size());
+        std::ranges::transform(proof, branch.begin(),
+            [](const auto& hash) NOEXCEPT { return encode_hash(hash); });
+
+        send_result(
+        {
+            object_t
+            {
+                { "tx_hash", encode_hash(hash) },
+                { "merkle", std::move(branch) }
+            }
+        }, two * hash_size * add1(branch.size()), BIND(complete, _1));
+    }
 }
 
 // Handlers (server).
