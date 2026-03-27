@@ -52,7 +52,7 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
     { events::snapshot_secs,       "snapshot_secs......." },
     { events::prune_msecs,         "prune_msecs........." },
     { events::reload_msecs,        "reload_msecs........" },
-    { events::block_msecs,         "block_msecs........." },
+    { events::block_usecs,         "block_usecs........." },
     { events::ancestry_msecs,      "ancestry_msecs......" },
     { events::filter_msecs,        "filter_msecs........" },
     { events::filterhashes_msecs,  "filterhashes_msecs.." },
