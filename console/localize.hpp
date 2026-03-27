@@ -33,7 +33,7 @@
 #define BS_SETTINGS_MESSAGE \
     "These are the configuration settings that can be set."
 #define BS_DETAIL_MESSAGE \
-    "Runs a full bitcoin node server."
+    "Runs a full node bitcoin server."
 
 // --initchain
 #define BS_INITIALIZING_CHAIN \
