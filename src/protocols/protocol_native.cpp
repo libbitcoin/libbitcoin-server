@@ -204,23 +204,65 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
     if (stopped(ec))
         return false;
 
+    const auto& query = archive();
     const auto link = to_header(height, hash);
-    if (const auto block = archive().get_block(link, witness))
+    if (link.is_terminal())
     {
-        const auto size = block->serialized_size(witness);
-        switch (media)
+        send_not_found();
+        return true;
+    }
+
+    size_t size{};
+    if (!query.get_block_size(size, link, witness))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    switch (media)
+    {
+        case data:
         {
-            case data:
-                send_chunk(to_bin(*block, size, witness));
+            data_chunk out(size);
+            stream::flip::fast sink{ out };
+            flip::bytes::fast writer{ sink };
+            if (!query.get_wire_block(writer, link, witness))
+            {
+                send_internal_server_error(database::error::integrity);
                 return true;
-            case text:
-                send_text(to_hex(*block, size, witness));
+            }
+
+            send_chunk(std::move(out));
+            return true;
+        }
+        case text:
+        {
+            data_chunk out(size);
+            stream::flip::fast sink{ out };
+            flip::bytes::fast writer{ sink };
+            if (!query.get_wire_block(writer, link, witness))
+            {
+                send_internal_server_error(database::error::integrity);
                 return true;
-            case json:
-                auto model = value_from(block);
-                inject(model.at("header"), height, link);
-                send_json(std::move(model), two * size);
+            }
+
+            // block conversion because there's no hex_flipper.
+            send_text(encode_base16(out));
+            return true;
+        }
+        case json:
+        {
+            const auto block = query.get_block(link, witness);
+            if (!block)
+            {
+                send_internal_server_error(database::error::integrity);
                 return true;
+            }
+
+            auto model = value_from(block);
+            inject(model.at("header"), height, link);
+            send_json(std::move(model), two * size);
+            return true;
         }
     }
 
