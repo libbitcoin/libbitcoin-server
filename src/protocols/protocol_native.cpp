@@ -224,8 +224,8 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
         case data:
         {
             data_chunk out(size);
-            stream::flip::fast sink{ out };
-            flip::bytes::fast writer{ sink };
+            stream::out::fast sink{ out };
+            write::bytes::fast writer{ sink };
             if (!query.get_wire_block(writer, link, witness))
             {
                 send_internal_server_error(database::error::integrity);
@@ -237,17 +237,16 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
         }
         case text:
         {
-            data_chunk out(size);
-            stream::flip::fast sink{ out };
-            flip::bytes::fast writer{ sink };
+            std::string out(two * size, '\0');
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
             if (!query.get_wire_block(writer, link, witness))
             {
                 send_internal_server_error(database::error::integrity);
                 return true;
             }
 
-            // block conversion because there's no hex_flipper.
-            send_text(encode_base16(out));
+            send_text(std::move(out));
             return true;
         }
         case json:
