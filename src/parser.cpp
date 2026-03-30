@@ -1251,6 +1251,11 @@ options_metadata parser::load_settings() THROWS
         "Set the process to high memory priority, defaults to 'true'."
     )
     (
+        "node.allow_overlapped",
+        value<bool>(&configured.node.allow_overlapped),
+        "Allow overlapped block requests, defaults to 'true'."
+    )
+    (
         "node.delay_inbound",
         value<bool>(&configured.node.delay_inbound),
         "Delay accepting inbound connections until node is current, defaults to 'true'."
