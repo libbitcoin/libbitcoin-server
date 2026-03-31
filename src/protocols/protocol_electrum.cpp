@@ -518,11 +518,60 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
 }
 
 void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
-    rpc_interface::blockchain_transaction_get_merkle, const std::string& ,
-    double ) NOEXCEPT
+    rpc_interface::blockchain_transaction_get_merkle, const std::string& tx_hash,
+    double height) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    using namespace system;
+    if (stopped(ec))
+        return;
+
+    hash_digest hash{};
+    size_t block_height{};
+    if (!to_integer(block_height, height) || !decode_hash(hash, tx_hash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    const auto& query = archive();
+    const auto block_link = query.to_confirmed(block_height);
+    if (block_link.is_terminal())
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    auto hashes = query.get_tx_keys(block_link);
+    if (hashes.empty())
+    {
+        send_code(error::server_error);
+        return;
+    }
+
+    const auto index = find_position(hashes, hash);
+    if (is_negative(index))
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    using namespace chain;
+    const auto position = to_unsigned(index);
+    const auto proof = block::merkle_branch(index, std::move(hashes));
+
+    array_t branch(proof.size());
+    std::ranges::transform(proof, branch.begin(),
+        [](const auto& hash) NOEXCEPT{ return encode_hash(hash); });
+
+    send_result(
+    {
+        object_t
+        {
+            { "merkle", std::move(branch) },
+            { "block_height", block_height },
+            { "pos", position }
+        }
+    }, two * hash_size * add1(branch.size()), BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_transaction_id_from_pos(const code& ec,
