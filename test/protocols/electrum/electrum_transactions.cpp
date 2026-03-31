@@ -201,6 +201,34 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__genesis_coinba
     BOOST_CHECK(result.at("merkle").as_array().empty());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__mutiple_txs_block__expected)
+{
+    BOOST_CHECK(handshake());
+
+    const auto& txs = *bogus_block10.transactions_ptr();
+    const auto& tx0 = *txs.at(0);
+    const auto& tx1 = *txs.at(1);
+    const auto& tx2 = *txs.at(2);
+    const auto tx0_hash = tx0.hash(false);
+    const auto tx1_hash = tx1.hash(false);
+    const auto tx2_hash = tx2.hash(false);
+
+    // Add a multi-tx block.
+    query_.set(bogus_block10, database::context{ 0, 10, 0 }, false, false);
+    query_.push_confirmed(query_.to_header(bogus_block10.hash()), false);
+
+    const auto request = R"({"id":104,"method":"blockchain.transaction.get_merkle","params":["%1%",10]})" "\n";
+    const auto response = get((boost::format(request) % encode_hash(tx1_hash)).str());
+    const auto& result = response.at("result").as_object();
+    BOOST_CHECK_EQUAL(result.at("block_height").as_int64(), 10);
+    BOOST_CHECK_EQUAL(result.at("pos").as_int64(), 1);
+
+    const auto& merkle = result.at("merkle").as_array();
+    BOOST_CHECK_EQUAL(merkle.size(), 2u);
+    BOOST_CHECK_EQUAL(merkle.at(0).as_string(), encode_hash(tx0_hash));
+    BOOST_CHECK_EQUAL(merkle.at(1).as_string(), encode_hash(bitcoin_hash(tx2_hash, tx2_hash)));
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__missing_param__dropped)
 {
     BOOST_CHECK(handshake());
