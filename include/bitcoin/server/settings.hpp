@@ -97,7 +97,7 @@ public:
         /// Maximum cumulative number of address subscriptions per channel.
         uint32_t maximum_subscriptions{ 1'000'000 };
 
-        /// Arbitrary server name returned by server.version.
+        /// Arbitrary name returned by server.version and server.features.
         std::string server_name{ BC_USER_AGENT };
 
         /// Arbitrary string returned by server.donation_address.
@@ -105,6 +105,10 @@ public:
 
         /// Arbitrary string returned by server.banner.
         std::string banner_message{};
+
+        /// Advertised as self via server.features (limit one each per host).
+        network::config::endpoints advertise_binds{};
+        network::config::endpoints advertise_safes{};
     };
 
     /// html (http/s) document server settings (has directory/default).
