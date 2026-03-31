@@ -21,12 +21,12 @@
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
-// server.banner
-
 using namespace system;
 static const code not_found{ server::error::not_found };
 static const code target_overflow{ server::error::target_overflow };
 static const code invalid_argument{ server::error::invalid_argument };
+
+// server.banner
 
 BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_aparams__dropped)
 {
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_aparams__dr
     BOOST_CHECK(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_named_aparams__dropped)
+BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_named_params__dropped)
 {
     BOOST_CHECK(handshake());
 
@@ -86,6 +86,32 @@ BOOST_AUTO_TEST_CASE(electrum__server_donation_address__jsonrpc_2__expected)
 
     const auto response = get(R"({"jsonrpc":"2.0","id":43,"method":"server.donation_address"})" "\n");
     BOOST_CHECK_EQUAL(response.at("result").as_string(), "donation_address");
+}
+
+// server.ping
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__null)
+{
+    BOOST_CHECK(handshake());
+
+    const auto response = get(R"({"id":200,"method":"server.ping","params":[]})" "\n");
+    BOOST_CHECK(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__jsonrpc_unspecified_no_aparams__dropped)
+{
+    BOOST_CHECK(handshake());
+
+    const auto response = get(R"({"id":201,"method":"server.ping"})" "\n");
+    BOOST_CHECK(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__extra_param__dropped)
+{
+    BOOST_CHECK(handshake());
+
+    const auto response = get(R"({"id":202,"method":"server.ping","params":["extra"]})" "\n");
+    BOOST_CHECK(response.at("dropped").as_bool());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
