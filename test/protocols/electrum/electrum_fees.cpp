@@ -21,6 +21,8 @@
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
+// blockchain.estimatefee
+
 // blockchain.relay_fee
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
@@ -33,5 +35,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
     BOOST_CHECK(response.at("result").is_number());
     BOOST_CHECK_EQUAL(response.at("result").as_double(), expected);
 }
+
+// get_fee_histogram
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -26,6 +26,8 @@ static const code not_found{ server::error::not_found };
 static const code target_overflow{ server::error::target_overflow };
 static const code invalid_argument{ server::error::invalid_argument };
 
+// server.add_peer
+
 // server.banner
 
 BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_aparams__dropped)
@@ -87,6 +89,9 @@ BOOST_AUTO_TEST_CASE(electrum__server_donation_address__jsonrpc_2__expected)
     const auto response = get(R"({"jsonrpc":"2.0","id":43,"method":"server.donation_address"})" "\n");
     BOOST_CHECK_EQUAL(response.at("result").as_string(), "donation_address");
 }
+
+// server.features
+// server.peers.subscribe
 
 // server.ping
 
