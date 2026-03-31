@@ -37,6 +37,9 @@ public:
     typedef std::shared_ptr<protocol_electrum_version> ptr;
     using rpc_interface = interface::electrum;
 
+    static constexpr electrum::version minimum = electrum::version::v1_4;
+    static constexpr electrum::version maximum = electrum::version::v1_4_2;
+
     inline protocol_electrum_version(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
@@ -51,8 +54,6 @@ public:
     virtual void finished(const code& ec, const code& shake) NOEXCEPT;
 
 protected:
-    static constexpr electrum::version minimum = electrum::version::v1_4;
-    static constexpr electrum::version maximum = electrum::version::v1_4_2;
     static constexpr size_t max_client_name_length = 1024;
 
     void handle_server_version(const code& ec,
