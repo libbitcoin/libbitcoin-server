@@ -83,11 +83,6 @@ electrum_setup_fixture::~electrum_setup_fixture()
     BOOST_WARN_MESSAGE(test::clear(test::directory), "electrum cleanup");
 }
 
-const configuration& electrum_setup_fixture::config() const NOEXCEPT
-{
-    return config_;
-}
-
 boost::json::value electrum_setup_fixture::get(const std::string& request)
 {
     socket_.send(boost::asio::buffer(request));
@@ -126,6 +121,6 @@ bool electrum_setup_fixture::handshake(const std::string& version,
     const auto& result = response.at("result").as_array();
     return (result.size() == two) &&
         (result.at(0).is_string() && result.at(1).is_string()) &&
-        (result.at(0).as_string() == config().server.electrum.server_name) &&
+        (result.at(0).as_string() == config_.server.electrum.server_name) &&
         (result.at(1).as_string() == version);
 }

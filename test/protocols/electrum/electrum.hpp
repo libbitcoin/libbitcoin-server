@@ -31,15 +31,16 @@ struct electrum_setup_fixture
     electrum_setup_fixture();
     ~electrum_setup_fixture();
 
-    const configuration& config() const NOEXCEPT;
     boost::json::value get(const std::string& request);
     bool handshake(const std::string& version="1.4",
         const std::string& name="test", network::rpc::code_t id=0);
 
-private:
+protected:
     configuration config_;
     store_t store_;
     query_t query_;
+
+private:
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};

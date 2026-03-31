@@ -83,6 +83,7 @@ extern const system::chain::block block6;
 extern const system::chain::block block7;
 extern const system::chain::block block8;
 extern const system::chain::block block9;
+extern const system::chain::block bogus_block10;
 
 bool setup_ten_block_store(query_t& query) NOEXCEPT;
 
