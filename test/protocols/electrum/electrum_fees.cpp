@@ -27,13 +27,14 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     constexpr auto expected = 99.0;
     const auto response = get(R"({"id":90,"method":"blockchain.relayfee","params":[]})" "\n");
-    BOOST_CHECK_EQUAL(response.at("id").as_int64(), 90);
-    BOOST_CHECK(response.at("result").is_number());
-    BOOST_CHECK_EQUAL(response.at("result").as_double(), expected);
+    REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 90);
+    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), expected);
 }
 
 // get_fee_histogram

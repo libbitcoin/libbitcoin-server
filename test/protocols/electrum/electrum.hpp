@@ -32,7 +32,7 @@ struct electrum_setup_fixture
     ~electrum_setup_fixture();
 
     boost::json::value get(const std::string& request);
-    bool handshake(const std::string& version="1.4",
+    bool handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id=0);
 
 protected:

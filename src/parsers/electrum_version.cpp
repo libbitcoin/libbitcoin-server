@@ -40,7 +40,8 @@ std::string_view version_to_string(version value) NOEXCEPT
         { version::v1_4,   "1.4" },
         { version::v1_4_1, "1.4.1" },
         { version::v1_4_2, "1.4.2" },
-        { version::v1_6,   "1.6" }
+        { version::v1_6,   "1.6" },
+        { version::v1_7,   "1.7" }
     };
 
     const auto it = map.find(value);
@@ -63,7 +64,8 @@ version version_from_string( const std::string_view& value) NOEXCEPT
         { "1.4",   version::v1_4 },
         { "1.4.1", version::v1_4_1 },
         { "1.4.2", version::v1_4_2 },
-        { "1.6",   version::v1_6 }
+        { "1.6",   version::v1_6 },
+        { "1.7",   version::v1_7 }
     };
 
     const auto it = map.find(value);

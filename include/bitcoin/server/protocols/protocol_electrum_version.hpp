@@ -37,8 +37,8 @@ public:
     typedef std::shared_ptr<protocol_electrum_version> ptr;
     using rpc_interface = interface::electrum;
 
-    static constexpr electrum::version minimum = electrum::version::v1_4;
-    static constexpr electrum::version maximum = electrum::version::v1_4_2;
+    static constexpr electrum::version minimum = electrum::version::v1_0;
+    static constexpr electrum::version maximum = electrum::version::v1_6;
 
     inline protocol_electrum_version(const auto& session,
         const network::channel::ptr& channel,

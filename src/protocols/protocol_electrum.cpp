@@ -19,11 +19,15 @@
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
 #include <algorithm>
+#include <map>
 #include <ranges>
 #include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
+#include <bitcoin/server/parsers/parsers.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
+
+// github.com/spesmilo/electrum-protocol/blob/master/docs/protocol-methods.rst
 
 namespace libbitcoin {
 namespace server {
@@ -31,7 +35,7 @@ namespace server {
 #define CLASS protocol_electrum
 
 using namespace system;
-using namespace interface;
+using namespace network::rpc;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
@@ -64,6 +68,7 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_scripthash_subscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_unsubscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast_package, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get_merkle, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_id_from_pos, _1, _2, _3, _4, _5);
@@ -79,6 +84,7 @@ void protocol_electrum::start() NOEXCEPT
 
     // Mempool methods.
     SUBSCRIBE_RPC(handle_mempool_get_fee_histogram, _1, _2);
+    SUBSCRIBE_RPC(handle_mempool_get_info, _1, _2);
     protocol_rpc<channel_electrum>::start();
 }
 
@@ -122,21 +128,6 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     return true;
 }
 
-// Utility.
-// ----------------------------------------------------------------------------
-
-// TODO: centralize in server (also used in bitcoind and native interfaces).
-template <typename Object, typename ...Args>
-std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
-{
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    BC_ASSERT(writer);
-    return out;
-}
-
 // Handlers (blockchain).
 // ----------------------------------------------------------------------------
 
@@ -147,6 +138,12 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
     using namespace system;
     if (stopped(ec))
         return;
+
+    if (!at_least(electrum::version::v1_3))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
 
     size_t starting{};
     size_t waypoint{};
@@ -168,6 +165,12 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
     if (stopped(ec))
         return;
 
+    if (!at_least(electrum::version::v1_2))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     size_t quantity{};
     size_t waypoint{};
     size_t starting{};
@@ -176,6 +179,12 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
         !to_integer(starting, start_height))
     {
         send_code(error::invalid_argument);
+        return;
+    }
+
+    if (!is_zero(cp_height) && !at_least(electrum::version::v1_4))
+    {
+        send_code(error::wrong_version);
         return;
     }
 
@@ -217,41 +226,63 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
     // Recommended to be at least one difficulty retarget period, e.g. 2016.
     // The maximum number of headers the server will return in single request.
-    const auto maximum = server_settings().electrum.maximum_headers;
+    const auto maximum_headers = server_settings().electrum.maximum_headers;
 
     // Returned headers are assured to be contiguous despite intervening reorg.
     // No headers may be returned, which implies start > confirmed top block.
-    const auto count = limit(quantity, maximum);
+    const auto count = limit(quantity, maximum_headers);
     const auto links = query.get_confirmed_headers(starting, count);
-    constexpr auto header_size = chain::header::serialized_size();
-    auto size = two * header_size * links.size();
-
-    // Fetch and serialize headers.
-    array_t headers{};
-    headers.reserve(links.size());
-    for (const auto& link: links)
-    {
-        if (const auto header = query.get_header(link); header)
-        {
-            headers.push_back(to_hex(*header, header_size));
-            continue;
-        }
-
-        send_code(error::server_error);
-        return;
-    };
+    auto size = two * chain::header::serialized_size() * links.size();
 
     value_t value{ object_t{} };
     auto& result = std::get<object_t>(value.value());
     if (multiplicity)
     {
-        result["max"] = maximum;
-        result["count"] = uint64_t{ headers.size() };
-        result["headers"] = std::move(headers);
+        result["max"] = maximum_headers;
+        result["count"] = links.size();
     }
-    else if (!headers.empty())
+    else if (links.empty())
     {
-        result["header"] = headers.front();
+        send_code(error::server_error);
+        return;
+    }
+
+    if (at_least(electrum::version::v1_6))
+    {
+        array_t headers{};
+        headers.reserve(links.size());
+        for (const auto& link: links)
+        {
+            const auto header = query.get_wire_header(link);
+            if (header.empty())
+            {
+                send_code(error::server_error);
+                return;
+            }
+
+            headers.push_back(encode_base16(header));
+        };
+
+        if (multiplicity)
+            result["headers"] = std::move(headers);
+        else
+            result["header"] = std::move(headers.front());
+    }
+    else
+    {
+        std::string headers(size, '\0');
+        stream::out::fast sink{ headers };
+        write::base16::fast writer{ sink };
+        for (const auto& link: links)
+        {
+            if (!query.get_wire_header(writer, link))
+            {
+                send_code(error::server_error);
+                return;
+            }
+        };
+
+        result["hex"] = std::move(headers);
     }
 
     // There is a very slim chance of inconsistency given an intervening reorg
@@ -286,6 +317,12 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     const auto link = query.to_confirmed(top);
@@ -297,8 +334,8 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    const auto header = query.get_header(link);
-    if (!header)
+    const auto header = query.get_wire_header(link);
+    if (header.empty())
     {
         send_code(error::server_error);
         return;
@@ -309,8 +346,8 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     {
         object_t
         {
-            { "height", uint64_t{ top } },
-            { "hex", to_hex(*header, chain::header::serialized_size()) }
+            { "height", top },
+            { "hex", encode_base16(header) }
         }
     }, 256, BIND(complete, _1));
 }
@@ -322,9 +359,9 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 
     const auto& query = archive();
     const auto height = query.get_height(link);
-    const auto header = query.get_header(link);
+    const auto header = query.get_wire_header(link);
 
-    if (height.is_terminal() || !header)
+    if (height.is_terminal())
     {
         LOGF("Electrum::do_header, object not found (" << link << ").");
         return;
@@ -335,20 +372,28 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
         object_t
         {
             { "height", height.value },
-            { "hex", to_hex(*header, chain::header::serialized_size()) }
+            { "hex", encode_base16(header) }
         }
     }, 100, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
-    rpc_interface::blockchain_estimate_fee, double number,
+    rpc_interface::blockchain_estimate_fee, double ,
     const std::string& ) NOEXCEPT
 {
     if (stopped(ec))
         return;
 
-    // TODO: mode argument added in 1.6.
-    send_result(number, 70, BIND(complete, _1));
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    ////const auto mode_enabled = at_least(electrum::version::v1_6);
+
+    ////send_result(number, 70, BIND(complete, _1));
+    send_code(error::not_implemented);
 }
 
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
@@ -357,7 +402,13 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
     if (stopped(ec))
         return;
 
-    // TODO: deprecated in 1.4.2, removed in 1.6.
+    if (!at_least(electrum::version::v1_0) ||
+         at_least(electrum::version::v1_6))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_result(node_settings().minimum_fee_rate, 42, BIND(complete, _1));
 }
 
@@ -365,7 +416,15 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     rpc_interface::blockchain_scripthash_get_balance,
     const std::string& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
@@ -373,7 +432,15 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
     rpc_interface::blockchain_scripthash_get_history,
     const std::string& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
@@ -381,7 +448,17 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     rpc_interface::blockchain_scripthash_get_mempool,
     const std::string& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    ////const auto sort = at_least(electrum::version::v1_6);
+
     send_code(error::not_implemented);
 }
 
@@ -389,7 +466,15 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
     rpc_interface::blockchain_scripthash_list_unspent,
     const std::string& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
@@ -397,7 +482,15 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
     rpc_interface::blockchain_scripthash_subscribe,
     const std::string& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
@@ -405,7 +498,15 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     rpc_interface::blockchain_scripthash_unsubscribe,
     const std::string& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_4_2))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
@@ -416,8 +517,16 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     if (stopped(ec))
         return;
 
-    // ElectrumX changed in version 1.1 to return error vs. bitcoind result.
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: implement error_object.
+    // Changed in version 1.1: return error vs. bitcoind result.
     // Previously it returned text string (bitcoind message) in the error case.
+    ////const auto error_object = at_least(electrum::version::v1_1);
 
     data_chunk tx_data{};
     if (!decode_base16(tx_data, raw_tx))
@@ -446,6 +555,37 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     send_result(encode_base16(tx->hash(false)), size, BIND(complete, _1));
 }
 
+void protocol_electrum::handle_blockchain_transaction_broadcast_package(
+    const code& ec, rpc_interface::blockchain_transaction_broadcast_package,
+    const std::string& raw_txs, bool ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_6))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    data_chunk txs_data{};
+    if (!decode_base16(txs_data, raw_txs))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    // TODO: consider whether to support the lousy package p2p protocol.
+    constexpr auto confirmable = false;
+    if (!confirmable)
+    {
+        send_code(error::unconfirmable_transaction);
+        return;
+    }
+
+    send_code(error::not_implemented);
+}
+
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     rpc_interface::blockchain_transaction_get, const std::string& tx_hash,
     bool verbose) NOEXCEPT
@@ -453,8 +593,15 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     if (stopped(ec))
         return;
 
-    // Changed in version 1.2: verbose argument added.
-    // Changed in version 1.1: ignored argument height removed.
+    // TODO: changed in version 1.1: ignored height argument removed.
+    // Requires additional same-name method implementation for v1.0.
+    // This implies and override to channel_rpc<electrum>::dispatch().
+    if ((!at_least(electrum::version::v1_0)) ||
+        (!at_least(electrum::version::v1_2) && verbose))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
 
     hash_digest hash{};
     if (!decode_hash(hash, tx_hash))
@@ -465,56 +612,68 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
 
     const auto& query = archive();
     const auto link = query.to_tx(hash);
-    const auto tx = query.get_transaction(link, true);
-    if (!tx)
+    if (link.is_terminal())
     {
         send_code(error::not_found);
         return;
     }
 
-    const auto size = tx->serialized_size(true);
-    if (verbose)
+    if (!verbose)
     {
-        auto value = value_from(bitcoind(*tx));
-        if (!value.is_object())
+        const auto tx = query.get_wire_tx(link, true);
+        if (tx.empty())
         {
             send_code(error::server_error);
             return;
         }
 
-        if (const auto header = query.to_strong(link); !header.is_terminal())
+        send_result(encode_base16(tx), two * tx.size(), BIND(complete, _1));
+        return;
+    }
+
+    const auto tx = query.get_transaction(link, true);
+    if (!tx)
+    {
+        send_code(error::server_error);
+        return;
+    }
+
+    auto value = value_from(bitcoind(*tx));
+    if (!value.is_object())
+    {
+        send_code(error::server_error);
+        return;
+    }
+
+    if (const auto header = query.to_strong(link); !header.is_terminal())
+    {
+        using namespace system;
+        const auto top = query.get_top_confirmed();
+        const auto height = query.get_height(header);
+        const auto block_hash = query.get_header_key(header);
+
+        uint32_t timestamp{};
+        if (height.is_terminal() || (block_hash == null_hash) ||
+            !query.get_timestamp(timestamp, header))
         {
-            using namespace system;
-            const auto top = query.get_top_confirmed();
-            const auto height = query.get_height(header);
-            const auto block_hash = query.get_header_key(header);
-
-            uint32_t timestamp{};
-            if (height.is_terminal() || (block_hash == null_hash) ||
-                !query.get_timestamp(timestamp, header))
-            {
-                send_code(error::server_error);
-                return;
-            }
-
-            // Floor manages race between getting confirmed top and height.
-            const auto confirmations = add1(floored_subtract(top, height.value));
-
-            auto& transaction = value.as_object();
-            transaction["in_active_chain"] = true;
-            transaction["blockhash"] = encode_hash(block_hash);
-            transaction["confirmations"] = confirmations;
-            transaction["blocktime"] = timestamp;
-            transaction["time"] = timestamp;
+            send_code(error::server_error);
+            return;
         }
 
-        // Verbose means whatever bitcoind returns for getrawtransaction, lolz.
-        send_result(std::move(value), two * size, BIND(complete, _1));
+        // Floor manages race between getting confirmed top and height.
+        const auto confirms = add1(floored_subtract(top, height.value));
+
+        auto& transaction = value.as_object();
+        transaction["in_active_chain"] = true;
+        transaction["blockhash"] = encode_hash(block_hash);
+        transaction["confirmations"] = confirms;
+        transaction["blocktime"] = timestamp;
+        transaction["time"] = timestamp;
     }
-    else
-    {
-        send_result(to_hex(*tx, size, true), two * size, BIND(complete, _1));
-    }
+
+    // Verbose means whatever bitcoind returns for getrawtransaction, lolz.
+    const auto size = tx->serialized_size(true);
+    send_result(std::move(value), two * size, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
@@ -524,6 +683,12 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
     using namespace system;
     if (stopped(ec))
         return;
+
+    if (!at_least(electrum::version::v1_4))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
 
     hash_digest hash{};
     size_t block_height{};
@@ -581,6 +746,12 @@ void protocol_electrum::handle_blockchain_transaction_id_from_pos(const code& ec
     if (stopped(ec))
         return;
 
+    if (!at_least(electrum::version::v1_4))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     size_t position{};
     size_t block_height{};
     if (!to_integer(block_height, height) ||
@@ -610,38 +781,37 @@ void protocol_electrum::handle_blockchain_transaction_id_from_pos(const code& ec
     if (!merkle)
     {
         send_result(encode_hash(hash), two * hash_size, BIND(complete, _1));
+        return;
     }
-    else
+
+    auto hashes = query.get_tx_keys(block_link);
+    if (hashes.empty())
     {
-        auto hashes = query.get_tx_keys(block_link);
-        if (hashes.empty())
-        {
-            send_code(error::server_error);
-            return;
-        }
-
-        if (position >= hashes.size())
-        {
-            send_code(error::not_found);
-            return;
-        }
-
-        using namespace chain;
-        const auto proof = block::merkle_branch(position, std::move(hashes));
-
-        array_t branch(proof.size());
-        std::ranges::transform(proof, branch.begin(),
-            [](const auto& hash) NOEXCEPT { return encode_hash(hash); });
-
-        send_result(
-        {
-            object_t
-            {
-                { "tx_hash", encode_hash(hash) },
-                { "merkle", std::move(branch) }
-            }
-        }, two * hash_size * add1(branch.size()), BIND(complete, _1));
+        send_code(error::server_error);
+        return;
     }
+
+    if (position >= hashes.size())
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    using namespace chain;
+    const auto proof = block::merkle_branch(position, std::move(hashes));
+
+    array_t branch(proof.size());
+    std::ranges::transform(proof, branch.begin(),
+        [](const auto& hash) NOEXCEPT { return encode_hash(hash); });
+
+    send_result(
+    {
+        object_t
+        {
+            { "tx_hash", encode_hash(hash) },
+            { "merkle", std::move(branch) }
+        }
+    }, two * hash_size * add1(branch.size()), BIND(complete, _1));
 }
 
 // Handlers (server).
@@ -650,7 +820,15 @@ void protocol_electrum::handle_blockchain_transaction_id_from_pos(const code& ec
 void protocol_electrum::handle_server_add_peer(const code& ec,
     rpc_interface::server_add_peer, const interface::object_t& ) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
@@ -659,6 +837,12 @@ void protocol_electrum::handle_server_banner(const code& ec,
 {
     if (stopped(ec))
         return;
+
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
 
     send_result(options().banner_message, 42, BIND(complete, _1));
 }
@@ -669,21 +853,68 @@ void protocol_electrum::handle_server_donation_address(const code& ec,
     if (stopped(ec))
         return;
 
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_result(options().donation_address, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_server_features(const code& ec,
     rpc_interface::server_features) NOEXCEPT
 {
-    if (stopped(ec)) return;
-    send_code(error::not_implemented);
+    using namespace system;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    const auto& query = archive();
+    const auto genesis = query.to_confirmed(zero);
+    if (genesis.is_terminal())
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    const auto hash = query.get_header_key(genesis);
+    if (hash == null_hash)
+    {
+        send_code(error::server_error);
+        return;
+    }
+
+    send_result(object_t
+    {
+        { "genesis_hash", encode_hash(hash) },
+        { "hosts", advertised_hosts() },
+        { "hash_function", "sha256" },
+        { "server_version", options().server_name },
+        { "protocol_min", string_t{ version_to_string(minimum) } },
+        { "protocol_max", string_t{ version_to_string(maximum) } },
+        { "pruning", null_t{} }
+    }, 1024, BIND(complete, _1));
 }
 
 // This is not actually a subscription method.
 void protocol_electrum::handle_server_peers_subscribe(const code& ec,
     rpc_interface::server_peers_subscribe) NOEXCEPT
 {
-    if (stopped(ec)) return;
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
     send_code(error::not_implemented);
 }
 
@@ -692,6 +923,12 @@ void protocol_electrum::handle_server_ping(const code& ec,
 {
     if (stopped(ec))
         return;
+
+    if (!at_least(electrum::version::v1_2))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
 
     // Any receive, including ping, resets the base channel inactivity timer.
     send_result(null_t{}, 42, BIND(complete, _1));
@@ -706,16 +943,59 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     if (stopped(ec))
         return;
 
-    // TODO: requires tx pool metadata graph.
-    send_result(value_t
+    if (!at_least(electrum::version::v1_2))
     {
-        array_t
-        {
-            array_t{ 1, 1024 },
-            array_t{ 2, 2048 },
-            array_t{ 4, 4096 }
-        }
-    }, 256, BIND(complete, _1));
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: requires tx pool metadata graph.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_mempool_get_info(const code& ec,
+    rpc_interface::mempool_get_info) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_0))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: requires tx pool metadata graph.
+    send_code(error::not_implemented);
+}
+
+// utilities
+// ----------------------------------------------------------------------------
+
+// One of each type allowed for given host, last writer wins if more than one.
+object_t protocol_electrum::advertised_hosts() const NOEXCEPT
+{
+    std::map<string_t, object_t> map{};
+
+    for (const auto& bind: options().advertise_binds)
+        if (!bind.host().empty())
+            map[bind.host()]["tcp_port"] = bind.port();
+
+    for (const auto& safe: options().advertise_safes)
+        if (!safe.host().empty())
+            map[safe.host()]["ssl_port"] = safe.port();
+
+    object_t hosts{};
+    for (const auto& [host, object]: map)
+        hosts[host] = object;
+
+    if (hosts.empty()) return
+    {
+        { "tcp_port", null_t{} },
+        { "ssl_port", null_t{} }
+    };
+
+    return hosts;
 }
 
 BC_POP_WARNING()

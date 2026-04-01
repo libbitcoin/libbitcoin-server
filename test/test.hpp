@@ -24,7 +24,7 @@
 #include <filesystem>
 #include <bitcoin/server.hpp>
 
-#define REQUIRE_NO_THROW_AND_TRUE(expression) \
+#define REQUIRE_NO_THROW_TRUE(expression) \
     BOOST_REQUIRE_NO_THROW(expression); \
     BOOST_REQUIRE(expression)
 
