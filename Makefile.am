@@ -48,12 +48,18 @@ src_libbitcoin_server_la_SOURCES = \
     src/parsers/native_target.cpp \
     src/protocols/protocol_bitcoind_rest.cpp \
     src/protocols/protocol_bitcoind_rpc.cpp \
-    src/protocols/protocol_electrum.cpp \
-    src/protocols/protocol_electrum_version.cpp \
     src/protocols/protocol_html.cpp \
     src/protocols/protocol_http.cpp \
     src/protocols/protocol_native.cpp \
-    src/protocols/protocol_stratum_v1.cpp
+    src/protocols/protocol_stratum_v1.cpp \
+    src/protocols/electrum/protocol_electrum.cpp \
+    src/protocols/electrum/protocol_electrum_addresses.cpp \
+    src/protocols/electrum/protocol_electrum_fees.cpp \
+    src/protocols/electrum/protocol_electrum_headers.cpp \
+    src/protocols/electrum/protocol_electrum_mempool.cpp \
+    src/protocols/electrum/protocol_electrum_server.cpp \
+    src/protocols/electrum/protocol_electrum_transactions.cpp \
+    src/protocols/electrum/protocol_electrum_version.cpp
 
 # local: test/libbitcoin-server-test
 #------------------------------------------------------------------------------
@@ -84,9 +90,10 @@ test_libbitcoin_server_test_SOURCES = \
     test/protocols/electrum/electrum_addresses.cpp \
     test/protocols/electrum/electrum_fees.cpp \
     test/protocols/electrum/electrum_headers.cpp \
+    test/protocols/electrum/electrum_mempool.cpp \
     test/protocols/electrum/electrum_server.cpp \
-    test/protocols/electrum/electrum_server_version.cpp \
-    test/protocols/electrum/electrum_transactions.cpp
+    test/protocols/electrum/electrum_transactions.cpp \
+    test/protocols/electrum/electrum_version.cpp
 
 endif WITH_TESTS
 
