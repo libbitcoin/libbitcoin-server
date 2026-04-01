@@ -54,6 +54,7 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
     { unconfirmable_transaction, "unconfirmable_transaction" },
     { argument_overflow, "argument_overflow" },
     { target_overflow, "target_overflow" },
+    { wrong_version, "wrong_version" },
     { server_error, "server_error" }
 };
 
