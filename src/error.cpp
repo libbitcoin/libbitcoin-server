@@ -51,6 +51,7 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
     { not_found, "not_found" },
     { not_implemented, "not_implemented" },
     { invalid_argument, "invalid_argument" },
+    { unsupported_argument, "unsupported_argument" },
     { unconfirmable_transaction, "unconfirmable_transaction" },
     { argument_overflow, "argument_overflow" },
     { target_overflow, "target_overflow" },
