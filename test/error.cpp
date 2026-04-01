@@ -236,6 +236,15 @@ BOOST_AUTO_TEST_CASE(error_t__code__target_overflow__true_expected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "target_overflow");
 }
 
+BOOST_AUTO_TEST_CASE(error_t__code__wrong_version__true_expected_message)
+{
+    constexpr auto value = error::wrong_version;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "wrong_version");
+}
+
 BOOST_AUTO_TEST_CASE(error_t__code__server_error__true_expected_message)
 {
     constexpr auto value = error::server_error;

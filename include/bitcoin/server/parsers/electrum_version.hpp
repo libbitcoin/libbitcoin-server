@@ -31,19 +31,19 @@ enum class version
     /// Invalid version.
     v0_0,
 
-    /// 2011, initial protocol negotiation.
+    /// 2011, initial protocol negotiation (usupported).
     v0_6,
 
-    /// 2012, enhanced protocol negotiation.
+    /// 2012, enhanced protocol negotiation (usupported).
     v0_8,
 
-    /// 2012, added pruning limits and transport indicators.
+    /// 2012, added pruning limits and transport indicators (usupported).
     v0_9,
 
-    /// 2013, baseline for core methods in the official specification.
+    /// 2013, baseline for core methods in official specification (usupported).
     v0_10,
 
-    /// 2014, 1.x series, deprecations of utxo and block number methods.
+    /// 2014, deprecations of utxo and block number methods (minimum).
     v1_0,
 
     /// 2015, updated version response and introduced scripthash methods.
@@ -64,8 +64,14 @@ enum class version
     /// 2020, added scripthash unsubscribe functionality.
     v1_4_2,
 
-    /// 2022, updated response formats and added fee estimation modes.
-    v1_6
+    /// There is no v1.5 release (skipped).
+    //v1_5,
+
+    /// 2022, updated response formats, added fee estimation modes (maximum).
+    v1_6,
+
+    /// Not valid, just defined for out of bounds testing.
+    v1_7
 };
 
 std::string_view version_to_string(version value) NOEXCEPT;

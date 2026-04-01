@@ -237,6 +237,8 @@ BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
     BOOST_REQUIRE_EQUAL(server.server_name, BC_USER_AGENT);
     BOOST_REQUIRE(server.donation_address.empty());
     BOOST_REQUIRE(server.banner_message.empty());
+    BOOST_REQUIRE(server.advertise_binds.empty());
+    BOOST_REQUIRE(server.advertise_safes.empty());
 }
 
 BOOST_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)

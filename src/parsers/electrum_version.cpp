@@ -24,6 +24,8 @@ namespace libbitcoin {
 namespace server {
 namespace electrum {
 
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
 std::string_view version_to_string(version value) NOEXCEPT
 {
     static const std::unordered_map<version, std::string_view> map
@@ -40,7 +42,8 @@ std::string_view version_to_string(version value) NOEXCEPT
         { version::v1_4,   "1.4" },
         { version::v1_4_1, "1.4.1" },
         { version::v1_4_2, "1.4.2" },
-        { version::v1_6,   "1.6" }
+        { version::v1_6,   "1.6" },
+        { version::v1_7,   "1.7" }
     };
 
     const auto it = map.find(value);
@@ -63,12 +66,15 @@ version version_from_string( const std::string_view& value) NOEXCEPT
         { "1.4",   version::v1_4 },
         { "1.4.1", version::v1_4_1 },
         { "1.4.2", version::v1_4_2 },
-        { "1.6",   version::v1_6 }
+        { "1.6",   version::v1_6 },
+        { "1.7",   version::v1_7 }
     };
 
     const auto it = map.find(value);
     return it != map.end() ? it->second : version::v0_0;
 }
+
+BC_POP_WARNING()
 
 } // namespace electrum
 } // namespace server

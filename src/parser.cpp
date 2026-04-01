@@ -1154,6 +1154,16 @@ options_metadata parser::load_settings() THROWS
         value<std::string>(&configured.server.electrum.banner_message),
         "String returned by server.banner, defaults to empty."
     )
+    (
+        "electrum.advertise_bind",
+        value<network::config::endpoints>(&configured.server.electrum.advertise_binds),
+        "Advertised host:port at which this server can be reached (defaults to empty)."
+    )
+    (
+        "electrum.advertise_safe",
+        value<network::config::endpoints>(&configured.server.electrum.advertise_safes),
+        "Advertised secure host:port at which this server can be reached (defaults to empty)."
+    )
 
     /* [stratum_v1] */
     (

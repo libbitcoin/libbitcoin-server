@@ -63,13 +63,16 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_headers.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_mempool.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server_version.cpp">
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_transactions.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_transactions.cpp">
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\settings.cpp">

@@ -44,6 +44,7 @@ struct electrum_methods
         method<"blockchain.scripthash.subscribe", string_t>{ "scripthash" },
         method<"blockchain.scripthash.unsubscribe", string_t>{ "scripthash" },
         method<"blockchain.transaction.broadcast", string_t>{ "raw_tx" },
+        method<"blockchain.transaction.broadcast_package", string_t, optional<true>>{ "raw_txs", "verbose" },
         method<"blockchain.transaction.get", string_t, boolean_t>{ "tx_hash", "verbose" },
         method<"blockchain.transaction.get_merkle", string_t, number_t>{ "tx_hash", "height" },
         method<"blockchain.transaction.id_from_pos", number_t, number_t, optional<false>>{ "height", "tx_pos", "merkle" },
@@ -58,7 +59,8 @@ struct electrum_methods
         method<"server.version", string_t, optional<empty::value>>{ "client_name", "protocol_version" },
 
         /// Mempool methods.
-        method<"mempool.get_fee_histogram">{}
+        method<"mempool.get_fee_histogram">{},
+        method<"mempool.get_info">{}
     };
 
     template <typename... Args>
@@ -80,17 +82,19 @@ struct electrum_methods
     using blockchain_scripthash_subscribe = at<9>;
     using blockchain_scripthash_unsubscribe = at<10>;
     using blockchain_transaction_broadcast = at<11>;
-    using blockchain_transaction_get = at<12>;
-    using blockchain_transaction_get_merkle = at<13>;
-    using blockchain_transaction_id_from_pos = at<14>;
-    using server_add_peer = at<15>;
-    using server_banner = at<16>;
-    using server_donation_address = at<17>;
-    using server_features = at<18>;
-    using server_peers_subscribe = at<19>;
-    using server_ping = at<20>;
-    using server_version = at<21>;
-    using mempool_get_fee_histogram = at<22>;
+    using blockchain_transaction_broadcast_package = at<12>;
+    using blockchain_transaction_get = at<13>;
+    using blockchain_transaction_get_merkle = at<14>;
+    using blockchain_transaction_id_from_pos = at<15>;
+    using server_add_peer = at<16>;
+    using server_banner = at<17>;
+    using server_donation_address = at<18>;
+    using server_features = at<19>;
+    using server_peers_subscribe = at<20>;
+    using server_ping = at<21>;
+    using server_version = at<22>;
+    using mempool_get_fee_histogram = at<23>;
+    using mempool_get_info = at<24>;
 };
 
 } // namespace interface

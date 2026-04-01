@@ -21,71 +21,107 @@
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
-// server.banner
-
 using namespace system;
 static const code not_found{ server::error::not_found };
 static const code target_overflow{ server::error::target_overflow };
 static const code invalid_argument{ server::error::invalid_argument };
 
+// server.add_peer
+
+// server.banner
+
 BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_aparams__dropped)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     // params[] required in json 1.0, server drops connection for invalid json-rpc.
     const auto response = get(R"({"id":42,"method":"server.banner"})" "\n");
-    BOOST_CHECK(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_named_aparams__dropped)
+BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_named_params__dropped)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     // params{} disallowed in json 1.0, server drops connection for invalid json-rpc.
     const auto response = get(R"({"id":42,"method":"server.banner","params":{}})" "\n");
-    BOOST_CHECK(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_empty_params__expected)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":42,"method":"server.banner","params":[]})" "\n");
-    BOOST_CHECK_EQUAL(response.at("result").as_string(), "banner_message");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "banner_message");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_1__expected)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"jsonrpc":"1.0","id":42,"method":"server.banner","params":[]})" "\n");
-    BOOST_CHECK_EQUAL(response.at("result").as_string(), "banner_message");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "banner_message");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_2__expected)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"jsonrpc":"2.0","id":42,"method":"server.banner"})" "\n");
-    BOOST_CHECK_EQUAL(response.at("result").as_string(), "banner_message");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "banner_message");
 }
 
 // server.donation_address
 
 BOOST_AUTO_TEST_CASE(electrum__server_donation_address__jsonrpc_1__expected)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"jsonrpc":"1.0","id":43,"method":"server.donation_address","params":[]})" "\n");
-    BOOST_CHECK_EQUAL(response.at("result").as_string(), "donation_address");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "donation_address");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_donation_address__jsonrpc_2__expected)
 {
-    BOOST_CHECK(handshake());
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"jsonrpc":"2.0","id":43,"method":"server.donation_address"})" "\n");
-    BOOST_CHECK_EQUAL(response.at("result").as_string(), "donation_address");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "donation_address");
+}
+
+// server.features
+// server.peers.subscribe
+
+// server.ping
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__null)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":200,"method":"server.ping","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__jsonrpc_unspecified_no_params__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":201,"method":"server.ping"})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__extra_param__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":202,"method":"server.ping","params":["extra"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

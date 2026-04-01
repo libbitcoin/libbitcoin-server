@@ -79,7 +79,7 @@ void protocol_electrum_version::finished(const code& ec,
 // Handler.
 // ----------------------------------------------------------------------------
 
-// Changed in version 1.6: server must tolerate and ignore extraneous args.
+// TODO: Changed in version 1.6: server must tolerate and ignore extra args.
 void protocol_electrum_version::handle_server_version(const code& ec,
     rpc_interface::server_version, const std::string& client_name,
     const value_t& protocol_version) NOEXCEPT
@@ -97,13 +97,13 @@ void protocol_electrum_version::handle_server_version(const code& ec,
     else
     {
         send_result(value_t
+        {
+            array_t
             {
-                array_t
-                {
-                    { string_t{ server_name() } },
-                    { string_t{ negotiated_version() } }
-                }
-            }, 70, BIND(finished, _1, error::success));
+                { string_t{ server_name() } },
+                { string_t{ negotiated_version() } }
+            }
+        }, 70, BIND(finished, _1, error::success));
     }
 
     // Handshake must leave channel paused, before leaving stranded handler.
@@ -184,7 +184,7 @@ bool protocol_electrum_version::get_versions(electrum::version& min,
     if (std::holds_alternative<null_t>(value))
     {
         // An interface default can't be set for optional<value_t>.
-        max = min = electrum::version::v1_4;
+        max = min = maximum;
         return true;
     }
 

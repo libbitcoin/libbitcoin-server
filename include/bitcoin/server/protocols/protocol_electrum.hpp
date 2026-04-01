@@ -25,6 +25,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
+#include <bitcoin/server/protocols/protocol_electrum_version.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 
 namespace libbitcoin {
@@ -91,6 +92,9 @@ protected:
     void handle_blockchain_transaction_broadcast(const code& ec,
         rpc_interface::blockchain_transaction_broadcast,
         const std::string& raw_tx) NOEXCEPT;
+    void handle_blockchain_transaction_broadcast_package(const code& ec,
+        rpc_interface::blockchain_transaction_broadcast_package,
+        const std::string& raw_txs, bool verbose) NOEXCEPT;
     void handle_blockchain_transaction_get(const code& ec,
         rpc_interface::blockchain_transaction_get, const std::string& tx_hash,
         bool verbose) NOEXCEPT;
@@ -122,6 +126,8 @@ protected:
     /// Handlers (mempool).
     void handle_mempool_get_fee_histogram(const code& ec,
         rpc_interface::mempool_get_fee_histogram) NOEXCEPT;
+    void handle_mempool_get_info(const code& ec,
+        rpc_interface::mempool_get_info) NOEXCEPT;
 
 protected:
     /// Common implementation for block_header/s.
@@ -131,7 +137,7 @@ protected:
     /// Notify client of new header.
     void do_header(node::header_t link) NOEXCEPT;
 
-    inline bool is_version(server::electrum::version version) const NOEXCEPT
+    inline bool at_least(server::electrum::version version) const NOEXCEPT
     {
         return channel_->version() >= version;
     }
@@ -142,6 +148,13 @@ protected:
     }
 
 private:
+    using version_t = protocol_electrum_version;
+    static constexpr electrum::version minimum = version_t::minimum;
+    static constexpr electrum::version maximum = version_t::maximum;
+
+    // Compute server.features.hosts value from config.
+    network::rpc::object_t advertised_hosts() const NOEXCEPT;
+
     // These are thread safe.
     const options_t& options_;
     std::atomic_bool subscribed_{};

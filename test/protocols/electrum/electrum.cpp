@@ -83,11 +83,6 @@ electrum_setup_fixture::~electrum_setup_fixture()
     BOOST_WARN_MESSAGE(test::clear(test::directory), "electrum cleanup");
 }
 
-const configuration& electrum_setup_fixture::config() const NOEXCEPT
-{
-    return config_;
-}
-
 boost::json::value electrum_setup_fixture::get(const std::string& request)
 {
     socket_.send(boost::asio::buffer(request));
@@ -109,23 +104,30 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
     return boost::json::parse(response);
 }
 
-bool electrum_setup_fixture::handshake(const std::string& version,
+bool electrum_setup_fixture::handshake(electrum::version version,
     const std::string& name, network::rpc::code_t id)
 {
     const auto request = boost::format
     (
         R"({"id":%1%,"method":"server.version","params":["%2%","%3%"]})" "\n"
-    ) % id % name % version;
+    ) % id % name % electrum::version_to_string(version);
 
     const auto response = get(request.str());
-    if (!response.at("id").is_int64() || response.at("id").as_int64() != id ||
-        !response.at("result").is_array())
-        return false;
+    try
+    {
+        if (response.at("id").as_int64() != id)
+            return false;
 
-    // Assumes server always accepts proposed version.
-    const auto& result = response.at("result").as_array();
-    return (result.size() == two) &&
-        (result.at(0).is_string() && result.at(1).is_string()) &&
-        (result.at(0).as_string() == config().server.electrum.server_name) &&
-        (result.at(1).as_string() == version);
+        // Assumes server always accepts proposed version.
+        const auto& result = response.at("result").as_array();
+        return (result.size() == two) &&
+            (result.at(0).is_string() && result.at(1).is_string()) &&
+            (result.at(0).as_string() == config_.server.electrum.server_name) &&
+            (result.at(1).as_string() == electrum::version_to_string(version));
+
+    }
+    catch (...)
+    {
+        return false;
+    }
 }

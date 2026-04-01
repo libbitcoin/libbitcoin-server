@@ -37,6 +37,7 @@ BOOST_AUTO_TEST_CASE(electrum_version__version_to_string__all__expected)
     BOOST_REQUIRE_EQUAL(version_to_string(version::v1_4_1), "1.4.1");
     BOOST_REQUIRE_EQUAL(version_to_string(version::v1_4_2), "1.4.2");
     BOOST_REQUIRE_EQUAL(version_to_string(version::v1_6), "1.6");
+    BOOST_REQUIRE_EQUAL(version_to_string(version::v1_7), "1.7");
 }
 
 BOOST_AUTO_TEST_CASE(electrum_version__version_from_string__all__expected)
@@ -54,6 +55,7 @@ BOOST_AUTO_TEST_CASE(electrum_version__version_from_string__all__expected)
     BOOST_REQUIRE(version_from_string("1.4.1") == version::v1_4_1);
     BOOST_REQUIRE(version_from_string("1.4.2") == version::v1_4_2);
     BOOST_REQUIRE(version_from_string("1.6") == version::v1_6);
+    BOOST_REQUIRE(version_from_string("1.7") == version::v1_7);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
