@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__insufficient_version__wr
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_no_checkpoint__expected_no_proof)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
     const auto response = get(R"({"id":43,"method":"blockchain.block.header","params":[0]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__insufficient_version__w
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_checkpoint_v_1_2__expected)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_checkpoint_v1_2__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_check
     BOOST_REQUIRE_EQUAL(result.at("headers").as_array().at(0).as_string(), encode_base16(header0_data));
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint__expected)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint_v1_6__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
@@ -258,6 +258,23 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint
     BOOST_REQUIRE_EQUAL(headers.at(0).as_string(), encode_base16(header1_data));
     BOOST_REQUIRE_EQUAL(headers.at(1).as_string(), encode_base16(header2_data));
     BOOST_REQUIRE_EQUAL(headers.at(2).as_string(), encode_base16(header3_data));
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint_v1_4__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":61,"method":"blockchain.block.headers","params":[1,3]})" "\n");
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("max").is_int64());
+    REQUIRE_NO_THROW_TRUE(result.at("count").is_int64());
+    REQUIRE_NO_THROW_TRUE(result.at("hex").is_string());
+    BOOST_REQUIRE_EQUAL(result.at("max").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("count").as_int64(), 3);
+
+    // "hex" prior to v1.6
+    const auto expected = encode_base16(header1_data) + encode_base16(header2_data) + encode_base16(header3_data);
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), expected);
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__count_exceeds_max__capped)
