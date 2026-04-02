@@ -192,8 +192,8 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         return;
 
     // TODO: changed in version 1.1: ignored height argument removed.
-    // Requires additional same-name method implementation for v1.0.
-    // This implies and override to channel_rpc<electrum>::dispatch().
+    // This implies an override to channel_rpc<electrum>::dispatch() to strip
+    // the height parameter in the case of negotiated v1.1.
     if ((!at_least(electrum::version::v1_0)) ||
         (!at_least(electrum::version::v1_2) && verbose))
     {
