@@ -22,14 +22,14 @@ namespace libbitcoin {
 namespace server {
 
 DEFINE_EMBEDDED_PAGE(native_pages, char, html,
-R"DELIM(<!doctype html>
+    R"DELIM(<!doctype html>
 <html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Libbitcoin integrated block explorer." />
+    <meta name="description" content="A modern blockchain explorer for Libbitcoin." />
     <meta name="theme-color" content="#272822" />
-    <title>Libbitcoin Server</title>
+    <title>libbitcoin Explorer</title>
     <script type="module" crossorigin src="/script.js"></script>
     <link rel="stylesheet" crossorigin href="/style.css">
   </head>
