@@ -30,6 +30,7 @@ static const code not_found{ server::error::not_found };
 static const code wrong_version{ server::error::wrong_version };
 static const code not_implemented{ server::error::not_implemented };
 static const code invalid_argument{ server::error::invalid_argument };
+static const code unsupported_argument{ server::error::unsupported_argument };
 static const code unconfirmable_transaction{ server::error::unconfirmable_transaction };
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__empty__invalid_argument)
@@ -45,14 +46,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__invalid_encodin
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto response = get(R"({"id":75,"method":"blockchain.transaction.broadcast","params":["deadbeef"]})" "\n");
+    const auto response = get(R"({"id":75,"method":"blockchain.transaction.broadcast","params":["xxxx"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__invalid_tx__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":76,"method":"blockchain.transaction.broadcast","params":["0100000001"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -61,13 +62,113 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__invalid_tx__inv
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbase__unconfirmable_transaction)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto tx0_text = encode_base16(genesis.transactions_ptr()->front()->to_data(true));
     constexpr auto request = R"({"id":73,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % tx0_text).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), unconfirmable_transaction.value());
+}
+
+// blockchain.transaction.broadcast_package
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__empty_v1_4__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":76,"method":"blockchain.transaction.broadcast_package","params":[[]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__empty_verbose__unsupported_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":76,"method":"blockchain.transaction.broadcast_package","params":[[],true]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), unsupported_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__string__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":76,"method":"blockchain.transaction.broadcast_package","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__empty__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":76,"method":"blockchain.transaction.broadcast_package","params":[[]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__not_string__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":75,"method":"blockchain.transaction.broadcast_package","params":[[true,false]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__invalid_encoding__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":75,"method":"blockchain.transaction.broadcast_package","params":[["xxxx"]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__invalid_tx__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":76,"method":"blockchain.transaction.broadcast_package","params":[["0100000001"]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_transactions__unconfirmable_transaction)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto tx0_text = encode_base16(genesis.transactions_ptr()->front()->to_data(true));
+    const auto tx1_text = encode_base16(block1.transactions_ptr()->front()->to_data(true));
+    const auto tx0_hash = encode_hash(genesis.transactions_ptr()->front()->hash(false));
+    const auto tx1_hash = encode_hash(block1.transactions_ptr()->front()->hash(false));
+    constexpr auto request = R"({"id":73,"method":"blockchain.transaction.broadcast_package","params":[["%1%","%2%"]]})" "\n";
+    const auto response = get((boost::format(request) % tx0_text % tx1_text).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("success").is_bool());
+    REQUIRE_NO_THROW_TRUE(result.at("errors").is_array());
+    BOOST_REQUIRE(!result.at("success").as_bool());
+
+    const auto& errors = result.at("errors").as_array();
+    BOOST_REQUIRE_EQUAL(errors.size(), 2u);
+    BOOST_REQUIRE(errors.at(0).is_object());
+    BOOST_REQUIRE(errors.at(1).is_object());
+
+    const auto& error1 = errors.at(0).as_object();
+    REQUIRE_NO_THROW_TRUE(error1.at("txid").is_string());
+    REQUIRE_NO_THROW_TRUE(error1.at("error").is_string());
+    BOOST_REQUIRE_EQUAL(error1.at("txid").as_string(), tx0_hash);
+    BOOST_REQUIRE_EQUAL(error1.at("error").as_string(), unconfirmable_transaction.message());
+
+    const auto& error2 = errors.at(1).as_object();
+    REQUIRE_NO_THROW_TRUE(error2.at("txid").is_string());
+    REQUIRE_NO_THROW_TRUE(error2.at("error").is_string());
+    BOOST_REQUIRE_EQUAL(error2.at("txid").as_string(), tx1_hash);
+    BOOST_REQUIRE_EQUAL(error2.at("error").as_string(), unconfirmable_transaction.message());
 }
 
 // blockchain.transaction.get
@@ -191,7 +292,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__empty_hash__in
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__invalid_hash_encoding__invalid_argument)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__invalid_hash__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 

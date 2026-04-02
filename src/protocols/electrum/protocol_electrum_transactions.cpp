@@ -46,11 +46,6 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
         return;
     }
 
-    // TODO: implement error_object.
-    // Changed in version 1.1: return error vs. bitcoind result.
-    // Previously it returned text string (bitcoind message) in the error case.
-    ////const auto error_object = at_least(electrum::version::v1_1);
-
     data_chunk tx_data{};
     if (!decode_base16(tx_data, raw_tx))
     {
@@ -65,22 +60,40 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
         return;
     }
 
-    // TODO: handle just as any peer annoucement, validate and relay.
     // TODO: requires tx pool in order to validate against unconfirmed txs.
-    constexpr auto confirmable = false;
-    if (!confirmable)
+    const code fault{ error::unconfirmable_transaction };
+
+    ////const auto& query = archive();
+    ////constexpr chain::context next_block_context{};
+    ////fault = tx->check();
+    ////fault = tx->guard_check();
+    ////fault = tx->check(next_block_context);
+    ////fault = tx->guard_check(next_block_context);
+    ////query.populate_with_metadata(*tx);
+    ////fault = tx->accept(next_block_context);
+    ////fault = tx->guard_accept(next_block_context);
+    ////fault = tx->confirm(next_block_context);
+    ////fault = tx->connect(next_block_context);
+
+    if (!fault)
     {
-        send_code(error::unconfirmable_transaction);
+        // TODO: broadcast tx to p2p.
+        send_result(encode_hash(tx->hash(false)), 42, BIND(complete, _1));
         return;
     }
 
-    constexpr auto size = two * hash_size;
-    send_result(encode_base16(tx->hash(false)), size, BIND(complete, _1));
+    if (!at_least(electrum::version::v1_1))
+    {
+        send_result(fault.message(), 42, BIND(complete, _1));
+        return;
+    }
+
+    send_code(fault);
 }
 
 void protocol_electrum::handle_blockchain_transaction_broadcast_package(
     const code& ec, rpc_interface::blockchain_transaction_broadcast_package,
-    const std::string& raw_txs, bool ) NOEXCEPT
+    const interface::value_t& raw_txs, bool verbose) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -91,22 +104,84 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
         return;
     }
 
-    data_chunk txs_data{};
-    if (!decode_base16(txs_data, raw_txs))
+    // Electrum documentation: "Exact structure depends on bitcoind impl and
+    // version, and should not be relied upon... should be considered
+    // experimental and better-suited for debugging." - do not support this.
+    if (verbose)
+    {
+        send_code(error::unsupported_argument);
+        return;
+    }
+
+    if (!std::holds_alternative<array_t>(raw_txs.value()))
     {
         send_code(error::invalid_argument);
         return;
     }
 
-    // TODO: consider whether to support the lousy package p2p protocol.
-    constexpr auto confirmable = false;
-    if (!confirmable)
+    const auto& txs_hex = std::get<array_t>(raw_txs.value());
+    if (txs_hex.empty())
     {
-        send_code(error::unconfirmable_transaction);
+        send_code(error::invalid_argument);
         return;
     }
 
-    send_code(error::not_implemented);
+    size_t error_size{};
+    ////const auto& query = archive();
+    ////constexpr chain::context next_block_context{};
+    object_t result{ { "success", true }, { "errors", array_t{} } };
+    auto& success = std::get<bool>(result["success"].value());
+    auto& errors = std::get<array_t>(result["errors"].value());
+
+    for (const auto& tx_hex: txs_hex)
+    {
+        if (!std::holds_alternative<string_t>(tx_hex.value()))
+        {
+            send_code(error::invalid_argument);
+            return;
+        }
+
+        data_chunk tx_data{};
+        if (!decode_base16(tx_data, std::get<string_t>(tx_hex.value())))
+        {
+            send_code(error::invalid_argument);
+            return;
+        }
+
+        const auto tx = to_shared<chain::transaction>(tx_data, true);
+        if (!tx->is_valid())
+        {
+            send_code(error::invalid_argument);
+            return;
+        }
+
+        // TODO: requires tx pool in order to validate against unconfirmed txs.
+        const code fault{ error::unconfirmable_transaction };
+
+        ////fault = tx->check();
+        ////fault = tx->guard_check();
+        ////fault = tx->check(next_block_context);
+        ////fault = tx->guard_check(next_block_context);
+        ////query.populate_with_metadata(*tx);
+        ////fault = tx->accept(next_block_context);
+        ////fault = tx->guard_accept(next_block_context);
+        ////fault = tx->confirm(next_block_context);
+        ////fault = tx->connect(next_block_context);
+
+        if (fault)
+        {
+            const auto message = fault.message();
+            error_size += message.size();
+            errors.push_back(object_t
+            {
+                { "txid", encode_hash(tx->hash(false)) },
+                { "error", message }
+            });
+        }
+    }
+
+    success = errors.empty();
+    send_result(result, 42 + error_size, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,

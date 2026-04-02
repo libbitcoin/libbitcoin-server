@@ -57,7 +57,7 @@ protected:
     bool handle_event(const code&, node::chase event_,
         node::event_value) NOEXCEPT;
 
-    /// Handlers (blockchain).
+    /// Handlers (headers).
     void handle_blockchain_block_header(const code& ec,
         rpc_interface::blockchain_block_header, double height,
         double cp_height) NOEXCEPT;
@@ -66,11 +66,15 @@ protected:
         double count, double cp_height) NOEXCEPT;
     void handle_blockchain_headers_subscribe(const code& ec,
         rpc_interface::blockchain_headers_subscribe) NOEXCEPT;
+
+    /// Handlers (fees).
     void handle_blockchain_estimate_fee(const code& ec,
         rpc_interface::blockchain_estimate_fee, double number,
         const std::string& mode) NOEXCEPT;
     void handle_blockchain_relay_fee(const code& ec,
         rpc_interface::blockchain_relay_fee) NOEXCEPT;
+
+    /// Handlers (addresses).
     void handle_blockchain_scripthash_get_balance(const code& ec,
         rpc_interface::blockchain_scripthash_get_balance,
         const std::string& scripthash) NOEXCEPT;
@@ -89,12 +93,14 @@ protected:
     void handle_blockchain_scripthash_unsubscribe(const code& ec,
         rpc_interface::blockchain_scripthash_unsubscribe,
         const std::string& scripthash) NOEXCEPT;
+
+    /// Handlers (transactions).
     void handle_blockchain_transaction_broadcast(const code& ec,
         rpc_interface::blockchain_transaction_broadcast,
         const std::string& raw_tx) NOEXCEPT;
     void handle_blockchain_transaction_broadcast_package(const code& ec,
         rpc_interface::blockchain_transaction_broadcast_package,
-        const std::string& raw_txs, bool verbose) NOEXCEPT;
+        const interface::value_t& raw_txs, bool verbose) NOEXCEPT;
     void handle_blockchain_transaction_get(const code& ec,
         rpc_interface::blockchain_transaction_get, const std::string& tx_hash,
         bool verbose) NOEXCEPT;
@@ -119,6 +125,8 @@ protected:
         rpc_interface::server_peers_subscribe) NOEXCEPT;
     void handle_server_ping(const code& ec,
         rpc_interface::server_ping) NOEXCEPT;
+
+    /// See protocol_electrum_version.
     ////void handle_server_version(const code& ec,
     ////    rpc_interface::server_version, const std::string& client_name,
     ////    const interface::value_t& protocol_version) NOEXCEPT;
