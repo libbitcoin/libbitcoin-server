@@ -96,11 +96,86 @@ BOOST_AUTO_TEST_CASE(electrum__server_donation_address__jsonrpc_2__expected)
 }
 
 // server.features
+
+BOOST_AUTO_TEST_CASE(electrum__server_features__no_params__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":301,"method":"server.features"})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_features__extra_param__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":302,"method":"server.features","params":["extra"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("genesis_hash").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("hash_function").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("server_version").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("protocol_min").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("protocol_max").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("pruning").is_null());
+    REQUIRE_NO_THROW_TRUE(result.at("hosts").is_object());
+
+    using namespace electrum;
+    const auto min = version_to_string(protocol_electrum_version::minimum);
+    const auto max = version_to_string(protocol_electrum_version::maximum);
+    const auto server_name = config_.server.electrum.server_name;
+    const auto genesis_hash = encode_hash(genesis.hash());
+    BOOST_REQUIRE_EQUAL(result.at("genesis_hash").as_string(), genesis_hash);
+    BOOST_REQUIRE_EQUAL(result.at("hash_function").as_string(), "sha256");
+    BOOST_REQUIRE_EQUAL(result.at("server_version").as_string(), server_name);
+    BOOST_REQUIRE_EQUAL(result.at("protocol_min").as_string(), min);
+    BOOST_REQUIRE_EQUAL(result.at("protocol_max").as_string(), max);
+
+    const auto& hosts = result.at("hosts").as_object();
+    BOOST_REQUIRE_EQUAL(hosts.size(), 1u);
+    REQUIRE_NO_THROW_TRUE(hosts.at("").is_object());
+
+    const auto& host = hosts.at("").as_object();
+    REQUIRE_NO_THROW_TRUE(host.at("tcp_port").is_null());
+    REQUIRE_NO_THROW_TRUE(host.at("ssl_port").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_features__hosts__expected)
+{
+    config_.server.electrum.advertise_binds.emplace_back("tcp.com:80");
+    config_.server.electrum.advertise_safes.emplace_back("ssl.com:443");
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("hosts").is_object());
+
+    const auto& hosts = result.at("hosts").as_object();
+    REQUIRE_NO_THROW_TRUE(hosts.at("tcp.com").is_object());
+    REQUIRE_NO_THROW_TRUE(hosts.at("ssl.com").is_object());
+
+    const auto& tcp = hosts.at("tcp.com").as_object();
+    const auto& ssl = hosts.at("ssl.com").as_object();
+    BOOST_REQUIRE_EQUAL(tcp.at("tcp_port").as_int64(), 80);
+    BOOST_REQUIRE_EQUAL(ssl.at("ssl_port").as_int64(), 443);
+}
+
 // server.peers.subscribe
 
 // server.ping
 
-BOOST_AUTO_TEST_CASE(electrum__server_ping__null)
+BOOST_AUTO_TEST_CASE(electrum__server_ping__always__null)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
 

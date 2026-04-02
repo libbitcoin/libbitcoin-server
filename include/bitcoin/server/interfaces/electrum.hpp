@@ -44,7 +44,7 @@ struct electrum_methods
         method<"blockchain.scripthash.subscribe", string_t>{ "scripthash" },
         method<"blockchain.scripthash.unsubscribe", string_t>{ "scripthash" },
         method<"blockchain.transaction.broadcast", string_t>{ "raw_tx" },
-        method<"blockchain.transaction.broadcast_package", string_t, optional<true>>{ "raw_txs", "verbose" },
+        method<"blockchain.transaction.broadcast_package", value_t, optional<false>>{ "raw_txs", "verbose" },
         method<"blockchain.transaction.get", string_t, boolean_t>{ "tx_hash", "verbose" },
         method<"blockchain.transaction.get_merkle", string_t, number_t>{ "tx_hash", "height" },
         method<"blockchain.transaction.id_from_pos", number_t, number_t, optional<false>>{ "height", "tx_pos", "merkle" },

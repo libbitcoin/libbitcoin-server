@@ -45,25 +45,31 @@ void protocol_electrum::start() NOEXCEPT
     // Events subscription is asynchronous, events may be missed.
     subscribe_events(BIND(handle_event, _1, _2, _3));
 
-    // Blockchain methods.
+    // Header methods.
     SUBSCRIBE_RPC(handle_blockchain_block_header, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_block_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_RPC(handle_blockchain_headers_subscribe, _1, _2);
+
+    // Fee methods.
     SUBSCRIBE_RPC(handle_blockchain_estimate_fee, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_relay_fee, _1, _2);
+
+    // Address methods.
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_balance, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_history, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_mempool, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_list_unspent, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_subscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_unsubscribe, _1, _2, _3);
+
+    // Transaction methods.
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast_package, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get_merkle, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_id_from_pos, _1, _2, _3, _4, _5);
 
-    // Server methods
+    // Server methods.
     SUBSCRIBE_RPC(handle_server_add_peer, _1, _2, _3);
     SUBSCRIBE_RPC(handle_server_banner, _1, _2);
     SUBSCRIBE_RPC(handle_server_donation_address, _1, _2);

@@ -108,7 +108,7 @@ void protocol_electrum::handle_server_features(const code& ec,
     {
         { "genesis_hash", encode_hash(hash) },
         { "hosts", advertised_hosts() },
-        { "hash_function", "sha256" },
+        { "hash_function", string_t{ "sha256" } },
         { "server_version", options().server_name },
         { "protocol_min", string_t{ version_to_string(minimum) } },
         { "protocol_max", string_t{ version_to_string(maximum) } },
@@ -165,13 +165,18 @@ object_t protocol_electrum::advertised_hosts() const NOEXCEPT
             map[safe.host()]["ssl_port"] = safe.port();
 
     object_t hosts{};
-    for (const auto& [host, object] : map)
+    for (const auto& [host, object]: map)
         hosts[host] = object;
 
     if (hosts.empty()) return
     {
-        { "tcp_port", null_t{} },
-        { "ssl_port", null_t{} }
+        {
+            "", object_t
+            {
+                { "tcp_port", null_t{} },
+                { "ssl_port", null_t{} }
+            }
+        }
     };
 
     return hosts;
