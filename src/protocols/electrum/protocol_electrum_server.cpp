@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
 #include <map>
+#include <optional>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -32,7 +33,7 @@ using namespace std::placeholders;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 void protocol_electrum::handle_server_add_peer(const code& ec,
-    rpc_interface::server_add_peer, const interface::object_t& ) NOEXCEPT
+    rpc_interface::server_add_peer, const interface::object_t&) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -43,6 +44,8 @@ void protocol_electrum::handle_server_add_peer(const code& ec,
         return;
     }
 
+    // This is an unsafe feature and server outbound connections are a bad idea.
+    // Instead we rely strictly on a configured list servers to advertise.
     send_code(error::not_implemented);
 }
 
@@ -107,7 +110,7 @@ void protocol_electrum::handle_server_features(const code& ec,
     send_result(object_t
     {
         { "genesis_hash", encode_hash(hash) },
-        { "hosts", advertised_hosts() },
+        { "hosts", self_hosts() },
         { "hash_function", string_t{ "sha256" } },
         { "server_version", options().server_name },
         { "protocol_min", string_t{ version_to_string(minimum) } },
@@ -129,7 +132,8 @@ void protocol_electrum::handle_server_peers_subscribe(const code& ec,
         return;
     }
 
-    send_code(error::not_implemented);
+    // Only supports configured servers.
+    send_result(more_hosts(), 1024, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_server_ping(const code& ec,
@@ -150,17 +154,18 @@ void protocol_electrum::handle_server_ping(const code& ec,
 
 // utilities
 // ----------------------------------------------------------------------------
+// These are both fugly encodings and unnecessarily restrict the features.
 
 // One of each type allowed for given host, last writer wins if more than one.
-object_t protocol_electrum::advertised_hosts() const NOEXCEPT
+object_t protocol_electrum::self_hosts() const NOEXCEPT
 {
     std::map<string_t, object_t> map{};
 
-    for (const auto& bind: options().advertise_binds)
+    for (const auto& bind: options().self_binds)
         if (!bind.host().empty())
             map[bind.host()]["tcp_port"] = bind.port();
 
-    for (const auto& safe: options().advertise_safes)
+    for (const auto& safe: options().self_safes)
         if (!safe.host().empty())
             map[safe.host()]["ssl_port"] = safe.port();
 
@@ -180,6 +185,46 @@ object_t protocol_electrum::advertised_hosts() const NOEXCEPT
     };
 
     return hosts;
+}
+
+// One of each type allowed for given host, last writer wins if more than one.
+array_t protocol_electrum::more_hosts() const NOEXCEPT
+{
+    using port_option = std::optional<uint16_t>;
+    struct port { port_option tcp{}; port_option ssl{}; };
+    std::map<string_t, port> map{};
+
+    for (const auto& bind: options().more_binds)
+        map[bind.host()].tcp = bind.port();
+
+    for (const auto& safe: options().more_safes)
+        map[safe.host()].ssl = safe.port();
+
+    const auto defaulted = [](uint16_t port) NOEXCEPT
+    {
+        return is_zero(port) ? std::string{} : std::to_string(port);
+    };
+
+    array_t result{};
+    for (const auto& [host, ports]: map)
+    {
+        array_t features{};
+        if (ports.tcp.has_value())
+            features.push_back("t" + defaulted(ports.tcp.value()));
+
+        if (ports.ssl.has_value())
+            features.push_back("s" + defaulted(ports.ssl.value()));
+
+        if (!features.empty())
+            result.push_back(array_t
+            {
+                host,
+                host,
+                std::move(features)
+            });
+    }
+
+    return result;
 }
 
 BC_POP_WARNING()

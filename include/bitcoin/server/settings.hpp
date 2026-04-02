@@ -106,9 +106,13 @@ public:
         /// Arbitrary string returned by server.banner.
         std::string banner_message{};
 
-        /// Advertised as self via server.features (limit one each per host).
-        network::config::endpoints advertise_binds{};
-        network::config::endpoints advertise_safes{};
+        /// Advertised self via server.features (limit one each per host).
+        network::config::endpoints self_binds{};
+        network::config::endpoints self_safes{};
+
+        /// Advertised servers via server.peers.subscribe.
+        network::config::endpoints more_binds{};
+        network::config::endpoints more_safes{};
     };
 
     /// html (http/s) document server settings (has directory/default).

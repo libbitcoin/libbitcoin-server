@@ -161,7 +161,8 @@ private:
     static constexpr electrum::version maximum = version_t::maximum;
 
     // Compute server.features.hosts value from config.
-    network::rpc::object_t advertised_hosts() const NOEXCEPT;
+    network::rpc::object_t self_hosts() const NOEXCEPT;
+    network::rpc::array_t more_hosts() const NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;

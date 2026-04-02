@@ -22,15 +22,32 @@
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
 using namespace system;
-static const code not_found{ server::error::not_found };
-static const code target_overflow{ server::error::target_overflow };
-static const code invalid_argument{ server::error::invalid_argument };
+static const code wrong_version{ server::error::wrong_version };
+static const code not_implemented{ server::error::not_implemented };
 
 // server.add_peer
 
+BOOST_AUTO_TEST_CASE(electrum__server_add_peer__insufficient_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":400,"method":"server.add_peer","params":[{}]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_add_peer__v1_1__not_implemented)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":401,"method":"server.add_peer","params":[{}]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+}
+
 // server.banner
 
-BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_aparams__dropped)
+BOOST_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_params__dropped)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
@@ -151,8 +168,8 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
 
 BOOST_AUTO_TEST_CASE(electrum__server_features__hosts__expected)
 {
-    config_.server.electrum.advertise_binds.emplace_back("tcp.com:80");
-    config_.server.electrum.advertise_safes.emplace_back("ssl.com:443");
+    config_.server.electrum.self_binds.emplace_back("tcp.com:80");
+    config_.server.electrum.self_safes.emplace_back("ssl.com:443");
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
@@ -172,6 +189,67 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__hosts__expected)
 }
 
 // server.peers.subscribe
+
+BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__extra_param__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":502,"method":"server.peers.subscribe","params":["extra"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__empty_params__empty_array)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":503,"method":"server.peers.subscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__configured_peers__expected)
+{
+    config_.server.electrum.more_binds.emplace_back("another.trusted.server:50001");
+    config_.server.electrum.more_safes.emplace_back("electrum.example.com");
+    config_.server.electrum.more_safes.emplace_back("fulcrum.trustednode.org:50002");
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":504,"method":"server.peers.subscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& peers = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(peers.size(), 3u);
+
+    // Peer 0: another.trusted.server:50001
+    const auto& peer0 = peers[0].as_array();
+    BOOST_REQUIRE_EQUAL(peer0.size(), 3u);
+    BOOST_REQUIRE_EQUAL(peer0[0].as_string(), "another.trusted.server");
+    BOOST_REQUIRE_EQUAL(peer0[1].as_string(), "another.trusted.server");
+
+    const auto& features0 = peer0[2].as_array();
+    BOOST_REQUIRE_EQUAL(features0.size(), 1u);
+    BOOST_REQUIRE_EQUAL(features0[0].as_string(), "t50001");
+
+    // Peer 1: electrum.example.com (default SSL)
+    const auto& peer1 = peers[1].as_array();
+    BOOST_REQUIRE_EQUAL(peer1.size(), 3u);
+    BOOST_REQUIRE_EQUAL(peer1[0].as_string(), "electrum.example.com");
+    BOOST_REQUIRE_EQUAL(peer1[1].as_string(), "electrum.example.com");
+
+    const auto& features1 = peer1[2].as_array();
+    BOOST_REQUIRE_EQUAL(features1.size(), 1u);
+    BOOST_REQUIRE_EQUAL(features1[0].as_string(), "s");
+
+    // Peer 2: fulcrum.trustednode.org:50002
+    const auto& peer2 = peers[2].as_array();
+    BOOST_REQUIRE_EQUAL(peer2.size(), 3u);
+    BOOST_REQUIRE_EQUAL(peer2[0].as_string(), "fulcrum.trustednode.org");
+    BOOST_REQUIRE_EQUAL(peer2[1].as_string(), "fulcrum.trustednode.org");
+
+    const auto& features2 = peer2[2].as_array();
+    BOOST_REQUIRE_EQUAL(features2.size(), 1u);
+    BOOST_REQUIRE_EQUAL(features2[0].as_string(), "s50002");
+}
 
 // server.ping
 

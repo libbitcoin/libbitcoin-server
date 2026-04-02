@@ -1155,14 +1155,24 @@ options_metadata parser::load_settings() THROWS
         "String returned by server.banner, defaults to empty."
     )
     (
-        "electrum.advertise_bind",
-        value<network::config::endpoints>(&configured.server.electrum.advertise_binds),
+        "electrum.self_bind",
+        value<network::config::endpoints>(&configured.server.electrum.self_binds),
         "Advertised host:port at which this server can be reached (defaults to empty)."
     )
     (
-        "electrum.advertise_safe",
-        value<network::config::endpoints>(&configured.server.electrum.advertise_safes),
+        "electrum.self_safe",
+        value<network::config::endpoints>(&configured.server.electrum.self_safes),
         "Advertised secure host:port at which this server can be reached (defaults to empty)."
+    )
+    (
+        "electrum.more_bind",
+        value<network::config::endpoints>(&configured.server.electrum.more_binds),
+        "Advertised host:port at which another server can be reached (defaults to empty)."
+    )
+    (
+        "electrum.more_safe",
+        value<network::config::endpoints>(&configured.server.electrum.more_safes),
+        "Advertised secure host:port at which another server can be reached (defaults to empty)."
     )
 
     /* [stratum_v1] */
