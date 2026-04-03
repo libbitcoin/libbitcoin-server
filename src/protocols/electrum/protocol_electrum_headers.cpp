@@ -213,12 +213,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         send_code(error::argument_overflow);
         return;
     }
-    else if (starting > top)
-    {
-        send_code(error::not_found);
-        return;
-    }
-    else if (prove && waypoint > top)
+    else if ((starting > top) || (prove && waypoint > top))
     {
         send_code(error::not_found);
         return;
