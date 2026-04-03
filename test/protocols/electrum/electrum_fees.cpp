@@ -23,10 +23,47 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
 using namespace system;
 static const code wrong_version{ server::error::wrong_version };
+static const code not_implemented{ server::error::not_implemented };
+static const code invalid_argument{ server::error::invalid_argument };
 
 // blockchain.estimatefee
 
-// blockchain.relay_fee
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__no_number__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__float_number__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[42.42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__mode_invalid_version__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__valid__not_implemented)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+}
+
+// blockchain.relayfee
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
 {
@@ -48,7 +85,5 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__obsoleted__wrong_version)
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
-
-// get_fee_histogram
 
 BOOST_AUTO_TEST_SUITE_END()

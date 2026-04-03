@@ -25,14 +25,15 @@ namespace server {
 
 #define CLASS protocol_electrum
 
+using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
-    rpc_interface::blockchain_estimate_fee, double,
-    const std::string&) NOEXCEPT
+    rpc_interface::blockchain_estimate_fee, double number,
+    const std::string& mode) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -43,9 +44,21 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
         return;
     }
 
-    ////const auto mode_enabled = at_least(electrum::version::v1_6);
+    size_t target{};
+    if (!to_integer(target, number))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
 
-    ////send_result(number, 70, BIND(complete, _1));
+    if (!mode.empty() &&
+        !at_least(electrum::version::v1_6))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    // TODO: integrate fee estimator.
     send_code(error::not_implemented);
 }
 
