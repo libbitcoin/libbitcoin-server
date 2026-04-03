@@ -47,6 +47,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__9_block_st
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
+// blockchain.block.get_chunk
+// blockchain.block.get_header
+
 // blockchain.block.header
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__insufficient_version__wrong_version)

@@ -52,7 +52,7 @@ void protocol_electrum::handle_blockchain_number_of_blocks_subscribe(
 }
 
 void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
-    rpc_interface::blockchain_block_get_chunk, double ) NOEXCEPT
+    rpc_interface::blockchain_block_get_chunk, double index) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -63,12 +63,40 @@ void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
         return;
     }
 
-    // TODO: get zero-based index of 2016 headers.
-    send_code(error::not_implemented);
+    size_t position{};
+    if (!to_integer(position, index))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    // Get zero-based index of 2016 headers by confirmed confirmed.
+    constexpr size_t chunk{ 2016 };
+    const auto& query = archive();
+    const auto top = query.get_top_confirmed();
+    const auto height = ceilinged_multiply(position, chunk);
+    const auto last = limit(ceilinged_add(height, chunk), top);
+    const auto count = floored_subtract(last, height);
+    const auto size = count * two * chain::header::serialized_size();
+    const auto links = query.get_confirmed_headers(height, count);
+
+    std::string headers(size, '\0');
+    stream::out::fast sink{ headers };
+    write::base16::fast writer{ sink };
+    for (const auto& link: links)
+    {
+        if (!query.get_wire_header(writer, link))
+        {
+            send_code(error::server_error);
+            return;
+        }
+    }
+
+    send_result(std::move(headers), size + 42u, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
-    rpc_interface::blockchain_block_get_header, double ) NOEXCEPT
+    rpc_interface::blockchain_block_get_header, double height) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -79,8 +107,33 @@ void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
         return;
     }
 
-    // TODO: get header by height.
-    send_code(error::not_implemented);
+    size_t target{};
+    if (!to_integer(target, height))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    const auto& query = archive();
+    const auto link = query.to_confirmed(target);
+    if (link.is_terminal())
+    {
+        ////send_code(error::not_found);
+        send_result(null_t{}, 42, BIND(complete, _1));
+        return;
+    }
+
+    const auto size = two * chain::header::serialized_size();
+    std::string header(size, '\0');
+    stream::out::fast sink{ header };
+    write::base16::fast writer{ sink };
+    if (!query.get_wire_header(writer, link))
+    {
+        send_code(error::server_error);
+        return;
+    }
+
+    send_result(std::move(header), size + 42u, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_block_header(const code& ec,
