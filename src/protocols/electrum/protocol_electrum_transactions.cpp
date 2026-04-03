@@ -66,12 +66,12 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     ////const auto& query = archive();
     ////constexpr chain::context next_block_context{};
     ////fault = tx->check();
-    ////fault = tx->guard_check();
+    ////fault = tx->check_guard();
     ////fault = tx->check(next_block_context);
-    ////fault = tx->guard_check(next_block_context);
+    ////fault = tx->check_guard(next_block_context);
     ////query.populate_with_metadata(*tx);
     ////fault = tx->accept(next_block_context);
-    ////fault = tx->guard_accept(next_block_context);
+    ////fault = tx->accept_guard(next_block_context);
     ////fault = tx->confirm(next_block_context);
     ////fault = tx->connect(next_block_context);
 
@@ -159,12 +159,12 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
         const code fault{ error::unconfirmable_transaction };
 
         ////fault = tx->check();
-        ////fault = tx->guard_check();
+        ////fault = tx->check_guard();
         ////fault = tx->check(next_block_context);
-        ////fault = tx->guard_check(next_block_context);
+        ////fault = tx->check_guard(next_block_context);
         ////query.populate_with_metadata(*tx);
         ////fault = tx->accept(next_block_context);
-        ////fault = tx->guard_accept(next_block_context);
+        ////fault = tx->accept_guard(next_block_context);
         ////fault = tx->confirm(next_block_context);
         ////fault = tx->connect(next_block_context);
 
