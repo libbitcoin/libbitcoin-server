@@ -46,8 +46,9 @@ void protocol_electrum::handle_blockchain_number_of_blocks_subscribe(
         return;
     }
 
-    // TODO: implement.
-    send_code(error::not_implemented);
+    subscribed_height_.store(true, std::memory_order_relaxed);
+    const auto top_height = archive().get_top_confirmed();
+    send_result(top_height, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
@@ -292,7 +293,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    subscribed_.store(true, std::memory_order_relaxed);
+    subscribed_header_.store(true, std::memory_order_relaxed);
     send_result(
     {
         object_t
@@ -301,31 +302,6 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
             { "hex", encode_base16(header) }
         }
     }, 256, BIND(complete, _1));
-}
-
-// Notifier for blockchain_headers_subscribe events.
-void protocol_electrum::do_header(node::header_t link) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    const auto& query = archive();
-    const auto height = query.get_height(link);
-    const auto header = query.get_wire_header(link);
-
-    if (height.is_terminal())
-    {
-        LOGF("Electrum::do_header, object not found (" << link << ").");
-        return;
-    }
-
-    send_notification("blockchain.headers.subscribe",
-    {
-        object_t
-        {
-            { "height", height.value },
-            { "hex", encode_base16(header) }
-        }
-    }, 100, BIND(complete, _1));
 }
 
 BC_POP_WARNING()

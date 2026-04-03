@@ -29,6 +29,8 @@ namespace server {
 
 #define CLASS protocol_electrum
 
+using namespace system;
+using namespace network::rpc;
 using namespace std::placeholders;
 
 // Start.
@@ -118,7 +120,13 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     {
         case node::chase::organized:
         {
-            if (subscribed_.load(std::memory_order_relaxed))
+            if (subscribed_height_.load(std::memory_order_relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_height, std::get<node::header_t>(value));
+            }
+
+            if (subscribed_header_.load(std::memory_order_relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST(do_header, std::get<node::header_t>(value));
@@ -133,6 +141,51 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     }
 
     return true;
+}
+
+// Notifier for handle_blockchain_number_of_blocks_subscribe events.
+void protocol_electrum::do_height(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto height = query.get_height(link);
+
+    if (height.is_terminal())
+    {
+        LOGF("Electrum::do_height, object not found (" << link << ").");
+        return;
+    }
+
+    send_notification("blockchain.numblocks.subscribe",
+    {
+        array_t{ height.value }
+    }, 48, BIND(complete, _1));
+}
+
+// Notifier for blockchain_headers_subscribe events.
+void protocol_electrum::do_header(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto height = query.get_height(link);
+    const auto header = query.get_wire_header(link);
+
+    if (height.is_terminal())
+    {
+        LOGF("Electrum::do_header, object not found (" << link << ").");
+        return;
+    }
+
+    send_notification("blockchain.headers.subscribe",
+    {
+        object_t
+        {
+            { "height", height.value },
+            { "hex", encode_base16(header) }
+        }
+    }, 64, BIND(complete, _1));
 }
 
 } // namespace server

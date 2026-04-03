@@ -27,6 +27,26 @@ static const code wrong_version{ server::error::wrong_version };
 static const code target_overflow{ server::error::target_overflow };
 static const code invalid_argument{ server::error::invalid_argument };
 
+// blockchain.numblocks.subscribe
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__obsoleted_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":1001,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__9_block_store__returns_9)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":1004,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
 // blockchain.block.header
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__insufficient_version__wrong_version)
