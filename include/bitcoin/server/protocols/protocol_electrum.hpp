@@ -83,7 +83,7 @@ protected:
     /// Handlers (addresses).
     void handle_blockchain_utxo_get_address(const code& ec,
         rpc_interface::blockchain_utxo_get_address,
-        const std::string& address) NOEXCEPT;
+        const std::string& tx_hash, double index) NOEXCEPT;
     void handle_blockchain_address_get_balance(const code& ec,
         rpc_interface::blockchain_address_get_balance,
         const std::string& address) NOEXCEPT;
@@ -99,6 +99,8 @@ protected:
     void handle_blockchain_address_subscribe(const code& ec,
         rpc_interface::blockchain_address_subscribe,
         const std::string& address) NOEXCEPT;
+
+    /// Handlers (scripthash).
     void handle_blockchain_scripthash_get_balance(const code& ec,
         rpc_interface::blockchain_scripthash_get_balance,
         const std::string& scripthash) NOEXCEPT;
@@ -187,6 +189,10 @@ private:
     // Compute server.features.hosts value from config.
     network::rpc::object_t self_hosts() const NOEXCEPT;
     network::rpc::array_t more_hosts() const NOEXCEPT;
+
+    // Extract the legacy bitcoin payment address of a script.
+    system::wallet::payment_address extract_address(
+        const system::chain::script& script) NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;

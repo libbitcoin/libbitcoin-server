@@ -33,7 +33,7 @@ using namespace std::placeholders;
 
 // Start.
 // ----------------------------------------------------------------------------
-// github.com/spesmilo/electrum-protocol/blob/master/docs/protocol-methods.rst
+// electrum-protocol.readthedocs.io/en/latest/protocol-methods.html
 
 void protocol_electrum::start() NOEXCEPT
 {
@@ -46,6 +46,9 @@ void protocol_electrum::start() NOEXCEPT
     subscribe_events(BIND(handle_event, _1, _2, _3));
 
     // Header methods.
+    SUBSCRIBE_RPC(handle_blockchain_number_of_blocks_subscribe, _1, _2);
+    SUBSCRIBE_RPC(handle_blockchain_block_get_chunk, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_block_get_header, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_block_header, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_block_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_RPC(handle_blockchain_headers_subscribe, _1, _2);
@@ -55,6 +58,14 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_relay_fee, _1, _2);
 
     // Address methods.
+    SUBSCRIBE_RPC(handle_blockchain_utxo_get_address, _1, _2, _3, _4);
+    SUBSCRIBE_RPC(handle_blockchain_address_get_balance, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_get_history, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_get_mempool, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_list_unspent, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_subscribe, _1, _2, _3);
+
+    // Scripthash methods.
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_balance, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_history, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_mempool, _1, _2, _3);

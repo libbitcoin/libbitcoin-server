@@ -21,11 +21,11 @@
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
-// blockchain.utxo.get_address
-// blockchain.address.get_balance
-// blockchain.address.get_history
-// blockchain.address.get_mempool
-// blockchain.address.list_unspent
-// blockchain.address.subscribe
+// blockchain.scripthash.get_balance
+// blockchain.scripthash.get_history
+// blockchain.scripthash.get_mempool
+// blockchain.scripthash.list_unspent
+// blockchain.scripthash.subscribe
+// blockchain.scripthash.unsubscribe
 
 BOOST_AUTO_TEST_SUITE_END()
