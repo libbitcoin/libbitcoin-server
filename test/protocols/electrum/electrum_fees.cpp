@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
     BOOST_REQUIRE_EQUAL(response.at("result").as_double(), config_.node.minimum_fee_rate);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_relayfee__obsoleted__wrong_version)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__obsoleted__wrong_version)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
