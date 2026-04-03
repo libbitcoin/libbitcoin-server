@@ -42,8 +42,8 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
         return;
     }
 
-    // TODO: requires tx pool metadata graph.
-    send_code(error::not_implemented);
+    // TODO: Empty array (of tuples), could be simulated with block fees.
+    send_result(array_t{}, 42, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_mempool_get_info(const code& ec,
@@ -52,7 +52,7 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
     if (stopped(ec))
         return;
 
-    // Not documented.
+    // Not documented, but replaces blockchain.relayfee.
     if (!at_least(electrum::version::v1_6))
     {
         send_code(error::wrong_version);

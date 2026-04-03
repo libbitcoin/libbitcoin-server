@@ -21,7 +21,87 @@
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
+using namespace system;
+static const code wrong_version{ server::error::wrong_version };
+
 // mempool.get_fee_histogram
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__insufficient_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":600,"method":"mempool.get_fee_histogram","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__no_params_key__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":601,"method":"mempool.get_fee_histogram"})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__extra_param__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":602,"method":"mempool.get_fee_histogram","params":[42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__empty_array)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":603,"method":"mempool.get_fee_histogram","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+}
+
 // mempool.get_info
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__insufficient_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":700,"method":"mempool.get_info","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__no_params_key__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":701,"method":"mempool.get_info"})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__extra_param__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":702,"method":"mempool.get_info","params":[42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
+{
+    config_.node.minimum_fee_rate = 42.42f;
+    config_.node.minimum_bump_rate = 24.24f;
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":703,"method":"mempool.get_info","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("mempoolminfee").is_number());
+    REQUIRE_NO_THROW_TRUE(result.at("minrelaytxfee").is_number());
+    REQUIRE_NO_THROW_TRUE(result.at("incrementalrelayfee").is_number());
+    BOOST_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), config_.node.minimum_fee_rate);
+    BOOST_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), config_.node.minimum_fee_rate);
+    BOOST_REQUIRE_EQUAL(result.at("incrementalrelayfee").as_double(), config_.node.minimum_bump_rate);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
