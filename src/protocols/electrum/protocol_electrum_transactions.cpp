@@ -66,12 +66,12 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     ////const auto& query = archive();
     ////constexpr chain::context next_block_context{};
     ////fault = tx->check();
-    ////fault = tx->guard_check();
+    ////fault = tx->check_guard();
     ////fault = tx->check(next_block_context);
-    ////fault = tx->guard_check(next_block_context);
+    ////fault = tx->check_guard(next_block_context);
     ////query.populate_with_metadata(*tx);
     ////fault = tx->accept(next_block_context);
-    ////fault = tx->guard_accept(next_block_context);
+    ////fault = tx->accept_guard(next_block_context);
     ////fault = tx->confirm(next_block_context);
     ////fault = tx->connect(next_block_context);
 
@@ -159,12 +159,12 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
         const code fault{ error::unconfirmable_transaction };
 
         ////fault = tx->check();
-        ////fault = tx->guard_check();
+        ////fault = tx->check_guard();
         ////fault = tx->check(next_block_context);
-        ////fault = tx->guard_check(next_block_context);
+        ////fault = tx->check_guard(next_block_context);
         ////query.populate_with_metadata(*tx);
         ////fault = tx->accept(next_block_context);
-        ////fault = tx->guard_accept(next_block_context);
+        ////fault = tx->accept_guard(next_block_context);
         ////fault = tx->confirm(next_block_context);
         ////fault = tx->connect(next_block_context);
 
@@ -192,8 +192,8 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         return;
 
     // TODO: changed in version 1.1: ignored height argument removed.
-    // Requires additional same-name method implementation for v1.0.
-    // This implies and override to channel_rpc<electrum>::dispatch().
+    // This implies an override to channel_rpc<electrum>::dispatch() to strip
+    // the height parameter in the case of negotiated v1.1.
     if ((!at_least(electrum::version::v1_0)) ||
         (!at_least(electrum::version::v1_2) && verbose))
     {
@@ -274,9 +274,9 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     send_result(std::move(value), two * size, BIND(complete, _1));
 }
 
-void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
-    rpc_interface::blockchain_transaction_get_merkle, const std::string& tx_hash,
-    double height) NOEXCEPT
+void protocol_electrum::handle_blockchain_transaction_get_merkle(
+    const code& ec, rpc_interface::blockchain_transaction_get_merkle,
+    const std::string& tx_hash, double height) NOEXCEPT
 {
     using namespace system;
     if (stopped(ec))
@@ -337,9 +337,9 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
     }, two * hash_size * add1(branch.size()), BIND(complete, _1));
 }
 
-void protocol_electrum::handle_blockchain_transaction_id_from_pos(const code& ec,
-    rpc_interface::blockchain_transaction_id_from_pos, double height,
-    double tx_pos, bool merkle) NOEXCEPT
+void protocol_electrum::handle_blockchain_transaction_id_from_position(
+    const code& ec, rpc_interface::blockchain_transaction_id_from_position,
+    double height, double tx_pos, bool merkle) NOEXCEPT
 {
     if (stopped(ec))
         return;

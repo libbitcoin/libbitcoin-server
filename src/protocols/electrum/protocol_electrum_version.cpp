@@ -80,6 +80,8 @@ void protocol_electrum_version::finished(const code& ec,
 // ----------------------------------------------------------------------------
 
 // TODO: Changed in version 1.6: server must tolerate and ignore extra args.
+// This implies an override to channel_rpc<electrum>::dispatch(). This must
+// be done for ALL versions, since it applies to the version negotiation.
 void protocol_electrum_version::handle_server_version(const code& ec,
     rpc_interface::server_version, const std::string& client_name,
     const value_t& protocol_version) NOEXCEPT

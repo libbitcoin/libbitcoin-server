@@ -29,11 +29,13 @@ namespace server {
 
 #define CLASS protocol_electrum
 
+using namespace system;
+using namespace network::rpc;
 using namespace std::placeholders;
 
 // Start.
 // ----------------------------------------------------------------------------
-// github.com/spesmilo/electrum-protocol/blob/master/docs/protocol-methods.rst
+// electrum-protocol.readthedocs.io/en/latest/protocol-methods.html
 
 void protocol_electrum::start() NOEXCEPT
 {
@@ -46,6 +48,9 @@ void protocol_electrum::start() NOEXCEPT
     subscribe_events(BIND(handle_event, _1, _2, _3));
 
     // Header methods.
+    SUBSCRIBE_RPC(handle_blockchain_number_of_blocks_subscribe, _1, _2);
+    SUBSCRIBE_RPC(handle_blockchain_block_get_chunk, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_block_get_header, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_block_header, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_block_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_RPC(handle_blockchain_headers_subscribe, _1, _2);
@@ -55,6 +60,14 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_relay_fee, _1, _2);
 
     // Address methods.
+    SUBSCRIBE_RPC(handle_blockchain_utxo_get_address, _1, _2, _3, _4);
+    SUBSCRIBE_RPC(handle_blockchain_address_get_balance, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_get_history, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_get_mempool, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_list_unspent, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_address_subscribe, _1, _2, _3);
+
+    // Scripthash methods.
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_balance, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_history, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_get_mempool, _1, _2, _3);
@@ -67,7 +80,7 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast_package, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get_merkle, _1, _2, _3, _4);
-    SUBSCRIBE_RPC(handle_blockchain_transaction_id_from_pos, _1, _2, _3, _4, _5);
+    SUBSCRIBE_RPC(handle_blockchain_transaction_id_from_position, _1, _2, _3, _4, _5);
 
     // Server methods.
     SUBSCRIBE_RPC(handle_server_add_peer, _1, _2, _3);
@@ -107,7 +120,13 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     {
         case node::chase::organized:
         {
-            if (subscribed_.load(std::memory_order_relaxed))
+            if (subscribed_height_.load(std::memory_order_relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_height, std::get<node::header_t>(value));
+            }
+
+            if (subscribed_header_.load(std::memory_order_relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST(do_header, std::get<node::header_t>(value));
@@ -122,6 +141,51 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     }
 
     return true;
+}
+
+// Notifier for handle_blockchain_number_of_blocks_subscribe events.
+void protocol_electrum::do_height(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto height = query.get_height(link);
+
+    if (height.is_terminal())
+    {
+        LOGF("Electrum::do_height, object not found (" << link << ").");
+        return;
+    }
+
+    send_notification("blockchain.numblocks.subscribe",
+    {
+        array_t{ height.value }
+    }, 48, BIND(complete, _1));
+}
+
+// Notifier for blockchain_headers_subscribe events.
+void protocol_electrum::do_header(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto height = query.get_height(link);
+    const auto header = query.get_wire_header(link);
+
+    if (height.is_terminal())
+    {
+        LOGF("Electrum::do_header, object not found (" << link << ").");
+        return;
+    }
+
+    send_notification("blockchain.headers.subscribe",
+    {
+        object_t
+        {
+            { "height", height.value },
+            { "hex", encode_base16(header) }
+        }
+    }, 64, BIND(complete, _1));
 }
 
 } // namespace server

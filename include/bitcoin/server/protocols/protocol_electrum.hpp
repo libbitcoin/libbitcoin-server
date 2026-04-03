@@ -58,6 +58,12 @@ protected:
         node::event_value) NOEXCEPT;
 
     /// Handlers (headers).
+    void handle_blockchain_number_of_blocks_subscribe(const code& ec,
+        rpc_interface::blockchain_number_of_blocks_subscribe) NOEXCEPT;
+    void handle_blockchain_block_get_chunk(const code& ec,
+        rpc_interface::blockchain_block_get_chunk, double index) NOEXCEPT;
+    void handle_blockchain_block_get_header(const code& ec,
+        rpc_interface::blockchain_block_get_header, double height) NOEXCEPT;
     void handle_blockchain_block_header(const code& ec,
         rpc_interface::blockchain_block_header, double height,
         double cp_height) NOEXCEPT;
@@ -75,6 +81,26 @@ protected:
         rpc_interface::blockchain_relay_fee) NOEXCEPT;
 
     /// Handlers (addresses).
+    void handle_blockchain_utxo_get_address(const code& ec,
+        rpc_interface::blockchain_utxo_get_address,
+        const std::string& tx_hash, double index) NOEXCEPT;
+    void handle_blockchain_address_get_balance(const code& ec,
+        rpc_interface::blockchain_address_get_balance,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_get_history(const code& ec,
+        rpc_interface::blockchain_address_get_history,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_get_mempool(const code& ec,
+        rpc_interface::blockchain_address_get_mempool,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_list_unspent(const code& ec,
+        rpc_interface::blockchain_address_list_unspent,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_subscribe(const code& ec,
+        rpc_interface::blockchain_address_subscribe,
+        const std::string& address) NOEXCEPT;
+
+    /// Handlers (scripthash).
     void handle_blockchain_scripthash_get_balance(const code& ec,
         rpc_interface::blockchain_scripthash_get_balance,
         const std::string& scripthash) NOEXCEPT;
@@ -107,8 +133,8 @@ protected:
     void handle_blockchain_transaction_get_merkle(const code& ec,
         rpc_interface::blockchain_transaction_get_merkle,
         const std::string& tx_hash, double height) NOEXCEPT;
-    void handle_blockchain_transaction_id_from_pos(const code& ec,
-        rpc_interface::blockchain_transaction_id_from_pos, double height,
+    void handle_blockchain_transaction_id_from_position(const code& ec,
+        rpc_interface::blockchain_transaction_id_from_position, double height,
         double tx_pos, bool merkle) NOEXCEPT;
 
     /// Handlers (server).
@@ -142,7 +168,8 @@ protected:
     void blockchain_block_headers(size_t starting, size_t quantity,
         size_t waypoint, bool multiplicity) NOEXCEPT;
 
-    /// Notify client of new header.
+    /// Notify client of newly organized block.
+    void do_height(node::header_t link) NOEXCEPT;
     void do_header(node::header_t link) NOEXCEPT;
 
     inline bool at_least(server::electrum::version version) const NOEXCEPT
@@ -161,11 +188,17 @@ private:
     static constexpr electrum::version maximum = version_t::maximum;
 
     // Compute server.features.hosts value from config.
-    network::rpc::object_t advertised_hosts() const NOEXCEPT;
+    network::rpc::object_t self_hosts() const NOEXCEPT;
+    network::rpc::array_t more_hosts() const NOEXCEPT;
+
+    // Extract the legacy bitcoin payment address of a script.
+    system::wallet::payment_address extract_address(
+        const system::chain::script& script) NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;
-    std::atomic_bool subscribed_{};
+    std::atomic_bool subscribed_height_{};
+    std::atomic_bool subscribed_header_{};
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
