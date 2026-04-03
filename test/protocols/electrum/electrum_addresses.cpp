@@ -87,6 +87,40 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2pk__null)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2kh__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    // Add a confirmed p2sh/p2kh block.
+    query_.set(bogus_block10, database::context{ 0, 10, 0 }, false, false);
+    query_.push_confirmed(query_.to_header(bogus_block10.hash()), false);
+
+    const auto hash = bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
+    const auto response = get((boost::format(request) % encode_hash(hash)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const auto& result = response.at("result").as_string();
+    BOOST_REQUIRE_EQUAL(result,"1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM");
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    // Add a confirmed p2sh/p2kh block.
+    query_.set(bogus_block10, database::context{ 0, 10, 0 }, false, false);
+    query_.push_confirmed(query_.to_header(bogus_block10.hash()), false);
+
+    const auto hash = bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",1]})" "\n";
+    const auto response = get((boost::format(request) % encode_hash(hash)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const auto& result = response.at("result").as_string();
+    BOOST_REQUIRE_EQUAL(result, "31xsx7sPoS2UfoUAKfoXLX6wTPvpetyo7s");
+}
+
 // TODO: add block with payment address tx and test.
 
 // blockchain.address.get_balance

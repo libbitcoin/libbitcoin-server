@@ -143,7 +143,7 @@ const chain::block bogus_block10
                 output
                 {
                     0x04,
-                    script{}
+                    script::to_pay_key_hash_pattern({ 0x01 })
                 }
             },
             0x05
@@ -173,7 +173,12 @@ const chain::block bogus_block10
                 output
                 {
                     0x09,
-                    script{}
+                    script::to_pay_key_hash_pattern({ 0x02 })
+                },
+                output
+                {
+                    0x09,
+                    script::to_pay_script_hash_pattern({ 0x03 })
                 }
             },
             0x0a
@@ -203,7 +208,7 @@ const chain::block bogus_block10
                 output
                 {
                     0x0e,
-                    script{}
+                    script::to_pay_script_hash_pattern({ 0x04 })
                 }
             },
             0x0f
