@@ -33,6 +33,108 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
+    rpc_interface::blockchain_utxo_get_address,
+    const std::string& ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get the output by tx_hash and index.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_blockchain_address_get_balance(const code& ec,
+    rpc_interface::blockchain_address_get_balance,
+    const std::string& ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_3))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get by p2sh/p2pkh address.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_blockchain_address_get_history(const code& ec,
+    rpc_interface::blockchain_address_get_history,
+    const std::string& ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_3))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get by p2sh/p2pkh address.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_blockchain_address_get_mempool(const code& ec,
+    rpc_interface::blockchain_address_get_mempool,
+    const std::string& ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_3))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get by p2sh/p2pkh address.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_blockchain_address_list_unspent(const code& ec,
+    rpc_interface::blockchain_address_list_unspent,
+    const std::string& ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_3))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get by p2sh/p2pkh address.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
+    rpc_interface::blockchain_address_subscribe,
+    const std::string& ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_3))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get by p2sh/p2pkh address.
+    send_code(error::not_implemented);
+}
+
 void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     rpc_interface::blockchain_scripthash_get_balance,
     const std::string& ) NOEXCEPT

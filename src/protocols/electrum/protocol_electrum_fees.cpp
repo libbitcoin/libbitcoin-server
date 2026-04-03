@@ -31,8 +31,8 @@ using namespace std::placeholders;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
-    rpc_interface::blockchain_estimate_fee, double ,
-    const std::string& ) NOEXCEPT
+    rpc_interface::blockchain_estimate_fee, double,
+    const std::string&) NOEXCEPT
 {
     if (stopped(ec))
         return;

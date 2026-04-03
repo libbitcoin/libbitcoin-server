@@ -52,14 +52,21 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_0))
+    // Not documented.
+    if (!at_least(electrum::version::v1_6))
     {
         send_code(error::wrong_version);
         return;
     }
 
-    // TODO: requires tx pool metadata graph.
-    send_code(error::not_implemented);
+    const auto& settings = node_settings();
+    send_result(object_t
+    {
+        // Even with a txpool or txgraph this value is fixed.
+        { "mempoolminfee", settings.minimum_fee_rate },
+        { "minrelaytxfee", settings.minimum_fee_rate },
+        { "incrementalrelayfee", settings.minimum_bump_rate }
+    }, 128, BIND(complete, _1));
 }
 
 BC_POP_WARNING()

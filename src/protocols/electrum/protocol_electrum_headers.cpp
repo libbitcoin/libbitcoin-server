@@ -34,6 +34,54 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+void protocol_electrum::handle_blockchain_number_of_blocks_subscribe(
+    const code& ec, rpc_interface::blockchain_number_of_blocks_subscribe) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_1))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: implement.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
+    rpc_interface::blockchain_block_get_chunk, double ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_4))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get zero-based index of 2016 headers.
+    send_code(error::not_implemented);
+}
+
+void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
+    rpc_interface::blockchain_block_get_header, double ) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (at_least(electrum::version::v1_4))
+    {
+        send_code(error::wrong_version);
+        return;
+    }
+
+    // TODO: get header by height.
+    send_code(error::not_implemented);
+}
+
 void protocol_electrum::handle_blockchain_block_header(const code& ec,
     rpc_interface::blockchain_block_header, double height,
     double cp_height) NOEXCEPT

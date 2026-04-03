@@ -67,7 +67,7 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast_package, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get_merkle, _1, _2, _3, _4);
-    SUBSCRIBE_RPC(handle_blockchain_transaction_id_from_pos, _1, _2, _3, _4, _5);
+    SUBSCRIBE_RPC(handle_blockchain_transaction_id_from_position, _1, _2, _3, _4, _5);
 
     // Server methods.
     SUBSCRIBE_RPC(handle_server_add_peer, _1, _2, _3);

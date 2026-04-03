@@ -32,11 +32,20 @@ struct electrum_methods
     static constexpr std::tuple methods
     {
         /// Blockchain methods.
+        method<"blockchain.block.get_chunk", number_t>{ "index" },
+        method<"blockchain.block.get_header", number_t>{ "height" },
         method<"blockchain.block.header", number_t, optional<0.0>>{ "height", "cp_height" },
         method<"blockchain.block.headers", number_t, number_t, optional<0.0>>{ "start_height", "count", "cp_height" },
         method<"blockchain.headers.subscribe">{},
+        method<"blockchain.numblocks.subscribe">{},
         method<"blockchain.estimatefee", number_t, optional<""_t>>{ "number", "mode" },
         method<"blockchain.relayfee">{},
+        method<"blockchain.utxo.get_address", string_t, number_t>{ "tx_hash", "index" },
+        method<"blockchain.address.get_balance", string_t>{ "address" },
+        method<"blockchain.address.get_history", string_t>{ "address" },
+        method<"blockchain.address.get_mempool", string_t>{ "address" },
+        method<"blockchain.address.listunspent", string_t>{ "address" },
+        method<"blockchain.address.subscribe", string_t>{ "address" },
         method<"blockchain.scripthash.get_balance", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_history", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_mempool", string_t>{ "scripthash" },
@@ -69,32 +78,40 @@ struct electrum_methods
     template <size_t Index>
     using at = method_at<methods, Index>;
 
-    // Derive this from above in c++26 using reflection.
-    using blockchain_block_header = at<0>;
-    using blockchain_block_headers = at<1>;
-    using blockchain_headers_subscribe = at<2>;
-    using blockchain_estimate_fee = at<3>;
-    using blockchain_relay_fee = at<4>;
-    using blockchain_scripthash_get_balance = at<5>;
-    using blockchain_scripthash_get_history = at<6>;
-    using blockchain_scripthash_get_mempool = at<7>;
-    using blockchain_scripthash_list_unspent = at<8>;
-    using blockchain_scripthash_subscribe = at<9>;
-    using blockchain_scripthash_unsubscribe = at<10>;
-    using blockchain_transaction_broadcast = at<11>;
-    using blockchain_transaction_broadcast_package = at<12>;
-    using blockchain_transaction_get = at<13>;
-    using blockchain_transaction_get_merkle = at<14>;
-    using blockchain_transaction_id_from_pos = at<15>;
-    using server_add_peer = at<16>;
-    using server_banner = at<17>;
-    using server_donation_address = at<18>;
-    using server_features = at<19>;
-    using server_peers_subscribe = at<20>;
-    using server_ping = at<21>;
-    using server_version = at<22>;
-    using mempool_get_fee_histogram = at<23>;
-    using mempool_get_info = at<24>;
+    using blockchain_block_get_chunk = at<0>;
+    using blockchain_block_get_header = at<1>;
+    using blockchain_block_header = at<2>;
+    using blockchain_block_headers = at<3>;
+    using blockchain_headers_subscribe = at<4>;
+    using blockchain_number_of_blocks_subscribe = at<5>;
+    using blockchain_estimate_fee = at<6>;
+    using blockchain_relay_fee = at<7>;
+    using blockchain_utxo_get_address = at<8>;
+    using blockchain_address_get_balance = at<9>;
+    using blockchain_address_get_history = at<10>;
+    using blockchain_address_get_mempool = at<11>;
+    using blockchain_address_list_unspent = at<12>;
+    using blockchain_address_subscribe = at<13>;
+    using blockchain_scripthash_get_balance = at<14>;
+    using blockchain_scripthash_get_history = at<15>;
+    using blockchain_scripthash_get_mempool = at<16>;
+    using blockchain_scripthash_list_unspent = at<17>;
+    using blockchain_scripthash_subscribe = at<18>;
+    using blockchain_scripthash_unsubscribe = at<19>;
+    using blockchain_transaction_broadcast = at<20>;
+    using blockchain_transaction_broadcast_package = at<21>;
+    using blockchain_transaction_get = at<22>;
+    using blockchain_transaction_get_merkle = at<23>;
+    using blockchain_transaction_id_from_position = at<24>;
+    using server_add_peer = at<25>;
+    using server_banner = at<26>;
+    using server_donation_address = at<27>;
+    using server_features = at<28>;
+    using server_peers_subscribe = at<29>;
+    using server_ping = at<30>;
+    using server_version = at<31>;
+    using mempool_get_fee_histogram = at<32>;
+    using mempool_get_info = at<33>;
 };
 
 } // namespace interface

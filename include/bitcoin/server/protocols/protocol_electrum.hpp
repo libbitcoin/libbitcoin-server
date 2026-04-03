@@ -58,6 +58,12 @@ protected:
         node::event_value) NOEXCEPT;
 
     /// Handlers (headers).
+    void handle_blockchain_number_of_blocks_subscribe(const code& ec,
+        rpc_interface::blockchain_number_of_blocks_subscribe) NOEXCEPT;
+    void handle_blockchain_block_get_chunk(const code& ec,
+        rpc_interface::blockchain_block_get_chunk, double index) NOEXCEPT;
+    void handle_blockchain_block_get_header(const code& ec,
+        rpc_interface::blockchain_block_get_header, double height) NOEXCEPT;
     void handle_blockchain_block_header(const code& ec,
         rpc_interface::blockchain_block_header, double height,
         double cp_height) NOEXCEPT;
@@ -75,6 +81,24 @@ protected:
         rpc_interface::blockchain_relay_fee) NOEXCEPT;
 
     /// Handlers (addresses).
+    void handle_blockchain_utxo_get_address(const code& ec,
+        rpc_interface::blockchain_utxo_get_address,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_get_balance(const code& ec,
+        rpc_interface::blockchain_address_get_balance,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_get_history(const code& ec,
+        rpc_interface::blockchain_address_get_history,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_get_mempool(const code& ec,
+        rpc_interface::blockchain_address_get_mempool,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_list_unspent(const code& ec,
+        rpc_interface::blockchain_address_list_unspent,
+        const std::string& address) NOEXCEPT;
+    void handle_blockchain_address_subscribe(const code& ec,
+        rpc_interface::blockchain_address_subscribe,
+        const std::string& address) NOEXCEPT;
     void handle_blockchain_scripthash_get_balance(const code& ec,
         rpc_interface::blockchain_scripthash_get_balance,
         const std::string& scripthash) NOEXCEPT;
@@ -107,8 +131,8 @@ protected:
     void handle_blockchain_transaction_get_merkle(const code& ec,
         rpc_interface::blockchain_transaction_get_merkle,
         const std::string& tx_hash, double height) NOEXCEPT;
-    void handle_blockchain_transaction_id_from_pos(const code& ec,
-        rpc_interface::blockchain_transaction_id_from_pos, double height,
+    void handle_blockchain_transaction_id_from_position(const code& ec,
+        rpc_interface::blockchain_transaction_id_from_position, double height,
         double tx_pos, bool merkle) NOEXCEPT;
 
     /// Handlers (server).

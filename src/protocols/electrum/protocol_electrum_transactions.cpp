@@ -274,9 +274,9 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     send_result(std::move(value), two * size, BIND(complete, _1));
 }
 
-void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
-    rpc_interface::blockchain_transaction_get_merkle, const std::string& tx_hash,
-    double height) NOEXCEPT
+void protocol_electrum::handle_blockchain_transaction_get_merkle(
+    const code& ec, rpc_interface::blockchain_transaction_get_merkle,
+    const std::string& tx_hash, double height) NOEXCEPT
 {
     using namespace system;
     if (stopped(ec))
@@ -337,9 +337,9 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(const code& ec,
     }, two * hash_size * add1(branch.size()), BIND(complete, _1));
 }
 
-void protocol_electrum::handle_blockchain_transaction_id_from_pos(const code& ec,
-    rpc_interface::blockchain_transaction_id_from_pos, double height,
-    double tx_pos, bool merkle) NOEXCEPT
+void protocol_electrum::handle_blockchain_transaction_id_from_position(
+    const code& ec, rpc_interface::blockchain_transaction_id_from_position,
+    double height, double tx_pos, bool merkle) NOEXCEPT
 {
     if (stopped(ec))
         return;
