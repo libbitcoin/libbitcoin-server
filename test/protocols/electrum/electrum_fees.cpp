@@ -21,20 +21,32 @@
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
+using namespace system;
+static const code wrong_version{ server::error::wrong_version };
+
 // blockchain.estimatefee
 
 // blockchain.relay_fee
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+    config_.node.minimum_fee_rate = 42.42f;
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    constexpr auto expected = 99.0;
     const auto response = get(R"({"id":90,"method":"blockchain.relayfee","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 90);
-    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), expected);
+    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), config_.node.minimum_fee_rate);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_relayfee__obsoleted__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.relayfee","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
 // get_fee_histogram
