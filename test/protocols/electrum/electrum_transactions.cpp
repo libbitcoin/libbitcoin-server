@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__mutiple_txs_bl
     const auto tx1_hash = tx1.hash(false);
     const auto tx2_hash = tx2.hash(false);
 
-    // Add a multi-tx block.
+    // Add a confirmed multi-tx block.
     query_.set(bogus_block10, database::context{ 0, 10, 0 }, false, false);
     query_.push_confirmed(query_.to_header(bogus_block10.hash()), false);
 

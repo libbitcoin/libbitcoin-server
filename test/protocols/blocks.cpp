@@ -82,17 +82,16 @@ const server::settings::embedded_pages native{};
 
 bool setup_ten_block_store(query_t& query) NOEXCEPT
 {
-    using namespace database;
     return query.initialize(genesis) &&
-        query.set(block1, context{ 0, 1, 0 }, false, false) &&
-        query.set(block2, context{ 0, 2, 0 }, false, false) &&
-        query.set(block3, context{ 0, 3, 0 }, false, false) &&
-        query.set(block4, context{ 0, 4, 0 }, false, false) &&
-        query.set(block5, context{ 0, 5, 0 }, false, false) &&
-        query.set(block6, context{ 0, 6, 0 }, false, false) &&
-        query.set(block7, context{ 0, 7, 0 }, false, false) &&
-        query.set(block8, context{ 0, 8, 0 }, false, false) &&
-        query.set(block9, context{ 0, 9, 0 }, false, false) &&
+        query.set(block1, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(block3, database::context{ 0, 3, 0 }, false, false) &&
+        query.set(block4, database::context{ 0, 4, 0 }, false, false) &&
+        query.set(block5, database::context{ 0, 5, 0 }, false, false) &&
+        query.set(block6, database::context{ 0, 6, 0 }, false, false) &&
+        query.set(block7, database::context{ 0, 7, 0 }, false, false) &&
+        query.set(block8, database::context{ 0, 8, 0 }, false, false) &&
+        query.set(block9, database::context{ 0, 9, 0 }, false, false) &&
         query.push_confirmed(query.to_header(block1_hash), false) &&
         query.push_confirmed(query.to_header(block2_hash), false) &&
         query.push_confirmed(query.to_header(block3_hash), false) &&

@@ -121,8 +121,6 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
     BOOST_REQUIRE_EQUAL(result, "31xsx7sPoS2UfoUAKfoXLX6wTPvpetyo7s");
 }
 
-// TODO: add block with payment address tx and test.
-
 // blockchain.address.get_balance
 // blockchain.address.get_history
 // blockchain.address.get_mempool
