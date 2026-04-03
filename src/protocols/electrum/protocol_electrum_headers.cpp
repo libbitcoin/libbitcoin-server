@@ -75,8 +75,8 @@ void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     const auto height = ceilinged_multiply(position, chunk);
-    const auto last = limit(ceilinged_add(height, chunk), top);
-    const auto count = floored_subtract(last, height);
+    const auto end = limit(ceilinged_add(height, chunk), add1(top));
+    const auto count = floored_subtract(end, height);
     const auto size = count * two * chain::header::serialized_size();
     const auto links = query.get_confirmed_headers(height, count);
 
@@ -123,7 +123,7 @@ void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
         return;
     }
 
-    const auto size = two * chain::header::serialized_size();
+    constexpr auto size = two * chain::header::serialized_size();
     std::string header(size, '\0');
     stream::out::fast sink{ header };
     write::base16::fast writer{ sink };
