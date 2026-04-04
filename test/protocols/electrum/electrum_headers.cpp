@@ -47,6 +47,89 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__9_block_st
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
+// blockchain.block.get_chunk
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__obsoleted_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[0]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__invalid_index__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[42.42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__above_top__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[1]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE(response.at("result").as_string().empty());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__zero__first_ten_headers_in_order)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    const auto expected = encode_base16(header0_data) +
+        encode_base16(header1_data) + encode_base16(header2_data) + encode_base16(header3_data) +
+        encode_base16(header4_data) + encode_base16(header5_data) + encode_base16(header6_data) +
+        encode_base16(header7_data) + encode_base16(header8_data) + encode_base16(header9_data);
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[0]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const auto& result = response.at("result").as_string();
+    BOOST_REQUIRE_EQUAL(result, expected);
+}
+
+// blockchain.block.get_header
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__obsoleted_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[0]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__invalid_height__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[42.42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__above_top__null)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__five__expected_header)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[5]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const auto& result = response.at("result").as_string();
+    BOOST_REQUIRE_EQUAL(result, encode_base16(header5_data));
+}
+
 // blockchain.block.header
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__insufficient_version__wrong_version)

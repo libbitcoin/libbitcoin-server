@@ -31,16 +31,16 @@ enum class version
     /// Invalid version.
     v0_0,
 
-    /// 2011, initial protocol negotiation (usupported).
+    /// 2011, initial protocol negotiation (unsupported).
     v0_6,
 
-    /// 2012, enhanced protocol negotiation (usupported).
+    /// 2012, enhanced protocol negotiation (unsupported).
     v0_8,
 
-    /// 2012, added pruning limits and transport indicators (usupported).
+    /// 2012, added pruning limits and transport indicators (unsupported).
     v0_9,
 
-    /// 2013, baseline for core methods in official specification (usupported).
+    /// 2013, baseline for core methods in official specification (unsupported).
     v0_10,
 
     /// 2014, deprecations of utxo and block number methods (minimum).
@@ -70,7 +70,7 @@ enum class version
     /// 2022, updated response formats, added fee estimation modes (maximum).
     v1_6,
 
-    /// Not valid, just defined for out of bounds testing.
+    /// Not yet valid, just defined for out of bounds testing.
     v1_7
 };
 
