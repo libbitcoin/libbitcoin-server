@@ -414,7 +414,7 @@ code protocol_electrum::validate_tx(
     // Ensure tx does not violate tx consensus rules.
     if (!ec) ec = tx.check();
     if (!ec) ec = tx.check(ctx);
-    if (!ec) archive().populate_with_metadata(tx);
+    if (!ec) archive().populate_with_metadata(tx, true);
     if (!ec) ec = tx.accept(ctx);
     if (!ec) ec = tx.confirm(ctx);
     if (!ec) ec = ec = tx.connect(ctx);
