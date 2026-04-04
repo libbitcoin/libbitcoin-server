@@ -32,6 +32,7 @@ static const code not_implemented{ server::error::not_implemented };
 static const code invalid_argument{ server::error::invalid_argument };
 static const code unsupported_argument{ server::error::unsupported_argument };
 static const code unconfirmable_transaction{ server::error::unconfirmable_transaction };
+static const code coinbase_transaction{ system::error::coinbase_transaction };
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__empty__invalid_argument)
 {
@@ -60,15 +61,26 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__invalid_tx__inv
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbase__unconfirmable_transaction)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbase__coinbase_transaction_response)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto tx0_text = encode_base16(genesis.transactions_ptr()->front()->to_data(true));
     constexpr auto request = R"({"id":73,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % tx0_text).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), coinbase_transaction.message());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbase__coinbase_transaction_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto tx0_text = encode_base16(genesis.transactions_ptr()->front()->to_data(true));
+    constexpr auto request = R"({"id":74,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % tx0_text).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), unconfirmable_transaction.value());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), coinbase_transaction.value());
 }
 
 // blockchain.transaction.broadcast_package
@@ -162,13 +174,13 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_tra
     REQUIRE_NO_THROW_TRUE(error1.at("txid").is_string());
     REQUIRE_NO_THROW_TRUE(error1.at("error").is_string());
     BOOST_REQUIRE_EQUAL(error1.at("txid").as_string(), tx0_hash);
-    BOOST_REQUIRE_EQUAL(error1.at("error").as_string(), unconfirmable_transaction.message());
+    BOOST_REQUIRE_EQUAL(error1.at("error").as_string(), coinbase_transaction.message());
 
     const auto& error2 = errors.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(error2.at("txid").is_string());
     REQUIRE_NO_THROW_TRUE(error2.at("error").is_string());
     BOOST_REQUIRE_EQUAL(error2.at("txid").as_string(), tx1_hash);
-    BOOST_REQUIRE_EQUAL(error2.at("error").as_string(), unconfirmable_transaction.message());
+    BOOST_REQUIRE_EQUAL(error2.at("error").as_string(), coinbase_transaction.message());
 }
 
 // blockchain.transaction.get

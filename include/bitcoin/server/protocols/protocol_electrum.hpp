@@ -195,6 +195,11 @@ private:
     system::wallet::payment_address extract_address(
         const system::chain::script& script) NOEXCEPT;
 
+    // Validate a transaction given next block context.
+    bool get_pool_context(system::chain::context& pool) const NOEXCEPT;
+    code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
+    code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
+
     // These are thread safe.
     const options_t& options_;
     std::atomic_bool subscribed_height_{};
