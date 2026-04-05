@@ -216,16 +216,16 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         return;
     }
 
-    if (const auto header = query.to_strong(link); !header.is_terminal())
+    if (const auto block = query.find_strong(link); !block.is_terminal())
     {
         using namespace system;
         const auto top = query.get_top_confirmed();
-        const auto height = query.get_height(header);
-        const auto block_hash = query.get_header_key(header);
+        const auto height = query.get_height(block);
+        const auto block_hash = query.get_header_key(block);
 
         uint32_t timestamp{};
         if (height.is_terminal() || (block_hash == null_hash) ||
-            !query.get_timestamp(timestamp, header))
+            !query.get_timestamp(timestamp, block))
         {
             send_code(error::server_error);
             return;
