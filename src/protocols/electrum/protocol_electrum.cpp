@@ -35,6 +35,7 @@ using namespace std::placeholders;
 
 // Start.
 // ----------------------------------------------------------------------------
+// github.com/spesmilo/electrum-protocol/blob/master/docs/protocol-changes.rst
 // electrum-protocol.readthedocs.io/en/latest/protocol-methods.html
 
 void protocol_electrum::start() NOEXCEPT

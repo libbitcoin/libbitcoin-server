@@ -311,6 +311,10 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     send_result(std::move(value), size + 42u, BIND(complete, _1));
 }
 
+// TODO: v1.2 undocumented add optional parameter 'raw' (default false).
+// TODO: v1.3 undocumented change optional parameter 'raw' (default to true).
+// This (v1.3) implies an override to channel_rpc<electrum>::dispatch().
+// TODO: v1.4 undocumented remove parameter 'raw'.
 void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     rpc_interface::blockchain_headers_subscribe) NOEXCEPT
 {

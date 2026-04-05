@@ -33,6 +33,8 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// NOTE: undocumented change in v1.6 (mempool txs have a canonical ordering).
+
 void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     rpc_interface::blockchain_scripthash_get_balance,
     const std::string& ) NOEXCEPT

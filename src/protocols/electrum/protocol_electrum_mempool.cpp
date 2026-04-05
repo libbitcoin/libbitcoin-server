@@ -30,6 +30,8 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+// NOTE: undocumented change in v1.6 (mempool txs have a canonical ordering).
+
 void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     rpc_interface::mempool_get_fee_histogram) NOEXCEPT
 {
