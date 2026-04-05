@@ -746,11 +746,12 @@ bool protocol_native::handle_get_tx_details(const code& ec,
         { "fee", floored_subtract(value, spend) }
     };
 
-    size_t position{};
-    if (query.get_tx_position(position, link))
+    if (const auto block = query.find_strong(link); !block.is_terminal())
     {
+        size_t position{};
         database::context context{};
-        if (!query.get_context(context, query.to_strong(link)))
+        if (!query.get_context(context, block) ||
+            !query.get_tx_position(position, link, block))
         {
             send_internal_server_error(database::error::integrity);
             return true;
