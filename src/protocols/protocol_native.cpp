@@ -26,8 +26,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
 
-// TODO: rationalize confirmed state against database (to_block vs. to_strong).
-
 namespace libbitcoin {
 namespace server {
 
@@ -45,9 +43,6 @@ using inpoint = database::inpoint;
 using outpoint = database::outpoint;
 using inpoints = database::inpoints;
 using outpoints = database::outpoints;
-
-// Avoiding namespace conflict.
-using object_type = network::rpc::object_t;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
