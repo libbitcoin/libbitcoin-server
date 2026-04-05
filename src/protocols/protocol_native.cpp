@@ -663,7 +663,7 @@ bool protocol_native::handle_get_tx_header(const code& ec,
         return false;
 
     const auto& query = archive();
-    const auto link = query.to_confirmed_block(*hash);
+    const auto link = query.find_confirmed_block(*hash);
     if (link.is_terminal())
     {
         send_not_found();
@@ -1015,8 +1015,8 @@ bool protocol_native::handle_get_output_spender(const code& ec,
 
     const auto& query = archive();
     const chain::point spent{ *hash, index };
-    const auto spender = query.get_spender(query.to_confirmed_spender(spent));
-    if (spender.index() == chain::point::null_index)
+    const auto spender = query.get_spender(query.find_confirmed_spender(spent));
+    if (spender.is_null())
     {
         send_not_found();
         return true;
