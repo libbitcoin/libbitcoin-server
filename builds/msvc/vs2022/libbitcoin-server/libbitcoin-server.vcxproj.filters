@@ -8,37 +8,37 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\server">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\server\channels">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\impl">
+    <Filter Include="include\bitcoin">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\impl\protocols">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\server\interfaces">
+    <Filter Include="include\bitcoin\server">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\parsers">
+    <Filter Include="include\bitcoin\server\channels">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\protocols">
+    <Filter Include="include\bitcoin\server\impl">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\server\sessions">
+    <Filter Include="include\bitcoin\server\impl\protocols">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\interfaces">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="resource">
+    <Filter Include="include\bitcoin\server\parsers">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\protocols">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\sessions">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000000}</UniqueIdentifier>
@@ -49,8 +49,17 @@
     <Filter Include="src\protocols">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\electrum">
+    <Filter Include="src\protocols\bitcoind">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\electrum">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\native">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\stratum_v1">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +90,12 @@
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
@@ -108,11 +123,23 @@
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rest.cpp">
-      <Filter>src\protocols</Filter>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native.cpp">
+      <Filter>src\protocols\native</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rpc.cpp">
-      <Filter>src\protocols</Filter>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_address.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_block.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_input.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_output.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_tx.cpp">
+      <Filter>src\protocols\native</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\protocol_html.cpp">
       <Filter>src\protocols</Filter>
@@ -120,11 +147,8 @@
     <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp">
       <Filter>src\protocols</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_native.cpp">
-      <Filter>src\protocols</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_stratum_v1.cpp">
-      <Filter>src\protocols</Filter>
+    <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp">
+      <Filter>src\protocols\stratum_v1</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>

@@ -77,8 +77,7 @@ const chain::block block7{ block7_data, true };
 const chain::block block8{ block8_data, true };
 const chain::block block9{ block9_data, true };
 
-const server::settings::embedded_pages admin{};
-const server::settings::embedded_pages native{};
+const server::settings::embedded_pages web_pages{};
 
 bool setup_ten_block_store(query_t& query) NOEXCEPT
 {

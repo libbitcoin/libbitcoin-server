@@ -26,8 +26,7 @@ using header_data = system::data_array<80>;
 using store_t = database::store<database::map>;
 using query_t = database::query<database::store<database::map>>;
 
-extern const server::settings::embedded_pages admin;
-extern const server::settings::embedded_pages native;
+extern const server::settings::embedded_pages web_pages;
 
 extern const system::hash_digest block0_hash;
 extern const system::hash_digest block1_hash;

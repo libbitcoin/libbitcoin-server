@@ -69,7 +69,6 @@ protected:
 
     bool handle_get_top(const code& ec, interface::top,
         uint8_t version, uint8_t media) NOEXCEPT;
-
     bool handle_get_block(const code& ec, interface::block,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool witness) NOEXCEPT;
@@ -155,6 +154,12 @@ protected:
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
 
 private:
+    using media_type = network::http::media_type;
+    static constexpr uint8_t text = to_value(media_type::text_plain);
+    static constexpr uint8_t json = to_value(media_type::application_json);
+    static constexpr uint8_t data = to_value(
+        media_type::application_octet_stream);
+
     // Serializers.
     // ------------------------------------------------------------------------
     // private/static
