@@ -70,7 +70,7 @@ void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
         return;
     }
 
-    // Get zero-based index of 2016 headers by confirmed confirmed.
+    // Get zero-based index of 2016 confirmed header "chunks".
     constexpr size_t chunk{ 2016 };
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
