@@ -26,6 +26,7 @@ namespace server {
 #define CLASS protocol_electrum
 
 using namespace system;
+using namespace system::wallet;
 using namespace network::rpc;
 using namespace std::placeholders;
 
@@ -84,7 +85,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
 
 void protocol_electrum::handle_blockchain_address_get_balance(const code& ec,
     rpc_interface::blockchain_address_get_balance,
-    const std::string& ) NOEXCEPT
+    const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -95,8 +96,7 @@ void protocol_electrum::handle_blockchain_address_get_balance(const code& ec,
         return;
     }
 
-    // TODO: get by p2sh/p2pkh address.
-    send_code(error::not_implemented);
+    get_balance(extract_scripthash(address));
 }
 
 void protocol_electrum::handle_blockchain_address_get_history(const code& ec,
@@ -163,25 +163,27 @@ void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
         return;
     }
 
-    // TODO: get by p2sh/p2pkh address.
-    send_code(error::not_implemented);
+    // TODO: collect the address into a limited notification set.
+    subscribed_address_.store(true, std::memory_order_relaxed);
+
+    // TODO: compute the status hash in a store query (no mempool).
+    send_result(array_t{ "status-hash" }, 16, BIND(complete, _1));
 }
 
 // utilities
 // ----------------------------------------------------------------------------
 
-wallet::payment_address protocol_electrum::extract_address(
-    const chain::script& script) NOEXCEPT
+hash_digest protocol_electrum::extract_scripthash(
+    const std::string& address) const NOEXCEPT
 {
-    // Adapts addresses to testnet but not to altcoins.
-    using namespace wallet;
-    const auto testnet = !system_settings().forks.difficult;
-    const auto p2kh = testnet ? payment_address::testnet_p2kh :
-        payment_address::mainnet_p2kh;
-    const auto p2sh = testnet ? payment_address::testnet_p2sh :
-        payment_address::mainnet_p2sh;
-    return payment_address::extract_output(script, p2kh, p2sh);
+    // TODO: capture failure condition (don't hash empty script).
+    return payment_address(address).output_script(p2kh_, p2sh_).hash();
+}
 
+payment_address protocol_electrum::extract_address(
+    const chain::script& script) const NOEXCEPT
+{
+    return payment_address::extract_output(script, p2kh_, p2sh_);
 }
 
 BC_POP_WARNING()

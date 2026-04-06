@@ -98,11 +98,11 @@ void protocol_electrum::start() NOEXCEPT
     protocol_rpc<channel_electrum>::start();
 }
 
+// Events unsubscription is asynchronous, race is ok.
 void protocol_electrum::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
-    // Unsubscription is asynchronous, race is ok.
+    stopping_.store(true);
     unsubscribe_events();
     protocol_rpc<channel_electrum>::stopping(ec);
 }
@@ -117,20 +117,34 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     if (stopped())
         return false;
 
+    constexpr auto relaxed = std::memory_order_relaxed;
     switch (event_)
     {
+        // TODO: collapse four atomics this into a single enumeration.
         case node::chase::organized:
         {
-            if (subscribed_height_.load(std::memory_order_relaxed))
+            if (subscribed_height_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST(do_height, std::get<node::header_t>(value));
             }
 
-            if (subscribed_header_.load(std::memory_order_relaxed))
+            if (subscribed_header_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST(do_header, std::get<node::header_t>(value));
+            }
+
+            if (subscribed_address_.load(relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_address, std::get<node::header_t>(value));
+            }
+
+            if (subscribed_address_.load(relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_scripthash, std::get<node::header_t>(value));
             }
 
             break;
@@ -143,6 +157,10 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 
     return true;
 }
+
+// notifications
+// ----------------------------------------------------------------------------
+// Each notification is an independent message.
 
 // Notifier for handle_blockchain_number_of_blocks_subscribe events.
 void protocol_electrum::do_height(node::header_t link) NOEXCEPT
@@ -158,9 +176,9 @@ void protocol_electrum::do_height(node::header_t link) NOEXCEPT
         return;
     }
 
-    send_notification("blockchain.numblocks.subscribe",
+    send_notification("blockchain.numblocks.subscribe", array_t
     {
-        array_t{ height.value }
+        height.value
     }, 48, BIND(complete, _1));
 }
 
@@ -187,6 +205,28 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
             { "hex", encode_base16(header) }
         }
     }, 64, BIND(complete, _1));
+}
+
+// Notifier for blockchain_address_subscribe events.
+void protocol_electrum::do_address(node::header_t) NOEXCEPT
+{
+    // EXAMPLE
+    send_notification("blockchain.address.subscribe", array_t
+    {
+        "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+        "0000000000000000000000000000000000000000000000000000000000000000"
+    }, 128, BIND(complete, _1));
+}
+
+// Notifier for blockchain_scripthash_unsubscribe events.
+void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
+{
+    // EXAMPLE
+    send_notification("blockchain.scripthash.subscribe", array_t
+    {
+        "8b01df4e368ea28f8dc0423bcf7a4923e3a12d307c875e47a0cfbf90b0a1e4",
+        "0000000000000000000000000000000000000000000000000000000000000000"
+    }, 150, BIND(complete, _1));
 }
 
 } // namespace server
