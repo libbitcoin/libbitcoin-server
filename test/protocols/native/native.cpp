@@ -18,11 +18,10 @@
  */
 #include "../../test.hpp"
 #include "../blocks.hpp"
-#include "electrum.hpp"
+#include "native.hpp"
 #include <future>
-#include <boost/format.hpp>
 
-electrum_setup_fixture::electrum_setup_fixture()
+native_setup_fixture::native_setup_fixture()
   : config_{ system::chain::selection::mainnet, web_pages, web_pages },
     store_
     {
@@ -35,21 +34,15 @@ electrum_setup_fixture::electrum_setup_fixture()
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    BOOST_REQUIRE_MESSAGE(test::clear(test::directory), "electrum setup");
-
+    BOOST_REQUIRE_MESSAGE(test::clear(test::directory), "native setup");
     auto& database_settings = config_.database;
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
     auto& server_settings = config_.server;
-    auto& electrum = server_settings.electrum;
+    auto& native = server_settings.native;
 
-    electrum.binds = { { ELECTRUM_ENDPOINT } };
-    electrum.server_name = "server_name";
-    electrum.banner_message = "banner_message";
-    electrum.donation_address = "donation_address";
-    electrum.maximum_subscriptions = 3;
-    electrum.maximum_headers = 5;
-    electrum.connections = 1;
+    native.binds = { { NATIVE_ENDPOINT } };
+    native.connections = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;
@@ -59,7 +52,7 @@ electrum_setup_fixture::electrum_setup_fixture()
 
     // Create and populate the store.
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_MESSAGE(setup_ten_block_store(query_), "electrum initialize");
+    BOOST_REQUIRE_MESSAGE(setup_ten_block_store(query_), "native initialize");
 
     // Run the server.
     std::promise<code> running{};
@@ -71,19 +64,19 @@ electrum_setup_fixture::electrum_setup_fixture()
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(electrum.binds.back().to_endpoint());
+    socket_.connect(native.binds.back().to_endpoint());
 }
 
-electrum_setup_fixture::~electrum_setup_fixture()
+native_setup_fixture::~native_setup_fixture()
 {
     socket_.close();
     server_.close();
     const auto ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
-    BOOST_WARN_MESSAGE(test::clear(test::directory), "electrum cleanup");
+    BOOST_WARN_MESSAGE(test::clear(test::directory), "native cleanup");
 }
 
-boost::json::value electrum_setup_fixture::get(const std::string& request)
+boost::json::value native_setup_fixture::get(const std::string& request)
 {
     socket_.send(boost::asio::buffer(request));
     boost::asio::streambuf stream{};
@@ -102,32 +95,4 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
     std::istream response_stream{ &stream };
     std::getline(response_stream, response);
     return boost::json::parse(response);
-}
-
-bool electrum_setup_fixture::handshake(electrum::version version,
-    const std::string& name, network::rpc::code_t id)
-{
-    const auto request = boost::format
-    (
-        R"({"id":%1%,"method":"server.version","params":["%2%","%3%"]})" "\n"
-    ) % id % name % electrum::version_to_string(version);
-
-    const auto response = get(request.str());
-    try
-    {
-        if (response.at("id").as_int64() != id)
-            return false;
-
-        // Assumes server always accepts proposed version.
-        const auto& result = response.at("result").as_array();
-        return (result.size() == two) &&
-            (result.at(0).is_string() && result.at(1).is_string()) &&
-            (result.at(0).as_string() == config_.server.electrum.server_name) &&
-            (result.at(1).as_string() == electrum::version_to_string(version));
-
-    }
-    catch (...)
-    {
-        return false;
-    }
 }

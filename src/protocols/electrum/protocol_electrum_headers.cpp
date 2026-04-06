@@ -70,7 +70,7 @@ void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
         return;
     }
 
-    // Get zero-based index of 2016 headers by confirmed confirmed.
+    // Get zero-based index of 2016 confirmed header "chunks".
     constexpr size_t chunk{ 2016 };
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
@@ -311,6 +311,10 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     send_result(std::move(value), size + 42u, BIND(complete, _1));
 }
 
+// TODO: v1.2 undocumented add optional parameter 'raw' (default false).
+// TODO: v1.3 undocumented change optional parameter 'raw' (default to true).
+// This (v1.3) implies an override to channel_rpc<electrum>::dispatch().
+// TODO: v1.4 undocumented remove parameter 'raw'.
 void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     rpc_interface::blockchain_headers_subscribe) NOEXCEPT
 {

@@ -58,11 +58,15 @@ enum class version
     /// 2019, removed deserialized headers and added merkle proof features.
     v1_4,
 
-    /// 2019, modifications for auxiliary proof-of-work handling.
+    /// 2019, modifications for auxiliary proof-of-work handling (unsupported).
+    /// The version number is allowed but there is no difference from v1.4.
     v1_4_1,
 
     /// 2020, added scripthash unsubscribe functionality.
     v1_4_2,
+
+    /// Name index coins only (e.g. Namecoin) (unsupported).
+    //v1_4_3,
 
     /// There is no v1.5 release (skipped).
     //v1_5,

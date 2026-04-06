@@ -46,12 +46,10 @@ src_libbitcoin_server_la_SOURCES = \
     src/parsers/electrum_version.cpp \
     src/parsers/native_query.cpp \
     src/parsers/native_target.cpp \
-    src/protocols/protocol_bitcoind_rest.cpp \
-    src/protocols/protocol_bitcoind_rpc.cpp \
     src/protocols/protocol_html.cpp \
     src/protocols/protocol_http.cpp \
-    src/protocols/protocol_native.cpp \
-    src/protocols/protocol_stratum_v1.cpp \
+    src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
+    src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
     src/protocols/electrum/protocol_electrum.cpp \
     src/protocols/electrum/protocol_electrum_addresses.cpp \
     src/protocols/electrum/protocol_electrum_fees.cpp \
@@ -60,7 +58,14 @@ src_libbitcoin_server_la_SOURCES = \
     src/protocols/electrum/protocol_electrum_scripthash.cpp \
     src/protocols/electrum/protocol_electrum_server.cpp \
     src/protocols/electrum/protocol_electrum_transactions.cpp \
-    src/protocols/electrum/protocol_electrum_version.cpp
+    src/protocols/electrum/protocol_electrum_version.cpp \
+    src/protocols/native/protocol_native.cpp \
+    src/protocols/native/protocol_native_address.cpp \
+    src/protocols/native/protocol_native_block.cpp \
+    src/protocols/native/protocol_native_input.cpp \
+    src/protocols/native/protocol_native_output.cpp \
+    src/protocols/native/protocol_native_tx.cpp \
+    src/protocols/stratum_v1/protocol_stratum_v1.cpp
 
 # local: test/libbitcoin-server-test
 #------------------------------------------------------------------------------
@@ -86,6 +91,10 @@ test_libbitcoin_server_test_SOURCES = \
     test/parsers/native_target.cpp \
     test/protocols/blocks.cpp \
     test/protocols/blocks.hpp \
+    test/protocols/bitcoind/bitcoind.cpp \
+    test/protocols/bitcoind/bitcoind.hpp \
+    test/protocols/bitcoind/bitcoind_rest.cpp \
+    test/protocols/bitcoind/bitcoind_rpc.cpp \
     test/protocols/electrum/electrum.cpp \
     test/protocols/electrum/electrum.hpp \
     test/protocols/electrum/electrum_addresses.cpp \
@@ -95,7 +104,15 @@ test_libbitcoin_server_test_SOURCES = \
     test/protocols/electrum/electrum_scripthash.cpp \
     test/protocols/electrum/electrum_server.cpp \
     test/protocols/electrum/electrum_transactions.cpp \
-    test/protocols/electrum/electrum_version.cpp
+    test/protocols/electrum/electrum_version.cpp \
+    test/protocols/native/native.cpp \
+    test/protocols/native/native.hpp \
+    test/protocols/native/native_address.cpp \
+    test/protocols/native/native_block.cpp \
+    test/protocols/native/native_configuration.cpp \
+    test/protocols/native/native_input.cpp \
+    test/protocols/native/native_output.cpp \
+    test/protocols/native/native_tx.cpp
 
 endif WITH_TESTS
 

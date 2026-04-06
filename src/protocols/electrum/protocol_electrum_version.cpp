@@ -79,7 +79,11 @@ void protocol_electrum_version::finished(const code& ec,
 // Handler.
 // ----------------------------------------------------------------------------
 
-// TODO: Changed in version 1.6: server must tolerate and ignore extra args.
+// TODO: undocumented change in v1.1 (semantics and return).
+// TODO: undocumented change v1.2 (disallow version for ping).
+// TODO: undocumented change v1.4 (only the first message accepted).
+// TODO: change version v1.6 (must be first message sent).
+// TODO: change version v1.6 (server must tolerate and ignore extra args).
 // This implies an override to channel_rpc<electrum>::dispatch(). This must
 // be done for ALL versions, since it applies to the version negotiation.
 void protocol_electrum_version::handle_server_version(const code& ec,

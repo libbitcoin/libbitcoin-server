@@ -130,6 +130,8 @@
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_addresses.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_fees.cpp" />
@@ -139,12 +141,15 @@
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_server.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_transactions.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_version.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rest.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_bitcoind_rpc.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_address.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_block.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_input.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_output.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_tx.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_html.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_native.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_stratum_v1.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
   </ItemGroup>
