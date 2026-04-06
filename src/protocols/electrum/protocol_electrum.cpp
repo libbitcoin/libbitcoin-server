@@ -33,6 +33,10 @@ using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
 
+// Electrum could be factored into protocols by version, with version-dependent
+// protocol attachment and with protocol derivations (see p2p). Currently all
+// methods apart from version are in one protocol class.
+
 // Start.
 // ----------------------------------------------------------------------------
 // github.com/spesmilo/electrum-protocol/blob/master/docs/protocol-changes.rst
