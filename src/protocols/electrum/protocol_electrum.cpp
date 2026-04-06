@@ -54,7 +54,7 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_block_get_header, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_block_header, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_block_headers, _1, _2, _3, _4, _5);
-    SUBSCRIBE_RPC(handle_blockchain_headers_subscribe, _1, _2);
+    SUBSCRIBE_RPC(handle_blockchain_headers_subscribe, _1, _2, _3);
 
     // Fee methods.
     SUBSCRIBE_RPC(handle_blockchain_estimate_fee, _1, _2, _3, _4);

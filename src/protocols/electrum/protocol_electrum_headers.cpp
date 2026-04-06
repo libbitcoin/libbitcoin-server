@@ -311,17 +311,27 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     send_result(std::move(value), size + 42u, BIND(complete, _1));
 }
 
-// TODO: v1.2 undocumented add optional parameter 'raw' (default false).
-// TODO: v1.3 undocumented change optional parameter 'raw' (default to true).
-// This (v1.3) implies an override to channel_rpc<electrum>::dispatch().
-// TODO: v1.4 undocumented remove parameter 'raw'.
+// TODO: implement support for v1.3 explicit false.
+// TODO: This implies an override to channel_rpc<electrum>::dispatch() with
+// TODO: use of an injected nullable<bool> to indicate presence.
+// v1.2 undocumented add optional parameter 'raw' (default false).
+// v1.3 undocumented change optional parameter 'raw' (default to true).
+// v1.4 undocumented remove parameter 'raw' (always true).
 void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
-    rpc_interface::blockchain_headers_subscribe) NOEXCEPT
+    rpc_interface::blockchain_headers_subscribe, bool raw) NOEXCEPT
 {
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_0))
+    // HACK: assumes raw true implies defined.
+    // HACK: precludes explicity setting raw false for v1.3.
+    const auto raw_defined = raw;
+    if (at_least(electrum::version::v1_3))
+        raw = true;
+
+    if ((!at_least(electrum::version::v1_0)) ||
+        (!at_least(electrum::version::v1_2) && raw_defined) ||
+        ( at_least(electrum::version::v1_4) && raw_defined))
     {
         send_code(error::wrong_version);
         return;
@@ -342,6 +352,13 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     if (header.empty())
     {
         send_code(error::server_error);
+        return;
+    }
+
+    // TODO: determine intended encoding.
+    if (!raw)
+    {
+        send_code(error::not_implemented);
         return;
     }
 
