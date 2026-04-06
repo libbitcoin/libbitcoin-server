@@ -44,6 +44,13 @@ public:
         const options_t& options) NOEXCEPT
       : protocol_rpc<channel_electrum>(session, channel, options),
         options_(options),
+        turbo_(session->database_settings().turbo),
+        p2kh_(session->system_settings().forks.difficult ?
+            system::wallet::payment_address::mainnet_p2kh :
+            system::wallet::payment_address::testnet_p2kh),
+        p2sh_(session->system_settings().forks.difficult ?
+            system::wallet::payment_address::mainnet_p2sh :
+            system::wallet::payment_address::testnet_p2sh),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         network::tracker<protocol_electrum>(session->log)
     {
@@ -168,9 +175,39 @@ protected:
     void blockchain_block_headers(size_t starting, size_t quantity,
         size_t waypoint, bool multiplicity) NOEXCEPT;
 
-    /// Notify client of newly organized block.
+    /// Completion handlers (for long-running address queries).
+    /// -----------------------------------------------------------------------
+
+    void get_balance(const system::hash_digest& hash) NOEXCEPT;
+    void get_history(const system::hash_digest& ) NOEXCEPT {};
+    void get_mempool(const system::hash_digest& ) NOEXCEPT {};
+    void list_unspent(const system::hash_digest& ) NOEXCEPT {};
+
+    void do_get_balance(const system::hash_digest& ) NOEXCEPT;
+    void do_get_history(const system::hash_digest& ) NOEXCEPT {};
+    void do_get_mempool(const system::hash_digest& ) NOEXCEPT {};
+    void do_list_unspent(const system::hash_digest& ) NOEXCEPT {};
+    void do_subscribe(const system::hash_digest& ) NOEXCEPT {};
+    void do_unsubscribe(const system::hash_digest& ) NOEXCEPT {};
+
+    void complete_get_balance(const code& ec, uint64_t confirmed,
+        uint64_t unconfirmed) NOEXCEPT;
+    void complete_get_history(const code& ) NOEXCEPT {};
+    void complete_get_mempool(const code& ) NOEXCEPT {};
+    void complete_list_unspent(const code& ) NOEXCEPT {};
+    void complete_subscribe(const code& ) NOEXCEPT {};
+    void complete_unsubscribe(const code& ) NOEXCEPT {};
+
+    /// Notification senders.
+    /// -----------------------------------------------------------------------
+
     void do_height(node::header_t link) NOEXCEPT;
     void do_header(node::header_t link) NOEXCEPT;
+    void do_address(node::header_t link) NOEXCEPT;
+    void do_scripthash(node::header_t link) NOEXCEPT;
+
+    /// Utilities.
+    /// -----------------------------------------------------------------------
 
     inline bool at_least(server::electrum::version version) const NOEXCEPT
     {
@@ -191,9 +228,11 @@ private:
     network::rpc::object_t self_hosts() const NOEXCEPT;
     network::rpc::array_t more_hosts() const NOEXCEPT;
 
-    // Extract the legacy bitcoin payment address of a script.
+    // Convert between legacy bitcoin payment address and scripthash.
+    system::hash_digest extract_scripthash(
+        const std::string& address) const NOEXCEPT;
     system::wallet::payment_address extract_address(
-        const system::chain::script& script) NOEXCEPT;
+        const system::chain::script& script) const NOEXCEPT;
 
     // Validate a transaction given next block context.
     bool get_pool_context(system::chain::context& pool) const NOEXCEPT;
@@ -202,8 +241,14 @@ private:
 
     // These are thread safe.
     const options_t& options_;
+    const bool turbo_;
+    const uint8_t p2kh_;
+    const uint8_t p2sh_;
+    std::atomic_bool stopping_{};
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};
+    std::atomic_bool subscribed_address_{};
+    std::atomic_bool subscribed_scripthash_{};
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
