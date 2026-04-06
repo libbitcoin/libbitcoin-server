@@ -102,13 +102,10 @@ void protocol_electrum_version::handle_server_version(const code& ec,
     }
     else
     {
-        send_result(value_t
+        send_result(array_t
         {
-            array_t
-            {
-                { string_t{ server_name() } },
-                { string_t{ negotiated_version() } }
-            }
+            { string_t{ server_name() } },
+            { string_t{ negotiated_version() } }
         }, 70, BIND(finished, _1, error::success));
     }
 

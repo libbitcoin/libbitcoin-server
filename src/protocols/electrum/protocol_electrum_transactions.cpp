@@ -299,14 +299,11 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(
     std::ranges::transform(proof, branch.begin(),
         [](const auto& hash) NOEXCEPT{ return encode_hash(hash); });
 
-    send_result(
+    send_result(object_t
     {
-        object_t
-        {
-            { "merkle", std::move(branch) },
-            { "block_height", block_height },
-            { "pos", position }
-        }
+        { "merkle", std::move(branch) },
+        { "block_height", block_height },
+        { "pos", position }
     }, two * hash_size * add1(branch.size()), BIND(complete, _1));
 }
 
@@ -375,13 +372,10 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     std::ranges::transform(proof, branch.begin(),
         [](const auto& hash) NOEXCEPT { return encode_hash(hash); });
 
-    send_result(
+    send_result(object_t
     {
-        object_t
-        {
-            { "tx_hash", encode_hash(hash) },
-            { "merkle", std::move(branch) }
-        }
+        { "tx_hash", encode_hash(hash) },
+        { "merkle", std::move(branch) }
     }, two * hash_size * add1(branch.size()), BIND(complete, _1));
 }
 

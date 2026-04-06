@@ -197,13 +197,10 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
         return;
     }
 
-    send_notification("blockchain.headers.subscribe",
+    send_notification("blockchain.headers.subscribe", object_t
     {
-        object_t
-        {
-            { "height", height.value },
-            { "hex", encode_base16(header) }
-        }
+        { "height", height.value },
+        { "hex", encode_base16(header) }
     }, 64, BIND(complete, _1));
 }
 

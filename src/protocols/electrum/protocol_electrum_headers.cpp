@@ -346,13 +346,10 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     }
 
     subscribed_header_.store(true, std::memory_order_relaxed);
-    send_result(
+    send_result(object_t
     {
-        object_t
-        {
-            { "height", top },
-            { "hex", encode_base16(header) }
-        }
+        { "height", top },
+        { "hex", encode_base16(header) }
     }, 256, BIND(complete, _1));
 }
 
