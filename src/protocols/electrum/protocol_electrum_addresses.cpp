@@ -164,7 +164,7 @@ void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
     subscribed_address_.store(true, std::memory_order_relaxed);
 
     // TODO: compute the status hash in a store query (no mempool).
-    send_result(array_t{ "status-hash" }, 16, BIND(complete, _1));
+    send_result(array_t{ string_t{ "status-hash" } }, 16, BIND(complete, _1));
 }
 
 // utilities
