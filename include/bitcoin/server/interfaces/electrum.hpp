@@ -52,7 +52,7 @@ struct electrum_methods
         method<"blockchain.scripthash.get_balance", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_history", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_mempool", string_t>{ "scripthash" },
-        method<"blockchain.scripthash.list_unspent", string_t>{ "scripthash" },
+        method<"blockchain.scripthash.listunspent", string_t>{ "scripthash" },
         method<"blockchain.scripthash.subscribe", string_t>{ "scripthash" },
         method<"blockchain.scripthash.unsubscribe", string_t>{ "scripthash" },
 
