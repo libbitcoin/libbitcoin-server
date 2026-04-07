@@ -78,7 +78,7 @@ protected:
         rpc_interface::blockchain_block_headers, double start_height,
         double count, double cp_height) NOEXCEPT;
     void handle_blockchain_headers_subscribe(const code& ec,
-        rpc_interface::blockchain_headers_subscribe) NOEXCEPT;
+        rpc_interface::blockchain_headers_subscribe, bool raw) NOEXCEPT;
 
     /// Handlers (fees).
     void handle_blockchain_estimate_fee(const code& ec,

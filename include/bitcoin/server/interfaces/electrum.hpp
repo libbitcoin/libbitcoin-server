@@ -37,7 +37,7 @@ struct electrum_methods
         method<"blockchain.block.get_header", number_t>{ "height" },
         method<"blockchain.block.header", number_t, optional<0.0>>{ "height", "cp_height" },
         method<"blockchain.block.headers", number_t, number_t, optional<0.0>>{ "start_height", "count", "cp_height" },
-        method<"blockchain.headers.subscribe">{},
+        method<"blockchain.headers.subscribe", optional<false>>{ "raw" },
 
         method<"blockchain.estimatefee", number_t, optional<""_t>>{ "number", "mode" },
         method<"blockchain.relayfee">{},
@@ -52,7 +52,7 @@ struct electrum_methods
         method<"blockchain.scripthash.get_balance", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_history", string_t>{ "scripthash" },
         method<"blockchain.scripthash.get_mempool", string_t>{ "scripthash" },
-        method<"blockchain.scripthash.list_unspent", string_t>{ "scripthash" },
+        method<"blockchain.scripthash.listunspent", string_t>{ "scripthash" },
         method<"blockchain.scripthash.subscribe", string_t>{ "scripthash" },
         method<"blockchain.scripthash.unsubscribe", string_t>{ "scripthash" },
 

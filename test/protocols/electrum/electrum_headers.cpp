@@ -558,6 +558,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__start_plus_count_huge__
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
 }
 
+// TODO: add optional bool parameter "raw".
 // blockchain.headers.subscribe
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__default__expected)
