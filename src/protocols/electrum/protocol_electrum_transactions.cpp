@@ -411,7 +411,7 @@ code protocol_electrum::validate_tx(
     if (!ec) archive().populate_with_metadata(tx, true);
     if (!ec) ec = tx.accept(ctx);
     if (!ec) ec = tx.confirm(ctx);
-    if (!ec) ec = ec = tx.connect(ctx);
+    if (!ec) ec = tx.connect(ctx);
 
     // Ensure tx does not violate presumed block consensus rules.
     // This is a DoS guard when validating a tx outside of a block.
