@@ -101,7 +101,7 @@ void protocol_electrum::handle_blockchain_address_get_balance(const code& ec,
 
 void protocol_electrum::handle_blockchain_address_get_history(const code& ec,
     rpc_interface::blockchain_address_get_history,
-    const std::string& ) NOEXCEPT
+    const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -112,13 +112,12 @@ void protocol_electrum::handle_blockchain_address_get_history(const code& ec,
         return;
     }
 
-    // TODO: get by p2sh/p2pkh address.
-    send_code(error::not_implemented);
+    get_history(extract_scripthash(address));
 }
 
 void protocol_electrum::handle_blockchain_address_get_mempool(const code& ec,
     rpc_interface::blockchain_address_get_mempool,
-    const std::string& ) NOEXCEPT
+    const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -129,13 +128,12 @@ void protocol_electrum::handle_blockchain_address_get_mempool(const code& ec,
         return;
     }
 
-    // TODO: get by p2sh/p2pkh address.
-    send_code(error::not_implemented);
+    get_mempool(extract_scripthash(address));
 }
 
 void protocol_electrum::handle_blockchain_address_list_unspent(const code& ec,
     rpc_interface::blockchain_address_list_unspent,
-    const std::string& ) NOEXCEPT
+    const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -146,8 +144,7 @@ void protocol_electrum::handle_blockchain_address_list_unspent(const code& ec,
         return;
     }
 
-    // TODO: get by p2sh/p2pkh address.
-    send_code(error::not_implemented);
+    list_unspent(extract_scripthash(address));
 }
 
 void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
@@ -172,17 +169,20 @@ void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
 
 // utilities
 // ----------------------------------------------------------------------------
+// A p2pk output does not produce a bitcoin payment address, as there is no
+// form of a p2pk bitcoin payment address. However a
 
 hash_digest protocol_electrum::extract_scripthash(
     const std::string& address) const NOEXCEPT
 {
-    // TODO: capture failure condition (don't hash empty script).
+    // A failed parse or default initialized script hashes to null_hash.
     return payment_address(address).output_script(p2kh_, p2sh_).hash();
 }
 
 payment_address protocol_electrum::extract_address(
     const chain::script& script) const NOEXCEPT
 {
+    // A failure to parse as p2sh or p2kh returns invalid object.
     return payment_address::extract_output(script, p2kh_, p2sh_);
 }
 

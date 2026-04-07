@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
+#include <ranges>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -32,8 +33,6 @@ using namespace std::placeholders;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
-
-// NOTE: undocumented change in v1.6 (mempool txs have a canonical ordering).
 
 // get_balance
 // ----------------------------------------------------------------------------
@@ -54,26 +53,25 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     }
 
     hash_digest hash{};
-    if (!decode_hash(hash, scripthash))
-    {
-        send_code(error::invalid_argument);
-        return;
-    }
-
+    decode_hash(hash, scripthash);
     get_balance(hash);
 }
 
 void protocol_electrum::get_balance(const hash_digest& hash) NOEXCEPT
 {
+    if (hash == null_hash)
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
     if (!archive().address_enabled())
     {
         send_code(error::not_implemented);
         return;
     }
 
-    // Monitor socket for close.
     monitor(true);
-
     PARALLEL(do_get_balance, hash);
 }
 
@@ -81,30 +79,38 @@ void protocol_electrum::do_get_balance(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    const auto& query = archive();
-    uint64_t confirmed{}, unconfirmed{};
+    int64_t unconfirmed{};
+    uint64_t confirmed{}, combined{};
 
-    // TODO: add query to return both confirmed and unconfirmed balances.
-    auto ec = query.get_confirmed_balance(stopping_, confirmed, hash, turbo_);
+    const auto& query = archive();
+    auto ec = query.get_balance(stopping_, confirmed, combined, hash);
+
+    // get_balance() query returns positive net balances.
+    // These are differenced to obtain relative unconfirmed for electrum.
+    if (!ec)
+    {
+        if (is_limited<int64_t>(confirmed) || is_limited<int64_t>(combined) ||
+            is_subtract_overflow<int64_t>(combined, confirmed))
+            ec = error::server_error;
+        else
+            unconfirmed = subtract<int64_t>(combined, confirmed);
+    }
 
     POST(complete_get_balance, ec, confirmed, unconfirmed);
 }
 
 void protocol_electrum::complete_get_balance(const code& ec,
-    uint64_t confirmed, uint64_t unconfirmed) NOEXCEPT
+    uint64_t confirmed, int64_t unconfirmed) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    // Stop monitoring socket.
     monitor(false);
-
-    // Suppresses cancelation error response.
     if (stopped())
         return;
 
     if (ec)
     {
-        send_code(error::server_error);
+        send_code(ec);
         return;
     }
 
@@ -117,10 +123,11 @@ void protocol_electrum::complete_get_balance(const code& ec,
 
 // get_history
 // ----------------------------------------------------------------------------
+// undocumented change in v1.6 (mempool canonical ordering, always ordered).
 
 void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
     rpc_interface::blockchain_scripthash_get_history,
-    const std::string& ) NOEXCEPT
+    const std::string& scripthash) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -131,15 +138,65 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
         return;
     }
 
-    send_code(error::not_implemented);
+    hash_digest hash{};
+    decode_hash(hash, scripthash);
+    get_history(hash);
+}
+
+void protocol_electrum::get_history(const system::hash_digest& hash) NOEXCEPT
+{
+    if (hash == null_hash)
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    if (!archive().address_enabled())
+    {
+        send_code(error::not_implemented);
+        return;
+    }
+
+    monitor(true);
+    PARALLEL(do_get_history, hash);
+}
+
+void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    const auto& query = archive();
+    database::histories histories{};
+    const auto ec = query.get_address(stopping_, histories, hash, turbo_);
+    POST(complete_get_history, ec, std::move(histories));
+}
+
+void protocol_electrum::complete_get_history(const code& ec,
+    const database::histories& histories) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_code(ec);
+        return;
+    }
+
+    const auto size = add1(histories.size()) * 128u;
+    send_result(transform(histories), size, BIND(complete, _1));
 }
 
 // get_mempool
 // ----------------------------------------------------------------------------
+// undocumented change in v1.6 (mempool canonical ordering, always ordered).
 
 void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     rpc_interface::blockchain_scripthash_get_mempool,
-    const std::string& ) NOEXCEPT
+    const std::string& scripthash) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -150,9 +207,56 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
         return;
     }
 
-    ////const auto sort = at_least(electrum::version::v1_6);
+    hash_digest hash{};
+    decode_hash(hash, scripthash);
+    get_mempool(hash);
+}
 
-    send_code(error::not_implemented);
+void protocol_electrum::get_mempool(const system::hash_digest& hash) NOEXCEPT
+{
+    if (hash == null_hash)
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    if (!archive().address_enabled())
+    {
+        send_code(error::not_implemented);
+        return;
+    }
+
+    monitor(true);
+    PARALLEL(do_get_mempool, hash);
+}
+
+void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    const auto& query = archive();
+    database::histories histories{};
+    auto ec = query.get_unconfirmed_address(stopping_, histories, hash, turbo_);
+    POST(complete_get_mempool, ec, std::move(histories));
+}
+
+void protocol_electrum::complete_get_mempool(const code& ec,
+    const database::histories& histories) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_code(ec);
+        return;
+    }
+
+    const auto size = add1(histories.size()) * 128u;
+    send_result(transform(histories), size, BIND(complete, _1));
 }
 
 // list_unspent
@@ -160,7 +264,7 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
 
 void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec,
     rpc_interface::blockchain_scripthash_list_unspent,
-    const std::string& ) NOEXCEPT
+    const std::string& scripthash) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -171,7 +275,56 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
         return;
     }
 
-    send_code(error::not_implemented);
+    hash_digest hash{};
+    decode_hash(hash, scripthash);
+    list_unspent(hash);
+}
+
+void protocol_electrum::list_unspent(const system::hash_digest& hash) NOEXCEPT
+{
+    if (hash == null_hash)
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    if (!archive().address_enabled())
+    {
+        send_code(error::not_implemented);
+        return;
+    }
+
+    monitor(true);
+    PARALLEL(do_list_unspent, hash);
+}
+
+void protocol_electrum::do_list_unspent(const hash_digest& hash) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    const auto& query = archive();
+    database::unspents unspents{};
+    const auto ec = query.get_unspent(stopping_, unspents, hash, turbo_);
+    POST(complete_list_unspent, ec, std::move(unspents));
+}
+
+void protocol_electrum::complete_list_unspent(const code& ec,
+    const database::unspents& unspents) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_code(ec);
+        return;
+    }
+
+    const auto size = add1(unspents.size()) * 128u;
+    send_result(transform(unspents), size, BIND(complete, _1));
 }
 
 // subscribe/unsubscribe
@@ -215,6 +368,58 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
 
     // TODO: return false if the scripthash was not found.
     send_result(true, 16, BIND(complete, _1));
+}
+
+// utilities
+// ----------------------------------------------------------------------------
+// TODO: these can be implemented as electrum json serializers (see bitcoind).
+
+// Height is set to 0 for unconfirmed tx fully chain rooted and -1 otherwise.
+array_t protocol_electrum::transform(const database::histories& histories) NOEXCEPT
+{
+    // Height is set to zero or max_size_t for unconfirmed history.
+    static_assert(to_signed(max_size_t) == -1 && is_max(max_size_t));
+
+    array_t out(histories.size());
+    std::ranges::transform(histories, out.begin(),
+        [](const database::history& history) NOEXCEPT
+        {
+            const auto height = history.tx.height();
+            const bool unconfirmed = is_min(height) || is_max(height);
+
+            object_t object
+            {
+                { "height", to_signed(height) },
+                { "tx_hash", encode_hash(history.tx.hash()) }
+            };
+
+            if (unconfirmed)
+                object["fee"] = history.fee;
+
+            return object;
+        });
+
+    return out;
+}
+
+// Height is set to 0 for unconfirmed unspent output txs.
+array_t protocol_electrum::transform(const database::unspents& unspents) NOEXCEPT
+{
+    array_t out(unspents.size());
+    std::ranges::transform(unspents, out.begin(),
+        [](const database::unspent& unspent) NOEXCEPT
+        {
+            const auto& tx = unspent.tx;
+            return object_t
+            {
+                { "tx_hash", encode_hash(tx.point().hash()) },
+                { "tx_pos",  tx.point().index() },
+                { "height",  unspent.height },
+                { "value",   tx.value() }
+            };
+        });
+
+    return out;
 }
 
 BC_POP_WARNING()

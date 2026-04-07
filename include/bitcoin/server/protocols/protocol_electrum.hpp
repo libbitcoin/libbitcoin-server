@@ -20,7 +20,7 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ELECTRUM_HPP
 
 #include <memory>
-#include <unordered_map>
+#include <unordered_set>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -179,32 +179,30 @@ protected:
     /// -----------------------------------------------------------------------
 
     void get_balance(const system::hash_digest& hash) NOEXCEPT;
-    void get_history(const system::hash_digest& ) NOEXCEPT {};
-    void get_mempool(const system::hash_digest& ) NOEXCEPT {};
-    void list_unspent(const system::hash_digest& ) NOEXCEPT {};
+    void get_history(const system::hash_digest& hash) NOEXCEPT;
+    void get_mempool(const system::hash_digest& hash) NOEXCEPT;
+    void list_unspent(const system::hash_digest& hash) NOEXCEPT;
 
-    void do_get_balance(const system::hash_digest& ) NOEXCEPT;
-    void do_get_history(const system::hash_digest& ) NOEXCEPT {};
-    void do_get_mempool(const system::hash_digest& ) NOEXCEPT {};
-    void do_list_unspent(const system::hash_digest& ) NOEXCEPT {};
-    void do_subscribe(const system::hash_digest& ) NOEXCEPT {};
-    void do_unsubscribe(const system::hash_digest& ) NOEXCEPT {};
+    void do_get_balance(const system::hash_digest& hash) NOEXCEPT;
+    void do_get_history(const system::hash_digest& hash) NOEXCEPT;
+    void do_get_mempool(const system::hash_digest& hash) NOEXCEPT;
+    void do_list_unspent(const system::hash_digest& hash) NOEXCEPT;
 
     void complete_get_balance(const code& ec, uint64_t confirmed,
-        uint64_t unconfirmed) NOEXCEPT;
-    void complete_get_history(const code& ) NOEXCEPT {};
-    void complete_get_mempool(const code& ) NOEXCEPT {};
-    void complete_list_unspent(const code& ) NOEXCEPT {};
-    void complete_subscribe(const code& ) NOEXCEPT {};
-    void complete_unsubscribe(const code& ) NOEXCEPT {};
+        int64_t unconfirmed) NOEXCEPT;
+    void complete_get_history(const code& ec,
+        const database::histories& histories) NOEXCEPT;
+    void complete_get_mempool(const code& ec,
+        const database::histories& histories) NOEXCEPT;
+    void complete_list_unspent(const code& ec,
+        const database::unspents& unspents) NOEXCEPT;
 
-    /// Notification senders.
+    /// Notification senders and send handlers.
     /// -----------------------------------------------------------------------
 
     void do_height(node::header_t link) NOEXCEPT;
     void do_header(node::header_t link) NOEXCEPT;
-    void do_address(node::header_t link) NOEXCEPT;
-    void do_scripthash(node::header_t link) NOEXCEPT;
+    void do_address(node::address_t link) NOEXCEPT;
 
     /// Utilities.
     /// -----------------------------------------------------------------------
@@ -220,13 +218,15 @@ protected:
     }
 
 private:
+    using array_t = network::rpc::array_t;
+    using object_t = network::rpc::object_t;
     using version_t = protocol_electrum_version;
     static constexpr electrum::version minimum = version_t::minimum;
     static constexpr electrum::version maximum = version_t::maximum;
 
     // Compute server.features.hosts value from config.
-    network::rpc::object_t self_hosts() const NOEXCEPT;
-    network::rpc::array_t more_hosts() const NOEXCEPT;
+    object_t self_hosts() const NOEXCEPT;
+    array_t more_hosts() const NOEXCEPT;
 
     // Convert between legacy bitcoin payment address and scripthash.
     system::hash_digest extract_scripthash(
@@ -238,6 +238,10 @@ private:
     bool get_pool_context(system::chain::context& pool) const NOEXCEPT;
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
     code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
+
+    // Address transformations.
+    array_t transform(const database::histories& histories) NOEXCEPT;
+    array_t transform(const database::unspents& unspents) NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;
@@ -252,6 +256,9 @@ private:
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
+
+    // This is protected by strand.
+    std::unordered_set<system::hash_digest> subscriptions_{};
 };
 
 } // namespace server
