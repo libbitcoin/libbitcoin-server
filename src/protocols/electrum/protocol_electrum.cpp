@@ -121,10 +121,10 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     if (stopped())
         return false;
 
+    // TODO: collapse three atomics this into a single enumeration.
     constexpr auto relaxed = std::memory_order_relaxed;
     switch (event_)
     {
-        // TODO: collapse four atomics this into a single enumeration.
         case node::chase::organized:
         {
             if (subscribed_height_.load(relaxed))
@@ -139,19 +139,16 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
                 POST(do_header, std::get<node::header_t>(value));
             }
 
-            if (subscribed_address_.load(relaxed))
-            {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_address, std::get<node::header_t>(value));
-            }
-
-            if (subscribed_address_.load(relaxed))
-            {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_scripthash, std::get<node::header_t>(value));
-            }
-
             break;
+        }
+        case node::chase::spent:
+        case node::chase::received:
+        {
+            if (subscribed_address_.load(relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::address_t>(value));
+                POST(do_address, std::get<node::address_t>(value));
+            }
         }
         default:
         {
@@ -208,26 +205,36 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
     }, 64, BIND(complete, _1));
 }
 
-// Notifier for blockchain_address_subscribe events.
-void protocol_electrum::do_address(node::header_t) NOEXCEPT
+// This struct is small and stack allocated (208 bytes).
+// Writer holds stream ref to status and midstate via accumulator.
+// Writer flush rewrites status via stream and resets accumulator.
+// Pass writer to store method to accumulate confirmed address midstate.
+// Once initialized, copy writer after adding state and flushing for status.
+struct midstate
 {
-    // EXAMPLE
-    send_notification("blockchain.address.subscribe", array_t
-    {
-        "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
-        "0000000000000000000000000000000000000000000000000000000000000000"
-    }, 128, BIND(complete, _1));
-}
+    hash_digest status{};
+    stream::out::fast stream{ status };
+    hash::sha256::fast writer{ stream };
+};
 
+// Notifier for blockchain_address_subscribe events.
 // Notifier for blockchain_scripthash_unsubscribe events.
-void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
+void protocol_electrum::do_address(node::address_t ) NOEXCEPT
 {
+    std::string status_hash{};
+    std::string script_hash{};
+
+    midstate value{};
+    auto copy = value;
+
     // EXAMPLE
+    // script_hash is a payment address for address.
+    ////send_notification("blockchain.address.subscribe", array_t
     send_notification("blockchain.scripthash.subscribe", array_t
     {
-        "8b01df4e368ea28f8dc0423bcf7a4923e3a12d307c875e47a0cfbf90b0a1e4",
-        "0000000000000000000000000000000000000000000000000000000000000000"
-    }, 150, BIND(complete, _1));
+        script_hash,
+        status_hash
+    }, 128, BIND(handle_send, _1));
 }
 
 } // namespace server
