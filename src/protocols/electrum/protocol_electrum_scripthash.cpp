@@ -375,49 +375,47 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
 // TODO: these can be implemented as electrum json serializers (see bitcoind).
 
 // Height is set to 0 for unconfirmed tx fully chain rooted and -1 otherwise.
-array_t protocol_electrum::transform(const database::histories& histories) NOEXCEPT
+array_t protocol_electrum::transform(const database::histories& ins) NOEXCEPT
 {
     // Height is set to zero or max_size_t for unconfirmed history.
     static_assert(to_signed(max_size_t) == -1 && is_max(max_size_t));
 
-    array_t out(histories.size());
-    std::ranges::transform(histories, out.begin(),
-        [](const database::history& history) NOEXCEPT
+    array_t out(ins.size());
+    std::ranges::transform(ins, out.begin(), [](const auto& in) NOEXCEPT
+    {
+        const auto height = in.tx.height();
+        const bool unconfirmed = is_min(height) || is_max(height);
+
+        object_t object
         {
-            const auto height = history.tx.height();
-            const bool unconfirmed = is_min(height) || is_max(height);
+            { "height", to_signed(height) },
+            { "tx_hash", encode_hash(in.tx.hash()) }
+        };
 
-            object_t object
-            {
-                { "height", to_signed(height) },
-                { "tx_hash", encode_hash(history.tx.hash()) }
-            };
+        if (unconfirmed)
+            object["fee"] = in.fee;
 
-            if (unconfirmed)
-                object["fee"] = history.fee;
-
-            return object;
-        });
+        return object;
+    });
 
     return out;
 }
 
 // Height is set to 0 for unconfirmed unspent output txs.
-array_t protocol_electrum::transform(const database::unspents& unspents) NOEXCEPT
+array_t protocol_electrum::transform(const database::unspents& ins) NOEXCEPT
 {
-    array_t out(unspents.size());
-    std::ranges::transform(unspents, out.begin(),
-        [](const database::unspent& unspent) NOEXCEPT
+    array_t out(ins.size());
+    std::ranges::transform(ins, out.begin(), [](const auto& in) NOEXCEPT
+    {
+        const auto& tx = in.tx;
+        return object_t
         {
-            const auto& tx = unspent.tx;
-            return object_t
-            {
-                { "tx_hash", encode_hash(tx.point().hash()) },
-                { "tx_pos",  tx.point().index() },
-                { "height",  unspent.height },
-                { "value",   tx.value() }
-            };
-        });
+            { "tx_hash", encode_hash(tx.point().hash()) },
+            { "tx_pos",  tx.point().index() },
+            { "height",  in.height },
+            { "value",   tx.value() }
+        };
+    });
 
     return out;
 }
