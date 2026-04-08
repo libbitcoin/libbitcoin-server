@@ -167,7 +167,7 @@ void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
 
     const auto& query = archive();
     database::histories histories{};
-    const auto ec = query.get_address(stopping_, histories, hash, turbo_);
+    const auto ec = query.get_history(stopping_, histories, hash, turbo_);
     POST(complete_get_history, ec, std::move(histories));
 }
 
@@ -236,7 +236,7 @@ void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
 
     const auto& query = archive();
     database::histories histories{};
-    auto ec = query.get_unconfirmed_address(stopping_, histories, hash, turbo_);
+    auto ec = query.get_unconfirmed_history(stopping_, histories, hash, turbo_);
     POST(complete_get_mempool, ec, std::move(histories));
 }
 
