@@ -14,7 +14,7 @@
 </div>
 
 ## tl;dr
-This is the **server component of libbitcoin v4**. It integrates the basic components and offers a **high performance Bitcoin full node** with a comprehensive set of client-server interfaces like **bitcoind, electrum and stratum** as well as an intergrated **block explorer**. It makes full use of the available hardware, internet connection and availabe RAM and CPU so you can sync the Bitcoin blockchain from genesis, today and in the future.
+This is the **server component of libbitcoin v4**. It integrates the basic components and offers a **high performance Bitcoin full node** with a comprehensive set of client-server interfaces like **bitcoind, electrum and stratum** as well as an integrated **block explorer**. It makes full use of the available hardware, internet connection and available RAM and CPU so you can sync the Bitcoin blockchain from genesis, today and in the future.
 
 If you follow this README you will be able to build, run and monitor your own libbitcoin server (bs). Libbitcoin is a multi platform software that works on Linux, Windows and OSX (Intel and ARM).
 
@@ -56,12 +56,12 @@ The build process is essentially the same on Linux, macOS, and other Unix-like s
 
 ### Linux
 
-Linux users can build libbitcoin node with the provided installation script `install.sh` that uses Autotools and pkg-config to first build the needed dependencies (boost, libpsec256) and then fetches the latest libbitcoin projects (libbitcoin-system, libbitcoin-database, libbitcoin-network, libbitcoin-node and libbitcoin-server) from GitHub and builds the stack bottom up to the libbitcoin-server executable - `bs`.
+Linux users can build libbitcoin node with the provided installation script `install.sh` that uses Autotools and pkg-config to first build the needed dependencies (boost, libsecp256k1) and then fetches the latest libbitcoin projects (libbitcoin-system, libbitcoin-database, libbitcoin-network, libbitcoin-node and libbitcoin-server) from GitHub and builds the stack bottom up to the libbitcoin-server executable - `bs`.
 
 You can issue the following command to check for further parameterization of the install script:
 
 ```bash
-$ install.sh --help
+$ ./install.sh --help
 ```
 
 which brings up the following options:
@@ -70,16 +70,6 @@ which brings up the following options:
 Usage: ./install.sh [OPTION]...
 Manage the installation of libbitcoin-server.
 Script options:
-  --with-icu               Compile with International Components for Unicode.
-                             Since the addition of BIP-39 and later BIP-38 
-                             support, libbitcoin conditionally incorporates ICU 
-                             to provide BIP-38 and BIP-39 passphrase 
-                             normalization features. Currently 
-                             libbitcoin-explorer is the only other library that 
-                             accesses this feature, so if you do not intend to 
-                             use passphrase normalization this dependency can 
-                             be avoided.
-  --build-icu              Build ICU libraries.
   --build-boost            Build Boost libraries.
   --build-secp256k1        Build libsecp256k1 libraries.
   --build-dir=<path>       Location of downloaded and intermediate files.
@@ -96,52 +86,48 @@ In order to successfully execute `install.sh` a few requirements need to be met.
 
 #### Requirements
 * Base OS: Ubuntu 24.04.3 LTS (Noble Numbat)
-* C++13 compiler (gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04))
+* C++20 compiler (gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04))
 * [Autoconf](https://www.gnu.org/software/autoconf/)
 * [Automake](https://www.gnu.org/software/automake/)
 * [libtool](https://www.gnu.org/software/libtool/)
 * [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
+* [wget](https://www.gnu.org/software/wget/)
 * [git](https://git-scm.com/)
-* [curl](https://www.gnu.org/software/curl/)
 
 The corresponding packages can be installed with the following command:
 
 ```bash
-$ sudo apt install build-essential curl git autoconf automake pkg-config libtool
+$ sudo apt install build-essential wget git autoconf automake pkg-config libtool
 ```
 
 #### Build
-Create a new directory (e.g. `/home/user/libbitcoin`), then use git to fetch the latest repository from GitHub by issuing the following command from within this directory:
+Use wget to fetch the latest `install.sh` from GitHub by issuing the following command from anywhere in your filesystem:
 
 ```bash
-git clone https://github.com/libbitcoin/libbitcoin-server
+wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/master/install.sh
+chmod +x install.sh
 ```
 
-Enter the project directory `cd libbitcoin-server` and start the build with the following command:
+Start the build with the following command:
 
 ```bash
-$ ./install.sh --prefix=/home/user/libbitcoin/build/release_static/ --build-secp256k1 --build-boost --disable-shared
+$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/install/ --build-dir=/home/user/libbitcoin/build --build-secp256k1 --build-boost --disable-shared
 ```
 
-This will build the libbitcoin-server executable as a static release with no [CPU extensions](#cpu-extensions) built in. Use only absolute path names for prefix dir. A successful build will create the following directory/file structure:
+This will build the libbitcoin-server executable as a static release with no [CPU extensions](#cpu-extensions) built in. Use only absolute path names for prefix dir. A successful build from within `~/libbitcoin/` will create the following directory/file structure:
 
 ```
-~/bitcoin/libbitcoin/
-~/bitcoin/libbitcoin/build/
-~/bitcoin/libbitcoin/build/release_static/
-~/bitcoin/libbitcoin/build/release_static/bin/
-~/bitcoin/libbitcoin/build/release_static/etc/
-~/bitcoin/libbitcoin/build/release_static/include/
-~/bitcoin/libbitcoin/build/release_static/lib/
-~/bitcoin/libbitcoin/build/release_static/share/
-~/bitcoin/libbitcoin/build/release_static/share/doc/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-database/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-network/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-node/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-server/
-~/bitcoin/libbitcoin/build/release_static/share/doc/libbitcoin-system/
-~/bitcoin/libbitcoin/libbitcoin-node
+~/libbitcoin/
+├── install.sh
+├── build/
+└── install/
+    ├── bin/
+    ├── etc/
+    ├── include/
+    ├── lib/
+    └── share/
 ```
+
 Now enter the bin directory and [fire up](#running-bs) your libbitcoin server.
 
 #### CPU Extensions
@@ -152,7 +138,7 @@ CPU Extensions are specific optimizations your CPU might or might not have. libb
 * [AVX2](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions)
 * [AVX512](https://en.wikipedia.org/wiki/AVX-512)
 
-To build libbitcoin-server with these extensions use the `--enable-feature` parameters like:
+To build libbitcoin-server with these extensions use the `--enable-*` parameters like:
 
 - --enable-shani
 - --enable-sse41
@@ -162,7 +148,7 @@ To build libbitcoin-server with these extensions use the `--enable-feature` para
 This command will create a static release build with all supported CPU extensions (if supported by the system). Building libbitcoin with unsupported CPU extensions might work but will lead to crashes at runtime.
 
 ```bash
-$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/build/release_static/ --build-dir=/home/user/libbitcoin/build/temp --build-secp256k1 --build-boost --disable-shared --enable-ndebug --enable-shani --enable-avx2 --enable-sse41 --enable-isystem
+$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/install/ --build-dir=/home/user/libbitcoin/build --build-secp256k1 --build-boost --disable-shared --enable-ndebug --enable-shani --enable-avx2 --enable-sse41 --enable-isystem
 ```
 
 You can check if the optimizations have been built in your binary with the following command:
@@ -199,9 +185,9 @@ $ ./bs --help
 The response should look like this:
 
 ```
-Usage: bs [-abdfhiklnrstvw] [--config value]                             
+Usage: bs [-abdfhiklnrsv] [--config value] [--test value] [--write value]
 
-Info: Runs a full bitcoin server.                                          
+Info: Runs a full node bitcoin server.                                   
 
 Options (named):
 
@@ -312,7 +298,7 @@ In this case it took the node 11053 seconds (or 184 minutes) to sync up to Block
 
 As the node aims to sync the Blockchain as fast as possible, we assume that if the computer is powerful enough, the limiting factor for syncing the chain is your internet connection - you simply can't sync faster than the time needed to download the Blockchain.
 
-The following diagram shows the performance data extracted from various IBDs (bs milestone and full validation, Core 30 Standard and AssumeValid) on a 64 Core, 256MB RAM machine running Ubuntu.
+The following diagram shows the performance data extracted from various IBDs (bs milestone and full validation, Core 30 Standard and AssumeValid) on a 64 Core, 256GB RAM machine running Ubuntu.
 
 <details>
 <summary><strong>brunella - Dell Precision Tower 7810</strong></summary>
