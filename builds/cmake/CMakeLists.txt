@@ -22,7 +22,7 @@ endif()
 #------------------------------------------------------------------------------
 # Project options.
 #------------------------------------------------------------------------------
-option( with-test "Build test." ON )
+option( with-tests "Build tests." ON )
 option( with-console "Build console." ON )
 
 #------------------------------------------------------------------------------
@@ -187,15 +187,15 @@ set_target_properties( libbitcoin-server
 )
 
 #------------------------------------------------------------------------------
-# libbitcoin-server-tests tests
+# libbitcoin-server-test tests
 #------------------------------------------------------------------------------
-if ( with-test )
-  add_executable( libbitcoin-server-tests )
+if ( with-tests )
+  add_executable( libbitcoin-server-test )
 
   enable_testing()
 
-  add_test( NAME libbitcoin-server-tests
-    COMMAND libbitcoin-server-tests
+  add_test( NAME libbitcoin-server-test
+    COMMAND libbitcoin-server-test
     --run_test=*
     --log_level=warning
     --show_progress=no
@@ -204,12 +204,12 @@ if ( with-test )
     --build_info=yes
   )
 
-  target_compile_features( libbitcoin-server-tests
+  target_compile_features( libbitcoin-server-test
     PUBLIC
       cxx_std_20
   )
 
-  target_compile_options( libbitcoin-server-tests
+  target_compile_options( libbitcoin-server-test
     PRIVATE
       -Wall
       -Wextra
@@ -225,23 +225,23 @@ if ( with-test )
       -fstack-protector-all
   )
 
-  file( GLOB_RECURSE libbitcoin_server_tests_SOURCES CONFIGURE_DEPENDS
+  file( GLOB_RECURSE libbitcoin_server_test_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../../test/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../test/*.cpp"
   )
 
-  target_sources( libbitcoin-server-tests
+  target_sources( libbitcoin-server-test
     PRIVATE
-      ${libbitcoin_server_tests_SOURCES}
+      ${libbitcoin_server_test_SOURCES}
   )
 
-  target_link_libraries( libbitcoin-server-tests
+  target_link_libraries( libbitcoin-server-test
     PRIVATE
       Boost::unit_test_framework
       bitcoin::server
   )
 
-  set_target_properties( libbitcoin-server-tests
+  set_target_properties( libbitcoin-server-test
     PROPERTIES
       VERSION ${PROJECT_VERSION}
       SOVERSION ${PROJECT_VERSION_MAJOR}
