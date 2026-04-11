@@ -87,10 +87,23 @@ protected:
     void handle_blockchain_relay_fee(const code& ec,
         rpc_interface::blockchain_relay_fee) NOEXCEPT;
 
-    /// Handlers (addresses).
+    /// Handlers (outputs).
     void handle_blockchain_utxo_get_address(const code& ec,
         rpc_interface::blockchain_utxo_get_address,
         const std::string& tx_hash, double index) NOEXCEPT;
+    void handle_blockchain_outpoint_get_status(const code& ec,
+        rpc_interface::blockchain_outpoint_get_status,
+        const std::string& tx_hash, double index,
+        const std::string& spk_hint) NOEXCEPT;
+    void handle_blockchain_outpoint_subscribe(const code& ec,
+        rpc_interface::blockchain_outpoint_subscribe,
+        const std::string& tx_hash, double index,
+        const std::string& spk_hint) NOEXCEPT;
+    void handle_blockchain_outpoint_unsubscribe(const code& ec,
+        rpc_interface::blockchain_outpoint_unsubscribe,
+        const std::string& tx_hash, double index) NOEXCEPT;
+
+    /// Handlers (addresses).
     void handle_blockchain_address_get_balance(const code& ec,
         rpc_interface::blockchain_address_get_balance,
         const std::string& address) NOEXCEPT;
@@ -126,6 +139,26 @@ protected:
     void handle_blockchain_scripthash_unsubscribe(const code& ec,
         rpc_interface::blockchain_scripthash_unsubscribe,
         const std::string& scripthash) NOEXCEPT;
+
+    /// Handlers (scriptpubkey).
+    void handle_blockchain_scriptpubkey_get_balance(const code& ec,
+        rpc_interface::blockchain_scriptpubkey_get_balance,
+        const std::string& scriptpubkey) NOEXCEPT;
+    void handle_blockchain_scriptpubkey_get_history(const code& ec,
+        rpc_interface::blockchain_scriptpubkey_get_history,
+        const std::string& scriptpubkey) NOEXCEPT;
+    void handle_blockchain_scriptpubkey_get_mempool(const code& ec,
+        rpc_interface::blockchain_scriptpubkey_get_mempool,
+        const std::string& scriptpubkey) NOEXCEPT;
+    void handle_blockchain_scriptpubkey_list_unspent(const code& ec,
+        rpc_interface::blockchain_scriptpubkey_list_unspent,
+        const std::string& scriptpubkey) NOEXCEPT;
+    void handle_blockchain_scriptpubkey_subscribe(const code& ec,
+        rpc_interface::blockchain_scriptpubkey_subscribe,
+        const std::string& scriptpubkey) NOEXCEPT;
+    void handle_blockchain_scriptpubkey_unsubscribe(const code& ec,
+        rpc_interface::blockchain_scriptpubkey_unsubscribe,
+        const std::string& scriptpubkey) NOEXCEPT;
 
     /// Handlers (transactions).
     void handle_blockchain_transaction_broadcast(const code& ec,
@@ -202,7 +235,10 @@ protected:
 
     void do_height(node::header_t link) NOEXCEPT;
     void do_header(node::header_t link) NOEXCEPT;
+    void do_outpoint(node::header_t link) NOEXCEPT;
     void do_address(node::address_t link) NOEXCEPT;
+    void do_scripthash(node::address_t link) NOEXCEPT;
+    void do_scriptpubkey(node::address_t link) NOEXCEPT;
 
     /// Utilities.
     /// -----------------------------------------------------------------------
@@ -251,8 +287,10 @@ private:
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};
+    std::atomic_bool subscribed_outpoint_{};
     std::atomic_bool subscribed_address_{};
     std::atomic_bool subscribed_scripthash_{};
+    std::atomic_bool subscribed_scriptpubkey_{};
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;

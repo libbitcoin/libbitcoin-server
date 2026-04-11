@@ -363,11 +363,11 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
         return;
     }
 
-    // TODO: remove the scripthash from the notification set.
-    subscribed_scripthash_.store(false, std::memory_order_relaxed);
+    // TODO: remove scripthash subscription from the notification set.
+    const auto previous = subscribed_scriptpubkey_.load(
+        std::memory_order_relaxed);
 
-    // TODO: return false if the scripthash was not found.
-    send_result(true, 16, BIND(complete, _1));
+    send_result(previous, 16, BIND(complete, _1));
 }
 
 // utilities

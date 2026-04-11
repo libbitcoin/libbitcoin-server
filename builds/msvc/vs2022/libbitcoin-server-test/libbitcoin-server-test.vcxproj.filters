@@ -81,7 +81,13 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_mempool.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_outputs.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scripthash.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scripts.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">

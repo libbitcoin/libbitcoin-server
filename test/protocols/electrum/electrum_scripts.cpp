@@ -21,11 +21,11 @@
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
-// blockchain.scripthash.get_balance
-// blockchain.scripthash.get_history
-// blockchain.scripthash.get_mempool
-// blockchain.scripthash.listunspent
-// blockchain.scripthash.subscribe
-// blockchain.scripthash.unsubscribe
+// blockchain.scriptpubkey.get_balance
+// blockchain.scriptpubkey.get_history
+// blockchain.scriptpubkey.get_mempool
+// blockchain.scriptpubkey.listunspent
+// blockchain.scriptpubkey.subscribe
+// blockchain.scriptpubkey.unsubscribe
 
 BOOST_AUTO_TEST_SUITE_END()
