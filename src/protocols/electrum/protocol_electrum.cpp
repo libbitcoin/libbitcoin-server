@@ -64,8 +64,13 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_estimate_fee, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_relay_fee, _1, _2);
 
-    // Address methods.
+    // Output methods.
     SUBSCRIBE_RPC(handle_blockchain_utxo_get_address, _1, _2, _3, _4);
+    SUBSCRIBE_RPC(handle_blockchain_outpoint_get_status, _1, _2, _3, _4, _5);
+    SUBSCRIBE_RPC(handle_blockchain_outpoint_subscribe, _1, _2, _3, _4, _5);
+    SUBSCRIBE_RPC(handle_blockchain_outpoint_unsubscribe, _1, _2, _3, _4);
+
+    // Address methods.
     SUBSCRIBE_RPC(handle_blockchain_address_get_balance, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_address_get_history, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_address_get_mempool, _1, _2, _3);
@@ -79,6 +84,14 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_scripthash_list_unspent, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_subscribe, _1, _2, _3);
     SUBSCRIBE_RPC(handle_blockchain_scripthash_unsubscribe, _1, _2, _3);
+
+    // Scriptpubkey methods.
+    SUBSCRIBE_RPC(handle_blockchain_scriptpubkey_get_balance, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_scriptpubkey_get_history, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_scriptpubkey_get_mempool, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_scriptpubkey_list_unspent, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_scriptpubkey_subscribe, _1, _2, _3);
+    SUBSCRIBE_RPC(handle_blockchain_scriptpubkey_unsubscribe, _1, _2, _3);
 
     // Transaction methods.
     SUBSCRIBE_RPC(handle_blockchain_transaction_broadcast, _1, _2, _3);
@@ -144,10 +157,28 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
         case node::chase::spent:
         case node::chase::received:
         {
+            if (subscribed_outpoint_.load(relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::address_t>(value));
+                POST(do_outpoint, std::get<node::address_t>(value));
+            }
+
             if (subscribed_address_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::address_t>(value));
                 POST(do_address, std::get<node::address_t>(value));
+            }
+
+            if (subscribed_scripthash_.load(relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::address_t>(value));
+                POST(do_scripthash, std::get<node::address_t>(value));
+            }
+
+            if (subscribed_scriptpubkey_.load(relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::address_t>(value));
+                POST(do_scriptpubkey, std::get<node::address_t>(value));
             }
         }
         default:
@@ -205,6 +236,19 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
     }, 64, BIND(complete, _1));
 }
 
+// Notifier for blockchain_outpoint_subscribe events.
+void protocol_electrum::do_outpoint(node::address_t) NOEXCEPT
+{
+    chain::point point{};
+
+    // TODO: compute and return outpont status from a store query.
+    send_notification("blockchain.outpoint.subscribe", array_t
+    {
+        array_t{ encode_hash(point.hash()), point.index() },
+        object_t{}
+    }, 128, BIND(handle_send, _1));
+}
+
 // This struct is small and stack allocated (208 bytes).
 // Writer holds stream ref to status and midstate via accumulator.
 // Writer flush rewrites status via stream and resets accumulator.
@@ -218,7 +262,6 @@ struct midstate
 };
 
 // Notifier for blockchain_address_subscribe events.
-// Notifier for blockchain_scripthash_unsubscribe events.
 void protocol_electrum::do_address(node::address_t ) NOEXCEPT
 {
     std::string status_hash{};
@@ -229,8 +272,37 @@ void protocol_electrum::do_address(node::address_t ) NOEXCEPT
 
     // EXAMPLE
     // script_hash is a payment address for address.
-    ////send_notification("blockchain.address.subscribe", array_t
+    send_notification("blockchain.address.subscribe", array_t
+    {
+        script_hash,
+        status_hash
+    }, 128, BIND(handle_send, _1));
+}
+
+// Notifier for blockchain_scripthash_subscribe events.
+void protocol_electrum::do_scripthash(node::address_t) NOEXCEPT
+{
+    std::string status_hash{};
+    std::string script_hash{};
+
+    // EXAMPLE
+    // script_hash is a payment address for address.
     send_notification("blockchain.scripthash.subscribe", array_t
+    {
+        script_hash,
+        status_hash
+    }, 128, BIND(handle_send, _1));
+}
+
+// Notifier for blockchain_scriptpubkey_subscribe events.
+void protocol_electrum::do_scriptpubkey(node::address_t) NOEXCEPT
+{
+    std::string status_hash{};
+    std::string script_hash{};
+
+    // EXAMPLE
+    // script_hash is a payment address for address.
+    send_notification("blockchain.scriptpubkey.subscribe", array_t
     {
         script_hash,
         status_hash

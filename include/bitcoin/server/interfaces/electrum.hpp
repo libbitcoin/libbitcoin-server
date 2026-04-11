@@ -43,6 +43,10 @@ struct electrum_methods
         method<"blockchain.relayfee">{},
 
         method<"blockchain.utxo.get_address", string_t, number_t>{ "tx_hash", "index" },
+        method<"blockchain.outpoint.get_status", string_t, number_t, optional<""_t>>{ "tx_hash", "txout_idx", "spk_hint" },
+        method<"blockchain.outpoint.subscribe", string_t, number_t, optional<""_t>>{ "tx_hash", "txout_idx", "spk_hint" },
+        method<"blockchain.outpoint.unsubscribe", string_t, number_t>{ "tx_hash", "txout_idx" },
+
         method<"blockchain.address.get_balance", string_t>{ "address" },
         method<"blockchain.address.get_history", string_t>{ "address" },
         method<"blockchain.address.get_mempool", string_t>{ "address" },
@@ -55,6 +59,13 @@ struct electrum_methods
         method<"blockchain.scripthash.listunspent", string_t>{ "scripthash" },
         method<"blockchain.scripthash.subscribe", string_t>{ "scripthash" },
         method<"blockchain.scripthash.unsubscribe", string_t>{ "scripthash" },
+
+        method<"blockchain.scriptpubkey.get_balance", string_t>{ "scriptpubkey" },
+        method<"blockchain.scriptpubkey.get_history", string_t>{ "scriptpubkey" },
+        method<"blockchain.scriptpubkey.get_mempool", string_t>{ "scriptpubkey" },
+        method<"blockchain.scriptpubkey.listunspent", string_t>{ "scriptpubkey" },
+        method<"blockchain.scriptpubkey.subscribe", string_t>{ "scriptpubkey" },
+        method<"blockchain.scriptpubkey.unsubscribe", string_t>{ "scriptpubkey" },
 
         method<"blockchain.transaction.broadcast", string_t>{ "raw_tx" },
         method<"blockchain.transaction.broadcast_package", value_t, optional<false>>{ "raw_txs", "verbose" },
@@ -93,35 +104,46 @@ struct electrum_methods
     using blockchain_relay_fee = at<7>;
 
     using blockchain_utxo_get_address = at<8>;
-    using blockchain_address_get_balance = at<9>;
-    using blockchain_address_get_history = at<10>;
-    using blockchain_address_get_mempool = at<11>;
-    using blockchain_address_list_unspent = at<12>;
-    using blockchain_address_subscribe = at<13>;
+    using blockchain_outpoint_get_status = at<9>;
+    using blockchain_outpoint_subscribe = at<10>;
+    using blockchain_outpoint_unsubscribe = at<11>;
 
-    using blockchain_scripthash_get_balance = at<14>;
-    using blockchain_scripthash_get_history = at<15>;
-    using blockchain_scripthash_get_mempool = at<16>;
-    using blockchain_scripthash_list_unspent = at<17>;
-    using blockchain_scripthash_subscribe = at<18>;
-    using blockchain_scripthash_unsubscribe = at<19>;
+    using blockchain_address_get_balance = at<12>;
+    using blockchain_address_get_history = at<13>;
+    using blockchain_address_get_mempool = at<14>;
+    using blockchain_address_list_unspent = at<15>;
+    using blockchain_address_subscribe = at<16>;
 
-    using blockchain_transaction_broadcast = at<20>;
-    using blockchain_transaction_broadcast_package = at<21>;
-    using blockchain_transaction_get = at<22>;
-    using blockchain_transaction_get_merkle = at<23>;
-    using blockchain_transaction_id_from_position = at<24>;
+    using blockchain_scripthash_get_balance = at<17>;
+    using blockchain_scripthash_get_history = at<18>;
+    using blockchain_scripthash_get_mempool = at<19>;
+    using blockchain_scripthash_list_unspent = at<20>;
+    using blockchain_scripthash_subscribe = at<21>;
+    using blockchain_scripthash_unsubscribe = at<22>;
 
-    using server_add_peer = at<25>;
-    using server_banner = at<26>;
-    using server_donation_address = at<27>;
-    using server_features = at<28>;
-    using server_peers_subscribe = at<29>;
-    using server_ping = at<30>;
-    using server_version = at<31>;
+    using blockchain_scriptpubkey_get_balance = at<23>;
+    using blockchain_scriptpubkey_get_history = at<24>;
+    using blockchain_scriptpubkey_get_mempool = at<25>;
+    using blockchain_scriptpubkey_list_unspent = at<26>;
+    using blockchain_scriptpubkey_subscribe = at<27>;
+    using blockchain_scriptpubkey_unsubscribe = at<28>;
 
-    using mempool_get_fee_histogram = at<32>;
-    using mempool_get_info = at<33>;
+    using blockchain_transaction_broadcast = at<29>;
+    using blockchain_transaction_broadcast_package = at<30>;
+    using blockchain_transaction_get = at<31>;
+    using blockchain_transaction_get_merkle = at<32>;
+    using blockchain_transaction_id_from_position = at<33>;
+
+    using server_add_peer = at<34>;
+    using server_banner = at<35>;
+    using server_donation_address = at<36>;
+    using server_features = at<37>;
+    using server_peers_subscribe = at<38>;
+    using server_ping = at<39>;
+    using server_version = at<40>;
+
+    using mempool_get_fee_histogram = at<41>;
+    using mempool_get_info = at<42>;
 };
 
 } // namespace interface

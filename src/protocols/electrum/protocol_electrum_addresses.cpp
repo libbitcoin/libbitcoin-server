@@ -34,55 +34,6 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
-    rpc_interface::blockchain_utxo_get_address, const std::string& tx_hash,
-    double index) NOEXCEPT
-{
-    if (stopped(ec))
-        return;
-
-    if (at_least(electrum::version::v1_1))
-    {
-        send_code(error::wrong_version);
-        return;
-    }
-
-    uint32_t offset{};
-    hash_digest hash{};
-    if (!to_integer(offset, index) ||
-        !decode_hash(hash, tx_hash))
-    {
-        send_code(error::invalid_argument);
-        return;
-    }
-
-    const auto& query = archive();
-    const auto tx = query.to_tx(hash);
-    if (tx.is_terminal())
-    {
-        ////send_code(error::not_found);
-        send_result(null_t{}, 42, BIND(complete, _1));
-        return;
-    }
-
-    const auto output = query.to_output(tx, offset);
-    const auto script = query.get_output_script(output);
-    if (!script)
-    {
-        send_code(error::server_error);
-        return;
-    }
-
-    const auto address = extract_address(*script);
-    if (!address)
-    {
-        send_result(null_t{}, 42, BIND(complete, _1));
-        return;
-    }
-
-    send_result(address.encoded(), 56, BIND(complete, _1));
-}
-
 void protocol_electrum::handle_blockchain_address_get_balance(const code& ec,
     rpc_interface::blockchain_address_get_balance,
     const std::string& address) NOEXCEPT
