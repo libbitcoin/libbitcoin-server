@@ -79,23 +79,9 @@ void protocol_electrum::do_get_balance(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    int64_t unconfirmed{};
-    uint64_t confirmed{}, combined{};
-
     const auto& query = archive();
-    auto ec = query.get_balance(stopping_, confirmed, combined, hash);
-
-    // get_balance() query returns positive net balances.
-    // These are differenced to obtain relative unconfirmed for electrum.
-    if (!ec)
-    {
-        if (is_limited<int64_t>(confirmed) || is_limited<int64_t>(combined) ||
-            is_subtract_overflow<int64_t>(combined, confirmed))
-            ec = error::server_error;
-        else
-            unconfirmed = subtract<int64_t>(combined, confirmed);
-    }
-
+    uint64_t confirmed{}, unconfirmed{};
+    auto ec = query.get_balance(stopping_, confirmed, unconfirmed, hash);
     POST(complete_get_balance, ec, confirmed, unconfirmed);
 }
 
