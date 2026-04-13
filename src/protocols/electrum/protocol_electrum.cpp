@@ -241,7 +241,8 @@ void protocol_electrum::do_outpoint(node::address_t) NOEXCEPT
 {
     chain::point point{};
 
-    // TODO: compute and return outpont status from a store query.
+    // TODO: compute and return outpoint status from a store query.
+    // TODO: unlike scripthash, this is not a cumulative "status" hash.
     send_notification("blockchain.outpoint.subscribe", array_t
     {
         array_t{ encode_hash(point.hash()), point.index() },
@@ -270,7 +271,7 @@ void protocol_electrum::do_address(node::address_t ) NOEXCEPT
     midstate value{};
     auto copy = value;
 
-    // EXAMPLE
+    // EXAMPLE:
     // script_hash is a payment address for address.
     send_notification("blockchain.address.subscribe", array_t
     {
@@ -285,7 +286,7 @@ void protocol_electrum::do_scripthash(node::address_t) NOEXCEPT
     std::string status_hash{};
     std::string script_hash{};
 
-    // EXAMPLE
+    // EXAMPLE:
     // script_hash is a payment address for address.
     send_notification("blockchain.scripthash.subscribe", array_t
     {
@@ -300,7 +301,7 @@ void protocol_electrum::do_scriptpubkey(node::address_t) NOEXCEPT
     std::string status_hash{};
     std::string script_hash{};
 
-    // EXAMPLE
+    // EXAMPLE:
     // script_hash is a payment address for address.
     send_notification("blockchain.scriptpubkey.subscribe", array_t
     {
