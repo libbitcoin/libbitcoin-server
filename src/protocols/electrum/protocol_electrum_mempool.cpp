@@ -45,7 +45,8 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     }
 
     // TODO: Empty array (of tuples), could be simulated with block fees.
-    send_result(array_t{}, 42, BIND(complete, _1));
+    ////send_result(array_t{}, 42, BIND(complete, _1));
+    send_code(error::not_implemented);
 }
 
 void protocol_electrum::handle_mempool_get_info(const code& ec,

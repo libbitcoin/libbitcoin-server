@@ -23,6 +23,7 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
 
 using namespace system;
 static const code wrong_version{ server::error::wrong_version };
+static const code not_implemented{ server::error::not_implemented };
 
 // mempool.get_fee_histogram
 
@@ -51,12 +52,14 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__extra_param__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__empty_array)
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__not_implemented)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":603,"method":"mempool.get_fee_histogram","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    ///REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
 // mempool.get_info
