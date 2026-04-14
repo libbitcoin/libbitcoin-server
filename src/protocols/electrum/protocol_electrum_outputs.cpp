@@ -215,7 +215,7 @@ bool protocol_electrum::send_get_status(const std::string& tx_hash,
         result["spender_height"] = to_unsigned(spender.height());
     }
 
-    send_result(std::move(result), 16, BIND(complete, _1));
+    send_result(std::move(result), 128, BIND(complete, _1));
     return true;
 }
 
