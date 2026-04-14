@@ -94,6 +94,9 @@ parser::parser(system::chain::selection context,
 
     // SCALE: LF2.2 @ 850K.
 
+    // Only used for electrum queries (255 is optimal otherwise).
+    configured.database.interval_depth = 11;
+
     // database (archive)
 
     configured.database.header_buckets = 386'364;
@@ -1391,7 +1394,7 @@ options_metadata parser::load_settings() THROWS
     (
         "database.interval_depth",
         value<uint16_t>(&configured.database.interval_depth),
-        "The interval depth for merkle proof optimization, defaults to '255' (disabled)."
+        "The interval depth for merkle proof optimization, defaults to '11'."
     )
 
     /* header */
