@@ -364,21 +364,19 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
 array_t protocol_electrum::transform(const database::histories& ins) NOEXCEPT
 {
     // Height is set to zero or max_size_t for unconfirmed history.
+    // to_signed() conversion is simple but sacrifices top height bit (ok).
     static_assert(to_signed(max_size_t) == -1 && is_max(max_size_t));
 
     array_t out(ins.size());
     std::ranges::transform(ins, out.begin(), [](const auto& in) NOEXCEPT
     {
-        const auto height = in.tx.height();
-        const bool unconfirmed = is_min(height) || is_max(height);
-
         object_t object
         {
-            { "height", to_signed(height) },
+            { "height", to_signed(in.tx.height()) },
             { "tx_hash", encode_hash(in.tx.hash()) }
         };
 
-        if (unconfirmed)
+        if (!in.confirmed())
         {
             // A fee of max_uint64 implies missing prevout(s). This will happen
             // for a block-downloaded tx queried during parallel block download
@@ -400,13 +398,13 @@ array_t protocol_electrum::transform(const database::unspents& ins) NOEXCEPT
     array_t out(ins.size());
     std::ranges::transform(ins, out.begin(), [](const auto& in) NOEXCEPT
     {
-        const auto& tx = in.tx;
+        const auto& out = in.out;
         return object_t
         {
-            { "tx_hash", encode_hash(tx.point().hash()) },
-            { "tx_pos",  tx.point().index() },
+            { "tx_hash", encode_hash(out.point().hash()) },
+            { "tx_pos",  out.point().index() },
             { "height",  in.height },
-            { "value",   tx.value() }
+            { "value",   out.value() }
         };
     });
 
