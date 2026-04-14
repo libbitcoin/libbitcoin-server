@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
+#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -28,6 +29,8 @@ namespace server {
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
+
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     rpc_interface::blockchain_utxo_get_address, const std::string& tx_hash,
@@ -91,45 +94,9 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
         return;
     }
 
-    uint32_t index{};
-    hash_digest hash{};
-    if (!to_integer(index, txout_idx) ||
-        !decode_hash(hash, tx_hash))
-    {
-        send_code(error::invalid_argument);
-        return;
-    }
-
-    // script is advisory, and should match prevout script.
-    if (!spk_hint.empty())
-    {
-        data_chunk bytes{};
-        if (!decode_base16(bytes, spk_hint))
-        {
-            send_code(error::invalid_argument);
-            return;
-        }
-
-        chain::script script{ std::move(bytes), false };
-        if (!script.is_valid())
-        {
-            send_code(error::invalid_argument);
-            return;
-        }
-    }
-
-    // TODO: implement outpoint status query.
-    chain::point prevout{ hash, index };
-    send_result(object_t
-    {
-        { "height", 24 },
-        { "spender_txhash", "<hash>" },
-        { "spender_height", 42 }
-
-    }, 16, BIND(complete, _1));
+    send_get_status(tx_hash, txout_idx, spk_hint);
 }
 
-// TODO: implement.
 void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
     rpc_interface::blockchain_outpoint_subscribe, const std::string& tx_hash,
     double txout_idx, const std::string& spk_hint) NOEXCEPT
@@ -143,45 +110,11 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
         return;
     }
 
-    uint32_t index{};
-    hash_digest hash{};
-    if (!to_integer(index, txout_idx) ||
-        !decode_hash(hash, tx_hash))
-    {
-        send_code(error::invalid_argument);
+    if (!send_get_status(tx_hash, txout_idx, spk_hint))
         return;
-    }
-
-    // script is advisory, but should match prevout script.
-    if (!spk_hint.empty())
-    {
-        data_chunk bytes{};
-        if (!decode_base16(bytes, spk_hint))
-        {
-            send_code(error::invalid_argument);
-            return;
-        }
-
-        chain::script script{ std::move(bytes), false };
-        if (!script.is_valid())
-        {
-            send_code(error::invalid_argument);
-            return;
-        }
-    }
 
     // TODO: collect the outpoint into a limited notification set.
     subscribed_outpoint_.store(false, std::memory_order_relaxed);
-
-    // TODO: implement outpoint status query.
-    chain::point prevout{ hash, index };
-    send_result(object_t
-    {
-        { "height", 24 },
-        { "spender_txhash", "<hash>" },
-        { "spender_height", 42 }
-
-    }, 16, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
@@ -213,6 +146,80 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
 
     send_result(previous, 16, BIND(complete, _1));
 }
+
+// utility.
+// ----------------------------------------------------------------------------
+
+bool protocol_electrum::send_get_status(const std::string& tx_hash,
+    double txout_idx, const std::string& spk_hint) NOEXCEPT
+{
+    uint32_t index{};
+    hash_digest hash{};
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
+    {
+        send_code(error::invalid_argument);
+        return false;
+    }
+
+    // This is parsed for correctness but is not used.
+    // Script is advisory, and should match output script.
+    if (!spk_hint.empty())
+    {
+        data_chunk bytes{};
+        if (!decode_base16(bytes, spk_hint))
+        {
+            send_code(error::invalid_argument);
+            return false;
+        }
+
+        chain::script script{ std::move(bytes), false };
+        if (!script.is_valid())
+        {
+            send_code(error::invalid_argument);
+            return false;
+        }
+    }
+
+    const auto& query = archive();
+    const auto tx = query.to_tx(hash);
+    const auto output = query.to_output(tx, index);
+    if (output.is_terminal())
+    {
+        send_code(error::not_found);
+        return false;
+    }
+
+    // TODO: database query.///////////////////////////////////////////////////
+    size_t height{ database::history::rooted_height };
+    if (const auto block = query.find_confirmed_block(tx); block.is_terminal())
+    {
+        if (!query.is_confirmed_all_prevouts(tx))
+            height = database::history::unrooted_height;
+    }
+    else if (!query.get_height(height, block))
+    {
+        send_code(error::server_error);
+        return false;
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
+    // TODO: query tx spenders sorted history./////////////////////////////////
+    const database::histories spenders{};
+    ///////////////////////////////////////////////////////////////////////////
+
+    auto result = object_t{ { "height", to_unsigned(height) } };
+    if (!spenders.empty())
+    {
+        const auto& spender = spenders.front().tx;
+        result["spender_txhash"] = encode_hash(spender.hash());
+        result["spender_height"] = to_unsigned(spender.height());
+    }
+
+    send_result(std::move(result), 128, BIND(complete, _1));
+    return true;
+}
+
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin
