@@ -30,7 +30,8 @@ struct bitcoind_setup_fixture
 {
     DELETE_COPY_MOVE(bitcoind_setup_fixture);
 
-    bitcoind_setup_fixture();
+    using initializer = std::function<bool(test::query_t&)>;
+    explicit bitcoind_setup_fixture(const initializer& setup);
     ~bitcoind_setup_fixture();
 
     // bitcoind does not implement any protocol version control or negotiation.
@@ -38,14 +39,26 @@ struct bitcoind_setup_fixture
 
 protected:
     configuration config_;
-    store_t store_;
-    query_t query_;
+    test::store_t store_;
+    test::query_t query_;
 
 private:
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
     boost::asio::ip::tcp::socket socket_{ io };
+};
+
+struct bitcoind_ten_block_setup_fixture
+    : bitcoind_setup_fixture
+{
+    inline bitcoind_ten_block_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        })
+    {
+    }
 };
 
 #endif

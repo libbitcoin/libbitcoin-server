@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 using namespace system;
 static const code not_found{ server::error::not_found };
@@ -79,6 +79,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__above_top__empty)
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__zero__first_ten_headers_in_order)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    using namespace test;
     const auto expected = encode_base16(header0_data) +
         encode_base16(header1_data) + encode_base16(header2_data) + encode_base16(header3_data) +
         encode_base16(header4_data) + encode_base16(header5_data) + encode_base16(header6_data) +
@@ -127,7 +128,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__five__expected_heade
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
     const auto& result = response.at("result").as_string();
-    BOOST_REQUIRE_EQUAL(result, encode_base16(header5_data));
+    BOOST_REQUIRE_EQUAL(result, encode_base16(test::header5_data));
 }
 
 // blockchain.block.header
@@ -151,7 +152,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_no_checkpoint__e
     // "hex" prior to v1.6
     const auto& result = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(result.at("hex").is_string());
-    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(header0_data));
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(test::header0_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__block1_no_checkpoint__expected_no_proof)
@@ -160,7 +161,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__block1_no_checkpoint__ex
 
     const auto response = get(R"({"id":44,"method":"blockchain.block.header","params":[1]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().at("header").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("header").as_string(), encode_base16(header1_data));
+    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("header").as_string(), encode_base16(test::header1_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_zero_checkpoint__expected_no_proof)
@@ -169,17 +170,17 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_zero_checkpoint_
 
     const auto response = get(R"({"id":45,"method":"blockchain.block.header","params":[0,0]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().at("header").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("header").as_string(), encode_base16(header0_data));
+    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("header").as_string(), encode_base16(test::header0_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_self_block1__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
-    const auto expected_header = encode_base16(header1_data);
+    const auto expected_header = encode_base16(test::header1_data);
     const auto expected_root = encode_hash(merkle_root(
     {
-        block0_hash,
-        block1_hash
+        test::block0_hash,
+        test::block1_hash
     }));
 
     const auto response = get(R"({"id":46,"method":"blockchain.block.header","params":[1,1]})" "\n");
@@ -195,13 +196,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_self_block1__expec
     const auto& branch = result.at("branch").as_array();
     BOOST_REQUIRE(branch.at(0).is_string());
     BOOST_REQUIRE_EQUAL(branch.size(), 1u);
-    BOOST_REQUIRE_EQUAL(branch.at(0).as_string(), encode_hash(block0_hash));
+    BOOST_REQUIRE_EQUAL(branch.at(0).as_string(), encode_hash(test::block0_hash));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_example__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
-
+    
+    using namespace test;
     const auto expected_root = encode_hash(merkle_root(
     {
         block0_hash,
@@ -322,7 +324,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_check
 
     // "hex" prior to 1.6
     REQUIRE_NO_THROW_TRUE(result.at("hex").is_string());
-    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(header0_data));
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(test::header0_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_checkpoint_v1_6__expected)
@@ -340,7 +342,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_check
     REQUIRE_NO_THROW_TRUE(result.at("headers").is_array());
     BOOST_REQUIRE(result.at("headers").as_array().at(0).is_string());
     BOOST_REQUIRE_EQUAL(result.at("headers").as_array().size(), 1u);
-    BOOST_REQUIRE_EQUAL(result.at("headers").as_array().at(0).as_string(), encode_base16(header0_data));
+    BOOST_REQUIRE_EQUAL(result.at("headers").as_array().at(0).as_string(), encode_base16(test::header0_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint_v1_6__expected)
@@ -358,9 +360,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint
     const auto& headers = result.at("headers").as_array();
     BOOST_REQUIRE(result.at("headers").as_array().at(0).is_string());
     BOOST_REQUIRE_EQUAL(headers.size(), 3u);
-    BOOST_REQUIRE_EQUAL(headers.at(0).as_string(), encode_base16(header1_data));
-    BOOST_REQUIRE_EQUAL(headers.at(1).as_string(), encode_base16(header2_data));
-    BOOST_REQUIRE_EQUAL(headers.at(2).as_string(), encode_base16(header3_data));
+    BOOST_REQUIRE_EQUAL(headers.at(0).as_string(), encode_base16(test::header1_data));
+    BOOST_REQUIRE_EQUAL(headers.at(1).as_string(), encode_base16(test::header2_data));
+    BOOST_REQUIRE_EQUAL(headers.at(2).as_string(), encode_base16(test::header3_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint_v1_4__expected)
@@ -376,6 +378,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__block1to3_no_checkpoint
     BOOST_REQUIRE_EQUAL(result.at("count").as_int64(), 3);
 
     // "hex" prior to v1.6
+    using namespace test;
     const auto expected = encode_base16(header1_data) + encode_base16(header2_data) + encode_base16(header3_data);
     BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), expected);
 }
@@ -410,6 +413,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__proof_no_offset__expect
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
+    using namespace test;
     const auto expected_root = encode_hash(merkle_root(
     {
         block0_hash,
@@ -456,6 +460,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__proof_offset__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
+    using namespace test;
     const auto expected_root = encode_hash(merkle_root(
     {
         block0_hash,
@@ -570,7 +575,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__default__expected)
     REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(result.at("hex").is_string());
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
-    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), system::encode_base16(header9_data));
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), system::encode_base16(test::header9_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__jsonrpc_2__expected)
@@ -582,7 +587,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__jsonrpc_2__expected
     REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(result.at("hex").is_string());
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
-    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), system::encode_base16(header9_data));
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), system::encode_base16(test::header9_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__id_preserved__expected)
@@ -604,7 +609,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__empty_params__expec
 
     const auto& result = response.at("result").as_object();
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
-    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), system::encode_base16(header9_data));
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), system::encode_base16(test::header9_data));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

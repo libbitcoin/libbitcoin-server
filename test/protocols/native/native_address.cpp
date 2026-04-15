@@ -19,6 +19,6 @@
 #include "../../test.hpp"
 #include "native.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(native_tests, native_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 BOOST_AUTO_TEST_SUITE_END()

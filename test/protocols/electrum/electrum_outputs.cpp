@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 using namespace system;
 static const code not_found{ server::error::not_found };
@@ -92,10 +92,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2kh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    query_.set(bogus_block10, database::context{ 0, 10, 0 }, false, false);
-    query_.push_confirmed(query_.to_header(bogus_block10.hash()), false);
+    query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false);
+    query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false);
 
-    const auto hash = bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
     const auto response = get((boost::format(request) % encode_hash(hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
@@ -109,10 +109,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    query_.set(bogus_block10, database::context{ 0, 10, 0 }, false, false);
-    query_.push_confirmed(query_.to_header(bogus_block10.hash()), false);
+    query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false);
+    query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false);
 
-    const auto hash = bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",1]})" "\n";
     const auto response = get((boost::format(request) % encode_hash(hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());

@@ -22,8 +22,13 @@
 #include <future>
 #include <boost/format.hpp>
 
-electrum_setup_fixture::electrum_setup_fixture()
-  : config_{ system::chain::selection::mainnet, web_pages, web_pages },
+electrum_setup_fixture::electrum_setup_fixture(const initializer& setup)
+  : config_
+    {
+      system::chain::selection::mainnet,
+      test::web_pages,
+      test::web_pages
+    },
     store_
     {
         [&]() NOEXCEPT -> const database::settings&
@@ -55,11 +60,11 @@ electrum_setup_fixture::electrum_setup_fixture()
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
-    auto ec = store_.create([](auto, auto) {});
 
     // Create and populate the store.
+    auto ec = store_.create([](auto, auto) {});
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_MESSAGE(setup_ten_block_store(query_), "electrum initialize");
+    BOOST_REQUIRE_MESSAGE(setup(query_), "electrum initialize");
 
     // Run the server.
     std::promise<code> running{};

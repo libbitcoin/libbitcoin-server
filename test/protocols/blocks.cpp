@@ -21,6 +21,8 @@
 
 // blockchain.info/rawblock/[hash]?format=hex
 
+namespace test {
+
 using namespace system;
 constexpr hash_digest block0_hash = base16_hash("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
 constexpr hash_digest block1_hash = base16_hash("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048");
@@ -66,16 +68,17 @@ constexpr block_data block7_data = base16_array("010000008d778fdc15a2d3fb76b7122
 constexpr block_data block8_data = base16_array("010000004494c8cf4154bdcc0720cd4a59d9c9b285e4b146d45f061d2b6c967100000000e3855ed886605b6d4a99d5fa2ef2e9b0b164e63df3c4136bebf2d0dac0f1f7a667c86649ffff001d1c4b56660101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d012cffffffff0100f2052a01000000434104cc8d85f5e7933cb18f13b97d165e1189c1fb3e9c98b0dd5446b2a1989883ff9e740a8a75da99cc59a21016caf7a7afd3e4e9e7952983e18d1ff70529d62e0ba1ac00000000");
 constexpr block_data block9_data = base16_array("01000000c60ddef1b7618ca2348a46e868afc26e3efc68226c78aa47f8488c4000000000c997a5e56e104102fa209c6a852dd90660a20b2d9c352423edce25857fcd37047fca6649ffff001d28404f530101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0134ffffffff0100f2052a0100000043410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b412a3ac00000000");
 
-const chain::block genesis = system::settings{ chain::selection::mainnet }.genesis_block;
-const chain::block block1{ block1_data, true };
-const chain::block block2{ block2_data, true };
-const chain::block block3{ block3_data, true };
-const chain::block block4{ block4_data, true };
-const chain::block block5{ block5_data, true };
-const chain::block block6{ block6_data, true };
-const chain::block block7{ block7_data, true };
-const chain::block block8{ block8_data, true };
-const chain::block block9{ block9_data, true };
+using namespace chain;
+const block genesis = system::settings{ chain::selection::mainnet }.genesis_block;
+const block block1{ block1_data, true };
+const block block2{ block2_data, true };
+const block block3{ block3_data, true };
+const block block4{ block4_data, true };
+const block block5{ block5_data, true };
+const block block6{ block6_data, true };
+const block block7{ block7_data, true };
+const block block8{ block8_data, true };
+const block block9{ block9_data, true };
 
 const server::settings::embedded_pages web_pages{};
 
@@ -102,8 +105,50 @@ bool setup_ten_block_store(query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(block9_hash), false);
 }
 
-using namespace chain;
-const chain::block bogus_block10
+bool setup_three_block_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2, database::context{ 0, 2, 0 }, false, false) &&
+        query.push_confirmed(query.to_header(block1_hash), false) &&
+        query.push_confirmed(query.to_header(block2_hash), false);
+}
+
+bool setup_three_block_witness_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.push_confirmed(query.to_header(block1a.hash()), false) &&
+        query.push_confirmed(query.to_header(block2a.hash()), false);
+}
+
+bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(test::tx4) &&
+        query.set(test::tx5) &&
+        query.set(block3a, database::context{ 0, 3, 0 }, false, false) &&
+        query.set(block1b, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2b, database::context{ 0, 2, 0 }, false, false) &&
+        query.push_confirmed(query.to_header(block1a.hash()), true) &&
+        query.push_confirmed(query.to_header(block2a.hash()), true) &&
+        query.push_confirmed(query.to_header(block3a.hash()), true);
+}
+
+bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(test::tx4) &&
+        query.set(test::tx5) &&
+        query.set(block3a, database::context{ 0, 3, 0 }, false, false);
+}
+
+const block bogus_block10
 {
     header
     {
@@ -213,3 +258,464 @@ const chain::block bogus_block10
         }
     }
 };
+const block bogus_block
+{
+    header
+    {
+        0x31323334,
+        null_hash,
+        hash_digest{ 0xbb },
+        0x41424344,
+        0x51525354,
+        0x61626364
+    },
+    transactions
+    {
+        transaction
+        {
+            0x01,
+            inputs
+            {
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0x02
+                },
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0x03
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x04,
+                    script{}
+                }
+            },
+            0x05
+        },
+        transaction
+        {
+            0x06,
+            inputs
+            {
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0x07
+                },
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0x08
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x09,
+                    script{}
+                }
+            },
+            0x0a
+        },
+        transaction
+        {
+            0x0b,
+            inputs
+            {
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0x0c
+                },
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0x0d
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x0e,
+                    script{}
+                }
+            },
+            0x0f
+        }
+    }
+};
+const block block1a
+{
+    header
+    {
+        0x31323334,         // version
+        block0_hash,        // previous_block_hash
+        hash_digest{ 0x1a },// merkle_root
+        0x41424344,         // timestamp
+        0x51525354,         // bits
+        0x61626364          // nonce
+    },
+    transactions
+    {
+        // This first transaction is *not* a coinbase.
+        transaction         // tx#1
+        {
+            0x2a,           // version
+            inputs
+            {
+                input
+                {
+                    point{ one_hash, 0x18 },            // missing prevout
+                    script{ { { opcode::op_return }, { opcode::pick } } },
+                    witness{ "[242424]" },
+                    0x2a    // sequence
+                },
+                input
+                {
+                    point{ one_hash, 0x2a },            // missing prevout
+                    script{ { { opcode::op_return }, { opcode::roll } } },
+                    witness{ "[313131]" },
+                    0x18    // sequence
+                },
+                input
+                {
+                    point{ hash_digest{ 0x02 }, 0x2b }, // missing prevout
+                    script{ { { opcode::op_return }, { opcode::roll } } },
+                    witness{ "[424242]" },
+                    0x19    // sequence
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x18,   // value
+                    script{ { { opcode::pick } } }
+                },
+                output
+                {
+                    0x2a,   // value
+                    script{ { { opcode::roll } } }
+                }
+            },
+            0x18            // locktime
+        }
+    }
+};
+const block block2a
+{
+    header
+    {
+        0x31323334,         // version
+        block1a.hash(),     // previous_block_hash
+        hash_digest{ 0x2a },// merkle_root
+        0x41424344,         // timestamp
+        0x51525354,         // bits
+        0x61626364          // nonce
+    },
+    transactions
+    {
+        // This first transaction is *not* a coinbase.
+        transaction         // tx#2
+        {
+            0xa2,           // version
+            inputs
+            {
+                input
+                {
+                    // existing prevout
+                    point{ block1a.transactions_ptr()->front()->hash(false), 0x00 },
+                    script{ { { opcode::checkmultisig }, { opcode::pick } } },
+                    witness{ "[242424]" },
+                    0xa2    // sequence
+                },
+                input
+                {
+                    // existing prevout
+                    point{ block1a.transactions_ptr()->front()->hash(false), 0x01 },
+                    script{ { { opcode::checkmultisig }, { opcode::roll } } },
+                    witness{ "[313131]" },
+                    0x81    // sequence
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x81,   // value
+                    script{ { { opcode::pick } } }
+                }
+            },
+            0x81            // locktime
+        },
+        transaction         // tx#3
+        {
+            0xa2,           // version
+            inputs
+            {
+                input
+                {
+                    point{ one_hash, 0x20 },    // missing prevout
+                    script{ { { opcode::checkmultisig }, { opcode::pick } } },
+                    witness{ "[242424]" },
+                    0xa2    // sequence
+                },
+                input
+                {
+                    point{ one_hash, 0x21 },    // missing prevout
+                    script{ { { opcode::checkmultisig }, { opcode::roll } } },
+                    witness{ "[313131]" },
+                    0x81    // sequence
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x81,   // value
+                    script{ { { opcode::pick } } }
+                }
+            },
+            0x81            // locktime
+        }
+    }
+};
+const block block3a
+{
+    header
+    {
+        0x31323334,         // version
+        block2a.hash(),     // previous_block_hash
+        hash_digest{ 0x3a },// merkle_root
+        0x41424344,         // timestamp
+        0x51525354,         // bits
+        0x61626364          // nonce
+    },
+    transactions
+    {
+        // This first transaction is *not* a coinbase.
+        transaction
+        {
+            0xa3,           // version
+            inputs
+            {
+                input
+                {
+                    // existing prevout
+                    point{ block1a.transactions_ptr()->front()->hash(false), 0x01 },
+                    script{ { { opcode::checkmultisig }, { opcode::size } } },
+                    witness{ "[949494]" },
+                    0xa3    // sequence
+                },
+                input
+                {
+                    // existing prevout
+                    point{ block1a.transactions_ptr()->front()->hash(false), 0x00 },
+                    script{ { { opcode::checkmultisig }, { opcode::size } } },
+                    witness{ "[919191]" },
+                    0x83    // sequence
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x83,   // value
+                    script{ { { opcode::pick } } }
+                }
+            },
+            0x83            // locktime
+        }
+    }
+};
+const transaction tx4
+{
+    0xa5,           // version
+    inputs
+    {
+        input
+        {
+            point{ block1a.transactions_ptr()->front()->hash(false), 0x00 },
+            script{ { { opcode::checkmultisig }, { opcode::pick } } },
+            witness{ "[252525]" },
+            0xa5    // sequence
+        },
+        input
+        {
+            point{ block1a.transactions_ptr()->front()->hash(false), 0x01 },
+            script{ { { opcode::checkmultisig }, { opcode::roll } } },
+            witness{ "[353535]" },
+            0x85    // sequence
+        }
+    },
+    outputs
+    {
+        output
+        {
+            0x08,   // value
+            script{ { { opcode::pick } } }
+        }
+    },
+    0x85            // locktime
+};
+const transaction tx5
+{
+    0xa5,           // version
+    inputs
+    {
+        input
+        {
+            point{ block1a.transactions_ptr()->front()->hash(false), 0x00 },
+            script{ { { opcode::checkmultisig }, { opcode::pick } } },
+            witness{ "[252525]" },
+            0xa5    // sequence
+        }
+    },
+    outputs
+    {
+        output
+        {
+            0x85,   // value
+            script{ { { opcode::pick } } }
+        }
+    },
+    0x85            // locktime
+};
+const block block1b
+{
+    header
+    {
+        0x31323334,         // version
+        block0_hash,        // previous_block_hash
+        hash_digest{ 0x1b },// merkle_root
+        0x41424344,         // timestamp
+        0x51525354,         // bits
+        0x61626364          // nonce
+    },
+    transactions
+    {
+        // This first transaction is a coinbase.
+        transaction     // tx#1
+        {
+            0xb1,
+            inputs
+            {
+                input
+                {
+                    point{},
+                    script{ { { opcode::checkmultisig }, { opcode::size } } },
+                    witness{},
+                    0xb1
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0xb1,
+                    script{ { { opcode::pick } } }
+                },
+                output
+                {
+                    0xb1,
+                    script{ { { opcode::pick } } }
+                }
+            },
+            0xb1
+        }
+    }
+};
+const block block2b
+{
+    header
+    {
+        0x31323334,         // version
+        block1b.hash(),     // previous_block_hash
+        hash_digest{ 0x2b },// merkle_root
+        0x41424344,         // timestamp
+        0x51525354,         // bits
+        0x61626364          // nonce
+    },
+    transactions
+    {
+        // This first transaction is a coinbase.
+        transaction     // tx#2
+        {
+            0xb2,
+            inputs
+            {
+                input
+                {
+                    point{ block1b.transactions_ptr()->front()->hash(false), 0x00 },
+                    script{ { { opcode::checkmultisig }, { opcode::size } } },
+                    witness{},
+                    0xb2
+                },
+                input
+                {
+                    point{ block1b.transactions_ptr()->front()->hash(false), 0x01 },
+                    script{ { { opcode::checkmultisig }, { opcode::size } } },
+                    witness{},
+                    0xb2
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0xb2,
+                    script{ { { opcode::pick } } }
+                }
+            },
+            0xb2
+        }
+    }
+};
+const transaction tx2b
+{
+    transaction
+    {
+        0xb1,
+        inputs
+        {
+            input
+            {
+                // Spends block1b coinbase.
+                point{ block1b.transactions_ptr()->front()->hash(false), 0x00 },
+                script{ { { opcode::checkmultisig }, { opcode::size } } },
+                witness{},
+                0xb1
+            }
+        },
+        outputs
+        {
+            output
+            {
+                0xb1,
+                script{ { { opcode::pick } } }
+            }
+        },
+        0xb1
+    }
+};
+
+} // namespace test

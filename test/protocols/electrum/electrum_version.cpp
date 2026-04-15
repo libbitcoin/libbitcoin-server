@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 // server.version
 
