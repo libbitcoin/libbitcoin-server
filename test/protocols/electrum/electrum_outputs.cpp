@@ -92,8 +92,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2kh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false);
-    query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false);
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false));
 
     const auto hash = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
@@ -109,8 +109,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false);
-    query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false);
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false));
 
     const auto hash = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",1]})" "\n";
