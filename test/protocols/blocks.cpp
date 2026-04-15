@@ -68,16 +68,17 @@ constexpr block_data block7_data = base16_array("010000008d778fdc15a2d3fb76b7122
 constexpr block_data block8_data = base16_array("010000004494c8cf4154bdcc0720cd4a59d9c9b285e4b146d45f061d2b6c967100000000e3855ed886605b6d4a99d5fa2ef2e9b0b164e63df3c4136bebf2d0dac0f1f7a667c86649ffff001d1c4b56660101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d012cffffffff0100f2052a01000000434104cc8d85f5e7933cb18f13b97d165e1189c1fb3e9c98b0dd5446b2a1989883ff9e740a8a75da99cc59a21016caf7a7afd3e4e9e7952983e18d1ff70529d62e0ba1ac00000000");
 constexpr block_data block9_data = base16_array("01000000c60ddef1b7618ca2348a46e868afc26e3efc68226c78aa47f8488c4000000000c997a5e56e104102fa209c6a852dd90660a20b2d9c352423edce25857fcd37047fca6649ffff001d28404f530101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0134ffffffff0100f2052a0100000043410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b412a3ac00000000");
 
-const chain::block genesis = system::settings{ chain::selection::mainnet }.genesis_block;
-const chain::block block1{ block1_data, true };
-const chain::block block2{ block2_data, true };
-const chain::block block3{ block3_data, true };
-const chain::block block4{ block4_data, true };
-const chain::block block5{ block5_data, true };
-const chain::block block6{ block6_data, true };
-const chain::block block7{ block7_data, true };
-const chain::block block8{ block8_data, true };
-const chain::block block9{ block9_data, true };
+using namespace chain;
+const block genesis = system::settings{ chain::selection::mainnet }.genesis_block;
+const block block1{ block1_data, true };
+const block block2{ block2_data, true };
+const block block3{ block3_data, true };
+const block block4{ block4_data, true };
+const block block5{ block5_data, true };
+const block block6{ block6_data, true };
+const block block7{ block7_data, true };
+const block block8{ block8_data, true };
+const block block9{ block9_data, true };
 
 const server::settings::embedded_pages web_pages{};
 
@@ -104,8 +105,7 @@ bool setup_ten_block_store(query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(block9_hash), false);
 }
 
-using namespace chain;
-const chain::block bogus_block10
+const block bogus_block10
 {
     header
     {
@@ -320,7 +320,7 @@ const block bogus_block
         }
     }
 };
-const chain::block block1a
+const block block1a
 {
     header
     {
@@ -378,7 +378,7 @@ const chain::block block1a
         }
     }
 };
-const chain::block block2a
+const block block2a
 {
     header
     {
@@ -456,7 +456,7 @@ const chain::block block2a
         }
     }
 };
-const chain::block block3a
+const block block3a
 {
     header
     {
@@ -557,7 +557,7 @@ const transaction tx5
     },
     0x85            // locktime
 };
-const chain::block block1b
+const block block1b
 {
     header
     {
@@ -601,7 +601,7 @@ const chain::block block1b
         }
     }
 };
-const chain::block block2b
+const block block2b
 {
     header
     {
