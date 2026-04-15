@@ -181,41 +181,30 @@ bool protocol_electrum::send_get_status(const std::string& tx_hash,
     }
 
     const auto& query = archive();
-    const auto tx = query.to_tx(hash);
-    const auto output = query.to_output(tx, index);
-    if (output.is_terminal())
+    const auto out = query.get_tx_history(hash);
+    if (!out.tx.is_valid())
     {
         send_code(error::not_found);
         return false;
     }
 
-    // TODO: database query.///////////////////////////////////////////////////
-    size_t height{ database::history::rooted_height };
-    if (const auto block = query.find_confirmed_block(tx); block.is_terminal())
+    if (const auto ins = query.get_spenders_history(hash, index); ins.empty())
     {
-        if (!query.is_confirmed_all_prevouts(tx))
-            height = database::history::unrooted_height;
+        send_result(object_t
+        {
+            { "height", to_unsigned(out.tx.height()) }
+        } , 64, BIND(complete, _1));
     }
-    else if (!query.get_height(height, block))
+    else
     {
-        send_code(error::server_error);
-        return false;
-    }
-    ///////////////////////////////////////////////////////////////////////////
-
-    // TODO: query tx spenders sorted history./////////////////////////////////
-    const database::histories spenders{};
-    ///////////////////////////////////////////////////////////////////////////
-
-    auto result = object_t{ { "height", to_unsigned(height) } };
-    if (!spenders.empty())
-    {
-        const auto& spender = spenders.front().tx;
-        result["spender_txhash"] = encode_hash(spender.hash());
-        result["spender_height"] = to_unsigned(spender.height());
+        send_result(object_t
+        {
+            { "height", to_unsigned(out.tx.height()) },
+            { "spender_txhash", encode_hash(ins.front().tx.hash()) },
+            { "spender_height", to_unsigned(ins.front().tx.height()) }
+        }, 128, BIND(complete, _1));
     }
 
-    send_result(std::move(result), 128, BIND(complete, _1));
     return true;
 }
 
