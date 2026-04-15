@@ -97,6 +97,10 @@ extern const system::chain::block block2b;
 extern const system::chain::transaction tx2b;
 
 bool setup_ten_block_store(query_t& query) NOEXCEPT;
+bool setup_three_block_store(query_t& query) NOEXCEPT;
+bool setup_three_block_witness_store(query_t& query) NOEXCEPT;
+bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT;
+bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT;
 
 } // namespace test
 

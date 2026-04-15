@@ -19,6 +19,6 @@
 #include "../../test.hpp"
 #include "bitcoind.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(bitcoind_tests, bitcoind_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(bitcoind_tests, bitcoind_ten_block_setup_fixture)
 
 BOOST_AUTO_TEST_SUITE_END()

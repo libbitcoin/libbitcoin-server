@@ -30,7 +30,8 @@ struct native_setup_fixture
 {
     DELETE_COPY_MOVE(native_setup_fixture);
 
-    native_setup_fixture();
+    using initializer = std::function<bool(test::query_t&)>;
+    explicit native_setup_fixture(const initializer& setup);
     ~native_setup_fixture();
 
     // native does not implement a handshake (url versioning).
@@ -46,6 +47,18 @@ private:
     server::server_node server_;
     boost::asio::io_context io{};
     boost::asio::ip::tcp::socket socket_{ io };
+};
+
+struct native_ten_block_setup_fixture
+    : native_setup_fixture
+{
+    inline native_ten_block_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        })
+    {
+    }
 };
 
 #endif

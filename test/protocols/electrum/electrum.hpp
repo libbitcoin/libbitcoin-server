@@ -28,7 +28,8 @@ struct electrum_setup_fixture
 {
     DELETE_COPY_MOVE(electrum_setup_fixture);
 
-    electrum_setup_fixture();
+    using initializer = std::function<bool(test::query_t&)>;
+    explicit electrum_setup_fixture(const initializer& setup);
     ~electrum_setup_fixture();
 
     boost::json::value get(const std::string& request);
@@ -45,6 +46,30 @@ private:
     server::server_node server_;
     boost::asio::io_context io{};
     boost::asio::ip::tcp::socket socket_{ io };
+};
+
+struct electrum_ten_block_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_ten_block_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        })
+    {
+    }
+};
+
+struct electrum_three_block_confirmed_address_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_three_block_confirmed_address_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_confirmed_address_store(query);
+        })
+    {
+    }
 };
 
 #endif

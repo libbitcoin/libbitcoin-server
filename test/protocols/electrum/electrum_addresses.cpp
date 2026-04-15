@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_three_block_confirmed_address_setup_fixture)
 
 // blockchain.address.get_balance
 // blockchain.address.get_history

@@ -21,8 +21,13 @@
 #include "native.hpp"
 #include <future>
 
-native_setup_fixture::native_setup_fixture()
-  : config_{ system::chain::selection::mainnet, test::web_pages, test::web_pages },
+native_setup_fixture::native_setup_fixture(const initializer& setup)
+  : config_
+    {
+        system::chain::selection::mainnet,
+        test::web_pages,
+        test::web_pages
+    },
     store_
     {
         [&]() NOEXCEPT -> const database::settings&
@@ -48,11 +53,11 @@ native_setup_fixture::native_setup_fixture()
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
-    auto ec = store_.create([](auto, auto) {});
 
     // Create and populate the store.
+    auto ec = store_.create([](auto, auto) {});
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_MESSAGE(test::setup_ten_block_store(query_), "native initialize");
+    BOOST_REQUIRE_MESSAGE(setup(query_), "native initialize");
 
     // Run the server.
     std::promise<code> running{};

@@ -105,6 +105,49 @@ bool setup_ten_block_store(query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(block9_hash), false);
 }
 
+bool setup_three_block_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2, database::context{ 0, 2, 0 }, false, false) &&
+        query.push_confirmed(query.to_header(block1_hash), false) &&
+        query.push_confirmed(query.to_header(block2_hash), false);
+}
+
+bool setup_three_block_witness_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.push_confirmed(query.to_header(block1a.hash()), false) &&
+        query.push_confirmed(query.to_header(block2a.hash()), false);
+}
+
+bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(test::tx4) &&
+        query.set(test::tx5) &&
+        query.set(block3a, database::context{ 0, 3, 0 }, false, false) &&
+        query.set(block1b, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2b, database::context{ 0, 2, 0 }, false, false) &&
+        query.push_confirmed(query.to_header(block1a.hash()), true) &&
+        query.push_confirmed(query.to_header(block2a.hash()), true) &&
+        query.push_confirmed(query.to_header(block3a.hash()), true);
+}
+
+bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(test::tx4) &&
+        query.set(test::tx5) &&
+        query.set(block3a, database::context{ 0, 3, 0 }, false, false);
+}
+
 const block bogus_block10
 {
     header
