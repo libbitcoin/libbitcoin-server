@@ -23,7 +23,7 @@
 #include <boost/format.hpp>
 
 electrum_setup_fixture::electrum_setup_fixture()
-  : config_{ system::chain::selection::mainnet, web_pages, web_pages },
+  : config_{ system::chain::selection::mainnet, test::web_pages, test::web_pages },
     store_
     {
         [&]() NOEXCEPT -> const database::settings&
@@ -59,7 +59,7 @@ electrum_setup_fixture::electrum_setup_fixture()
 
     // Create and populate the store.
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_MESSAGE(setup_ten_block_store(query_), "electrum initialize");
+    BOOST_REQUIRE_MESSAGE(test::setup_ten_block_store(query_), "electrum initialize");
 
     // Run the server.
     std::promise<code> running{};

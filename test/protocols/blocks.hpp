@@ -21,6 +21,8 @@
 
 #include "../test.hpp"
 
+namespace test {
+
 using block_data = system::data_array<215>;
 using header_data = system::data_array<80>;
 using store_t = database::store<database::map>;
@@ -84,6 +86,18 @@ extern const system::chain::block block8;
 extern const system::chain::block block9;
 extern const system::chain::block bogus_block10;
 
+extern const system::chain::block bogus_block;
+extern const system::chain::block block1a;
+extern const system::chain::block block2a;
+extern const system::chain::block block3a;
+extern const system::chain::transaction tx4;
+extern const system::chain::transaction tx5;
+extern const system::chain::block block1b;
+extern const system::chain::block block2b;
+extern const system::chain::transaction tx2b;
+
 bool setup_ten_block_store(query_t& query) NOEXCEPT;
+
+} // namespace test
 
 #endif

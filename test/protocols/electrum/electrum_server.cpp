@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
     const auto min = version_to_string(protocol_electrum_version::minimum);
     const auto max = version_to_string(protocol_electrum_version::maximum);
     const auto server_name = config_.server.electrum.server_name;
-    const auto genesis_hash = encode_hash(genesis.hash());
+    const auto genesis_hash = encode_hash(test::genesis.hash());
     BOOST_REQUIRE_EQUAL(result.at("genesis_hash").as_string(), genesis_hash);
     BOOST_REQUIRE_EQUAL(result.at("hash_function").as_string(), "sha256");
     BOOST_REQUIRE_EQUAL(result.at("server_version").as_string(), server_name);

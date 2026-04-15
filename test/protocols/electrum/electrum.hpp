@@ -37,8 +37,8 @@ struct electrum_setup_fixture
 
 protected:
     configuration config_;
-    store_t store_;
-    query_t query_;
+    test::store_t store_;
+    test::query_t query_;
 
 private:
     network::logger log_;
