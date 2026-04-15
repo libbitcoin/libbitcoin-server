@@ -121,19 +121,27 @@ void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
 // utilities
 // ----------------------------------------------------------------------------
 // A p2pk output does not produce a bitcoin payment address, as there is no
-// form of a p2pk bitcoin payment address. However a
+// form of a p2pk bitcoin payment address.
 
+// A failed parse or default initialized script returns null_hash.
 hash_digest protocol_electrum::extract_scripthash(
     const std::string& address) const NOEXCEPT
 {
-    // A failed parse or default initialized script hashes to null_hash.
-    return payment_address(address).output_script(p2kh_, p2sh_).hash();
+    const auto payment = payment_address(address);
+    if (!payment)
+        return {};
+
+    const auto script = payment.output_script(p2kh_, p2sh_);
+    if (!script.is_valid())
+        return {};
+
+    return script.hash();
 }
 
+// A failure to parse as p2sh or p2kh returns invalid object.
 payment_address protocol_electrum::extract_address(
     const chain::script& script) const NOEXCEPT
 {
-    // A failure to parse as p2sh or p2kh returns invalid object.
     return payment_address::extract_output(script, p2kh_, p2sh_);
 }
 
