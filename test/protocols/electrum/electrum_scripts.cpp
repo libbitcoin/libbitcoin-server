@@ -34,7 +34,7 @@ BOOST_FIXTURE_TEST_SUITE(electrum_disabled_address_tests, electrum_disabled_addr
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__no_address_index__not_implemented)
 {
     BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":901,"method":"blockchain.scriptpubkey.get_balance","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__no_address_i
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__no_address_index__not_implemented)
 {
     BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.get_history","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__no_address_i
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__no_address_index__not_implemented)
 {
     BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.get_mempool","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__no_address_i
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__no_address_index__not_implemented)
 {
     BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.listunspent","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -84,16 +84,25 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__missing_arguments__dropped)
 {
     BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":901,"method":"blockchain.scriptpubkey.get_balance","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__insufficient_version__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":902,"method":"blockchain.scriptpubkey.get_balance","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__empty_v1_7__wrong_version)
+////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BOOST_REQUIRE(handshake(electrum::version::v1_8));
 ////
 ////    const auto response = get(R"({"id":902,"method":"blockchain.scriptpubkey.get_balance","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -102,7 +111,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__missing_argu
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":903,"method":"blockchain.scriptpubkey.get_balance","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -111,7 +120,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__invalid_addr
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__not_found_address__zero)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":904,"method":"blockchain.scriptpubkey.get_balance","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -126,7 +135,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__not_found_ad
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed.
     BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
@@ -152,16 +161,25 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__confirmed_an
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__missing_arguments__dropped)
 {
     BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scriptpubkey.get_history","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__insufficient_version__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":902,"method":"blockchain.scriptpubkey.get_history","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__empty_v1_7__wrong_version)
+////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BOOST_REQUIRE(handshake(electrum::version::v1_8));
 ////
 ////    const auto response = get(R"({"id":1003,"method":"blockchain.scriptpubkey.get_history","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -170,7 +188,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__missing_argu
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1004,"method":"blockchain.scriptpubkey.get_history","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -179,7 +197,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__invalid_addr
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__not_found_address__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1005,"method":"blockchain.scriptpubkey.get_history","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -188,7 +206,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__not_found_ad
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
     BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
@@ -207,6 +225,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
+    BOOST_CHECK(!tx1.contains("fee"));
     BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);
     BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
@@ -214,6 +233,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
+    BOOST_CHECK_EQUAL(tx2.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
     BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);  // rooted
     BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
 
@@ -221,6 +241,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     const auto& tx3 = history.at(2).as_object();
     REQUIRE_NO_THROW_TRUE(tx3.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx3.at("tx_hash").is_string());
+    BOOST_CHECK_EQUAL(tx2.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
     BOOST_REQUIRE_EQUAL(tx3.at("height").as_int64(), -1); // not rooted
     BOOST_REQUIRE_EQUAL(tx3.at("tx_hash").as_string(), encode_hash(hash3));
 }
@@ -230,16 +251,25 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__missing_arguments__dropped)
 {
     BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scriptpubkey.get_mempool","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__insufficient_version__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":902,"method":"blockchain.scriptpubkey.get_mempool","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__empty_v1_7__wrong_version)
+////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BOOST_REQUIRE(handshake(electrum::version::v1_8));
 ////
 ////    const auto response = get(R"({"id":1003,"method":"blockchain.scriptpubkey.get_mempool","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -248,7 +278,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__missing_argu
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1004,"method":"blockchain.scriptpubkey.get_mempool","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -257,7 +287,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__invalid_addr
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__not_found_address__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1005,"method":"blockchain.scriptpubkey.get_mempool","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -266,7 +296,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__not_found_ad
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
     BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
@@ -285,13 +315,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__confirmed_an
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
-    BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 0);  // rooted
+    BOOST_CHECK_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
     BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
     const auto hash2 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
+    BOOST_CHECK_EQUAL(tx2.at("fee").as_int64(), floored_subtract(0x10 + 0x11, 0x0a));
     BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), -1); // not rooted
     BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
 }
@@ -301,16 +332,25 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__confirmed_an
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__missing_arguments__dropped)
 {
     BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scriptpubkey.listunspent","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__insufficient_version__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":902,"method":"blockchain.scriptpubkey.listunspent","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
+
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__empty_v1_7__wrong_version)
+////BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BOOST_REQUIRE(handshake(electrum::version::v1_8));
 ////
 ////    const auto response = get(R"({"id":1003,"method":"blockchain.scriptpubkey.listunspent","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -319,7 +359,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__missing_arg
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1004,"method":"blockchain.scriptpubkey.listunspent","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
@@ -328,7 +368,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__invalid_add
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__not_found_address__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1005,"method":"blockchain.scriptpubkey.listunspent","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % bogus_script).str());
@@ -337,7 +377,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__not_found_a
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
     BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));

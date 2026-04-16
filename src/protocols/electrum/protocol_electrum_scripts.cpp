@@ -41,7 +41,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_balance(
     if (stopped(ec))
         return;
 
-    if (at_least(electrum::version::v1_7))
+    if (!at_least(electrum::version::v1_7))
     {
         send_code(error::wrong_version);
         return;
@@ -71,7 +71,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_history(
     if (stopped(ec))
         return;
 
-    if (at_least(electrum::version::v1_7))
+    if (!at_least(electrum::version::v1_7))
     {
         send_code(error::wrong_version);
         return;
@@ -101,7 +101,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_mempool(
     if (stopped(ec))
         return;
 
-    if (at_least(electrum::version::v1_7))
+    if (!at_least(electrum::version::v1_7))
     {
         send_code(error::wrong_version);
         return;
@@ -131,7 +131,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_list_unspent(
     if (stopped(ec))
         return;
 
-    if (at_least(electrum::version::v1_7))
+    if (!at_least(electrum::version::v1_7))
     {
         send_code(error::wrong_version);
         return;
@@ -161,7 +161,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_subscribe(
     if (stopped(ec))
         return;
 
-    if (at_least(electrum::version::v1_7))
+    if (!at_least(electrum::version::v1_7))
     {
         send_code(error::wrong_version);
         return;
@@ -195,7 +195,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_unsubscribe(
     if (stopped(ec))
         return;
 
-    if (at_least(electrum::version::v1_7))
+    if (!at_least(electrum::version::v1_7))
     {
         send_code(error::wrong_version);
         return;

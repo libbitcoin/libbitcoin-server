@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__default__expected)
     BOOST_REQUIRE_EQUAL(result.size(), 2u);
     BOOST_REQUIRE(result.at(0).is_string());
     BOOST_REQUIRE_EQUAL(result.at(0).as_string(), "server_name");
-    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.6");
+    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.7");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__minimum__expected)
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__minimum__expected)
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__maximum__expected)
 {
-    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.6"]})" "\n");
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.7"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 42);
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
@@ -64,14 +64,14 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__maximum__expected)
     BOOST_REQUIRE_EQUAL(result.size(), 2u);
     BOOST_REQUIRE(result.at(0).is_string());
     BOOST_REQUIRE_EQUAL(result.at(0).as_string(), "server_name");
-    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.6");
+    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.7");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__valid_range__expected)
 {
-    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.0","1.6"]]})" "\n");
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.0","1.7"]]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.6");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.7");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__invalid__invalid_argument)
