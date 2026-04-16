@@ -29,7 +29,8 @@ struct electrum_setup_fixture
     DELETE_COPY_MOVE(electrum_setup_fixture);
 
     using initializer = std::function<bool(test::query_t&)>;
-    explicit electrum_setup_fixture(const initializer& setup);
+    explicit electrum_setup_fixture(const initializer& setup,
+        bool address_index=true);
     ~electrum_setup_fixture();
 
     boost::json::value get(const std::string& request);
@@ -68,6 +69,18 @@ struct electrum_three_block_confirmed_address_setup_fixture
         {
             return test::setup_three_block_confirmed_address_store(query);
         })
+    {
+    }
+};
+
+struct electrum_disabled_address_index_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_disabled_address_index_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_confirmed_address_store(query);
+        }, false)
     {
     }
 };

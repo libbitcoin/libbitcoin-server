@@ -38,7 +38,7 @@ public:
     using rpc_interface = interface::electrum;
 
     static constexpr electrum::version minimum = electrum::version::v1_0;
-    static constexpr electrum::version maximum = electrum::version::v1_6;
+    static constexpr electrum::version maximum = electrum::version::v1_7;
 
     inline protocol_electrum_version(const auto& session,
         const network::channel::ptr& channel,

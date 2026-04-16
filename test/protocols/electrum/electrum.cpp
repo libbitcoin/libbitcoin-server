@@ -22,7 +22,8 @@
 #include <future>
 #include <boost/format.hpp>
 
-electrum_setup_fixture::electrum_setup_fixture(const initializer& setup)
+electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
+    bool address_index)
   : config_
     {
       system::chain::selection::mainnet,
@@ -33,6 +34,9 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup)
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            if (!address_index)
+                config_.database.address_buckets = 0;
+
             config_.database.path = TEST_DIRECTORY;
             return config_.database;
         }()
