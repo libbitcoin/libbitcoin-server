@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__confirmed_and_unc
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
-    BOOST_CHECK(!tx1.contains("fee"));
+    BOOST_REQUIRE(!tx1.contains("fee"));
     BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);
     BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__confirmed_and_unc
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
-    BOOST_CHECK_EQUAL(tx2.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
+    BOOST_REQUIRE_EQUAL(tx2.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
     BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);  // rooted
     BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
 
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__confirmed_and_unc
     const auto& tx3 = history.at(2).as_object();
     REQUIRE_NO_THROW_TRUE(tx3.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx3.at("tx_hash").is_string());
-    BOOST_CHECK_EQUAL(tx3.at("fee").as_int64(), floored_subtract(0x10 + 0x11, 0x0a));
+    BOOST_REQUIRE_EQUAL(tx3.at("fee").as_int64(), floored_subtract(0x10 + 0x11, 0x0a));
     BOOST_REQUIRE_EQUAL(tx3.at("height").as_int64(), -1); // not rooted
     BOOST_REQUIRE_EQUAL(tx3.at("tx_hash").as_string(), encode_hash(hash3));
 }
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__confirmed_and_unc
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
-    BOOST_CHECK_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
+    BOOST_REQUIRE_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
     BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 0);  // rooted
     BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__confirmed_and_unc
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
-    BOOST_CHECK_EQUAL(tx2.at("fee").as_int64(), floored_subtract(0x10 + 0x11, 0x0a));
+    BOOST_REQUIRE_EQUAL(tx2.at("fee").as_int64(), floored_subtract(0x10 + 0x11, 0x0a));
     BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), -1); // not rooted
     BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
 }
