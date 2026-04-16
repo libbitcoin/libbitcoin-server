@@ -87,7 +87,7 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scripthash.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scripts.cpp">
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scriptpubkey.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">

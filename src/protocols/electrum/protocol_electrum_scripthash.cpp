@@ -318,7 +318,7 @@ void protocol_electrum::complete_list_unspent(const code& ec,
 
 void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
     rpc_interface::blockchain_scripthash_subscribe,
-    const std::string& ) NOEXCEPT
+    const std::string& scripthash) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -329,7 +329,21 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
         return;
     }
 
-    // TODO: collect the scripthash into a limited notification set.
+    hash_digest hash{};
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    send_scripthash_subscribe(hash);
+}
+
+void protocol_electrum::send_scripthash_subscribe(
+    const hash_digest& ) NOEXCEPT
+{
+
+    // TODO: collect hash into a limited notification set.
     subscribed_scripthash_.store(true, std::memory_order_relaxed);
 
     // TODO: compute the status hash in a store query (no mempool).
@@ -338,7 +352,7 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
 
 void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     rpc_interface::blockchain_scripthash_unsubscribe,
-    const std::string& ) NOEXCEPT
+    const std::string& scripthash) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -349,7 +363,20 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
         return;
     }
 
-    // TODO: remove scripthash subscription from the notification set.
+    hash_digest hash{};
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    send_scripthash_unsubscribe(hash);
+}
+
+void protocol_electrum::send_scripthash_unsubscribe(
+    const hash_digest& ) NOEXCEPT
+{
+    // TODO: remove hash subscription from the notification set.
     const auto previous = subscribed_scriptpubkey_.load(
         std::memory_order_relaxed);
 

@@ -94,7 +94,16 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
         return;
     }
 
-    send_get_status(tx_hash, txout_idx, spk_hint);
+    uint32_t index{};
+    hash_digest hash{};
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    chain::point prevout{ hash, index };
+    send_get_status(prevout, spk_hint);
 }
 
 void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
@@ -110,10 +119,19 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
         return;
     }
 
-    if (!send_get_status(tx_hash, txout_idx, spk_hint))
+    uint32_t index{};
+    hash_digest hash{};
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    chain::point prevout{ hash, index };
+    if (!send_get_status(prevout, spk_hint))
         return;
 
-    // TODO: collect the outpoint into a limited notification set.
+    // TODO: collect prevout into a limited notification set.
     subscribed_outpoint_.store(false, std::memory_order_relaxed);
 }
 
@@ -139,7 +157,7 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
         return;
     }
 
-    // TODO: remove outpoint subscription from notification set.
+    // TODO: remove prevout subscription from notification set.
     chain::point prevout{ hash, index };
     const auto previous = subscribed_scriptpubkey_.load(
         std::memory_order_relaxed);
@@ -150,17 +168,9 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
 // utility.
 // ----------------------------------------------------------------------------
 
-bool protocol_electrum::send_get_status(const std::string& tx_hash,
-    double txout_idx, const std::string& spk_hint) NOEXCEPT
+bool protocol_electrum::send_get_status(const chain::point& prevout,
+    const std::string& spk_hint) NOEXCEPT
 {
-    uint32_t index{};
-    hash_digest hash{};
-    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
-    {
-        send_code(error::invalid_argument);
-        return false;
-    }
-
     // This is parsed for correctness but is not used.
     // Script is advisory, and should match output script.
     if (!spk_hint.empty())
@@ -181,14 +191,14 @@ bool protocol_electrum::send_get_status(const std::string& tx_hash,
     }
 
     const auto& query = archive();
-    const auto out = query.get_tx_history(hash);
+    const auto out = query.get_tx_history(prevout.hash());
     if (!out.tx.is_valid())
     {
         send_code(error::not_found);
         return false;
     }
 
-    if (const auto ins = query.get_spenders_history(hash, index); ins.empty())
+    if (const auto ins = query.get_spenders_history(prevout); ins.empty())
     {
         send_result(object_t
         {

@@ -181,11 +181,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_subscribe(
         return;
     }
 
-    // TODO: collect the address into a limited notification set.
-    subscribed_address_.store(true, std::memory_order_relaxed);
-
-    // TODO: compute the status hash in a store query (no mempool).
-    send_result(object_t{}, 16, BIND(complete, _1));
+    send_scripthash_subscribe(script.hash());
 }
 
 void protocol_electrum::handle_blockchain_scriptpubkey_unsubscribe(
@@ -215,11 +211,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_unsubscribe(
         return;
     }
 
-    // TODO: remove script subscription from notification set.
-    const auto previous = subscribed_scriptpubkey_.load(
-        std::memory_order_relaxed);
-
-    send_result(previous, 16, BIND(complete, _1));
+    send_scripthash_unsubscribe(script.hash());
 }
 
 BC_POP_WARNING()

@@ -279,8 +279,10 @@ private:
     array_t transform(const database::histories& histories) NOEXCEPT;
     array_t transform(const database::unspents& unspents) NOEXCEPT;
 
-    // Shared get_status implementation.
-    bool send_get_status(const std::string& tx_hash, double txout_idx,
+    // Shared implementations.
+    void send_scripthash_unsubscribe(const system::hash_digest& hash) NOEXCEPT;
+    void send_scripthash_subscribe(const system::hash_digest& hash) NOEXCEPT;
+    bool send_get_status(const system::chain::point& prevout,
         const std::string& spk_hint) NOEXCEPT;
 
     // These are thread safe.
