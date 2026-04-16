@@ -94,15 +94,15 @@ bool setup_ten_block_store(query_t& query) NOEXCEPT
         query.set(block7, database::context{ 0, 7, 0 }, false, false) &&
         query.set(block8, database::context{ 0, 8, 0 }, false, false) &&
         query.set(block9, database::context{ 0, 9, 0 }, false, false) &&
-        query.push_confirmed(query.to_header(block1_hash), false) &&
-        query.push_confirmed(query.to_header(block2_hash), false) &&
-        query.push_confirmed(query.to_header(block3_hash), false) &&
-        query.push_confirmed(query.to_header(block4_hash), false) &&
-        query.push_confirmed(query.to_header(block5_hash), false) &&
-        query.push_confirmed(query.to_header(block6_hash), false) &&
-        query.push_confirmed(query.to_header(block7_hash), false) &&
-        query.push_confirmed(query.to_header(block8_hash), false) &&
-        query.push_confirmed(query.to_header(block9_hash), false);
+        query.push_confirmed(query.to_header(block1_hash), true) &&
+        query.push_confirmed(query.to_header(block2_hash), true) &&
+        query.push_confirmed(query.to_header(block3_hash), true) &&
+        query.push_confirmed(query.to_header(block4_hash), true) &&
+        query.push_confirmed(query.to_header(block5_hash), true) &&
+        query.push_confirmed(query.to_header(block6_hash), true) &&
+        query.push_confirmed(query.to_header(block7_hash), true) &&
+        query.push_confirmed(query.to_header(block8_hash), true) &&
+        query.push_confirmed(query.to_header(block9_hash), true);
 }
 
 bool setup_three_block_store(query_t& query) NOEXCEPT
@@ -110,8 +110,8 @@ bool setup_three_block_store(query_t& query) NOEXCEPT
     return query.initialize(genesis) &&
         query.set(block1, database::context{ 0, 1, 0 }, false, false) &&
         query.set(block2, database::context{ 0, 2, 0 }, false, false) &&
-        query.push_confirmed(query.to_header(block1_hash), false) &&
-        query.push_confirmed(query.to_header(block2_hash), false);
+        query.push_confirmed(query.to_header(block1_hash), true) &&
+        query.push_confirmed(query.to_header(block2_hash), true);
 }
 
 bool setup_three_block_witness_store(query_t& query) NOEXCEPT
@@ -119,8 +119,8 @@ bool setup_three_block_witness_store(query_t& query) NOEXCEPT
     return query.initialize(genesis) &&
         query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
         query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
-        query.push_confirmed(query.to_header(block1a.hash()), false) &&
-        query.push_confirmed(query.to_header(block2a.hash()), false);
+        query.push_confirmed(query.to_header(block1a.hash()), true) &&
+        query.push_confirmed(query.to_header(block2a.hash()), true);
 }
 
 bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT
@@ -265,8 +265,8 @@ const block bogus_block11
     header
     {
         0x31323334,
-        block9_hash,
-        hash_digest{ 0x12, 0xbb },
+        bogus_block10.hash(),
+        hash_digest{ 0x11, 0xbb },
         0x41424344,
         0x51525354,
         0x61626364
@@ -324,6 +324,52 @@ const block bogus_block11
                     0x14,
                     // "31xsx7sPoS2UfoUAKfoXLX6wTPvpetyo7s"
                     script::to_pay_script_hash_pattern({ 0x03 })
+                }
+            },
+            0x0a
+        }
+    }
+};
+const block bogus_block12
+{
+    header
+    {
+        0x31323334,
+        bogus_block11.hash(),
+        hash_digest{ 0x12, 0xbb },
+        0x41424344,
+        0x51525354,
+        0x61626364
+    },
+    transactions
+    {
+        transaction
+        {
+            0x07,
+            inputs
+            {
+                input
+                {
+                    point{ bogus_block11.transactions_ptr()->front()->hash(false), 0x03 },
+                    script{},
+                    witness{},
+                    0x08
+                },
+                input
+                {
+                    point{ bogus_block11.transactions_ptr()->front()->hash(false), 0x04 },
+                    script{},
+                    witness{},
+                    0x09
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x10,
+                    // "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM"
+                    script::to_pay_key_hash_pattern({ 0x02 })
                 }
             },
             0x0a

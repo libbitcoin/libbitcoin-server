@@ -86,6 +86,7 @@ extern const system::chain::block block8;
 extern const system::chain::block block9;
 extern const system::chain::block bogus_block10;
 extern const system::chain::block bogus_block11;
+extern const system::chain::block bogus_block12;
 
 extern const system::chain::block bogus_block;
 extern const system::chain::block block1a;
