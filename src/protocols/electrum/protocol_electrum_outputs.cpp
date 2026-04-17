@@ -94,7 +94,16 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
         return;
     }
 
-    send_get_status(tx_hash, txout_idx, spk_hint);
+    uint32_t index{};
+    hash_digest hash{};
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    chain::point prevout{ hash, index };
+    send_outpoint_status(prevout, spk_hint);
 }
 
 void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
@@ -110,11 +119,22 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
         return;
     }
 
-    if (!send_get_status(tx_hash, txout_idx, spk_hint))
+    uint32_t index{};
+    hash_digest hash{};
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    chain::point prevout{ hash, index };
+    if (!send_outpoint_status(prevout, spk_hint))
         return;
 
-    // TODO: collect the outpoint into a limited notification set.
-    subscribed_outpoint_.store(false, std::memory_order_relaxed);
+    // TODO: subscribe.
+    ///////////////////////////////////////////////////////////////////////////
+    subscribed_outpoint_.store(true, std::memory_order_relaxed);
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
@@ -139,28 +159,22 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
         return;
     }
 
-    // TODO: remove outpoint subscription from notification set.
     chain::point prevout{ hash, index };
-    const auto previous = subscribed_scriptpubkey_.load(
-        std::memory_order_relaxed);
 
-    send_result(previous, 16, BIND(complete, _1));
+    // TODO: unsubscribe.
+    ///////////////////////////////////////////////////////////////////////////
+    const auto prior = subscribed_outpoint_.load(std::memory_order_relaxed);
+    ///////////////////////////////////////////////////////////////////////////
+
+    send_result(prior, 16, BIND(complete, _1));
 }
 
 // utility.
 // ----------------------------------------------------------------------------
 
-bool protocol_electrum::send_get_status(const std::string& tx_hash,
-    double txout_idx, const std::string& spk_hint) NOEXCEPT
+bool protocol_electrum::send_outpoint_status(const chain::point& prevout,
+    const std::string& spk_hint) NOEXCEPT
 {
-    uint32_t index{};
-    hash_digest hash{};
-    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
-    {
-        send_code(error::invalid_argument);
-        return false;
-    }
-
     // This is parsed for correctness but is not used.
     // Script is advisory, and should match output script.
     if (!spk_hint.empty())
@@ -180,29 +194,30 @@ bool protocol_electrum::send_get_status(const std::string& tx_hash,
         }
     }
 
-    const auto& query = archive();
-    const auto out = query.get_tx_history(hash);
-    if (!out.tx.is_valid())
+    object_t status{};
+    if (!get_outpoint_status(status, prevout))
     {
         send_code(error::not_found);
         return false;
     }
 
-    if (const auto ins = query.get_spenders_history(hash, index); ins.empty())
+    send_result(std::move(status), 128, BIND(complete, _1));
+    return true;
+}
+
+bool protocol_electrum::get_outpoint_status(object_t& status,
+    const chain::point& prevout) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto out = query.get_tx_history(prevout.hash());
+    if (!out.tx.is_valid())
+        return false;
+
+    status = { { "height", to_unsigned(out.tx.height()) } };
+    if (const auto ins = query.get_spenders_history(prevout); !ins.empty())
     {
-        send_result(object_t
-        {
-            { "height", to_unsigned(out.tx.height()) }
-        } , 64, BIND(complete, _1));
-    }
-    else
-    {
-        send_result(object_t
-        {
-            { "height", to_unsigned(out.tx.height()) },
-            { "spender_txhash", encode_hash(ins.front().tx.hash()) },
-            { "spender_height", to_unsigned(ins.front().tx.height()) }
-        }, 128, BIND(complete, _1));
+        status["spender_txhash"] = encode_hash(ins.front().tx.hash());
+        status["spender_height"] = to_unsigned(ins.front().tx.height());
     }
 
     return true;

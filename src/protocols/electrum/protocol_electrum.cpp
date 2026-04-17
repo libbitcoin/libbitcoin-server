@@ -165,23 +165,14 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
                 POST(do_outpoint, std::get<node::address_t>(value));
             }
 
-            if (subscribed_address_.load(relaxed))
-            {
-                BC_ASSERT(std::holds_alternative<node::address_t>(value));
-                POST(do_address, std::get<node::address_t>(value));
-            }
-
             if (subscribed_scripthash_.load(relaxed))
             {
+                BC_ASSERT(archive().address_enabled());
                 BC_ASSERT(std::holds_alternative<node::address_t>(value));
                 POST(do_scripthash, std::get<node::address_t>(value));
             }
 
-            if (subscribed_scriptpubkey_.load(relaxed))
-            {
-                BC_ASSERT(std::holds_alternative<node::address_t>(value));
-                POST(do_scriptpubkey, std::get<node::address_t>(value));
-            }
+            break;
         }
         default:
         {
@@ -206,7 +197,7 @@ void protocol_electrum::do_height(node::header_t link) NOEXCEPT
 
     if (height.is_terminal())
     {
-        LOGF("Electrum::do_height, object not found (" << link << ").");
+        LOGF("Electrum::do_height, height not found (" << link << ").");
         return;
     }
 
@@ -227,7 +218,7 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 
     if (height.is_terminal())
     {
-        LOGF("Electrum::do_header, object not found (" << link << ").");
+        LOGF("Electrum::do_header, header not found (" << link << ").");
         return;
     }
 
@@ -239,77 +230,79 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 }
 
 // Notifier for blockchain_outpoint_subscribe events.
-void protocol_electrum::do_outpoint(node::address_t) NOEXCEPT
+void protocol_electrum::do_outpoint(node::address_t link) NOEXCEPT
 {
-    chain::point point{};
+    BC_ASSERT(stranded());
 
-    // TODO: compute and return outpoint status from a store query.
-    // TODO: unlike scripthash, this is not a cumulative "status" hash.
+    // TODO: get prevout from event.
+    ///////////////////////////////////////////////////////////////////////////
+    chain::point prevout{};
+    ///////////////////////////////////////////////////////////////////////////
+
+    object_t status{};
+    if (!get_outpoint_status(status, prevout))
+    {
+        LOGF("Electrum::do_outpoint, outpoint not found (" << link << ").");
+        return;
+    }
+
     send_notification("blockchain.outpoint.subscribe", array_t
     {
-        array_t{ encode_hash(point.hash()), point.index() },
-        object_t{}
-    }, 128, BIND(handle_send, _1));
-}
-
-// This struct is small and stack allocated (208 bytes).
-// Writer holds stream ref to status and midstate via accumulator.
-// Writer flush rewrites status via stream and resets accumulator.
-// Pass writer to store method to accumulate confirmed address midstate.
-// Once initialized, copy writer after adding state and flushing for status.
-struct midstate
-{
-    hash_digest status{};
-    stream::out::fast stream{ status };
-    hash::sha256::fast writer{ stream };
-};
-
-// Notifier for blockchain_address_subscribe events.
-void protocol_electrum::do_address(node::address_t ) NOEXCEPT
-{
-    std::string status_hash{};
-    std::string script_hash{};
-
-    midstate value{};
-    auto copy = value;
-
-    // EXAMPLE:
-    // script_hash is a payment address for address.
-    send_notification("blockchain.address.subscribe", array_t
-    {
-        script_hash,
-        status_hash
+        array_t{ encode_hash(prevout.hash()), prevout.index() },
+        std::move(status)
     }, 128, BIND(handle_send, _1));
 }
 
 // Notifier for blockchain_scripthash_subscribe events.
-void protocol_electrum::do_scripthash(node::address_t) NOEXCEPT
+void protocol_electrum::do_scripthash(node::address_t link) NOEXCEPT
 {
-    std::string status_hash{};
-    std::string script_hash{};
+    BC_ASSERT(stranded());
 
-    // EXAMPLE:
-    // script_hash is a payment address for address.
-    send_notification("blockchain.scripthash.subscribe", array_t
-    {
-        script_hash,
-        status_hash
-    }, 128, BIND(handle_send, _1));
+    // TODO: get hash/type from event.
+    ///////////////////////////////////////////////////////////////////////////
+    hash_digest hash{};
+    constexpr auto type = notify_t::scripthash;
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Address status is long-running, so cannot tie up strand.
+    PARALLEL(do_status, hash, BIND(notify_status, _1, _2, _3, type, link));
 }
 
-// Notifier for blockchain_scriptpubkey_subscribe events.
-void protocol_electrum::do_scriptpubkey(node::address_t) NOEXCEPT
+void protocol_electrum::notify_status(const code& ec, const hash_digest& hash,
+    const hash_digest& status, notify_t type, node::address_t link) NOEXCEPT
 {
-    std::string status_hash{};
-    std::string script_hash{};
+    BC_ASSERT(stranded());
 
-    // EXAMPLE:
-    // script_hash is a payment address for address.
-    send_notification("blockchain.scriptpubkey.subscribe", array_t
+    if (ec)
     {
-        script_hash,
-        status_hash
-    }, 128, BIND(handle_send, _1));
+        LOGF("Electrum::do_scripthash, address not found (" << link << ").");
+        return;
+    }
+
+    send_notification(to_method_name(type), array_t
+    {
+        encode_hash(hash),
+        status == null_hash ? value_t{} : value_t{ encode_hash(status) }
+    }, 128, BIND(complete, _1));
+}
+
+// utilities
+// ----------------------------------------------------------------------------
+// private/static
+
+// Convert enumeration to json-rpc notification method name.
+std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
+{
+    switch (type)
+    {
+        case notify_t::address:
+            return "blockchain.address.subscribe";
+        case notify_t::scripthash:
+            return "blockchain.scripthash.subscribe";
+        default:
+        case notify_t::scriptpubkey:
+            return "blockchain.scriptpubkey.subscribe";
+    }
 }
 
 BC_POP_WARNING()

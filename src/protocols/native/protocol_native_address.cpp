@@ -60,7 +60,7 @@ void protocol_native::do_get_address(uint8_t media, bool turbo,
 
     database::outpoints set{};
     const auto& query = archive();
-    const auto ec = query.get_address_outputs(stopping_, set, *hash, turbo);
+    const auto ec = query.get_address_outpoints(stopping_, set, *hash, turbo);
     POST(complete_get_address, ec, media, std::move(set));
 }
 
@@ -138,7 +138,8 @@ void protocol_native::do_get_address_confirmed(uint8_t media, bool turbo,
 
     database::outpoints set{};
     const auto& query = archive();
-    auto ec = query.get_confirmed_unspent_outputs(stopping_, set, *hash, turbo);
+    auto ec = query.get_confirmed_unspent_outpoints(stopping_, set, *hash,
+        turbo);
     POST(complete_get_address, ec, media, std::move(set));
 }
 

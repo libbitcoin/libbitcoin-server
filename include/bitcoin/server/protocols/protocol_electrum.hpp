@@ -204,6 +204,11 @@ protected:
         rpc_interface::mempool_get_info) NOEXCEPT;
 
 protected:
+    using hash_digest = system::hash_digest;
+    enum class notify_t { address, scripthash, scriptpubkey };
+    typedef std::function<void(const code&, const hash_digest&,
+        const hash_digest&)> status_handler;
+
     /// Common implementation for block_header/s.
     void blockchain_block_headers(size_t starting, size_t quantity,
         size_t waypoint, bool multiplicity) NOEXCEPT;
@@ -211,15 +216,17 @@ protected:
     /// Completion handlers (for long-running address queries).
     /// -----------------------------------------------------------------------
 
-    void get_balance(const system::hash_digest& hash) NOEXCEPT;
-    void get_history(const system::hash_digest& hash) NOEXCEPT;
-    void get_mempool(const system::hash_digest& hash) NOEXCEPT;
-    void list_unspent(const system::hash_digest& hash) NOEXCEPT;
+    void get_balance(const hash_digest& hash) NOEXCEPT;
+    void get_history(const hash_digest& hash) NOEXCEPT;
+    void get_mempool(const hash_digest& hash) NOEXCEPT;
+    void list_unspent(const hash_digest& hash) NOEXCEPT;
 
-    void do_get_balance(const system::hash_digest& hash) NOEXCEPT;
-    void do_get_history(const system::hash_digest& hash) NOEXCEPT;
-    void do_get_mempool(const system::hash_digest& hash) NOEXCEPT;
-    void do_list_unspent(const system::hash_digest& hash) NOEXCEPT;
+    void do_get_balance(const hash_digest& hash) NOEXCEPT;
+    void do_get_history(const hash_digest& hash) NOEXCEPT;
+    void do_get_mempool(const hash_digest& hash) NOEXCEPT;
+    void do_list_unspent(const hash_digest& hash) NOEXCEPT;
+    void do_status(const hash_digest& hash,
+        const status_handler& sender) NOEXCEPT;
 
     void complete_get_balance(const code& ec, uint64_t confirmed,
         int64_t unconfirmed) NOEXCEPT;
@@ -229,6 +236,14 @@ protected:
         const database::histories& histories) NOEXCEPT;
     void complete_list_unspent(const code& ec,
         const database::unspents& unspents) NOEXCEPT;
+    void complete_status(const code& ec, const hash_digest& hash,
+        const hash_digest& status, const status_handler& sender) NOEXCEPT;
+
+    void send_status(const code& ec, const hash_digest& hash,
+        const hash_digest& status) NOEXCEPT;
+    void notify_status(const code& ec, const hash_digest& hash,
+        const hash_digest& status, notify_t type,
+        node::address_t link) NOEXCEPT;
 
     /// Notification senders and send handlers.
     /// -----------------------------------------------------------------------
@@ -236,9 +251,7 @@ protected:
     void do_height(node::header_t link) NOEXCEPT;
     void do_header(node::header_t link) NOEXCEPT;
     void do_outpoint(node::header_t link) NOEXCEPT;
-    void do_address(node::address_t link) NOEXCEPT;
     void do_scripthash(node::address_t link) NOEXCEPT;
-    void do_scriptpubkey(node::address_t link) NOEXCEPT;
 
     /// Utilities.
     /// -----------------------------------------------------------------------
@@ -254,19 +267,32 @@ protected:
     }
 
 private:
+    // Status hash optimization (~200 bytes).
+    struct midstate
+    {
+        hash_digest status{};
+        system::stream::out::fast stream{ status };
+        system::hash::sha256::fast writer{ stream };
+    };
+
+    // Aliases.
     using array_t = network::rpc::array_t;
     using object_t = network::rpc::object_t;
     using version_t = protocol_electrum_version;
     static constexpr electrum::version minimum = version_t::minimum;
     static constexpr electrum::version maximum = version_t::maximum;
 
+    // Address transformations.
+    static array_t transform(const database::histories& histories) NOEXCEPT;
+    static array_t transform(const database::unspents& unspents) NOEXCEPT;
+    static std::string to_method_name(notify_t type) NOEXCEPT;
+
     // Compute server.features.hosts value from config.
     object_t self_hosts() const NOEXCEPT;
     array_t more_hosts() const NOEXCEPT;
 
     // Convert between legacy bitcoin payment address and scripthash.
-    system::hash_digest extract_scripthash(
-        const std::string& address) const NOEXCEPT;
+    hash_digest extract_scripthash(const std::string& address) const NOEXCEPT;
     system::wallet::payment_address extract_address(
         const system::chain::script& script) const NOEXCEPT;
 
@@ -275,13 +301,13 @@ private:
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
     code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 
-    // Address transformations.
-    array_t transform(const database::histories& histories) NOEXCEPT;
-    array_t transform(const database::unspents& unspents) NOEXCEPT;
-
-    // Shared get_status implementation.
-    bool send_get_status(const std::string& tx_hash, double txout_idx,
+    // Shared send/get implementations.
+    void send_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
+    void send_scripthash_subscribe(const hash_digest& hash) NOEXCEPT;
+    bool send_outpoint_status(const system::chain::point& prevout,
         const std::string& spk_hint) NOEXCEPT;
+    bool get_outpoint_status(object_t& status,
+        const system::chain::point& prevout) const NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;
@@ -292,15 +318,13 @@ private:
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};
     std::atomic_bool subscribed_outpoint_{};
-    std::atomic_bool subscribed_address_{};
     std::atomic_bool subscribed_scripthash_{};
-    std::atomic_bool subscribed_scriptpubkey_{};
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
 
     // This is protected by strand.
-    std::unordered_set<system::hash_digest> subscriptions_{};
+    std::unordered_set<hash_digest> subscriptions_{};
 };
 
 } // namespace server

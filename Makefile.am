@@ -57,7 +57,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/protocols/electrum/protocol_electrum_mempool.cpp \
     src/protocols/electrum/protocol_electrum_outputs.cpp \
     src/protocols/electrum/protocol_electrum_scripthash.cpp \
-    src/protocols/electrum/protocol_electrum_scripts.cpp \
+    src/protocols/electrum/protocol_electrum_scriptpubkey.cpp \
     src/protocols/electrum/protocol_electrum_server.cpp \
     src/protocols/electrum/protocol_electrum_transactions.cpp \
     src/protocols/electrum/protocol_electrum_version.cpp \
@@ -105,7 +105,7 @@ test_libbitcoin_server_test_SOURCES = \
     test/protocols/electrum/electrum_mempool.cpp \
     test/protocols/electrum/electrum_outputs.cpp \
     test/protocols/electrum/electrum_scripthash.cpp \
-    test/protocols/electrum/electrum_scripts.cpp \
+    test/protocols/electrum/electrum_scriptpubkey.cpp \
     test/protocols/electrum/electrum_server.cpp \
     test/protocols/electrum/electrum_transactions.cpp \
     test/protocols/electrum/electrum_version.cpp \

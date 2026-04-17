@@ -100,7 +100,7 @@ void protocol_electrum::handle_blockchain_address_list_unspent(const code& ec,
 
 void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
     rpc_interface::blockchain_address_subscribe,
-    const std::string& ) NOEXCEPT
+    const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -111,11 +111,14 @@ void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
         return;
     }
 
-    // TODO: collect the address into a limited notification set.
-    subscribed_address_.store(true, std::memory_order_relaxed);
+    const auto hash = extract_scripthash(address);
+    if (hash == null_hash)
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
 
-    // TODO: compute the status hash in a store query (no mempool).
-    send_result(array_t{ string_t{ "status-hash" } }, 16, BIND(complete, _1));
+    send_scripthash_subscribe(hash);
 }
 
 // utilities

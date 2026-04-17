@@ -313,12 +313,12 @@ void protocol_electrum::complete_list_unspent(const code& ec,
     send_result(transform(unspents), size, BIND(complete, _1));
 }
 
-// subscribe/unsubscribe
+// subscribe
 // ----------------------------------------------------------------------------
 
 void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
     rpc_interface::blockchain_scripthash_subscribe,
-    const std::string& ) NOEXCEPT
+    const std::string& scripthash) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -329,16 +329,90 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
         return;
     }
 
-    // TODO: collect the scripthash into a limited notification set.
-    subscribed_scripthash_.store(true, std::memory_order_relaxed);
+    hash_digest hash{};
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
 
-    // TODO: compute the status hash in a store query (no mempool).
-    send_result(array_t{ string_t{ "status-hash" } }, 16, BIND(complete, _1));
+    send_scripthash_subscribe(hash);
 }
+
+void protocol_electrum::send_scripthash_subscribe(
+    const hash_digest& hash) NOEXCEPT
+{
+    if (!archive().address_enabled())
+    {
+        send_code(error::not_implemented);
+        return;
+    }
+
+    monitor(true);
+    PARALLEL(do_status, hash, BIND(send_status, _1, _2, _3));
+}
+
+// Invoked by send_scripthash_subscribe() or do_scripthash().
+void protocol_electrum::do_status(const hash_digest& hash,
+    const status_handler& sender) NOEXCEPT
+{
+    // TODO: subscribe.
+    ///////////////////////////////////////////////////////////////////////////
+    subscribed_scripthash_.store(true, std::memory_order_relaxed);
+    ///////////////////////////////////////////////////////////////////////////
+
+    hash_digest status{};
+    const auto& query = archive();
+    database::histories histories{};
+    const auto ec = query.get_history(stopping_, histories, hash, turbo_);
+
+    // TODO: compute status hash and initialize/update associated midstate.
+    ///////////////////////////////////////////////////////////////////////////
+    if (!ec && !histories.empty())
+    {
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
+    POST(complete_status, ec, hash, std::move(status), sender);
+}
+
+void protocol_electrum::complete_status(const code& ec,
+    const hash_digest& hash, const hash_digest& status,
+    const status_handler& sender) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    sender(ec, hash, status);
+}
+
+void protocol_electrum::send_status(const code& ec, const hash_digest& hash,
+    const hash_digest& status) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        send_code(ec);
+        return;
+    }
+
+    send_result(array_t
+    {
+        encode_hash(hash),
+        status == null_hash ? value_t{} : value_t{ encode_hash(status) }
+    }, 128, BIND(complete, _1));
+}
+
+// unsubscribe
+// ----------------------------------------------------------------------------
 
 void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     rpc_interface::blockchain_scripthash_unsubscribe,
-    const std::string& ) NOEXCEPT
+    const std::string& scripthash) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -349,18 +423,33 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
         return;
     }
 
-    // TODO: remove scripthash subscription from the notification set.
-    const auto previous = subscribed_scriptpubkey_.load(
-        std::memory_order_relaxed);
+    hash_digest hash{};
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
 
-    send_result(previous, 16, BIND(complete, _1));
+    send_scripthash_unsubscribe(hash);
+}
+
+void protocol_electrum::send_scripthash_unsubscribe(
+    const hash_digest& ) NOEXCEPT
+{
+    // TODO: unsubscribe.
+    ///////////////////////////////////////////////////////////////////////////
+    const auto prior = subscribed_scripthash_.load(std::memory_order_relaxed);
+    ///////////////////////////////////////////////////////////////////////////
+
+    send_result(prior, 16, BIND(complete, _1));
 }
 
 // utilities
 // ----------------------------------------------------------------------------
-// TODO: these can be implemented as electrum json serializers (see bitcoind).
+// private/static
 
 // Height is set to 0 for unconfirmed tx fully chain rooted and -1 otherwise.
+// TODO: this can be implemented as electrum json serializers (see bitcoind).
 array_t protocol_electrum::transform(const database::histories& ins) NOEXCEPT
 {
     // Height is set to zero or max_size_t for unconfirmed history.
@@ -393,6 +482,7 @@ array_t protocol_electrum::transform(const database::histories& ins) NOEXCEPT
 }
 
 // Height is set to 0 for unconfirmed unspent output txs.
+// TODO: this can be implemented as electrum json serializers (see bitcoind).
 array_t protocol_electrum::transform(const database::unspents& ins) NOEXCEPT
 {
     array_t out(ins.size());
