@@ -1,0 +1,419 @@
+###############################################################################
+#  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+#
+#     SOON TO BE GENERATED CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+#
+###############################################################################
+
+name: Mock Manual Release Candidate Generation
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag-system:
+        description: "libbitcoin-system tag used for release generation."
+        required: true
+        type: string
+      tag-database:
+        description: "libbitcoin-database tag used for release generation."
+        required: true
+        type: string
+      tag-network:
+        description: "libbitcoin-network tag used for release generation."
+        required: true
+        type: string
+      tag-node:
+        description: "libbitcoin-node tag used for release generation."
+        required: true
+        type: string
+      tag-server:
+        description: "libbitcoin-server tag used for release generation."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+
+  validate-tags:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout server
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-server'
+          ref: ${{ github.event.inputs.tag-server }}
+          repository: ${{ github.repository }}
+
+      - name: checkout node
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-node'
+          ref: ${{ github.event.inputs.tag-node }}
+          repository: ${{ github.repository_owner }}/libbitcoin-node
+
+      - name: checkout network
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-network'
+          ref: ${{ github.event.inputs.tag-network }}
+          repository: ${{ github.repository_owner }}/libbitcoin-network
+
+      - name: checkout database
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-database'
+          ref: ${{ github.event.inputs.tag-database }}
+          repository: ${{ github.repository_owner }}/libbitcoin-database
+
+      - name: checkout system
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-system'
+          ref: ${{ github.event.inputs.tag-system }}
+          repository: ${{ github.repository_owner }}/libbitcoin-system
+
+      - name: Verify tag server
+        shell: bash
+        working-directory: libbitcoin-server
+        run: |
+          if ! git rev-parse --verify "refs/tags/${{ github.event.inputs.tag-server }}" > /dev/null 2>&1; then
+            echo "Tag '${{ github.event.inputs.tag-server }}' does not exist in the repository."
+            exit 1
+          fi
+          echo "Validated tag '${{ github.event.inputs.tag-server }}'."
+
+      - name: Verify tag node
+        shell: bash
+        working-directory: libbitcoin-node
+        run: |
+          if ! git rev-parse --verify "refs/tags/${{ github.event.inputs.tag-node }}" > /dev/null 2>&1; then
+            echo "Tag '${{ github.event.inputs.tag-node }}' does not exist in the repository."
+            exit 1
+          fi
+          echo "Validated tag '${{ github.event.inputs.tag-node }}'."
+
+      - name: Verify tag network
+        shell: bash
+        working-directory: libbitcoin-network
+        run: |
+          if ! git rev-parse --verify "refs/tags/${{ github.event.inputs.tag-network }}" > /dev/null 2>&1; then
+            echo "Tag '${{ github.event.inputs.tag-network }}' does not exist in the repository."
+            exit 1
+          fi
+          echo "Validated tag '${{ github.event.inputs.tag-network }}'."
+
+      - name: Verify tag database
+        shell: bash
+        working-directory: libbitcoin-database
+        run: |
+          if ! git rev-parse --verify "refs/tags/${{ github.event.inputs.tag-database }}" > /dev/null 2>&1; then
+            echo "Tag '${{ github.event.inputs.tag-database }}' does not exist in the repository."
+            exit 1
+          fi
+          echo "Validated tag '${{ github.event.inputs.tag-database }}'."
+
+      - name: Verify tag system
+        shell: bash
+        working-directory: libbitcoin-system
+        run: |
+          if ! git rev-parse --verify "refs/tags/${{ github.event.inputs.tag-system }}" > /dev/null 2>&1; then
+            echo "Tag '${{ github.event.inputs.tag-system }}' does not exist in the repository."
+            exit 1
+          fi
+          echo "Validated tag '${{ github.event.inputs.tag-system }}'."
+
+  build-candidates:
+
+    needs: validate-tags
+
+    outputs:
+      candidate_identifier: ${{ steps.normalizer.outputs.candidate_identifier }}
+
+    runs-on: ${{ matrix.image }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - image: ubuntu-latest
+            toolchain: gnu
+            cc: "gcc"
+            cxx: "g++"
+            configuration: debug
+            link: static
+
+          - image: ubuntu-latest
+            toolchain: cmake
+            cc: "clang"
+            cxx: "clang++"
+            configuration: release
+            link: static
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticDebug
+            platform: "x64"
+            version: "vs2022"
+            tests: "*"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticRelease
+            platform: "x64"
+            version: "vs2022"
+            tests: "*"
+
+    steps:
+      - name: checkout server
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-server'
+          ref: ${{ github.event.inputs.tag-server }}
+          repository: ${{ github.repository }}
+
+      - name: checkout node
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-node'
+          ref: ${{ github.event.inputs.tag-node }}
+          repository: ${{ github.repository_owner }}/libbitcoin-node
+
+      - name: checkout network
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-network'
+          ref: ${{ github.event.inputs.tag-network }}
+          repository: ${{ github.repository_owner }}/libbitcoin-network
+
+      - name: checkout database
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-database'
+          ref: ${{ github.event.inputs.tag-database }}
+          repository: ${{ github.repository_owner }}/libbitcoin-database
+
+      - name: checkout system
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          path: 'libbitcoin-system'
+          ref: ${{ github.event.inputs.tag-system }}
+          repository: ${{ github.repository_owner }}/libbitcoin-system
+
+      - name: Prepare toolchain [linux]
+        if: ${{ startsWith(matrix.image, 'ubuntu') }}
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.packages || '' }} git build-essential autoconf automake libtool pkg-config
+
+      - name: Prepare toolchain [macos]
+        if: ${{ startsWith(matrix.image, 'macos') }}
+        shell: bash
+        run: |
+          brew install ${{ matrix.packages || '' }} autoconf automake libtool
+          if [[ -n "${{ matrix.llvm }}" ]]; then
+            echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
+          fi
+      - name: Prepare toolchain [windows]
+        if: ${{ startsWith(matrix.image, 'windows') }}
+        uses: microsoft/setup-msbuild@v3
+        with:
+          msbuild-architecture: x64
+
+      - name: Environmental Variable Computation
+        if: ${{ matrix.toolchain == 'cmake' || matrix.toolchain == 'gnu' || matrix.toolchain == 'presets' }}
+        shell: bash
+        run: |
+          if [[ "${{ matrix.link }}" == "dynamic" ]]; then
+              echo "LDFLAGS=-Wl,-rpath,${{ github.workspace }}/prefix/lib" >> $GITHUB_ENV
+          fi
+
+      - name: Normalize output location
+        id: normalizer
+        shell: bash
+        run: |
+          mkdir candidate
+          if [[ "${{ matrix.toolchain }}" == "cmake" ]]; then
+              CANDIDATE="prefix/bin/bs"
+              CANONICAL="bs-${{ matrix.toolchain }}-${{ matrix.link }}-${{ matrix.configuration }}"
+          elif [[ ${{ matrix.toolchain }} == "gnu" ]]; then
+              CANDIDATE="prefix/bin/bs"
+              CANONICAL="bs-${{ matrix.toolchain }}-${{ matrix.link }}-${{ matrix.configuration }}"
+          elif [[ ${{ matrix.toolchain }} == "presets" ]]; then
+              CANDIDATE="prefix/${{ matrix.preset }}/bin/bs"
+              CANONICAL="bs-${{ matrix.toolchain }}-${{ matrix.link }}-${{ matrix.configuration }}"
+          elif [[ ${{ matrix.toolchain }} == "msbuild" ]]; then
+              if [[ "${{ matrix.configuration }}" == *Debug* ]]; then
+                  CONFIG="Debug"
+              elif [[ "${{ matrix.configuration }}" == *Release* ]]; then
+                  CONFIG="Release"
+              else
+                  echo "Configuration unexpected."
+                  exit 1
+              fi
+              CANDIDATE="libbitcoin-server/bin/x64/${CONFIG}/v143/static/bs.exe"
+              CANONICAL="bs-${{ matrix.toolchain }}-${{ matrix.platform }}-${{ matrix.version }}-${{ matrix.configuration }}.exe"
+          else
+              echo "\e[0;91mUnexpected toolchain provided.\e[0m"
+              exit 1
+          fi
+          echo "PAYLOAD" >> candidate/${CANONICAL}
+          echo "candidate_identifier=${CANONICAL}" >> "$GITHUB_OUTPUT"
+
+      - name: Inventory results
+        working-directory: candidate
+        shell: bash
+        run: |
+          ls -lahR
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ${{ steps.normalizer.outputs.candidate_identifier }}
+          path: candidate/*
+          retention-days: 1
+          if-no-files-found: error
+
+  sign:
+    name: Sign artifacts
+
+    needs: build-candidates
+
+    environment: release
+
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Retrieve artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          path: artifacts
+
+      - name: GPG Keyring Initialization
+        env:
+          SIGNING_PRIVATE_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          echo "Importing GPG signing key..."
+          # Import the private key
+          echo "$SIGNING_PRIVATE_KEY" | gpg --batch --import --pinentry-mode loopback
+          # Get the key fingerprint (first secret key)
+          KEY_FINGERPRINT=$(gpg --list-secret-keys --with-colons | grep '^sec' | head -n1 | cut -d: -f5)
+          if [ -z "$KEY_FINGERPRINT" ]; then
+            echo "Error: No secret key found after import"
+            exit 1
+          fi
+          echo "Imported key fingerprint: $KEY_FINGERPRINT"
+          # Set ultimate trust (required for non-interactive signing)
+          echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$KEY_FINGERPRINT" trust >/dev/null 2>&1
+          # Configure gpg-agent for loopback pinentry (handles passphrase non-interactively)
+          mkdir -p ~/.gnupg
+          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+          echo "use-agent" > ~/.gnupg/gpg.conf
+          # Reload agent
+          gpgconf --kill gpg-agent
+          gpgconf --launch gpg-agent
+
+      - name: execute signature
+        working-directory: artifacts
+        shell: bash
+        run: |
+          echo "Signing artifacts..."
+          find . -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print0 | \
+            while IFS= read -r -d '' dir; do
+              dir_name="${dir#./}"  # remove leading ./
+              echo "📁 Directory: $dir_name"
+              # Walk files inside this directory (only direct children, not recursive)
+              find "$dir" -maxdepth 1 -type f -print0 | \
+                while IFS= read -r -d '' file; do
+                  file_name=$(basename "$file")
+                  echo "   📄 $file_name"
+                  gpg --batch --yes --detach-sign --armor "$file"
+                done
+            done
+
+      - name: GPG Keyring Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up GPG keyring..."
+          gpg --batch \
+            --yes \
+            --delete-secret-keys \
+            --delete-keys \
+            "$(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d: -f5)" 2>/dev/null || true
+          rm -rf ~/.gnupg
+          echo "Cleanup complete."
+
+      - name: Inventory results
+        working-directory: artifacts
+        shell: bash
+        run: |
+          ls -lahR
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          if-no-files-found: error
+          name: server-${{ github.event.inputs.tag-server }}-signed-artifacts
+          path: artifacts/*/*
+          retention-days: 1
+
+  publish:
+    name: Publish release
+
+    needs: sign
+
+    environment: release
+
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: server-${{ github.event.inputs.tag-server }}-signed-artifacts
+          path: signed-release
+
+      - name: Inventory results
+        working-directory: signed-release
+        shell: bash
+        run: |
+          ls -lahR
+
+      - name: Populate release
+        uses: softprops/action-gh-release@v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.tag-server }}
+          draft: true
+          prerelease: true
+          overwrite_files: false
+          files: |
+            signed-release/*/*
+          body: |
+            **libbitcoin-server ${{ github.event.inputs.tag-server }}**
+            Built from:
+            - system: ${{ github.event.inputs.tag-system }}
+            - database: ${{ github.event.inputs.tag-database }}
+            - network: ${{ github.event.inputs.tag-network }}
+            - node: ${{ github.event.inputs.tag-node }}
