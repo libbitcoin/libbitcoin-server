@@ -204,6 +204,8 @@ protected:
         rpc_interface::mempool_get_info) NOEXCEPT;
 
 protected:
+    using unspents = database::unspents;
+    using histories = database::histories;
     using hash_digest = system::hash_digest;
     enum class notify_t { address, scripthash, scriptpubkey };
     typedef std::function<void(const code&, const hash_digest&,
@@ -231,11 +233,11 @@ protected:
     void complete_get_balance(const code& ec, uint64_t confirmed,
         int64_t unconfirmed) NOEXCEPT;
     void complete_get_history(const code& ec,
-        const database::histories& histories) NOEXCEPT;
+        const histories& histories) NOEXCEPT;
     void complete_get_mempool(const code& ec,
-        const database::histories& histories) NOEXCEPT;
+        const histories& histories) NOEXCEPT;
     void complete_list_unspent(const code& ec,
-        const database::unspents& unspents) NOEXCEPT;
+        const unspents& unspents) NOEXCEPT;
     void complete_status(const code& ec, const hash_digest& hash,
         const hash_digest& status, const status_handler& sender) NOEXCEPT;
 
@@ -282,10 +284,11 @@ private:
     static constexpr electrum::version minimum = version_t::minimum;
     static constexpr electrum::version maximum = version_t::maximum;
 
-    // Address transformations.
-    static array_t transform(const database::histories& histories) NOEXCEPT;
-    static array_t transform(const database::unspents& unspents) NOEXCEPT;
+    // Transformations.
     static std::string to_method_name(notify_t type) NOEXCEPT;
+    static array_t transform(const unspents& unspents) NOEXCEPT;
+    static array_t transform(const histories& histories) NOEXCEPT;
+    static hash_digest to_status(const histories& histories) NOEXCEPT;
 
     // Compute server.features.hosts value from config.
     object_t self_hosts() const NOEXCEPT;
