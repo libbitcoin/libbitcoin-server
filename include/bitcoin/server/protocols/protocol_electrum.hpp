@@ -245,7 +245,7 @@ protected:
         const hash_digest& status) NOEXCEPT;
     void notify_status(const code& ec, const hash_digest& hash,
         const hash_digest& status, notify_t type,
-        node::address_t link) NOEXCEPT;
+        node::header_t link) NOEXCEPT;
 
     /// Notification senders and send handlers.
     /// -----------------------------------------------------------------------
@@ -253,7 +253,7 @@ protected:
     void do_height(node::header_t link) NOEXCEPT;
     void do_header(node::header_t link) NOEXCEPT;
     void do_outpoint(node::header_t link) NOEXCEPT;
-    void do_scripthash(node::address_t link) NOEXCEPT;
+    void do_scripthash(node::header_t link) NOEXCEPT;
 
     /// Utilities.
     /// -----------------------------------------------------------------------
