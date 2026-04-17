@@ -47,8 +47,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
 
     uint32_t offset{};
     hash_digest hash{};
-    if (!to_integer(offset, index) ||
-        !decode_hash(hash, tx_hash))
+    if (!to_integer(offset, index) || !decode_hash(hash, tx_hash))
     {
         send_code(error::invalid_argument);
         return;
@@ -152,8 +151,7 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
 
     uint32_t index{};
     hash_digest hash{};
-    if (!to_integer(index, txout_idx) ||
-        !decode_hash(hash, tx_hash))
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
     {
         send_code(error::invalid_argument);
         return;

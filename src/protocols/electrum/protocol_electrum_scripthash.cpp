@@ -151,14 +151,14 @@ void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
+    histories histories{};
     const auto& query = archive();
-    database::histories histories{};
     const auto ec = query.get_history(stopping_, histories, hash, turbo_);
     POST(complete_get_history, ec, std::move(histories));
 }
 
 void protocol_electrum::complete_get_history(const code& ec,
-    const database::histories& histories) NOEXCEPT
+    const histories& histories) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -220,14 +220,14 @@ void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
+    histories histories{};
     const auto& query = archive();
-    database::histories histories{};
     auto ec = query.get_unconfirmed_history(stopping_, histories, hash, turbo_);
     POST(complete_get_mempool, ec, std::move(histories));
 }
 
 void protocol_electrum::complete_get_mempool(const code& ec,
-    const database::histories& histories) NOEXCEPT
+    const histories& histories) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -288,14 +288,14 @@ void protocol_electrum::do_list_unspent(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
+    unspents unspents{};
     const auto& query = archive();
-    database::unspents unspents{};
     const auto ec = query.get_unspent(stopping_, unspents, hash, turbo_);
     POST(complete_list_unspent, ec, std::move(unspents));
 }
 
 void protocol_electrum::complete_list_unspent(const code& ec,
-    const database::unspents& unspents) NOEXCEPT
+    const unspents& unspents) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -361,19 +361,10 @@ void protocol_electrum::do_status(const hash_digest& hash,
     subscribed_scripthash_.store(true, std::memory_order_relaxed);
     ///////////////////////////////////////////////////////////////////////////
 
-    hash_digest status{};
+    histories histories{};
     const auto& query = archive();
-    database::histories histories{};
     const auto ec = query.get_history(stopping_, histories, hash, turbo_);
-
-    // TODO: compute status hash and initialize/update associated midstate.
-    ///////////////////////////////////////////////////////////////////////////
-    if (!ec && !histories.empty())
-    {
-    }
-    ///////////////////////////////////////////////////////////////////////////
-
-    POST(complete_status, ec, hash, std::move(status), sender);
+    POST(complete_status, ec, hash, to_status(histories), sender);
 }
 
 void protocol_electrum::complete_status(const code& ec,
@@ -446,13 +437,31 @@ void protocol_electrum::send_scripthash_unsubscribe(
 
 // utilities
 // ----------------------------------------------------------------------------
+// TODO: these can be implemented as electrum json serializers (see bitcoind).
 // private/static
 
-// Height is set to 0 for unconfirmed tx fully chain rooted and -1 otherwise.
-// TODO: this can be implemented as electrum json serializers (see bitcoind).
-array_t protocol_electrum::transform(const database::histories& ins) NOEXCEPT
+// Height is zero (rooted) or max_size_t for unconfirmed history txs.
+hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
 {
-    // Height is set to zero or max_size_t for unconfirmed history.
+    if (histories.empty())
+        return {};
+
+    midstate out{};
+    for (const auto& record: histories)
+    {
+        out.writer.write_string(encode_hash(record.tx.hash()));
+        out.writer.write_string(":");
+        out.writer.write_string(std::to_string(to_signed(record.tx.height())));
+        out.writer.write_string(":");
+    }
+
+    out.writer.flush();
+    return out.status;
+}
+
+// Height is zero (rooted) or max_size_t for unconfirmed history txs.
+array_t protocol_electrum::transform(const histories& ins) NOEXCEPT
+{
     // to_signed() conversion is simple but sacrifices top height bit (ok).
     static_assert(to_signed(max_size_t) == -1 && is_max(max_size_t));
 
@@ -481,9 +490,8 @@ array_t protocol_electrum::transform(const database::histories& ins) NOEXCEPT
     return out;
 }
 
-// Height is set to 0 for unconfirmed unspent output txs.
-// TODO: this can be implemented as electrum json serializers (see bitcoind).
-array_t protocol_electrum::transform(const database::unspents& ins) NOEXCEPT
+// Height is zero for unconfirmed unspent output txs.
+array_t protocol_electrum::transform(const unspents& ins) NOEXCEPT
 {
     array_t out(ins.size());
     std::ranges::transform(ins, out.begin(), [](const auto& in) NOEXCEPT
