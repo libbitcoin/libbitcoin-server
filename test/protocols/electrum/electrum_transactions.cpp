@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__invalid_tx__inv
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbase__coinbase_transaction_response)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__v1_0_genesis_coinbase__coinbase_transaction_response)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbas
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), coinbase_transaction.message());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__genesis_coinbase__coinbase_transaction_error)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__v1_6_genesis_coinbase__coinbase_transaction_error)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 

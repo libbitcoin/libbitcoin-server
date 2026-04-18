@@ -140,6 +140,7 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     constexpr auto relaxed = std::memory_order_relaxed;
     switch (event_)
     {
+        ////case node::chase::transaction:
         case node::chase::organized:
         {
             if (subscribed_height_.load(relaxed))
@@ -154,22 +155,17 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
                 POST(do_header, std::get<node::header_t>(value));
             }
 
-            break;
-        }
-        case node::chase::spent:
-        case node::chase::received:
-        {
             if (subscribed_outpoint_.load(relaxed))
             {
-                BC_ASSERT(std::holds_alternative<node::address_t>(value));
-                POST(do_outpoint, std::get<node::address_t>(value));
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_outpoint, std::get<node::header_t>(value));
             }
 
             if (subscribed_scripthash_.load(relaxed))
             {
                 BC_ASSERT(archive().address_enabled());
-                BC_ASSERT(std::holds_alternative<node::address_t>(value));
-                POST(do_scripthash, std::get<node::address_t>(value));
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_scripthash, std::get<node::header_t>(value));
             }
 
             break;
@@ -230,7 +226,7 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 }
 
 // Notifier for blockchain_outpoint_subscribe events.
-void protocol_electrum::do_outpoint(node::address_t link) NOEXCEPT
+void protocol_electrum::do_outpoint(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -254,7 +250,7 @@ void protocol_electrum::do_outpoint(node::address_t link) NOEXCEPT
 }
 
 // Notifier for blockchain_scripthash_subscribe events.
-void protocol_electrum::do_scripthash(node::address_t link) NOEXCEPT
+void protocol_electrum::do_scripthash(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -269,7 +265,7 @@ void protocol_electrum::do_scripthash(node::address_t link) NOEXCEPT
 }
 
 void protocol_electrum::notify_status(const code& ec, const hash_digest& hash,
-    const hash_digest& status, notify_t type, node::address_t link) NOEXCEPT
+    const hash_digest& status, notify_t type, node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
