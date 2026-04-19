@@ -196,6 +196,7 @@ include_bitcoin_server_interfacesdir = ${includedir}/bitcoin/server/interfaces
 include_bitcoin_server_interfaces_HEADERS = \
     include/bitcoin/server/interfaces/bitcoind_rest.hpp \
     include/bitcoin/server/interfaces/bitcoind_rpc.hpp \
+    include/bitcoin/server/interfaces/btcd.hpp \
     include/bitcoin/server/interfaces/electrum.hpp \
     include/bitcoin/server/interfaces/interfaces.hpp \
     include/bitcoin/server/interfaces/native.hpp \

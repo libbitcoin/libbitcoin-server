@@ -32,6 +32,7 @@
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rest.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rpc.hpp>
+#include <bitcoin/server/interfaces/btcd.hpp>
 #include <bitcoin/server/interfaces/electrum.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/interfaces/native.hpp>

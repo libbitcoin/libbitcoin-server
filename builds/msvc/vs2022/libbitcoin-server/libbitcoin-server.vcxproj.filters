@@ -206,6 +206,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rpc.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\electrum.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>

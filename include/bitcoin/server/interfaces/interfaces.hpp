@@ -21,6 +21,7 @@
 
 #include <bitcoin/server/interfaces/bitcoind_rest.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rpc.hpp>
+#include <bitcoin/server/interfaces/btcd.hpp>
 #include <bitcoin/server/interfaces/electrum.hpp>
 #include <bitcoin/server/interfaces/native.hpp>
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
@@ -33,6 +34,7 @@ namespace interface {
 
 using bitcoind_rest = publish<bitcoind_rest_methods>;
 using bitcoind_rpc  = publish<bitcoind_rpc_methods>;
+using btcd          = publish<btcd_methods>;
 using electrum      = publish<electrum_methods>;
 using native        = publish<native_methods>;
 using stratum_v1    = publish<stratum_v1_methods>;

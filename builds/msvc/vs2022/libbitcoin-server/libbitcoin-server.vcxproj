@@ -170,6 +170,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\estimator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rest.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rpc.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\interfaces.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\native.hpp" />
