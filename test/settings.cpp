@@ -233,6 +233,7 @@ BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
 
     // electrum_server
     BOOST_REQUIRE_EQUAL(server.maximum_headers, 10u * 2016u);
+    BOOST_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
     BOOST_REQUIRE_EQUAL(server.maximum_subscriptions, 1'000'000u);
     BOOST_REQUIRE_EQUAL(server.server_name, BC_USER_AGENT);
     BOOST_REQUIRE(server.donation_address.empty());

@@ -1138,6 +1138,11 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowed headers returned per request, defaults to '20160'."
     )
     (
+        "electrum.maximum_history",
+        value<uint32_t>(&configured.server.electrum.maximum_history),
+        "The maximum number of address history entries upon one subscription, defaults to '1000000'."
+    )
+    (
         "electrum.maximum_subscriptions",
         value<uint32_t>(&configured.server.electrum.maximum_subscriptions),
         "The maximum allowed address subscriptions per channel, defaults to '1000000'."
