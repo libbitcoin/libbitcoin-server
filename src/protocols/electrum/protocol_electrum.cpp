@@ -161,7 +161,7 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
                 NOTIFY(do_outpoint, std::get<node::header_t>(value));
             }
 
-            if (subscribed_scripthash_.load(relaxed))
+            if (subscribed_address_.load(relaxed))
             {
                 BC_ASSERT(archive().address_enabled());
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));

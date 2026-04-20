@@ -355,8 +355,8 @@ private:
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};
+    std::atomic_bool subscribed_address_{};
     std::atomic_bool subscribed_outpoint_{};
-    std::atomic_bool subscribed_scripthash_{};
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
@@ -365,8 +365,8 @@ private:
     network::asio::strand notification_strand_;
 
     // These are protected by notification strand.
+    std::map<hash_digest, subscription> address_subscriptions_{};
     std::set<system::chain::point> outpoint_subscriptions_{};
-    std::map<hash_digest, subscription> scripthash_subscriptions_{};
 };
 
 } // namespace server

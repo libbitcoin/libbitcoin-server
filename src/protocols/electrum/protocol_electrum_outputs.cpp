@@ -29,6 +29,7 @@ namespace server {
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -131,7 +132,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
 
     // TODO: subscribe.
     ///////////////////////////////////////////////////////////////////////////
-    subscribed_outpoint_.store(true, std::memory_order_relaxed);
+    subscribed_outpoint_.store(true, relaxed);
     ///////////////////////////////////////////////////////////////////////////
 
     chain::point prevout{ hash, index };
@@ -165,7 +166,7 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
 
     // TODO: unsubscribe.
     ///////////////////////////////////////////////////////////////////////////
-    const auto prior = subscribed_outpoint_.load(std::memory_order_relaxed);
+    const auto prior = subscribed_outpoint_.load(relaxed);
     ///////////////////////////////////////////////////////////////////////////
 
     send_result(prior, 16, BIND(complete, _1));

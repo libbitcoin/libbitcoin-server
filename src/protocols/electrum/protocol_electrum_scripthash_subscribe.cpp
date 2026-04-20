@@ -30,6 +30,7 @@ namespace server {
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -71,7 +72,7 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
         return;
     }
 
-    if (scripthash_subscriptions_.size() >= options_.maximum_subscriptions)
+    if (address_subscriptions_.size() >= options_.maximum_subscriptions)
     {
         send_code(error::subscription_limit);
         return;
@@ -93,9 +94,8 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     // Subscription response is idempotent.
-    subscribed_scripthash_.store(true, std::memory_order_relaxed);
-    auto [it, inserted] = scripthash_subscriptions_.try_emplace(hash, type,
-        midstate{});
+    subscribed_address_.store(true, relaxed);
+    auto [it, in] = address_subscriptions_.try_emplace(hash, type, midstate{});
 
     hash_digest status{};
     const auto ec = get_scripthash_status(status, it->second, it->first);
@@ -169,9 +169,9 @@ void protocol_electrum::do_scripthash_unsubscribe(
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    const auto found = to_bool(scripthash_subscriptions_.erase(hash));
-    if (is_zero(scripthash_subscriptions_.size()))
-        subscribed_scripthash_.store(false, std::memory_order_relaxed);
+    const auto found = to_bool(address_subscriptions_.erase(hash));
+    if (is_zero(address_subscriptions_.size()))
+        subscribed_address_.store(false, relaxed);
 
     POST(complete_scripthash_unsubscribe, found);
 }
@@ -192,7 +192,7 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
 
     code ec{};
     hash_digest status{};
-    for (auto& [key, sub]: scripthash_subscriptions_)
+    for (auto& [key, sub]: address_subscriptions_)
     {
         if ((ec = get_scripthash_status(status, sub, key)))
         {
@@ -227,7 +227,7 @@ void protocol_electrum::do_regressed(node::header_t) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    for (auto& [key, sub]: scripthash_subscriptions_)
+    for (auto& [key, sub]: address_subscriptions_)
     {
         // writer.flush resets hash accumulator, sub.type remains unchanged.
         sub.state.writer.flush();
