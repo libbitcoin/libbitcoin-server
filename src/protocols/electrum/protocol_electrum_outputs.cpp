@@ -29,6 +29,7 @@ namespace server {
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -36,6 +37,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     rpc_interface::blockchain_utxo_get_address, const std::string& tx_hash,
     double index) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (stopped(ec))
         return;
 
@@ -84,6 +86,7 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
     rpc_interface::blockchain_outpoint_get_status, const std::string& tx_hash,
     double txout_idx, const std::string& spk_hint) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (stopped(ec))
         return;
 
@@ -109,6 +112,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
     rpc_interface::blockchain_outpoint_subscribe, const std::string& tx_hash,
     double txout_idx, const std::string& spk_hint) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (stopped(ec))
         return;
 
@@ -126,20 +130,21 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
         return;
     }
 
+    // TODO: subscribe.
+    ///////////////////////////////////////////////////////////////////////////
+    subscribed_outpoint_.store(true, relaxed);
+    ///////////////////////////////////////////////////////////////////////////
+
     chain::point prevout{ hash, index };
     if (!send_outpoint_status(prevout, spk_hint))
         return;
-
-    // TODO: subscribe.
-    ///////////////////////////////////////////////////////////////////////////
-    subscribed_outpoint_.store(true, std::memory_order_relaxed);
-    ///////////////////////////////////////////////////////////////////////////
 }
 
 void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
     rpc_interface::blockchain_outpoint_unsubscribe, const std::string& tx_hash,
     double txout_idx) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (stopped(ec))
         return;
 
@@ -161,18 +166,70 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
 
     // TODO: unsubscribe.
     ///////////////////////////////////////////////////////////////////////////
-    const auto prior = subscribed_outpoint_.load(std::memory_order_relaxed);
+    const auto prior = subscribed_outpoint_.load(relaxed);
     ///////////////////////////////////////////////////////////////////////////
 
     send_result(prior, 16, BIND(complete, _1));
 }
 
+// notification.
+// ============================================================================
+
+// Notifier for blockchain_outpoint_subscribe events.
+void protocol_electrum::do_outpoint(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    // TODO: get prevout from event.
+    ///////////////////////////////////////////////////////////////////////////
+    chain::point prevout{};
+    ///////////////////////////////////////////////////////////////////////////
+
+    object_t status{};
+    if (!get_outpoint_status(status, prevout))
+    {
+        LOGF("Electrum::do_outpoint, outpoint not found (" << link << ").");
+        return;
+    }
+
+    // TODO: post_notification(bounce to network strand).
+    send_notification("blockchain.outpoint.subscribe", array_t
+    {
+        array_t{ encode_hash(prevout.hash()), prevout.index() },
+        std::move(status)
+    }, 128, BIND(handle_send, _1));
+}
+
+// ============================================================================
+
 // utility.
 // ----------------------------------------------------------------------------
+
+bool protocol_electrum::get_outpoint_status(object_t& status,
+    const chain::point& prevout) const NOEXCEPT
+{
+    // May be on either network or notification strand (thread safe).
+
+    const auto& query = archive();
+    const auto out = query.get_tx_history(prevout.hash());
+    if (!out.tx.is_valid())
+        return false;
+
+    status = { { "height", to_unsigned(out.tx.height()) } };
+    if (const auto ins = query.get_spenders_history(prevout); !ins.empty())
+    {
+        status["spender_txhash"] = encode_hash(ins.front().tx.hash());
+        status["spender_height"] = to_unsigned(ins.front().tx.height());
+    }
+
+    return true;
+}
 
 bool protocol_electrum::send_outpoint_status(const chain::point& prevout,
     const std::string& spk_hint) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     // This is parsed for correctness but is not used.
     // Script is advisory, and should match output script.
     if (!spk_hint.empty())
@@ -200,24 +257,6 @@ bool protocol_electrum::send_outpoint_status(const chain::point& prevout,
     }
 
     send_result(std::move(status), 128, BIND(complete, _1));
-    return true;
-}
-
-bool protocol_electrum::get_outpoint_status(object_t& status,
-    const chain::point& prevout) const NOEXCEPT
-{
-    const auto& query = archive();
-    const auto out = query.get_tx_history(prevout.hash());
-    if (!out.tx.is_valid())
-        return false;
-
-    status = { { "height", to_unsigned(out.tx.height()) } };
-    if (const auto ins = query.get_spenders_history(prevout); !ins.empty())
-    {
-        status["spender_txhash"] = encode_hash(ins.front().tx.hash());
-        status["spender_height"] = to_unsigned(ins.front().tx.height());
-    }
-
     return true;
 }
 

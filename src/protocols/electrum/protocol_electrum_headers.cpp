@@ -31,6 +31,7 @@ namespace server {
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -46,7 +47,7 @@ void protocol_electrum::handle_blockchain_number_of_blocks_subscribe(
         return;
     }
 
-    subscribed_height_.store(true, std::memory_order_relaxed);
+    subscribed_height_.store(true, relaxed);
     const auto top_height = archive().get_top_confirmed();
     send_result(top_height, 42, BIND(complete, _1));
 }
@@ -362,7 +363,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    subscribed_header_.store(true, std::memory_order_relaxed);
+    subscribed_header_.store(true, relaxed);
     send_result(object_t
     {
         { "height", top },

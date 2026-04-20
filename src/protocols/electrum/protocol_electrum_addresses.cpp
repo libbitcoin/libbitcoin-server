@@ -118,7 +118,7 @@ void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
         return;
     }
 
-    send_scripthash_subscribe(hash);
+    scripthash_subscribe(hash, notify_t::address);
 }
 
 // utilities

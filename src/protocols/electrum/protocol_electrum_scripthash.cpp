@@ -25,14 +25,13 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_electrum
+#define NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
-BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
 // get_balance
 // ----------------------------------------------------------------------------
@@ -42,7 +41,6 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     const std::string& scripthash) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     if (stopped(ec))
         return;
 
@@ -57,8 +55,10 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     get_balance(hash);
 }
 
+// common
 void protocol_electrum::get_balance(const hash_digest& hash) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (hash == null_hash)
     {
         send_code(error::invalid_argument);
@@ -78,7 +78,6 @@ void protocol_electrum::get_balance(const hash_digest& hash) NOEXCEPT
 void protocol_electrum::do_get_balance(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
-
     const auto& query = archive();
     uint64_t confirmed{}, unconfirmed{};
     auto ec = query.get_balance(stopping_, confirmed, unconfirmed, hash);
@@ -89,7 +88,6 @@ void protocol_electrum::complete_get_balance(const code& ec,
     uint64_t confirmed, int64_t unconfirmed) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     monitor(false);
     if (stopped())
         return;
@@ -115,6 +113,7 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
     rpc_interface::blockchain_scripthash_get_history,
     const std::string& scripthash) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (stopped(ec))
         return;
 
@@ -129,8 +128,10 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
     get_history(hash);
 }
 
+// common
 void protocol_electrum::get_history(const system::hash_digest& hash) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (hash == null_hash)
     {
         send_code(error::invalid_argument);
@@ -150,7 +151,6 @@ void protocol_electrum::get_history(const system::hash_digest& hash) NOEXCEPT
 void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
-
     histories histories{};
     const auto& query = archive();
     const auto ec = query.get_history(stopping_, histories, hash, turbo_);
@@ -161,7 +161,6 @@ void protocol_electrum::complete_get_history(const code& ec,
     const histories& histories) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     monitor(false);
     if (stopped())
         return;
@@ -184,6 +183,7 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     rpc_interface::blockchain_scripthash_get_mempool,
     const std::string& scripthash) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (stopped(ec))
         return;
 
@@ -198,8 +198,10 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     get_mempool(hash);
 }
 
+// common
 void protocol_electrum::get_mempool(const system::hash_digest& hash) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (hash == null_hash)
     {
         send_code(error::invalid_argument);
@@ -219,7 +221,6 @@ void protocol_electrum::get_mempool(const system::hash_digest& hash) NOEXCEPT
 void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
-
     histories histories{};
     const auto& query = archive();
     auto ec = query.get_unconfirmed_history(stopping_, histories, hash, turbo_);
@@ -230,7 +231,6 @@ void protocol_electrum::complete_get_mempool(const code& ec,
     const histories& histories) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     monitor(false);
     if (stopped())
         return;
@@ -252,6 +252,7 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
     rpc_interface::blockchain_scripthash_list_unspent,
     const std::string& scripthash) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (stopped(ec))
         return;
 
@@ -266,8 +267,10 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
     list_unspent(hash);
 }
 
+// common
 void protocol_electrum::list_unspent(const system::hash_digest& hash) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (hash == null_hash)
     {
         send_code(error::invalid_argument);
@@ -287,7 +290,6 @@ void protocol_electrum::list_unspent(const system::hash_digest& hash) NOEXCEPT
 void protocol_electrum::do_list_unspent(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
-
     unspents unspents{};
     const auto& query = archive();
     const auto ec = query.get_unspent(stopping_, unspents, hash, turbo_);
@@ -298,7 +300,6 @@ void protocol_electrum::complete_list_unspent(const code& ec,
     const unspents& unspents) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     monitor(false);
     if (stopped())
         return;
@@ -313,153 +314,12 @@ void protocol_electrum::complete_list_unspent(const code& ec,
     send_result(transform(unspents), size, BIND(complete, _1));
 }
 
-// subscribe
-// ----------------------------------------------------------------------------
-
-void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
-    rpc_interface::blockchain_scripthash_subscribe,
-    const std::string& scripthash) NOEXCEPT
-{
-    if (stopped(ec))
-        return;
-
-    if (!at_least(electrum::version::v1_1))
-    {
-        send_code(error::wrong_version);
-        return;
-    }
-
-    hash_digest hash{};
-    if (!decode_hash(hash, scripthash))
-    {
-        send_code(error::invalid_argument);
-        return;
-    }
-
-    send_scripthash_subscribe(hash);
-}
-
-void protocol_electrum::send_scripthash_subscribe(
-    const hash_digest& hash) NOEXCEPT
-{
-    if (!archive().address_enabled())
-    {
-        send_code(error::not_implemented);
-        return;
-    }
-
-    monitor(true);
-    PARALLEL(do_status, hash, BIND(send_status, _1, _2, _3));
-}
-
-// Invoked by send_scripthash_subscribe() or do_scripthash().
-void protocol_electrum::do_status(const hash_digest& hash,
-    const status_handler& sender) NOEXCEPT
-{
-    // TODO: subscribe.
-    ///////////////////////////////////////////////////////////////////////////
-    subscribed_scripthash_.store(true, std::memory_order_relaxed);
-    ///////////////////////////////////////////////////////////////////////////
-
-    histories histories{};
-    const auto& query = archive();
-    const auto ec = query.get_history(stopping_, histories, hash, turbo_);
-    POST(complete_status, ec, hash, to_status(histories), sender);
-}
-
-void protocol_electrum::complete_status(const code& ec,
-    const hash_digest& hash, const hash_digest& status,
-    const status_handler& sender) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    monitor(false);
-    if (stopped())
-        return;
-
-    sender(ec, hash, status);
-}
-
-void protocol_electrum::send_status(const code& ec, const hash_digest& hash,
-    const hash_digest& status) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (ec)
-    {
-        send_code(ec);
-        return;
-    }
-
-    send_result(array_t
-    {
-        encode_hash(hash),
-        status == null_hash ? value_t{} : value_t{ encode_hash(status) }
-    }, 128, BIND(complete, _1));
-}
-
-// unsubscribe
-// ----------------------------------------------------------------------------
-
-void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
-    rpc_interface::blockchain_scripthash_unsubscribe,
-    const std::string& scripthash) NOEXCEPT
-{
-    if (stopped(ec))
-        return;
-
-    if (!at_least(electrum::version::v1_4_2))
-    {
-        send_code(error::wrong_version);
-        return;
-    }
-
-    hash_digest hash{};
-    if (!decode_hash(hash, scripthash))
-    {
-        send_code(error::invalid_argument);
-        return;
-    }
-
-    send_scripthash_unsubscribe(hash);
-}
-
-void protocol_electrum::send_scripthash_unsubscribe(
-    const hash_digest& ) NOEXCEPT
-{
-    // TODO: unsubscribe.
-    ///////////////////////////////////////////////////////////////////////////
-    const auto prior = subscribed_scripthash_.load(std::memory_order_relaxed);
-    ///////////////////////////////////////////////////////////////////////////
-
-    send_result(prior, 16, BIND(complete, _1));
-}
-
 // utilities
 // ----------------------------------------------------------------------------
-// TODO: these can be implemented as electrum json serializers (see bitcoind).
 // private/static
 
 // Height is zero (rooted) or max_size_t for unconfirmed history txs.
-hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
-{
-    if (histories.empty())
-        return {};
-
-    midstate out{};
-    for (const auto& record: histories)
-    {
-        out.writer.write_string(encode_hash(record.tx.hash()));
-        out.writer.write_string(":");
-        out.writer.write_string(std::to_string(to_signed(record.tx.height())));
-        out.writer.write_string(":");
-    }
-
-    out.writer.flush();
-    return out.status;
-}
-
-// Height is zero (rooted) or max_size_t for unconfirmed history txs.
+// TODO: this can be implemented as electrum json serializers (see bitcoind).
 array_t protocol_electrum::transform(const histories& ins) NOEXCEPT
 {
     // to_signed() conversion is simple but sacrifices top height bit (ok).
@@ -491,6 +351,7 @@ array_t protocol_electrum::transform(const histories& ins) NOEXCEPT
 }
 
 // Height is zero for unconfirmed unspent output txs.
+// TODO: this can be implemented as electrum json serializers (see bitcoind).
 array_t protocol_electrum::transform(const unspents& ins) NOEXCEPT
 {
     array_t out(ins.size());
@@ -509,8 +370,6 @@ array_t protocol_electrum::transform(const unspents& ins) NOEXCEPT
     return out;
 }
 
-BC_POP_WARNING()
-BC_POP_WARNING()
 BC_POP_WARNING()
 
 } // namespace server

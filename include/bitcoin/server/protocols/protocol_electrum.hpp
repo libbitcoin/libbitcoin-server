@@ -19,8 +19,9 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ELECTRUM_HPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ELECTRUM_HPP
 
+#include <map>
 #include <memory>
-#include <unordered_set>
+#include <set>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -52,6 +53,7 @@ public:
             system::wallet::payment_address::mainnet_p2sh :
             system::wallet::payment_address::testnet_p2sh),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
+        notification_strand_(channel_->service().get_executor()),
         network::tracker<protocol_electrum>(session->log)
     {
     }
@@ -227,48 +229,77 @@ protected:
     void do_get_history(const hash_digest& hash) NOEXCEPT;
     void do_get_mempool(const hash_digest& hash) NOEXCEPT;
     void do_list_unspent(const hash_digest& hash) NOEXCEPT;
-    void do_status(const hash_digest& hash,
-        const status_handler& sender) NOEXCEPT;
 
-    void complete_get_balance(const code& ec, uint64_t confirmed,
-        int64_t unconfirmed) NOEXCEPT;
-    void complete_get_history(const code& ec,
-        const histories& histories) NOEXCEPT;
-    void complete_get_mempool(const code& ec,
-        const histories& histories) NOEXCEPT;
-    void complete_list_unspent(const code& ec,
-        const unspents& unspents) NOEXCEPT;
-    void complete_status(const code& ec, const hash_digest& hash,
-        const hash_digest& status, const status_handler& sender) NOEXCEPT;
+    void complete_get_balance(const code& ec, uint64_t confirmed, int64_t unconfirmed) NOEXCEPT;
+    void complete_get_history(const code& ec, const histories& histories) NOEXCEPT;
+    void complete_get_mempool(const code& ec, const histories& histories) NOEXCEPT;
+    void complete_list_unspent(const code& ec, const unspents& unspents) NOEXCEPT;
 
-    void send_status(const code& ec, const hash_digest& hash,
-        const hash_digest& status) NOEXCEPT;
-    void notify_status(const code& ec, const hash_digest& hash,
-        const hash_digest& status, notify_t type,
-        node::header_t link) NOEXCEPT;
-
-    /// Notification senders and send handlers.
+    /// Notification event handlers.
     /// -----------------------------------------------------------------------
 
     void do_height(node::header_t link) NOEXCEPT;
     void do_header(node::header_t link) NOEXCEPT;
     void do_outpoint(node::header_t link) NOEXCEPT;
     void do_scripthash(node::header_t link) NOEXCEPT;
+    void do_regressed(node::header_t link) NOEXCEPT;
+
+    /// Address.
+    /// -----------------------------------------------------------------------
+
+    // subscription.
+    void scripthash_subscribe(const hash_digest& hash,
+        notify_t type) NOEXCEPT;
+    void do_scripthash_subscribe(const hash_digest& hash,
+        notify_t type) NOEXCEPT;
+    void complete_scripthash_subscribe(const code& ec,
+        hash_digest& status, const hash_digest& hash) NOEXCEPT;
+
+    // unsubscription.
+    void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
+    void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
+    void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
+
+    // notification (do_scripthash()).
+    void scripthash_notify(const hash_digest& status, const hash_digest& hash,
+        notify_t type) NOEXCEPT;
+
+    /// Outpoint.
+    /// -----------------------------------------------------------------------
+
+    // subscription (do_outpoint()).
+    bool get_outpoint_status(interface::object_t& status,
+        const system::chain::point& prevout) const NOEXCEPT;
+    bool send_outpoint_status(const system::chain::point& prevout,
+        const std::string& spk_hint) NOEXCEPT;
+
+    // unsubscription.
+    // notification.
 
     /// Utilities.
     /// -----------------------------------------------------------------------
 
+    /// The negotiated version is at least the specified level.
     inline bool at_least(server::electrum::version version) const NOEXCEPT
     {
         return channel_->version() >= version;
     }
 
+    /// Configuration options.
     inline const options_t& options() const NOEXCEPT
     {
         return options_;
     }
 
 private:
+    // Post to notification strand.
+    template <class Derived, typename Method, typename... Args>
+    inline auto notify(Method&& method, Args&&... args) NOEXCEPT
+    {
+        return boost::asio::post(notification_strand_,
+            BIND_SAFE(BIND_SHARED(method, args)));
+    }
+
     // Status hash optimization (~200 bytes).
     struct midstate
     {
@@ -277,12 +308,24 @@ private:
         system::hash::sha256::fast writer{ stream };
     };
 
+    // Subscription to address/scripthash/scruptpubkey.
+    struct subscription
+    {
+        notify_t type{};
+        midstate state{};
+        database::address_link cursor{};
+    };
+
     // Aliases.
     using array_t = network::rpc::array_t;
     using object_t = network::rpc::object_t;
     using version_t = protocol_electrum_version;
     static constexpr electrum::version minimum = version_t::minimum;
     static constexpr electrum::version maximum = version_t::maximum;
+
+    // Scripthash status.
+    code get_scripthash_status(hash_digest& out, subscription& sub,
+        const hash_digest& hash) NOEXCEPT;
 
     // Transformations.
     static std::string to_method_name(notify_t type) NOEXCEPT;
@@ -304,14 +347,6 @@ private:
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
     code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 
-    // Shared send/get implementations.
-    void send_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
-    void send_scripthash_subscribe(const hash_digest& hash) NOEXCEPT;
-    bool send_outpoint_status(const system::chain::point& prevout,
-        const std::string& spk_hint) NOEXCEPT;
-    bool get_outpoint_status(object_t& status,
-        const system::chain::point& prevout) const NOEXCEPT;
-
     // These are thread safe.
     const options_t& options_;
     const bool turbo_;
@@ -320,14 +355,18 @@ private:
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};
+    std::atomic_bool subscribed_address_{};
     std::atomic_bool subscribed_outpoint_{};
-    std::atomic_bool subscribed_scripthash_{};
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;
 
-    // This is protected by strand.
-    std::unordered_set<hash_digest> subscriptions_{};
+    // This is thread safe, uses network threadpool.
+    network::asio::strand notification_strand_;
+
+    // These are protected by notification strand.
+    std::map<hash_digest, subscription> address_subscriptions_{};
+    std::set<system::chain::point> outpoint_subscriptions_{};
 };
 
 } // namespace server

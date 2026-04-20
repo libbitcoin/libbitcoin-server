@@ -57,6 +57,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/protocols/electrum/protocol_electrum_mempool.cpp \
     src/protocols/electrum/protocol_electrum_outputs.cpp \
     src/protocols/electrum/protocol_electrum_scripthash.cpp \
+    src/protocols/electrum/protocol_electrum_scripthash_subscribe.cpp \
     src/protocols/electrum/protocol_electrum_scriptpubkey.cpp \
     src/protocols/electrum/protocol_electrum_server.cpp \
     src/protocols/electrum/protocol_electrum_transactions.cpp \

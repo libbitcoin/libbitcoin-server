@@ -209,6 +209,15 @@ BOOST_AUTO_TEST_CASE(error_t__code__invalid_argument__true_expected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "invalid_argument");
 }
 
+BOOST_AUTO_TEST_CASE(error_t__code__subscription_limit__true_expected_message)
+{
+    constexpr auto value = error::subscription_limit;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "subscription_limit");
+}
+
 BOOST_AUTO_TEST_CASE(error_t__code__unsupported_argument__true_expected_message)
 {
     constexpr auto value = error::unsupported_argument;
