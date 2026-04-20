@@ -227,22 +227,6 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
     }, 128, BIND(handle_send, _1));
 }
 
-// regress
-// ----------------------------------------------------------------------------
-
-// The chain has been reduced in height, clear all midstate cache and cursors.
-void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
-{
-    BC_ASSERT(notification_strand_.running_in_this_thread());
-
-    for (auto& [key, sub]: address_subscriptions_)
-    {
-        // writer.flush resets hash accumulator, sub.type remains unchanged.
-        sub.state.writer.flush();
-        sub.cursor = {};
-    }
-}
-
 // utility
 // ----------------------------------------------------------------------------
 // private
