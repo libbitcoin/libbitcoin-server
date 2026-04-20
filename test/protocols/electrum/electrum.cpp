@@ -57,6 +57,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     electrum.banner_message = "banner_message";
     electrum.donation_address = "donation_address";
     electrum.maximum_subscriptions = 3;
+    electrum.maximum_history = 5;
     electrum.maximum_headers = 5;
     electrum.connections = 1;
     database_settings.interval_depth = 2;

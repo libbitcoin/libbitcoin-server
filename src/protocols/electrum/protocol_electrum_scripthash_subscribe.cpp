@@ -91,9 +91,12 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     hash_digest status{};
     if (address_subscriptions_.size() < options_.maximum_subscriptions)
     {
+        using mid = midstate;
+        const auto limit = options().maximum_history;
+
         // Subscription response is idempotent.
-        auto at = address_subscriptions_.try_emplace(hash, type, midstate{});
-        ec = get_scripthash_status(status, at.first->second, at.first->first);
+        auto& at = *address_subscriptions_.try_emplace(hash, type, mid{}).first;
+        ec = get_scripthash_status(status, at.second, at.first, limit);
         subscribed_address_.store(true, relaxed);
     }
     else
@@ -105,7 +108,7 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
 }
 
 void protocol_electrum::complete_scripthash_subscribe(const code& ec,
-    hash_digest& status, const hash_digest& hash) NOEXCEPT
+    const hash_digest& status, const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -113,6 +116,7 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
     if (stopped())
         return;
 
+    // TODO: map database::error::maximum_depth to server code?
     if (ec)
     {
         send_code(ec);
@@ -281,9 +285,10 @@ hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
 }
 
 code protocol_electrum::get_scripthash_status(hash_digest& out,
-    subscription& /* sub */, const hash_digest& hash) NOEXCEPT
+    subscription& /* sub */, const hash_digest& hash, size_t /* limit */) NOEXCEPT
 {
     // TODO: use cursors and midstate to optimize succesive queries.
+    // TODO: limit first pass query depth.
 
     histories histories{};
     const auto& query = archive();

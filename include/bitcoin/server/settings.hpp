@@ -94,6 +94,9 @@ public:
         /// Recommended to be a multiple of the difficulty retarget period.
         uint32_t maximum_headers{ 10 * 2016 };
 
+        /// Maximum number of address history entries upon one subscription.
+        uint32_t maximum_history{ 1'000'000 };
+
         /// Maximum cumulative number of address subscriptions per channel.
         uint32_t maximum_subscriptions{ 1'000'000 };
 

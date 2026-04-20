@@ -252,7 +252,7 @@ protected:
     void do_scripthash_subscribe(const hash_digest& hash,
         notify_t type) NOEXCEPT;
     void complete_scripthash_subscribe(const code& ec,
-        hash_digest& status, const hash_digest& hash) NOEXCEPT;
+        const hash_digest& status, const hash_digest& hash) NOEXCEPT;
     void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
@@ -321,7 +321,7 @@ private:
 
     // Status utilities.
     code get_scripthash_status(hash_digest& out, subscription& sub,
-        const hash_digest& hash) NOEXCEPT;
+        const hash_digest& hash, size_t limit=max_size_t) NOEXCEPT;
     bool get_outpoint_statuses(std::vector<interface::object_t>& out,
         const system::chain::point& prevout) const NOEXCEPT;
     bool get_outpoint_status(interface::object_t& out,
