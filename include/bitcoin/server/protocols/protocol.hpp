@@ -61,4 +61,7 @@ private:
 } // namespace server
 } // namespace libbitcoin
 
+// For use with secondary (e.g. notification) strands.
+#define NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
+
 #endif

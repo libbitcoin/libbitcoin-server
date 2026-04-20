@@ -28,11 +28,11 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_electrum
-#define NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -137,7 +137,6 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
         return false;
 
     // TODO: collapse three atomics this into a single enumeration.
-    constexpr auto relaxed = std::memory_order_relaxed;
     switch (event_)
     {
         ////case node::chase::transaction:

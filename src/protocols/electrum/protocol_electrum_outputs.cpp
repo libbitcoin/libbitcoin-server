@@ -27,6 +27,7 @@ namespace server {
 #define CLASS protocol_electrum
 
 using namespace system;
+using namespace system::chain;
 using namespace network::rpc;
 using namespace std::placeholders;
 constexpr auto relaxed = std::memory_order_relaxed;
@@ -104,9 +105,11 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
         return;
     }
 
-    chain::point prevout{ hash, index };
-    send_outpoint_status(prevout, spk_hint);
+    send_outpoint_status({ hash, index }, spk_hint);
 }
+
+// subscribe
+// ----------------------------------------------------------------------------
 
 void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
     rpc_interface::blockchain_outpoint_subscribe, const std::string& tx_hash,
@@ -130,15 +133,53 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
         return;
     }
 
-    // TODO: subscribe.
-    ///////////////////////////////////////////////////////////////////////////
-    subscribed_outpoint_.store(true, relaxed);
-    ///////////////////////////////////////////////////////////////////////////
-
-    chain::point prevout{ hash, index };
-    if (!send_outpoint_status(prevout, spk_hint))
-        return;
+    // Outpoint status is not long-running so the notification strand is only
+    // used to guard the notifications set. No need for the monitor, as
+    // do_outpoint_subscribe() is trivial and pointless to cancel.
+    ////monitor(true);
+    NOTIFY(do_outpoint_subscribe, point{ hash, index }, spk_hint);
 }
+
+void protocol_electrum::do_outpoint_subscribe(const point& prevout,
+    const std::string& hint) NOEXCEPT
+{
+    // Cancellability is preserved because not on channel strand.
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    code ec{};
+    if (outpoint_subscriptions_.size() < options_.maximum_subscriptions)
+    {
+        // Subscription response is idempotent.
+        outpoint_subscriptions_.insert(prevout);
+        subscribed_outpoint_.store(true, relaxed);
+    }
+    else
+    {
+        ec = error::subscription_limit;
+    }
+
+    POST(complete_outpoint_subscribe, ec, prevout, hint);
+}
+
+void protocol_electrum::complete_outpoint_subscribe(const code& ec,
+    const point& prevout, const std::string& hint) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    ////monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_code(ec);
+        return;
+    }
+
+    send_outpoint_status(prevout, hint);
+}
+
+// unsubscribe
+// ----------------------------------------------------------------------------
 
 void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
     rpc_interface::blockchain_outpoint_unsubscribe, const std::string& tx_hash,
@@ -162,51 +203,69 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
         return;
     }
 
-    chain::point prevout{ hash, index };
-
-    // TODO: unsubscribe.
-    ///////////////////////////////////////////////////////////////////////////
-    const auto prior = subscribed_outpoint_.load(relaxed);
-    ///////////////////////////////////////////////////////////////////////////
-
-    send_result(prior, 16, BIND(complete, _1));
+    NOTIFY(do_outpoint_unsubscribe, point{ hash, index });
 }
 
-// notification.
-// ============================================================================
-
-// Notifier for blockchain_outpoint_subscribe events.
-void protocol_electrum::do_outpoint(node::header_t link) NOEXCEPT
+void protocol_electrum::do_outpoint_unsubscribe(const point& prevout) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    // TODO: get prevout from event.
-    ///////////////////////////////////////////////////////////////////////////
-    chain::point prevout{};
-    ///////////////////////////////////////////////////////////////////////////
+    const auto found = to_bool(outpoint_subscriptions_.erase(prevout));
+    if (is_zero(outpoint_subscriptions_.size()))
+        subscribed_outpoint_.store(false, relaxed);
 
-    object_t status{};
-    if (!get_outpoint_status(status, prevout))
+    POST(complete_outpoint_unsubscribe, found);
+}
+
+void protocol_electrum::complete_outpoint_unsubscribe(bool found) NOEXCEPT
+{
+    send_result(found, 16, BIND(complete, _1));
+}
+
+// notify
+// ----------------------------------------------------------------------------
+
+// Notifier for blockchain_outpoint_subscribe events.
+void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
+{
+    // Cancellability is preserved because not on channel strand.
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    for (const auto& prevout: outpoint_subscriptions_)
     {
-        LOGF("Electrum::do_outpoint, outpoint not found (" << link << ").");
-        return;
-    }
+        if (stopping_)
+            return;
 
-    // TODO: post_notification(bounce to network strand).
+        auto status = std::make_unique<object_t>();
+        if (!get_outpoint_status(*status, prevout))
+        {
+            LOGV("Electrum::do_outpoint, outpoint not found.");
+        }
+        else
+        {
+            // Asio-buffered message (small, not under caller control).
+            POST(outpoint_notify, std::move(status), prevout);
+        }
+    }
+}
+
+void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
+    const point& prevout) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
     send_notification("blockchain.outpoint.subscribe", array_t
     {
         array_t{ encode_hash(prevout.hash()), prevout.index() },
-        std::move(status)
+        std::move(*status)
     }, 128, BIND(handle_send, _1));
 }
 
-// ============================================================================
-
-// utility.
+// utility
 // ----------------------------------------------------------------------------
 
 bool protocol_electrum::get_outpoint_status(object_t& status,
-    const chain::point& prevout) const NOEXCEPT
+    const point& prevout) const NOEXCEPT
 {
     // May be on either network or notification strand (thread safe).
 
@@ -225,17 +284,17 @@ bool protocol_electrum::get_outpoint_status(object_t& status,
     return true;
 }
 
-bool protocol_electrum::send_outpoint_status(const chain::point& prevout,
-    const std::string& spk_hint) NOEXCEPT
+bool protocol_electrum::send_outpoint_status(const point& prevout,
+    const std::string& hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     // This is parsed for correctness but is not used.
     // Script is advisory, and should match output script.
-    if (!spk_hint.empty())
+    if (!hint.empty())
     {
         data_chunk bytes{};
-        if (!decode_base16(bytes, spk_hint))
+        if (!decode_base16(bytes, hint))
         {
             send_code(error::invalid_argument);
             return false;

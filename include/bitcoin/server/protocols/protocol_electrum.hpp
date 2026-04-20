@@ -247,7 +247,7 @@ protected:
     /// Address.
     /// -----------------------------------------------------------------------
 
-    // subscription.
+    // subscribe.
     void scripthash_subscribe(const hash_digest& hash,
         notify_t type) NOEXCEPT;
     void do_scripthash_subscribe(const hash_digest& hash,
@@ -255,26 +255,40 @@ protected:
     void complete_scripthash_subscribe(const code& ec,
         hash_digest& status, const hash_digest& hash) NOEXCEPT;
 
-    // unsubscription.
+    // unsubscribe.
     void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
 
-    // notification (do_scripthash()).
+    // notify (do_scripthash()).
     void scripthash_notify(const hash_digest& status, const hash_digest& hash,
         notify_t type) NOEXCEPT;
 
     /// Outpoint.
     /// -----------------------------------------------------------------------
 
-    // subscription (do_outpoint()).
+    // subscribe.
+    void do_outpoint_subscribe(const system::chain::point& prevout,
+        const std::string& hint) NOEXCEPT;
+    void complete_outpoint_subscribe(const code& ec,
+        const system::chain::point& prevout,
+        const std::string& hint) NOEXCEPT;
+
+    // unsubscribe.
+    void do_outpoint_unsubscribe(const system::chain::point& prevout) NOEXCEPT;
+    void complete_outpoint_unsubscribe(bool found) NOEXCEPT;
+
+    // notify (do_outpoint()).
+    void outpoint_notify(const std::unique_ptr<interface::object_t>& status,
+        const system::chain::point& prevout) NOEXCEPT;
+
+    // utility.
     bool get_outpoint_status(interface::object_t& status,
         const system::chain::point& prevout) const NOEXCEPT;
     bool send_outpoint_status(const system::chain::point& prevout,
-        const std::string& spk_hint) NOEXCEPT;
+        const std::string& hint) NOEXCEPT;
 
-    // unsubscription.
-    // notification.
+    // notify.
 
     /// Utilities.
     /// -----------------------------------------------------------------------
@@ -328,10 +342,10 @@ private:
         const hash_digest& hash) NOEXCEPT;
 
     // Transformations.
-    static std::string to_method_name(notify_t type) NOEXCEPT;
     static array_t transform(const unspents& unspents) NOEXCEPT;
     static array_t transform(const histories& histories) NOEXCEPT;
     static hash_digest to_status(const histories& histories) NOEXCEPT;
+    static std::string to_method_name(notify_t type) NOEXCEPT;
 
     // Compute server.features.hosts value from config.
     object_t self_hosts() const NOEXCEPT;
@@ -365,8 +379,8 @@ private:
     network::asio::strand notification_strand_;
 
     // These are protected by notification strand.
-    std::map<hash_digest, subscription> address_subscriptions_{};
     std::set<system::chain::point> outpoint_subscriptions_{};
+    std::map<hash_digest, subscription> address_subscriptions_{};
 };
 
 } // namespace server
