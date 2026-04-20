@@ -28,6 +28,7 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_electrum
+#define NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network::rpc;
@@ -47,7 +48,6 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 void protocol_electrum::start() NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     if (started())
         return;
 
@@ -158,16 +158,24 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
             if (subscribed_outpoint_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_outpoint, std::get<node::header_t>(value));
+                NOTIFY(do_outpoint, std::get<node::header_t>(value));
             }
 
             if (subscribed_scripthash_.load(relaxed))
             {
                 BC_ASSERT(archive().address_enabled());
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_scripthash, std::get<node::header_t>(value));
+                NOTIFY(do_scripthash, std::get<node::header_t>(value));
             }
 
+            break;
+        }
+        case node::chase::regressed:
+        case node::chase::disorganized:
+        {
+            // value is regression branch_point.
+            BC_ASSERT(std::holds_alternative<node::height_t>(value));
+            NOTIFY(do_regressed, std::get<node::height_t>(value));
             break;
         }
         default:
@@ -179,7 +187,7 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     return true;
 }
 
-// notifications
+// height/header notifications.
 // ----------------------------------------------------------------------------
 // Each notification is an independent message.
 
@@ -187,7 +195,6 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 void protocol_electrum::do_height(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     const auto& query = archive();
     const auto height = query.get_height(link);
 
@@ -207,7 +214,6 @@ void protocol_electrum::do_height(node::header_t link) NOEXCEPT
 void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
     const auto& query = archive();
     const auto height = query.get_height(link);
     const auto header = query.get_wire_header(link);
@@ -223,82 +229,6 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
         { "height", height.value },
         { "hex", encode_base16(header) }
     }, 64, BIND(complete, _1));
-}
-
-// Notifier for blockchain_outpoint_subscribe events.
-void protocol_electrum::do_outpoint(node::header_t link) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    // TODO: get prevout from event.
-    ///////////////////////////////////////////////////////////////////////////
-    chain::point prevout{};
-    ///////////////////////////////////////////////////////////////////////////
-
-    object_t status{};
-    if (!get_outpoint_status(status, prevout))
-    {
-        LOGF("Electrum::do_outpoint, outpoint not found (" << link << ").");
-        return;
-    }
-
-    send_notification("blockchain.outpoint.subscribe", array_t
-    {
-        array_t{ encode_hash(prevout.hash()), prevout.index() },
-        std::move(status)
-    }, 128, BIND(handle_send, _1));
-}
-
-// Notifier for blockchain_scripthash_subscribe events.
-void protocol_electrum::do_scripthash(node::header_t link) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    // TODO: get hash/type from event.
-    ///////////////////////////////////////////////////////////////////////////
-    hash_digest hash{};
-    constexpr auto type = notify_t::scripthash;
-    ///////////////////////////////////////////////////////////////////////////
-
-    // Address status is long-running, so cannot tie up strand.
-    PARALLEL(do_status, hash, BIND(notify_status, _1, _2, _3, type, link));
-}
-
-void protocol_electrum::notify_status(const code& ec, const hash_digest& hash,
-    const hash_digest& status, notify_t type, node::header_t link) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (ec)
-    {
-        LOGF("Electrum::do_scripthash, address not found (" << link << ").");
-        return;
-    }
-
-    send_notification(to_method_name(type), array_t
-    {
-        encode_hash(hash),
-        status == null_hash ? value_t{} : value_t{ encode_hash(status) }
-    }, 128, BIND(complete, _1));
-}
-
-// utilities
-// ----------------------------------------------------------------------------
-// private/static
-
-// Convert enumeration to json-rpc notification method name.
-std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
-{
-    switch (type)
-    {
-        case notify_t::address:
-            return "blockchain.address.subscribe";
-        case notify_t::scripthash:
-            return "blockchain.scripthash.subscribe";
-        default:
-        case notify_t::scriptpubkey:
-            return "blockchain.scriptpubkey.subscribe";
-    }
 }
 
 BC_POP_WARNING()

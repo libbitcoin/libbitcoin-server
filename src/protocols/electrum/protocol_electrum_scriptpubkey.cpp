@@ -181,7 +181,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_subscribe(
         return;
     }
 
-    send_scripthash_subscribe(script.hash());
+    scripthash_subscribe(script.hash(), notify_t::scriptpubkey);
 }
 
 void protocol_electrum::handle_blockchain_scriptpubkey_unsubscribe(
@@ -211,7 +211,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_unsubscribe(
         return;
     }
 
-    send_scripthash_unsubscribe(script.hash());
+    scripthash_unsubscribe(script.hash());
 }
 
 BC_POP_WARNING()
