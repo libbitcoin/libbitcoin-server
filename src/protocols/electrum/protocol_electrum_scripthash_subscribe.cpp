@@ -40,6 +40,7 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
     const std::string& scripthash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -64,6 +65,7 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
     notify_t type) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (!archive().address_enabled())
     {
         send_code(error::not_implemented);
@@ -106,6 +108,7 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
     hash_digest& status, const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     monitor(false);
     if (stopped())
         return;
@@ -131,6 +134,7 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     const std::string& scripthash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -155,6 +159,7 @@ void protocol_electrum::scripthash_unsubscribe(
     const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (!archive().address_enabled())
     {
         send_code(error::not_implemented);

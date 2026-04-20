@@ -194,6 +194,7 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 void protocol_electrum::do_height(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     const auto& query = archive();
     const auto height = query.get_height(link);
 
@@ -213,6 +214,7 @@ void protocol_electrum::do_height(node::header_t link) NOEXCEPT
 void protocol_electrum::do_header(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     const auto& query = archive();
     const auto height = query.get_height(link);
     const auto header = query.get_wire_header(link);

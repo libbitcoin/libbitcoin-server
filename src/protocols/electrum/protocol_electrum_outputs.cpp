@@ -42,6 +42,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     double index) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -91,6 +92,7 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
     double txout_idx, const std::string& spk_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -119,6 +121,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
     double txout_idx, const std::string& spk_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -168,6 +171,7 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
     const point& prevout, const std::string& hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     ////monitor(false);
     if (stopped())
         return;
@@ -189,6 +193,7 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
     double txout_idx) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
