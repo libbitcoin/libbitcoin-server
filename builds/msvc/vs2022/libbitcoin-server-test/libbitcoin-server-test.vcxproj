@@ -144,7 +144,7 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_fees.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_headers.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_mempool.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_outputs.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_outpoints.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scripthash.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scriptpubkey.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp" />
