@@ -226,8 +226,8 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
 // regress
 // ----------------------------------------------------------------------------
 
-// The chain has regressed, clear all midstate cache and cursors.
-void protocol_electrum::do_regressed(node::header_t) NOEXCEPT
+// The chain has been reduced in height, clear all midstate cache and cursors.
+void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 

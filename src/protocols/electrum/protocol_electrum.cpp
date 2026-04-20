@@ -169,12 +169,11 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 
             break;
         }
-        case node::chase::regressed:
-        case node::chase::disorganized:
+        case node::chase::reorganized:
         {
             // value is regression branch_point.
             BC_ASSERT(std::holds_alternative<node::height_t>(value));
-            NOTIFY(do_regressed, std::get<node::height_t>(value));
+            NOTIFY(do_reorganized, std::get<node::height_t>(value));
             break;
         }
         default:

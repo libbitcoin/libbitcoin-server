@@ -242,7 +242,7 @@ protected:
     void do_header(node::header_t link) NOEXCEPT;
     void do_outpoint(node::header_t link) NOEXCEPT;
     void do_scripthash(node::header_t link) NOEXCEPT;
-    void do_regressed(node::header_t link) NOEXCEPT;
+    void do_reorganized(node::header_t link) NOEXCEPT;
 
     /// Address.
     /// -----------------------------------------------------------------------
