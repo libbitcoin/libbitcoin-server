@@ -18,14 +18,12 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
-#include <ranges>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_electrum
-#define NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network::rpc;
@@ -42,6 +40,7 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
     const std::string& scripthash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -66,15 +65,10 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
     notify_t type) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (!archive().address_enabled())
     {
         send_code(error::not_implemented);
-        return;
-    }
-
-    if (address_subscriptions_.size() >= options_.maximum_subscriptions)
-    {
-        send_code(error::subscription_limit);
         return;
     }
 
@@ -93,12 +87,20 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    // Subscription response is idempotent.
-    subscribed_address_.store(true, relaxed);
-    auto [it, in] = address_subscriptions_.try_emplace(hash, type, midstate{});
-
+    code ec{};
     hash_digest status{};
-    const auto ec = get_scripthash_status(status, it->second, it->first);
+    if (address_subscriptions_.size() < options_.maximum_subscriptions)
+    {
+        // Subscription response is idempotent.
+        auto at = address_subscriptions_.try_emplace(hash, type, midstate{});
+        ec = get_scripthash_status(status, at.first->second, at.first->first);
+        subscribed_address_.store(true, relaxed);
+    }
+    else
+    {
+        ec = error::subscription_limit;
+    }
+
     POST(complete_scripthash_subscribe, ec, hash, status);
 }
 
@@ -106,6 +108,7 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
     hash_digest& status, const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     monitor(false);
     if (stopped())
         return;
@@ -131,6 +134,7 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     const std::string& scripthash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -155,6 +159,7 @@ void protocol_electrum::scripthash_unsubscribe(
     const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (!archive().address_enabled())
     {
         send_code(error::not_implemented);
@@ -181,7 +186,7 @@ void protocol_electrum::complete_scripthash_unsubscribe(bool found) NOEXCEPT
     send_result(found, 16, BIND(complete, _1));
 }
 
-// notification
+// notify
 // ----------------------------------------------------------------------------
 
 // Notifier for blockchain_scripthash_subscribe events.
@@ -190,18 +195,17 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
     // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    code ec{};
-    hash_digest status{};
     for (auto& [key, sub]: address_subscriptions_)
     {
-        if ((ec = get_scripthash_status(status, sub, key)))
+        hash_digest status{};
+        if (const auto ec = get_scripthash_status(status, sub, key))
         {
             if (ec == database::error::canceled) return;
             LOGF("Electrum::do_scripthash, " << ec.message());
         }
         else
         {
-            // Asio-buffered output (small, not under caller control).
+            // Asio-buffered message (small, not under caller control).
             POST(scripthash_notify, status, key, sub.type);
         }
     }
@@ -219,11 +223,11 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
     }, 128, BIND(handle_send, _1));
 }
 
-// regression
+// regress
 // ----------------------------------------------------------------------------
 
-// The chain has regressed, clear all midstate cache and cursors.
-void protocol_electrum::do_regressed(node::header_t) NOEXCEPT
+// The chain has been reduced in height, clear all midstate cache and cursors.
+void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -235,10 +239,11 @@ void protocol_electrum::do_regressed(node::header_t) NOEXCEPT
     }
 }
 
-// utilities
+// utility
 // ----------------------------------------------------------------------------
-// private/static
+// private
 
+// static
 // Convert enumeration to json-rpc notification method name.
 std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
 {
@@ -254,6 +259,7 @@ std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
     }
 }
 
+// static
 // Height is zero (rooted) or max_size_t for unconfirmed history txs.
 // TODO: this can be implemented as electrum json serializer (see bitcoind).
 hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
@@ -274,14 +280,10 @@ hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
     return out.status;
 }
 
-// non-static
 code protocol_electrum::get_scripthash_status(hash_digest& out,
     subscription& /* sub */, const hash_digest& hash) NOEXCEPT
 {
     // TODO: use cursors and midstate to optimize succesive queries.
-    ////auto& state = sub.state;
-    ////const auto& point = sub.point_cursor;
-    ////const auto& address = sub.address_cursor;
 
     histories histories{};
     const auto& query = archive();

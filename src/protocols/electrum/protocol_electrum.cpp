@@ -28,11 +28,11 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_electrum
-#define NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -137,7 +137,6 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
         return false;
 
     // TODO: collapse three atomics this into a single enumeration.
-    constexpr auto relaxed = std::memory_order_relaxed;
     switch (event_)
     {
         ////case node::chase::transaction:
@@ -170,12 +169,11 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
 
             break;
         }
-        case node::chase::regressed:
-        case node::chase::disorganized:
+        case node::chase::reorganized:
         {
             // value is regression branch_point.
             BC_ASSERT(std::holds_alternative<node::height_t>(value));
-            NOTIFY(do_regressed, std::get<node::height_t>(value));
+            NOTIFY(do_reorganized, std::get<node::height_t>(value));
             break;
         }
         default:
@@ -185,50 +183,6 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     }
 
     return true;
-}
-
-// height/header notifications.
-// ----------------------------------------------------------------------------
-// Each notification is an independent message.
-
-// Notifier for handle_blockchain_number_of_blocks_subscribe events.
-void protocol_electrum::do_height(node::header_t link) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto& query = archive();
-    const auto height = query.get_height(link);
-
-    if (height.is_terminal())
-    {
-        LOGF("Electrum::do_height, height not found (" << link << ").");
-        return;
-    }
-
-    send_notification("blockchain.numblocks.subscribe", array_t
-    {
-        height.value
-    }, 48, BIND(complete, _1));
-}
-
-// Notifier for blockchain_headers_subscribe events.
-void protocol_electrum::do_header(node::header_t link) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto& query = archive();
-    const auto height = query.get_height(link);
-    const auto header = query.get_wire_header(link);
-
-    if (height.is_terminal())
-    {
-        LOGF("Electrum::do_header, header not found (" << link << ").");
-        return;
-    }
-
-    send_notification("blockchain.headers.subscribe", object_t
-    {
-        { "height", height.value },
-        { "hex", encode_base16(header) }
-    }, 64, BIND(complete, _1));
 }
 
 BC_POP_WARNING()

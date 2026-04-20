@@ -371,6 +371,52 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     }, 256, BIND(complete, _1));
 }
 
+// height/header notifications.
+// ----------------------------------------------------------------------------
+// Each notification is an independent message.
+
+// Notifier for handle_blockchain_number_of_blocks_subscribe events.
+void protocol_electrum::do_height(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto height = query.get_height(link);
+
+    if (height.is_terminal())
+    {
+        LOGF("Electrum::do_height, height not found (" << link << ").");
+        return;
+    }
+
+    send_notification("blockchain.numblocks.subscribe", array_t
+    {
+        height.value
+    }, 48, BIND(complete, _1));
+}
+
+// Notifier for blockchain_headers_subscribe events.
+void protocol_electrum::do_header(node::header_t link) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto height = query.get_height(link);
+    const auto header = query.get_wire_header(link);
+
+    if (height.is_terminal())
+    {
+        LOGF("Electrum::do_header, header not found (" << link << ").");
+        return;
+    }
+
+    send_notification("blockchain.headers.subscribe", object_t
+    {
+        { "height", height.value },
+        { "hex", encode_base16(header) }
+    }, 64, BIND(complete, _1));
+}
+
 BC_POP_WARNING()
 
 } // namespace server
