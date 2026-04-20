@@ -284,9 +284,6 @@ code protocol_electrum::get_scripthash_status(hash_digest& out,
     subscription& /* sub */, const hash_digest& hash) NOEXCEPT
 {
     // TODO: use cursors and midstate to optimize succesive queries.
-    ////auto& state = sub.state;
-    ////const auto& point = sub.point_cursor;
-    ////const auto& address = sub.address_cursor;
 
     histories histories{};
     const auto& query = archive();
