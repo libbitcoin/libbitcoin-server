@@ -24,9 +24,11 @@
 namespace libbitcoin {
 namespace server {
 
+#define CLASS protocol_native
+
 using namespace system;
 
-#define CLASS protocol_native
+BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 
 // handle_get_address
 // ----------------------------------------------------------------------------
@@ -230,6 +232,8 @@ void protocol_native::complete_get_address_balance(const code& ec,
 
     send_not_found();
 }
+
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin

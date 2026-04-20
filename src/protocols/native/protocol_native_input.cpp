@@ -26,6 +26,9 @@ namespace server {
 
 using namespace system;
 
+BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
 bool protocol_native::handle_get_inputs(const code& ec, interface::inputs,
     uint8_t, uint8_t media, const hash_cptr& hash, bool witness) NOEXCEPT
 {
@@ -94,7 +97,7 @@ bool protocol_native::handle_get_input(const code& ec, interface::input,
                 // Json input serialization includes witness.
                 send_json(value_from(input),
                     two * input->serialized_size(witness));
-            return true;
+                return true;
         }
     }
 
@@ -155,13 +158,16 @@ bool protocol_native::handle_get_input_witness(const code& ec,
             case json:
                 send_json(value_from(witness),
                     two * witness->serialized_size(false));
-            return true;
+                return true;
         }
     }
 
     send_not_found();
     return true;
 }
+
+BC_POP_WARNING()
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin
