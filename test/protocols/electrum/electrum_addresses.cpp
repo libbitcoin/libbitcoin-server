@@ -384,6 +384,4 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__confirmed_and_un
     BOOST_REQUIRE(point12_0 < point11_1);
 }
 
-// blockchain.address.subscribe
-
 BOOST_AUTO_TEST_SUITE_END()
