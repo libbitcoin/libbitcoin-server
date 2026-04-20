@@ -236,8 +236,9 @@ void protocol_electrum::do_regressed(node::header_t) NOEXCEPT
 
 // utility
 // ----------------------------------------------------------------------------
-// private/static
+// private
 
+// static
 // Convert enumeration to json-rpc notification method name.
 std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
 {
@@ -253,6 +254,7 @@ std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
     }
 }
 
+// static
 // Height is zero (rooted) or max_size_t for unconfirmed history txs.
 // TODO: this can be implemented as electrum json serializer (see bitcoind).
 hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
@@ -273,7 +275,6 @@ hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
     return out.status;
 }
 
-// non-static
 code protocol_electrum::get_scripthash_status(hash_digest& out,
     subscription& /* sub */, const hash_digest& hash) NOEXCEPT
 {

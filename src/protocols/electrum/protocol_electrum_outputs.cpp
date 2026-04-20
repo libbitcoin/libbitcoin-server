@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
+#include <ranges>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 
@@ -33,6 +34,8 @@ using namespace std::placeholders;
 constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
+BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
 void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     rpc_interface::blockchain_utxo_get_address, const std::string& tx_hash,
@@ -233,18 +236,22 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
 
     for (const auto& prevout: outpoint_subscriptions_)
     {
-        if (stopping_)
-            return;
-
-        auto status = std::make_unique<object_t>();
-        if (!get_outpoint_status(*status, prevout))
+        if (stopping_) return;
+        std::vector<object_t> statuses{};
+        if (!get_outpoint_statuses(statuses, prevout))
         {
             LOGV("Electrum::do_outpoint, outpoint not found.");
         }
         else
         {
-            // Asio-buffered message (small, not under caller control).
-            POST(outpoint_notify, std::move(status), prevout);
+            // There can be more than one spender for a given output, so
+            // instead of picking one arbitrarily, send all independently.
+            for (auto& status: statuses)
+            {
+                // Asio-buffered message (small, not under caller control).
+                auto ptr = std::make_unique<object_t>(std::move(status));
+                POST(outpoint_notify, std::move(ptr), prevout);
+            }
         }
     }
 }
@@ -263,22 +270,60 @@ void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
 
 // utility
 // ----------------------------------------------------------------------------
+// private
 
-bool protocol_electrum::get_outpoint_status(object_t& status,
+bool protocol_electrum::get_outpoint_statuses(std::vector<object_t>& out,
     const point& prevout) const NOEXCEPT
 {
-    // May be on either network or notification strand (thread safe).
+    BC_ASSERT(notification_strand_.running_in_this_thread());
 
     const auto& query = archive();
-    const auto out = query.get_tx_history(prevout.hash());
-    if (!out.tx.is_valid())
+    const auto history = query.get_tx_history(prevout.hash());
+    if (!history.tx.is_valid())
         return false;
 
-    status = { { "height", to_unsigned(out.tx.height()) } };
+    out.clear();
+    const auto height = to_unsigned(history.tx.height());
+    const auto ins = query.get_spenders_history(prevout);
+
+    // No spenders, just return unspent singleton.
+    if (ins.empty())
+    {
+        out.push_back({ { "height", height } });
+        return true;
+    }
+
+    // One or more spenders, return all.
+    out.resize(ins.size());
+    std::ranges::transform(ins, out.begin(), [height](const auto& in) NOEXCEPT
+    {
+        return object_t
+        {
+            { "height", height },
+            { "spender_txhash", encode_hash(in.tx.hash()) },
+            { "spender_height", to_unsigned(in.tx.height()) }
+        };
+    });
+
+    return true;
+}
+
+bool protocol_electrum::get_outpoint_status(object_t& out,
+    const point& prevout) const NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& query = archive();
+    const auto history = query.get_tx_history(prevout.hash());
+    if (!history.tx.is_valid())
+        return false;
+
+    // Zero or more spenders, return the first if multiple.
+    out = { { "height", to_unsigned(history.tx.height()) } };
     if (const auto ins = query.get_spenders_history(prevout); !ins.empty())
     {
-        status["spender_txhash"] = encode_hash(ins.front().tx.hash());
-        status["spender_height"] = to_unsigned(ins.front().tx.height());
+        out["spender_txhash"] = encode_hash(ins.front().tx.hash());
+        out["spender_height"] = to_unsigned(ins.front().tx.height());
     }
 
     return true;
@@ -319,6 +364,8 @@ bool protocol_electrum::send_outpoint_status(const point& prevout,
     return true;
 }
 
+BC_POP_WARNING()
+BC_POP_WARNING()
 BC_POP_WARNING()
 
 } // namespace server

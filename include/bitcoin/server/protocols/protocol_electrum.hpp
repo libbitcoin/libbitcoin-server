@@ -247,48 +247,30 @@ protected:
     /// Address.
     /// -----------------------------------------------------------------------
 
-    // subscribe.
     void scripthash_subscribe(const hash_digest& hash,
         notify_t type) NOEXCEPT;
     void do_scripthash_subscribe(const hash_digest& hash,
         notify_t type) NOEXCEPT;
     void complete_scripthash_subscribe(const code& ec,
         hash_digest& status, const hash_digest& hash) NOEXCEPT;
-
-    // unsubscribe.
     void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
-
-    // notify (do_scripthash()).
     void scripthash_notify(const hash_digest& status, const hash_digest& hash,
         notify_t type) NOEXCEPT;
 
     /// Outpoint.
     /// -----------------------------------------------------------------------
 
-    // subscribe.
     void do_outpoint_subscribe(const system::chain::point& prevout,
         const std::string& hint) NOEXCEPT;
     void complete_outpoint_subscribe(const code& ec,
         const system::chain::point& prevout,
         const std::string& hint) NOEXCEPT;
-
-    // unsubscribe.
     void do_outpoint_unsubscribe(const system::chain::point& prevout) NOEXCEPT;
     void complete_outpoint_unsubscribe(bool found) NOEXCEPT;
-
-    // notify (do_outpoint()).
     void outpoint_notify(const std::unique_ptr<interface::object_t>& status,
         const system::chain::point& prevout) NOEXCEPT;
-
-    // utility.
-    bool get_outpoint_status(interface::object_t& status,
-        const system::chain::point& prevout) const NOEXCEPT;
-    bool send_outpoint_status(const system::chain::point& prevout,
-        const std::string& hint) NOEXCEPT;
-
-    // notify.
 
     /// Utilities.
     /// -----------------------------------------------------------------------
@@ -337,9 +319,15 @@ private:
     static constexpr electrum::version minimum = version_t::minimum;
     static constexpr electrum::version maximum = version_t::maximum;
 
-    // Scripthash status.
+    // Status utilities.
     code get_scripthash_status(hash_digest& out, subscription& sub,
         const hash_digest& hash) NOEXCEPT;
+    bool get_outpoint_statuses(std::vector<interface::object_t>& out,
+        const system::chain::point& prevout) const NOEXCEPT;
+    bool get_outpoint_status(interface::object_t& out,
+        const system::chain::point& prevout) const NOEXCEPT;
+    bool send_outpoint_status(const system::chain::point& prevout,
+        const std::string& hint) NOEXCEPT;
 
     // Transformations.
     static array_t transform(const unspents& unspents) NOEXCEPT;
