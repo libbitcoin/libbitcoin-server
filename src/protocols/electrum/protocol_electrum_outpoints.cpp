@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
+#include <memory>
 #include <ranges>
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -28,14 +29,13 @@ namespace server {
 #define CLASS protocol_electrum
 
 using namespace system;
-using namespace system::chain;
 using namespace network::rpc;
 using namespace std::placeholders;
 constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
-BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
+BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_UNIQUE_PTR)
 
 void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     rpc_interface::blockchain_utxo_get_address, const std::string& tx_hash,
@@ -104,13 +104,38 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
 
     uint32_t index{};
     hash_digest hash{};
-    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash) ||
+        !is_valid_hint(spk_hint))
     {
         send_code(error::invalid_argument);
         return;
     }
 
-    send_outpoint_status({ hash, index }, spk_hint);
+    outpoint_subscription sub{};
+    if (!get_outpoint_history(sub, { hash, index }))
+    {
+        send_code(error::not_found);
+        return;
+    }
+
+    // Sends first spender only.
+    send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
+}
+
+bool protocol_electrum::get_outpoint_history(outpoint_subscription& out,
+    const point& prevout) const NOEXCEPT
+{
+    const auto& query = archive();
+    out.outpoint = query.get_tx_history(prevout.hash());
+    if (!out.outpoint.valid())
+    {
+        out.spenders.clear();
+        return false;
+    }
+
+    // TODO: this could be accept stopping_ but it's a small query.
+    out.spenders = query.get_spenders_history(prevout);
+    return true;
 }
 
 // subscribe
@@ -133,46 +158,43 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
 
     uint32_t index{};
     hash_digest hash{};
-    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
+    if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash) ||
+        !is_valid_hint(spk_hint))
     {
         send_code(error::invalid_argument);
         return;
     }
 
-    // Outpoint status is not long-running so the notification strand is only
-    // used to guard the notifications set. No need for the monitor, as
-    // do_outpoint_subscribe() is trivial and pointless to cancel.
-    ////monitor(true);
-    NOTIFY(do_outpoint_subscribe, point{ hash, index }, spk_hint);
+    monitor(true);
+    NOTIFY(do_outpoint_subscribe, point{ hash, index });
 }
 
-void protocol_electrum::do_outpoint_subscribe(const point& prevout,
-    const std::string& hint) NOEXCEPT
+void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
 {
     // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    code ec{};
+    outpoint_subscription sub{};
+    code ec{ error::subscription_limit };
     if (outpoint_subscriptions_.size() < options_.maximum_subscriptions)
     {
-        // Subscription response is idempotent.
-        outpoint_subscriptions_.insert(prevout);
+        ec = get_outpoint_history(sub, prevout) ?
+            error::success : ec = error::not_found;
+
+        outpoint_subscriptions_.emplace(prevout, sub);
         subscribed_outpoint_.store(true, relaxed);
     }
-    else
-    {
-        ec = error::subscription_limit;
-    }
 
-    POST(complete_outpoint_subscribe, ec, prevout, hint);
+    // All current subscribers are cached and forwarded.
+    POST(complete_outpoint_subscribe, ec, std::move(sub), prevout);
 }
 
 void protocol_electrum::complete_outpoint_subscribe(const code& ec,
-    const point& prevout, const std::string& hint) NOEXCEPT
+    const outpoint_subscription& sub, const point& prevout) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    ////monitor(false);
+    monitor(false);
     if (stopped())
         return;
 
@@ -182,7 +204,21 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
         return;
     }
 
-    send_outpoint_status(prevout, hint);
+    // Send first spender only.
+    send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
+
+    // Send here vs. completion handler because asio will queue it up
+    // behind the send anyway, and this prevents another sub copy.
+    // Send remaining spenders as notifications.
+    if (!sub.spenders.empty())
+    {
+        const auto height = sub.outpoint.tx.height();
+        for (auto spender = std::next(sub.spenders.begin());
+            spender != sub.spenders.end(); ++spender)
+        {
+            POST(outpoint_notify, make_status(height, *spender), prevout);
+        }
+    }
 }
 
 // unsubscribe
@@ -239,25 +275,48 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
     // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    for (const auto& prevout: outpoint_subscriptions_)
+    for (auto& subscription: outpoint_subscriptions_)
     {
-        if (stopping_) return;
-        std::vector<object_t> statuses{};
-        if (!get_outpoint_statuses(statuses, prevout))
+        if (stopping_)
+            return;
+
+        auto& sub = subscription.second;
+        const auto& prevout = subscription.first;
+
+        outpoint_subscription res{};
+        if (!get_outpoint_history(res, prevout))
         {
             LOGV("Electrum::do_outpoint, outpoint not found.");
+            continue;
+        }
+
+        // There is no change.
+        if (sub == res) continue;
+
+        const auto height = sub.outpoint.tx.height();
+        if (!sub.outpoint.valid() || sub.outpoint.tx.height() != height)
+        {
+            // Outpoint changed (or newly found), send all current spenders.
+            if (res.spenders.empty())
+            {
+                POST(outpoint_notify, make_status(height), prevout);
+            }
+            else for (const auto& spender: res.spenders)
+            {
+                POST(outpoint_notify, make_status(height, spender), prevout);
+            }
         }
         else
         {
-            // There can be more than one spender for a given output, so
-            // instead of picking one arbitrarily, send all independently.
-            for (auto& status: statuses)
+            // Outpoint unchanged, send only new or changed spenders.
+            for (const auto& spender: difference(res.spenders, sub.spenders))
             {
-                // Asio-buffered message (small, not under caller control).
-                auto ptr = std::make_unique<object_t>(std::move(status));
-                POST(outpoint_notify, std::move(ptr), prevout);
+                POST(outpoint_notify, make_status(height, spender), prevout);
             }
         }
+
+        // Update subscription state.
+        sub = std::move(res);
     }
 }
 
@@ -275,98 +334,65 @@ void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
 
 // utility
 // ----------------------------------------------------------------------------
-// private
 
-bool protocol_electrum::get_outpoint_statuses(std::vector<object_t>& out,
-    const point& prevout) const NOEXCEPT
+object_t protocol_electrum::to_outpoint_status(size_t output_height) NOEXCEPT
 {
-    BC_ASSERT(notification_strand_.running_in_this_thread());
-
-    const auto& query = archive();
-    const auto history = query.get_tx_history(prevout.hash());
-    if (!history.tx.is_valid())
-        return false;
-
-    out.clear();
-    const auto height = to_unsigned(history.tx.height());
-    const auto ins = query.get_spenders_history(prevout);
-
-    // No spenders, just return unspent singleton.
-    if (ins.empty())
+    return
     {
-        out.push_back({ { "height", height } });
-        return true;
-    }
-
-    // One or more spenders, return all.
-    out.resize(ins.size());
-    std::ranges::transform(ins, out.begin(), [height](const auto& in) NOEXCEPT
-    {
-        return object_t
-        {
-            { "height", height },
-            { "spender_txhash", encode_hash(in.tx.hash()) },
-            { "spender_height", to_unsigned(in.tx.height()) }
-        };
-    });
-
-    return true;
+        { "height", to_unsigned(output_height) }
+    };
 }
 
-bool protocol_electrum::get_outpoint_status(object_t& out,
-    const point& prevout) const NOEXCEPT
+object_t protocol_electrum::to_outpoint_status(size_t output_height,
+    const history& history) NOEXCEPT
 {
-    BC_ASSERT(stranded());
-
-    const auto& query = archive();
-    const auto history = query.get_tx_history(prevout.hash());
-    if (!history.tx.is_valid())
-        return false;
-
-    // Zero or more spenders, return the first if multiple.
-    out = { { "height", to_unsigned(history.tx.height()) } };
-    if (const auto ins = query.get_spenders_history(prevout); !ins.empty())
+    return
     {
-        out["spender_txhash"] = encode_hash(ins.front().tx.hash());
-        out["spender_height"] = to_unsigned(ins.front().tx.height());
-    }
-
-    return true;
+        { "height", to_unsigned(output_height) },
+        { "spender_txhash", encode_hash(history.tx.hash()) },
+        { "spender_height", to_unsigned(history.tx.height()) }
+    };
 }
 
-bool protocol_electrum::send_outpoint_status(const point& prevout,
-    const std::string& hint) NOEXCEPT
+// Converts only the first (if any).
+object_t protocol_electrum::to_outpoint_status(
+    const outpoint_subscription& sub) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(sub.outpoint.valid());
 
-    // This is parsed for correctness but is not used.
-    // Script is advisory, and should match output script.
+    const auto output_height = sub.outpoint.tx.height();
+    return sub.spenders.empty() ?
+        to_outpoint_status(output_height) :
+        to_outpoint_status(output_height, sub.spenders.front());
+}
+
+bool protocol_electrum::is_valid_hint(const std::string& hint) NOEXCEPT
+{
     if (!hint.empty())
     {
         data_chunk bytes{};
         if (!decode_base16(bytes, hint))
-        {
-            send_code(error::invalid_argument);
             return false;
-        }
 
         chain::script script{ std::move(bytes), false };
         if (!script.is_valid())
-        {
-            send_code(error::invalid_argument);
             return false;
-        }
     }
 
-    object_t status{};
-    if (!get_outpoint_status(status, prevout))
-    {
-        send_code(error::not_found);
-        return false;
-    }
-
-    send_result(std::move(status), 128, BIND(complete, _1));
     return true;
+}
+
+std::unique_ptr<protocol_electrum::object_t> protocol_electrum::make_status(
+    size_t output_height) const NOEXCEPT
+{
+    return std::make_unique<object_t>(to_outpoint_status(output_height));
+}
+
+std::unique_ptr<protocol_electrum::object_t> protocol_electrum::make_status(
+    size_t output_height, const history& history) const NOEXCEPT
+{
+    return std::make_unique<object_t>(to_outpoint_status(output_height,
+        history));
 }
 
 BC_POP_WARNING()

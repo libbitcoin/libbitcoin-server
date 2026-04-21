@@ -96,7 +96,7 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
 
         // Subscription response is idempotent.
         auto& at = *address_subscriptions_.try_emplace(hash, type, mid{}).first;
-        ec = get_scripthash_status(status, at.second, at.first, limit);
+        ec = get_scripthash_history(status, at.second, at.first, limit);
         subscribed_address_.store(true, relaxed);
     }
     else
@@ -202,7 +202,7 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
     for (auto& [key, sub]: address_subscriptions_)
     {
         hash_digest status{};
-        if (const auto ec = get_scripthash_status(status, sub, key))
+        if (const auto ec = get_scripthash_history(status, sub, key))
         {
             if (ec == database::error::canceled) return;
             LOGF("Electrum::do_scripthash, " << ec.message());
@@ -268,8 +268,9 @@ hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
     return out.status;
 }
 
-code protocol_electrum::get_scripthash_status(hash_digest& out,
-    subscription& /* sub */, const hash_digest& hash, size_t /* limit */) NOEXCEPT
+code protocol_electrum::get_scripthash_history(hash_digest& out,
+    address_subscription& /* sub */, const hash_digest& hash,
+    size_t /* limit */) NOEXCEPT
 {
     // TODO: use cursors and midstate to optimize succesive queries.
     // TODO: limit first pass query depth.
