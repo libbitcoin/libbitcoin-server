@@ -66,6 +66,7 @@ enum error_t : uint8_t
     unconfirmable_transaction,
     argument_overflow,
     target_overflow,
+    maximum_depth,
     wrong_version,
     server_error
 };

@@ -254,6 +254,15 @@ BOOST_AUTO_TEST_CASE(error_t__code__target_overflow__true_expected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "target_overflow");
 }
 
+BOOST_AUTO_TEST_CASE(error_t__code__maximum_depth__true_expected_message)
+{
+    constexpr auto value = error::maximum_depth;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "maximum_depth");
+}
+
 BOOST_AUTO_TEST_CASE(error_t__code__wrong_version__true_expected_message)
 {
     constexpr auto value = error::wrong_version;
