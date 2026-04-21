@@ -184,8 +184,9 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     return true;
 }
 
-// regress
+// reorganization
 // ----------------------------------------------------------------------------
+// outpoint subscriptions do not require modification.
 
 // The chain has been reduced in height, clear all midstate cache and cursors.
 void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT

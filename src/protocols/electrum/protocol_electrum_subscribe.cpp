@@ -81,27 +81,22 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
     NOTIFY(do_scripthash_subscribe, hash, type);
 }
 
+// Subscription response is idempotent.
 void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     notify_t type) NOEXCEPT
 {
     // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    code ec{};
     hash_digest status{};
+    code ec{ error::subscription_limit };
     if (address_subscriptions_.size() < options_.maximum_subscriptions)
     {
         using mid = midstate;
         const auto limit = options().maximum_history;
-
-        // Subscription response is idempotent.
         auto& at = *address_subscriptions_.try_emplace(hash, type, mid{}).first;
         ec = get_scripthash_history(status, at.second, at.first, limit);
         subscribed_address_.store(true, relaxed);
-    }
-    else
-    {
-        ec = error::subscription_limit;
     }
 
     POST(complete_scripthash_subscribe, ec, hash, status);

@@ -133,7 +133,6 @@ bool protocol_electrum::get_outpoint_history(outpoint_subscription& out,
         return false;
     }
 
-    // TODO: this could be accept stopping_ but it's a small query.
     out.spenders = query.get_spenders_history(prevout);
     return true;
 }
@@ -169,6 +168,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
     NOTIFY(do_outpoint_subscribe, point{ hash, index });
 }
 
+// Subscription response is idempotent.
 void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
 {
     // Cancellability is preserved because not on channel strand.
@@ -180,7 +180,6 @@ void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
     {
         ec = get_outpoint_history(sub, prevout) ?
             error::success : ec = error::not_found;
-
         outpoint_subscriptions_.emplace(prevout, sub);
         subscribed_outpoint_.store(true, relaxed);
     }
@@ -207,9 +206,9 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
     // Send first spender only.
     send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
 
+    // Send remaining spenders as notifications.
     // Send here vs. completion handler because asio will queue it up
     // behind the send anyway, and this prevents another sub copy.
-    // Send remaining spenders as notifications.
     if (!sub.spenders.empty())
     {
         const auto height = sub.outpoint.tx.height();
@@ -283,25 +282,25 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
         auto& sub = subscription.second;
         const auto& prevout = subscription.first;
 
-        outpoint_subscription res{};
-        if (!get_outpoint_history(res, prevout))
+        outpoint_subscription result{};
+        if (!get_outpoint_history(result, prevout))
         {
             LOGV("Electrum::do_outpoint, outpoint not found.");
             continue;
         }
 
         // There is no change.
-        if (sub == res) continue;
+        if (sub == result) continue;
 
         const auto height = sub.outpoint.tx.height();
         if (!sub.outpoint.valid() || sub.outpoint.tx.height() != height)
         {
             // Outpoint changed (or newly found), send all current spenders.
-            if (res.spenders.empty())
+            if (result.spenders.empty())
             {
                 POST(outpoint_notify, make_status(height), prevout);
             }
-            else for (const auto& spender: res.spenders)
+            else for (const auto& spender: result.spenders)
             {
                 POST(outpoint_notify, make_status(height, spender), prevout);
             }
@@ -309,14 +308,14 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
         else
         {
             // Outpoint unchanged, send only new or changed spenders.
-            for (const auto& spender: difference(res.spenders, sub.spenders))
+            for (const auto& spender: difference(result.spenders, sub.spenders))
             {
                 POST(outpoint_notify, make_status(height, spender), prevout);
             }
         }
 
         // Update subscription state.
-        sub = std::move(res);
+        sub = std::move(result);
     }
 }
 
