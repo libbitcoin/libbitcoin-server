@@ -21,7 +21,6 @@
 
 #include <map>
 #include <memory>
-#include <set>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -206,12 +205,40 @@ protected:
         rpc_interface::mempool_get_info) NOEXCEPT;
 
 protected:
+    using point = system::chain::point;
+    using hash_digest = system::hash_digest;
+    using history = database::history;
     using unspents = database::unspents;
     using histories = database::histories;
-    using hash_digest = system::hash_digest;
     enum class notify_t { address, scripthash, scriptpubkey };
-    typedef std::function<void(const code&, const hash_digest&,
-        const hash_digest&)> status_handler;
+
+    // Status hash optimization (~200 bytes).
+    struct midstate
+    {
+        hash_digest status{};
+        system::stream::out::fast stream{ status };
+        system::hash::sha256::fast writer{ stream };
+    };
+
+    // Subscription to address/scripthash/scruptpubkey.
+    struct address_subscription
+    {
+        notify_t type{};
+        midstate state{};
+        database::address_link cursor{};
+    };
+
+    // Subscription to outpoint.
+    struct outpoint_subscription
+    {
+        database::history outpoint{};
+        database::histories spenders{};
+
+        bool operator==(const outpoint_subscription& other) const NOEXCEPT
+        {
+            return outpoint == other.outpoint && spenders == other.spenders;
+        }
+    };
 
     /// Common implementation for block_header/s.
     void blockchain_block_headers(size_t starting, size_t quantity,
@@ -259,18 +286,22 @@ protected:
     void scripthash_notify(const hash_digest& status, const hash_digest& hash,
         notify_t type) NOEXCEPT;
 
+    code get_scripthash_history(hash_digest& status, address_subscription& sub,
+        const hash_digest& hash, size_t limit=max_size_t) NOEXCEPT;
+
     /// Outpoint.
     /// -----------------------------------------------------------------------
 
-    void do_outpoint_subscribe(const system::chain::point& prevout,
-        const std::string& hint) NOEXCEPT;
+    void do_outpoint_subscribe(const point& prevout) NOEXCEPT;
     void complete_outpoint_subscribe(const code& ec,
-        const system::chain::point& prevout,
-        const std::string& hint) NOEXCEPT;
-    void do_outpoint_unsubscribe(const system::chain::point& prevout) NOEXCEPT;
+        const outpoint_subscription& sub, const point& prevout) NOEXCEPT;
+    void do_outpoint_unsubscribe(const point& prevout) NOEXCEPT;
     void complete_outpoint_unsubscribe(bool found) NOEXCEPT;
     void outpoint_notify(const std::unique_ptr<interface::object_t>& status,
-        const system::chain::point& prevout) NOEXCEPT;
+        const point& prevout) NOEXCEPT;
+
+    bool get_outpoint_history(outpoint_subscription& sub,
+        const point& prevout) const NOEXCEPT;
 
     /// Utilities.
     /// -----------------------------------------------------------------------
@@ -296,22 +327,6 @@ private:
             BIND_SAFE(BIND_SHARED(method, args)));
     }
 
-    // Status hash optimization (~200 bytes).
-    struct midstate
-    {
-        hash_digest status{};
-        system::stream::out::fast stream{ status };
-        system::hash::sha256::fast writer{ stream };
-    };
-
-    // Subscription to address/scripthash/scruptpubkey.
-    struct subscription
-    {
-        notify_t type{};
-        midstate state{};
-        database::address_link cursor{};
-    };
-
     // Aliases.
     using array_t = network::rpc::array_t;
     using object_t = network::rpc::object_t;
@@ -319,21 +334,21 @@ private:
     static constexpr electrum::version minimum = version_t::minimum;
     static constexpr electrum::version maximum = version_t::maximum;
 
-    // Status utilities.
-    code get_scripthash_status(hash_digest& out, subscription& sub,
-        const hash_digest& hash, size_t limit=max_size_t) NOEXCEPT;
-    bool get_outpoint_statuses(std::vector<interface::object_t>& out,
-        const system::chain::point& prevout) const NOEXCEPT;
-    bool get_outpoint_status(interface::object_t& out,
-        const system::chain::point& prevout) const NOEXCEPT;
-    bool send_outpoint_status(const system::chain::point& prevout,
-        const std::string& hint) NOEXCEPT;
-
     // Transformations.
     static array_t transform(const unspents& unspents) NOEXCEPT;
     static array_t transform(const histories& histories) NOEXCEPT;
     static hash_digest to_status(const histories& histories) NOEXCEPT;
     static std::string to_method_name(notify_t type) NOEXCEPT;
+    static bool is_valid_hint(const std::string& hint) NOEXCEPT;
+    static object_t to_outpoint_status(size_t output_height) NOEXCEPT;
+    static object_t to_outpoint_status(size_t output_height,
+        const history& history) NOEXCEPT;
+    static object_t to_outpoint_status(
+        const outpoint_subscription& sub) NOEXCEPT;
+    std::unique_ptr<object_t> make_status(
+        size_t output_height) const NOEXCEPT;
+    std::unique_ptr<object_t> make_status(size_t output_height,
+        const history& history) const NOEXCEPT;
 
     // Compute server.features.hosts value from config.
     object_t self_hosts() const NOEXCEPT;
@@ -367,8 +382,8 @@ private:
     network::asio::strand notification_strand_;
 
     // These are protected by notification strand.
-    std::set<system::chain::point> outpoint_subscriptions_{};
-    std::map<hash_digest, subscription> address_subscriptions_{};
+    std::map<point, outpoint_subscription> outpoint_subscriptions_{};
+    std::map<hash_digest, address_subscription> address_subscriptions_{};
 };
 
 } // namespace server

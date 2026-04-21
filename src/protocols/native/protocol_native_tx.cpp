@@ -26,6 +26,9 @@ namespace server {
 
 using namespace system;
 
+BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
 bool protocol_native::handle_get_tx(const code& ec, interface::tx, uint8_t,
     uint8_t media, const hash_cptr& hash, bool witness) NOEXCEPT
 {
@@ -166,6 +169,9 @@ bool protocol_native::handle_get_tx_details(const code& ec,
     send_json(std::move(object), 128);
     return true;
 }
+
+BC_POP_WARNING()
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin

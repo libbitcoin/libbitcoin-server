@@ -26,6 +26,9 @@ namespace server {
 
 using namespace system;
 
+BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
 bool protocol_native::handle_get_outputs(const code& ec, interface::outputs,
     uint8_t, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
@@ -90,7 +93,7 @@ bool protocol_native::handle_get_output(const code& ec, interface::output,
                 return true;
             case json:
                 send_json(value_from(output), two * size);
-            return true;
+                return true;
         }
     }
 
@@ -193,6 +196,9 @@ bool protocol_native::handle_get_output_spenders(const code& ec,
     send_not_found();
     return true;
 }
+
+BC_POP_WARNING()
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin

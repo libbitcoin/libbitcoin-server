@@ -427,7 +427,4 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__confirmed_a
     BOOST_REQUIRE(point12_0 < point11_1);
 }
 
-// blockchain.scriptpubkey.subscribe
-// blockchain.scriptpubkey.unsubscribe
-
 BOOST_AUTO_TEST_SUITE_END()

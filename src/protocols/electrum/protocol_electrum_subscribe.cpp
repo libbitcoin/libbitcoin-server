@@ -81,27 +81,22 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
     NOTIFY(do_scripthash_subscribe, hash, type);
 }
 
+// Subscription response is idempotent.
 void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     notify_t type) NOEXCEPT
 {
     // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    code ec{};
     hash_digest status{};
+    code ec{ error::subscription_limit };
     if (address_subscriptions_.size() < options_.maximum_subscriptions)
     {
         using mid = midstate;
         const auto limit = options().maximum_history;
-
-        // Subscription response is idempotent.
         auto& at = *address_subscriptions_.try_emplace(hash, type, mid{}).first;
-        ec = get_scripthash_status(status, at.second, at.first, limit);
+        ec = get_scripthash_history(status, at.second, at.first, limit);
         subscribed_address_.store(true, relaxed);
-    }
-    else
-    {
-        ec = error::subscription_limit;
     }
 
     POST(complete_scripthash_subscribe, ec, hash, status);
@@ -202,7 +197,7 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
     for (auto& [key, sub]: address_subscriptions_)
     {
         hash_digest status{};
-        if (const auto ec = get_scripthash_status(status, sub, key))
+        if (const auto ec = get_scripthash_history(status, sub, key))
         {
             if (ec == database::error::canceled) return;
             LOGF("Electrum::do_scripthash, " << ec.message());
@@ -225,22 +220,6 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
         encode_hash(hash),
         status == null_hash ? value_t{} : value_t{ encode_hash(status) }
     }, 128, BIND(handle_send, _1));
-}
-
-// regress
-// ----------------------------------------------------------------------------
-
-// The chain has been reduced in height, clear all midstate cache and cursors.
-void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
-{
-    BC_ASSERT(notification_strand_.running_in_this_thread());
-
-    for (auto& [key, sub]: address_subscriptions_)
-    {
-        // writer.flush resets hash accumulator, sub.type remains unchanged.
-        sub.state.writer.flush();
-        sub.cursor = {};
-    }
 }
 
 // utility
@@ -284,8 +263,9 @@ hash_digest protocol_electrum::to_status(const histories& histories) NOEXCEPT
     return out.status;
 }
 
-code protocol_electrum::get_scripthash_status(hash_digest& out,
-    subscription& /* sub */, const hash_digest& hash, size_t /* limit */) NOEXCEPT
+code protocol_electrum::get_scripthash_history(hash_digest& out,
+    address_subscription& /* sub */, const hash_digest& hash,
+    size_t /* limit */) NOEXCEPT
 {
     // TODO: use cursors and midstate to optimize succesive queries.
     // TODO: limit first pass query depth.

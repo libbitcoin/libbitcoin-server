@@ -30,6 +30,8 @@ namespace server {
 using namespace system;
 using namespace network::messages::peer;
 
+BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
+
 bool protocol_native::handle_get_top(const code& ec, interface::top,
     uint8_t, uint8_t media) NOEXCEPT
 {
@@ -483,6 +485,8 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
     send_not_found();
     return true;
 }
+
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin

@@ -136,10 +136,9 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     if (stopped())
         return false;
 
-    // TODO: collapse three atomics this into a single enumeration.
     switch (event_)
     {
-        ////case node::chase::transaction:
+        case node::chase::transaction:
         case node::chase::organized:
         {
             if (subscribed_height_.load(relaxed))
@@ -183,6 +182,23 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
     }
 
     return true;
+}
+
+// reorganization
+// ----------------------------------------------------------------------------
+// outpoint subscriptions do not require modification.
+
+// The chain has been reduced in height, clear all midstate cache and cursors.
+void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    for (auto& [key, sub]: address_subscriptions_)
+    {
+        // writer.flush resets hash accumulator, sub.type remains unchanged.
+        sub.state.writer.flush();
+        sub.cursor = {};
+    }
 }
 
 BC_POP_WARNING()
