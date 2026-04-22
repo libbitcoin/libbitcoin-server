@@ -205,6 +205,117 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_spent__
 }
 
 // blockchain.outpoint.subscribe
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__insufficient_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    constexpr auto hash = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
+    const auto request = R"({"id":1101,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
+    const auto result = get_error((boost::format(request) % hash).str());
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__missing_arguments__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":1102,"method":"blockchain.outpoint.subscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_hash__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto result = get_error(R"({"id":1103,"method":"blockchain.outpoint.subscribe","params":["not_a_hash", 0]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_index__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    constexpr hash_digest hash{ 0x42 };
+    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1]})" "\n";
+    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_hint_encoding__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    constexpr hash_digest hash{ 0x42 };
+    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,"not_hex"]})" "\n";
+    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_hint__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    constexpr hash_digest hash{ 0x42 };
+    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,""]})" "\n";
+    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__extra_argument__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    constexpr hash_digest hash{ 0x42 };
+    const auto response = get(R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,"00",42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
 // blockchain.outpoint.unsubscribe
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__insufficient_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    constexpr auto hash = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
+    const auto request = R"({"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["%1%",0]})" "\n";
+    const auto result = get_error((boost::format(request) % hash).str());
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__missing_arguments__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":1102,"method":"blockchain.outpoint.unsubscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__invalid_hash__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto result = get_error(R"({"id":1103,"method":"blockchain.outpoint.unsubscribe","params":["4242", 0]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__invalid_index__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    constexpr hash_digest hash{ 0x42 };
+    const auto request = R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1]})" "\n";
+    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__extra_argument__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    constexpr hash_digest hash{ 0x42 };
+    const auto response = get(R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1,""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
 
 BOOST_AUTO_TEST_SUITE_END()
