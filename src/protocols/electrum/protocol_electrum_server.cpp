@@ -107,16 +107,38 @@ void protocol_electrum::handle_server_features(const code& ec,
         return;
     }
 
-    send_result(object_t
+    object_t value
     {
         { "genesis_hash", encode_hash(hash) },
         { "hosts", self_hosts() },
-        { "hash_function", string_t{ "sha256" } },
         { "server_version", options().server_name },
         { "protocol_min", string_t{ version_to_string(minimum) } },
         { "protocol_max", string_t{ version_to_string(maximum) } },
         { "pruning", null_t{} }
-    }, 1024, BIND(complete, _1));
+    };
+
+    if (!at_least(electrum::version::v1_6))
+    {
+        value["hash_function"] = string_t{ "sha256" };
+    }
+
+    if (at_least(electrum::version::v1_7))
+    {
+        value["method_flavours"] = object_t
+        {
+            {
+                // Unreliable verbose tx serialiation option is not supported.
+                // "Exact structure depends on bitcoind impl and version, and
+                // should not be relied upon."
+                "blockchain.transaction.broadcast_package", object_t
+                {
+                    { "supports_verbose_true", false }
+                }
+            }
+        };
+    }
+
+    send_result(std::move(value), 1024, BIND(complete, _1));
 }
 
 // This is not actually a subscription method.
