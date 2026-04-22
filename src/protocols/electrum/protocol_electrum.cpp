@@ -197,6 +197,7 @@ void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
     {
         // writer.flush resets hash accumulator, sub.type remains unchanged.
         sub.state.writer.flush();
+        sub.state.status = {};
         sub.cursor = {};
     }
 }

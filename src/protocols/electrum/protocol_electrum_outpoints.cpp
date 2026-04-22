@@ -126,7 +126,7 @@ bool protocol_electrum::get_outpoint_history(outpoint_subscription& out,
     const point& prevout) const NOEXCEPT
 {
     const auto& query = archive();
-    out.outpoint = query.get_tx_history(prevout.hash());
+    out.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
     if (!out.outpoint.valid())
     {
         out.spenders.clear();

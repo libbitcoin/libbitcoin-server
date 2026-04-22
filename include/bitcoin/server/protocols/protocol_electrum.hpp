@@ -233,7 +233,6 @@ protected:
     {
         database::history outpoint{};
         database::histories spenders{};
-
         bool operator==(const outpoint_subscription& other) const NOEXCEPT
         {
             return outpoint == other.outpoint && spenders == other.spenders;
@@ -286,7 +285,7 @@ protected:
     void scripthash_notify(const hash_digest& status, const hash_digest& hash,
         notify_t type) NOEXCEPT;
 
-    code get_scripthash_history(hash_digest& status, address_subscription& sub,
+    code get_scripthash_history(address_subscription& sub,
         const hash_digest& hash, size_t limit=max_size_t) NOEXCEPT;
 
     /// Outpoint.
@@ -337,9 +336,10 @@ private:
     // Transformations.
     static array_t transform(const unspents& unspents) NOEXCEPT;
     static array_t transform(const histories& histories) NOEXCEPT;
-    static hash_digest to_status(const histories& histories) NOEXCEPT;
-    static std::string to_method_name(notify_t type) NOEXCEPT;
+    static void write_status(system::writer& writer,
+        const history& history) NOEXCEPT;
     static bool is_valid_hint(const std::string& hint) NOEXCEPT;
+    static std::string to_method_name(notify_t type) NOEXCEPT;
     static object_t to_outpoint_status(size_t output_height) NOEXCEPT;
     static object_t to_outpoint_status(size_t output_height,
         const history& history) NOEXCEPT;
