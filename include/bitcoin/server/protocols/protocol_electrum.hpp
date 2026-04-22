@@ -210,26 +210,21 @@ protected:
     using history = database::history;
     using unspents = database::unspents;
     using histories = database::histories;
+    using cursor_t = database::address_link;
+    using midstate = system::accumulator<system::sha256>;
     enum class notify_t { address, scripthash, scriptpubkey };
 
-    // Status hash optimization (~200 bytes).
-    struct midstate
-    {
-        hash_digest status{};
-        system::stream::out::fast stream{ status };
-        system::hash::sha256::fast writer{ stream };
-    };
-
     // Subscription to address/scripthash/scruptpubkey.
-    struct address_subscription
+    struct address_subscription final
     {
         notify_t type{};
-        midstate state{};
-        database::address_link cursor{};
+        cursor_t cursor{};
+        hash_digest status{};
+        midstate accumulator{};
     };
 
     // Subscription to outpoint.
-    struct outpoint_subscription
+    struct outpoint_subscription final
     {
         database::history outpoint{};
         database::histories spenders{};
@@ -336,7 +331,7 @@ private:
     // Transformations.
     static array_t transform(const unspents& unspents) NOEXCEPT;
     static array_t transform(const histories& histories) NOEXCEPT;
-    static void write_status(system::writer& writer,
+    static void write_status(midstate& accumulator,
         const history& history) NOEXCEPT;
     static bool is_valid_hint(const std::string& hint) NOEXCEPT;
     static std::string to_method_name(notify_t type) NOEXCEPT;

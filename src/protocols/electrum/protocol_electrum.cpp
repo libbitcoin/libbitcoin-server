@@ -195,9 +195,9 @@ void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
 
     for (auto& [key, sub]: address_subscriptions_)
     {
-        // writer.flush resets hash accumulator, sub.type remains unchanged.
-        sub.state.writer.flush();
-        sub.state.status = {};
+        // flush resets hash accumulator, sub.type remains unchanged.
+        sub.accumulator.flush();
+        sub.status = {};
         sub.cursor = {};
     }
 }
