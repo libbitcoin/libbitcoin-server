@@ -349,26 +349,44 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    const auto header = query.get_wire_header(link);
-    if (header.empty())
+    value_t value{};
+    if (raw)
     {
-        send_code(error::server_error);
-        return;
+        const auto header = query.get_wire_header(link);
+        if (header.empty())
+        {
+            send_code(error::server_error);
+            return;
+        }
+        
+        value = object_t
+        {
+            { "height", top },
+            { "hex", encode_base16(header) }
+        };
     }
-
-    // TODO: determine intended encoding.
-    if (!raw)
+    else
     {
-        send_code(error::not_implemented);
-        return;
+        const auto header = query.get_header(link);
+        if (!header)
+        {
+            send_code(error::server_error);
+            return;
+        }
+
+        auto json = value_from(electrumx(*header));
+        if (!json.is_object())
+        {
+            send_code(error::server_error);
+            return;
+        }
+
+        json.as_object()["block_height"] = top;
+        value = std::move(json);
     }
 
     subscribed_header_.store(true, relaxed);
-    send_result(object_t
-    {
-        { "height", top },
-        { "hex", encode_base16(header) }
-    }, 256, BIND(complete, _1));
+    send_result(std::move(value), 256, BIND(complete, _1));
 }
 
 // height/header notifications.
