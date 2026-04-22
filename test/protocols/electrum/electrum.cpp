@@ -114,6 +114,11 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
     return boost::json::parse(response);
 }
 
+void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
+{
+    server_.notify(error::success, event_, value);
+}
+
 bool electrum_setup_fixture::handshake(electrum::version version,
     const std::string& name, network::rpc::code_t id)
 {
