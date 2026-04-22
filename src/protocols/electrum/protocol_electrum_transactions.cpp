@@ -189,6 +189,8 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         return;
     }
 
+    size_t size{};
+    boost::json::value value{};
     if (!verbose)
     {
         const auto tx = query.get_wire_tx(link, true);
@@ -198,53 +200,55 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
             return;
         }
 
-        send_result(encode_base16(tx), two * tx.size(), BIND(complete, _1));
-        return;
+        size = two * tx.size();
+        value = encode_base16(tx);
     }
-
-    const auto tx = query.get_transaction(link, true);
-    if (!tx)
+    else
     {
-        send_code(error::server_error);
-        return;
-    }
-
-    auto value = value_from(bitcoind(*tx));
-    if (!value.is_object())
-    {
-        send_code(error::server_error);
-        return;
-    }
-
-    if (const auto block = query.find_strong(link); !block.is_terminal())
-    {
-        using namespace system;
-        const auto top = query.get_top_confirmed();
-        const auto height = query.get_height(block);
-        const auto block_hash = query.get_header_key(block);
-
-        uint32_t timestamp{};
-        if (height.is_terminal() || (block_hash == null_hash) ||
-            !query.get_timestamp(timestamp, block))
+        const auto tx = query.get_transaction(link, true);
+        if (!tx)
         {
             send_code(error::server_error);
             return;
         }
 
-        // Floor manages race between getting confirmed top and height.
-        const auto confirms = add1(floored_subtract(top, height.value));
+        // Verbose is whatever bitcoind returns for getrawtransaction, lolz.
+        value = value_from(bitcoind(*tx));
+        if (!value.is_object())
+        {
+            send_code(error::server_error);
+            return;
+        }
 
-        auto& transaction = value.as_object();
-        transaction["in_active_chain"] = true;
-        transaction["blockhash"] = encode_hash(block_hash);
-        transaction["confirmations"] = confirms;
-        transaction["blocktime"] = timestamp;
-        transaction["time"] = timestamp;
+        size = two * tx->serialized_size(true);
+        if (const auto block = query.find_strong(link); !block.is_terminal())
+        {
+            using namespace system;
+            const auto top = query.get_top_confirmed();
+            const auto height = query.get_height(block);
+            const auto block_hash = query.get_header_key(block);
+
+            uint32_t timestamp{};
+            if (height.is_terminal() || (block_hash == null_hash) ||
+                !query.get_timestamp(timestamp, block))
+            {
+                send_code(error::server_error);
+                return;
+            }
+
+            // Floor manages race between getting confirmed top and height.
+            const auto confirms = add1(floored_subtract(top, height.value));
+
+            auto& object = value.as_object();
+            object["in_active_chain"] = true;
+            object["blockhash"] = encode_hash(block_hash);
+            object["confirmations"] = confirms;
+            object["blocktime"] = timestamp;
+            object["time"] = timestamp;
+        }
     }
 
-    // Verbose means whatever bitcoind returns for getrawtransaction, lolz.
-    const auto size = tx->serialized_size(true);
-    send_result(std::move(value), two * size, BIND(complete, _1));
+    send_result(std::move(value), size, BIND(complete, _1));
 }
 
 void protocol_electrum::handle_blockchain_transaction_get_merkle(
