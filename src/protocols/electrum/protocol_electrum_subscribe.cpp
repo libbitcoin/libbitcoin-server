@@ -92,15 +92,15 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     code ec{ error::subscription_limit };
     if (address_subscriptions_.size() < options_.maximum_subscriptions)
     {
-        using mid = midstate;
-        const auto at = address_subscriptions_.try_emplace(hash, type, mid{});
+        const auto at = address_subscriptions_
+            .try_emplace(hash, address_subscription{ type });
 
         // Initial subscription is limited by configured maximum history.
         const auto limit = at.second ? options().maximum_history : max_size_t;
 
         // Partially-cached result idempotent (new or redundant subscription).
         ec = get_scripthash_history(at.first->second, at.first->first, limit);
-        status = at.first->second.state.status;
+        status = at.first->second.status;
         subscribed_address_.store(true, relaxed);
     }
 
@@ -204,16 +204,18 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
         // Depth limit is never imposed once a subscription is accepted.
         if (const auto ec = get_scripthash_history(sub, key))
         {
-            if (ec == database::error::query_canceled ||
-                ec == error::not_found)
+            if (ec == database::error::query_canceled)
                 return;
+
+            if (ec == error::not_found)
+                continue;
 
             LOGF("Electrum::do_scripthash, " << ec.message());
         }
         else
         {
             // Asio-buffered message (small, not under caller control).
-            POST(scripthash_notify, sub.state.status, key, sub.type);
+            POST(scripthash_notify, sub.status, key, sub.type);
         }
     }
 }
@@ -252,13 +254,13 @@ std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
 
 // static
 // Height is zero (rooted) or max_size_t for unconfirmed history txs.
-void protocol_electrum::write_status(system::writer& writer,
+void protocol_electrum::write_status(midstate& accumulator,
     const history& history) NOEXCEPT
 {
-    writer.write_string(encode_hash(history.tx.hash()));
-    writer.write_string(":");
-    writer.write_string(std::to_string(to_signed(history.tx.height())));
-    writer.write_string(":");
+    accumulator.write(encode_hash(history.tx.hash()));
+    accumulator.write(":");
+    accumulator.write(std::to_string(to_signed(history.tx.height())));
+    accumulator.write(":");
 }
 
 code protocol_electrum::get_scripthash_history(address_subscription& sub,
@@ -279,19 +281,18 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
         auto it = records.cbegin();
         const auto cend = records.cend();
         while (it != cend && it->confirmed())
-            write_status(sub.state.writer, *it++);
+            write_status(sub.accumulator, *it++);
 
         BC_ASSERT(std::none_of(it, cend, [](const auto& at)
             { return at.confirmed(); }));
 
         // Copy midstate accumulator and write unconfirmeds.
-        midstate copy = sub.state;
+        midstate copy = sub.accumulator;
         while (it != cend)
-            write_status(copy.writer, *it++);
+            write_status(copy, *it++);
 
         // Flush, cache and return status (always updated on initial).
-        copy.writer.flush();
-        sub.state.status = std::move(copy.status);
+        sub.status = copy.flush();
         return error::success;
     }
     else
@@ -305,10 +306,10 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
         auto it = records.cbegin();
         auto cend = records.cend();
         while (it != cend && it->confirmed())
-            write_status(sub.state.writer, *it++);
+            write_status(sub.accumulator, *it++);
 
         // Copy midstate accumulator for write of unconfirmeds.
-        midstate copy = sub.state;
+        midstate copy = sub.accumulator;
         records.clear();
 
         // Update scan queries all unconfirmed independently.
@@ -322,15 +323,15 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
 
         // Accumulate unconfirmed status in order.
         while (it != cend)
-            write_status(copy.writer, *it++);
+            write_status(copy, *it++);
 
         // Flush, cache and return not found if no writes.
-        copy.writer.flush();
-        if (sub.state.status == copy.status)
+        auto status = copy.flush();
+        if (sub.status == status)
             return error::not_found;
 
         // Set cache into midstate object for next run.
-        sub.state.status = std::move(copy.status);
+        sub.status = std::move(status);
         return error::success;
     }
 }

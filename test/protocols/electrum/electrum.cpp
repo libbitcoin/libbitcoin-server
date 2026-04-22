@@ -93,6 +93,18 @@ electrum_setup_fixture::~electrum_setup_fixture()
     BOOST_WARN_MESSAGE(test::clear(test::directory), "electrum cleanup");
 }
 
+int64_t electrum_setup_fixture::get_error(const std::string& request)
+{
+    try
+    {
+        return get(request).at("error").as_object().at("code").as_int64();
+    }
+    catch (const boost::system::system_error&)
+    {
+        return -1;
+    }
+}
+
 boost::json::value electrum_setup_fixture::get(const std::string& request)
 {
     socket_.send(boost::asio::buffer(request));
@@ -104,7 +116,6 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
     }
     catch (const boost::system::system_error&)
     {
-        ////BOOST_WARN_MESSAGE(false, e.what());
         return boost::json::parse(R"({"dropped":true})");
     }
 
@@ -112,6 +123,11 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
     std::istream response_stream{ &stream };
     std::getline(response_stream, response);
     return boost::json::parse(response);
+}
+
+void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
+{
+    server_.notify(error::success, event_, value);
 }
 
 bool electrum_setup_fixture::handshake(electrum::version version,
