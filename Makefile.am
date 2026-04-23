@@ -101,6 +101,7 @@ test_libbitcoin_server_test_SOURCES = \
     test/protocols/electrum/electrum.cpp \
     test/protocols/electrum/electrum.hpp \
     test/protocols/electrum/electrum_addresses.cpp \
+    test/protocols/electrum/electrum_disabled.cpp \
     test/protocols/electrum/electrum_fees.cpp \
     test/protocols/electrum/electrum_headers.cpp \
     test/protocols/electrum/electrum_mempool.cpp \
