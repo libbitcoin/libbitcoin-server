@@ -23,9 +23,13 @@ using namespace system;
 static const code wrong_version{ server::error::wrong_version };
 static const code invalid_argument{ server::error::invalid_argument };
 static const std::string bogus_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
+////static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 static const std::string bogus_scripthash{ "9c2c84a6cf9809e08af19557e28d38257e6fee6981269760637a5f9dfb000b05" };
+static const std::string found_scripthash{ "bad83872c90886be19b98734fd16741611efcd9f5de699c14b712675eec682f5" };
 static const chain::script bogus{ chain::script::to_pay_key_hash_pattern({ 0x42 }) };
+static const chain::script found{ chain::script::to_pay_key_hash_pattern({ 0x02 }) };
 static const auto bogus_script = encode_base16(bogus.to_data(false));
+static const auto found_script = encode_base16(found.to_data(false));
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
