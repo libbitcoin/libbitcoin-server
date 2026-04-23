@@ -20,10 +20,11 @@
 #include "electrum.hpp"
 
 using namespace system;
+static const code not_found{ server::error::not_found };
 static const code wrong_version{ server::error::wrong_version };
 static const code invalid_argument{ server::error::invalid_argument };
 static const std::string bogus_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
-////static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
+static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 static const std::string bogus_scripthash{ "9c2c84a6cf9809e08af19557e28d38257e6fee6981269760637a5f9dfb000b05" };
 static const std::string found_scripthash{ "bad83872c90886be19b98734fd16741611efcd9f5de699c14b712675eec682f5" };
 static const chain::script bogus{ chain::script::to_pay_key_hash_pattern({ 0x42 }) };
@@ -64,7 +65,6 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__extra_argument__dro
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto response = get(R"({"id":1104,"method":"blockchain.address.subscribe","params":["%1%",42]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
@@ -100,8 +100,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__extra_argument__
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    constexpr hash_digest hash{ 0x42 };
-    const auto response = get(R"({"id":1104,"method":"blockchain.scripthash.subscribe","params":["%1%",42]})" "\n");
+    const auto request = R"({"id":1104,"method":"blockchain.scripthash.subscribe","params":["%1%",42]})" "\n";
+    const auto response = get((boost::format(request) % bogus_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -136,8 +136,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__extra_argument
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
 
-    constexpr hash_digest hash{ 0x42 };
-    const auto response = get(R"({"id":1104,"method":"blockchain.scripthash.unsubscribe","params":["%1%",-1]})" "\n");
+    const auto request = R"({"id":1104,"method":"blockchain.scripthash.unsubscribe","params":["%1%",-1]})" "\n";
+    const auto response = get((boost::format(request) % bogus_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -172,8 +172,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__extra_argument
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
-    const auto response = get(R"({"id":1104,"method":"blockchain.scriptpubkey.subscribe","params":["%1%",42]})" "\n");
+    const auto request = R"({"id":1104,"method":"blockchain.scriptpubkey.subscribe","params":["%1%",42]})" "\n";
+    const auto response = get((boost::format(request) % bogus_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -208,8 +208,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__extra_argume
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
-    const auto response = get(R"({"id":1104,"method":"blockchain.scriptpubkey.unsubscribe","params":["%1%",-1]})" "\n");
+    const auto request = R"({"id":1104,"method":"blockchain.scriptpubkey.unsubscribe","params":["%1%",-1]})" "\n";
+    const auto response = get((boost::format(request) % bogus_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
