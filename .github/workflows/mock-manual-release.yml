@@ -608,11 +608,11 @@ jobs:
             **libbitcoin-server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})**
 
             Built from:
-            - server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})
-            - node [${{ github.event.inputs.tag-node }}](https://github.com/${{ github.repository_owner }}/libbitcoin-node/tree/${{ github.event.inputs.tag-node }})
-            - network [${{ github.event.inputs.tag-network }}](https://github.com/${{ github.repository_owner }}/libbitcoin-network/tree/${{ github.event.inputs.tag-network }})
-            - database [${{ github.event.inputs.tag-database }}](https://github.com/${{ github.repository_owner }}/libbitcoin-database/tree/${{ github.event.inputs.tag-database }})
-            - system [${{ github.event.inputs.tag-system }}](https://github.com/${{ github.repository_owner }}/libbitcoin-system/tree/${{ github.event.inputs.tag-system }})
+            - ${{ github.repository_owner }}/server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})
+            - ${{ github.repository_owner }}/node [${{ github.event.inputs.tag-node }}](https://github.com/${{ github.repository_owner }}/libbitcoin-node/tree/${{ github.event.inputs.tag-node }})
+            - ${{ github.repository_owner }}/network [${{ github.event.inputs.tag-network }}](https://github.com/${{ github.repository_owner }}/libbitcoin-network/tree/${{ github.event.inputs.tag-network }})
+            - ${{ github.repository_owner }}/database [${{ github.event.inputs.tag-database }}](https://github.com/${{ github.repository_owner }}/libbitcoin-database/tree/${{ github.event.inputs.tag-database }})
+            - ${{ github.repository_owner }}/system [${{ github.event.inputs.tag-system }}](https://github.com/${{ github.repository_owner }}/libbitcoin-system/tree/${{ github.event.inputs.tag-system }})
 
             Signed with:
             ${{ vars.PUBLIC_KEY }}
