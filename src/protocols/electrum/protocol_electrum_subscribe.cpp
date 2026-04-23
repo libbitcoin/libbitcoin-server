@@ -104,11 +104,11 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
         subscribed_address_.store(true, relaxed);
     }
 
-    POST(complete_scripthash_subscribe, ec, hash, std::move(status));
+    POST(complete_scripthash_subscribe, ec, std::move(status));
 }
 
 void protocol_electrum::complete_scripthash_subscribe(const code& ec,
-    const hash_digest& status, const hash_digest& hash) NOEXCEPT
+    const hash_digest& status) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -123,11 +123,8 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
         return;
     }
 
-    send_result(array_t
-    {
-        encode_hash(hash),
-        status == null_hash ? value_t{} : value_t{ encode_hash(status) }
-    }, 128, BIND(complete, _1));
+    send_result(status == null_hash ? value_t{} :
+        value_t{ encode_hash(status) }, 128, BIND(complete, _1));
 }
 
 // unsubscribe

@@ -274,7 +274,7 @@ protected:
     void do_scripthash_subscribe(const hash_digest& hash,
         notify_t type) NOEXCEPT;
     void complete_scripthash_subscribe(const code& ec,
-        const hash_digest& status, const hash_digest& hash) NOEXCEPT;
+        const hash_digest& status) NOEXCEPT;
     void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
