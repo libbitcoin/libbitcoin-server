@@ -24,6 +24,7 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 using namespace system;
 static const code wrong_version{ server::error::wrong_version };
 static const code not_implemented{ server::error::not_implemented };
+static const code invalid_argument{ server::error::invalid_argument };
 
 // server.add_peer
 
@@ -132,7 +133,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__extra_param__dropped)
 
 BOOST_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
@@ -164,6 +165,41 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
     const auto& host = hosts.at("").as_object();
     REQUIRE_NO_THROW_TRUE(host.at("tcp_port").is_null());
     REQUIRE_NO_THROW_TRUE(host.at("ssl_port").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_features__v1_6__hash_function_removed)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE(!result.contains("hash_function"));
+    REQUIRE_NO_THROW_TRUE(result.at("genesis_hash").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("server_version").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("protocol_min").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("protocol_max").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("pruning").is_null());
+    REQUIRE_NO_THROW_TRUE(result.at("hosts").is_object());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_features__method_flavours_v1_7__supports_verbose_true_false)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("method_flavours").is_object());
+
+    const auto& flavours = result.at("method_flavours").as_object();
+    REQUIRE_NO_THROW_TRUE(flavours.at("blockchain.transaction.broadcast_package").is_object());
+
+    const auto& package = flavours.at("blockchain.transaction.broadcast_package").as_object();
+    REQUIRE_NO_THROW_TRUE(package.at("supports_verbose_true").is_bool());
+    BOOST_REQUIRE(!package.at("supports_verbose_true").as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_features__hosts__expected)
@@ -253,14 +289,6 @@ BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__configured_peers__expecte
 
 // server.ping
 
-BOOST_AUTO_TEST_CASE(electrum__server_ping__always__null)
-{
-    BOOST_REQUIRE(handshake(electrum::version::v1_2));
-
-    const auto response = get(R"({"id":200,"method":"server.ping","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
-}
-
 BOOST_AUTO_TEST_CASE(electrum__server_ping__jsonrpc_unspecified_no_params__dropped)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
@@ -271,10 +299,60 @@ BOOST_AUTO_TEST_CASE(electrum__server_ping__jsonrpc_unspecified_no_params__dropp
 
 BOOST_AUTO_TEST_CASE(electrum__server_ping__extra_param__dropped)
 {
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":215,"method":"server.ping","params":[8,"12345678", 42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__v1_2_defaults__null)
+{
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
-    const auto response = get(R"({"id":202,"method":"server.ping","params":["extra"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    const auto response = get(R"({"id":200,"method":"server.ping","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__v1_7_defaults__null)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":210,"method":"server.ping","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+// This may not be strictly compliant behavior (possibly empty string is correct).
+BOOST_AUTO_TEST_CASE(electrum__server_ping__v1_7_default_values__null)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":210,"method":"server.ping","params":[0,""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__v1_7__invalid_data_encoding__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto result = get_error(R"({"id":211,"method":"server.ping","params":[8,"not_hex!"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__v1_7__mismatched_data_length__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto result = get_error(R"({"id":213,"method":"server.ping","params":[5,"12345678"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_ping__v1_7_data__expected_echo)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":214,"method":"server.ping","params":[8,"12345678"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "00000000");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

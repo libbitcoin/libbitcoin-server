@@ -108,7 +108,7 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_server_donation_address, _1, _2);
     SUBSCRIBE_RPC(handle_server_features, _1, _2);
     SUBSCRIBE_RPC(handle_server_peers_subscribe, _1, _2);
-    SUBSCRIBE_RPC(handle_server_ping, _1, _2);
+    SUBSCRIBE_RPC(handle_server_ping, _1, _2, _3, _4);
     ////SUBSCRIBE_RPC(handle_server_version, _1, _2, _3, _4);
 
     // Mempool methods.

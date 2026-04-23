@@ -349,26 +349,48 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    const auto header = query.get_wire_header(link);
-    if (header.empty())
+    size_t size{};
+    boost::json::value value{};
+    if (raw)
     {
-        send_code(error::server_error);
-        return;
-    }
+        const auto header = query.get_wire_header(link);
+        if (header.empty())
+        {
+            send_code(error::server_error);
+            return;
+        }
 
-    // TODO: determine intended encoding.
-    if (!raw)
+        size = two * chain::header::serialized_size();
+        value =
+        {
+            { "height", top },
+            { "hex", encode_base16(header) }
+        };
+    }
+    else
     {
-        send_code(error::not_implemented);
-        return;
+        const auto header = query.get_header(link);
+        if (!header)
+        {
+            send_code(error::server_error);
+            return;
+        }
+
+        // !raw is a custom electrumx serialization.
+        value = value_from(electrumx(*header));
+        if (!value.is_object())
+        {
+            send_code(error::server_error);
+            return;
+        }
+
+        size = 256;
+        auto& object = value.as_object();
+        object["block_height"] = top;
     }
 
     subscribed_header_.store(true, relaxed);
-    send_result(object_t
-    {
-        { "height", top },
-        { "hex", encode_base16(header) }
-    }, 256, BIND(complete, _1));
+    send_result(std::move(value), size, BIND(complete, _1));
 }
 
 // height/header notifications.
