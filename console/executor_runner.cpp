@@ -106,6 +106,8 @@ bool executor::do_run()
     auto events = create_event_sink();
     if (!log || !events)
     {
+        // Stop ensures console output.
+        log_.stop();
         logger(BS_LOG_INITIALIZE_FAILURE);
         return false;
     }
