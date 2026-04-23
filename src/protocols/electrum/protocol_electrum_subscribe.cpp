@@ -277,6 +277,10 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
             hash, limit, turbo_))
             return ec;
 
+        // No change to sub.status.
+        if (records.empty())
+            return error::success;
+
         // Accumulate confirmed status in order.
         auto it = records.cbegin();
         const auto cend = records.cend();
@@ -302,6 +306,8 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
             records, hash, max_size_t, turbo_))
             return ec;
 
+        const auto confirmed_empty = records.empty();
+
         // Accumulate confirmed status in order.
         auto it = records.cbegin();
         auto cend = records.cend();
@@ -316,6 +322,10 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
         if (const auto ec = query.get_unconfirmed_history(stopping_, records,
             hash, turbo_))
             return ec;
+
+        // No change to sub.status.
+        if (confirmed_empty && records.empty())
+            return error::success;
 
         // Reinitialize iterator for unconfirmed writer.
         it = records.cbegin();
