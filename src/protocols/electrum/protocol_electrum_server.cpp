@@ -27,6 +27,7 @@ namespace server {
 
 #define CLASS protocol_electrum
 
+using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
 
@@ -158,8 +159,10 @@ void protocol_electrum::handle_server_peers_subscribe(const code& ec,
     send_result(more_hosts(), 1024, BIND(complete, _1));
 }
 
+// Server does not send ping notifications (or perform other traffic shaping).
 void protocol_electrum::handle_server_ping(const code& ec,
-    rpc_interface::server_ping) NOEXCEPT
+    rpc_interface::server_ping, double pong_len,
+    const std::string& data) NOEXCEPT
 {
     if (stopped(ec))
         return;
@@ -170,8 +173,38 @@ void protocol_electrum::handle_server_ping(const code& ec,
         return;
     }
 
-    // Any receive, including ping, resets the base channel inactivity timer.
-    send_result(null_t{}, 42, BIND(complete, _1));
+    // Default response of null_t.
+    value_t value{};
+    size_t size{ 42 };
+
+    if (!at_least(electrum::version::v1_7))
+    {
+        if (!data.empty() || is_nonzero(pong_len))
+        {
+            send_code(error::wrong_version);
+            return;
+        }
+    }
+    else
+    {
+        size_t length{};
+        data_chunk unused{};
+
+        // Base16 encoding validation expects whole octets (even char count).
+        if (!to_integer(length, pong_len) || (length != data.length()) ||
+            !decode_base16(unused, data))
+        {
+            send_code(error::invalid_argument);
+            return;
+        }
+
+        // Treat empty as default (args look the same, may not be correct).
+        if (is_nonzero(length))
+            value = string_t(length, '0');
+    }
+
+    // Length is limited by maximum_request (DoS protection).
+    send_result(std::move(value), size, BIND(complete, _1));
 }
 
 // utilities

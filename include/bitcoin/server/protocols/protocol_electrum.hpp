@@ -191,7 +191,8 @@ protected:
     void handle_server_peers_subscribe(const code& ec,
         rpc_interface::server_peers_subscribe) NOEXCEPT;
     void handle_server_ping(const code& ec,
-        rpc_interface::server_ping) NOEXCEPT;
+        rpc_interface::server_ping, double pong_len,
+        const std::string& data) NOEXCEPT;
 
     /// See protocol_electrum_version.
     ////void handle_server_version(const code& ec,
