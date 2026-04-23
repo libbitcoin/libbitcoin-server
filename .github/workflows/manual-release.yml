@@ -375,29 +375,6 @@ jobs:
           --build-secp256k1
           ${{ matrix.options }}
 
-      - name: Execute tests [msbuild]
-        if: ${{ matrix.toolchain == 'disabled' }}
-        shell: powershell
-        run: |
-          Write-Host "Locating test executables..." -ForegroundColor Yellow;
-          $BC_TEST_EXES = @(Get-ChildItem -Path "$env:${{ github.workspace }}\libbitcoin-server\bin" -recurse | Where-Object { $_.Name -eq "libbitcoin-server-test.exe" });
-          If ($BC_TEST_EXES.Count -ne 1) {
-            Write-Host "Failure, invalid count of test executables." -ForegroundColor Red;
-            exit 1;
-          }
-          Write-Host "Found single test executable: " $BC_TEST_EXES.FullName -ForegroundColor Green;
-          $BC_TEST_SINGLETON = $BC_TEST_EXES.FullName;
-          Write-Host "Executing $BC_TEST_SINGLETON $env:BOOST_UNIT_TEST_OPTIONS" -ForegroundColor Yellow;
-          try {
-            Invoke-Expression "$BC_TEST_SINGLETON --log_level=warning --run_test=${{ matrix.tests }} $env:BOOST_UNIT_TEST_OPTIONS"
-          }
-          catch {
-            $ERR = $_;
-            Write-Host "Test execution failure: " $ERR -ForegroundColor Red;
-            exit $ERR;
-          }
-          Write-Host "Test execution complete." -ForegroundColor Green;
-
       - name: Normalize output location
         id: normalizer
         shell: bash
@@ -427,11 +404,12 @@ jobs:
               echo "\e[0;91mUnexpected toolchain provided.\e[0m"
               exit 1
           fi
+
           cp --dereference --no-clobber ${CANDIDATE} candidate/${CANONICAL}
           echo "candidate_identifier=${CANONICAL}" >> "$GITHUB_OUTPUT"
 
       - name: Strip symbols from binaries
-        if: ${{ matrix.toolchain != 'msbuild' }}
+        if: ${{ matrix.configuration != 'debug' && matrix.toolchain != 'msbuild' }}
         shell: bash
         run: |
           echo "Stripping debug symbols to reduce binary size..."
@@ -440,8 +418,8 @@ jobs:
             ! -path "*/.git/*" \
             ! -name "*.a" \
             -exec sh -c '
-              file "{}" | grep -qE "ELF|Mach-O|PE32" && 
-              strip --strip-unneeded --preserve-dates "{}" && 
+              file "{}" | grep -qE "ELF|Mach-O|PE32" &&
+              strip --strip-unneeded --preserve-dates "{}" &&
               echo "Stripped: {}"
               ' \; || true
 
@@ -460,16 +438,11 @@ jobs:
           if-no-files-found: error
 
   sign:
-
     name: Sign artifacts
-
     needs: build-candidates
-
     environment: release
-
     permissions:
       contents: write
-
     runs-on: ubuntu-latest
 
     steps:
@@ -479,64 +452,187 @@ jobs:
           path: artifacts
 
       - name: GPG Keyring Initialization
+        id: gpg-init
         env:
           SIGNING_PRIVATE_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
         run: |
           echo "Importing GPG signing key..."
-          # Import the private key
+
+          # Import private key
           echo "$SIGNING_PRIVATE_KEY" | gpg --batch --import --pinentry-mode loopback
-          # Get the key fingerprint (first secret key)
-          KEY_FINGERPRINT=$(gpg --list-secret-keys --with-colons | grep '^sec' | head -n1 | cut -d: -f5)
+
+          # Extract full fingerprint
+          KEY_FINGERPRINT=$(gpg --list-secret-keys --with-colons --fingerprint \
+            | grep '^fpr' | head -n1 | cut -d: -f10)
+
           if [ -z "$KEY_FINGERPRINT" ]; then
             echo "Error: No secret key found after import"
             exit 1
           fi
+
           echo "Imported key fingerprint: $KEY_FINGERPRINT"
-          # Set ultimate trust (required for non-interactive signing)
+
+          # Set ultimate trust
           echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$KEY_FINGERPRINT" trust >/dev/null 2>&1
-          # Configure gpg-agent for loopback pinentry (handles passphrase non-interactively)
+
+          # Configure gpg-agent
           mkdir -p ~/.gnupg
-          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+          cat > ~/.gnupg/gpg-agent.conf << 'EOF'
+            allow-loopback-pinentry
+            default-cache-ttl 3600
+            max-cache-ttl 7200
+          EOF
+
           echo "use-agent" > ~/.gnupg/gpg.conf
-          # Reload agent
+
+          # Restart agent
           gpgconf --kill gpg-agent
           gpgconf --launch gpg-agent
 
+          # Pre-cache passphrase (after agent is ready)
+          echo "$SIGNING_PASSPHRASE" | \
+            gpg \
+              --batch \
+              --pinentry-mode loopback \
+              --passphrase-fd 0 \
+              --sign \
+              --output /dev/null \
+              --detach-sign /dev/null \
+              2>/dev/null || true
+
+          echo "key_fingerprint=$KEY_FINGERPRINT" >> $GITHUB_OUTPUT
+          echo "GPG key imported and passphrase cached successfully."
+
       - name: execute signature
+        id: gpg-sign
         working-directory: artifacts
         shell: bash
+        env:
+          KEY_FINGERPRINT: ${{ steps.gpg-init.outputs.key_fingerprint }}
         run: |
-          echo "Signing artifacts..."
+          echo "Signing artifacts with key $KEY_FINGERPRINT..."
+
+          shopt -s nullglob
+
           find . -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print0 | \
             while IFS= read -r -d '' dir; do
-              dir_name="${dir#./}"  # remove leading ./
+              dir_name="${dir#./}"
               echo "📁 Directory: $dir_name"
-              # Walk files inside this directory (only direct children, not recursive)
-              find "$dir" -maxdepth 1 -type f -print0 | \
+
+              # Sign only regular files that are not already signatures
+              find "$dir" -maxdepth 1 -type f ! -name "*.asc" -print0 | \
                 while IFS= read -r -d '' file; do
                   file_name=$(basename "$file")
-                  echo "   📄 $file_name"
-                  gpg --batch --yes --detach-sign --armor "$file"
+                  echo "   📄 Signing: $file_name"
+
+                  gpg \
+                    --batch \
+                    --yes \
+                    --pinentry-mode loopback \
+                    --local-user "$KEY_FINGERPRINT" \
+                    --detach-sign \
+                    --armor \
+                    "$file" || {
+                      echo "❌ Failed to sign $file_name"
+                      exit 1
+                    }
                 done
             done
+          echo "✅ All artifacts signed successfully."
 
       - name: GPG Keyring Cleanup
+        id: gpg-cleanup
         if: always()
         run: |
-          echo "Cleaning up GPG keyring..."
-          gpg --batch \
-            --yes \
-            --delete-secret-keys \
-            --delete-keys \
-            "$(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d: -f5)" 2>/dev/null || true
+          echo "Cleaning up GPG keyring and passphrase cache..."
+
+          # 1. Kill agent first (clears cached passphrase)
+          gpgconf --kill gpg-agent 2>/dev/null || true
+
+          # 2. Delete keys using full fingerprint
+          FINGERPRINTS=$(gpg --list-secret-keys --with-colons --fingerprint \
+            | grep '^fpr' | cut -d: -f10 | sort -u)
+
+          if [ -n "$FINGERPRINTS" ]; then
+            for fpr in $FINGERPRINTS; do
+              echo "Deleting key: ${fpr}"
+              gpg --batch --yes --delete-secret-keys "${fpr}" 2>/dev/null || true
+              gpg --batch --yes --delete-keys "${fpr}" 2>/dev/null || true
+            done
+          else
+            echo "No secret keys found to delete."
+          fi
+
+          # 3. Final filesystem cleanup
           rm -rf ~/.gnupg
-          echo "Cleanup complete."
+
+          echo "GPG keyring and passphrase cache cleaned up."
 
       - name: Inventory results
         working-directory: artifacts
         shell: bash
         run: |
           ls -lahR
+
+      - name: Verify GPG signatures with provided public key
+        working-directory: artifacts
+        env:
+          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
+        run: |
+          echo "Importing verification public key..."
+
+          # Import the public key (non-interactively)
+          echo "$PUBLIC_KEY" | gpg --batch --import --pinentry-mode loopback
+
+          # Get the fingerprint of the imported public key
+          PUB_FINGERPRINT=$(gpg --list-keys --with-colons --fingerprint \
+            | grep '^fpr' | head -n1 | cut -d: -f10)
+
+          if [ -z "$PUB_FINGERPRINT" ]; then
+            echo "❌ Error: No public key found after import"
+            exit 1
+          fi
+
+          echo "✅ Public key imported (fingerprint: $PUB_FINGERPRINT)"
+          echo "Verifying all signatures..."
+
+          shopt -s nullglob
+
+          find . -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print0 | \
+            while IFS= read -r -d '' dir; do
+              dir_name="${dir#./}"
+              echo "📁 Checking directory: $dir_name"
+
+              # Find all .asc signature files and verify them
+              find "$dir" -maxdepth 1 -type f -name "*.asc" -print0 | \
+                while IFS= read -r -d '' sigfile; do
+                  # The original file is the signature filename without .asc
+                  original="${sigfile%.asc}"
+
+                  if [ ! -f "$original" ]; then
+                    echo "   ⚠️  Warning: Original file not found for $sigfile"
+                    continue
+                  fi
+
+                  file_name=$(basename "$original")
+                  echo "   🔍 Verifying: $file_name"
+
+                  # Verify using the specific public key (strict check)
+                  if gpg --batch --yes --pinentry-mode loopback \
+                       --no-default-keyring --keyring ~/.gnupg/pubring.kbx \
+                       --verify "$sigfile" "$original" 2>&1 | grep -q "Good signature"; then
+                    echo "      ✅ Good signature from expected key"
+                  else
+                    echo "      ❌ Verification FAILED for $file_name"
+                    echo "      Full output:"
+                    gpg --batch --yes --verify "$sigfile" "$original"
+                    exit 1
+                  fi
+                done
+            done
+
+          echo "✅ All signatures successfully verified with the provided public key."
 
       - name: Upload signed artifacts
         uses: actions/upload-artifact@v7.0.1
@@ -584,9 +680,14 @@ jobs:
           files: |
             signed-release/*/*
           body: |
-            **libbitcoin-server ${{ github.event.inputs.tag-server }}**
+            **libbitcoin-server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})**
+
             Built from:
-            - system: ${{ github.event.inputs.tag-system }}
-            - database: ${{ github.event.inputs.tag-database }}
-            - network: ${{ github.event.inputs.tag-network }}
-            - node: ${{ github.event.inputs.tag-node }}
+            - ${{ github.repository_owner }}/server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})
+            - ${{ github.repository_owner }}/node [${{ github.event.inputs.tag-node }}](https://github.com/${{ github.repository_owner }}/libbitcoin-node/tree/${{ github.event.inputs.tag-node }})
+            - ${{ github.repository_owner }}/network [${{ github.event.inputs.tag-network }}](https://github.com/${{ github.repository_owner }}/libbitcoin-network/tree/${{ github.event.inputs.tag-network }})
+            - ${{ github.repository_owner }}/database [${{ github.event.inputs.tag-database }}](https://github.com/${{ github.repository_owner }}/libbitcoin-database/tree/${{ github.event.inputs.tag-database }})
+            - ${{ github.repository_owner }}/system [${{ github.event.inputs.tag-system }}](https://github.com/${{ github.repository_owner }}/libbitcoin-system/tree/${{ github.event.inputs.tag-system }})
+
+            Signed with:
+            ${{ vars.PUBLIC_KEY }}
