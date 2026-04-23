@@ -263,7 +263,7 @@
     "compiled:%1% enabled:%2%."
 
 #define BS_LOG_INITIALIZE_FAILURE \
-    "Failed to initialize logging."
+    "Failed to initialize logging, check configured path."
 #define BS_USING_CONFIG_FILE \
     "Using config file: %1%"
 #define BS_USING_DEFAULT_CONFIG \

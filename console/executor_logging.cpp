@@ -42,11 +42,14 @@ const std::unordered_map<uint8_t, bool> executor::defined_
 
 // Logging.
 // ----------------------------------------------------------------------------
+// Logging uses underling std::ostream. It is possible that these may throw
+// upon certain unexpected failures, such as a disconnected device. Presently
+// the writes are not wrapped in a try block (performance) but this can be
+// appplied centrally below if desired.
 
-// TODO: verify construction failure handled.
 database::file::stream::out::rotator executor::create_log_sink() const
 {
-    return 
+    return
     {
         // Standard file names, within the [node].path directory.
         metadata_.configured.log.log_file1(),

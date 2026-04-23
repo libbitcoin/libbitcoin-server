@@ -36,7 +36,7 @@ void executor::stopper(const std::string& message)
     capture_.stop();
 
     // Stop log, causing final message to be buffered by handler.
-    log_.stop(message,levels::application);
+    log_.stop(message, levels::application);
 
     // Suspend process termination until final message is buffered.
     stopped_.get_future().wait();
@@ -106,10 +106,13 @@ bool executor::do_run()
     auto events = create_event_sink();
     if (!log || !events)
     {
+        // Stop ensures console output.
+        log_.stop();
         logger(BS_LOG_INITIALIZE_FAILURE);
         return false;
     }
 
+    // These all use std iostreams (exception risk).
     subscribe_log(log);
     subscribe_events(events);
     subscribe_capture();
