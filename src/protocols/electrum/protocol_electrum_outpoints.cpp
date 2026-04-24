@@ -118,21 +118,6 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
     send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
 }
 
-bool protocol_electrum::get_outpoint_history(outpoint_subscription& out,
-    const point& prevout) const NOEXCEPT
-{
-    const auto& query = archive();
-    out.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-    if (!out.outpoint.valid())
-    {
-        out.spenders.clear();
-        return false;
-    }
-
-    out.spenders = query.get_spenders_history(prevout);
-    return true;
-}
-
 // subscribe
 // ----------------------------------------------------------------------------
 
@@ -328,6 +313,7 @@ void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
 // utility
 // ----------------------------------------------------------------------------
 
+// private/static
 object_t protocol_electrum::to_outpoint_status(size_t output_height) NOEXCEPT
 {
     return
@@ -336,6 +322,7 @@ object_t protocol_electrum::to_outpoint_status(size_t output_height) NOEXCEPT
     };
 }
 
+// private/static
 object_t protocol_electrum::to_outpoint_status(size_t output_height,
     const history& history) NOEXCEPT
 {
@@ -347,7 +334,7 @@ object_t protocol_electrum::to_outpoint_status(size_t output_height,
     };
 }
 
-// Converts only the first (if any).
+// private/static
 object_t protocol_electrum::to_outpoint_status(
     const outpoint_subscription& sub) NOEXCEPT
 {
@@ -362,6 +349,23 @@ object_t protocol_electrum::to_outpoint_status(
         to_outpoint_status(output_height, sub.spenders.front());
 }
 
+// protected
+bool protocol_electrum::get_outpoint_history(outpoint_subscription& out,
+    const point& prevout) const NOEXCEPT
+{
+    const auto& query = archive();
+    out.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
+    if (!out.outpoint.valid())
+    {
+        out.spenders.clear();
+        return false;
+    }
+
+    out.spenders = query.get_spenders_history(prevout);
+    return true;
+}
+
+// private/static
 bool protocol_electrum::is_valid_hint(const std::string& hint) NOEXCEPT
 {
     if (!hint.empty())
@@ -378,12 +382,14 @@ bool protocol_electrum::is_valid_hint(const std::string& hint) NOEXCEPT
     return true;
 }
 
+// private
 std::unique_ptr<protocol_electrum::object_t> protocol_electrum::make_status(
     size_t output_height) const NOEXCEPT
 {
     return std::make_unique<object_t>(to_outpoint_status(output_height));
 }
 
+// private
 std::unique_ptr<protocol_electrum::object_t> protocol_electrum::make_status(
     size_t output_height, const history& history) const NOEXCEPT
 {
