@@ -18,7 +18,7 @@
  */
 #include "../../test.hpp"
 #include "../blocks.hpp"
-#include "electrum.hpp"
+#include "electrum_setup_fixture.hpp"
 #include <future>
 #include <boost/format.hpp>
 

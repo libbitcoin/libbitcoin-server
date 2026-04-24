@@ -129,16 +129,13 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind.cpp">
-      <ObjectFileName>$(IntDir)test_protocols_bitcoind_bitcoind.obj</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp">
+      <ObjectFileName>$(IntDir)test_protocols_bitcoind_bitcoind_setup_fixture.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\blocks.cpp">
       <ObjectFileName>$(IntDir)test_protocols_blocks.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum.cpp">
-      <ObjectFileName>$(IntDir)test_protocols_electrum_electrum.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_disabled.cpp" />
@@ -149,19 +146,22 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scripthash.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scriptpubkey.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.cpp">
+      <ObjectFileName>$(IntDir)test_protocols_electrum_electrum_setup_fixture.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_subscribe.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_transactions.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_protocols_electrum_electrum_version.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\native\native.cpp">
-      <ObjectFileName>$(IntDir)test_protocols_native_native.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\native\native_address.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_block.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_configuration.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_input.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_output.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp">
+      <ObjectFileName>$(IntDir)test_protocols_native_native_setup_fixture.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp">
@@ -169,10 +169,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\blocks.hpp" />
-    <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum.hpp" />
-    <ClInclude Include="..\..\..\..\test\protocols\native\native.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\test.hpp" />
   </ItemGroup>
   <ItemGroup>

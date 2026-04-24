@@ -18,7 +18,7 @@
  */
 #include "../../test.hpp"
 #include "../blocks.hpp"
-#include "electrum.hpp"
+#include "electrum_setup_fixture.hpp"
 #include <boost/format.hpp>
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
