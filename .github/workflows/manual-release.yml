@@ -217,7 +217,7 @@ jobs:
             configuration: StaticDebug
             platform: "x64"
             version: "vs2022"
-            options: "/p:Option-sha"
+            options: "--enable-shani"
             basename: "bs-StaticDebug-shani"
 
           - image: windows-latest
@@ -225,24 +225,8 @@ jobs:
             configuration: StaticRelease
             platform: "x64"
             version: "vs2022"
-            options: "/p:Option-sha"
+            options: "--enable-shani"
             basename: "bs-StaticRelease-shani"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticDebug
-            platform: "x64"
-            version: "vs2022"
-            options: "/arch:AVX512"
-            basename: "bs-StaticDebug-avx512"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
-            platform: "x64"
-            version: "vs2022"
-            options: "/arch:AVX512"
-            basename: "bs-StaticRelease-avx512"
 
     steps:
       - name: checkout server
