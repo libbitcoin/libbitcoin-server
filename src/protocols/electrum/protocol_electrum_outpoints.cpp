@@ -112,13 +112,9 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
     }
 
     outpoint_subscription sub{};
-    if (!get_outpoint_history(sub, { hash, index }))
-    {
-        send_code(error::not_found);
-        return;
-    }
+    get_outpoint_history(sub, { hash, index });
 
-    // Sends first spender only.
+    // Sends first spender only, empty if not found.
     send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
 }
 
@@ -177,8 +173,8 @@ void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
     code ec{ error::subscription_limit };
     if (outpoint_subscriptions_.size() < options().maximum_subscriptions)
     {
-        ec = get_outpoint_history(sub, prevout) ?
-            error::success : ec = error::not_found;
+        ec = error::success;
+        get_outpoint_history(sub, prevout);
         outpoint_subscriptions_.emplace(prevout, sub);
         subscribed_outpoint_.store(true, relaxed);
     }
@@ -355,8 +351,11 @@ object_t protocol_electrum::to_outpoint_status(size_t output_height,
 object_t protocol_electrum::to_outpoint_status(
     const outpoint_subscription& sub) NOEXCEPT
 {
-    BC_ASSERT(sub.outpoint.valid());
+    // Return empty object for not found.
+    if (!sub.outpoint.valid())
+        return {};
 
+    // Converts only the first (if any).
     const auto output_height = sub.outpoint.tx.height();
     return sub.spenders.empty() ?
         to_outpoint_status(output_height) :

@@ -26,7 +26,7 @@ static const code not_found{ server::error::not_found };
 static const code wrong_version{ server::error::wrong_version };
 static const code invalid_argument{ server::error::invalid_argument };
 static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
-static const std::string bogus_hash{ "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b" };
+static const std::string bogus_hash{ "4242424242424242424242424242424242424242424242424242424242424242" };
 
 // blockchain.utxo.get_address
 
@@ -152,14 +152,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__invalid_index__in
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__tx_not_found__not_found)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__tx_not_found__empty_object)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":1105,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
-    BOOST_REQUIRE_EQUAL(result, not_found.value());
+    const auto response = get((boost::format(request) % bogus_hash).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE(response.as_object().empty());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_unspent__expected)
