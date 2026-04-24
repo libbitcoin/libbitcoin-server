@@ -34,6 +34,11 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 // subscribe
 // ----------------------------------------------------------------------------
+// Post to an independent strand on the network threadpool. This protects the
+// subscriptions and ensures that the channel remains both cancellable and
+// responsive. The channel listener remains paused during this call, which
+// guards against call backlogging (DoS) and requires the monitor to allow
+// socket cancellation and server stop to interrupt expensive query.
 
 void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
     rpc_interface::blockchain_scripthash_subscribe,
@@ -72,33 +77,24 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
         return;
     }
 
-    // Post to an independent strand on the network threadpool. This protects
-    // the subscriptions and ensures that the channel remains both cancellable
-    // and responsive. The channel listener remains paused during this call,
-    // which guards against call backlogging (DoS) and requires the monitor to
-    // allow socket cancellation and server stop to interrupt expensive query.
     monitor(true);
     NOTIFY(do_scripthash_subscribe, hash, type);
 }
 
-// Subscription response is idempotent.
 void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     notify_t type) NOEXCEPT
 {
-    // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     hash_digest status{};
     code ec{ error::subscription_limit };
     if (address_subscriptions_.size() < options_.maximum_subscriptions)
     {
-        const auto at = address_subscriptions_
-            .try_emplace(hash, address_subscription{ type });
+        const auto at = address_subscriptions_.try_emplace(hash,
+            address_subscription{ type });
 
         // Initial subscription is limited by configured maximum history.
         const auto limit = at.second ? options().maximum_history : max_size_t;
-
-        // Partially-cached result idempotent (new or redundant subscription).
         ec = get_scripthash_history(at.first->second, at.first->first, limit);
         status = at.first->second.status;
         subscribed_address_.store(true, relaxed);
@@ -118,7 +114,6 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
 
     if (ec)
     {
-        // Limited is only expected code, not found is success/null_hash.
         send_code(ec);
         return;
     }
@@ -193,23 +188,20 @@ void protocol_electrum::complete_scripthash_unsubscribe(bool found) NOEXCEPT
 // Notifier for blockchain_scripthash_subscribe events.
 void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
 {
-    // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     for (auto& [key, sub]: address_subscriptions_)
     {
         const auto previous = sub.status;
-
-        // Depth limit is never after once the subscription is accepted.
         if (const auto ec = get_scripthash_history(sub, key, max_size_t))
         {
             if (ec == database::error::query_canceled)
                 return;
 
-            if (ec == error::not_found)
-                continue;
-
-            LOGF("Electrum::do_scripthash, " << ec.message());
+            if (ec != error::not_found)
+            {
+                LOGF("Electrum::do_scripthash, " << ec.message());
+            }
         }
         else if (sub.status != previous)
         {
@@ -234,7 +226,6 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
 // ----------------------------------------------------------------------------
 
 // private/static
-// Convert enumeration to json-rpc notification method name.
 std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
 {
     switch (type)
@@ -250,10 +241,10 @@ std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
 }
 
 // private/static
-// Height is zero (rooted) or max_size_t for unconfirmed history txs.
 void protocol_electrum::write_status(midstate& accumulator,
     const history& history) NOEXCEPT
 {
+    // Height is zero (rooted) or max_size_t for unconfirmed history txs.
     accumulator.write(encode_hash(history.tx.hash()));
     accumulator.write(":");
     accumulator.write(std::to_string(to_signed(history.tx.height())));
@@ -268,8 +259,8 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
 
     histories history{};
     const auto& query = archive();
-    if (const auto ec = query.get_history(stopping_, sub.cursor, history,
-        hash, limit, turbo_))
+    if (const auto ec = query.get_history(stopping_, sub.cursor, history, hash,
+        limit, turbo_))
         return ec;
 
     if (history.empty())
