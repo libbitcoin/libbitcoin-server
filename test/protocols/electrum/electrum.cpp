@@ -108,6 +108,11 @@ int64_t electrum_setup_fixture::get_error(const std::string& request)
 boost::json::value electrum_setup_fixture::get(const std::string& request)
 {
     socket_.send(boost::asio::buffer(request));
+    return receive();
+}
+
+boost::json::value electrum_setup_fixture::receive()
+{
     boost::asio::streambuf stream{};
 
     try
