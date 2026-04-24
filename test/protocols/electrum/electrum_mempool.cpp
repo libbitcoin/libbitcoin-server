@@ -31,9 +31,8 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__insufficient_version__
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":600,"method":"mempool.get_fee_histogram","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":600,"method":"mempool.get_fee_histogram","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__no_params_key__dropped)
@@ -56,10 +55,8 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__not_impl
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
-    const auto response = get(R"({"id":603,"method":"mempool.get_fee_histogram","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
-    ///REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+    const auto result = get_error(R"({"id":603,"method":"mempool.get_fee_histogram","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 // mempool.get_info
@@ -68,9 +65,8 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__insufficient_version__wrong_ver
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto response = get(R"({"id":700,"method":"mempool.get_info","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":700,"method":"mempool.get_info","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__no_params_key__dropped)

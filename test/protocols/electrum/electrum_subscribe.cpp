@@ -69,6 +69,125 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__extra_argument__dro
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__bogus_p2pkh__null)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto request = R"({"id":1101,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % bogus_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__expected_status)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    // This validates the hash accumulator copy in get_scripthash_history() and incomporates
+    // confirmed, rooted and unrooted transactions, duplicates, and sort.
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+    const auto expected_initial = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":0:" +
+        encode_hash(hash12) + ":-1:"
+    ));
+
+    const auto request = R"({"id":1101,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__repeat_call__idempotent)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    // This validates curosr/midstate consistency.
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+    const auto expected_initial = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":0:" +
+        encode_hash(hash12) + ":-1:"
+    ));
+
+    const auto request = R"({"id":1101,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_initial);
+
+    const auto response2 = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    // This validates curosr/midstate consistency.
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+
+    // Confirming block 10 also makes block 11 to rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    const auto expected_confirm10 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":0:" +
+        encode_hash(hash12) + ":-1:"
+    ));
+
+    const auto request = R"({"id":1101,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+
+    // Confirming block 11 also makes block 12 rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+    const auto expected_confirm11 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":0:"
+    ));
+
+    const auto response2 = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_confirm11);
+
+    // Confirming block 12 only makes block 12 confirmed.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
+    const auto expected_confirm12 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":12:"
+    ));
+
+    const auto response3 = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
+}
+
 // blockchain.scripthash.subscribe
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__insufficient_version__wrong_version)
@@ -103,6 +222,15 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__extra_argument__
     const auto request = R"({"id":1104,"method":"blockchain.scripthash.subscribe","params":["%1%",42]})" "\n";
     const auto response = get((boost::format(request) % bogus_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__bogus_scripthash__null)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto request = R"({"id":1101,"method":"blockchain.scripthash.subscribe","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % bogus_scripthash).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
 // blockchain.scripthash.unsubscribe
@@ -175,6 +303,15 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__extra_argument
     const auto request = R"({"id":1104,"method":"blockchain.scriptpubkey.subscribe","params":["%1%",42]})" "\n";
     const auto response = get((boost::format(request) % bogus_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__bogus_script__null)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto request = R"({"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % bogus_script).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
 // blockchain.scriptpubkey.unsubscribe

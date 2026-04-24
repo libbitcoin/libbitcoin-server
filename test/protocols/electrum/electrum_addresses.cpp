@@ -43,18 +43,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__obsoleted_version
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":902,"method":"blockchain.address.get_balance","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":902,"method":"blockchain.address.get_balance","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":903,"method":"blockchain.address.get_balance","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":903,"method":"blockchain.address.get_balance","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__not_found_address__zero)
@@ -110,18 +108,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__obsoleted_version
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":1003,"method":"blockchain.address.get_history","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":1003,"method":"blockchain.address.get_history","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":1004,"method":"blockchain.address.get_history","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":1004,"method":"blockchain.address.get_history","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__not_found_address__empty)
@@ -190,18 +186,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__obsoleted_version
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":1003,"method":"blockchain.address.get_mempool","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":1003,"method":"blockchain.address.get_mempool","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":1004,"method":"blockchain.address.get_mempool","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":1004,"method":"blockchain.address.get_mempool","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__not_found_address__empty)
@@ -262,18 +256,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__obsoleted_versio
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":1003,"method":"blockchain.address.listunspent","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":1003,"method":"blockchain.address.listunspent","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":1004,"method":"blockchain.address.listunspent","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":1004,"method":"blockchain.address.listunspent","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__not_found_address__empty)

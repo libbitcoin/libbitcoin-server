@@ -40,27 +40,24 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__float_number__invalid_ar
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[42.42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42.42]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__mode_invalid_version__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__valid__not_implemented)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 // blockchain.relayfee
@@ -81,9 +78,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__obsoleted__wrong_version)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    const auto response = get(R"({"id":801,"method":"blockchain.relayfee","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":801,"method":"blockchain.relayfee","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

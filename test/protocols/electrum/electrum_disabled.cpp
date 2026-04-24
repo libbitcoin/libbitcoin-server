@@ -37,9 +37,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__no_address_index_
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":901,"method":"blockchain.address.get_balance","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__no_address_index__not_implemented)
@@ -48,9 +47,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__no_address_index_
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1001,"method":"blockchain.address.get_history","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__no_address_index__not_implemented)
@@ -59,9 +57,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__no_address_index_
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1001,"method":"blockchain.address.get_mempool","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__no_address_index__not_implemented)
@@ -70,9 +67,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__no_address_index
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1001,"method":"blockchain.address.listunspent","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 // scripthash
@@ -165,9 +161,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__no_address_i
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":901,"method":"blockchain.scriptpubkey.get_balance","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % bogus_script).str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % bogus_script).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__no_address_index__not_implemented)
@@ -176,9 +171,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__no_address_i
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.get_history","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % bogus_script).str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % bogus_script).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__no_address_index__not_implemented)
@@ -187,9 +181,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__no_address_i
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.get_mempool","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % bogus_script).str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % bogus_script).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__no_address_index__not_implemented)
@@ -198,9 +191,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__no_address_
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.listunspent","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % bogus_script).str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    const auto result = get_error((boost::format(request) % bogus_script).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

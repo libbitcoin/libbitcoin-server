@@ -199,7 +199,7 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
     for (auto& [key, sub]: address_subscriptions_)
     {
         // Depth limit is never imposed once a subscription is accepted.
-        if (const auto ec = get_scripthash_history(sub, key))
+        if (const auto ec = get_scripthash_history(sub, key, max_size_t))
         {
             if (ec == database::error::query_canceled)
                 return;
@@ -265,82 +265,31 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
 {
     histories records{};
     const auto& query = archive();
+    if (const auto ec = query.get_history(stopping_, sub.cursor, records,
+        hash, limit, turbo_))
+        return ec;
 
-    if (sub.cursor.is_terminal())
-    {
-        // Initial scan queries all confirmed and unconfired together.
-        // Initial scan is depth-limited (based on config), others are not.
-        if (const auto ec = query.get_history(stopping_, sub.cursor, records,
-            hash, limit, turbo_))
-            return ec;
-
-        // No change to sub.status.
-        if (records.empty())
-            return error::success;
-
-        // Accumulate confirmed status in order.
-        auto it = records.cbegin();
-        const auto cend = records.cend();
-        while (it != cend && it->confirmed())
-            write_status(sub.accumulator, *it++);
-
-        BC_ASSERT(std::none_of(it, cend, [](const auto& at)
-            { return at.confirmed(); }));
-
-        // Copy midstate accumulator and write unconfirmeds.
-        midstate copy = sub.accumulator;
-        while (it != cend)
-            write_status(copy, *it++);
-
-        // Flush, cache and return status (always updated on initial).
-        sub.status = copy.flush();
+    // No change to sub.status (null_hash if never written).
+    if (records.empty())
         return error::success;
-    }
-    else
-    {
-        // Update scan queries new (cursor) confirmed independently.
-        if (const auto ec = query.get_confirmed_history(stopping_, sub.cursor,
-            records, hash, max_size_t, turbo_))
-            return ec;
 
-        const auto confirmed_empty = records.empty();
+    // Add confirmed status in order.
+    auto it = records.cbegin();
+    const auto end = records.cend();
+    while (it != end && it->confirmed())
+        write_status(sub.accumulator, *it++);
 
-        // Accumulate confirmed status in order.
-        auto it = records.cbegin();
-        auto cend = records.cend();
-        while (it != cend && it->confirmed())
-            write_status(sub.accumulator, *it++);
+    BC_ASSERT(std::none_of(it, end, [](const auto& at)
+        { return at.confirmed(); }));
 
-        // Copy midstate accumulator for write of unconfirmeds.
-        midstate copy = sub.accumulator;
-        records.clear();
+    // Copy midstate accumulator and add unconfirmed status in order.
+    midstate copy = sub.accumulator;
+    while (it != end)
+        write_status(copy, *it++);
 
-        // Update scan queries all unconfirmed independently.
-        if (const auto ec = query.get_unconfirmed_history(stopping_, records,
-            hash, turbo_))
-            return ec;
-
-        // No change to sub.status.
-        if (confirmed_empty && records.empty())
-            return error::success;
-
-        // Reinitialize iterator for unconfirmed writer.
-        it = records.cbegin();
-        cend = records.cend();
-
-        // Accumulate unconfirmed status in order.
-        while (it != cend)
-            write_status(copy, *it++);
-
-        // Flush, cache and return not found if no writes.
-        auto status = copy.flush();
-        if (sub.status == status)
-            return error::not_found;
-
-        // Set cache into midstate object for next run.
-        sub.status = std::move(status);
-        return error::success;
-    }
+    // Flush, cache and return status (may not be a change).
+    sub.status = copy.flush();
+    return error::success;
 }
 
 BC_POP_WARNING()

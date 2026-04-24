@@ -33,9 +33,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__obsoleted_
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":1001,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":1001,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__9_block_store__returns_9)
@@ -53,18 +52,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__obsoleted_version__wr
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[0]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":43,"method":"blockchain.block.get_chunk","params":[0]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__invalid_index__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[42.42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":43,"method":"blockchain.block.get_chunk","params":[42.42]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__above_top__empty)
@@ -98,18 +95,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__obsoleted_version__w
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[0]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":43,"method":"blockchain.block.get_header","params":[0]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__invalid_height__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[42.42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":43,"method":"blockchain.block.get_header","params":[42.42]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__above_top__null)
