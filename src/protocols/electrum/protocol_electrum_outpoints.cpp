@@ -171,12 +171,11 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
 // Subscription response is idempotent.
 void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
 {
-    // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     outpoint_subscription sub{};
     code ec{ error::subscription_limit };
-    if (outpoint_subscriptions_.size() < options_.maximum_subscriptions)
+    if (outpoint_subscriptions_.size() < options().maximum_subscriptions)
     {
         ec = get_outpoint_history(sub, prevout) ?
             error::success : ec = error::not_found;
@@ -271,7 +270,6 @@ void protocol_electrum::complete_outpoint_unsubscribe(bool found) NOEXCEPT
 // Notifier for blockchain_outpoint_subscribe events.
 void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
 {
-    // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     for (auto& subscription: outpoint_subscriptions_)
