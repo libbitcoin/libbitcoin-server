@@ -152,8 +152,11 @@ void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     histories histories{};
+    database::height_link cursor{};
     const auto& query = archive();
-    const auto ec = query.get_history(stopping_, histories, hash, turbo_);
+    const auto ec = query.get_history(stopping_, cursor, histories, hash,
+        options().maximum_history, turbo_);
+
     POST(complete_get_history, ec, std::move(histories));
 }
 
@@ -223,7 +226,9 @@ void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
     BC_ASSERT(!stranded());
     histories histories{};
     const auto& query = archive();
-    auto ec = query.get_unconfirmed_history(stopping_, histories, hash, turbo_);
+    auto ec = query.get_unconfirmed_history(stopping_, histories, hash,
+        options().maximum_history, turbo_);
+
     POST(complete_get_mempool, ec, std::move(histories));
 }
 

@@ -211,7 +211,7 @@ protected:
     using history = database::history;
     using unspents = database::unspents;
     using histories = database::histories;
-    using cursor_t = database::address_link;
+    using cursor_t = database::height_link;
     using midstate = system::accumulator<system::sha256>;
     enum class notify_t { address, scripthash, scriptpubkey };
 
@@ -274,7 +274,7 @@ protected:
     void do_scripthash_subscribe(const hash_digest& hash,
         notify_t type) NOEXCEPT;
     void complete_scripthash_subscribe(const code& ec,
-        const hash_digest& status, const hash_digest& hash) NOEXCEPT;
+        const hash_digest& status) NOEXCEPT;
     void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
@@ -282,7 +282,7 @@ protected:
         notify_t type) NOEXCEPT;
 
     code get_scripthash_history(address_subscription& sub,
-        const hash_digest& hash, size_t limit=max_size_t) NOEXCEPT;
+        const hash_digest& hash, size_t limit) NOEXCEPT;
 
     /// Outpoint.
     /// -----------------------------------------------------------------------

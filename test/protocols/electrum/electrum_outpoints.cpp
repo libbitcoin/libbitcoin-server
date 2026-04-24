@@ -25,6 +25,8 @@ using namespace system;
 static const code not_found{ server::error::not_found };
 static const code wrong_version{ server::error::wrong_version };
 static const code invalid_argument{ server::error::invalid_argument };
+static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
+static const std::string bogus_hash{ "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b" };
 
 // blockchain.utxo.get_address
 
@@ -32,9 +34,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__obsoleted_version__w
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    constexpr auto hash = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost::format(request) % hash).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -50,9 +51,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__invalid_index__inval
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -68,9 +68,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__tx_not_found__null)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
-    const auto response = get((boost::format(request) % encode_hash(hash)).str());
+    const auto response = get((boost::format(request) % bogus_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
@@ -78,9 +77,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2pk__null)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    constexpr auto hash = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
-    const auto response = get((boost::format(request) % hash).str());
+    const auto response = get((boost::format(request) % bogus_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
@@ -98,7 +96,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2kh__expected)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
     const auto& result = response.at("result").as_string();
-    BOOST_REQUIRE_EQUAL(result,"1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM");
+    BOOST_REQUIRE_EQUAL(result, found_address);
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
@@ -124,9 +122,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__insufficient_vers
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    constexpr auto hash = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
     const auto request = R"({"id":1101,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost::format(request) % hash).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -150,9 +147,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__invalid_index__in
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":1104,"method":"blockchain.outpoint.get_status","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -170,9 +166,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_unspent
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
+    const auto hash = test::block1.transactions_ptr()->at(0)->hash(false);
     const auto request = R"({"id":1106,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
-    const auto response = get((boost::format(request) % encode_hash(hash1)).str());
+    const auto response = get((boost::format(request) % encode_hash(hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -210,9 +206,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__insufficient_versi
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    constexpr auto hash = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
     const auto request = R"({"id":1101,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost::format(request) % hash).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -236,9 +231,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_index__inv
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -246,9 +240,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_hint_encod
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,"not_hex"]})" "\n";
-    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -256,9 +249,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_hint__inva
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,""]})" "\n";
-    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -266,8 +258,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__extra_argument__dr
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
-    const auto response = get(R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,"00",42]})" "\n");
+    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,"00",42]})" "\n";
+    const auto response = get((boost::format(request) % bogus_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -277,9 +269,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__insufficient_ver
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    constexpr auto hash = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
     const auto request = R"({"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost::format(request) % hash).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -303,9 +294,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__invalid_index__i
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
     const auto request = R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost::format(request) % encode_hash(hash)).str());
+    const auto result = get_error((boost::format(request) % bogus_hash).str());
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -313,8 +303,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__extra_argument__
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    constexpr hash_digest hash{ 0x42 };
-    const auto response = get(R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1,""]})" "\n");
+    const auto request = R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1,""]})" "\n";
+    const auto response = get((boost::format(request) % bogus_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 

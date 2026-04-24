@@ -33,6 +33,7 @@ struct electrum_setup_fixture
         bool address_index=true);
     ~electrum_setup_fixture();
 
+    boost::json::value receive();
     int64_t get_error(const std::string& request);
     boost::json::value get(const std::string& request);
     void notify(node::chase event_, node::event_value value);

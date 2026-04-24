@@ -104,11 +104,11 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
         subscribed_address_.store(true, relaxed);
     }
 
-    POST(complete_scripthash_subscribe, ec, hash, std::move(status));
+    POST(complete_scripthash_subscribe, ec, std::move(status));
 }
 
 void protocol_electrum::complete_scripthash_subscribe(const code& ec,
-    const hash_digest& status, const hash_digest& hash) NOEXCEPT
+    const hash_digest& status) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -123,11 +123,8 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
         return;
     }
 
-    send_result(array_t
-    {
-        encode_hash(hash),
-        status == null_hash ? value_t{} : value_t{ encode_hash(status) }
-    }, 128, BIND(complete, _1));
+    send_result(status == null_hash ? value_t{} :
+        value_t{ encode_hash(status) }, 128, BIND(complete, _1));
 }
 
 // unsubscribe
@@ -202,7 +199,7 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
     for (auto& [key, sub]: address_subscriptions_)
     {
         // Depth limit is never imposed once a subscription is accepted.
-        if (const auto ec = get_scripthash_history(sub, key))
+        if (const auto ec = get_scripthash_history(sub, key, max_size_t))
         {
             if (ec == database::error::query_canceled)
                 return;
@@ -234,9 +231,8 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
 
 // utility
 // ----------------------------------------------------------------------------
-// private
 
-// static
+// private/static
 // Convert enumeration to json-rpc notification method name.
 std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
 {
@@ -252,7 +248,7 @@ std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
     }
 }
 
-// static
+// private/static
 // Height is zero (rooted) or max_size_t for unconfirmed history txs.
 void protocol_electrum::write_status(midstate& accumulator,
     const history& history) NOEXCEPT
@@ -263,77 +259,31 @@ void protocol_electrum::write_status(midstate& accumulator,
     accumulator.write(":");
 }
 
+// protected
 code protocol_electrum::get_scripthash_history(address_subscription& sub,
     const hash_digest& hash, size_t limit) NOEXCEPT
 {
-    histories records{};
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    histories history{};
     const auto& query = archive();
+    if (const auto ec = query.get_history(stopping_, sub.cursor, history,
+        hash, limit, turbo_))
+        return ec;
 
-    if (sub.cursor.is_terminal())
-    {
-        // Initial scan queries all confirmed and unconfired together.
-        // Initial scan is depth-limited (based on config), others are not.
-        if (const auto ec = query.get_history(stopping_, sub.cursor, records,
-            hash, limit, turbo_))
-            return ec;
-
-        // Accumulate confirmed status in order.
-        auto it = records.cbegin();
-        const auto cend = records.cend();
-        while (it != cend && it->confirmed())
-            write_status(sub.accumulator, *it++);
-
-        BC_ASSERT(std::none_of(it, cend, [](const auto& at)
-            { return at.confirmed(); }));
-
-        // Copy midstate accumulator and write unconfirmeds.
-        midstate copy = sub.accumulator;
-        while (it != cend)
-            write_status(copy, *it++);
-
-        // Flush, cache and return status (always updated on initial).
-        sub.status = copy.flush();
+    if (history.empty())
         return error::success;
-    }
-    else
-    {
-        // Update scan queries new (cursor) confirmed independently.
-        if (const auto ec = query.get_confirmed_history(stopping_, sub.cursor,
-            records, hash, max_size_t, turbo_))
-            return ec;
 
-        // Accumulate confirmed status in order.
-        auto it = records.cbegin();
-        auto cend = records.cend();
-        while (it != cend && it->confirmed())
-            write_status(sub.accumulator, *it++);
+    auto it = history.cbegin();
+    while (it != history.cend() && it->confirmed())
+        write_status(sub.accumulator, *it++);
 
-        // Copy midstate accumulator for write of unconfirmeds.
-        midstate copy = sub.accumulator;
-        records.clear();
+    midstate copy = sub.accumulator;
+    while (it != history.cend())
+        write_status(copy, *it++);
 
-        // Update scan queries all unconfirmed independently.
-        if (const auto ec = query.get_unconfirmed_history(stopping_, records,
-            hash, turbo_))
-            return ec;
-
-        // Reinitialize iterator for unconfirmed writer.
-        it = records.cbegin();
-        cend = records.cend();
-
-        // Accumulate unconfirmed status in order.
-        while (it != cend)
-            write_status(copy, *it++);
-
-        // Flush, cache and return not found if no writes.
-        auto status = copy.flush();
-        if (sub.status == status)
-            return error::not_found;
-
-        // Set cache into midstate object for next run.
-        sub.status = std::move(status);
-        return error::success;
-    }
+    sub.status = copy.flush();
+    return error::success;
 }
 
 BC_POP_WARNING()

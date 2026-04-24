@@ -23,6 +23,8 @@ using namespace system;
 static const code not_found{ server::error::not_found };
 static const code wrong_version{ server::error::wrong_version };
 static const code invalid_argument{ server::error::invalid_argument };
+static const std::string bogus_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
+static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
@@ -41,18 +43,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__obsoleted_version
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":902,"method":"blockchain.address.get_balance","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":902,"method":"blockchain.address.get_balance","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":903,"method":"blockchain.address.get_balance","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":903,"method":"blockchain.address.get_balance","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__not_found_address__zero)
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__not_found_address
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":904,"method":"blockchain.address.get_balance","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto response = get((boost::format(request) % bogus_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__confirmed_and_unc
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
 
     const auto request = R"({"id":905,"method":"blockchain.address.get_balance","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM").str());
+    const auto response = get((boost::format(request) % found_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -108,18 +108,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__obsoleted_version
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":1003,"method":"blockchain.address.get_history","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":1003,"method":"blockchain.address.get_history","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":1004,"method":"blockchain.address.get_history","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":1004,"method":"blockchain.address.get_history","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__not_found_address__empty)
@@ -127,7 +125,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__not_found_address
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1005,"method":"blockchain.address.get_history","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto response = get((boost::format(request) % bogus_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
@@ -142,7 +140,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__confirmed_and_unc
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.address.get_history","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM").str());
+    const auto response = get((boost::format(request) % found_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& history = response.at("result").as_array();
@@ -188,18 +186,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__obsoleted_version
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":1003,"method":"blockchain.address.get_mempool","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":1003,"method":"blockchain.address.get_mempool","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":1004,"method":"blockchain.address.get_mempool","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":1004,"method":"blockchain.address.get_mempool","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__not_found_address__empty)
@@ -207,7 +203,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__not_found_address
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1005,"method":"blockchain.address.get_mempool","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto response = get((boost::format(request) % bogus_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
@@ -222,7 +218,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__confirmed_and_unc
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.address.get_mempool","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM").str());
+    const auto response = get((boost::format(request) % found_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& history = response.at("result").as_array();
@@ -260,18 +256,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__obsoleted_versio
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
-    const auto response = get(R"({"id":1003,"method":"blockchain.address.listunspent","params":[""]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    const auto result = get_error(R"({"id":1003,"method":"blockchain.address.listunspent","params":[""]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__invalid_address__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto response = get(R"({"id":1004,"method":"blockchain.address.listunspent","params":["invalid"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    const auto result = get_error(R"({"id":1004,"method":"blockchain.address.listunspent","params":["invalid"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__not_found_address__empty)
@@ -279,7 +273,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__not_found_addres
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1005,"method":"blockchain.address.listunspent","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto response = get((boost::format(request) % bogus_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
@@ -294,7 +288,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__confirmed_and_un
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.address.listunspent","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM").str());
+    const auto response = get((boost::format(request) % found_address).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& unspent = response.at("result").as_array();
