@@ -231,9 +231,8 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
 
 // utility
 // ----------------------------------------------------------------------------
-// private
 
-// static
+// private/static
 // Convert enumeration to json-rpc notification method name.
 std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
 {
@@ -249,7 +248,7 @@ std::string protocol_electrum::to_method_name(notify_t type) NOEXCEPT
     }
 }
 
-// static
+// private/static
 // Height is zero (rooted) or max_size_t for unconfirmed history txs.
 void protocol_electrum::write_status(midstate& accumulator,
     const history& history) NOEXCEPT
@@ -260,34 +259,29 @@ void protocol_electrum::write_status(midstate& accumulator,
     accumulator.write(":");
 }
 
+// protected
 code protocol_electrum::get_scripthash_history(address_subscription& sub,
     const hash_digest& hash, size_t limit) NOEXCEPT
 {
-    histories records{};
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    histories history{};
     const auto& query = archive();
-    if (const auto ec = query.get_history(stopping_, sub.cursor, records,
+    if (const auto ec = query.get_history(stopping_, sub.cursor, history,
         hash, limit, turbo_))
         return ec;
 
-    // No change to sub.status (null_hash if never written).
-    if (records.empty())
+    if (history.empty())
         return error::success;
 
-    // Add confirmed status in order.
-    auto it = records.cbegin();
-    const auto end = records.cend();
-    while (it != end && it->confirmed())
+    auto it = history.cbegin();
+    while (it != history.cend() && it->confirmed())
         write_status(sub.accumulator, *it++);
 
-    BC_ASSERT(std::none_of(it, end, [](const auto& at)
-        { return at.confirmed(); }));
-
-    // Copy midstate accumulator and add unconfirmed status in order.
     midstate copy = sub.accumulator;
-    while (it != end)
+    while (it != history.cend())
         write_status(copy, *it++);
 
-    // Flush, cache and return status (may not be a change).
     sub.status = copy.flush();
     return error::success;
 }
