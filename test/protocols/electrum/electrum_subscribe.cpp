@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, uint32_t{});
+    notify(node::chase::organized);
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, uint32_t{});
+    notify(node::chase::organized);
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, uint32_t{});
+    notify(node::chase::organized);
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, uint32_t{});
+    notify(node::chase::organized);
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -721,7 +721,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, uint32_t{});
+    notify(node::chase::organized);
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -745,7 +745,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, uint32_t{});
+    notify(node::chase::organized);
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
