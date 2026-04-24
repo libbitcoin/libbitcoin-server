@@ -198,7 +198,9 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
 
     for (auto& [key, sub]: address_subscriptions_)
     {
-        // Depth limit is never imposed once a subscription is accepted.
+        const auto previous = sub.status;
+
+        // Depth limit is never after once the subscription is accepted.
         if (const auto ec = get_scripthash_history(sub, key, max_size_t))
         {
             if (ec == database::error::query_canceled)
@@ -209,9 +211,8 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
 
             LOGF("Electrum::do_scripthash, " << ec.message());
         }
-        else
+        else if (sub.status != previous)
         {
-            // Asio-buffered message (small, not under caller control).
             POST(scripthash_notify, sub.status, key, sub.type);
         }
     }
