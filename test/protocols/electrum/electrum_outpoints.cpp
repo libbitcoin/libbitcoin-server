@@ -262,6 +262,53 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__extra_argument__dr
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__tx_not_found__empty_object)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto request = R"({"id":1105,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
+    const auto response = get((boost::format(request) % bogus_hash).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_object().empty());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_unspent__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto hash = test::block1.transactions_ptr()->at(0)->hash(false);
+    const auto request = R"({"id":1106,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
+    const auto response = get((boost::format(request) % encode_hash(hash)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
+    BOOST_REQUIRE(!result.contains("spender_txhash"));
+    BOOST_REQUIRE(!result.contains("spender_height"));
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_spent__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+
+    const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
+    const auto request = R"({"id":1107,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
+    const auto response = get((boost::format(request) % encode_hash(hash1)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(result.at("spender_height").is_int64());
+    REQUIRE_NO_THROW_TRUE(result.at("spender_txhash").is_string());
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("spender_height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(result.at("spender_txhash").as_string(), encode_hash(hash10));
+}
+
 // blockchain.outpoint.unsubscribe
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__insufficient_version__wrong_version)
@@ -305,6 +352,30 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__extra_argument__
     const auto request = R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1,""]})" "\n";
     const auto response = get((boost::format(request) % bogus_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__unsubscribed__false)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto request = R"({"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["%1%",0]})" "\n";
+    const auto response = get((boost::format(request) % bogus_hash).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
+    BOOST_REQUIRE(!response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__subscribed__true)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto hash1 = encode_hash(test::block1.transactions_ptr()->at(0)->hash(false));
+    const auto request1 = R"({"id":1107,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
+    const auto response1 = get((boost::format(request1) % hash1).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_object());
+
+    const auto request2 = R"({"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["%1%",0]})" "\n";
+    const auto response2 = get((boost::format(request2) % hash1).str());
+    REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

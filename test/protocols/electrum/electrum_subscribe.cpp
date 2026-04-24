@@ -133,6 +133,13 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__repeat_call__idempo
     const auto response2 = get((boost::format(request) % found_address).str());
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
+
+    // Testing below a third subscription to ensure that duplicates are merged.
+    BOOST_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
+
+    const auto response3 = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expected)
@@ -363,6 +370,13 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__repeat_call__ide
     const auto response2 = get((boost::format(request) % found_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
+
+    // Testing below a third subscription to ensure that duplicates are merged.
+    BOOST_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
+
+    const auto response3 = get((boost::format(request) % found_scripthash).str());
+    REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__expected)
@@ -529,6 +543,29 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__extra_argument
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__unsubscribed__false)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+
+    const auto request = R"({"id":1101,"method":"blockchain.scripthash.unsubscribe","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % bogus_scripthash).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
+    BOOST_REQUIRE(!response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__subscribed__true)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+
+    const auto request1 = R"({"id":1101,"method":"blockchain.scripthash.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request1) % found_scripthash).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_null());
+
+    const auto request2 = R"({"id":1101,"method":"blockchain.scripthash.unsubscribe","params":["%1%"]})" "\n";
+    const auto response2 = get((boost::format(request2) % found_scripthash).str());
+    REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
+}
+
 // blockchain.scriptpubkey.subscribe
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__insufficient_version__wrong_version)
@@ -629,6 +666,13 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__repeat_call__i
     const auto response2 = get((boost::format(request) % found_script).str());
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
+
+    // Testing below a third subscription to ensure that duplicates are merged.
+    BOOST_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
+
+    const auto response3 = get((boost::format(request) % found_script).str());
+    REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__expected)
@@ -793,6 +837,29 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__extra_argume
     const auto request = R"({"id":1104,"method":"blockchain.scriptpubkey.unsubscribe","params":["%1%",-1]})" "\n";
     const auto response = get((boost::format(request) % bogus_scripthash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__unsubscribed__false)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto request = R"({"id":1101,"method":"blockchain.scriptpubkey.unsubscribe","params":["%1%"]})" "\n";
+    const auto response = get((boost::format(request) % bogus_script).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
+    BOOST_REQUIRE(!response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__subscribed__true)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto request1 = R"({"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request1) % found_script).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_null());
+
+    const auto request2 = R"({"id":1101,"method":"blockchain.scriptpubkey.unsubscribe","params":["%1%"]})" "\n";
+    const auto response2 = get((boost::format(request2) % found_script).str());
+    REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
