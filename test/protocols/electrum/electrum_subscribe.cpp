@@ -188,6 +188,81 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
     BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    // This validates curosr/midstate consistency.
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+
+    // Confirming block 10 also makes block 11 to rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    const auto expected_confirm10 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":0:" +
+        encode_hash(hash12) + ":-1:"
+    ));
+
+    const auto request = R"({"id":1101,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+
+    // Confirming block 11 also makes block 12 rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+    const auto expected_confirm11 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":0:"
+    ));
+
+    // Trigger node chaser event to electrum event subscriber.
+    notify(node::chase::organized, {});
+
+    const auto notification1 = receive();
+    REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
+    BOOST_CHECK_EQUAL(notification1.at("method").as_string(), "blockchain.address.subscribe");
+
+    const auto& params1 = notification1.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params1.size(), 2u);
+    BOOST_CHECK(params1.at(0).is_string());
+    BOOST_CHECK(params1.at(1).is_string());
+    BOOST_CHECK_EQUAL(params1.at(0).as_string(), found_scripthash);
+    BOOST_CHECK_EQUAL(params1.at(1).as_string(), expected_confirm11);
+
+    // Confirming block 12 only makes block 12 confirmed.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
+    const auto expected_confirm12 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":12:"
+    ));
+
+    // Trigger node chaser event to electrum event subscriber.
+    notify(node::chase::organized, {});
+
+    const auto notification2 = receive();
+    REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification2.at("params").is_array());
+    BOOST_CHECK_EQUAL(notification2.at("method").as_string(), "blockchain.address.subscribe");
+
+    const auto& params2 = notification2.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params2.size(), 2u);
+    BOOST_CHECK(params2.at(0).is_string());
+    BOOST_CHECK(params2.at(1).is_string());
+    BOOST_CHECK_EQUAL(params2.at(0).as_string(), found_scripthash);
+    BOOST_CHECK_EQUAL(params2.at(1).as_string(), expected_confirm12);
+}
+
 // blockchain.scripthash.subscribe
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__insufficient_version__wrong_version)
@@ -342,6 +417,82 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
 }
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_notify__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    // This validates curosr/midstate consistency.
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+
+    // Confirming block 10 also makes block 11 to rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    const auto expected_confirm10 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":0:" +
+        encode_hash(hash12) + ":-1:"
+    ));
+
+    const auto request = R"({"id":1101,"method":"blockchain.scripthash.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request) % found_scripthash).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+
+    // Confirming block 11 also makes block 12 rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+    const auto expected_confirm11 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":0:"
+    ));
+
+    // Trigger node chaser event to electrum event subscriber.
+    notify(node::chase::organized, {});
+
+    const auto notification1 = receive();
+    REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
+    BOOST_CHECK_EQUAL(notification1.at("method").as_string(), "blockchain.scripthash.subscribe");
+
+    const auto& params1 = notification1.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params1.size(), 2u);
+    BOOST_CHECK(params1.at(0).is_string());
+    BOOST_CHECK(params1.at(1).is_string());
+    BOOST_CHECK_EQUAL(params1.at(0).as_string(), found_scripthash);
+    BOOST_CHECK_EQUAL(params1.at(1).as_string(), expected_confirm11);
+
+    // Confirming block 12 only makes block 12 confirmed.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
+    const auto expected_confirm12 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":12:"
+    ));
+
+    // Trigger node chaser event to electrum event subscriber.
+    notify(node::chase::organized, {});
+
+    const auto notification2 = receive();
+    REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification2.at("params").is_array());
+    BOOST_CHECK_EQUAL(notification2.at("method").as_string(), "blockchain.scripthash.subscribe");
+
+    const auto& params2 = notification2.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params2.size(), 2u);
+    BOOST_CHECK(params2.at(0).is_string());
+    BOOST_CHECK(params2.at(1).is_string());
+    BOOST_CHECK_EQUAL(params2.at(0).as_string(), found_scripthash);
+    BOOST_CHECK_EQUAL(params2.at(1).as_string(), expected_confirm12);
+}
+
 
 // blockchain.scripthash.unsubscribe
 
@@ -532,6 +683,81 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
     const auto response3 = get((boost::format(request) % found_script).str());
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_notify__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    // This validates curosr/midstate consistency.
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+
+    // Confirming block 10 also makes block 11 to rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    const auto expected_confirm10 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":0:" +
+        encode_hash(hash12) + ":-1:"
+    ));
+
+    const auto request = R"({"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request) % found_script).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+
+    // Confirming block 11 also makes block 12 rooted.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+    const auto expected_confirm11 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":0:"
+    ));
+
+    // Trigger node chaser event to electrum event subscriber.
+    notify(node::chase::organized, {});
+
+    const auto notification1 = receive();
+    REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
+    BOOST_CHECK_EQUAL(notification1.at("method").as_string(), "blockchain.scriptpubkey.subscribe");
+
+    const auto& params1 = notification1.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params1.size(), 2u);
+    BOOST_CHECK(params1.at(0).is_string());
+    BOOST_CHECK(params1.at(1).is_string());
+    BOOST_CHECK_EQUAL(params1.at(0).as_string(), found_scripthash);
+    BOOST_CHECK_EQUAL(params1.at(1).as_string(), expected_confirm11);
+
+    // Confirming block 12 only makes block 12 confirmed.
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
+    const auto expected_confirm12 = encode_hash(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":12:"
+    ));
+
+    // Trigger node chaser event to electrum event subscriber.
+    notify(node::chase::organized, {});
+
+    const auto notification2 = receive();
+    REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification2.at("params").is_array());
+    BOOST_CHECK_EQUAL(notification2.at("method").as_string(), "blockchain.scriptpubkey.subscribe");
+
+    const auto& params2 = notification2.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params2.size(), 2u);
+    BOOST_CHECK(params2.at(0).is_string());
+    BOOST_CHECK(params2.at(1).is_string());
+    BOOST_CHECK_EQUAL(params2.at(0).as_string(), found_scripthash);
+    BOOST_CHECK_EQUAL(params2.at(1).as_string(), expected_confirm12);
 }
 
 // blockchain.scriptpubkey.unsubscribe
