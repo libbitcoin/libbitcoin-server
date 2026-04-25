@@ -151,7 +151,7 @@ jobs:
             configuration: debug
             link: static
             options: "--enable-avx2"
-            basename: "bs-StaticDebug"
+            basename: "bs-nix-StaticDebug"
 
           - image: ubuntu-latest
             toolchain: cmake
@@ -160,25 +160,25 @@ jobs:
             configuration: release
             link: static
             options: "-Denable-avx2=ON"
-            basename: "bs-StaticRelease"
-
-          - image: ubuntu-latest
-            toolchain: gnu
-            cc: "gcc"
-            cxx: "g++"
-            configuration: debug
-            link: static
-            options: "--enable-shani"
-            basename: "bs-StaticDebug-shani"
+            basename: "bs-nix-StaticRelease"
 
           - image: ubuntu-latest
             toolchain: cmake
             cc: "clang"
             cxx: "clang++"
-            configuration: release
+            configuration: debug
             link: static
             options: "-Denable-shani=ON"
-            basename: "bs-StaticRelease-shani"
+            basename: "bs-nix-StaticDebug-shani"
+
+          - image: ubuntu-latest
+            toolchain: gnu
+            cc: "gcc"
+            cxx: "g++"
+            configuration: release
+            link: static
+            options: "--enable-shani"
+            basename: "bs-nix-StaticRelease-shani"
 
           - image: ubuntu-latest
             toolchain: gnu
@@ -187,7 +187,7 @@ jobs:
             configuration: debug
             link: static
             options: "--enable-avx512"
-            basename: "bs-StaticDebug-avx512"
+            basename: "bs-nix-StaticDebug-avx512"
 
           - image: ubuntu-latest
             toolchain: cmake
@@ -196,53 +196,37 @@ jobs:
             configuration: release
             link: static
             options: "-Denable-avx512=ON"
-            basename: "bs-StaticRelease-avx512"
+            basename: "bs-nix-StaticRelease-avx512"
 
           - image: windows-latest
             toolchain: msbuild
             configuration: StaticDebug
             platform: "x64"
             version: "vs2022"
-            basename: "bs-StaticDebug"
+            basename: "bs-win64-StaticDebug"
 
           - image: windows-latest
             toolchain: msbuild
             configuration: StaticRelease
             platform: "x64"
             version: "vs2022"
-            basename: "bs-StaticRelease"
+            basename: "bs-win64-StaticRelease"
 
           - image: windows-latest
             toolchain: msbuild
             configuration: StaticDebug
             platform: "x64"
             version: "vs2022"
-            options: "/p:Option-sha"
-            basename: "bs-StaticDebug-shani"
+            options: "--enable-shani"
+            basename: "bs-win64-StaticDebug-shani"
 
           - image: windows-latest
             toolchain: msbuild
             configuration: StaticRelease
             platform: "x64"
             version: "vs2022"
-            options: "/p:Option-sha"
-            basename: "bs-StaticRelease-shani"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticDebug
-            platform: "x64"
-            version: "vs2022"
-            options: "/arch:AVX512"
-            basename: "bs-StaticDebug-avx512"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
-            platform: "x64"
-            version: "vs2022"
-            options: "/arch:AVX512"
-            basename: "bs-StaticRelease-avx512"
+            options: "--enable-shani"
+            basename: "bs-win64-StaticRelease-shani"
 
     steps:
       - name: checkout server
