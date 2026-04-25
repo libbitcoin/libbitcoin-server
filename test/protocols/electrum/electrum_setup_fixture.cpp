@@ -124,10 +124,17 @@ boost::json::value electrum_setup_fixture::receive()
         return boost::json::parse(R"({"dropped":true})");
     }
 
-    std::string response{};
-    std::istream response_stream{ &stream };
-    std::getline(response_stream, response);
-    return boost::json::parse(response);
+    try
+    {
+        std::string response{};
+        std::istream response_stream{ &stream };
+        std::getline(response_stream, response);
+        return boost::json::parse(response);
+    }
+    catch (const boost::system::system_error& e)
+    {
+        BOOST_REQUIRE_MESSAGE(false, e.what());
+    }
 }
 
 void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
