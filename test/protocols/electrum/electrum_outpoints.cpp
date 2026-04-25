@@ -170,11 +170,11 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_unspent
     const auto response = get((boost::format(request) % encode_hash(hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
-    const auto& result = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
-    BOOST_REQUIRE(!result.contains("spender_txhash"));
-    BOOST_REQUIRE(!result.contains("spender_height"));
-    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
+    const auto& history = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
+    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
+    BOOST_REQUIRE(!history.contains("spender_txhash"));
+    BOOST_REQUIRE(!history.contains("spender_height"));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_spent__expected)
@@ -190,13 +190,13 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_spent__
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
-    const auto& result = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
-    REQUIRE_NO_THROW_TRUE(result.at("spender_height").is_int64());
-    REQUIRE_NO_THROW_TRUE(result.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(result.at("spender_height").as_int64(), 10);
-    BOOST_REQUIRE_EQUAL(result.at("spender_txhash").as_string(), encode_hash(hash10));
+    const auto& history = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(history.at("spender_height").is_int64());
+    REQUIRE_NO_THROW_TRUE(history.at("spender_txhash").is_string());
+    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(history.at("spender_height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(history.at("spender_txhash").as_string(), encode_hash(hash10));
 }
 
 // blockchain.outpoint.subscribe
@@ -280,14 +280,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_unspent_
     const auto response = get((boost::format(request) % encode_hash(hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
-    const auto& result = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
-    BOOST_REQUIRE(!result.contains("spender_txhash"));
-    BOOST_REQUIRE(!result.contains("spender_height"));
-    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
+    const auto& history = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
+    BOOST_REQUIRE(!history.contains("spender_txhash"));
+    BOOST_REQUIRE(!history.contains("spender_height"));
+    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_spent__expected)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__one_spender__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
@@ -300,17 +300,17 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_spent__e
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
-    const auto& result = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
-    REQUIRE_NO_THROW_TRUE(result.at("spender_height").is_int64());
-    REQUIRE_NO_THROW_TRUE(result.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(result.at("spender_height").as_int64(), 10);
-    BOOST_REQUIRE_EQUAL(result.at("spender_txhash").as_string(), encode_hash(hash10));
+    const auto& history = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(history.at("spender_height").is_int64());
+    REQUIRE_NO_THROW_TRUE(history.at("spender_txhash").is_string());
+    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(history.at("spender_height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(history.at("spender_txhash").as_string(), encode_hash(hash10));
 }
 
 // TODO: retest after buffering to preclude concurrent socket write.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__multiple_spenders__notifications)
+////BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__two_spenders__one_notification)
 ////{
 ////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 ////
@@ -357,9 +357,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_spent__e
 ////    REQUIRE_NO_THROW_TRUE(spender.at("height").is_int64());
 ////    REQUIRE_NO_THROW_TRUE(spender.at("spender_height").is_int64());
 ////    REQUIRE_NO_THROW_TRUE(spender.at("spender_txhash").is_string());
-////    BOOST_CHECK_EQUAL(spender.at("height").as_int64(), 1);
-////    BOOST_CHECK_EQUAL(spender.at("spender_height").as_int64(), 3);
-////    BOOST_CHECK_EQUAL(spender.at("spender_txhash").as_string(), hash3);
+////    BOOST_REQUIRE_EQUAL(spender.at("height").as_int64(), 1);
+////    BOOST_REQUIRE_EQUAL(spender.at("spender_height").as_int64(), 3);
+////    BOOST_REQUIRE_EQUAL(spender.at("spender_txhash").as_string(), hash3);
 ////}
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progressive__expected_notifications)
