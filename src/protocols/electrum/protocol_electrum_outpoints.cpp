@@ -318,7 +318,7 @@ object_t protocol_electrum::to_outpoint_status(size_t output_height) NOEXCEPT
 {
     return
     {
-        { "height", to_unsigned(output_height) }
+        { "height", to_signed(output_height) }
     };
 }
 
@@ -328,9 +328,9 @@ object_t protocol_electrum::to_outpoint_status(size_t output_height,
 {
     return
     {
-        { "height", to_unsigned(output_height) },
+        { "height", to_signed(output_height) },
         { "spender_txhash", encode_hash(history.tx.hash()) },
-        { "spender_height", to_unsigned(history.tx.height()) }
+        { "spender_height", to_signed(history.tx.height()) }
     };
 }
 
