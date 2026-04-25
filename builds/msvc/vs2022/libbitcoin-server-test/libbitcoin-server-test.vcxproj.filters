@@ -54,20 +54,17 @@
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind.cpp">
-      <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\blocks.cpp">
       <Filter>src\protocols</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum.cpp">
-      <Filter>src\protocols\electrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp">
       <Filter>src\protocols\electrum</Filter>
@@ -96,6 +93,9 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_subscribe.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
@@ -104,9 +104,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\native\native.cpp">
-      <Filter>src\protocols\native</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\native\native_address.cpp">
       <Filter>src\protocols\native</Filter>
@@ -123,6 +120,9 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_output.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>
@@ -134,16 +134,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind.hpp">
+    <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\blocks.hpp">
       <Filter>src\protocols</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum.hpp">
+    <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp">
       <Filter>src\protocols\electrum</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\test\protocols\native\native.hpp">
+    <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp">
       <Filter>src\protocols\native</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\test.hpp">

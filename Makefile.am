@@ -94,12 +94,10 @@ test_libbitcoin_server_test_SOURCES = \
     test/parsers/native_target.cpp \
     test/protocols/blocks.cpp \
     test/protocols/blocks.hpp \
-    test/protocols/bitcoind/bitcoind.cpp \
-    test/protocols/bitcoind/bitcoind.hpp \
     test/protocols/bitcoind/bitcoind_rest.cpp \
     test/protocols/bitcoind/bitcoind_rpc.cpp \
-    test/protocols/electrum/electrum.cpp \
-    test/protocols/electrum/electrum.hpp \
+    test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
+    test/protocols/bitcoind/bitcoind_setup_fixture.hpp \
     test/protocols/electrum/electrum_addresses.cpp \
     test/protocols/electrum/electrum_disabled.cpp \
     test/protocols/electrum/electrum_fees.cpp \
@@ -109,16 +107,18 @@ test_libbitcoin_server_test_SOURCES = \
     test/protocols/electrum/electrum_scripthash.cpp \
     test/protocols/electrum/electrum_scriptpubkey.cpp \
     test/protocols/electrum/electrum_server.cpp \
+    test/protocols/electrum/electrum_setup_fixture.cpp \
+    test/protocols/electrum/electrum_setup_fixture.hpp \
     test/protocols/electrum/electrum_subscribe.cpp \
     test/protocols/electrum/electrum_transactions.cpp \
     test/protocols/electrum/electrum_version.cpp \
-    test/protocols/native/native.cpp \
-    test/protocols/native/native.hpp \
     test/protocols/native/native_address.cpp \
     test/protocols/native/native_block.cpp \
     test/protocols/native/native_configuration.cpp \
     test/protocols/native/native_input.cpp \
     test/protocols/native/native_output.cpp \
+    test/protocols/native/native_setup_fixture.cpp \
+    test/protocols/native/native_setup_fixture.hpp \
     test/protocols/native/native_tx.cpp
 
 endif WITH_TESTS

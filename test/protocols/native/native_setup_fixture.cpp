@@ -18,7 +18,7 @@
  */
 #include "../../test.hpp"
 #include "../blocks.hpp"
-#include "native.hpp"
+#include "native_setup_fixture.hpp"
 #include <future>
 
 native_setup_fixture::native_setup_fixture(const initializer& setup)

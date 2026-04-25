@@ -102,6 +102,12 @@ public:
         /// Maximum cumulative number of address subscriptions per channel.
         uint32_t maximum_subscriptions{ 1'000'000 };
 
+        /// Minimum protocol version.
+        system::config::version protocol_minimum{ 1, 0, 0, 0 };
+
+        /// Maximum protocol version.
+        system::config::version protocol_maximum{ 1, 7, 0, 0 };
+
         /// Arbitrary name returned by server.version and server.features.
         std::string server_name{ BC_USER_AGENT };
 

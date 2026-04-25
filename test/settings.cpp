@@ -22,6 +22,7 @@ BOOST_AUTO_TEST_SUITE(settings_tests)
 
 using namespace bc::network;
 using namespace bc::system::chain;
+using version = system::config::version;
 
 // [log]
 
@@ -235,6 +236,8 @@ BOOST_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
     BOOST_REQUIRE_EQUAL(server.maximum_headers, 10u * 2016u);
     BOOST_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
     BOOST_REQUIRE_EQUAL(server.maximum_subscriptions, 1'000'000u);
+    BOOST_REQUIRE_EQUAL(server.protocol_minimum, version(1, 0, 0, 0));
+    BOOST_REQUIRE_EQUAL(server.protocol_maximum, version(1, 7, 0, 0));
     BOOST_REQUIRE_EQUAL(server.server_name, BC_USER_AGENT);
     BOOST_REQUIRE(server.donation_address.empty());
     BOOST_REQUIRE(server.banner_message.empty());
