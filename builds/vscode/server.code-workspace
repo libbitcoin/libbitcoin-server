@@ -4,10 +4,10 @@
             "path": "../../../libbitcoin-system"
         },
         {
-            "path": "../../../libbitcoin-network"
+            "path": "../../../libbitcoin-database"
         },
         {
-            "path": "../../../libbitcoin-database"
+            "path": "../../../libbitcoin-network"
         },
         {
             "path": "../../../libbitcoin-node"
