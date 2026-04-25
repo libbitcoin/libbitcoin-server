@@ -88,7 +88,7 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
 
     hash_digest status{};
     code ec{ error::subscription_limit };
-    if (address_subscriptions_.size() < options_.maximum_subscriptions)
+    if (address_subscriptions_.size() < options().maximum_subscriptions)
     {
         const auto at = address_subscriptions_.try_emplace(hash,
             address_subscription{ type });

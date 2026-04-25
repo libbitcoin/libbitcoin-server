@@ -112,29 +112,10 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
     }
 
     outpoint_subscription sub{};
-    if (!get_outpoint_history(sub, { hash, index }))
-    {
-        send_code(error::not_found);
-        return;
-    }
+    get_outpoint_history(sub, { hash, index });
 
-    // Sends first spender only.
+    // Sends first spender only, empty if not found.
     send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
-}
-
-bool protocol_electrum::get_outpoint_history(outpoint_subscription& out,
-    const point& prevout) const NOEXCEPT
-{
-    const auto& query = archive();
-    out.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-    if (!out.outpoint.valid())
-    {
-        out.spenders.clear();
-        return false;
-    }
-
-    out.spenders = query.get_spenders_history(prevout);
-    return true;
 }
 
 // subscribe
@@ -171,15 +152,14 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
 // Subscription response is idempotent.
 void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
 {
-    // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     outpoint_subscription sub{};
     code ec{ error::subscription_limit };
-    if (outpoint_subscriptions_.size() < options_.maximum_subscriptions)
+    if (outpoint_subscriptions_.size() < options().maximum_subscriptions)
     {
-        ec = get_outpoint_history(sub, prevout) ?
-            error::success : ec = error::not_found;
+        ec = error::success;
+        get_outpoint_history(sub, prevout);
         outpoint_subscriptions_.emplace(prevout, sub);
         subscribed_outpoint_.store(true, relaxed);
     }
@@ -271,7 +251,6 @@ void protocol_electrum::complete_outpoint_unsubscribe(bool found) NOEXCEPT
 // Notifier for blockchain_outpoint_subscribe events.
 void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
 {
-    // Cancellability is preserved because not on channel strand.
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     for (auto& subscription: outpoint_subscriptions_)
@@ -282,25 +261,25 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
         auto& sub = subscription.second;
         const auto& prevout = subscription.first;
 
-        outpoint_subscription result{};
-        if (!get_outpoint_history(result, prevout))
+        outpoint_subscription out{};
+        if (!get_outpoint_history(out, prevout))
         {
             LOGV("Electrum::do_outpoint, outpoint not found.");
             continue;
         }
 
         // There is no change.
-        if (sub == result) continue;
+        if (sub == out) continue;
 
-        const auto height = sub.outpoint.tx.height();
-        if (!sub.outpoint.valid() || sub.outpoint.tx.height() != height)
+        const auto height = out.outpoint.tx.height();
+        if (!sub.outpoint.valid() || height != sub.outpoint.tx.height())
         {
-            // Outpoint changed (or newly found), send all current spenders.
-            if (result.spenders.empty())
+            // Outpoint found or changed height, send all current spenders.
+            if (out.spenders.empty())
             {
                 POST(outpoint_notify, make_status(height), prevout);
             }
-            else for (const auto& spender: result.spenders)
+            else for (const auto& spender: out.spenders)
             {
                 POST(outpoint_notify, make_status(height, spender), prevout);
             }
@@ -308,14 +287,14 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
         else
         {
             // Outpoint unchanged, send only new or changed spenders.
-            for (const auto& spender: difference(result.spenders, sub.spenders))
+            for (const auto& spender: difference(out.spenders, sub.spenders))
             {
                 POST(outpoint_notify, make_status(height, spender), prevout);
             }
         }
 
         // Update subscription state.
-        sub = std::move(result);
+        sub = std::move(out);
     }
 }
 
@@ -334,37 +313,59 @@ void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
 // utility
 // ----------------------------------------------------------------------------
 
+// private/static
 object_t protocol_electrum::to_outpoint_status(size_t output_height) NOEXCEPT
 {
     return
     {
-        { "height", to_unsigned(output_height) }
+        { "height", to_signed(output_height) }
     };
 }
 
+// private/static
 object_t protocol_electrum::to_outpoint_status(size_t output_height,
     const history& history) NOEXCEPT
 {
     return
     {
-        { "height", to_unsigned(output_height) },
+        { "height", to_signed(output_height) },
         { "spender_txhash", encode_hash(history.tx.hash()) },
-        { "spender_height", to_unsigned(history.tx.height()) }
+        { "spender_height", to_signed(history.tx.height()) }
     };
 }
 
-// Converts only the first (if any).
+// private/static
 object_t protocol_electrum::to_outpoint_status(
     const outpoint_subscription& sub) NOEXCEPT
 {
-    BC_ASSERT(sub.outpoint.valid());
+    // Return empty object for not found.
+    if (!sub.outpoint.valid())
+        return {};
 
+    // Converts only the first (if any).
     const auto output_height = sub.outpoint.tx.height();
     return sub.spenders.empty() ?
         to_outpoint_status(output_height) :
         to_outpoint_status(output_height, sub.spenders.front());
 }
 
+// protected
+bool protocol_electrum::get_outpoint_history(outpoint_subscription& out,
+    const point& prevout) const NOEXCEPT
+{
+    const auto& query = archive();
+    out.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
+    if (!out.outpoint.valid())
+    {
+        out.spenders.clear();
+        return false;
+    }
+
+    out.spenders = query.get_spenders_history(prevout);
+    return true;
+}
+
+// private/static
 bool protocol_electrum::is_valid_hint(const std::string& hint) NOEXCEPT
 {
     if (!hint.empty())
@@ -381,12 +382,14 @@ bool protocol_electrum::is_valid_hint(const std::string& hint) NOEXCEPT
     return true;
 }
 
+// private
 std::unique_ptr<protocol_electrum::object_t> protocol_electrum::make_status(
     size_t output_height) const NOEXCEPT
 {
     return std::make_unique<object_t>(to_outpoint_status(output_height));
 }
 
+// private
 std::unique_ptr<protocol_electrum::object_t> protocol_electrum::make_status(
     size_t output_height, const history& history) const NOEXCEPT
 {

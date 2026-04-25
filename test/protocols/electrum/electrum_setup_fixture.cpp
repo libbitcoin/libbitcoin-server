@@ -18,7 +18,7 @@
  */
 #include "../../test.hpp"
 #include "../blocks.hpp"
-#include "electrum.hpp"
+#include "electrum_setup_fixture.hpp"
 #include <future>
 #include <boost/format.hpp>
 
@@ -56,7 +56,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     electrum.server_name = "server_name";
     electrum.banner_message = "banner_message";
     electrum.donation_address = "donation_address";
-    electrum.maximum_subscriptions = 3;
+    electrum.maximum_subscriptions = 2;
     electrum.maximum_history = 5;
     electrum.maximum_headers = 5;
     electrum.connections = 1;
@@ -124,10 +124,18 @@ boost::json::value electrum_setup_fixture::receive()
         return boost::json::parse(R"({"dropped":true})");
     }
 
-    std::string response{};
-    std::istream response_stream{ &stream };
-    std::getline(response_stream, response);
-    return boost::json::parse(response);
+    try
+    {
+        std::string response{};
+        std::istream response_stream{ &stream };
+        std::getline(response_stream, response);
+        return boost::json::parse(response);
+    }
+    catch (const boost::system::system_error& e)
+    {
+        BOOST_CHECK_MESSAGE(false, e.what());
+        return {};
+    }
 }
 
 void electrum_setup_fixture::notify(node::chase event_, node::event_value value)

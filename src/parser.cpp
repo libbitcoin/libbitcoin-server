@@ -1148,6 +1148,16 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowed address subscriptions per channel, defaults to '1000000'."
     )
     (
+        "electrum.protocol_minimum",
+        value<version>(&configured.server.electrum.protocol_minimum),
+        "Minimum protocol version, defaults to '1.0'."
+    )
+    (
+        "electrum.protocol_maximum",
+        value<version>(&configured.server.electrum.protocol_maximum),
+        "Maximum protocol version, defaults to '1.7'."
+    )
+    (
         "electrum.server_name",
         value<std::string>(&configured.server.electrum.server_name),
         "String returned by server.version, defaults to '" BC_USER_AGENT "'."

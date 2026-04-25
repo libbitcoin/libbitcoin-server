@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../../test.hpp"
-#include "electrum.hpp"
+#include "electrum_setup_fixture.hpp"
 
 using namespace system;
 static const code not_implemented{ server::error::not_implemented };

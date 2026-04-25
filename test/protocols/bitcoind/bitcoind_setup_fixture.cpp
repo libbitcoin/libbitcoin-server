@@ -18,7 +18,7 @@
  */
 #include "../../test.hpp"
 #include "../blocks.hpp"
-#include "bitcoind.hpp"
+#include "bitcoind_setup_fixture.hpp"
 #include <future>
 
 bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup)
