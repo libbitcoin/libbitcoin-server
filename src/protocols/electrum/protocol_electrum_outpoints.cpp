@@ -261,25 +261,25 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
         auto& sub = subscription.second;
         const auto& prevout = subscription.first;
 
-        outpoint_subscription result{};
-        if (!get_outpoint_history(result, prevout))
+        outpoint_subscription out{};
+        if (!get_outpoint_history(out, prevout))
         {
             LOGV("Electrum::do_outpoint, outpoint not found.");
             continue;
         }
 
         // There is no change.
-        if (sub == result) continue;
+        if (sub == out) continue;
 
-        const auto height = sub.outpoint.tx.height();
-        if (!sub.outpoint.valid() || sub.outpoint.tx.height() != height)
+        const auto height = out.outpoint.tx.height();
+        if (!sub.outpoint.valid() || height != sub.outpoint.tx.height())
         {
-            // Outpoint changed (or newly found), send all current spenders.
-            if (result.spenders.empty())
+            // Outpoint found or changed height, send all current spenders.
+            if (out.spenders.empty())
             {
                 POST(outpoint_notify, make_status(height), prevout);
             }
-            else for (const auto& spender: result.spenders)
+            else for (const auto& spender: out.spenders)
             {
                 POST(outpoint_notify, make_status(height, spender), prevout);
             }
@@ -287,14 +287,14 @@ void protocol_electrum::do_outpoint(node::header_t) NOEXCEPT
         else
         {
             // Outpoint unchanged, send only new or changed spenders.
-            for (const auto& spender: difference(result.spenders, sub.spenders))
+            for (const auto& spender: difference(out.spenders, sub.spenders))
             {
                 POST(outpoint_notify, make_status(height, spender), prevout);
             }
         }
 
         // Update subscription state.
-        sub = std::move(result);
+        sub = std::move(out);
     }
 }
 
