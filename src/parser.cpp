@@ -1750,6 +1750,16 @@ options_metadata parser::load_settings() THROWS
     )
 #endif
     (
+        "log.dirty_ratio_minimum",
+        value<uint32_t>(&configured.log.dirty_ratio_minimum),
+        "Warn at startup if vm.dirty_ratio is below this threshold, defaults to 90 (0 disables)."
+    )
+    (
+        "log.dirty_background_ratio_minimum",
+        value<uint32_t>(&configured.log.dirty_background_ratio_minimum),
+        "Warn at startup if vm.dirty_background_ratio is below this threshold, defaults to 90 (0 disables)."
+    )
+    (
         "log.maximum_size",
         value<uint32_t>(&configured.log.maximum_size),
         "The maximum byte size of each pair of rotated log files, defaults to 1000000."
