@@ -133,7 +133,8 @@ boost::json::value electrum_setup_fixture::receive()
     }
     catch (const boost::system::system_error& e)
     {
-        BOOST_REQUIRE_MESSAGE(false, e.what());
+        BOOST_CHECK_MESSAGE(false, e.what());
+        return {};
     }
 }
 
