@@ -46,6 +46,41 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__9_block_st
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__notifications__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":82,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+
+    // Trigger node chaser events to electrum event subscriber.
+    notify(node::chase::organized, { 10_u32 });
+    notify(node::chase::organized, { 11_u32 });
+
+    const auto notification1 = receive();
+    REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
+    BOOST_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.numblocks.subscribe");
+
+    const auto& params1 = notification1.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params1.size(), 1u);
+    BOOST_REQUIRE(params1.at(0).is_int64());
+    BOOST_CHECK_EQUAL(params1.at(0).as_int64(), 10);
+
+    const auto notification2 = receive();
+    const auto& params2 = notification2.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params2.size(), 1u);
+    BOOST_REQUIRE(params2.at(0).is_int64());
+    BOOST_CHECK_EQUAL(params2.at(0).as_int64(), 11);
+}
+
 // blockchain.block.get_chunk
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__obsoleted_version__wrong_version)
@@ -605,6 +640,59 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__empty_params__expec
     const auto& result = response.at("result").as_object();
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), system::encode_base16(test::header9_data));
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":82,"method":"blockchain.headers.subscribe","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    using namespace system;
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(test::header9_data));
+
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+
+    // Trigger node chaser events to electrum event subscriber.
+    notify(node::chase::organized, { 10_u32 });
+    notify(node::chase::organized, { 11_u32 });
+
+    const auto notification1 = receive();
+    REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
+    BOOST_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.headers.subscribe");
+
+    const auto& params1 = notification1.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params1.size(), 1u);
+    BOOST_REQUIRE(params1.at(0).is_object());
+
+    const auto& header1 = params1.at(0).as_object();
+    REQUIRE_NO_THROW_TRUE(header1.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(header1.at("hex").is_string());
+    BOOST_CHECK_EQUAL(header1.at("height").as_int64(), 10);
+    BOOST_CHECK_EQUAL(header1.at("hex").as_string(), encode_base16(test::bogus_block10.header().to_data()));
+
+    const auto notification2 = receive();
+    REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification2.at("params").is_array());
+    BOOST_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.headers.subscribe");
+
+    const auto& params2 = notification2.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params2.size(), 1u);
+    BOOST_REQUIRE(params2.at(0).is_object());
+
+    const auto& header2 = params2.at(0).as_object();
+    REQUIRE_NO_THROW_TRUE(header2.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(header2.at("hex").is_string());
+    BOOST_CHECK_EQUAL(header2.at("height").as_int64(), 11);
+    BOOST_CHECK_EQUAL(header2.at("hex").as_string(), encode_base16(test::bogus_block11.header().to_data()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

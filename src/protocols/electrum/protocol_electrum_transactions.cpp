@@ -34,6 +34,8 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+// BUGBUG: Electrum sends a single value param (invalid json-rpc).
+// We don't support receiving invalid rpc, so requires array or object syntax.
 void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     rpc_interface::blockchain_transaction_broadcast,
     const std::string& raw_tx) NOEXCEPT
