@@ -30,8 +30,6 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// NOTE: undocumented change in v1.6 (mempool txs have a canonical ordering).
-
 void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     rpc_interface::mempool_get_fee_histogram) NOEXCEPT
 {
@@ -44,9 +42,9 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
         return;
     }
 
-    // TODO: Empty array (of tuples), could be simulated with block fees.
-    ////send_result(array_t{}, 42, BIND(complete, _1));
-    send_code(error::not_implemented);
+    // TODO: could be simulated with block fees.
+    send_result(array_t{}, 42, BIND(complete, _1));
+    ////send_code(error::not_implemented);
 }
 
 void protocol_electrum::handle_mempool_get_info(const code& ec,
