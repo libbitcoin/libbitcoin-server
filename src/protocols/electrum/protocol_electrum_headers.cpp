@@ -411,10 +411,10 @@ void protocol_electrum::do_height(node::header_t link) NOEXCEPT
         return;
     }
 
-    // BUGBUG: Electrum expects a single value param (invalid json-rpc).
-    // We don't support sending invalid rpc, so this is offered only as array.
+    // Electrum expects singleton params (invalid json-rpc). This is enabled
+    // via the relaxed rpc model which accepts a value_t "params" value.
     // electrum.readthedocs.io/en/latest/protocol.html#blockchain-numblocks-subscribe
-    send_notification("blockchain.numblocks.subscribe", array_t
+    send_notification("blockchain.numblocks.subscribe", value_t
     {
         height.value
     }, 48, BIND(complete, _1));
