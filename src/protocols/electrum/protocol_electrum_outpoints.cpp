@@ -204,7 +204,7 @@ void protocol_electrum::complete_outpoint_subscribe_spenders(const code& ec,
     for (auto spender = std::next(sub.spenders.begin());
         spender != sub.spenders.end(); ++spender)
     {
-        POST(outpoint_notify, make_status(height, *spender), prevout);
+        outpoint_notify(make_status(height, *spender), prevout);
     }
 }
 
