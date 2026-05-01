@@ -66,19 +66,15 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__notificati
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
-    REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
+    REQUIRE_NO_THROW_TRUE(notification1.at("params").is_int64());
     BOOST_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.numblocks.subscribe");
-
-    const auto& params1 = notification1.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params1.size(), 1u);
-    BOOST_REQUIRE(params1.at(0).is_int64());
-    BOOST_CHECK_EQUAL(params1.at(0).as_int64(), 10);
+    BOOST_CHECK_EQUAL(notification1.at("params").as_int64(), 10);
 
     const auto notification2 = receive();
-    const auto& params2 = notification2.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params2.size(), 1u);
-    BOOST_REQUIRE(params2.at(0).is_int64());
-    BOOST_CHECK_EQUAL(params2.at(0).as_int64(), 11);
+    REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification2.at("params").is_int64());
+    BOOST_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.numblocks.subscribe");
+    BOOST_CHECK_EQUAL(notification2.at("params").as_int64(), 11);
 }
 
 // blockchain.block.get_chunk
