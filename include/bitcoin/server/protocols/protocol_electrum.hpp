@@ -290,6 +290,8 @@ protected:
     void do_outpoint_subscribe(const point& prevout) NOEXCEPT;
     void complete_outpoint_subscribe(const code& ec,
         const outpoint_subscription& sub, const point& prevout) NOEXCEPT;
+    void complete_outpoint_subscribe_spenders(const code& ec,
+        const outpoint_subscription& sub, const point& prevout) NOEXCEPT;
     void do_outpoint_unsubscribe(const point& prevout) NOEXCEPT;
     void complete_outpoint_unsubscribe(bool found) NOEXCEPT;
     void outpoint_notify(const std::unique_ptr<interface::object_t>& status,

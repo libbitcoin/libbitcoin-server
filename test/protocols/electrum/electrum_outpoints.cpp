@@ -350,7 +350,6 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__two_spenders__one_
     BOOST_REQUIRE_EQUAL(result.at("spender_height").as_int64(), 2);
     BOOST_REQUIRE_EQUAL(result.at("spender_txhash").as_string(), hash2);
 
-    // TODO: Failing on all linux builds.
     const auto notification = receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification.at("params").is_array());

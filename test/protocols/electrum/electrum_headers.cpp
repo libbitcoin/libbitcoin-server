@@ -46,7 +46,6 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__9_block_st
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
-// TODO: Failing on all linux g++ release builds.
 BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__notifications__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
