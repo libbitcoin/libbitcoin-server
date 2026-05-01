@@ -183,28 +183,16 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
         return;
     }
 
-    // Send first spender only. It should be possible to iterate and post the
-    // remaining spenders after send_result returns, but the asio ordering
-    // guarantee that would depend upon is bugged on linux, so this waits
-    // until the send completes before queuing up any additional notifications.
-    send_result(to_outpoint_status(sub), 128,
-        BIND(complete_outpoint_subscribe_spenders, _1, sub, prevout));
-}
-
-void protocol_electrum::complete_outpoint_subscribe_spenders(const code& ec,
-    const outpoint_subscription& sub, const point& prevout) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (stopped(ec) || sub.spenders.empty())
-        return;
+    // Send first spender only.
+    send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
 
     // Send any remaining spenders as notifications.
-    const auto height = sub.outpoint.tx.height();
-    for (auto spender = std::next(sub.spenders.begin());
-        spender != sub.spenders.end(); ++spender)
+    if (!sub.spenders.empty())
     {
-        outpoint_notify(make_status(height, *spender), prevout);
+        const auto height = sub.outpoint.tx.height();
+        for (auto spender = std::next(sub.spenders.begin());
+            spender != sub.spenders.end(); ++spender)
+            outpoint_notify(make_status(height, *spender), prevout);
     }
 }
 
