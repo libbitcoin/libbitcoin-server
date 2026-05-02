@@ -66,13 +66,13 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     const auto fault = broadcast_tx(tx);
     if (!fault)
     {
-        send_result(encode_hash(tx->hash(false)), 42, BIND(complete, _1));
+        send_result(encode_hash(tx->hash(false)), 42);
         return;
     }
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_result(fault.message(), 42, BIND(complete, _1));
+        send_result(fault.message(), 42);
         return;
     }
 
@@ -156,7 +156,7 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
     }
 
     success = errors.empty();
-    send_result(result, 42 + size, BIND(complete, _1));
+    send_result(result, 42 + size);
 }
 
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
@@ -250,7 +250,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         }
     }
 
-    send_result(std::move(value), size, BIND(complete, _1));
+    send_result(std::move(value), size);
 }
 
 void protocol_electrum::handle_blockchain_transaction_get_merkle(
@@ -310,7 +310,7 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(
         { "merkle", std::move(branch) },
         { "block_height", block_height },
         { "pos", position }
-    }, two * hash_size * add1(branch.size()), BIND(complete, _1));
+    }, two * hash_size * add1(branch.size()));
 }
 
 void protocol_electrum::handle_blockchain_transaction_id_from_position(
@@ -354,7 +354,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
 
     if (!merkle)
     {
-        send_result(encode_hash(hash), two * hash_size, BIND(complete, _1));
+        send_result(encode_hash(hash), two * hash_size);
         return;
     }
 
@@ -382,7 +382,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     {
         { "tx_hash", encode_hash(hash) },
         { "merkle", std::move(branch) }
-    }, two * hash_size * add1(branch.size()), BIND(complete, _1));
+    }, two * hash_size * add1(branch.size()));
 }
 
 // utility
