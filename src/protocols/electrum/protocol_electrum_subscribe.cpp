@@ -119,7 +119,7 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
     }
 
     send_result(status == null_hash ? value_t{} :
-        value_t{ encode_hash(status) }, 128, BIND(complete, _1));
+        value_t{ encode_hash(status) }, 128);
 }
 
 // unsubscribe
@@ -179,7 +179,7 @@ void protocol_electrum::do_scripthash_unsubscribe(
 
 void protocol_electrum::complete_scripthash_unsubscribe(bool found) NOEXCEPT
 {
-    send_result(found, 16, BIND(complete, _1));
+    send_result(found, 16);
 }
 
 // notify
@@ -219,7 +219,7 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
     {
         encode_hash(hash),
         status == null_hash ? value_t{} : value_t{ encode_hash(status) }
-    }, 128, BIND(handle_send, _1));
+    }, 128);
 }
 
 // utility

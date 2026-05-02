@@ -49,7 +49,7 @@ void protocol_electrum::handle_blockchain_number_of_blocks_subscribe(
 
     subscribed_height_.store(true, relaxed);
     const auto top_height = archive().get_top_confirmed();
-    send_result(top_height, 42, BIND(complete, _1));
+    send_result(top_height, 42);
 }
 
 void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
@@ -93,7 +93,7 @@ void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
         }
     }
 
-    send_result(std::move(headers), size + 42u, BIND(complete, _1));
+    send_result(std::move(headers), size + 42u);
 }
 
 void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
@@ -120,7 +120,7 @@ void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
     if (link.is_terminal())
     {
         ////send_code(error::not_found);
-        send_result(null_t{}, 42, BIND(complete, _1));
+        send_result(null_t{}, 42);
         return;
     }
 
@@ -134,7 +134,7 @@ void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
         return;
     }
 
-    send_result(std::move(header), size + 42u, BIND(complete, _1));
+    send_result(std::move(header), size + 42u);
 }
 
 void protocol_electrum::handle_blockchain_block_header(const code& ec,
@@ -309,7 +309,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         size += two * hash_size * add1(proof.size());
     }
 
-    send_result(std::move(value), size + 42u, BIND(complete, _1));
+    send_result(std::move(value), size + 42u);
 }
 
 // TODO: implement support for v1.3 explicit false.
@@ -390,7 +390,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     }
 
     subscribed_header_.store(true, relaxed);
-    send_result(std::move(value), size, BIND(complete, _1));
+    send_result(std::move(value), size);
 }
 
 // height/header notifications.
@@ -417,7 +417,7 @@ void protocol_electrum::do_height(node::header_t link) NOEXCEPT
     send_notification("blockchain.numblocks.subscribe", value_t
     {
         height.value
-    }, 48, BIND(complete, _1));
+    }, 48);
 }
 
 // Notifier for blockchain_headers_subscribe events.
@@ -442,7 +442,7 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
             { "height", height.value },
             { "hex", encode_base16(header) }
         }
-    }, 64, BIND(complete, _1));
+    }, 64);
 }
 
 BC_POP_WARNING()

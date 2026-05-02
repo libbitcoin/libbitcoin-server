@@ -65,7 +65,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     if (tx.is_terminal())
     {
         ////send_code(error::not_found);
-        send_result(null_t{}, 42, BIND(complete, _1));
+        send_result(null_t{}, 42);
         return;
     }
 
@@ -80,11 +80,11 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     const auto address = extract_address(*script);
     if (!address)
     {
-        send_result(null_t{}, 42, BIND(complete, _1));
+        send_result(null_t{}, 42);
         return;
     }
 
-    send_result(address.encoded(), 56, BIND(complete, _1));
+    send_result(address.encoded(), 56);
 }
 
 void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
@@ -115,7 +115,7 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
     get_outpoint_history(sub, { hash, index });
 
     // Sends first spender only, empty if not found.
-    send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
+    send_result(to_outpoint_status(sub), 128);
 }
 
 // subscribe
@@ -184,7 +184,7 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
     }
 
     // Send first spender only.
-    send_result(to_outpoint_status(sub), 128, BIND(complete, _1));
+    send_result(to_outpoint_status(sub), 128);
 
     // Send any remaining spenders as notifications.
     if (!sub.spenders.empty())
@@ -238,7 +238,7 @@ void protocol_electrum::do_outpoint_unsubscribe(const point& prevout) NOEXCEPT
 
 void protocol_electrum::complete_outpoint_unsubscribe(bool found) NOEXCEPT
 {
-    send_result(found, 16, BIND(complete, _1));
+    send_result(found, 16);
 }
 
 // notify
@@ -303,7 +303,7 @@ void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
     {
         array_t{ encode_hash(prevout.hash()), prevout.index() },
         std::move(*status)
-    }, 128, BIND(handle_send, _1));
+    }, 128);
 }
 
 // utility

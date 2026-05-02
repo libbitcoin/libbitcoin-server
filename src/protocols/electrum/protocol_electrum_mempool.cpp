@@ -43,7 +43,7 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     }
 
     // TODO: could be simulated with block fees.
-    send_result(array_t{}, 42, BIND(complete, _1));
+    send_result(array_t{}, 42);
     ////send_code(error::not_implemented);
 }
 
@@ -67,7 +67,7 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
         { "mempoolminfee", settings.minimum_fee_rate },
         { "minrelaytxfee", settings.minimum_fee_rate },
         { "incrementalrelayfee", settings.minimum_bump_rate }
-    }, 128, BIND(complete, _1));
+    }, 128);
 }
 
 BC_POP_WARNING()
