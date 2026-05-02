@@ -186,6 +186,9 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
     // Send first spender only.
     send_result(to_outpoint_status(sub), 128);
 
+    std::cout << "complete_outpoint_subscribe -> "
+        << std::to_string(sub.spenders.size()) << std::endl;
+
     // Send any remaining spenders as notifications.
     if (!sub.spenders.empty())
     {
@@ -298,6 +301,8 @@ void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
     const point& prevout) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
+    std::cout << "outpoint_notify -> " << encode_hash(prevout.hash()) << std::endl;
 
     send_notification("blockchain.outpoint.subscribe", array_t
     {
