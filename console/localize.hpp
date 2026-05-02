@@ -257,6 +257,16 @@
 #define BS_HARDWARE_TABLE2 \
     "platform:%1% compiled:%2%."
 
+#define BS_PAGING_TABLE \
+    "Linux VM dirty page kernel settings...\n" \
+    "control_mode             :%1%.\n" \
+    "dirty_bytes              :%2%.\n" \
+    "dirty_ratio              :%3%.\n" \
+    "dirty_background_bytes   :%4%.\n" \
+    "dirty_background_ratio   :%5%.\n" \
+    "dirty_expire_centisecs   :%6%.\n" \
+    "dirty_writeback_centisecs:%7%."
+
 #define BS_LOG_TABLE_HEADER \
     "Log system configuration..."
 #define BS_LOG_TABLE \
