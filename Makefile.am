@@ -139,6 +139,7 @@ console_bs_SOURCES = \
     console/executor_events.cpp \
     console/executor_logging.cpp \
     console/executor_options.cpp \
+    console/executor_paging.cpp \
     console/executor_runner.cpp \
     console/executor_scans.cpp \
     console/executor_signals.cpp \
