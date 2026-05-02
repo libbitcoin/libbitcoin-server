@@ -66,8 +66,7 @@ public:
     
         // TODO: serialize message to send.
         // TODO: websocket is full duplex, so writes must be queued.
-        ws_write(network::asio::const_buffer{ ptr->data(), ptr->size() },
-            binary, std::move(complete));
+        write({ ptr->data(), ptr->size() }, std::move(complete), binary);
     }
 
     inline channel_ws(const network::logger& log,
