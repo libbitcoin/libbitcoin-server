@@ -79,21 +79,6 @@ public:
     }
 
 protected:
-    /// Dispatch websocket buffer via derived handlers (override to handle).
-    /// Override to handle dispatch, must invoke read_request() on complete.
-    inline void dispatch_ws(const network::http::flat_buffer&,
-        size_t) NOEXCEPT override
-    {
-        const std::string welcome{ "Websocket libbitcoin/4.0" };
-        send(system::to_chunk(welcome), false, [this](const code& ec) NOEXCEPT
-        {
-            // handle_send alread stops channel on ec.
-            // One and only one handler of message must restart read loop.
-            // In half duplex this happens only after send (ws full duplex).
-            if (!ec) receive();
-        });
-    }
-
     inline void handle_send_ws(const code& ec, size_t, const system::chunk_ptr&,
         const network::result_handler& handler) NOEXCEPT
     {
