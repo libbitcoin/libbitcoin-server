@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ |  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+ |
+ |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+ |
+ -->
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="resource">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\embedded">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_commands.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_daemon.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_dumps.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_events.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_logging.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_options.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_runner.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_scans.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_signals.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_store.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_test_reader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_window.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\stack_trace.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\console\embedded\embedded.hpp">
+      <Filter>src\embedded</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\console\executor.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\console\localize.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\console\stack_trace.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resource.h">
+      <Filter>resource</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resource.rc">
+      <Filter>resource</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

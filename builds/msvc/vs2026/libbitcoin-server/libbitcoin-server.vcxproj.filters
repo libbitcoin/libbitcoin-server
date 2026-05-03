@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ |  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+ |
+ |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+ |
+ -->
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\channels">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\impl">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\impl\protocols">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\interfaces">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\parsers">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\protocols">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\server\sessions">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\parsers">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\bitcoind">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\electrum">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\native">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\stratum_v1">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\configuration.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\error.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\estimator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parser.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_query.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_addresses.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_fees.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_headers.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_mempool.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_outpoints.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_scripthash.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_scriptpubkey.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_server.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_subscribe.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_transactions.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_version.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_address.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_block.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_input.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_output.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_tx.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_html.cpp">
+      <Filter>src\protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp">
+      <Filter>src\protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp">
+      <Filter>src\protocols\stratum_v1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\server_node.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\settings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp">
+      <Filter>include\bitcoin</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v2.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_ws.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channels.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\estimator.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rest.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rpc.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\electrum.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\interfaces.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\native.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v1.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v2.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\types.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_query.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_target.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_admin.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rest.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rpc.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_html.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_http.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_native.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_rpc.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session.hpp">
+      <Filter>include\bitcoin\server\sessions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_handshake.hpp">
+      <Filter>include\bitcoin\server\sessions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_server.hpp">
+      <Filter>include\bitcoin\server\sessions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\sessions.hpp">
+      <Filter>include\bitcoin\server\sessions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resource.h">
+      <Filter>resource</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp">
+      <Filter>include\bitcoin\server\impl\protocols</Filter>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resource.rc">
+      <Filter>resource</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
