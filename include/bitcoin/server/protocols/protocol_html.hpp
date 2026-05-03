@@ -28,24 +28,21 @@ namespace libbitcoin {
 namespace server {
     
 /// Abstract base for HTML protocols, thread safe.
-/// To keep inheritance simple this derives from protocol_ws, which in turn
-/// derives from protocol_http (as required). So any html server is able to
-/// operate as a websocket server.
 class BCS_API protocol_html
   : public server::protocol_http,
-    public network::protocol_ws,
+    public network::protocol_http,
     protected network::tracker<protocol_html>
 {
 public:
     using options_t = server::settings::html_server;
-    using channel_t = channel_ws;
+    using channel_t = channel_http;
 
 protected:
     inline protocol_html(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol_http(session, channel),
-        network::protocol_ws(session, channel, options),
+        network::protocol_http(session, channel, options),
         options_(options),
         network::tracker<protocol_html>(session->log)
     {

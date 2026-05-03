@@ -28,7 +28,6 @@
 #include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
 #include <bitcoin/server/channels/channel_stratum_v2.hpp>
-#include <bitcoin/server/channels/channel_ws.hpp>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rest.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rpc.hpp>

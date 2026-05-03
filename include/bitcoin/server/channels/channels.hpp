@@ -24,7 +24,6 @@
 #include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
 #include <bitcoin/server/channels/channel_stratum_v2.hpp>
-#include <bitcoin/server/channels/channel_ws.hpp>
 
 #endif
 
@@ -40,8 +39,6 @@ network::channel
 │   └── [server::channel_electrum]
 ├── channel_http
 │   ├── [server::channel_http]
-│   └── channel_ws
-│       └── [server::channel_ws]
 └── channel_peer
     └── [node::channel_peer]
 
@@ -54,6 +51,5 @@ server::channel → node::channel
 ├── channel_stratum_v1 → network::channel_rpc<interface::stratum_v1>
 ├── channel_electrum   → network::channel_rpc<interface::electrum>
 ├── channel_http       → network::channel_http
-└── channel_ws         → network::channel_ws
 
 */
