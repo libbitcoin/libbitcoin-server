@@ -50,6 +50,7 @@ private:
     server::server_node server_;
     boost::asio::io_context io{};
     boost::asio::ip::tcp::socket socket_{ io };
+    boost::asio::streambuf stream_{};
 };
 
 struct electrum_ten_block_setup_fixture

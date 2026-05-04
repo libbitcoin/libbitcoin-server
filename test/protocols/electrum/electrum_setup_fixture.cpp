@@ -113,11 +113,9 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
 
 boost::json::value electrum_setup_fixture::receive()
 {
-    boost::asio::streambuf stream{};
-
     try
     {
-        boost::asio::read_until(socket_, stream, '\n');
+        boost::asio::read_until(socket_, stream_, '\n');
     }
     catch (const boost::system::system_error&)
     {
@@ -128,7 +126,7 @@ boost::json::value electrum_setup_fixture::receive()
     try
     {
         std::string response{};
-        std::istream response_stream{ &stream };
+        std::istream response_stream{ &stream_ };
         std::getline(response_stream, response);
         return boost::json::parse(response);
     }
