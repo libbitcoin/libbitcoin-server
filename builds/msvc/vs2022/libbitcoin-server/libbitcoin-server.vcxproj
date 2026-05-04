@@ -163,7 +163,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v2.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_ws.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channels.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />

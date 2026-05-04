@@ -49,8 +49,7 @@ network::protocol
 │   └── [server::protocol_rpc<server::channel_electrum>]
 ├── protocol_http
 │   ├── [server::protocol_bitcoind_rpc]
-│   └── protocol_ws
-│       └── [server::protocol_html]
+│   └── [server::protocol_html]
 └── protocol_peer
     ├── [node::protocol_peer]
     ├── protocol_alert_311
@@ -89,8 +88,8 @@ server::protocol → node::protocol
 ├── protocol_rpc<channel_electrum>   → network::protocol_rpc<channel_electrum>
 │   ├── protocol_electrum
 │   └── protocol_electrum_version
-└── protocol_http
-    ├── protocol_html                → network::protocol_ws
+└── protocol_http [TODO: derive from network::protocol_http directly]
+    ├── protocol_html                → network::protocol_http
     │   ├── protocol_admin
     │   └── protocol_native
     └── protocol_bitcoind_rpc        → network::protocol_http

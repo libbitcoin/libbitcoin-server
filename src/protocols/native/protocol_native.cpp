@@ -146,7 +146,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         { "difficult", system_settings().forks.difficult },
     };
 
-    send_json(std::move(object), 32);
+    send_json(std::move(object), 64);
     return true;
 }
 

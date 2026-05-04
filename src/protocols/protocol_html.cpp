@@ -163,7 +163,7 @@ void protocol_html::dispatch_file(const request& request) NOEXCEPT
         return;
     }
 
-    const auto octet_stream = media_type::application_octet_stream;
+    constexpr auto octet_stream = media_type::application_octet_stream;
     send_file(std::move(file), file_media_type(path, octet_stream), request);
 }
 

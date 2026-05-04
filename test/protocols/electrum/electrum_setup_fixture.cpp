@@ -132,7 +132,7 @@ boost::json::value electrum_setup_fixture::receive()
         std::getline(response_stream, response);
         return boost::json::parse(response);
     }
-    catch (const boost::system::system_error& e)
+    catch (const boost::system::system_error&)
     {
         ////std::cout << "electrum::parse -> " << e.what() << std::endl;
         return {};
