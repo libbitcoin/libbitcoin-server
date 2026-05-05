@@ -59,7 +59,10 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
     }
 
     // TODO: integrate fee estimator.
-    send_code(error::not_implemented);
+    ////send_code(error::not_implemented);
+
+    // If not enough information to make an estimate, -1 is returned.
+    send_result(-1, 42);
 }
 
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
@@ -75,7 +78,7 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
         return;
     }
 
-    send_result(node_settings().minimum_fee_rate, 42, BIND(complete, _1));
+    send_result(node_settings().minimum_fee_rate, 42);
 }
 
 BC_POP_WARNING()

@@ -102,7 +102,7 @@ void protocol_electrum::complete_get_balance(const code& ec,
     {
         { "confirmed", confirmed },
         { "unconfirmed", unconfirmed }
-    }, 42, BIND(complete, _1));
+    }, 42);
 }
 
 // get_history
@@ -175,7 +175,7 @@ void protocol_electrum::complete_get_history(const code& ec,
     }
 
     const auto size = add1(histories.size()) * 128u;
-    send_result(transform(histories), size, BIND(complete, _1));
+    send_result(transform(histories), size);
 }
 
 // get_mempool
@@ -247,7 +247,7 @@ void protocol_electrum::complete_get_mempool(const code& ec,
     }
 
     const auto size = add1(histories.size()) * 128u;
-    send_result(transform(histories), size, BIND(complete, _1));
+    send_result(transform(histories), size);
 }
 
 // list_unspent
@@ -316,7 +316,7 @@ void protocol_electrum::complete_list_unspent(const code& ec,
     }
 
     const auto size = add1(unspents.size()) * 128u;
-    send_result(transform(unspents), size, BIND(complete, _1));
+    send_result(transform(unspents), size);
 }
 
 // utilities

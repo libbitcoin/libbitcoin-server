@@ -189,7 +189,6 @@ include_bitcoin_server_channels_HEADERS = \
     include/bitcoin/server/channels/channel_http.hpp \
     include/bitcoin/server/channels/channel_stratum_v1.hpp \
     include/bitcoin/server/channels/channel_stratum_v2.hpp \
-    include/bitcoin/server/channels/channel_ws.hpp \
     include/bitcoin/server/channels/channels.hpp
 
 include_bitcoin_server_impl_protocolsdir = ${includedir}/bitcoin/server/impl/protocols

@@ -52,13 +52,13 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__mode_invalid_version__in
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__valid__not_implemented)
-{
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
-
-    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
-}
+////BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__valid__not_implemented)
+////{
+////    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+////
+////    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
+////    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+////}
 
 // blockchain.relayfee
 

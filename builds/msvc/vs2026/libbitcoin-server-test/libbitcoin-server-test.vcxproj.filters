@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ |  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+ |
+ |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+ |
+ -->
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\parsers">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\bitcoind">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\electrum">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\native">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\configuration.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\error.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\estimator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\blocks.cpp">
+      <Filter>src\protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_disabled.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_fees.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_headers.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_mempool.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_outpoints.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scripthash.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_scriptpubkey.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_server.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_subscribe.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_transactions.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_address.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_block.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_configuration.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_input.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_output.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\settings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\test.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\blocks.hpp">
+      <Filter>src\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp">
+      <Filter>src\protocols\electrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp">
+      <Filter>src\protocols\native</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\test.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
+  </ItemGroup>
+</Project>

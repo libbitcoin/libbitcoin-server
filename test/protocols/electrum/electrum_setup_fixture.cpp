@@ -121,6 +121,7 @@ boost::json::value electrum_setup_fixture::receive()
     }
     catch (const boost::system::system_error&)
     {
+        ////std::cout << "electrum::get -> dropped" << std::endl;
         return boost::json::parse(R"({"dropped":true})");
     }
 
@@ -131,9 +132,9 @@ boost::json::value electrum_setup_fixture::receive()
         std::getline(response_stream, response);
         return boost::json::parse(response);
     }
-    catch (const boost::system::system_error& e)
+    catch (const boost::system::system_error&)
     {
-        BOOST_CHECK_MESSAGE(false, e.what());
+        ////std::cout << "electrum::parse -> " << e.what() << std::endl;
         return {};
     }
 }

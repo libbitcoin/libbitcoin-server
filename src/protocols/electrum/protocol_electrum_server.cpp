@@ -62,7 +62,7 @@ void protocol_electrum::handle_server_banner(const code& ec,
         return;
     }
 
-    send_result(options().banner_message, 42, BIND(complete, _1));
+    send_result(options().banner_message, 42);
 }
 
 void protocol_electrum::handle_server_donation_address(const code& ec,
@@ -77,7 +77,7 @@ void protocol_electrum::handle_server_donation_address(const code& ec,
         return;
     }
 
-    send_result(options().donation_address, 42, BIND(complete, _1));
+    send_result(options().donation_address, 42);
 }
 
 void protocol_electrum::handle_server_features(const code& ec,
@@ -139,7 +139,7 @@ void protocol_electrum::handle_server_features(const code& ec,
         };
     }
 
-    send_result(std::move(value), 1024, BIND(complete, _1));
+    send_result(std::move(value), 1024);
 }
 
 // This is not actually a subscription method.
@@ -156,7 +156,7 @@ void protocol_electrum::handle_server_peers_subscribe(const code& ec,
     }
 
     // Only supports configured servers.
-    send_result(more_hosts(), 1024, BIND(complete, _1));
+    send_result(more_hosts(), 1024);
 }
 
 // Server does not send ping notifications (or perform other traffic shaping).
@@ -204,7 +204,7 @@ void protocol_electrum::handle_server_ping(const code& ec,
     }
 
     // Length is limited by maximum_request (DoS protection).
-    send_result(std::move(value), size, BIND(complete, _1));
+    send_result(std::move(value), size);
 }
 
 // utilities
