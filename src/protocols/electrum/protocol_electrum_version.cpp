@@ -93,6 +93,10 @@ void protocol_electrum_version::handle_server_version(const code& ec,
     if (stopped(ec))
         return;
 
+    // Handshake must leave channel paused, no more receives after this one.
+    if (handler_)
+        pause();
+
     // v0_0 implies version has not been set (first call).
     if ((channel_->version() == electrum::version::v0_0) &&
         (!set_client(client_name) || !set_version(protocol_version)))
@@ -108,9 +112,6 @@ void protocol_electrum_version::handle_server_version(const code& ec,
             { string_t{ negotiated_version() } }
         }, 70, BIND(finished, _1, error::success));
     }
-
-    // Handshake must leave channel paused, before leaving stranded handler.
-    if (handler_) pause();
 }
 
 // Client/server names.
