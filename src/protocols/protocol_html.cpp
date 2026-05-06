@@ -182,7 +182,11 @@ void protocol_html::send_json(boost::json::value&& model, size_t size_hint,
     add_common_headers(response, request);
     add_access_control_headers(response, request);
     response.set(field::content_type, from_media_type(json));
-    response.body() = json_value{ std::move(model), size_hint };
+    response.body() = json_value
+    {
+        .model = std::move(model),
+        .size_hint = size_hint
+    };
     response.prepare_payload();
     SEND(std::move(response), handle_complete, _1, error::success);
 }
