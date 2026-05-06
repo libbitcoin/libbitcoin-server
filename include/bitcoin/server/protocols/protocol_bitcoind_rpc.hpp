@@ -30,7 +30,6 @@ namespace server {
 
 class BCS_API protocol_bitcoind_rpc
   : public server::protocol_http,
-    public network::protocol_http,
     protected network::tracker<protocol_bitcoind_rpc>
 {
 public:
@@ -44,8 +43,7 @@ public:
     inline protocol_bitcoind_rpc(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : server::protocol_http(session, channel),
-        network::protocol_http(session, channel, options),
+      : server::protocol_http(session, channel, options),
         network::tracker<protocol_bitcoind_rpc>(session->log)
     {
     }
