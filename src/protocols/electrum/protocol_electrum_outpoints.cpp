@@ -146,7 +146,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
     }
 
     monitor(true);
-    NOTIFY(do_outpoint_subscribe, point{ hash, index });
+    POST_NOTIFY(do_outpoint_subscribe, point{ hash, index });
 }
 
 // Subscription response is idempotent.
@@ -225,7 +225,7 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
         return;
     }
 
-    NOTIFY(do_outpoint_unsubscribe, point{ hash, index });
+    POST_NOTIFY(do_outpoint_unsubscribe, point{ hash, index });
 }
 
 void protocol_electrum::do_outpoint_unsubscribe(const point& prevout) NOEXCEPT

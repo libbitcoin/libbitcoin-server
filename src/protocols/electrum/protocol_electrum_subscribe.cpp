@@ -78,7 +78,7 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
     }
 
     monitor(true);
-    NOTIFY(do_scripthash_subscribe, hash, type);
+    POST_NOTIFY(do_scripthash_subscribe, hash, type);
 }
 
 void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
@@ -162,7 +162,7 @@ void protocol_electrum::scripthash_unsubscribe(
         return;
     }
 
-    NOTIFY(do_scripthash_unsubscribe, hash);
+    POST_NOTIFY(do_scripthash_unsubscribe, hash);
 }
 
 void protocol_electrum::do_scripthash_unsubscribe(
