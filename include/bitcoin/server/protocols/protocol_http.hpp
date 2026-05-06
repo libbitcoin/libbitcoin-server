@@ -43,6 +43,14 @@ protected:
     {
     }
 
+    /// Override to capture forwarded websocket requests.
+    void handle_receive_unknown(const code& ec,
+        const network::http::method::unknown::cptr& unknown) NOEXCEPT override;
+
+    /// Override to dispatch websocket messages (forwarded through unknown).
+    virtual void dispatch_websocket(
+        const network::http::request& request) NOEXCEPT;
+
     /// Cache request for serialization (requires strand).
     void set_request(const network::http::request_cptr& request) NOEXCEPT;
 

@@ -23,7 +23,37 @@
 namespace libbitcoin {
 namespace server {
 
+#define CLASS protocol_http
+
 using namespace network::http;
+using namespace std::placeholders;
+
+// Shared pointers required in handler parameters so closures control lifetime.
+BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
+BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
+
+// Websocket dispatch.
+// ----------------------------------------------------------------------------
+
+void protocol_http::handle_receive_unknown(const code& ec,
+    const method::unknown::cptr& unknown) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return;
+
+    dispatch_websocket(*unknown);
+}
+
+void protocol_http::dispatch_websocket(const request& ) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    stop(error::not_implemented);
+}
+
+// Caching for http response abstraction.
+// ----------------------------------------------------------------------------
 
 // Cache request for serialization, keeping it out of dispatch.
 void protocol_http::set_request(const request_cptr& request) NOEXCEPT
@@ -48,6 +78,9 @@ request_cptr protocol_http::reset_request() NOEXCEPT
 
     return system::to_shared<request>();
 }
+
+BC_POP_WARNING()
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin
