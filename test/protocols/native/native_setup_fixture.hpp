@@ -28,17 +28,23 @@
 
 struct native_setup_fixture
 {
-    DELETE_COPY_MOVE(native_setup_fixture);
-
+    using status = boost::beast::http::status;
     using initializer = std::function<bool(test::query_t&)>;
+
+    DELETE_COPY_MOVE(native_setup_fixture);
     explicit native_setup_fixture(const initializer& setup);
     ~native_setup_fixture();
 
     bool expect_dropped(std::string_view target);
+    status get_status(std::string_view target);
+
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     boost::json::value get_json(std::string_view target);
-    boost::beast::http::status get_status(std::string_view target);
+
+    network::boost_code ws_upgrade(std::string_view target);
+    std::string ws_request(std::string_view message);
+    std::string ws_receive();
 
 protected:
     server::configuration config_;
@@ -50,10 +56,13 @@ private:
     using string_request = boost::beast::http::request<string_body>;
     static string_request create_request(std::string_view target);
 
+    using tcp_stream = boost::beast::tcp_stream;
+    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
+
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
-    boost::asio::ip::tcp::socket socket_{ io };
+    boost::beast::tcp_stream socket_{ io.get_executor() };
 };
 
 struct native_ten_block_setup_fixture

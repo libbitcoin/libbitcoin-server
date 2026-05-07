@@ -24,6 +24,15 @@ using namespace boost::beast;
 
 BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
+// websockets
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(native__ws_upgrade__expected)
+{
+    const auto ec = ws_upgrade({});
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+}
+
 // top
 // ----------------------------------------------------------------------------
 

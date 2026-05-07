@@ -103,22 +103,35 @@ bool native_setup_fixture::expect_dropped(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
+    flat_buffer buffer{};
     network::boost_code ec{};
-    network::http::flat_buffer buffer{};
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     return ec == boost::beast::net::error::eof;
+}
+
+http::status native_setup_fixture::get_status(std::string_view target)
+{
+    http::write(socket_, create_request(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
+    return response.result();
 }
 
 std::string native_setup_fixture::get_text(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
+    flat_buffer buffer{};
     network::boost_code ec{};
-    network::http::flat_buffer buffer{};
     http::response<network::http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE(!ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
 
     return response.body();
@@ -128,49 +141,58 @@ system::data_chunk native_setup_fixture::get_data(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
+    flat_buffer buffer{};
     network::boost_code ec{};
-    network::http::flat_buffer buffer{};
     http::response<network::http::chunk_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE(!ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
 
     return system::data_chunk(response.body().begin(), response.body().end());
 }
 
+// The network json body does not support reading a document consisting
+// of only a top-level primitive, because it supports streaming and non-
+// streaming. So instead just use a string buffer and parse explicitly.
 boost::json::value native_setup_fixture::get_json(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
-    // The network json body does not support reading a document consisting
-    // of only a top-level primitive, because it supports streaming and non-
-    // streaming. So instead just use a string buffer and parse explicitly.
-    ////network::boost_code ec{};
-    ////network::http::flat_buffer buffer{};
-    ////http::response<network::http::json_body> response{};
-    ////http::read(stream, buffer, response, ec);
-    ////BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
-    ////return response.body().model;
-
+    flat_buffer buffer{};
     network::boost_code ec{};
-    network::http::flat_buffer buffer{};
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE(!ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
 
     return boost::json::parse(response.body());
 }
 
-http::status native_setup_fixture::get_status(std::string_view target)
+network::boost_code native_setup_fixture::ws_upgrade(std::string_view target)
 {
-    http::write(socket_, create_request(target));
-
     network::boost_code ec{};
-    network::http::flat_buffer buffer{};
-    http::response<http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE(!ec);
+    websocket_stream ws{ socket_ };
+    ws.handshake("localhost", target.empty() ? "/" : target, ec);
+    return ec;
+}
 
-    return response.result();
+std::string native_setup_fixture::ws_receive()
+{
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    websocket_stream ws{ socket_ };
+    ws.read(buffer, ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
+    return buffers_to_string(buffer.data());
+}
+
+std::string native_setup_fixture::ws_request(std::string_view message)
+{
+    network::boost_code ec{};
+    websocket_stream ws{ socket_ };
+    ws.write(net::buffer(message), ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
+    return ws_receive();
 }
