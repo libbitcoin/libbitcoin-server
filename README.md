@@ -16,9 +16,7 @@
 ## tl;dr
 This is the **server component of libbitcoin v4**. It integrates the basic components and offers a **high performance Bitcoin full node** with a comprehensive set of client-server interfaces like **bitcoind, electrum and stratum** as well as an integrated **block explorer**. It makes full use of the available hardware, internet connection and available RAM and CPU so you can sync the Bitcoin blockchain from genesis, today and in the future.
 
-If you follow this README you will be able to build, run and monitor your own libbitcoin server (bs). Libbitcoin is a multi platform software that works on Linux, Windows and OSX (Intel and ARM).
-
-Now, If you want to see how fast your setup can sync the Bitcoin Blockchain, read on and get your libbitcoin server running today. It's pretty easy actually.
+Libbitcoin is a multi-platform software that works on Linux, Windows and macOS (Intel and ARM).
 
 **License Overview**
 
@@ -26,138 +24,226 @@ All files in this repository fall under the license specified in [COPYING](COPYI
 
 **About libbitcoin**
 
-The libbitcoin toolkit is a set of cross platform C++ libraries for building Bitcoin applications. The toolkit consists of several libraries, most of which depend on the foundational [libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system) library. Each library's repository can be cloned and built separately. There are no packages yet in distribution, however each library includes an installation script (described below) which is regularly verified via [GitHub Actions](https://github.com/features/actions).
+The libbitcoin toolkit is a set of cross platform C++ libraries for building Bitcoin applications. The toolkit consists of several libraries, most of which depend on the foundational [libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system) library. Each library's repository can be cloned and built separately.
 
 ## Contents
 - [libbitcoin-server](#libbitcoin-server)
   - [tl;dr](#tldr)
   - [Contents](#contents)
-  - [Installation](#installation)
+  - [Download](#download)
+  - [Build from Source](#build-from-source)
     - [Linux](#linux)
       - [Requirements](#requirements)
-      - [Build](#build)
+      - [GNU Autotools Build](#gnu-autotools-build)
+      - [CMake Build](#cmake-build)
+      - [CMake Presets Build](#cmake-presets-build)
       - [CPU Extensions](#cpu-extensions)
-    - [macOS](#macos)
     - [Windows](#windows)
+    - [macOS](#macos)
   - [Running bs](#running-bs)
     - [Startup Process](#startup-process)
+    - [Using the integrated Block Explorer](#using-the-integrated-block-explorer)
+    - [Using the interactive console](#using-the-interactive-console)
     - [Logging](#logging)
-    - [Using the console](#using-the-console)
     - [Performance](#performance)
     - [Memory Management](#memory-management)
       - [Kernel VM Tuning Parameters](#kernel-vm-tuning-parameters)
 
-## Installation
-The build process is essentially the same on Linux, macOS, and other Unix-like systems. It differs significantly on Windows due to the use of native Visual Studio projects and solutions. Detailed instructions are provided below.
+---
 
-- [Linux (Ubuntu)](#linux)
-- [macOS](#macos)
-- [Windows](#windows)
+## Download
+
+> **Prebuilt binaries are coming soon.**
+>
+> We are working on providing ready-to-run binaries for Linux and Windows. Once available, downloading and running `bs` will require no compiler or build tools — just download, configure, and run.
+>
+> Check back here or watch the [releases page](https://github.com/libbitcoin/libbitcoin-server/releases) for updates.
+
+In the meantime, [build from source](#build-from-source) using one of the provided installation scripts below.
+
+---
+
+## Build from Source
+
+Building from source is intended for advanced users and developers who want full control over the build. The build process clones and compiles all dependencies automatically.
+
+libbitcoin-server ships with **three installation scripts**, each targeting a different toolchain:
+
+| Script | Toolchain | Best for |
+|--------|-----------|----------|
+| `builds/gnu/install-gnu.sh` | GNU Autotools (make) | Linux, macOS — traditional |
+| `builds/cmake/install-cmake.sh` | CMake | Linux, macOS — flexible |
+| `builds/cmake/install-presets.sh` | CMake with Presets | Linux — simplified, named configurations |
+
+All scripts download and build Boost, libsecp256k1, and the full libbitcoin stack from source. A complete build typically takes **30–90 minutes** depending on your hardware.
 
 ### Linux
 
-Linux users can build libbitcoin node with the provided installation script `install.sh` that uses Autotools and pkg-config to first build the needed dependencies (boost, libsecp256k1) and then fetches the latest libbitcoin projects (libbitcoin-system, libbitcoin-database, libbitcoin-network, libbitcoin-node and libbitcoin-server) from GitHub and builds the stack bottom up to the libbitcoin-server executable - `bs`.
-
-You can issue the following command to check for further parameterization of the install script:
-
-```bash
-$ ./install.sh --help
-```
-
-which brings up the following options:
-
-```
-Usage: ./install.sh [OPTION]...
-Manage the installation of libbitcoin-server.
-Script options:
-  --build-boost            Build Boost libraries.
-  --build-secp256k1        Build libsecp256k1 libraries.
-  --build-dir=<path>       Location of downloaded and intermediate files.
-  --prefix=<absolute-path> Library install location (defaults to /usr/local).
-  --disable-shared         Disables shared library builds.
-  --disable-static         Disables static library builds.
-  --help, -h               Display usage, overriding script execution.
-
-All unrecognized options provided shall be passed as configuration options for 
-all dependencies.
-```
-
-In order to successfully execute `install.sh` a few requirements need to be met. This walkthrough is based on a 'current' installation of the following components. (That doesn't necessarily mean these are the minimum requirements though).
-
 #### Requirements
-* Base OS: Ubuntu 24.04.3 LTS (Noble Numbat)
-* C++20 compiler (gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04))
-* [Autoconf](https://www.gnu.org/software/autoconf/)
-* [Automake](https://www.gnu.org/software/automake/)
-* [libtool](https://www.gnu.org/software/libtool/)
-* [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
-* [wget](https://www.gnu.org/software/wget/)
-* [git](https://git-scm.com/)
 
-The corresponding packages can be installed with the following command:
+The following are the minimum requirements for Ubuntu 24.04 LTS. Other distributions require equivalent packages.
 
-```bash
-$ sudo apt install build-essential wget git autoconf automake pkg-config libtool
-```
+| Requirement | Package |
+|-------------|---------|
+| C++20 compiler | `build-essential` (GCC ≥ 13 or Clang ≥ 16) |
+| Autoconf / Automake / Libtool | `autoconf automake libtool` |
+| pkg-config | `pkg-config` |
+| git | `git` |
+| CMake ≥ 3.21 *(CMake builds only)* | `cmake` |
 
-#### Build
-Use wget to fetch the latest `install.sh` from GitHub by issuing the following command from anywhere in your filesystem:
+Install everything at once:
 
 ```bash
-wget https://raw.githubusercontent.com/libbitcoin/libbitcoin-server/master/install.sh
-chmod +x install.sh
+# For GNU Autotools builds:
+sudo apt install build-essential git autoconf automake libtool pkg-config
+
+# Additionally for CMake builds:
+sudo apt install cmake
 ```
 
-Start the build with the following command:
+---
+
+#### GNU Autotools Build
+
+Uses `make` and Autotools (`autoconf`, `automake`, `libtool`). Well-tested and the reference build for CI.
+
+Clone the repository and run the build script:
 
 ```bash
-$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/install/ --build-dir=/home/user/libbitcoin/build --build-secp256k1 --build-boost --disable-shared
+git clone https://github.com/libbitcoin/libbitcoin-server
+cd libbitcoin-server
+
+./builds/gnu/install-gnu.sh \
+  --prefix=$HOME/libbitcoin \
+  --build-secp256k1 \
+  --build-boost \
+  --build-config=release \
+  --build-link=static \
+  --build-post-install-clean
 ```
 
-This will build the libbitcoin-server executable as a static release with no [CPU extensions](#cpu-extensions) built in. Use only absolute path names for prefix dir. A successful build from within `~/libbitcoin/` will create the following directory/file structure:
+On success, the `bs` binary is at `$HOME/libbitcoin/bin/bs`.
 
-```
-~/libbitcoin/
-├── install.sh
-├── build/
-└── install/
-    ├── bin/
-    ├── etc/
-    ├── include/
-    ├── lib/
-    └── share/
+**Key options:**
+
+| Option | Values | Description |
+|--------|--------|-------------|
+| `--prefix=<path>` | absolute path | Installation destination |
+| `--build-config=<mode>` | `release`, `debug` | Build configuration |
+| `--build-secp256k1` | — | Build libsecp256k1 from source |
+| `--build-boost` | — | Build Boost from source |
+| `--build-use-local-src` | — | Reuse already-present source directories instead of cloning from GitHub |
+| `--build-parallel=<n>` | integer | Number of parallel compile jobs |
+| `--enable-shani` | — | Enable SHA-NI hardware acceleration |
+| `--enable-avx2` | — | Enable AVX2 SIMD acceleration |
+| `--enable-sse41` | — | Enable SSE4.1 acceleration |
+| `--enable-avx512` | — | Enable AVX-512 acceleration |
+
+See all options:
+
+```bash
+./builds/gnu/install-gnu.sh --help
 ```
 
-Now enter the bin directory and [fire up](#running-bs) your libbitcoin server.
+---
+
+#### CMake Build
+
+Uses CMake instead of Autotools. CPU extension flags use CMake's `-D` syntax.
+
+```bash
+git clone https://github.com/libbitcoin/libbitcoin-server
+cd libbitcoin-server
+
+./builds/cmake/install-cmake.sh \
+  --prefix=$HOME/libbitcoin \
+  --build-secp256k1 \
+  --build-boost \
+  --build-config=release \
+  --build-link=static \
+  --build-post-install-clean
+```
+
+**Key options:**
+
+| Option | Values | Description |
+|--------|--------|-------------|
+| `--prefix=<path>` | absolute path | Installation destination |
+| `--build-config=<mode>` | `release`, `debug` | Build configuration |
+| `--build-secp256k1` | — | Build libsecp256k1 from source |
+| `--build-boost` | — | Build Boost from source |
+| `--build-use-local-src` | — | Reuse already-present source directories instead of cloning from GitHub |
+| `-Denable-shani=ON` | `ON`, `OFF` | Enable SHA-NI hardware acceleration |
+| `-Denable-avx2=ON` | `ON`, `OFF` | Enable AVX2 SIMD acceleration |
+| `-Denable-sse41=ON` | `ON`, `OFF` | Enable SSE4.1 acceleration |
+| `-Denable-avx512=ON` | `ON`, `OFF` | Enable AVX-512 acceleration |
+
+See all options:
+
+```bash
+./builds/cmake/install-cmake.sh --help
+```
+
+---
+
+#### CMake Presets Build
+
+The simplest scripted build on Linux. Named presets combine all configuration choices (toolchain, build type, link mode) into a single `--build-preset` parameter. The install prefix and build directory are set automatically relative to the source tree.
+
+Available presets:
+
+| Preset | Config | Link |
+|--------|--------|------|
+| `nix-gnu-release-static` | release | static |
+| `nix-gnu-release-shared` | release | dynamic |
+| `nix-gnu-debug-static` | debug | static |
+| `nix-gnu-debug-shared` | debug | dynamic |
+
+**For most users, `nix-gnu-release-static` is the recommended choice:**
+
+```bash
+git clone https://github.com/libbitcoin/libbitcoin-server
+cd libbitcoin-server
+
+./builds/cmake/install-presets.sh \
+  --build-preset=nix-gnu-release-static \
+  --build-secp256k1 \
+  --build-boost \
+```
+
+The `bs` binary is placed at `prefix/nix-gnu-release-static/bin/bs` inside the repository directory.
+
+The presets script supports `--build-use-local-src` and `--build-post-install-clean` as well.
+
+See all options:
+
+```bash
+./builds/cmake/install-presets.sh --help
+```
+
+---
 
 #### CPU Extensions
-CPU Extensions are specific optimizations your CPU might or might not have. libbitcoin(-server) can be built with support for the following CPU extensions if your architecture supports them:
 
-* [SHA-NI](https://en.wikipedia.org/wiki/SHA_instruction_set)
-* [SSE4.1](https://en.wikipedia.org/wiki/SSE4)
-* [AVX2](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions)
-* [AVX512](https://en.wikipedia.org/wiki/AVX-512)
+libbitcoin can be compiled with optional CPU acceleration. If your processor supports them, these significantly improve hashing and signature verification throughput.
 
-To build libbitcoin-server with these extensions use the `--enable-*` parameters like:
+| Extension | Flag (GNU) | Flag (CMake) | Description |
+|-----------|-----------|--------------|-------------|
+| SHA-NI | `--enable-shani` | `-Denable-shani=ON` | SHA hardware instructions (Intel) |
+| SSE4.1 | `--enable-sse41` | `-Denable-sse41=ON` | SIMD integer ops |
+| AVX2 | `--enable-avx2` | `-Denable-avx2=ON` | 256-bit SIMD |
+| AVX-512 | `--enable-avx512` | `-Denable-avx512=ON` | 512-bit SIMD |
 
-- --enable-shani
-- --enable-sse41
-- --enable-avx2
-- --enable-avx512
+> **Important:** Enabling an extension your CPU does not support will compile successfully but crash at runtime. Always verify support first.
 
-This command will create a static release build with all supported CPU extensions (if supported by the system). Building libbitcoin with unsupported CPU extensions might work but will lead to crashes at runtime.
+Check which extensions your CPU supports:
 
 ```bash
-$ CFLAGS="-O3" CXXFLAGS="-O3" ./install.sh --prefix=/home/user/libbitcoin/install/ --build-dir=/home/user/libbitcoin/build --build-secp256k1 --build-boost --disable-shared --enable-ndebug --enable-shani --enable-avx2 --enable-sse41 --enable-isystem
+# After building, run:
+./bs --hardware
 ```
 
-You can check if the optimizations have been built in your binary with the following command:
-
-```bash
-$ ./bs --hardware
-```
-
-which will show your CPU architecture as well as the built in status of the supported optimizations:
+Example output on a supported system:
 
 ```
 Hardware configuration...
@@ -169,20 +255,51 @@ sse41... platform:1 compiled:1.
 shani... platform:1 compiled:1.
 ```
 
-### macOS
-TBD
+`platform:1 compiled:1` means the CPU supports it and it was compiled in.
 
-### Windows
-TBD
-
-## Running bs
-Let's see what options we have for the server:
+Example build with all extensions enabled (GNU):
 
 ```bash
-$ ./bs --help
+./builds/gnu/install-gnu.sh \
+  --prefix=$HOME/libbitcoin \
+  --build-secp256k1 \
+  --build-boost \
+  --build-config=release \
+  --build-link=static \
+  --enable-shani \
+  --enable-sse41 \
+  --enable-avx2
 ```
 
-The response should look like this:
+---
+
+### Windows
+
+Windows builds use the provided Visual Studio 2022 project files in `builds/msvc/vs2022/`.
+
+Detailed instructions are **TBD**.
+
+---
+
+### macOS
+
+The GNU Autotools and CMake build scripts work on macOS with clang. Install the build prerequisites via Homebrew:
+
+```bash
+brew install autoconf automake libtool pkg-config cmake
+```
+
+Then follow the [GNU Autotools Build](#gnu-autotools-build) or [CMake Build](#cmake-build) instructions above.
+
+Detailed instructions are **TBD**.
+
+## Running bs
+
+After a successful build, navigate to the `bin/` directory and confirm the binary is working:
+
+```bash
+./bs --help
+```
 
 ```
 Usage: bs [-abdfhiklnrsv] [--config value] [--test value] [--write value]
@@ -209,104 +326,114 @@ Options (named):
 -w [--write]         Run built-in write test and display.
 ```
 
-Did you check if all supported [CPU Extensions](#cpu-extensions) are built in (`./bs --hardware`)?
-
 ### Startup Process
 
-Starting the server without passing any parameters like
-
-```
-$ ./bs
-```
-
-will do the following:
-- If there is no data store at `./bitcoin/`, the node will create one. The location can be changed in the [config](/docs/configuration.md) file (`bs.cfg`).
-- Start multiple threads to setup peer connections, to download and to process blocks in default mode (milestone sync). See [Theory of operation](/docs/theory-of-operation.md#) for more information about operating modes.
-- Expose an interactive console to do basic communication with the node -> [Using the console](#using-the-console)
-- Write various logfiles -> [Logging](#logging)
-
-Furthermore the standard parameters will perform a **milestone sync** with the Bitcoin Blockchain, as opposed to a **full validation sync**.
-
-Although this works in principle, you may want to do at least a few basic settings. You do this by passing a [config file](/docs/configuration.md) to the node:
+Start the server with a configuration file:
 
 ```bash
-$ ./bs --config ./bs.cfg
+./bs --config ./bs.cfg
 ```
 
-The node will now expect to find a valid [config file](/docs/configuration.md) in the current folder.
+On first launch, `bs` will:
+- Create a data store at the path specified in `bs.cfg` (defaults to `./bitcoin/`).
+- Establish peer connections and begin syncing the Bitcoin blockchain in **milestone sync** mode.
+- Open an interactive console — see [Using the console](#using-the-console).
+- Write log files — see [Logging](#logging).
+- Create a database snapshot when reaching current block height
 
-Starting a **full validation sync** on the node requires to set the latest milestone block back to genesis. This is done by adding the following lines to the config file:
+**Milestone sync** (the default sync mode) skips expensive block validation for blocks below the configured checkpoint, making the initial sync significantly faster. There are no trust assumptions — milestone optimization is secure only because the user has previously validated to that point themselves. If the user has not previously validated the chain, they should perform a full validation sync from genesis and record a new milestone for future use.
 
-```
+For a **full validation sync** from genesis, add to your config file:
+
+```ini
 [bitcoin]
-checkpoint   = 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f:0
-milestone = 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f:0
+checkpoint = 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f:0
+milestone  = 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f:0
 ```
 
-Further information on how to adjust the config file as well as example configurations can be found [here](/docs/configuration.md).
+After the sync has finished and the snapshot has been created, retrieve an arbitrary hash via the native REST interface and use it for future syncs in milestone mode. Query the REST API with curl or just look up the hash in the [integrated Block Explorer](#using-the-integrated-block-explorer):
+
+```bash
+curl -s http://localhost:8181/v1/block/height/900000/header?format=json
+```
+
+Information on how to setup the native REST endpoint and other configuration options are documented in [docs/configuration.md](/docs/configuration.md).
+
+### Using the integrated Block Explorer
+
+The integrated Block Explorer gives you easy access to the Bitcoin blockchain. It uses the same query interface as the native REST endpoint and is configured alongside it. Connect to the Block explorer by visiting the configured URL in any modern browser, e.g. <a href="http://localhost:8181">http://localhost:8181</a>.
+
+<div align="center">
+
+<a href="/docs/images/block_explorer.png">
+  <img src="/docs/images/block_explorer.png" alt="Block Explorer - libbitcoin-server v4" width="400" />
+</a>
+
+</div>
+
+### Using the interactive console
+
+Press **`m` + Enter** in the terminal to open the interactive console:
+
+```
+2026-05-06T23:56:47Z.0 Toggle: [v]erbose
+2026-05-06T23:56:47Z.0 Toggle: [o]bjects
+2026-05-06T23:56:47Z.0 Toggle: [q]uitting
+2026-05-06T23:56:47Z.0 Toggle: [f]ault
+2026-05-06T23:56:47Z.0 Toggle: [r]emote
+2026-05-06T23:56:47Z.0 Toggle: [x]proxy
+2026-05-06T23:56:47Z.0 Toggle: [p]rotocol
+2026-05-06T23:56:47Z.0 Toggle: [s]ession
+2026-05-06T23:56:47Z.0 Toggle: [n]ews
+2026-05-06T23:56:47Z.0 Toggle: [a]pplication
+2026-05-06T23:56:47Z.0 Option: [z]eroize disk full error
+2026-05-06T23:56:47Z.0 Option: [w]ork distribution
+2026-05-06T23:56:47Z.0 Option: [t]est built-in case
+2026-05-06T23:56:47Z.0 Option: [m]enu of options and toggles
+2026-05-06T23:56:47Z.0 Option: [i]nfo about store
+2026-05-06T23:56:47Z.0 Option: [h]old network communication
+2026-05-06T23:56:47Z.0 Option: [g]o network communication
+2026-05-06T23:56:47Z.0 Option: [e]rrors in store
+2026-05-06T23:56:47Z.0 Option: [c]lose the node
+2026-05-06T23:56:47Z.0 Option: [b]ackup the store
+
+```
+
+The console lets you toggle log verbosity, pause/resume networking, trigger a backup, and shut down cleanly without risking store corruption.
 
 ### Logging
-libbitcoin-server creates the following files at start:
 
-* events.log
-* bs_begin.log (rotated to bs_end.log)
-* hosts.cache
+`bs` creates the following files at startup:
 
-The events.log file records all information about the sync process, providing the current status and speed of the sync. Read [Performance](#performance) to learn how to check your sync speed through the logs.
-
-### Using the console
-Pressing **`m` + Enter** in the terminal will bring up the interactive console. This interface is mainly used for low level logging and configuration and it looks like this:
-
-```
-2025-10-17T23:47:58Z.0 Toggle: [v]erbose
-2025-10-17T23:47:58Z.0 Toggle: [o]bjects
-2025-10-17T23:47:58Z.0 Toggle: [q]uitting
-2025-10-17T23:47:58Z.0 Toggle: [f]ault
-2025-10-17T23:47:58Z.0 Toggle: [r]emote
-2025-10-17T23:47:58Z.0 Toggle: [x]proxy
-2025-10-17T23:47:58Z.0 Toggle: [p]rotocol
-2025-10-17T23:47:58Z.0 Toggle: [s]ession
-2025-10-17T23:47:58Z.0 Toggle: [n]ews
-2025-10-17T23:47:58Z.0 Toggle: [a]pplication
-2025-10-17T23:47:58Z.0 Option: [z]eroize disk full error
-2025-10-17T23:47:58Z.0 Option: [w]ork distribution
-2025-10-17T23:47:58Z.0 Option: [t]est built-in case
-2025-10-17T23:47:58Z.0 Option: [m]enu of options and toggles
-2025-10-17T23:47:58Z.0 Option: [i]nfo about store
-2025-10-17T23:47:58Z.0 Option: [h]old network communication
-2025-10-17T23:47:58Z.0 Option: [g]o network communication
-2025-10-17T23:47:58Z.0 Option: [e]rrors in store
-2025-10-17T23:47:58Z.0 Option: [c]lose the node
-2025-10-17T23:47:58Z.0 Option: [b]ackup the store
-```
-Further information about how to use the interactive console can be found [here](/docs/tbd.md)
+| File | Description |
+|------|-------------|
+| `events.log` | Sync log: block heights, timing |
+| `bs_begin.log` | Session start log (rotated to `bs_end.log` on clean shutdown) |
+| `hosts.cache` | Peer address cache |
 
 ### Performance
-You can check your server's performance using the log files. To do this, check the events.log file as follows. Let's check for the **organization** of Block **700,000**. The command
+
+Monitor sync progress via `events.log`. To find when a specific block was organized:
 
 ```bash
-$ cat ./events.log | grep 'block_organized..... 700000'
+grep 'block_organized..... 700000' ./events.log
 ```
-
-will give you something like this, with the number on the right representing the seconds since the server started until block 700k was organized:
 
 ```
 block_organized..... 700000 11053
 ```
 
-In this case it took the node 11053 seconds (or 184 minutes) to sync up to Block 700k.
+The number on the right is elapsed seconds since startup. In this example, block 700,000 was reached in 11,053 seconds (≈ 3 hours).
 
-As the node aims to sync the Blockchain as fast as possible, we assume that if the computer is powerful enough, the limiting factor for syncing the chain is your internet connection - you simply can't sync faster than the time needed to download the Blockchain.
-
-The following diagram shows the performance data extracted from various IBDs (bs milestone and full validation, Core 30 Standard and AssumeValid) on a 64 Core, 256GB RAM machine running Ubuntu.
+The following chart shows IBD performance from a reference machine:
 
 <details>
 <summary><strong>brunella - Dell Precision Tower 7810</strong></summary>
 
-- Dual Intel® Xeon® CPU E5-2683 v4 @ 2.10 GHz (32 Kerne / 64 Threads)
+- Dual Intel® Xeon® CPU E5-2683 v4 @ 2.10 GHz (32 cores / 64 threads)
 - **256 GB** DDR4 ECC Registered (RDIMM)
 - 4 TB SSD Samsung 990 PRO (PCIe Gen4)
-- 2 GBit/s Fiber Internet
+- 2 GBit/s fiber internet
 
 </details>
 
@@ -318,43 +445,34 @@ The following diagram shows the performance data extracted from various IBDs (bs
 
 </div>
 
-Check [this](/docs/tbd.md) to learn more about how performance profiling and optimization works.
-
 ### Memory Management
 
-In order to improve the performance on your Linux system, you probably have to alter the kernel parameters that determine the memory management of the system ([Memory Paging](https://en.wikipedia.org/wiki/Memory_paging)).
+On Linux, tuning the kernel's dirty-page writeback parameters can significantly improve sync throughput by allowing the OS to buffer more writes in RAM before flushing to disk.
 
 #### Kernel VM Tuning Parameters
 
-These sysctl parameters optimize Linux VM dirty page writeback for high I/O workloads (e.g., databases). Set via `/etc/sysctl.conf` or `sudo sysctl`. This table shows the stock values of the current Ubuntu LTS.
+These are the stock Ubuntu LTS values:
 
-| Parameter                      | Value  | Description                                                       |
-|--------------------------------|--------|-------------------------------------------------------------------|
-| `vm.dirty_background_ratio`    | `10`   | Initiates background writeback at 10% dirty RAM (lowers latency). |
-| `vm.dirty_ratio`               | `20`   | Blocks apps at 20% dirty RAM (prevents OOM).                      |
-| `vm.dirty_expire_centisecs`    | `3000` | Marks pages "old" after 30s (1/100s units; triggers writeback).   |
-| `vm.dirty_writeback_centisecs` | `500`  | Wakes kworker every 5s to flush old pages.                        |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `vm.dirty_background_ratio` | `10` | Start background writeback at this % of dirty RAM |
+| `vm.dirty_ratio` | `20` | Block applications at this % of dirty RAM |
+| `vm.dirty_expire_centisecs` | `3000` | Mark pages stale after 30 s (unit: 1/100 s) |
+| `vm.dirty_writeback_centisecs` | `500` | Wake writeback worker every 5 s |
 
-Check your actual kernel parameters by issuing the following command:
+Check current values:
 
 ```bash
-$ sysctl vm.dirty_background_ratio vm.dirty_ratio vm.dirty_expire_centisecs vm.dirty_writeback_centisecs
+sysctl vm.dirty_background_ratio vm.dirty_ratio vm.dirty_expire_centisecs vm.dirty_writeback_centisecs
 ```
 
-The following parameters have been identified to be the most effective for the most computers we use for testing. They basically allow the server process to use as much RAM as possible (90%) and flush the dirty pages after 2 minutes:
-
-* vm.dirty_background_ratio = 90
-* vm.dirty_ratio = 90
-* vm.dirty_expire_centisecs = 12000
-* vm.dirty_writeback_centisecs = 12000
-
-Set them with the following commands:
+For libbitcoin workloads the following values have proven most effective — they allow the server to use up to 95 % of RAM as a write buffer and flush every 2 minutes:
 
 ```bash
-$ sudo sysctl vm.dirty_background_ratio=90
-$ sudo sysctl vm.dirty_ratio=90
-$ sudo sysctl vm.dirty_expire_centisecs=12000
-$ sudo sysctl vm.dirty_writeback_centisecs=12000
+sudo sysctl vm.dirty_background_ratio=95
+sudo sysctl vm.dirty_ratio=95
+sudo sysctl vm.dirty_expire_centisecs=12000
+sudo sysctl vm.dirty_writeback_centisecs=12000
 ```
 
 **Tuning:** As these parameters apply globally, you can adjust them under load from a different terminal.
