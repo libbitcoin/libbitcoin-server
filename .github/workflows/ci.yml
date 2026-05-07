@@ -19,17 +19,6 @@ jobs:
         include:
           - image: macos-latest
             config: "release"
-            link: "dynamic"
-            cc: "clang"
-            cxx: "clang++"
-            flags: ""
-            coverage: ""
-            boost: "--build-boost"
-            secp256k1: "--build-secp256k1"
-            options: "--enable-isystem"
-
-          - image: macos-latest
-            config: "release"
             link: "static"
             cc: "clang"
             cxx: "clang++"
@@ -42,21 +31,11 @@ jobs:
           - image: ubuntu-24.04
             config: "debug"
             link: "dynamic"
-            cc: "clang-18"
-            cxx: "clang++-18"
+            cc: "clang-19"
+            cxx: "clang++-19"
             flags: ""
             coverage: ""
-            boost: "--build-boost"
-            secp256k1: "--build-secp256k1"
-            options: "--enable-isystem"
-
-          - image: ubuntu-24.04
-            config: "release"
-            link: "static"
-            cc: "clang-18"
-            cxx: "clang++-18"
-            flags: ""
-            coverage: ""
+            package: "clang-19 clang++-19"
             boost: "--build-boost"
             secp256k1: "--build-secp256k1"
             options: "--enable-isystem"
@@ -64,8 +43,8 @@ jobs:
           - image: ubuntu-24.04
             config: "release"
             link: "dynamic"
-            cc: "gcc-12"
-            cxx: "g++-12"
+            cc: "clang-18"
+            cxx: "clang++-18"
             flags: ""
             coverage: ""
             boost: "--build-boost"
@@ -75,10 +54,22 @@ jobs:
           - image: ubuntu-24.04
             config: "debug"
             link: "static"
-            cc: "gcc"
-            cxx: "g++"
+            cc: "gcc-13"
+            cxx: "g++-13"
             flags: "--coverage -fprofile-update=atomic"
             coverage: "lcov"
+            boost: "--build-boost"
+            secp256k1: "--build-secp256k1"
+            options: "--enable-isystem"
+
+          - image: ubuntu-24.04
+            config: "release"
+            link: "static"
+            cc: "gcc-15"
+            cxx: "g++-15"
+            flags: ""
+            coverage: ""
+            package: "g++-15 gcc-15"
             boost: "--build-boost"
             secp256k1: "--build-secp256k1"
             options: "--enable-isystem"
@@ -145,6 +136,13 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
+          if [[ "${{ matrix.package }}" == *"g++-15"* ]] ||
+             [[ "${{ matrix.package }}" == *"gcc-15"* ]] ||
+             [[ "${{ matrix.package }}" == *"g++-16"* ]] ||
+             [[ "${{ matrix.package }}" == *"gcc-16"* ]]; then
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+            sudo apt-get update
+          fi
           sudo apt-get install git build-essential autoconf automake libtool pkg-config ${{ matrix.package || '' }}
           if [[ "${{ matrix.coverage }}" == "lcov" ]]; then
               sudo apt-get install lcov
@@ -266,32 +264,10 @@ jobs:
       matrix:
         include:
           - image: macos-latest
-            config: "release"
-            link: "dynamic"
-            cc: "clang"
-            cxx: "clang++"
-            flags: "-DNDEBUG"
-            coverage: ""
-            boost: "--build-boost"
-            secp256k1: "--build-secp256k1"
-            options: "--verbose"
-
-          - image: macos-latest
-            config: "release"
-            link: "static"
-            cc: "clang"
-            cxx: "clang++"
-            flags: ""
-            coverage: ""
-            boost: "--build-boost"
-            secp256k1: "--build-secp256k1"
-            options: "--verbose"
-
-          - image: ubuntu-24.04
             config: "debug"
             link: "dynamic"
-            cc: "clang-18"
-            cxx: "clang++-18"
+            cc: "clang"
+            cxx: "clang++"
             flags: ""
             coverage: ""
             boost: "--build-boost"
@@ -301,10 +277,11 @@ jobs:
           - image: ubuntu-24.04
             config: "release"
             link: "static"
-            cc: "clang-18"
-            cxx: "clang++-18"
+            cc: "clang-19"
+            cxx: "clang++-19"
             flags: ""
             coverage: ""
+            package: "clang-19 clang++-19"
             boost: "--build-boost"
             secp256k1: "--build-secp256k1"
             options: ""
@@ -323,10 +300,22 @@ jobs:
           - image: ubuntu-24.04
             config: "debug"
             link: "static"
-            cc: "gcc"
-            cxx: "g++"
+            cc: "gcc-14"
+            cxx: "g++-14"
             flags: ""
             coverage: ""
+            boost: "--build-boost"
+            secp256k1: "--build-secp256k1"
+            options: ""
+
+          - image: ubuntu-24.04
+            config: "debug"
+            link: "dynamic"
+            cc: "gcc-16"
+            cxx: "g++-16"
+            flags: ""
+            coverage: ""
+            package: "g++-16 gcc-16"
             boost: "--build-boost"
             secp256k1: "--build-secp256k1"
             options: ""
@@ -393,6 +382,13 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
+          if [[ "${{ matrix.package }}" == *"g++-15"* ]] ||
+             [[ "${{ matrix.package }}" == *"gcc-15"* ]] ||
+             [[ "${{ matrix.package }}" == *"g++-16"* ]] ||
+             [[ "${{ matrix.package }}" == *"gcc-16"* ]]; then
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+            sudo apt-get update
+          fi
           sudo apt-get install git build-essential autoconf automake libtool pkg-config ${{ matrix.package || '' }}
           if [[ "${{ matrix.coverage }}" == "lcov" ]]; then
               sudo apt-get install lcov
@@ -514,7 +510,7 @@ jobs:
       matrix:
         include:
           - image: ubuntu-24.04
-            preset: "nix-gnu-debug-shared"
+            preset: "nix-gnu-release-shared"
             cc: "clang-18"
             cxx: "clang++-18"
             flags: ""
@@ -525,16 +521,6 @@ jobs:
 
           - image: ubuntu-24.04
             preset: "nix-gnu-release-static"
-            cc: "clang-18"
-            cxx: "clang++-18"
-            flags: ""
-            coverage: ""
-            boost: "--build-boost"
-            secp256k1: "--build-secp256k1"
-            options: ""
-
-          - image: ubuntu-24.04
-            preset: "nix-gnu-release-shared"
             cc: "gcc-12"
             cxx: "g++-12"
             flags: ""
@@ -605,6 +591,13 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
+          if [[ "${{ matrix.package }}" == *"g++-15"* ]] ||
+             [[ "${{ matrix.package }}" == *"gcc-15"* ]] ||
+             [[ "${{ matrix.package }}" == *"g++-16"* ]] ||
+             [[ "${{ matrix.package }}" == *"gcc-16"* ]]; then
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+            sudo apt-get update
+          fi
           sudo apt-get install git build-essential autoconf automake libtool pkg-config ${{ matrix.package || '' }}
           if [[ "${{ matrix.coverage }}" == "lcov" ]]; then
               sudo apt-get install lcov
@@ -721,24 +714,13 @@ jobs:
       matrix:
         include:
           - image: windows-latest
-            configuration: "StaticRelease"
-            platform: "x64"
-            version: "vs2022"
-            tests: "*"
-
-          - image: windows-latest
             configuration: "StaticDebug"
             platform: "x64"
             version: "vs2022"
             tests: "*"
-          - image: windows-2025-vs2026
-            configuration: "StaticRelease"
-            platform: "x64"
-            version: "vs2026"
-            tests: "*"
 
           - image: windows-2025-vs2026
-            configuration: "StaticDebug"
+            configuration: "StaticRelease"
             platform: "x64"
             version: "vs2026"
             tests: "*"
