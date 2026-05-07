@@ -109,7 +109,7 @@ bool native_setup_fixture::expect_dropped(std::string_view target)
     network::http::flat_buffer buffer{};
     http::response<http::string_body> response{};
     http::read(stream, buffer, response, ec);
-    return !!ec;
+    return ec == boost::beast::net::error::eof;
 }
 
 std::string native_setup_fixture::get_text(std::string_view target)
@@ -180,5 +180,7 @@ http::status native_setup_fixture::get_status(std::string_view target)
     network::http::flat_buffer buffer{};
     http::response<http::string_body> response{};
     http::read(stream, buffer, response, ec);
+    BOOST_REQUIRE(!ec);
+
     return response.result();
 }
