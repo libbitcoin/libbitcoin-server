@@ -22,7 +22,7 @@
 #include "../../test.hpp"
 #include "../blocks.hpp"
 
-#define NATIVE_ENDPOINT "127.0.0.1:65000"
+#define NATIVE_ENDPOINT "127.0.0.1:65001"
 
 // TODO: native is http so use boost::beast.
 
@@ -34,15 +34,22 @@ struct native_setup_fixture
     explicit native_setup_fixture(const initializer& setup);
     ~native_setup_fixture();
 
-    // native does not implement a handshake (url versioning).
-    boost::json::value get(const std::string& request);
+    bool expect_dropped(std::string_view target);
+    std::string get_text(std::string_view target);
+    system::data_chunk get_data(std::string_view target);
+    boost::json::value get_json(std::string_view target);
+    boost::beast::http::status get_status(std::string_view target);
 
 protected:
-    configuration config_;
+    server::configuration config_;
     test::store_t store_;
     test::query_t query_;
 
 private:
+    using string_body = network::http::string_body;
+    using string_request = boost::beast::http::request<string_body>;
+    static string_request create_request(std::string_view target);
+
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
@@ -50,7 +57,7 @@ private:
 };
 
 struct native_ten_block_setup_fixture
-    : native_setup_fixture
+  : native_setup_fixture
 {
     inline native_ten_block_setup_fixture()
       : native_setup_fixture([](test::query_t& query)

@@ -22,6 +22,8 @@
 #include <future>
 #include <boost/format.hpp>
 
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
 electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     bool address_index)
   : config_
@@ -92,6 +94,8 @@ electrum_setup_fixture::~electrum_setup_fixture()
     BOOST_WARN_MESSAGE(!ec, ec.message());
     BOOST_WARN_MESSAGE(test::clear(test::directory), "electrum cleanup");
 }
+
+BC_POP_WARNING()
 
 int64_t electrum_setup_fixture::get_error(const std::string& request)
 {

@@ -156,14 +156,14 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
             if (subscribed_outpoint_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                NOTIFY(do_outpoint, std::get<node::header_t>(value));
+                POST_NOTIFY(do_outpoint, std::get<node::header_t>(value));
             }
 
             if (subscribed_address_.load(relaxed))
             {
                 BC_ASSERT(archive().address_enabled());
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                NOTIFY(do_scripthash, std::get<node::header_t>(value));
+                POST_NOTIFY(do_scripthash, std::get<node::header_t>(value));
             }
 
             break;
@@ -172,7 +172,7 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
         {
             // value is regression branch_point.
             BC_ASSERT(std::holds_alternative<node::height_t>(value));
-            NOTIFY(do_reorganized, std::get<node::height_t>(value));
+            POST_NOTIFY(do_reorganized, std::get<node::height_t>(value));
             break;
         }
         default:

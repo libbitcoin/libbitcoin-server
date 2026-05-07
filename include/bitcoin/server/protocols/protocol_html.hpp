@@ -30,7 +30,6 @@ namespace server {
 /// Abstract base for HTML protocols, thread safe.
 class BCS_API protocol_html
   : public server::protocol_http,
-    public network::protocol_http,
     protected network::tracker<protocol_html>
 {
 public:
@@ -41,8 +40,7 @@ protected:
     inline protocol_html(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : server::protocol_http(session, channel),
-        network::protocol_http(session, channel, options),
+      : server::protocol_http(session, channel, options),
         options_(options),
         network::tracker<protocol_html>(session->log)
     {

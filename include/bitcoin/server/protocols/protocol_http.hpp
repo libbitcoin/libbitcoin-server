@@ -30,15 +30,26 @@ namespace server {
 /// Abstract base for HTTP protocols, thread safe.
 class BCS_API protocol_http
   : public server::protocol,
+    public network::protocol_http,
     protected network::tracker<server::protocol_http>
 {
 protected:
     inline protocol_http(const auto& session,
-        const network::channel::ptr& channel) NOEXCEPT
+        const network::channel::ptr& channel,
+        const options_t& options) NOEXCEPT
       : server::protocol(session, channel),
+        network::protocol_http(session, channel, options),
         network::tracker<server::protocol_http>(session->log)
     {
     }
+
+    /// Override to capture forwarded websocket requests.
+    void handle_receive_unknown(const code& ec,
+        const network::http::method::unknown::cptr& unknown) NOEXCEPT override;
+
+    /// Override to dispatch websocket messages (forwarded through unknown).
+    virtual void dispatch_websocket(
+        const network::http::request& request) NOEXCEPT;
 
     /// Cache request for serialization (requires strand).
     void set_request(const network::http::request_cptr& request) NOEXCEPT;

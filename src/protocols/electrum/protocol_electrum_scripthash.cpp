@@ -25,7 +25,6 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_electrum
-#define NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network::rpc;
