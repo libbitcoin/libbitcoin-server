@@ -119,7 +119,7 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
 }
 
 void protocol_native::dispatch_websocket(
-    const http::request& request) NOEXCEPT
+    const http::request& ) NOEXCEPT
 {
     rpc::request_t model{};
     ////if (const auto ec = native_body(model, request.body()))
