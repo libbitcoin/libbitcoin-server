@@ -101,27 +101,23 @@ native_setup_fixture::create_request(std::string_view target)
 
 bool native_setup_fixture::expect_dropped(std::string_view target)
 {
-    tcp_stream stream{ socket_.get_executor() };
-    stream.connect(socket_.remote_endpoint());
-    http::write(stream, create_request(target));
+    http::write(socket_, create_request(target));
 
     network::boost_code ec{};
     network::http::flat_buffer buffer{};
     http::response<http::string_body> response{};
-    http::read(stream, buffer, response, ec);
-    return !!ec;
+    http::read(socket_, buffer, response, ec);
+    return ec == boost::beast::net::error::eof;
 }
 
 std::string native_setup_fixture::get_text(std::string_view target)
 {
-    tcp_stream stream{ socket_.get_executor() };
-    stream.connect(socket_.remote_endpoint());
-    http::write(stream, create_request(target));
+    http::write(socket_, create_request(target));
 
     network::boost_code ec{};
     network::http::flat_buffer buffer{};
     http::response<network::http::string_body> response{};
-    http::read(stream, buffer, response, ec);
+    http::read(socket_, buffer, response, ec);
     BOOST_REQUIRE(!ec);
     BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
 
@@ -130,14 +126,12 @@ std::string native_setup_fixture::get_text(std::string_view target)
 
 system::data_chunk native_setup_fixture::get_data(std::string_view target)
 {
-    tcp_stream stream{ socket_.get_executor() };
-    stream.connect(socket_.remote_endpoint());
-    http::write(stream, create_request(target));
+    http::write(socket_, create_request(target));
 
     network::boost_code ec{};
     network::http::flat_buffer buffer{};
     http::response<network::http::chunk_body> response{};
-    http::read(stream, buffer, response, ec);
+    http::read(socket_, buffer, response, ec);
     BOOST_REQUIRE(!ec);
     BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
 
@@ -146,9 +140,7 @@ system::data_chunk native_setup_fixture::get_data(std::string_view target)
 
 boost::json::value native_setup_fixture::get_json(std::string_view target)
 {
-    tcp_stream stream{ socket_.get_executor() };
-    stream.connect(socket_.remote_endpoint());
-    http::write(stream, create_request(target));
+    http::write(socket_, create_request(target));
 
     // The network json body does not support reading a document consisting
     // of only a top-level primitive, because it supports streaming and non-
@@ -163,7 +155,7 @@ boost::json::value native_setup_fixture::get_json(std::string_view target)
     network::boost_code ec{};
     network::http::flat_buffer buffer{};
     http::response<http::string_body> response{};
-    http::read(stream, buffer, response, ec);
+    http::read(socket_, buffer, response, ec);
     BOOST_REQUIRE(!ec);
     BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
 
@@ -172,13 +164,13 @@ boost::json::value native_setup_fixture::get_json(std::string_view target)
 
 http::status native_setup_fixture::get_status(std::string_view target)
 {
-    tcp_stream stream{ socket_.get_executor() };
-    stream.connect(socket_.remote_endpoint());
-    http::write(stream, create_request(target));
+    http::write(socket_, create_request(target));
 
     network::boost_code ec{};
     network::http::flat_buffer buffer{};
     http::response<http::string_body> response{};
-    http::read(stream, buffer, response, ec);
+    http::read(socket_, buffer, response, ec);
+    BOOST_REQUIRE(!ec);
+
     return response.result();
 }
