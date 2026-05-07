@@ -101,10 +101,7 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
 
     rpc::request_t model{};
     if (const auto ec = native_target(model, request.target()))
-    {
-        LOGA("Request parse [" << request.target() << "] " << ec.message());
         return !ec;
-    }
 
     if (!native_query(model, request))
     {
@@ -119,6 +116,17 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
         send_internal_server_error(ec, request);
 
     return true;
+}
+
+void protocol_native::dispatch_websocket(
+    const http::request& request) NOEXCEPT
+{
+    rpc::request_t model{};
+    ////if (const auto ec = native_body(model, request.body()))
+    ////    return stop(ec);
+
+    if (const auto ec = dispatcher_.notify(model))
+        stop(ec);
 }
 
 // Handlers.

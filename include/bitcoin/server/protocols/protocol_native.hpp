@@ -60,6 +60,8 @@ protected:
     /// Dispatch.
     bool try_dispatch_object(
         const network::http::request& request) NOEXCEPT override;
+    void dispatch_websocket(
+        const network::http::request& request) NOEXCEPT override;
 
     /// REST interface handlers.
     /// -----------------------------------------------------------------------
