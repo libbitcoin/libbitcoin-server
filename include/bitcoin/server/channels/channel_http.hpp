@@ -43,6 +43,14 @@ public:
         network::tracker<channel_http>(log)
     {
     }
+
+    /// Override to change default websocket reader expectation/config.
+    /// Default for http channel is undefined, for websocket is plain json.
+    /// Http selects from incoming header accept type if undefined, ws cannot.
+    inline network::http::request_ptr create_request() const NOEXCEPT override
+    {
+        return network::channel_http::create_request();
+    }
 };
 
 } // namespace server
