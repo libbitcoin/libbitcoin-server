@@ -235,6 +235,40 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     const auto links = query.get_confirmed_headers(starting, count);
     auto size = two * chain::header::serialized_size() * links.size();
 
+    // Single header, no proof: spec requires a plain hex string result,
+    // not a {"hex":…} or {"header":…} wrapper object.
+    if (!multiplicity && !prove)
+    {
+        if (links.empty())
+        {
+            send_code(error::server_error);
+            return;
+        }
+        if (at_least(electrum::version::v1_6))
+        {
+            const auto header = query.get_wire_header(links.front());
+            if (header.empty())
+            {
+                send_code(error::server_error);
+                return;
+            }
+            send_result(encode_base16(header), size + 42u);
+        }
+        else
+        {
+            std::string header(size, '\0');
+            stream::out::fast sink{ header };
+            write::base16::fast writer{ sink };
+            if (!query.get_wire_header(writer, links.front()))
+            {
+                send_code(error::server_error);
+                return;
+            }
+            send_result(std::move(header), size + 42u);
+        }
+        return;
+    }
+
     value_t value{ object_t{} };
     auto& result = std::get<object_t>(value.value());
     if (multiplicity)
@@ -283,7 +317,10 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             }
         };
 
-        result["hex"] = std::move(headers);
+        if (multiplicity)
+            result["hex"] = std::move(headers);
+        else
+            result["header"] = std::move(headers);
     }
 
     // There is a very slim chance of inconsistency given an intervening reorg
