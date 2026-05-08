@@ -173,12 +173,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_no_checkpoint__e
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
     const auto response = get(R"({"id":43,"method":"blockchain.block.header","params":[0]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
-
-    // "hex" prior to v1.6
-    const auto& result = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(result.at("hex").is_string());
-    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(test::header0_data));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(test::header0_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__block1_no_checkpoint__expected_no_proof)
@@ -186,8 +182,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__block1_no_checkpoint__ex
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":44,"method":"blockchain.block.header","params":[1]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("result").as_object().at("header").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("header").as_string(), encode_base16(test::header1_data));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(test::header1_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_zero_checkpoint__expected_no_proof)
@@ -195,8 +191,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_zero_checkpoint_
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":45,"method":"blockchain.block.header","params":[0,0]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("result").as_object().at("header").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("header").as_string(), encode_base16(test::header0_data));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(test::header0_data));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_self_block1__expected)
