@@ -520,7 +520,7 @@ jobs:
             options: ""
 
           - image: ubuntu-24.04
-            preset: "nix-gnu-release-static"
+            preset: "nix-gnu-debug-static"
             cc: "gcc-12"
             cxx: "g++-12"
             flags: ""
