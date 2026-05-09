@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__nonexistent_tx__not_f
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__missing_param__dropped)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__missing_verbose__defaults_false)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
@@ -222,7 +222,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__missing_param__droppe
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":80,"method":"blockchain.transaction.get","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % tx0_hash).str());
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__extra_param__dropped)
