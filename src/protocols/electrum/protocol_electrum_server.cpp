@@ -118,7 +118,7 @@ void protocol_electrum::handle_server_features(const code& ec,
         { "pruning", null_t{} }
     };
 
-    if (!at_least(electrum::version::v1_6))
+    if (at_least(electrum::version::v1_0))
     {
         value["hash_function"] = string_t{ "sha256" };
     }
