@@ -167,9 +167,9 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
     REQUIRE_NO_THROW_TRUE(host.at("ssl_port").is_null());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__server_features__v1_6__hash_function_removed)
+BOOST_AUTO_TEST_CASE(electrum__server_features__v1_7__hash_function_removed)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
