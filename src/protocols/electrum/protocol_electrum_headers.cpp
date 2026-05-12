@@ -160,7 +160,7 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
         return;
     }
 
-    blockchain_block_headers(starting, one, waypoint, false);
+    blockchain_block_headers(starting, one, waypoint, true);
 }
 
 void protocol_electrum::handle_blockchain_block_headers(const code& ec,
@@ -194,12 +194,12 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
         return;
     }
 
-    blockchain_block_headers(starting, quantity, waypoint, true);
+    blockchain_block_headers(starting, quantity, waypoint, false);
 }
 
 // Common implementation for blockchain_block_header/s.
 void protocol_electrum::blockchain_block_headers(size_t starting,
-    size_t quantity, size_t waypoint, bool multiplicity) NOEXCEPT
+    size_t quantity, size_t waypoint, bool single) NOEXCEPT
 {
     const auto prove = !is_zero(quantity) && !is_zero(waypoint);
     const auto target = starting + sub1(quantity);
@@ -235,115 +235,108 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     const auto links = query.get_confirmed_headers(starting, count);
     auto size = two * chain::header::serialized_size() * links.size();
 
-    // Single header, no proof: spec requires a plain hex string result,
-    // not a {"hex":…} or {"header":…} wrapper object.
-    if (!multiplicity && !prove)
-    {
-        if (links.empty())
-        {
-            send_code(error::server_error);
-            return;
-        }
-        if (at_least(electrum::version::v1_6))
-        {
-            const auto header = query.get_wire_header(links.front());
-            if (header.empty())
-            {
-                send_code(error::server_error);
-                return;
-            }
-            send_result(encode_base16(header), size + 42u);
-        }
-        else
-        {
-            std::string header(size, '\0');
-            stream::out::fast sink{ header };
-            write::base16::fast writer{ sink };
-            if (!query.get_wire_header(writer, links.front()))
-            {
-                send_code(error::server_error);
-                return;
-            }
-            send_result(std::move(header), size + 42u);
-        }
-        return;
-    }
-
-    value_t value{ object_t{} };
-    auto& result = std::get<object_t>(value.value());
-    if (multiplicity)
-    {
-        result["max"] = maximum_headers;
-        result["count"] = links.size();
-    }
-    else if (links.empty())
+    if (single && !is_one(links.size()))
     {
         send_code(error::server_error);
         return;
     }
 
-    if (at_least(electrum::version::v1_6))
+    value_t value{};
+
+    if (single && !prove)
     {
-        array_t headers{};
-        headers.reserve(links.size());
-        for (const auto& link: links)
+        const auto header = query.get_wire_header(links.front());
+        if (header.empty())
         {
-            const auto header = query.get_wire_header(link);
-            if (header.empty())
-            {
-                send_code(error::server_error);
-                return;
-            }
-
-            headers.push_back(encode_base16(header));
-        };
-
-        if (multiplicity)
-            result["headers"] = std::move(headers);
-        else
-            result["header"] = std::move(headers.front());
-    }
-    else
-    {
-        std::string headers(size, '\0');
-        stream::out::fast sink{ headers };
-        write::base16::fast writer{ sink };
-        for (const auto& link: links)
-        {
-            if (!query.get_wire_header(writer, link))
-            {
-                send_code(error::server_error);
-                return;
-            }
-        };
-
-        if (multiplicity)
-            result["hex"] = std::move(headers);
-        else
-            result["header"] = std::move(headers);
-    }
-
-    // There is a very slim chance of inconsistency given an intervening reorg
-    // because of get_merkle_root_and_proof() use of height-based calculations.
-    // This is acceptable as it must be verified by caller in any case.
-    if (prove)
-    {
-        hashes proof{};
-        hash_digest root{};
-        if (const auto code = query.get_merkle_root_and_proof(root, proof,
-            target, waypoint))
-        {
-            send_code(code);
+            send_code(error::server_error);
             return;
         }
 
-        array_t branch(proof.size());
-        std::ranges::transform(proof, branch.begin(),
-            [](const auto& hash) NOEXCEPT { return encode_hash(hash); });
+        value = encode_base16(header);
+    }
+    else
+    {
+        object_t result{};
 
-        result["branch"] = std::move(branch);
-        result["root"] = encode_hash(root);
-        size += two * hash_size * add1(proof.size());
+        if (at_least(electrum::version::v1_6))
+        {
+            // Collect headers into array.
+            array_t headers{};
+            headers.reserve(links.size());
+            for (const auto& link: links)
+            {
+                const auto header = query.get_wire_header(link);
+                if (header.empty())
+                {
+                    send_code(error::server_error);
+                    return;
+                }
+
+                headers.push_back(encode_base16(header));
+            }
+
+            if (single)
+            {
+                result["header"] = std::move(headers.front());
+            }
+            else
+            {
+                result["max"] = maximum_headers;
+                result["count"] = links.size();
+                result["headers"] = std::move(headers);
+            }
+        }
+        else
+        {
+            // Stream headers into single buffer.
+            std::string headers(size, '\0');
+            stream::out::fast sink{ headers };
+            write::base16::fast writer{ sink };
+            for (const auto& link: links)
+            {
+                if (!query.get_wire_header(writer, link))
+                {
+                    send_code(error::server_error);
+                    return;
+                }
+            }
+
+            if (single)
+            {
+                result["header"] = std::move(headers);
+            }
+            else
+            {
+                result["max"] = maximum_headers;
+                result["count"] = links.size();
+                result["hex"] = std::move(headers);
+            }
+        }
+
+        if (prove)
+        {
+            // A very slim chance of inconsistency given an intervening reorg
+            // because of get_merkle_root_and_proof() and height-based calcs.
+            // This is acceptable as must be verified by caller in any case.
+            hashes proof{};
+            hash_digest root{};
+            if (const auto code = query.get_merkle_root_and_proof(root, proof,
+                target, waypoint))
+            {
+                send_code(code);
+                return;
+            }
+
+            array_t branch(proof.size());
+            std::ranges::transform(proof, branch.begin(),
+                [](const auto& hash) NOEXCEPT{ return encode_hash(hash); });
+
+            result["branch"] = std::move(branch);
+            result["root"] = encode_hash(root);
+            size += two * hash_size * add1(proof.size());
+        }
+
+        value = std::move(result);
     }
 
     send_result(std::move(value), size + 42u);
