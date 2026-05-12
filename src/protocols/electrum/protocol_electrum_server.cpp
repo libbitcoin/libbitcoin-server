@@ -118,11 +118,6 @@ void protocol_electrum::handle_server_features(const code& ec,
         { "pruning", null_t{} }
     };
 
-    if (!at_least(electrum::version::v1_7))
-    {
-        value["hash_function"] = string_t{ "sha256" };
-    }
-
     if (at_least(electrum::version::v1_7))
     {
         value["method_flavours"] = object_t
@@ -137,6 +132,10 @@ void protocol_electrum::handle_server_features(const code& ec,
                 }
             }
         };
+    }
+    else
+    {
+        value["hash_function"] = string_t{ "sha256" };
     }
 
     send_result(std::move(value), 1024);
