@@ -130,15 +130,36 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
     return true;
 }
 
-void protocol_native::dispatch_websocket(
-    const http::request& ) NOEXCEPT
+void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
+    if (!request.body().contains<http::string_value>())
+    {
+        stop(network::error::not_acceptable);
+        return;
+    }
+
+    // Target is passed via the websocket string body.
+    const auto target = request.body().get<http::string_value>();
+
+    // TODO: add subscription parse to native_target and tests.
     rpc::request_t model{};
-    ////if (const auto ec = native_body(model, request.body()))
-    ////    return stop(ec);
+    if (const auto ec = native_target(model, target))
+        return;
+
+    if (!native_query(model, target, {}) ||
+        get_media(model) == media_type::text_html)
+    {
+        stop(network::error::not_acceptable);
+        return;
+    }
 
     if (const auto ec = dispatcher_.notify(model))
-        stop(ec);
+    {
+        stop(network::error::internal_server_error);
+        return;
+    }
 }
 
 // Handlers.
