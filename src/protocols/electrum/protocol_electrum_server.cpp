@@ -186,11 +186,10 @@ void protocol_electrum::handle_server_ping(const code& ec,
     }
     else
     {
-        size_t length{};
         data_chunk unused{};
 
         // Base16 encoding validation expects whole octets (even char count).
-        if (!to_integer(length, pong_len) || (length != data.length()) ||
+        if (!to_integer(size, pong_len) || (size != data.length()) ||
             !decode_base16(unused, data))
         {
             send_code(error::invalid_argument);
@@ -198,8 +197,8 @@ void protocol_electrum::handle_server_ping(const code& ec,
         }
 
         // Treat empty as default (args look the same, may not be correct).
-        if (is_nonzero(length))
-            value = string_t(length, '0');
+        if (is_nonzero(size))
+            value = string_t(size, '0');
     }
 
     // Length is limited by maximum_request (DoS protection).
