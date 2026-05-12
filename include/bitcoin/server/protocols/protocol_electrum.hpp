@@ -237,7 +237,7 @@ protected:
 
     /// Common implementation for block_header/s.
     void blockchain_block_headers(size_t starting, size_t quantity,
-        size_t waypoint, bool multiplicity) NOEXCEPT;
+        size_t waypoint, bool single) NOEXCEPT;
 
     /// Completion handlers (for long-running address queries).
     /// -----------------------------------------------------------------------

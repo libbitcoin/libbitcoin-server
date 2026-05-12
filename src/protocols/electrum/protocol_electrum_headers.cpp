@@ -160,7 +160,7 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
         return;
     }
 
-    blockchain_block_headers(starting, one, waypoint, false);
+    blockchain_block_headers(starting, one, waypoint, true);
 }
 
 void protocol_electrum::handle_blockchain_block_headers(const code& ec,
@@ -194,12 +194,12 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
         return;
     }
 
-    blockchain_block_headers(starting, quantity, waypoint, true);
+    blockchain_block_headers(starting, quantity, waypoint, false);
 }
 
 // Common implementation for blockchain_block_header/s.
 void protocol_electrum::blockchain_block_headers(size_t starting,
-    size_t quantity, size_t waypoint, bool multiplicity) NOEXCEPT
+    size_t quantity, size_t waypoint, bool single) NOEXCEPT
 {
     const auto prove = !is_zero(quantity) && !is_zero(waypoint);
     const auto target = starting + sub1(quantity);
@@ -237,7 +237,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
     // Single header, no proof: spec requires a plain hex string result,
     // not a {"hex":…} or {"header":…} wrapper object.
-    if (!multiplicity && !prove)
+    if (single && !prove)
     {
         if (links.empty())
         {
@@ -271,7 +271,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
     value_t value{ object_t{} };
     auto& result = std::get<object_t>(value.value());
-    if (multiplicity)
+    if (!single)
     {
         result["max"] = maximum_headers;
         result["count"] = links.size();
@@ -298,10 +298,10 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             headers.push_back(encode_base16(header));
         };
 
-        if (multiplicity)
-            result["headers"] = std::move(headers);
-        else
+        if (single)
             result["header"] = std::move(headers.front());
+        else
+            result["headers"] = std::move(headers);
     }
     else
     {
@@ -317,10 +317,10 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             }
         };
 
-        if (multiplicity)
-            result["hex"] = std::move(headers);
-        else
+        if (single)
             result["header"] = std::move(headers);
+        else
+            result["hex"] = std::move(headers);
     }
 
     // There is a very slim chance of inconsistency given an intervening reorg
