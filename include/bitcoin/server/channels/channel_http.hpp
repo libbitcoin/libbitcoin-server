@@ -44,12 +44,16 @@ public:
     {
     }
 
-    /// Override to change default websocket reader expectation/config.
-    /// Default for http channel is undefined, for websocket is plain json.
-    /// Http selects from incoming header accept type if undefined, ws cannot.
-    inline network::http::request_ptr create_request() const NOEXCEPT override
+protected:
+    using value_type = network::http::body::value_type;
+
+    /// Overridden to change default websocket reader to string.
+    inline value_type websocket_body() const NOEXCEPT override
     {
-        return network::channel_http::create_request();
+        // There is no forwarding constructor so assign and move.
+        network::http::body::value_type value{};
+        value = network::http::string_value{};
+        return value;
     }
 };
 
