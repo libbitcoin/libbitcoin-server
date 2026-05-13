@@ -24,16 +24,7 @@ using namespace boost::beast;
 
 BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
-// websockets
-// ----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_CASE(native__ws_upgrade__expected)
-{
-    const auto ec = ws_upgrade({});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-}
-
-// top
+// top (http)
 // ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(native__top__json__expected)
@@ -59,6 +50,34 @@ BOOST_AUTO_TEST_CASE(native__top__formal_xml__not_acceptable)
 {
     const auto status = get_status("/v1/top?format=xml");
     BOOST_REQUIRE_EQUAL(status, http::status::not_acceptable);
+}
+
+// top (websockets)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(native__ws_upgrade__always__expected)
+{
+    const auto ec = ws_upgrade({});
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top__text__expected)
+{
+    const auto ec = ws_upgrade({});
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
+    const auto response = ws_request("/v1/top?format=text");
+    BOOST_REQUIRE_EQUAL(response, "09");
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top__json__expected)
+{
+    const auto ec = ws_upgrade({});
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
+    const auto response = ws_request_json("/v1/top?format=json");
+    BOOST_REQUIRE(response.is_int64());
+    BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

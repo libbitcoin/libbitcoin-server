@@ -43,8 +43,9 @@ struct native_setup_fixture
     boost::json::value get_json(std::string_view target);
 
     network::boost_code ws_upgrade(std::string_view target);
-    std::string ws_request(std::string_view message);
     std::string ws_receive();
+    std::string ws_request(std::string_view message);
+    boost::json::value ws_request_json(std::string_view message);
 
 protected:
     server::configuration config_;
@@ -63,6 +64,7 @@ private:
     server::server_node server_;
     boost::asio::io_context io{};
     boost::beast::tcp_stream socket_{ io.get_executor() };
+    std::optional<websocket_stream> websocket_{};
 };
 
 struct native_ten_block_setup_fixture

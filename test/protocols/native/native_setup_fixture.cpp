@@ -171,8 +171,11 @@ boost::json::value native_setup_fixture::get_json(std::string_view target)
 network::boost_code native_setup_fixture::ws_upgrade(std::string_view target)
 {
     network::boost_code ec{};
-    websocket_stream ws{ socket_ };
-    ws.handshake("localhost", target.empty() ? "/" : target, ec);
+    BOOST_REQUIRE(!websocket_.has_value());
+
+    websocket_.emplace(socket_);
+    websocket_.value().text(true);
+    websocket_.value().handshake("localhost", target.empty() ? "/" : target, ec);
     return ec;
 }
 
@@ -180,8 +183,9 @@ std::string native_setup_fixture::ws_receive()
 {
     flat_buffer buffer{};
     network::boost_code ec{};
-    websocket_stream ws{ socket_ };
-    ws.read(buffer, ec);
+    BOOST_REQUIRE(websocket_.has_value());
+
+    websocket_.value().read(buffer, ec);
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
 
     return buffers_to_string(buffer.data());
@@ -190,9 +194,22 @@ std::string native_setup_fixture::ws_receive()
 std::string native_setup_fixture::ws_request(std::string_view message)
 {
     network::boost_code ec{};
-    websocket_stream ws{ socket_ };
-    ws.write(net::buffer(message), ec);
+    BOOST_REQUIRE(websocket_.has_value());
+
+    websocket_.value().write(net::buffer(message), ec);
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
 
     return ws_receive();
+}
+
+boost::json::value native_setup_fixture::ws_request_json(
+    std::string_view message)
+{
+    network::boost_code ec{};
+    BOOST_REQUIRE(websocket_.has_value());
+
+    websocket_.value().write(net::buffer(message), ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
+    return boost::json::parse(ws_receive());
 }
