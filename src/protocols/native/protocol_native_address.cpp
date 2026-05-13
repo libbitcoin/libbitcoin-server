@@ -233,6 +233,14 @@ void protocol_native::complete_get_address_balance(const code& ec,
     send_not_found();
 }
 
+bool protocol_native::handle_get_address_subscribe(const code& ec,
+    interface::address_subscribe, uint8_t version, uint8_t media,
+    const system::hash_cptr& hash, bool turbo) NOEXCEPT
+{
+    // TODO
+    return {};
+}
+
 BC_POP_WARNING()
 
 } // namespace server

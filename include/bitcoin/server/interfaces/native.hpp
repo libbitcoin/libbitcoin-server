@@ -33,6 +33,8 @@ struct native_methods
         method<"configuration", uint8_t, uint8_t>{ "version", "media" },
 
         method<"top", uint8_t, uint8_t>{ "version", "media" },
+        method<"top_subscribe", uint8_t, uint8_t>{ "version", "media" },
+
         method<"block", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>>{ "version", "media", "hash", "height", "witness" },
         method<"block_header", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "hash", "height" },
         method<"block_header_context", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "hash", "height" },
@@ -42,26 +44,35 @@ struct native_methods
         method<"block_filter_hash", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "type", "hash", "height" },
         method<"block_filter_header", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "type", "hash", "height" },
         method<"block_tx", uint8_t, uint8_t, uint32_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>>{ "version", "media", "position", "hash", "height", "witness" },
+        method<"block_subscribe", uint8_t, uint8_t>{ "version", "media" },
 
         method<"tx", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "witness" },
         method<"tx_header", uint8_t, uint8_t, system::hash_cptr>{ "version", "media", "hash" },
         method<"tx_details", uint8_t, uint8_t, system::hash_cptr>{ "version", "media", "hash" },
+        method<"tx_subscribe", uint8_t, uint8_t>{ "version", "media" },
 
         method<"inputs", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "witness" },
         method<"input", uint8_t, uint8_t, system::hash_cptr, uint32_t, optional<true>>{ "version", "media", "hash", "index", "witness" },
         method<"input_script", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"input_witness", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
+        method<"input_subscribe", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
  
         method<"outputs", uint8_t, uint8_t, system::hash_cptr>{ "version", "media", "hash" },
         method<"output", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"output_script", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"output_spender", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"output_spenders", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
+        method<"output_subscribe", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
 
         method<"address", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_confirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_unconfirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
-        method<"address_balance", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" }
+        method<"address_balance", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
+        method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "turbo" },
+
+        // TODO: move to admin interface (security).
+        method<"log_subscribe", uint8_t, uint8_t>{ "version", "media" },
+        method<"event_subscribe", uint8_t, uint8_t>{ "version", "media" }
     };
 
     template <typename... Args>
@@ -75,36 +86,46 @@ struct native_methods
     using configuration = at<0>;
 
     using top = at<1>;
+    using top_subscribe = at<2>;
 
-    using block = at<2>;
-    using block_header = at<3>;
-    using block_header_context = at<4>;
-    using block_details = at<5>;
-    using block_txs = at<6>;
-    using block_filter = at<7>;
-    using block_filter_hash = at<8>;
-    using block_filter_header = at<9>;
-    using block_tx = at<10>;
+    using block = at<3>;
+    using block_header = at<4>;
+    using block_header_context = at<5>;
+    using block_details = at<6>;
+    using block_txs = at<7>;
+    using block_filter = at<8>;
+    using block_filter_hash = at<9>;
+    using block_filter_header = at<10>;
+    using block_tx = at<11>;
+    using block_subscribe = at<12>;
 
-    using tx = at<11>;
-    using tx_header = at<12>;
-    using tx_details = at<13>;
+    using tx = at<13>;
+    using tx_header = at<14>;
+    using tx_details = at<15>;
+    using tx_subscribe = at<16>;
 
-    using inputs = at<14>;
-    using input = at<15>;
-    using input_script = at<16>;
-    using input_witness = at<17>;
+    using inputs = at<17>;
+    using input = at<18>;
+    using input_script = at<19>;
+    using input_witness = at<20>;
+    using input_subscribe = at<21>;
 
-    using outputs = at<18>;
-    using output = at<19>;
-    using output_script = at<20>;
-    using output_spender = at<21>;
-    using output_spenders = at<22>;
+    using outputs = at<22>;
+    using output = at<23>;
+    using output_script = at<24>;
+    using output_spender = at<25>;
+    using output_spenders = at<26>;
+    using output_subscribe = at<27>;
 
-    using address = at<23>;
-    using address_confirmed = at<24>;
-    using address_unconfirmed = at<25>;
-    using address_balance = at<26>;
+    using address = at<28>;
+    using address_confirmed = at<29>;
+    using address_unconfirmed = at<30>;
+    using address_balance = at<31>;
+    using address_subscribe = at<32>;
+
+    // TODO: move to admin interface (security).
+    using log_subscribe = at<33>;
+    using event_subscribe = at<34>;
 };
 
 /// ?format=data|text|json (via query string).

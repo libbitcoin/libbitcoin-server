@@ -47,8 +47,15 @@ inline void set_media(rpc::object_t& params, media_type media) NOEXCEPT
 
 bool native_query(rpc::request_t& out, const request& request) NOEXCEPT
 {
+    const auto accepts = to_media_types((request)[field::accept]);
+    return native_query(out, request.target(), accepts);
+}
+
+bool native_query(rpc::request_t& out, const std::string& target,
+    const media_types& accepts) NOEXCEPT
+{
     wallet::uri uri{};
-    if (!uri.decode(request.target()))
+    if (!uri.decode(target))
         return false;
 
     constexpr auto html = media_type::text_html;
@@ -83,7 +90,6 @@ bool native_query(rpc::request_t& out, const request& request) NOEXCEPT
     }
 
     const auto format = query[token::format];
-    const auto accepts = to_media_types((request)[field::accept]);
 
     // Prioritize query string format over http headers.
     if (format == token::formats::json)

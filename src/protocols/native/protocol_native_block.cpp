@@ -31,6 +31,7 @@ using namespace system;
 using namespace network::messages::peer;
 
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 bool protocol_native::handle_get_top(const code& ec, interface::top,
     uint8_t, uint8_t media) NOEXCEPT
@@ -54,6 +55,13 @@ bool protocol_native::handle_get_top(const code& ec, interface::top,
 
     send_not_found();
     return true;
+}
+
+bool protocol_native::handle_get_top_subscribe(const code& ec,
+    interface::top_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+{
+    // TODO
+    return {};
 }
 
 bool protocol_native::handle_get_block(const code& ec, interface::block,
@@ -486,6 +494,14 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
     return true;
 }
 
+bool protocol_native::handle_get_block_subscribe(const code& ec,
+    interface::block_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+{
+    // TODO
+    return {};
+}
+
+BC_POP_WARNING()
 BC_POP_WARNING()
 
 } // namespace server

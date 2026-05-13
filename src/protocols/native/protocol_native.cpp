@@ -46,8 +46,11 @@ void protocol_native::start() NOEXCEPT
     // Configuration methods.
     SUBSCRIBE_NATIVE(handle_get_configuration, _1, _2, _3, _4);
 
-    // Block methods.
+    // Top methods.
     SUBSCRIBE_NATIVE(handle_get_top, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_top_subscribe, _1, _2, _3, _4);
+
+    // Block methods.
     SUBSCRIBE_NATIVE(handle_get_block, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_header, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_block_header_context, _1, _2, _3, _4, _5, _6);
@@ -57,17 +60,20 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_tx, _1, _2, _3, _4, _5, _6, _7, _8);
+    SUBSCRIBE_NATIVE(handle_get_block_subscribe, _1, _2, _3, _4);
 
     // Transaction methods.
     SUBSCRIBE_NATIVE(handle_get_tx, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_tx_header, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_tx_details, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_tx_subscribe, _1, _2, _3, _4);
 
     // Input methods.
     SUBSCRIBE_NATIVE(handle_get_inputs, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_input, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_input_script, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_input_witness, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_input_subscribe, _1, _2, _3, _4, _5, _6);
 
     // Output methods.
     SUBSCRIBE_NATIVE(handle_get_outputs, _1, _2, _3, _4, _5);
@@ -75,12 +81,18 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_output_script, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_output_spender, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_output_spenders, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_output_subscribe, _1, _2, _3, _4, _5, _6);
 
     // Address methods.
     SUBSCRIBE_NATIVE(handle_get_address, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_confirmed, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_unconfirmed, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_balance, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_address_subscribe, _1, _2, _3, _4, _5, _6);
+
+    // Admin endpoint methods (TODO: move to admin interface).
+    SUBSCRIBE_NATIVE(handle_get_log_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_event_subscribe, _1, _2, _3, _4);
     protocol_html::start();
 }
 
@@ -101,10 +113,7 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
 
     rpc::request_t model{};
     if (const auto ec = native_target(model, request.target()))
-    {
-        LOGA("Request parse [" << request.target() << "] " << ec.message());
         return !ec;
-    }
 
     if (!native_query(model, request))
     {
@@ -119,6 +128,38 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
         send_internal_server_error(ec, request);
 
     return true;
+}
+
+void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (!request.body().contains<http::string_value>())
+    {
+        stop(network::error::not_acceptable);
+        return;
+    }
+
+    // Target is passed via the websocket string body.
+    const auto target = request.body().get<http::string_value>();
+
+    // TODO: add subscription parse to native_target and tests.
+    rpc::request_t model{};
+    if (const auto ec = native_target(model, target))
+        return;
+
+    if (!native_query(model, target, {}) ||
+        get_media(model) == media_type::text_html)
+    {
+        stop(network::error::not_acceptable);
+        return;
+    }
+
+    if (const auto ec = dispatcher_.notify(model))
+    {
+        stop(network::error::internal_server_error);
+        return;
+    }
 }
 
 // Handlers.
@@ -148,6 +189,20 @@ bool protocol_native::handle_get_configuration(const code& ec,
 
     send_json(std::move(object), 64);
     return true;
+}
+
+bool protocol_native::handle_get_log_subscribe(const code& ec,
+    interface::log_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+{
+    // TODO
+    return {};
+}
+
+bool protocol_native::handle_get_event_subscribe(const code& ec,
+    interface::event_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+{
+    // TODO
+    return {};
 }
 
 // Utilities.

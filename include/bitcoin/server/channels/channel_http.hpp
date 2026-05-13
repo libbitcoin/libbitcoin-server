@@ -43,6 +43,18 @@ public:
         network::tracker<channel_http>(log)
     {
     }
+
+protected:
+    using value_type = network::http::body::value_type;
+
+    /// Overridden to change default websocket reader to string.
+    inline value_type websocket_body() const NOEXCEPT override
+    {
+        // There is no forwarding constructor so assign and move.
+        network::http::body::value_type value{};
+        value = network::http::string_value{};
+        return value;
+    }
 };
 
 } // namespace server

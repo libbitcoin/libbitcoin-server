@@ -48,6 +48,9 @@ namespace token
 
 BCS_API bool native_query(network::rpc::request_t& out,
     const network::http::request& request) NOEXCEPT;
+BCS_API bool native_query(network::rpc::request_t& out,
+    const std::string& target,
+    const network::http::media_types& accepts) NOEXCEPT;
 
 BCS_API network::http::media_type get_media(
     const network::rpc::request_t& model) NOEXCEPT;
