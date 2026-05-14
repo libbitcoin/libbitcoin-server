@@ -66,6 +66,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/protocols/native/protocol_native_address.cpp \
     src/protocols/native/protocol_native_block.cpp \
     src/protocols/native/protocol_native_input.cpp \
+    src/protocols/native/protocol_native_inscription.cpp \
     src/protocols/native/protocol_native_output.cpp \
     src/protocols/native/protocol_native_tx.cpp \
     src/protocols/stratum_v1/protocol_stratum_v1.cpp
