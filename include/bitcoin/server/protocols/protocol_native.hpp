@@ -177,6 +177,14 @@ protected:
     bool handle_get_event_subscribe(const code& ec, interface::event_subscribe,
         uint8_t version, uint8_t media) NOEXCEPT;
 
+    bool handle_get_output_op_return(const code& ec, interface::output_op_return,
+        uint8_t version, uint8_t media, const system::hash_cptr& hash,
+        uint32_t index) NOEXCEPT;
+
+    bool handle_get_inscription(const code& ec, interface::inscription,
+        uint8_t version, uint8_t media, const system::hash_cptr& hash,
+        uint32_t index) NOEXCEPT;
+
 private:
     using media_type = network::http::media_type;
     static constexpr uint8_t text = to_value(media_type::text_plain);

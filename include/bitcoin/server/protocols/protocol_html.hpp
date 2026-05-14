@@ -65,6 +65,9 @@ protected:
         const network::http::request& request={}) NOEXCEPT;
     virtual void send_chunk(system::data_chunk&& bytes,
         const network::http::request& request={}) NOEXCEPT;
+    virtual void send_typed_chunk(system::data_chunk&& bytes,
+        network::http::media_type type,
+        const network::http::request& request={}) NOEXCEPT;
     virtual void send_file(network::http::file&& file,
         network::http::media_type type,
         const network::http::request& request={}) NOEXCEPT;

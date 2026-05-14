@@ -217,6 +217,19 @@ void protocol_html::send_chunk(system::data_chunk&& bytes,
     SEND(std::move(response), handle_complete, _1, error::success);
 }
 
+void protocol_html::send_typed_chunk(system::data_chunk&& bytes,
+    media_type type, const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    add_common_headers(response, request);
+    add_access_control_headers(response, request);
+    response.set(field::content_type, from_media_type(type));
+    response.body() = std::move(bytes);
+    response.prepare_payload();
+    SEND(std::move(response), handle_complete, _1, error::success);
+}
+
 void protocol_html::send_file(file&& file, media_type type,
     const request& request) NOEXCEPT
 {

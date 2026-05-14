@@ -93,6 +93,10 @@ void protocol_native::start() NOEXCEPT
     // Admin endpoint methods (TODO: move to admin interface).
     SUBSCRIBE_NATIVE(handle_get_log_subscribe, _1, _2, _3, _4);
     SUBSCRIBE_NATIVE(handle_get_event_subscribe, _1, _2, _3, _4);
+
+    // OP_RETURN and inscription methods.
+    SUBSCRIBE_NATIVE(handle_get_output_op_return, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_inscription, _1, _2, _3, _4, _5, _6);
     protocol_html::start();
 }
 

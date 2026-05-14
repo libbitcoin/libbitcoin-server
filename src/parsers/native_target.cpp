@@ -190,6 +190,8 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                     method = "output_spender";
                 else if (subcomponent == "spenders")
                     method = "output_spenders";
+                else if (subcomponent == "op_return")
+                    method = "output_op_return";
                 else
                     return error::invalid_subcomponent;
             }
@@ -317,6 +319,26 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
             else
                 return error::invalid_component;
         }
+    }
+    else if (target == "inscription")
+    {
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        const auto hash = to_hash(segments[segment++]);
+        if (!hash) return error::invalid_hash;
+
+        params["hash"] = hash;
+        if (segment == segments.size())
+            return error::missing_position;
+
+        const auto component = segments[segment++];
+        uint32_t index{};
+        if (!to_number(index, component))
+            return error::invalid_number;
+
+        params["index"] = index;
+        method = "inscription";
     }
     else
     {
