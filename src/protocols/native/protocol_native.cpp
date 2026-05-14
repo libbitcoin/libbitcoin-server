@@ -111,8 +111,12 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    const auto target = request.target();
+    BC_POP_WARNING()
+
     rpc::request_t model{};
-    if (const auto ec = native_target(model, request.target()))
+    if (const auto ec = native_target(model, target))
         return !ec;
 
     if (!native_query(model, request))
@@ -178,6 +182,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         return true;
     }
 
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
     boost::json::object object
     {
         { "address", archive().address_enabled() },
@@ -187,6 +192,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         { "retarget", system_settings().forks.retarget },
         { "difficult", system_settings().forks.difficult },
     };
+    BC_POP_WARNING()
 
     send_json(std::move(object), 64);
     return true;
@@ -212,12 +218,16 @@ bool protocol_native::handle_get_event_subscribe(const code& ec,
 
 using namespace boost::json;
 
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
 void protocol_native::inject(value& out, std::optional<uint32_t> height,
     const database::header_link& link) const NOEXCEPT
 {
     out.as_object().emplace("height", height.has_value() ? height.value() :
         archive().get_height(link).value);
 }
+
+BC_POP_WARNING()
 
 database::header_link protocol_native::to_header(
     const std::optional<uint32_t>& height,
