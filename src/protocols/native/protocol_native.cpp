@@ -149,7 +149,7 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
         return;
 
     // Default to json by simulating a json accept header (format overrides).
-    if (!native_query(model, target, { media_type::text_json }) ||
+    if (!native_query(model, target, { media_type::application_json }) ||
         get_media(model) == media_type::text_html)
     {
         stop(network::error::not_acceptable);
