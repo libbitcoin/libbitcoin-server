@@ -81,8 +81,6 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
     if (segment == segments.size())
         return error::missing_target;
 
-    // transaction, address, inputs, and outputs are identical excluding names;
-    // input and output are identical excluding names; block is unique.
     const auto target = segments[segment++];
     if (target == "configuration")
     {
@@ -90,14 +88,24 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
     }
     else if (target == "top")
     {
-        method = "top";
+        if (segment == segments.size())
+        {
+            method = "top";
+        }
+        else
+        {
+            const auto subcomponent = segments[segment++];
+            if (subcomponent == "subscribe")
+                method = "top_subscribe";
+            else
+                return error::invalid_subcomponent;
+        }
     }
     else if (target == "address")
     {
         if (segment == segments.size())
             return error::missing_hash;
 
-        // address hash is a single sha256, in reversed display endianness.
         const auto base16 = to_hash(segments[segment++]);
         if (!base16) return error::invalid_hash;
 
@@ -115,6 +123,8 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                 method = "address_unconfirmed";
             else if (subcomponent == "balance")
                 method = "address_balance";
+            else if (subcomponent == "subscribe")
+                method = "address_subscribe";
             else
                 return error::invalid_subcomponent;
         }
@@ -151,6 +161,8 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                     method = "input_script";
                 else if (subcomponent == "witness")
                     method = "input_witness";
+                else if (subcomponent == "subscribe")
+                    method = "input_subscribe";
                 else
                     return error::invalid_subcomponent;
             }
@@ -190,6 +202,8 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                     method = "output_spender";
                 else if (subcomponent == "spenders")
                     method = "output_spenders";
+                else if (subcomponent == "subscribe")
+                    method = "output_subscribe";
                 else
                     return error::invalid_subcomponent;
             }
@@ -200,23 +214,32 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
         if (segment == segments.size())
             return error::missing_hash;
 
-        const auto hash = to_hash(segments[segment++]);
-        if (!hash) return error::invalid_hash;
-
-        params["hash"] = hash;
-        if (segment == segments.size())
+        const auto next = segments[segment];
+        if (next == "subscribe")
         {
-            method = "tx";
+            segment++;
+            method = "tx_subscribe";
         }
         else
         {
-            const auto component = segments[segment++];
-            if (component == "header")
-                method = "tx_header";
-            else if (component == "details")
-                method = "tx_details";
+            const auto hash = to_hash(segments[segment++]);
+            if (!hash) return error::invalid_hash;
+
+            params["hash"] = hash;
+            if (segment == segments.size())
+            {
+                method = "tx";
+            }
             else
-                return error::invalid_component;
+            {
+                const auto component = segments[segment++];
+                if (component == "header")
+                    method = "tx_header";
+                else if (component == "details")
+                    method = "tx_details";
+                else
+                    return error::invalid_component;
+            }
         }
     }
     else if (target == "block")
@@ -224,98 +247,107 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
         if (segment == segments.size())
             return error::missing_id_type;
 
-        const auto by = segments[segment++];
-        if (by == "hash")
+        const auto by = segments[segment];
+        if (by == "subscribe")
         {
-            if (segment == segments.size())
-                return error::missing_hash;
-
-            const auto hash = to_hash(segments[segment++]);
-            if (!hash) return error::invalid_hash;
-
-            params["hash"] = hash;
-        }
-        else if (by == "height")
-        {
-            if (segment == segments.size())
-                return error::missing_height;
-
-            uint32_t height{};
-            if (!to_number(height, segments[segment++]))
-                return error::invalid_number;
-
-            params["height"] = height;
+            segment++;
+            method = "block_subscribe";
         }
         else
         {
-            return error::invalid_id_type;
-        }
-
-        if (segment == segments.size())
-        {
-            method = "block";
-        }
-        else
-        {
-            const auto component = segments[segment++];
-            if (component == "tx")
+            segment++; // consume the identifier type
+            if (by == "hash")
             {
                 if (segment == segments.size())
-                    return error::missing_position;
+                    return error::missing_hash;
 
-                uint32_t position{};
-                if (!to_number(position, segments[segment++]))
+                const auto hash = to_hash(segments[segment++]);
+                if (!hash) return error::invalid_hash;
+
+                params["hash"] = hash;
+            }
+            else if (by == "height")
+            {
+                if (segment == segments.size())
+                    return error::missing_height;
+
+                uint32_t height{};
+                if (!to_number(height, segments[segment++]))
                     return error::invalid_number;
 
-                params["position"] = position;
-                method = "block_tx";
-            }
-            else if (component == "header")
-            {
-                if (segment == segments.size())
-                {
-                    method = "block_header";
-                }
-                else
-                {
-                    const auto subcomponent = segments[segment++];
-                    if (subcomponent == "context")
-                        method = "block_header_context";
-                    else
-                        return error::invalid_subcomponent;
-                }
-            }
-            else if (component == "txs")
-                method = "block_txs";
-            else if (component == "details")
-                method = "block_details";
-            else if (component == "filter")
-            {
-                if (segment == segments.size())
-                    return error::missing_type_id;
-
-                uint8_t type{};
-                if (!to_number(type, segments[segment++]))
-                    return error::invalid_number;
-
-                params["type"] = type;
-                if (segment == segments.size())
-                {
-                    method = "block_filter";
-                }
-                else
-                {
-                    const auto subcomponent = segments[segment++];
-                    if (subcomponent == "hash")
-                        method = "block_filter_hash";
-                    else if (subcomponent == "header")
-                        method = "block_filter_header";
-                    else
-                        return error::invalid_subcomponent;
-                }
+                params["height"] = height;
             }
             else
-                return error::invalid_component;
+            {
+                return error::invalid_id_type;
+            }
+
+            if (segment == segments.size())
+            {
+                method = "block";
+            }
+            else
+            {
+                const auto component = segments[segment++];
+                if (component == "tx")
+                {
+                    if (segment == segments.size())
+                        return error::missing_position;
+
+                    uint32_t position{};
+                    if (!to_number(position, segments[segment++]))
+                        return error::invalid_number;
+
+                    params["position"] = position;
+                    method = "block_tx";
+                }
+                else if (component == "header")
+                {
+                    if (segment == segments.size())
+                    {
+                        method = "block_header";
+                    }
+                    else
+                    {
+                        const auto subcomponent = segments[segment++];
+                        if (subcomponent == "context")
+                            method = "block_header_context";
+                        else
+                            return error::invalid_subcomponent;
+                    }
+                }
+                else if (component == "txs")
+                    method = "block_txs";
+                else if (component == "details")
+                    method = "block_details";
+                else if (component == "filter")
+                {
+                    if (segment == segments.size())
+                        return error::missing_type_id;
+
+                    uint8_t type{};
+                    if (!to_number(type, segments[segment++]))
+                        return error::invalid_number;
+
+                    params["type"] = type;
+                    if (segment == segments.size())
+                    {
+                        method = "block_filter";
+                    }
+                    else
+                    {
+                        const auto subcomponent = segments[segment++];
+                        if (subcomponent == "hash")
+                            method = "block_filter_hash";
+                        else if (subcomponent == "header")
+                            method = "block_filter_header";
+                        else
+                            return error::invalid_subcomponent;
+                    }
+                }
+                else
+                    return error::invalid_component;
+            }
         }
     }
     else

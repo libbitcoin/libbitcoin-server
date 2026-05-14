@@ -112,9 +112,30 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__top_valid__expected)
     BOOST_REQUIRE_EQUAL(version, 42u);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_target__top_extra_segment__extra_segment)
+// top/subscribe
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__top_subscribe_valid__expected)
 {
-    const std::string path = "/v3/top/extra";
+    const std::string path = "/v42/top/subscribe";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "top_subscribe");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__top_subscribe_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/top/subscribe/extra";
     request_t out{};
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
@@ -495,6 +516,34 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__block_tx_hash_extra_segment__extra_
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
+// block/subscribe
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__block_subscribe_valid__expected)
+{
+    const std::string path = "/v42/block/subscribe";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "block_subscribe");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__block_subscribe_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/block/subscribe/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
 // tx
 
 BOOST_AUTO_TEST_CASE(parsers__native_target__tx_valid__expected)
@@ -580,6 +629,34 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__tx_header_invalid_component__invali
 BOOST_AUTO_TEST_CASE(parsers__native_target__tx_header_extra_segment__extra_segment)
 {
     const std::string path = "/v3/tx/0000000000000000000000000000000000000000000000000000000000000000/header/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
+// tx/subscribe
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__tx_subscribe_valid__expected)
+{
+    const std::string path = "/v42/tx/subscribe";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "tx_subscribe");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__tx_subscribe_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/tx/subscribe/extra";
     request_t out{};
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
@@ -753,6 +830,44 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__input_witness_valid__expected)
 BOOST_AUTO_TEST_CASE(parsers__native_target__input_witness_extra_segment__extra_segment)
 {
     const std::string path = "/v3/input/0000000000000000000000000000000000000000000000000000000000000000/3/witness/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
+// input_subscribe
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__input_subscribe_valid__expected)
+{
+    const std::string path = "/v42/input/0000000000000000000000000000000000000000000000000000000000000042/3/subscribe";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "input_subscribe");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 3u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+
+    const auto& any = std::get<any_t>(object.at("hash").value());
+    BOOST_REQUIRE(any.holds_alternative<const hash_digest>());
+
+    const auto& hash_cptr = any.get<const hash_digest>();
+    BOOST_REQUIRE(hash_cptr);
+    BOOST_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
+
+    const auto index = std::get<uint32_t>(object.at("index").value());
+    BOOST_REQUIRE_EQUAL(index, 3u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__input_subscribe_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/input/0000000000000000000000000000000000000000000000000000000000000042/3/subscribe/extra";
     request_t out{};
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
@@ -963,6 +1078,44 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__output_spenders_extra_segment__extr
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
+// output_subscribe
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__output_subscribe_valid__expected)
+{
+    const std::string path = "/v42/output/0000000000000000000000000000000000000000000000000000000000000042/3/subscribe";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "output_subscribe");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 3u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+
+    const auto& any = std::get<any_t>(object.at("hash").value());
+    BOOST_REQUIRE(any.holds_alternative<const hash_digest>());
+
+    const auto& hash_cptr = any.get<const hash_digest>();
+    BOOST_REQUIRE(hash_cptr);
+    BOOST_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
+
+    const auto index = std::get<uint32_t>(object.at("index").value());
+    BOOST_REQUIRE_EQUAL(index, 3u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__output_subscribe_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/output/0000000000000000000000000000000000000000000000000000000000000042/3/subscribe/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
 // address
 
 BOOST_AUTO_TEST_CASE(parsers__native_target__address_valid__reversed_expected)
@@ -1014,6 +1167,41 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__address_invalid_subcomponent__inval
 // address/confirmed
 // address/unconfirmed
 // address/balance
+
+// address/subscribe
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__address_subscribe_valid__expected)
+{
+    const std::string path = "/v42/address/0000000000000000000000000000000000000000000000000000000000000042/subscribe";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "address_subscribe");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 2u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+
+    const auto& any = std::get<any_t>(object.at("hash").value());
+    BOOST_REQUIRE(any.holds_alternative<const hash_digest>());
+
+    const auto& hash_cptr = any.get<const hash_digest>();
+    BOOST_REQUIRE(hash_cptr);
+    BOOST_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__address_subscribe_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/address/0000000000000000000000000000000000000000000000000000000000000042/subscribe/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
 
 // block_filter/height
 
