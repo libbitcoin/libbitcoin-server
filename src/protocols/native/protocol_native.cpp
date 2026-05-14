@@ -134,21 +134,22 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
+    // Native websocket interface supports only string requests.
     if (!request.body().contains<http::string_value>())
     {
         stop(network::error::not_acceptable);
         return;
     }
 
-    // Target is passed via the websocket string body.
+    // Target with query string is passed via websocket string body.
     const auto target = request.body().get<http::string_value>();
 
-    // TODO: add subscription parse to native_target and tests.
     rpc::request_t model{};
     if (const auto ec = native_target(model, target))
         return;
 
-    if (!native_query(model, target, {}) ||
+    // Default to json by simulating a json accept header (format overrides).
+    if (!native_query(model, target, { media_type::text_json }) ||
         get_media(model) == media_type::text_html)
     {
         stop(network::error::not_acceptable);
