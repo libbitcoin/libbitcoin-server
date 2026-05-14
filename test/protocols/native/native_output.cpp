@@ -24,30 +24,6 @@ BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 using namespace system;
 using namespace boost::beast;
 
-// output_op_return (http)
-// ----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_CASE(native__output_op_return__unknown_tx__not_found)
-{
-    const auto status = get_status(
-        "/v1/output/0000000000000000000000000000000000000000000000000000000000000000/0/op_return?format=json");
-    BOOST_REQUIRE_EQUAL(status, http::status::not_found);
-}
-
-BOOST_AUTO_TEST_CASE(native__output_op_return__unknown_tx__not_found_text)
-{
-    const auto status = get_status(
-        "/v1/output/0000000000000000000000000000000000000000000000000000000000000000/0/op_return?format=text");
-    BOOST_REQUIRE_EQUAL(status, http::status::not_found);
-}
-
-BOOST_AUTO_TEST_CASE(native__output_op_return__unknown_tx__not_found_data)
-{
-    const auto status = get_status(
-        "/v1/output/0000000000000000000000000000000000000000000000000000000000000000/0/op_return?format=data");
-    BOOST_REQUIRE_EQUAL(status, http::status::not_found);
-}
-
 // inscription (http)
 // ----------------------------------------------------------------------------
 

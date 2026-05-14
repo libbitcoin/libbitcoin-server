@@ -74,8 +74,6 @@ struct native_methods
         method<"log_subscribe", uint8_t, uint8_t>{ "version", "media" },
         method<"event_subscribe", uint8_t, uint8_t>{ "version", "media" },
 
-        method<"output_op_return", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
-
         method<"inscription", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" }
     };
 
@@ -131,8 +129,7 @@ struct native_methods
     using log_subscribe = at<33>;
     using event_subscribe = at<34>;
 
-    using output_op_return = at<35>;
-    using inscription = at<36>;
+    using inscription = at<35>;
 };
 
 /// ?format=data|text|json (via query string).

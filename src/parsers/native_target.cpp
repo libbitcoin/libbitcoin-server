@@ -190,8 +190,6 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                     method = "output_spender";
                 else if (subcomponent == "spenders")
                     method = "output_spenders";
-                else if (subcomponent == "op_return")
-                    method = "output_op_return";
                 else
                     return error::invalid_subcomponent;
             }
