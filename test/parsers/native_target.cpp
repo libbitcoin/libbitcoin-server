@@ -1341,4 +1341,106 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__block_details_hash_extra_segment__e
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
+// output_op_return
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__output_op_return_valid__expected)
+{
+    const std::string path = "/v255/output/0000000000000000000000000000000000000000000000000000000000000042/3/op_return";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "output_op_return");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 3u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 255u);
+
+    const auto& any = std::get<any_t>(object.at("hash").value());
+    BOOST_REQUIRE(any.holds_alternative<const hash_digest>());
+
+    const auto& hash_cptr = any.get<const hash_digest>();
+    BOOST_REQUIRE(hash_cptr);
+    BOOST_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
+
+    const auto index = std::get<uint32_t>(object.at("index").value());
+    BOOST_REQUIRE_EQUAL(index, 3u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__output_op_return_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/output/0000000000000000000000000000000000000000000000000000000000000000/3/op_return/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
+// inscription
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__inscription_valid__expected)
+{
+    const std::string path = "/v42/inscription/0000000000000000000000000000000000000000000000000000000000000042/0";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "inscription");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 3u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+
+    const auto& any = std::get<any_t>(object.at("hash").value());
+    BOOST_REQUIRE(any.holds_alternative<const hash_digest>());
+
+    const auto& hash_cptr = any.get<const hash_digest>();
+    BOOST_REQUIRE(hash_cptr);
+    BOOST_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
+
+    const auto index = std::get<uint32_t>(object.at("index").value());
+    BOOST_REQUIRE_EQUAL(index, 0u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__inscription_missing_hash__missing_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, "/v3/inscription"), server::error::missing_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__inscription_invalid_hash__invalid_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, "/v3/inscription/invalidhex/0"), server::error::invalid_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__inscription_missing_position__missing_position)
+{
+    const std::string path = "/v3/inscription/0000000000000000000000000000000000000000000000000000000000000000";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::missing_position);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__inscription_invalid_index__invalid_number)
+{
+    const std::string path = "/v3/inscription/0000000000000000000000000000000000000000000000000000000000000000/invalid";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::invalid_number);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__inscription_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/inscription/0000000000000000000000000000000000000000000000000000000000000000/0/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
