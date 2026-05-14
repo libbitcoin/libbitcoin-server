@@ -57,27 +57,39 @@ BOOST_AUTO_TEST_CASE(native__top__formal_xml__not_acceptable)
 
 BOOST_AUTO_TEST_CASE(native__ws_upgrade__always__expected)
 {
-    const auto ec = ws_upgrade({});
+    const auto ec = ws_upgrade();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-}
-
-BOOST_AUTO_TEST_CASE(native__ws_top__text__expected)
-{
-    const auto ec = ws_upgrade({});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-
-    const auto response = ws_request("/v1/top?format=text");
-    BOOST_REQUIRE_EQUAL(response, "09");
 }
 
 BOOST_AUTO_TEST_CASE(native__ws_top__json__expected)
 {
-    const auto ec = ws_upgrade({});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_REQUIRE(!ws_upgrade());
 
     const auto response = ws_request_json("/v1/top?format=json");
     BOOST_REQUIRE(response.is_int64());
     BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top__text__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_request_text("/v1/top?format=text");
+    BOOST_REQUIRE_EQUAL(response, "09");
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top__data__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_request_data("/v1/top?format=data");
+    BOOST_REQUIRE_EQUAL(response, base16_chunk("09"));
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top__xml__error_eof)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(ws_dropped("/v1/top?format=xml"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
