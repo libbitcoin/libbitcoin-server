@@ -171,7 +171,8 @@ bool protocol_native::handle_get_tx_details(const code& ec,
 }
 
 bool protocol_native::handle_get_tx_subscribe(const code& ec,
-    interface::tx_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::tx_subscribe, uint8_t version, uint8_t media,
+    bool stop) NOEXCEPT
 {
     // TODO
     return {};

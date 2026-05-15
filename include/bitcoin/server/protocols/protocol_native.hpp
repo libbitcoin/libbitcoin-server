@@ -72,7 +72,7 @@ protected:
     bool handle_get_top(const code& ec, interface::top,
         uint8_t version, uint8_t media) NOEXCEPT;
     bool handle_get_top_subscribe(const code& ec, interface::top_subscribe,
-        uint8_t version, uint8_t media) NOEXCEPT;
+        uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
@@ -106,7 +106,7 @@ protected:
         std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool witness) NOEXCEPT;
     bool handle_get_block_subscribe(const code& ec, interface::block_subscribe,
-        uint8_t version, uint8_t media) NOEXCEPT;
+        uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
     bool handle_get_tx(const code& ec, interface::tx,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
@@ -118,7 +118,7 @@ protected:
         uint8_t version, uint8_t media,
         const system::hash_cptr& hash) NOEXCEPT;
     bool handle_get_tx_subscribe(const code& ec, interface::tx_subscribe,
-        uint8_t version, uint8_t media) NOEXCEPT;
+        uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
     bool handle_get_inputs(const code& ec, interface::inputs,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
@@ -134,7 +134,7 @@ protected:
         uint32_t index) NOEXCEPT;
     bool handle_get_input_subscribe(const code& ec, interface::input_subscribe,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
-        uint32_t index) NOEXCEPT;
+        uint32_t index, bool stop) NOEXCEPT;
 
     bool handle_get_outputs(const code& ec, interface::outputs,
         uint8_t version, uint8_t media,
@@ -153,7 +153,7 @@ protected:
         uint32_t index) NOEXCEPT;
     bool handle_get_output_subscribe(const code& ec,
         interface::output_subscribe, uint8_t version, uint8_t media,
-        const system::hash_cptr& hash, uint32_t index) NOEXCEPT;
+        const system::hash_cptr& hash, uint32_t index, bool stop) NOEXCEPT;
 
     bool handle_get_address(const code& ec, interface::address,
         uint8_t version, uint8_t media,
@@ -169,13 +169,13 @@ protected:
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
     bool handle_get_address_subscribe(const code& ec,
         interface::address_subscribe, uint8_t version, uint8_t media,
-        const system::hash_cptr& hash, bool turbo) NOEXCEPT;
+        const system::hash_cptr& hash, bool turbo, bool stop) NOEXCEPT;
 
     // TODO: move to admin interface.
     bool handle_get_log_subscribe(const code& ec, interface::log_subscribe,
-        uint8_t version, uint8_t media) NOEXCEPT;
+        uint8_t version, uint8_t media, bool stop) NOEXCEPT;
     bool handle_get_event_subscribe(const code& ec, interface::event_subscribe,
-        uint8_t version, uint8_t media) NOEXCEPT;
+        uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
 private:
     using media_type = network::http::media_type;

@@ -48,7 +48,7 @@ void protocol_native::start() NOEXCEPT
 
     // Top methods.
     SUBSCRIBE_NATIVE(handle_get_top, _1, _2, _3, _4);
-    SUBSCRIBE_NATIVE(handle_get_top_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_top_subscribe, _1, _2, _3, _4, _5);
 
     // Block methods.
     SUBSCRIBE_NATIVE(handle_get_block, _1, _2, _3, _4, _5, _6, _7);
@@ -60,20 +60,20 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_tx, _1, _2, _3, _4, _5, _6, _7, _8);
-    SUBSCRIBE_NATIVE(handle_get_block_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_block_subscribe, _1, _2, _3, _4, _5);
 
     // Transaction methods.
     SUBSCRIBE_NATIVE(handle_get_tx, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_tx_header, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_tx_details, _1, _2, _3, _4, _5);
-    SUBSCRIBE_NATIVE(handle_get_tx_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_tx_subscribe, _1, _2, _3, _4, _5);
 
     // Input methods.
     SUBSCRIBE_NATIVE(handle_get_inputs, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_input, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_input_script, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_input_witness, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_input_subscribe, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_input_subscribe, _1, _2, _3, _4, _5, _6, _7);
 
     // Output methods.
     SUBSCRIBE_NATIVE(handle_get_outputs, _1, _2, _3, _4, _5);
@@ -81,18 +81,18 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_output_script, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_output_spender, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_output_spenders, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_output_subscribe, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_output_subscribe, _1, _2, _3, _4, _5, _6, _7);
 
     // Address methods.
     SUBSCRIBE_NATIVE(handle_get_address, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_confirmed, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_unconfirmed, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_balance, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_address_subscribe, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_NATIVE(handle_get_address_subscribe, _1, _2, _3, _4, _5, _6, _7);
 
     // Admin endpoint methods (TODO: move to admin interface).
-    SUBSCRIBE_NATIVE(handle_get_log_subscribe, _1, _2, _3, _4);
-    SUBSCRIBE_NATIVE(handle_get_event_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_log_subscribe, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_event_subscribe, _1, _2, _3, _4, _5);
     protocol_html::start();
 }
 
@@ -199,14 +199,16 @@ bool protocol_native::handle_get_configuration(const code& ec,
 }
 
 bool protocol_native::handle_get_log_subscribe(const code& ec,
-    interface::log_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::log_subscribe, uint8_t version, uint8_t media,
+    bool stop) NOEXCEPT
 {
     // TODO
     return {};
 }
 
 bool protocol_native::handle_get_event_subscribe(const code& ec,
-    interface::event_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::event_subscribe, uint8_t version, uint8_t media,
+    bool stop) NOEXCEPT
 {
     // TODO
     return {};

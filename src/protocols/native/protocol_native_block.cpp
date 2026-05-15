@@ -58,7 +58,8 @@ bool protocol_native::handle_get_top(const code& ec, interface::top,
 }
 
 bool protocol_native::handle_get_top_subscribe(const code& ec,
-    interface::top_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::top_subscribe, uint8_t version, uint8_t media,
+    bool stop) NOEXCEPT
 {
     // TODO
     return {};
@@ -495,7 +496,8 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
 }
 
 bool protocol_native::handle_get_block_subscribe(const code& ec,
-    interface::block_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::block_subscribe, uint8_t version, uint8_t media,
+    bool stop) NOEXCEPT
 {
     // TODO
     return {};
