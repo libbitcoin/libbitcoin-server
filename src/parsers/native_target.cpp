@@ -161,8 +161,6 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                     method = "input_script";
                 else if (subcomponent == "witness")
                     method = "input_witness";
-                else if (subcomponent == "subscribe")
-                    method = "input_subscribe";
                 else
                     return error::invalid_subcomponent;
             }

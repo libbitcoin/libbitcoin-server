@@ -73,7 +73,6 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_input, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_input_script, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_input_witness, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_input_subscribe, _1, _2, _3, _4, _5, _6, _7);
 
     // Output methods.
     SUBSCRIBE_NATIVE(handle_get_outputs, _1, _2, _3, _4, _5);
@@ -198,19 +197,21 @@ bool protocol_native::handle_get_configuration(const code& ec,
     return true;
 }
 
-bool protocol_native::handle_get_log_subscribe(const code& ec,
-    interface::log_subscribe, uint8_t version, uint8_t media,
+// TODO: add log level(s) param.
+bool protocol_native::handle_get_log_subscribe(const code& ,
+    interface::log_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
 {
-    // TODO
+    log_subscribe_.store(stop);
     return {};
 }
 
-bool protocol_native::handle_get_event_subscribe(const code& ec,
-    interface::event_subscribe, uint8_t version, uint8_t media,
+// TODO: add event(s) param.
+bool protocol_native::handle_get_event_subscribe(const code& ,
+    interface::event_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
 {
-    // TODO
+    event_subscribe_.store(stop);
     return {};
 }
 
