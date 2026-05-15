@@ -176,7 +176,7 @@ bool protocol_native::handle_get_tx_subscribe(const code& ,
 {
     tx_subscribe_.store(stop);
 
-    // No value returned upon tx subscription.
+    // TODO: return bool (previous state) only.
     send_ok();
     return true;
 }

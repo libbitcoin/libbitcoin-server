@@ -61,6 +61,7 @@ bool protocol_native::handle_get_top_subscribe(const code& ec,
     interface::top_subscribe, uint8_t version, uint8_t media,
     bool stop) NOEXCEPT
 {
+    // TODO: return only bool (previous state) if stop.
     top_subscribe_.store(stop);
     return handle_get_top(ec, {}, version, media);
 }
@@ -499,6 +500,7 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
     interface::block_subscribe, uint8_t version, uint8_t media,
     bool stop) NOEXCEPT
 {
+    // TODO: return only bool (previous state) if stop.
     block_subscribe_.store(stop);
 
     // Return top block hash upon block subscription.

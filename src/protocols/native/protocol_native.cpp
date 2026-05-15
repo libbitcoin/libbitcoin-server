@@ -202,6 +202,7 @@ bool protocol_native::handle_get_log_subscribe(const code& ,
     interface::log_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
 {
+    // TODO: return enumeration (on stop?).
     log_subscribe_.store(stop);
     return {};
 }
@@ -211,6 +212,7 @@ bool protocol_native::handle_get_event_subscribe(const code& ,
     interface::event_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
 {
+    // TODO: return enumeration (on stop?).
     event_subscribe_.store(stop);
     return {};
 }
