@@ -198,20 +198,26 @@ bool protocol_native::handle_get_configuration(const code& ec,
 }
 
 // TODO: add log level(s) param.
-bool protocol_native::handle_get_log_subscribe(const code& ,
+bool protocol_native::handle_get_log_subscribe(const code& ec,
     interface::log_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
 {
+    if (stopped(ec))
+        return false;
+
     // TODO: return enumeration (on stop?).
     log_subscribe_.store(stop);
     return {};
 }
 
 // TODO: add event(s) param.
-bool protocol_native::handle_get_event_subscribe(const code& ,
+bool protocol_native::handle_get_event_subscribe(const code& ec,
     interface::event_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
 {
+    if (stopped(ec))
+        return false;
+
     // TODO: return enumeration (on stop?).
     event_subscribe_.store(stop);
     return {};
