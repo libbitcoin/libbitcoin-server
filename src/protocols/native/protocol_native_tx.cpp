@@ -171,10 +171,17 @@ bool protocol_native::handle_get_tx_details(const code& ec,
 }
 
 bool protocol_native::handle_get_tx_subscribe(const code& ec,
-    interface::tx_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::tx_subscribe, uint8_t , uint8_t ,
+    bool stop) NOEXCEPT
 {
-    // TODO
-    return {};
+    if (stopped(ec))
+        return false;
+
+    tx_subscribe_.store(stop);
+
+    // TODO: return bool (previous state) only.
+    send_ok();
+    return true;
 }
 
 BC_POP_WARNING()

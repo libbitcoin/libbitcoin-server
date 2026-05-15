@@ -33,7 +33,7 @@ struct native_methods
         method<"configuration", uint8_t, uint8_t>{ "version", "media" },
 
         method<"top", uint8_t, uint8_t>{ "version", "media" },
-        method<"top_subscribe", uint8_t, uint8_t>{ "version", "media" },
+        method<"top_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
 
         method<"block", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>>{ "version", "media", "hash", "height", "witness" },
         method<"block_header", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "hash", "height" },
@@ -44,35 +44,34 @@ struct native_methods
         method<"block_filter_hash", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "type", "hash", "height" },
         method<"block_filter_header", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "type", "hash", "height" },
         method<"block_tx", uint8_t, uint8_t, uint32_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>>{ "version", "media", "position", "hash", "height", "witness" },
-        method<"block_subscribe", uint8_t, uint8_t>{ "version", "media" },
+        method<"block_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
 
         method<"tx", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "witness" },
         method<"tx_header", uint8_t, uint8_t, system::hash_cptr>{ "version", "media", "hash" },
         method<"tx_details", uint8_t, uint8_t, system::hash_cptr>{ "version", "media", "hash" },
-        method<"tx_subscribe", uint8_t, uint8_t>{ "version", "media" },
+        method<"tx_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
 
         method<"inputs", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "witness" },
         method<"input", uint8_t, uint8_t, system::hash_cptr, uint32_t, optional<true>>{ "version", "media", "hash", "index", "witness" },
         method<"input_script", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"input_witness", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
-        method<"input_subscribe", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
  
         method<"outputs", uint8_t, uint8_t, system::hash_cptr>{ "version", "media", "hash" },
         method<"output", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"output_script", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"output_spender", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
         method<"output_spenders", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
-        method<"output_subscribe", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "index" },
+        method<"output_subscribe", uint8_t, uint8_t, system::hash_cptr, uint32_t, optional<false>>{ "version", "media", "hash", "index", "stop" },
 
         method<"address", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_confirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_unconfirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_balance", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
-        method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, uint32_t>{ "version", "media", "hash", "turbo" },
+        method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, optional<true>, optional<false>>{ "version", "media", "hash", "turbo", "stop" },
 
         // TODO: move to admin interface (security).
-        method<"log_subscribe", uint8_t, uint8_t>{ "version", "media" },
-        method<"event_subscribe", uint8_t, uint8_t>{ "version", "media" }
+        method<"log_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
+        method<"event_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" }
     };
 
     template <typename... Args>
@@ -108,24 +107,23 @@ struct native_methods
     using input = at<18>;
     using input_script = at<19>;
     using input_witness = at<20>;
-    using input_subscribe = at<21>;
 
-    using outputs = at<22>;
-    using output = at<23>;
-    using output_script = at<24>;
-    using output_spender = at<25>;
-    using output_spenders = at<26>;
-    using output_subscribe = at<27>;
+    using outputs = at<21>;
+    using output = at<22>;
+    using output_script = at<23>;
+    using output_spender = at<24>;
+    using output_spenders = at<25>;
+    using output_subscribe = at<26>;
 
-    using address = at<28>;
-    using address_confirmed = at<29>;
-    using address_unconfirmed = at<30>;
-    using address_balance = at<31>;
-    using address_subscribe = at<32>;
+    using address = at<27>;
+    using address_confirmed = at<28>;
+    using address_unconfirmed = at<29>;
+    using address_balance = at<30>;
+    using address_subscribe = at<31>;
 
     // TODO: move to admin interface (security).
-    using log_subscribe = at<33>;
-    using event_subscribe = at<34>;
+    using log_subscribe = at<32>;
+    using event_subscribe = at<33>;
 };
 
 /// ?format=data|text|json (via query string).

@@ -166,14 +166,6 @@ bool protocol_native::handle_get_input_witness(const code& ec,
     return true;
 }
 
-bool protocol_native::handle_get_input_subscribe(const code& ec,
-    interface::input_subscribe, uint8_t version, uint8_t media,
-    const system::hash_cptr& hash, uint32_t index) NOEXCEPT
-{
-    // TODO
-    return {};
-}
-
 BC_POP_WARNING()
 BC_POP_WARNING()
 

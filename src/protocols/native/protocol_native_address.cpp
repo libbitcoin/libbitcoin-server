@@ -235,10 +235,14 @@ void protocol_native::complete_get_address_balance(const code& ec,
 
 bool protocol_native::handle_get_address_subscribe(const code& ec,
     interface::address_subscribe, uint8_t version, uint8_t media,
-    const system::hash_cptr& hash, bool turbo) NOEXCEPT
+    const system::hash_cptr& hash, bool turbo, bool stop) NOEXCEPT
 {
-    // TODO
-    return {};
+    if (stopped(ec))
+        return false;
+
+    // TODO: return only bool (previous state) if stop.
+    address_subscribe_.store(stop);
+    return handle_get_address(ec, {}, version, media, hash, turbo);
 }
 
 BC_POP_WARNING()

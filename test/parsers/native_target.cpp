@@ -834,44 +834,6 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__input_witness_extra_segment__extra_
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
-// input_subscribe
-
-BOOST_AUTO_TEST_CASE(parsers__native_target__input_subscribe_valid__expected)
-{
-    const std::string path = "/v42/input/0000000000000000000000000000000000000000000000000000000000000042/3/subscribe";
-
-    request_t request{};
-    BOOST_REQUIRE(!native_target(request, path));
-    BOOST_REQUIRE_EQUAL(request.method, "input_subscribe");
-    BOOST_REQUIRE(request.params.has_value());
-
-    const auto& params = request.params.value();
-    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
-
-    const auto& object = std::get<object_t>(request.params.value());
-    BOOST_REQUIRE_EQUAL(object.size(), 3u);
-
-    const auto version = std::get<uint8_t>(object.at("version").value());
-    BOOST_REQUIRE_EQUAL(version, 42u);
-
-    const auto& any = std::get<any_t>(object.at("hash").value());
-    BOOST_REQUIRE(any.holds_alternative<const hash_digest>());
-
-    const auto& hash_cptr = any.get<const hash_digest>();
-    BOOST_REQUIRE(hash_cptr);
-    BOOST_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
-
-    const auto index = std::get<uint32_t>(object.at("index").value());
-    BOOST_REQUIRE_EQUAL(index, 3u);
-}
-
-BOOST_AUTO_TEST_CASE(parsers__native_target__input_subscribe_extra_segment__extra_segment)
-{
-    const std::string path = "/v3/input/0000000000000000000000000000000000000000000000000000000000000042/3/subscribe/extra";
-    request_t out{};
-    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
-}
-
 // outputs
 
 BOOST_AUTO_TEST_CASE(parsers__native_target__outputs_valid__expected)

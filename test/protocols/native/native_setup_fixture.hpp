@@ -45,9 +45,9 @@ struct native_setup_fixture
     network::boost_code ws_upgrade();
     system::data_chunk ws_receive();
     bool ws_dropped(std::string_view message);
-    std::string ws_request_text(std::string_view message);
-    boost::json::value ws_request_json(std::string_view message);
-    system::data_chunk ws_request_data(std::string_view message);
+    std::string ws_get_text(std::string_view message);
+    boost::json::value ws_get_json(std::string_view message);
+    system::data_chunk ws_get_data(std::string_view message);
 
 protected:
     server::configuration config_;

@@ -28,6 +28,7 @@ namespace server {
 namespace token
 {
     // Names.
+    constexpr auto stop = "stop";
     constexpr auto turbo = "turbo";
     constexpr auto format = "format";
     constexpr auto witness = "witness";

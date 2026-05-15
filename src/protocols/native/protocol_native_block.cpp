@@ -58,10 +58,15 @@ bool protocol_native::handle_get_top(const code& ec, interface::top,
 }
 
 bool protocol_native::handle_get_top_subscribe(const code& ec,
-    interface::top_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::top_subscribe, uint8_t version, uint8_t media,
+    bool stop) NOEXCEPT
 {
-    // TODO
-    return {};
+    if (stopped(ec))
+        return false;
+
+    // TODO: return only bool (previous state) if stop.
+    top_subscribe_.store(stop);
+    return handle_get_top(ec, {}, version, media);
 }
 
 bool protocol_native::handle_get_block(const code& ec, interface::block,
@@ -495,10 +500,36 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
 }
 
 bool protocol_native::handle_get_block_subscribe(const code& ec,
-    interface::block_subscribe, uint8_t version, uint8_t media) NOEXCEPT
+    interface::block_subscribe, uint8_t version, uint8_t media,
+    bool stop) NOEXCEPT
 {
-    // TODO
-    return {};
+    if (stopped(ec))
+        return false;
+
+    // TODO: return only bool (previous state) if stop.
+    block_subscribe_.store(stop);
+
+    // Return top block hash upon block subscription.
+    const auto& query = archive();
+    const auto link = query.to_confirmed(query.get_top_confirmed());
+    if (const auto hash = query.get_header_key(link); hash != null_hash)
+    {
+        switch (media)
+        {
+            case data:
+                send_chunk(to_chunk(hash));
+                return true;
+            case text:
+                send_text(encode_base16(hash));
+                return true;
+            case json:
+                send_json(value_from(encode_hash(hash)), two * hash_size);
+                return true;
+        }
+    }
+
+    send_not_found();
+    return true;
 }
 
 BC_POP_WARNING()
