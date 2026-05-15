@@ -80,9 +80,19 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
 
 native_setup_fixture::~native_setup_fixture()
 {
-    socket_.close();
+    network::boost_code ec{};
+    if (websocket_.has_value())
+    {
+        websocket_.value().close(websocket::close_code::normal, ec);
+        BOOST_WARN_MESSAGE(!ec, ec.message());
+    }
+    else
+    {
+        socket_.close();
+    }
+
     server_.close();
-    const auto ec = store_.close([](auto, auto){});
+    ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
     BOOST_WARN_MESSAGE(test::clear(test::directory), "native cleanup");
 }
