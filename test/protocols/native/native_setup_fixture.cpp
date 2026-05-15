@@ -44,7 +44,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    BOOST_REQUIRE_MESSAGE(test::clear(test::directory), "native setup");
+    BOOST_CHECK_MESSAGE(test::clear(test::directory), "native setup");
     auto& database_settings = config_.database;
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
@@ -62,8 +62,8 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_MESSAGE(setup(query_), "native initialize");
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_MESSAGE(setup(query_), "native initialize");
 
     // Run the server.
     std::promise<code> running{};
@@ -74,7 +74,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
 
     // Block until server is running.
     ec = running.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
     socket_.connect(native.binds.back().to_endpoint());
 }
 
@@ -119,7 +119,7 @@ http::status native_setup_fixture::get_status(std::string_view target)
     network::boost_code ec{};
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -132,8 +132,8 @@ std::string native_setup_fixture::get_text(std::string_view target)
     network::boost_code ec{};
     http::response<network::http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
 
     return response.body();
 }
@@ -146,8 +146,8 @@ system::data_chunk native_setup_fixture::get_data(std::string_view target)
     network::boost_code ec{};
     http::response<network::http::chunk_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
 
     return system::data_chunk(response.body().begin(), response.body().end());
 }
@@ -163,8 +163,8 @@ boost::json::value native_setup_fixture::get_json(std::string_view target)
     network::boost_code ec{};
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
 
     return boost::json::parse(response.body());
 }
@@ -172,7 +172,7 @@ boost::json::value native_setup_fixture::get_json(std::string_view target)
 network::boost_code native_setup_fixture::ws_upgrade()
 {
     network::boost_code ec{};
-    BOOST_REQUIRE(!websocket_.has_value());
+    BOOST_CHECK(!websocket_.has_value());
 
     websocket_.emplace(socket_);
     websocket_.value().text(true);
@@ -184,10 +184,10 @@ data_chunk native_setup_fixture::ws_receive()
 {
     flat_buffer buffer{};
     network::boost_code ec{};
-    BOOST_REQUIRE(websocket_.has_value());
+    BOOST_CHECK(websocket_.has_value());
 
     websocket_.value().read(buffer, ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     const auto data = pointer_cast<uint8_t>(buffer.data().data());
     return { data, std::next(data, buffer.data().size()) };
@@ -196,40 +196,40 @@ data_chunk native_setup_fixture::ws_receive()
 bool native_setup_fixture::ws_dropped(std::string_view message)
 {
     network::boost_code ec{};
-    BOOST_REQUIRE(websocket_.has_value());
+    BOOST_CHECK(websocket_.has_value());
 
     websocket_.value().write(net::buffer(message), ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     flat_buffer buffer{};
     websocket_.value().read(buffer, ec);
     return ec == boost::asio::error::eof;
 }
 
-std::string native_setup_fixture::ws_request_text(std::string_view message)
+std::string native_setup_fixture::ws_get_text(std::string_view message)
 {
     network::boost_code ec{};
-    BOOST_REQUIRE(websocket_.has_value());
+    BOOST_CHECK(websocket_.has_value());
 
     websocket_.value().write(net::buffer(message), ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     return to_string(ws_receive());
 }
 
-boost::json::value native_setup_fixture::ws_request_json(
+boost::json::value native_setup_fixture::ws_get_json(
     std::string_view message)
 {
-    return boost::json::parse(ws_request_text(message));
+    return boost::json::parse(ws_get_text(message));
 }
 
-data_chunk native_setup_fixture::ws_request_data(std::string_view message)
+data_chunk native_setup_fixture::ws_get_data(std::string_view message)
 {
     network::boost_code ec{};
-    BOOST_REQUIRE(websocket_.has_value());
+    BOOST_CHECK(websocket_.has_value());
 
     websocket_.value().write(net::buffer(message), ec);
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     return ws_receive();
 }
