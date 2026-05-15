@@ -89,6 +89,15 @@ bool native_query(rpc::request_t& out, const std::string& target,
             return false;
     }
 
+    // Stop is optional<false> (where applicable), so only set if true.
+    if (const auto stop = query.find(token::stop); stop != query.end())
+    {
+        if (is_true(stop->second))
+            params[token::stop] = true;
+        else if (!is_false(stop->second))
+            return false;
+    }
+
     const auto format = query[token::format];
 
     // Prioritize query string format over http headers.
@@ -100,6 +109,8 @@ bool native_query(rpc::request_t& out, const std::string& target,
         set_media(params, data);
     else if (format == token::formats::html)
         set_media(params, html);
+    else if (!format.empty())
+        return false;
 
     // Priotize: json, html, text, data (ignores accept priorities).
     else if (contains(accepts, json))
