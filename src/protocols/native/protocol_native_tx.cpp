@@ -170,12 +170,15 @@ bool protocol_native::handle_get_tx_details(const code& ec,
     return true;
 }
 
-bool protocol_native::handle_get_tx_subscribe(const code& ec,
-    interface::tx_subscribe, uint8_t version, uint8_t media,
+bool protocol_native::handle_get_tx_subscribe(const code& ,
+    interface::tx_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
 {
-    // TODO
-    return {};
+    tx_subscribe_.store(stop);
+
+    // No value returned upon tx subscription.
+    send_ok();
+    return true;
 }
 
 BC_POP_WARNING()

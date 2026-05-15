@@ -230,8 +230,25 @@ private:
     database::header_link to_header(const std::optional<uint32_t>& height,
         const std::optional<system::hash_cptr>& hash) NOEXCEPT;
 
-    // This is thread safe.
+    // These are thread safe.
     std::atomic_bool stopping_{};
+
+    // Unconditional (all).
+    std::atomic_bool top_subscribe_{};
+    std::atomic_bool block_subscribe_{};
+    std::atomic_bool tx_subscribe_{};
+
+    // TODO: map of outpoints (notify on spenders).
+    std::atomic_bool output_subscribe_{};
+
+    // TODO: map of scripthashes (notify on instances).
+    std::atomic_bool address_subscribe_{};
+
+    // TODO: map of log levels.
+    std::atomic_bool log_subscribe_{};
+
+    // TODO: map of events.
+    std::atomic_bool event_subscribe_{};
 
     // This is protected by strand.
     dispatcher dispatcher_{};

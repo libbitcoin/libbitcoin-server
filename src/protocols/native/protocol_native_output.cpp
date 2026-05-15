@@ -201,8 +201,8 @@ bool protocol_native::handle_get_output_subscribe(const code& ec,
     interface::output_subscribe, uint8_t version, uint8_t media,
     const system::hash_cptr& hash, uint32_t index, bool stop) NOEXCEPT
 {
-    // TODO
-    return {};
+    output_subscribe_.store(stop);
+    return handle_get_output(ec, {}, version, media, hash, index);
 }
 
 BC_POP_WARNING()
