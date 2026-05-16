@@ -62,6 +62,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     electrum.maximum_history = 5;
     electrum.maximum_headers = 5;
     electrum.connections = 1;
+    electrum.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;

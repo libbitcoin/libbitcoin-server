@@ -54,6 +54,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
     native.binds = { { NATIVE_ENDPOINT } };
     native.connections = 1;
     native.path = "unused";
+    native.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;
