@@ -18,11 +18,16 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
+#include <atomic>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
+
+using namespace std::placeholders;
+
+#define CLASS protocol_native
 
 bool protocol_native::handle_get_configuration(const code& ec,
     interface::configuration, uint8_t, uint8_t media) NOEXCEPT
@@ -59,15 +64,17 @@ bool protocol_native::handle_get_log_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    log_subscribe_.store(stop);
+    // TODO: add levels param, if empty implies stop.
+    // TODO: implement as bit flags that map to levels here.
+    log_subscribe_.store(stop, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
         return true;
     }
 
-    // TODO: add levels param, if empty implies stop.
-    // TODO: implement as bit flags that map to levels here.
+    // handle_log will unsubscribe when !log_subscribe_ upon any message.
+    log.subscribe_messages(BIND(handle_log, _1, _2, _3, _4));
     send_empty();
     return true;
 }
@@ -79,15 +86,17 @@ bool protocol_native::handle_get_event_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    event_subscribe_.store(stop);
+    // TODO: add events param, if empty implies stop.
+    // TODO: implement as bit flags that map to events here.
+    event_subscribe_.store(stop, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
         return true;
     }
 
-    // TODO: add events param, if empty implies stop.
-    // TODO: implement as bit flags that map to events here.
+    // handle_events will unsubscribe when !log_subscribe_ upon any event.
+    log.subscribe_events(BIND(handle_events, _1, _2, _3, _4));
     send_empty();
     return true;
 }

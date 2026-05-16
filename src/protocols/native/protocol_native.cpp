@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
+#include <atomic>
 #include <optional>
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -239,7 +240,7 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
 bool protocol_native::handle_log(const code& ec, uint8_t level, time_t time,
     const std::string& message) NOEXCEPT
 {
-    if (stopped(ec))
+    if (stopped(ec) || !log_subscribe_.load(relaxed))
         return false;
 
 }
@@ -248,7 +249,7 @@ bool protocol_native::handle_log(const code& ec, uint8_t level, time_t time,
 bool protocol_native::handle_events(const code& ec, uint8_t event_,
     uint64_t value, const logger::time& point) NOEXCEPT
 {
-    if (stopped(ec))
+    if (stopped(ec) || !event_subscribe_.load(relaxed))
         return false;
 
 }
