@@ -45,7 +45,7 @@ void protocol_native::start() NOEXCEPT
         return;
 
     // Chaser subscription is asynchronous, events may be missed.
-    subscribe_events(BIND(handle_chase, _1, _2, _3));
+    subscribe_chase(BIND(handle_chase, _1, _2, _3));
 
     // Configuration methods.
     SUBSCRIBE_NATIVE(handle_get_configuration, _1, _2, _3, _4);
@@ -104,7 +104,7 @@ void protocol_native::stopping(const code& ec) NOEXCEPT
     BC_ASSERT(stranded());
     stopping_.store(true);
     dispatcher_.stop(ec);
-    unsubscribe_events();
+    unsubscribe_chase();
     protocol_html::stopping(ec);
 }
 
