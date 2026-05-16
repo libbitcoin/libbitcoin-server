@@ -74,14 +74,18 @@ protected:
     virtual void send_buffer(network::http::buffer_body::value_type&& buffer,
         network::http::media_type type,
         const network::http::request& request={}) NOEXCEPT;
+    virtual void send_empty(
+        const network::http::request& request={}) NOEXCEPT;
 
     /// Notifiers (websocket).
     virtual void notify_json(boost::json::value&& model, size_t size_hint,
-        const network::http::request& request = {}) NOEXCEPT;
+        const network::http::request& request={}) NOEXCEPT;
     virtual void notify_text(std::string&& hexidecimal,
-        const network::http::request& request = {}) NOEXCEPT;
+        const network::http::request& request={}) NOEXCEPT;
     virtual void notify_chunk(system::data_chunk&& bytes,
-        const network::http::request& request = {}) NOEXCEPT;
+        const network::http::request& request={}) NOEXCEPT;
+    virtual void notify_empty(
+        const network::http::request& request={}) NOEXCEPT;
 
     /// Utilities.
     std::filesystem::path to_path(
