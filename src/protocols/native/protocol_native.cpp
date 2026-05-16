@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
+#include <atomic>
 #include <optional>
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -43,6 +44,9 @@ void protocol_native::start() NOEXCEPT
 
     if (started())
         return;
+
+    // Chaser subscription is asynchronous, events may be missed.
+    subscribe_chase(BIND(handle_chase, _1, _2, _3));
 
     // Configuration methods.
     SUBSCRIBE_NATIVE(handle_get_configuration, _1, _2, _3, _4);
@@ -101,6 +105,7 @@ void protocol_native::stopping(const code& ec) NOEXCEPT
     BC_ASSERT(stranded());
     stopping_.store(true);
     dispatcher_.stop(ec);
+    unsubscribe_chase();
     protocol_html::stopping(ec);
 }
 
@@ -170,13 +175,15 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
 // Event handlers.
 // ----------------------------------------------------------------------------
 
-// capture chaser events
-bool protocol_native::handle_event(const code&, node::chase event_,
+bool protocol_native::handle_chase(const code&, node::chase event_,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
     if (stopped())
         return false;
+
+    if (!websocket())
+        return true;
 
     switch (event_)
     {
@@ -232,74 +239,31 @@ bool protocol_native::handle_event(const code&, node::chase event_,
     return true;
 }
 
-BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
-
-void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
+bool protocol_native::handle_log(const code& ec, uint8_t , time_t ,
+    const std::string& ) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    if (stopped(ec) || !log_subscribe_.load(relaxed))
+        return false;
 
-    // TODO: notification.
-    const auto height = archive().get_height(link).value;
-    switch (to_value(media))
-    {
-        case data:
-            notify_chunk(to_little_endian_size(height));
-            return;
-        case text:
-            notify_text(encode_base16(to_little_endian_size(height)));
-            return;
-        case json:
-            notify_json(height, two * sizeof(height));
-            return;
-    }
+    if (!websocket())
+        return true;
+
+    // TODO: json only.
+    return false;
 }
 
-void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
+bool protocol_native::handle_events(const code& ec, uint8_t ,
+    uint64_t , const logger::time& ) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    if (stopped(ec) || !event_subscribe_.load(relaxed))
+        return false;
 
-    // TODO: notification.
-    const auto hash = archive().get_header_key(link);
-    switch (to_value(media))
-    {
-        case data:
-            notify_chunk(to_chunk(hash));
-            return;
-        case text:
-            notify_text(encode_base16(hash));
-            return;
-        case json:
-            BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-            notify_json(value_from(encode_base16(hash)), two * hash_size);
-            BC_POP_WARNING()
-            return;
-    }
+    if (!websocket())
+        return true;
+
+    // TODO: json only.
+    return false;
 }
-
-void protocol_native::do_transaction(node::transaction_t link,
-    media_type media) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    // TODO: notification.
-    const auto hash = archive().get_tx_key(link);
-    switch (to_value(media))
-    {
-        case data:
-            notify_chunk(to_chunk(hash));
-            return;
-        case text:
-            notify_text(encode_base16(hash));
-            return;
-        case json:
-            BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-            notify_json(value_from(encode_base16(hash)), two * hash_size);
-            BC_POP_WARNING()
-            return;
-    }
-}
-
-BC_POP_WARNING()
 
 // Utilities.
 // ----------------------------------------------------------------------------

@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
+#include <atomic>
 #include <iterator>
 #include <optional>
 #include <ranges>
@@ -64,9 +65,35 @@ bool protocol_native::handle_get_top_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return only bool (previous state) if stop?
-    top_subscribe_.store(stop ? media_type::unknown : (media_type)media);
+    const auto value = stop ? media_type::unknown : (media_type)media;
+    top_subscribe_.store(value, std::memory_order_relaxed);
+    if (stop)
+    {
+        send_empty();
+        return true;
+    }
+
     return handle_get_top(ec, {}, version, media);
+}
+
+// notify
+void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto height = archive().get_height(link).value;
+    switch (to_value(media))
+    {
+        case data:
+            notify_chunk(to_little_endian_size(height));
+            return;
+        case text:
+            notify_text(encode_base16(to_little_endian_size(height)));
+            return;
+        case json:
+            notify_json(height, two * sizeof(height));
+            return;
+    }
 }
 
 bool protocol_native::handle_get_block(const code& ec, interface::block,
@@ -505,8 +532,13 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return only bool (previous state) if stop?
-    block_subscribe_.store(stop ? media_type::unknown : (media_type)media);
+    const auto value = stop ? media_type::unknown : (media_type)media;
+    block_subscribe_.store(value, std::memory_order_relaxed);
+    if (stop)
+    {
+        send_empty();
+        return true;
+    }
 
     // Return top block hash upon block subscription.
     const auto& query = archive();
@@ -529,6 +561,28 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
 
     send_not_found();
     return true;
+}
+
+// notify
+void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto hash = archive().get_header_key(link);
+    switch (to_value(media))
+    {
+        case data:
+            notify_chunk(to_chunk(hash));
+            return;
+        case text:
+            notify_text(encode_base16(hash));
+            return;
+        case json:
+            BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+            notify_json(value_from(encode_base16(hash)), two * hash_size);
+            BC_POP_WARNING()
+            return;
+    }
 }
 
 BC_POP_WARNING()

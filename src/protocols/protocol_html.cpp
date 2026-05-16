@@ -257,6 +257,18 @@ void protocol_html::send_buffer(buffer_body::value_type&& buffer,
     SEND(std::move(response), handle_complete, _1, error::success);
 }
 
+void protocol_html::send_empty(const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    add_common_headers(response, request);
+    add_access_control_headers(response, request);
+    ////response.set(field::content_type, media_type::text_plain);
+    response.body() = empty_value{};
+    response.prepare_payload();
+    SEND(std::move(response), handle_complete, _1, error::success);
+}
+
 // Notifiers (websocket).
 // ----------------------------------------------------------------------------
 
@@ -288,6 +300,14 @@ void protocol_html::notify_chunk(system::data_chunk&& bytes,
     BC_ASSERT(stranded());
     response response{ status::ok, request.version() };
     response.body() = std::move(bytes);
+    NOTIFY(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_html::notify_empty(const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    response.body() = empty_value{};
     NOTIFY(std::move(response), handle_complete, _1, error::success);
 }
 

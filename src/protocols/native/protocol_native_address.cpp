@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
+#include <atomic>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 
@@ -240,8 +241,14 @@ bool protocol_native::handle_get_address_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return only bool (previous state) if stop.
-    address_subscribe_.store(stop);
+    // TODO: map.
+    address_subscribe_.store(!stop, std::memory_order_relaxed);
+    if (stop)
+    {
+        send_empty();
+        return true;
+    }
+
     return handle_get_address(ec, {}, version, media, hash, turbo);
 }
 

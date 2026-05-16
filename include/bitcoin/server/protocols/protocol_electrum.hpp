@@ -61,8 +61,8 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    /// Handlers (event subscription).
-    bool handle_event(const code&, node::chase event_,
+    /// Event handlers.
+    bool handle_chase(const code&, node::chase event_,
         node::event_value) NOEXCEPT;
 
     /// Handlers (headers).

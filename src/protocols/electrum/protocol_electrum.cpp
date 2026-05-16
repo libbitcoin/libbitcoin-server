@@ -51,8 +51,8 @@ void protocol_electrum::start() NOEXCEPT
     if (started())
         return;
 
-    // Events subscription is asynchronous, events may be missed.
-    subscribe_events(BIND(handle_event, _1, _2, _3));
+    // Chaser subscription is asynchronous, events may be missed.
+    subscribe_chase(BIND(handle_chase, _1, _2, _3));
 
     // Header methods.
     SUBSCRIBE_RPC(handle_blockchain_number_of_blocks_subscribe, _1, _2);
@@ -122,14 +122,14 @@ void protocol_electrum::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     stopping_.store(true);
-    unsubscribe_events();
+    unsubscribe_chase();
     protocol_rpc<channel_electrum>::stopping(ec);
 }
 
 // Handlers (event subscription).
 // ----------------------------------------------------------------------------
 
-bool protocol_electrum::handle_event(const code&, node::chase event_,
+bool protocol_electrum::handle_chase(const code&, node::chase event_,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
