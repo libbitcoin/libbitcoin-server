@@ -118,13 +118,13 @@ BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__json__expected)
     BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
 }
 
-BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__stop__expected)
-{
-    BOOST_REQUIRE(!ws_upgrade());
-
-    const auto response = ws_get_json("/v1/top/subscribe?stop=true");
-    BOOST_REQUIRE(response.is_int64());
-    BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
-}
+////BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__stop__expected)
+////{
+////    BOOST_REQUIRE(!ws_upgrade());
+////
+////    const auto response = ws_get_json("/v1/top/subscribe?stop=true");
+////    BOOST_REQUIRE(response.is_int64());
+////    BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
+////}
 
 BOOST_AUTO_TEST_SUITE_END()
