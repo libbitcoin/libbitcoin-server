@@ -49,7 +49,8 @@ struct native_setup_fixture
     boost::json::value ws_get_json(std::string_view message);
     system::data_chunk ws_get_data(std::string_view message);
 
-    void notify(node::chase event_, node::event_value value={});
+    // 0_32 vs {} for xcode variant issue.
+    void notify(node::chase event_, node::event_value value=0_32);
 
 protected:
     server::configuration config_;

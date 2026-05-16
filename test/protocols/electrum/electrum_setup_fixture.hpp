@@ -36,9 +36,11 @@ struct electrum_setup_fixture
     boost::json::value receive();
     int64_t get_error(const std::string& request);
     boost::json::value get(const std::string& request);
-    void notify(node::chase event_, node::event_value value={});
     bool handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id={});
+
+    // 0_32 vs {} for xcode variant issue.
+    void notify(node::chase event_, node::event_value value=0_32);
 
 protected:
     configuration config_;
