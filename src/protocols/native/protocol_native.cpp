@@ -235,6 +235,24 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
     return true;
 }
 
+// TODO: json only.
+bool protocol_native::handle_log(const code& ec, uint8_t level, time_t time,
+    const std::string& message) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+}
+
+// TODO: json only.
+bool protocol_native::handle_events(const code& ec, uint8_t event_,
+    uint64_t value, const logger::time& point) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+}
+
 // Utilities.
 // ----------------------------------------------------------------------------
 // private

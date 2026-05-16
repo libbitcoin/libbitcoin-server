@@ -70,6 +70,10 @@ protected:
 
     bool handle_chase(const code&, node::chase event_,
         node::event_value) NOEXCEPT;
+    bool handle_log(const code& ec, uint8_t level, time_t time,
+        const std::string& message) NOEXCEPT;
+    bool handle_events(const code& ec, uint8_t event_, uint64_t value,
+        const network::logger::time& point) NOEXCEPT;
 
     /// Interface handlers.
     /// -----------------------------------------------------------------------
