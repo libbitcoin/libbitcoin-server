@@ -182,6 +182,9 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
     if (stopped())
         return false;
 
+    if (!websocket())
+        return true;
+
     switch (event_)
     {
         case node::chase::organized:
@@ -236,22 +239,30 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
     return true;
 }
 
-// TODO: json only.
-bool protocol_native::handle_log(const code& ec, uint8_t level, time_t time,
-    const std::string& message) NOEXCEPT
+bool protocol_native::handle_log(const code& ec, uint8_t , time_t ,
+    const std::string& ) NOEXCEPT
 {
     if (stopped(ec) || !log_subscribe_.load(relaxed))
         return false;
 
+    if (!websocket())
+        return true;
+
+    // TODO: json only.
+    return false;
 }
 
-// TODO: json only.
-bool protocol_native::handle_events(const code& ec, uint8_t event_,
-    uint64_t value, const logger::time& point) NOEXCEPT
+bool protocol_native::handle_events(const code& ec, uint8_t ,
+    uint64_t , const logger::time& ) NOEXCEPT
 {
     if (stopped(ec) || !event_subscribe_.load(relaxed))
         return false;
 
+    if (!websocket())
+        return true;
+
+    // TODO: json only.
+    return false;
 }
 
 // Utilities.
