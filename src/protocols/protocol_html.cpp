@@ -306,7 +306,7 @@ void protocol_html::notify_chunk(system::data_chunk&& bytes,
 void protocol_html::notify_empty(const request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    response response{};
+    response response{ status::ok, request.version() };
     response.body() = empty_value{};
     NOTIFY(std::move(response), handle_complete, _1, error::success);
 }
