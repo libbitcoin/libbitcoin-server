@@ -238,7 +238,6 @@ void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    // TODO: notification.
     const auto height = archive().get_height(link).value;
     switch (to_value(media))
     {
@@ -258,7 +257,6 @@ void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    // TODO: notification.
     const auto hash = archive().get_header_key(link);
     switch (to_value(media))
     {
@@ -281,7 +279,6 @@ void protocol_native::do_transaction(node::transaction_t link,
 {
     BC_ASSERT(stranded());
 
-    // TODO: notification.
     const auto hash = archive().get_tx_key(link);
     switch (to_value(media))
     {
