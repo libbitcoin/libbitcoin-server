@@ -170,9 +170,9 @@ bool protocol_electrum::handle_event(const code&, node::chase event_,
         }
         case node::chase::reorganized:
         {
-            // value is regression branch_point.
-            BC_ASSERT(std::holds_alternative<node::height_t>(value));
-            POST_NOTIFY(do_reorganized, std::get<node::height_t>(value));
+            // Value is regression branch_point.
+            BC_ASSERT(std::holds_alternative<node::header_t>(value));
+            POST_NOTIFY(do_reorganized, std::get<node::header_t>(value));
             break;
         }
         default:
@@ -195,7 +195,7 @@ void protocol_electrum::do_reorganized(node::header_t) NOEXCEPT
 
     for (auto& [key, sub]: address_subscriptions_)
     {
-        // flush resets hash accumulator, sub.type remains unchanged.
+        // Flush resets hash accumulator, sub.type remains unchanged.
         sub.accumulator.flush();
         sub.status = {};
         sub.cursor = {};
