@@ -36,9 +36,9 @@ struct electrum_setup_fixture
     boost::json::value receive();
     int64_t get_error(const std::string& request);
     boost::json::value get(const std::string& request);
-    void notify(node::chase event_, node::event_value value=0_u32);
+    void notify(node::chase event_, node::event_value value={});
     bool handshake(electrum::version version,
-        const std::string& name="test", network::rpc::code_t id=0);
+        const std::string& name="test", network::rpc::code_t id={});
 
 protected:
     configuration config_;
