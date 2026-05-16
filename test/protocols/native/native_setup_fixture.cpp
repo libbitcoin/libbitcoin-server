@@ -84,7 +84,16 @@ native_setup_fixture::~native_setup_fixture()
     if (websocket_.has_value())
     {
         websocket_.value().close(websocket::close_code::normal, ec);
-        BOOST_WARN_MESSAGE(!ec, ec.message());
+
+        // Expected and harmless during fixture teardown:
+        // beast::websocket::error::closed : normal (graceful handshake).
+        // asio::error::operation_aborted  : hard (invalid request test).
+        if (ec &&
+            ec != boost::beast::websocket::error::closed &&
+            ec != boost::asio::error::operation_aborted)
+        {
+            BOOST_WARN_MESSAGE(false, ec.message());
+        }
     }
     else
     {
