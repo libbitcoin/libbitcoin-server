@@ -52,7 +52,6 @@ bool protocol_native::handle_get_configuration(const code& ec,
     return true;
 }
 
-// TODO: add log level(s) param.
 bool protocol_native::handle_get_log_subscribe(const code& ec,
     interface::log_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
@@ -60,12 +59,19 @@ bool protocol_native::handle_get_log_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return enumeration (on stop?).
     log_subscribe_.store(stop);
-    return {};
+    if (stop)
+    {
+        send_empty();
+        return true;
+    }
+
+    // TODO: add levels param, if empty implies stop.
+    // TODO: implement as bit flags that map to levels here.
+    send_empty();
+    return true;
 }
 
-// TODO: add event(s) param.
 bool protocol_native::handle_get_event_subscribe(const code& ec,
     interface::event_subscribe, uint8_t , uint8_t ,
     bool stop) NOEXCEPT
@@ -73,9 +79,17 @@ bool protocol_native::handle_get_event_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return enumeration (on stop?).
     event_subscribe_.store(stop);
-    return {};
+    if (stop)
+    {
+        send_empty();
+        return true;
+    }
+
+    // TODO: add events param, if empty implies stop.
+    // TODO: implement as bit flags that map to events here.
+    send_empty();
+    return true;
 }
 
 } // namespace server

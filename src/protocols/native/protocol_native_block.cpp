@@ -64,8 +64,13 @@ bool protocol_native::handle_get_top_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return only bool (previous state) if stop?
     top_subscribe_.store(stop ? media_type::unknown : (media_type)media);
+    if (stop)
+    {
+        send_empty();
+        return true;
+    }
+
     return handle_get_top(ec, {}, version, media);
 }
 
@@ -525,8 +530,12 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return only bool (previous state) if stop?
     block_subscribe_.store(stop ? media_type::unknown : (media_type)media);
+    if (stop)
+    {
+        send_empty();
+        return true;
+    }
 
     // Return top block hash upon block subscription.
     const auto& query = archive();

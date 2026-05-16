@@ -179,14 +179,8 @@ bool protocol_native::handle_get_tx_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: return bool (previous state) only?
     tx_subscribe_.store(stop ? media_type::unknown : (media_type)media);
-
-    // TODO: move to send/notify_empty().
-    using namespace network::http;
-    response out{};
-    out.body() = empty_value{};
-    NOTIFY(std::move(out), handle_complete, _1, error::success);
+    notify_empty();
     return true;
 }
 
