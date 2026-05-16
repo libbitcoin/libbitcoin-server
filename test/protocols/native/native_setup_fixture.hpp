@@ -50,7 +50,7 @@ struct native_setup_fixture
     system::data_chunk ws_get_data(std::string_view message);
 
     // 0_32 vs {} for xcode variant issue.
-    void notify(node::chase event_, node::event_value value=0_32);
+    void notify(node::chase event_, node::event_value value=0_u32);
 
 protected:
     server::configuration config_;
