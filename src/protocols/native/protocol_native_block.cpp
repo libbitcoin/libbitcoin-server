@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
+#include <atomic>
 #include <iterator>
 #include <optional>
 #include <ranges>
@@ -64,7 +65,8 @@ bool protocol_native::handle_get_top_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    top_subscribe_.store(stop ? media_type::unknown : (media_type)media);
+    const auto value = stop ? media_type::unknown : (media_type)media;
+    top_subscribe_.store(value, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
@@ -530,7 +532,8 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    block_subscribe_.store(stop ? media_type::unknown : (media_type)media);
+    const auto value = stop ? media_type::unknown : (media_type)media;
+    block_subscribe_.store(value, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();

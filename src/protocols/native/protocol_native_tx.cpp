@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
+#include <atomic>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 
@@ -179,7 +180,8 @@ bool protocol_native::handle_get_tx_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
-    tx_subscribe_.store(stop ? media_type::unknown : (media_type)media);
+    const auto value = stop ? media_type::unknown : (media_type)media;
+    tx_subscribe_.store(value, std::memory_order_relaxed);
     notify_empty();
     return true;
 }

@@ -205,7 +205,7 @@ bool protocol_native::handle_get_output_subscribe(const code& ec,
         return false;
 
     // TODO: map.
-    output_subscribe_.store(stop);
+    output_subscribe_.store(stop, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
