@@ -196,13 +196,13 @@ private:
     static constexpr uint8_t json = to_value(media_type::application_json);
     static constexpr uint8_t data = to_value(media_type::application_octet_stream);
 
-    // Post to notification strand.
-    template <class Derived, typename Method, typename... Args>
-    inline auto notify(Method&& method, Args&&... args) NOEXCEPT
-    {
-        return boost::asio::post(notification_strand_,
-            BIND_SAFE(BIND_SHARED(method, args)));
-    }
+    ////// Post to notification strand (use POST_NOTIFY()).
+    ////template <class Derived, typename Method, typename... Args>
+    ////inline auto notify(Method&& method, Args&&... args) NOEXCEPT
+    ////{
+    ////    return boost::asio::post(notification_strand_,
+    ////        BIND_SAFE(BIND_SHARED(method, args)));
+    ////}
 
     // Serializers.
     // ------------------------------------------------------------------------
