@@ -62,7 +62,7 @@ public:
 
 protected:
     /// Handlers (event subscription).
-    bool handle_event(const code&, node::chase event_,
+    bool handle_chase(const code&, node::chase event_,
         node::event_value) NOEXCEPT;
 
     /// Handlers (headers).

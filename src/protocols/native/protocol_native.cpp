@@ -171,7 +171,7 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
 // ----------------------------------------------------------------------------
 
 // capture chaser events
-bool protocol_native::handle_event(const code&, node::chase event_,
+bool protocol_native::handle_chase(const code&, node::chase event_,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
