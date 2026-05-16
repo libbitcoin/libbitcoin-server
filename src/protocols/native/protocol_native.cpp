@@ -208,8 +208,9 @@ bool protocol_native::handle_event(const code&, node::chase event_,
                 // Resets subscriber height to the fork point.
                 BC_ASSERT(std::holds_alternative<node::height_t>(value));
                 POST(do_top, std::get<node::height_t>(value), media);
-                break;
             }
+
+            break;
         }
         case node::chase::transaction:
         {
@@ -268,7 +269,9 @@ void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
             send_text(encode_base16(hash));
             return;
         case json:
+            BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
             send_json(value_from(encode_base16(hash)), two * hash_size);
+            BC_POP_WARNING()
             return;
     }
 }
@@ -289,7 +292,9 @@ void protocol_native::do_transaction(node::transaction_t link,
             send_text(encode_base16(hash));
             return;
         case json:
+            BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
             send_json(value_from(encode_base16(hash)), two * hash_size);
+            BC_POP_WARNING()
             return;
     }
 }
