@@ -578,9 +578,7 @@ void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
             notify_text(encode_base16(hash));
             return;
         case json:
-            BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
             notify_json(value_from(encode_base16(hash)), two * hash_size);
-            BC_POP_WARNING()
             return;
     }
 }

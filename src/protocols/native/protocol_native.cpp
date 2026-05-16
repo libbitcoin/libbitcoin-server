@@ -248,7 +248,7 @@ bool protocol_native::handle_log(const code& ec, uint8_t , time_t ,
     if (!websocket())
         return true;
 
-    // TODO: json only.
+    // TODO: map subscribed flags to event filter, emit single json event.
     return false;
 }
 
@@ -261,7 +261,7 @@ bool protocol_native::handle_events(const code& ec, uint8_t ,
     if (!websocket())
         return true;
 
-    // TODO: json only.
+    // TODO: map subscribed flags to event filter, emit single json event.
     return false;
 }
 

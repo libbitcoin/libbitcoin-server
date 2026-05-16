@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(native__top_subscribe__json__expected)
 // top (websockets)
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(native__ws_upgrade__always__expected)
+BOOST_AUTO_TEST_CASE(native__ws_upgrade__always__success)
 {
     const auto ec = ws_upgrade();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
@@ -118,13 +118,49 @@ BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__json__expected)
     BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
 }
 
-////BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__stop__expected)
-////{
-////    BOOST_REQUIRE(!ws_upgrade());
-////
-////    const auto response = ws_get_json("/v1/top/subscribe?stop=true");
-////    BOOST_REQUIRE(response.is_int64());
-////    BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
-////}
+BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__stop__empty)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_get_text("/v1/top/subscribe?stop=true");
+    BOOST_REQUIRE(response.empty());
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__repeat__idempotent)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response1 = ws_get_json("/v1/top/subscribe?format=json");
+    BOOST_REQUIRE(response1.is_int64());
+    BOOST_REQUIRE_EQUAL(response1.as_int64(), 9);
+
+    const auto response2 = ws_get_json("/v1/top/subscribe?format=json");
+    BOOST_REQUIRE(response2.is_int64());
+    BOOST_REQUIRE_EQUAL(response2.as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__progressive_notify__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
+    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+
+    const auto response = ws_get_json("/v1/top/subscribe?format=json");
+    BOOST_REQUIRE(response.is_int64());
+    BOOST_REQUIRE_EQUAL(response.as_int64(), 9);
+
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE_EQUAL(ws_get_text("/v1/top/subscribe?format=text"), "0a");
+
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+    notify(node::chase::organized, node::header_t{ 11 });
+
+    BOOST_REQUIRE_EQUAL(to_string(ws_receive()), "0b");
+}
 
 BOOST_AUTO_TEST_SUITE_END()

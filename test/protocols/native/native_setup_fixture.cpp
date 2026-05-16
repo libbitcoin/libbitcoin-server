@@ -54,6 +54,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
     native.binds = { { NATIVE_ENDPOINT } };
     native.connections = 1;
     native.path = "unused";
+    native.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;
@@ -107,6 +108,19 @@ native_setup_fixture::~native_setup_fixture()
 }
 
 BC_POP_WARNING()
+
+// utility
+boost::json::value parse_json(std::string_view value)
+{
+    try
+    {
+        return boost::json::parse(value);
+    }
+    catch (...)
+    {
+        return {};
+    }
+}
 
 native_setup_fixture::string_request
 native_setup_fixture::create_request(std::string_view target)
@@ -185,7 +199,7 @@ boost::json::value native_setup_fixture::get_json(std::string_view target)
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
 
-    return boost::json::parse(response.body());
+    return parse_json(response.body());
 }
 
 network::boost_code native_setup_fixture::ws_upgrade()
@@ -239,7 +253,7 @@ std::string native_setup_fixture::ws_get_text(std::string_view message)
 boost::json::value native_setup_fixture::ws_get_json(
     std::string_view message)
 {
-    return boost::json::parse(ws_get_text(message));
+    return parse_json(ws_get_text(message));
 }
 
 data_chunk native_setup_fixture::ws_get_data(std::string_view message)
@@ -251,4 +265,9 @@ data_chunk native_setup_fixture::ws_get_data(std::string_view message)
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     return ws_receive();
+}
+
+void native_setup_fixture::notify(node::chase event_, node::event_value value)
+{
+    server_.notify(node::error::success, event_, value);
 }
