@@ -257,6 +257,40 @@ void protocol_html::send_buffer(buffer_body::value_type&& buffer,
     SEND(std::move(response), handle_complete, _1, error::success);
 }
 
+// Notifiers (websocket).
+// ----------------------------------------------------------------------------
+
+void protocol_html::notify_json(boost::json::value&& model, size_t size_hint,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    response.body() = json_value
+    {
+        .model = std::move(model),
+        .size_hint = size_hint
+    };
+    NOTIFY(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_html::notify_text(std::string&& hexidecimal,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    response.body() = std::move(hexidecimal);
+    NOTIFY(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_html::notify_chunk(system::data_chunk&& bytes,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    response.body() = std::move(bytes);
+    NOTIFY(std::move(response), handle_complete, _1, error::success);
+}
+
 // Utilities.
 // ----------------------------------------------------------------------------
 

@@ -25,6 +25,9 @@ namespace libbitcoin {
 namespace server {
 
 using namespace system;
+using namespace std::placeholders;
+
+#define CLASS protocol_native
 
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
@@ -171,16 +174,19 @@ bool protocol_native::handle_get_tx_details(const code& ec,
 }
 
 bool protocol_native::handle_get_tx_subscribe(const code& ec,
-    interface::tx_subscribe, uint8_t , uint8_t ,
-    bool stop) NOEXCEPT
+    interface::tx_subscribe, uint8_t, uint8_t media, bool stop) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    tx_subscribe_.store(stop);
+    // TODO: return bool (previous state) only?
+    tx_subscribe_.store(stop ? media_type::unknown : (media_type)media);
 
-    // TODO: return bool (previous state) only.
-    send_ok();
+    // TODO: move to send/notify_empty().
+    using namespace network::http;
+    response out{};
+    out.body() = empty_value{};
+    NOTIFY(std::move(out), handle_complete, _1, error::success);
     return true;
 }
 

@@ -141,6 +141,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_block.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_configuration.cpp">
+      <Filter>src\protocols\native</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_input.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>
