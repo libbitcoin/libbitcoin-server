@@ -243,13 +243,13 @@ void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
     switch (to_value(media))
     {
         case data:
-            send_chunk(to_little_endian_size(height));
+            notify_chunk(to_little_endian_size(height));
             return;
         case text:
-            send_text(encode_base16(to_little_endian_size(height)));
+            notify_text(encode_base16(to_little_endian_size(height)));
             return;
         case json:
-            send_json(height, two * sizeof(height));
+            notify_json(height, two * sizeof(height));
             return;
     }
 }
@@ -263,14 +263,14 @@ void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
     switch (to_value(media))
     {
         case data:
-            send_chunk(to_chunk(hash));
+            notify_chunk(to_chunk(hash));
             return;
         case text:
-            send_text(encode_base16(hash));
+            notify_text(encode_base16(hash));
             return;
         case json:
             BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-            send_json(value_from(encode_base16(hash)), two * hash_size);
+            notify_json(value_from(encode_base16(hash)), two * hash_size);
             BC_POP_WARNING()
             return;
     }
@@ -286,14 +286,14 @@ void protocol_native::do_transaction(node::transaction_t link,
     switch (to_value(media))
     {
         case data:
-            send_chunk(to_chunk(hash));
+            notify_chunk(to_chunk(hash));
             return;
         case text:
-            send_text(encode_base16(hash));
+            notify_text(encode_base16(hash));
             return;
         case json:
             BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-            send_json(value_from(encode_base16(hash)), two * hash_size);
+            notify_json(value_from(encode_base16(hash)), two * hash_size);
             BC_POP_WARNING()
             return;
     }
