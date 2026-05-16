@@ -28,6 +28,7 @@ namespace server {
 using namespace system;
 using namespace network;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 #define CLASS protocol_native
 #define SUBSCRIBE_NATIVE(method, ...) \
@@ -166,62 +167,134 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
     }
 }
 
-// Handlers.
+// Event handlers.
 // ----------------------------------------------------------------------------
 
-bool protocol_native::handle_get_configuration(const code& ec,
-    interface::configuration, uint8_t, uint8_t media) NOEXCEPT
+// capture chaser events
+bool protocol_native::handle_event(const code&, node::chase event_,
+    node::event_value value) NOEXCEPT
 {
-    if (stopped(ec))
+    // Do not pass ec to stopped as it is not a call status.
+    if (stopped())
         return false;
 
-    if (media != json)
+    switch (event_)
     {
-        send_not_acceptable();
-        return true;
+        case node::chase::organized:
+        {
+            auto media = top_subscribe_.load(relaxed);
+            if (media != media_type::unknown)
+            {
+                // Increments height above a fork point (start/reorg).
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_top, std::get<node::header_t>(value), media);
+            }
+
+            media = block_subscribe_.load(relaxed);
+            if (media != media_type::unknown)
+            {
+                // No block emission for a fork point (start/reorg).
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_block, std::get<node::header_t>(value), media);
+            }
+
+            break;
+        }
+        case node::chase::reorganized:
+        {
+            const auto media = top_subscribe_.load(relaxed);
+            if (media != media_type::unknown)
+            {
+                // Resets subscriber height to the fork point.
+                BC_ASSERT(std::holds_alternative<node::height_t>(value));
+                POST(do_top, std::get<node::height_t>(value), media);
+                break;
+            }
+        }
+        case node::chase::transaction:
+        {
+            const auto media = tx_subscribe_.load(relaxed);
+            if (media != media_type::unknown)
+            {
+                BC_ASSERT(std::holds_alternative<node::transaction_t>(value));
+                POST(do_transaction, std::get<node::transaction_t>(value), media);
+            }
+
+            break;
+        }
+        default:
+        {
+            break;
+        }
     }
 
-    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    boost::json::object object
-    {
-        { "address", archive().address_enabled() },
-        { "filter", archive().filter_enabled() },
-        { "turbo", database_settings().turbo },
-        { "witness", network_settings().witness_node() },
-        { "retarget", system_settings().forks.retarget },
-        { "difficult", system_settings().forks.difficult },
-    };
-    BC_POP_WARNING()
-
-    send_json(std::move(object), 64);
     return true;
 }
 
-// TODO: add log level(s) param.
-bool protocol_native::handle_get_log_subscribe(const code& ec,
-    interface::log_subscribe, uint8_t , uint8_t ,
-    bool stop) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
+BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 
-    // TODO: return enumeration (on stop?).
-    log_subscribe_.store(stop);
-    return {};
+void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    // TODO: notification.
+    const auto height = archive().get_height(link).value;
+    switch (to_value(media))
+    {
+        case data:
+            send_chunk(to_little_endian_size(height));
+            return;
+        case text:
+            send_text(encode_base16(to_little_endian_size(height)));
+            return;
+        case json:
+            send_json(height, two * sizeof(height));
+            return;
+    }
 }
 
-// TODO: add event(s) param.
-bool protocol_native::handle_get_event_subscribe(const code& ec,
-    interface::event_subscribe, uint8_t , uint8_t ,
-    bool stop) NOEXCEPT
+void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
 {
-    if (stopped(ec))
-        return false;
+    BC_ASSERT(stranded());
 
-    // TODO: return enumeration (on stop?).
-    event_subscribe_.store(stop);
-    return {};
+    // TODO: notification.
+    const auto hash = archive().get_header_key(link);
+    switch (to_value(media))
+    {
+        case data:
+            send_chunk(to_chunk(hash));
+            return;
+        case text:
+            send_text(encode_base16(hash));
+            return;
+        case json:
+            send_json(value_from(encode_base16(hash)), two * hash_size);
+            return;
+    }
 }
+
+void protocol_native::do_transaction(node::transaction_t link,
+    media_type media) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    // TODO: notification.
+    const auto hash = archive().get_tx_key(link);
+    switch (to_value(media))
+    {
+        case data:
+            send_chunk(to_chunk(hash));
+            return;
+        case text:
+            send_text(encode_base16(hash));
+            return;
+        case json:
+            send_json(value_from(encode_base16(hash)), two * hash_size);
+            return;
+    }
+}
+
+BC_POP_WARNING()
 
 // Utilities.
 // ----------------------------------------------------------------------------

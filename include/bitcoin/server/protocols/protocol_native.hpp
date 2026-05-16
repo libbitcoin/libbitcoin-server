@@ -64,7 +64,14 @@ protected:
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
 
-    /// REST interface handlers.
+
+    /// Event handlers.
+    /// -----------------------------------------------------------------------
+
+    bool handle_event(const code&, node::chase event_,
+        node::event_value) NOEXCEPT;
+
+    /// Interface handlers.
     /// -----------------------------------------------------------------------
 
     bool handle_get_configuration(const code& ec, interface::configuration,
@@ -175,8 +182,16 @@ protected:
     bool handle_get_event_subscribe(const code& ec, interface::event_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
-private:
+protected:
     using media_type = network::http::media_type;
+
+    /// Notification event handlers.
+    /// -----------------------------------------------------------------------
+    void do_top(node::header_t link, media_type media) NOEXCEPT;
+    void do_block(node::header_t link, media_type media) NOEXCEPT;
+    void do_transaction(node::transaction_t link, media_type media) NOEXCEPT;
+
+private:
     static constexpr uint8_t text = to_value(media_type::text_plain);
     static constexpr uint8_t json = to_value(media_type::application_json);
     static constexpr uint8_t data = to_value(
@@ -238,9 +253,9 @@ private:
     std::atomic_bool stopping_{};
 
     // Unconditional (all).
-    std::atomic_bool top_subscribe_{};
-    std::atomic_bool block_subscribe_{};
-    std::atomic_bool tx_subscribe_{};
+    std::atomic<media_type> top_subscribe_{ media_type::unknown };
+    std::atomic<media_type> block_subscribe_{ media_type::unknown };
+    std::atomic<media_type> tx_subscribe_{ media_type::unknown };
 
     // TODO: map of outpoints (notify on spenders).
     std::atomic_bool output_subscribe_{};
