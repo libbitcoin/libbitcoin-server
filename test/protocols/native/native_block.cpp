@@ -146,9 +146,6 @@ BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__progressive_notify__expected)
     BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
     BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
-    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
-    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
-    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
 
     const auto response = ws_get_json("/v1/top/subscribe?format=json");
     BOOST_REQUIRE(response.is_int64());
