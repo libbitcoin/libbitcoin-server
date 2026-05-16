@@ -275,7 +275,7 @@ void protocol_html::send_empty(const request& request) NOEXCEPT
 void protocol_html::notify_json(boost::json::value&& model, size_t size_hint,
     const request& request) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(stranded() && websocket());
     response response{ status::ok, request.version() };
     response.body() = json_value
     {
@@ -288,7 +288,7 @@ void protocol_html::notify_json(boost::json::value&& model, size_t size_hint,
 void protocol_html::notify_text(std::string&& hexidecimal,
     const request& request) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(stranded() && websocket());
     response response{ status::ok, request.version() };
     response.body() = std::move(hexidecimal);
     NOTIFY(std::move(response), handle_complete, _1, error::success);
@@ -297,7 +297,7 @@ void protocol_html::notify_text(std::string&& hexidecimal,
 void protocol_html::notify_chunk(system::data_chunk&& bytes,
     const request& request) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(stranded() && websocket());
     response response{ status::ok, request.version() };
     response.body() = std::move(bytes);
     NOTIFY(std::move(response), handle_complete, _1, error::success);
@@ -305,7 +305,7 @@ void protocol_html::notify_chunk(system::data_chunk&& bytes,
 
 void protocol_html::notify_empty(const request& request) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(stranded() && websocket());
     response response{ status::ok, request.version() };
     response.body() = empty_value{};
     NOTIFY(std::move(response), handle_complete, _1, error::success);
