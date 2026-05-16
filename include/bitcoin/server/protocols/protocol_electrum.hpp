@@ -314,6 +314,13 @@ protected:
     }
 
 private:
+    // Aliases.
+    using array_t = network::rpc::array_t;
+    using object_t = network::rpc::object_t;
+    using version_t = protocol_electrum_version;
+    static constexpr electrum::version minimum = version_t::minimum;
+    static constexpr electrum::version maximum = version_t::maximum;
+
     // Post to notification strand.
     template <class Derived, typename Method, typename... Args>
     inline auto notify(Method&& method, Args&&... args) NOEXCEPT
@@ -321,13 +328,6 @@ private:
         return boost::asio::post(notification_strand_,
             BIND_SAFE(BIND_SHARED(method, args)));
     }
-
-    // Aliases.
-    using array_t = network::rpc::array_t;
-    using object_t = network::rpc::object_t;
-    using version_t = protocol_electrum_version;
-    static constexpr electrum::version minimum = version_t::minimum;
-    static constexpr electrum::version maximum = version_t::maximum;
 
     // Transformations.
     static array_t transform(const unspents& unspents) NOEXCEPT;
