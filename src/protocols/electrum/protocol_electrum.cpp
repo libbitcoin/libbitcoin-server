@@ -51,7 +51,7 @@ void protocol_electrum::start() NOEXCEPT
     if (started())
         return;
 
-    // Events subscription is asynchronous, events may be missed.
+    // Chaser subscription is asynchronous, events may be missed.
     subscribe_events(BIND(handle_chase, _1, _2, _3));
 
     // Header methods.
