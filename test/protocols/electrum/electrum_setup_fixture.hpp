@@ -40,7 +40,7 @@ struct electrum_setup_fixture
         const std::string& name="test", network::rpc::code_t id={});
 
     // 0_32 vs {} for xcode variant issue.
-    void notify(node::chase event_, node::event_value value=0_32);
+    void notify(node::chase event_, node::event_value value=0_u32);
 
 protected:
     configuration config_;
