@@ -455,6 +455,11 @@ options_metadata parser::load_settings() THROWS
     )
     // [version properties excluded here]
     (
+        "bitcoin.bip16_activation_time",
+        value<uint32_t>(&configured.bitcoin.bip16_activation_time),
+        "The activation time for bip16 in unix time, defaults to '1333238400'."
+    )
+    (
         "bitcoin.bip34_activation_threshold",
         value<size_t>(&configured.bitcoin.bip34_activation_threshold),
         "The number of new version blocks required for bip34 style soft fork activation, defaults to '750'."
@@ -470,6 +475,11 @@ options_metadata parser::load_settings() THROWS
         "The number of blocks considered for bip34 style soft fork activation, defaults to '1000'."
     )
     (
+        "bitcoin.bip34_freeze",
+        value<size_t>(&configured.bitcoin.bip90_bip34_height),
+        "The block height to freeze the bip34 softfork for bip90, defaults to '227931'."
+    )
+    (
         "bitcoin.bip65_freeze",
         value<size_t>(&configured.bitcoin.bip90_bip65_height),
         "The block height to freeze the bip65 softfork for bip90, defaults to '388381'."
@@ -480,19 +490,29 @@ options_metadata parser::load_settings() THROWS
         "The block height to freeze the bip66 softfork for bip90, defaults to '363725'."
     )
     (
-        "bitcoin.bip34_freeze",
-        value<size_t>(&configured.bitcoin.bip90_bip34_height),
-        "The block height to freeze the bip34 softfork for bip90, defaults to '227931'."
+        "bitcoin.bip30_reactivate_height",
+        value<size_t>(&configured.bitcoin.bip30_reactivate_height),
+        "The height for bip30 reactivation, defaults to '1983702'."
     )
     (
-        "bitcoin.bip16_activation_time",
-        value<uint32_t>(&configured.bitcoin.bip16_activation_time),
-        "The activation time for bip16 in unix time, defaults to '1333238400'."
+        "bitcoin.bip30_deactivate_checkpoint",
+        value<chain::checkpoint>(&configured.bitcoin.bip30_deactivate_checkpoint),
+        "The hash:height checkpoint for bip30 deactivation, defaults to '000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8:227931'."
     )
     (
         "bitcoin.bip9_bit0_active_checkpoint",
         value<chain::checkpoint>(&configured.bitcoin.bip9_bit0_active_checkpoint),
         "The hash:height checkpoint for bip9 bit0 activation, defaults to '000000000000000004a1b34462cb8aeebd5799177f7a29cf28f2d1961716b5b5:419328'."
+    )
+    (
+        "bitcoin.bip9_bit1_active_checkpoint",
+        value<chain::checkpoint>(&configured.bitcoin.bip9_bit1_active_checkpoint),
+        "The hash:height checkpoint for bip9 bit1 activation, defaults to '0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893:481824'."
+    )
+    (
+        "bitcoin.bip9_bit2_active_checkpoint",
+        value<chain::checkpoint>(&configured.bitcoin.bip9_bit2_active_checkpoint),
+        "The hash:height checkpoint for bip9 bit2 activation, defaults to '0000000000000000000687bca986194dc2c1f949318629b44bb54ec0a94d8244:709632'."
     )
     (
         "bitcoin.milestone",
