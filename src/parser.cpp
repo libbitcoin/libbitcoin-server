@@ -1328,6 +1328,11 @@ options_metadata parser::load_settings() THROWS
         value<bool>(&configured.node.defer_confirmation),
         "Defer confirmation, defaults to 'false'."
     )
+    (
+        "node.fee_estimate_horizon",
+        value<uint16_t>(&configured.node.fee_estimate_horizon),
+        "Fee estimation horizon, limited to 1008, defaults to '0' (0 disables)."
+    )
     ////(
     ////    "node.headers_first",
     ////    value<bool>(&configured.node.headers_first),
