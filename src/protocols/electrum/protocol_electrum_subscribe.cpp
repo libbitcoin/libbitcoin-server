@@ -119,7 +119,7 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
     }
 
     send_result(status == null_hash ? value_t{} :
-        value_t{ encode_hash(status) }, 128);
+        value_t{ encode_base16(status) }, 128);
 }
 
 // unsubscribe
@@ -218,7 +218,7 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
     send_notification(to_method_name(type), array_t
     {
         encode_hash(hash),
-        status == null_hash ? value_t{} : value_t{ encode_hash(status) }
+        status == null_hash ? value_t{} : value_t{ encode_base16(status) }
     }, 128);
 }
 
