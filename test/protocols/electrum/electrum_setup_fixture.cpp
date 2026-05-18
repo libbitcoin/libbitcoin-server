@@ -75,7 +75,16 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     BOOST_REQUIRE_MESSAGE(setup(query_), "electrum initialize");
 
-    // Run the server.
+    std::promise<code> started{};
+    server_.start([&](const code& ec) NOEXCEPT
+    {
+        started.set_value(ec);
+    });
+
+    // Block until server is started.
+    ec = started.get_future().get();
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
     std::promise<code> running{};
     server_.run([&](const code& ec) NOEXCEPT
     {
