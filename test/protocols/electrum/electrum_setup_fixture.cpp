@@ -66,6 +66,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;
+    node_settings.fee_estimate_horizon = 8;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
 
