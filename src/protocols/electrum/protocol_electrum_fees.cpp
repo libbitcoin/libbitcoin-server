@@ -96,7 +96,7 @@ void protocol_electrum::complete_estimate_fee(const code& ec,
     }
 
     // If not enough information to make an estimate, -1 is returned.
-    send_result(disabled ? -1 : fee, 42);
+    send_result(disabled ? -1 : possible_narrow_sign_cast<int64_t>(fee), 42);
 }
 
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
