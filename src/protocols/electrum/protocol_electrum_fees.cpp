@@ -85,9 +85,9 @@ void protocol_electrum::complete_estimate_fee(const code& ec,
         return;
 
     const auto disabled =
-        ec == node::error::estimate_failed ||
-        ec == node::error::estimates_disabled ||
-        ec == node::error::estimates_premature;
+        ec == node::error::estimate_false ||
+        ec == node::error::estimate_disabled ||
+        ec == node::error::estimate_premature;
 
     if (!disabled && ec)
     {
