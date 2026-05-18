@@ -31,6 +31,17 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+using mode_t = node::estimator::mode;
+mode_t mode_from_string(const std::string& mode) NOEXCEPT
+{
+    if (mode.empty()) return mode_t::basic;
+    if (mode == "basic") return mode_t::basic;
+    if (mode == "geometric") return mode_t::geometric;
+    if (mode == "economical") return mode_t::economical;
+    if (mode == "conservative") return mode_t::conservative;
+    return mode_t::unknown;
+}
+
 void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
     rpc_interface::blockchain_estimate_fee, double number,
     const std::string& mode) NOEXCEPT
@@ -51,18 +62,41 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
         return;
     }
 
-    if (!mode.empty() &&
-        !at_least(electrum::version::v1_6))
+    if (!mode.empty() && !at_least(electrum::version::v1_6))
     {
         send_code(error::invalid_argument);
         return;
     }
 
-    // TODO: integrate fee estimator.
-    ////send_code(error::not_implemented);
+    const auto mode_ = mode_from_string(mode);
+    if (mode_ == mode_t::unknown)
+    {
+        send_code(error::invalid_argument);
+        return;
+    }
+
+    estimate(target, mode_, BIND(complete_estimate_fee, _1, _2));
+}
+
+void protocol_electrum::complete_estimate_fee(const code& ec,
+    uint64_t fee) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    const auto disabled =
+        ec == node::error::estimates_disabled ||
+        ec == node::error::estimates_premature;
+
+    if (!disabled && ec)
+    {
+        // node::error::estimates_failed, implies store fault.
+        send_code(error::server_error);
+        return;
+    }
 
     // If not enough information to make an estimate, -1 is returned.
-    send_result(-1, 42);
+    send_result(disabled ? -1 : fee, 42);
 }
 
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
