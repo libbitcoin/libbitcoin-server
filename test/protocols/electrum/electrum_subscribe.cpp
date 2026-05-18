@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__exp
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
-    const auto expected_initial = encode_hash(sha256_hash
+    const auto expected_initial = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__repeat_call__idempo
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
-    const auto expected_initial = encode_hash(sha256_hash
+    const auto expected_initial = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
 
     // Confirming block 10 also makes block 11 to rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    const auto expected_confirm10 = encode_hash(sha256_hash
+    const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
 
     // Confirming block 11 also makes block 12 rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
-    const auto expected_confirm11 = encode_hash(sha256_hash
+    const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
 
     // Confirming block 12 only makes block 12 confirmed.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
-    const auto expected_confirm12 = encode_hash(sha256_hash
+    const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
 
     // Confirming block 10 also makes block 11 to rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    const auto expected_confirm10 = encode_hash(sha256_hash
+    const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
 
     // Confirming block 11 also makes block 12 rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
-    const auto expected_confirm11 = encode_hash(sha256_hash
+    const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
 
     // Confirming block 12 only makes block 12 confirmed.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
-    const auto expected_confirm12 = encode_hash(sha256_hash
+    const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__initialization__
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
-    const auto expected_initial = encode_hash(sha256_hash
+    const auto expected_initial = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__repeat_call__ide
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
-    const auto expected_initial = encode_hash(sha256_hash
+    const auto expected_initial = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
 
     // Confirming block 10 also makes block 11 to rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    const auto expected_confirm10 = encode_hash(sha256_hash
+    const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
 
     // Confirming block 11 also makes block 12 rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
-    const auto expected_confirm11 = encode_hash(sha256_hash
+    const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
 
     // Confirming block 12 only makes block 12 confirmed.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
-    const auto expected_confirm12 = encode_hash(sha256_hash
+    const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
 
     // Confirming block 10 also makes block 11 to rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    const auto expected_confirm10 = encode_hash(sha256_hash
+    const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -460,7 +460,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
 
     // Confirming block 11 also makes block 12 rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
-    const auto expected_confirm11 = encode_hash(sha256_hash
+    const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
 
     // Confirming block 12 only makes block 12 confirmed.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
-    const auto expected_confirm12 = encode_hash(sha256_hash
+    const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -625,7 +625,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__initialization
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
-    const auto expected_initial = encode_hash(sha256_hash
+    const auto expected_initial = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -651,7 +651,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__repeat_call__i
     const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
-    const auto expected_initial = encode_hash(sha256_hash
+    const auto expected_initial = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -689,7 +689,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
 
     // Confirming block 10 also makes block 11 to rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    const auto expected_confirm10 = encode_hash(sha256_hash
+    const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -703,7 +703,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
 
     // Confirming block 11 also makes block 12 rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
-    const auto expected_confirm11 = encode_hash(sha256_hash
+    const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -716,7 +716,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
 
     // Confirming block 12 only makes block 12 confirmed.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
-    const auto expected_confirm12 = encode_hash(sha256_hash
+    const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -742,7 +742,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
 
     // Confirming block 10 also makes block 11 to rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    const auto expected_confirm10 = encode_hash(sha256_hash
+    const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":0:" +
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
 
     // Confirming block 11 also makes block 12 rooted.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
-    const auto expected_confirm11 = encode_hash(sha256_hash
+    const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
@@ -780,7 +780,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
 
     // Confirming block 12 only makes block 12 confirmed.
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block12.hash()), true));
-    const auto expected_confirm12 = encode_hash(sha256_hash
+    const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
         encode_hash(hash11) + ":11:" +
