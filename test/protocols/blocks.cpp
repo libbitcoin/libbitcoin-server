@@ -233,6 +233,7 @@ const block bogus_block10
             0x0b,
             inputs
             {
+                // Null points in non-first tx (coinbase confusion).
                 input
                 {
                     point{},
