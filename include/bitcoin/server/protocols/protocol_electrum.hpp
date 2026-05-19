@@ -257,6 +257,7 @@ protected:
     void complete_get_mempool(const code& ec, const histories& histories) NOEXCEPT;
     void complete_list_unspent(const code& ec, const unspents& unspents) NOEXCEPT;
 
+    void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
     void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
 
     /// Notification event handlers.

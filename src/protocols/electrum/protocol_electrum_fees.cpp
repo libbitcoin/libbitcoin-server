@@ -46,6 +46,8 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
     rpc_interface::blockchain_estimate_fee, double number,
     const std::string& mode) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
@@ -75,12 +77,20 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
         return;
     }
 
-    estimate(target, mode_, BIND(complete_estimate_fee, _1, _2));
+    estimate(target, mode_, BIND(handle_estimate_fee, _1, _2));
+}
+
+void protocol_electrum::handle_estimate_fee(const code& ec,
+    uint64_t fee) NOEXCEPT
+{
+    POST(complete_estimate_fee, ec, fee);
 }
 
 void protocol_electrum::complete_estimate_fee(const code& ec,
     uint64_t fee) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     if (stopped())
         return;
 
@@ -103,6 +113,8 @@ void protocol_electrum::complete_estimate_fee(const code& ec,
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
     rpc_interface::blockchain_relay_fee) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     if (stopped(ec))
         return;
 
