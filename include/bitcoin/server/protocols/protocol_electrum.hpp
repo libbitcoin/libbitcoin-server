@@ -239,7 +239,7 @@ protected:
     void blockchain_block_headers(size_t starting, size_t quantity,
         size_t waypoint, bool single) NOEXCEPT;
 
-    /// Completion handlers (for long-running address queries).
+    /// Completion handlers (for long-running or other async queries).
     /// -----------------------------------------------------------------------
 
     void get_balance(const hash_digest& hash) NOEXCEPT;
@@ -256,6 +256,9 @@ protected:
     void complete_get_history(const code& ec, const histories& histories) NOEXCEPT;
     void complete_get_mempool(const code& ec, const histories& histories) NOEXCEPT;
     void complete_list_unspent(const code& ec, const unspents& unspents) NOEXCEPT;
+
+    void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
+    void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
 
     /// Notification event handlers.
     /// -----------------------------------------------------------------------

@@ -48,17 +48,40 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__mode_invalid_version__in
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
+    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"basic"]})" "\n");
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__valid__not_implemented)
-////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_6));
-////
-////    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"mode"]})" "\n");
-////    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
-////}
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__nvalid_mode__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"bogus"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__uninitialized__negative_one)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    // Trigger node chaser event to initialize fee estimator.
+    notify(node::chase::block, { 9_u32 });
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+
+    // None of the first 10 blocks have fees, so no estimate is obtained.
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+}
 
 // blockchain.relayfee
 
