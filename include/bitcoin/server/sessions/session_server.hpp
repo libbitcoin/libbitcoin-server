@@ -94,11 +94,13 @@ protected:
     template <typename ...Rest, bool_if<is_zero(sizeof...(Rest))> = true>
     inline void attach_rest(const channel_ptr&, const ptr&) NOEXCEPT{}
 
-    template <typename Next, typename ...Rest>
     inline void attach_rest(const channel_ptr& channel, const ptr& self) NOEXCEPT
     {
-        channel->template attach<Next>(self, this->options_)->start();
-        attach_rest<Rest...>(channel, self);
+        if constexpr (!is_zero(sizeof...(Protocols)))
+        {
+            ((channel->template attach<Protocols>(self,
+                this->options_)->start(), void()), ...);
+        }
     }
 
     /// Overridden to set channel protocols. This allows the implementation to
@@ -109,7 +111,7 @@ protected:
     {
         using own = session_server<Protocols...>;
         const auto self = this->template shared_from_base<own>();
-        attach_rest<Protocols...>(channel, self);
+        attach_rest(channel, self);
     }
 
 protected:
