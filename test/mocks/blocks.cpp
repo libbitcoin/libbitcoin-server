@@ -148,7 +148,7 @@ bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT
         query.set(block3a, database::context{ 0, 3, 0 }, false, false);
 }
 
-const block bogus_block10
+const block mock_block10
 {
     header
     {
@@ -261,12 +261,12 @@ const block bogus_block10
         }
     }
 };
-const block bogus_block11
+const block mock_block11
 {
     header
     {
         0x31323334,
-        bogus_block10.hash(),
+        mock_block10.hash(),
         hash_digest{ 0x11, 0xbb },
         0x41424344,
         0x51525354,
@@ -331,12 +331,12 @@ const block bogus_block11
         }
     }
 };
-const block bogus_block12
+const block mock_block12
 {
     header
     {
         0x31323334,
-        bogus_block11.hash(),
+        mock_block11.hash(),
         hash_digest{ 0x12, 0xbb },
         0x41424344,
         0x51525354,
@@ -351,14 +351,14 @@ const block bogus_block12
             {
                 input
                 {
-                    point{ bogus_block11.transactions_ptr()->front()->hash(false), 0x03 },
+                    point{ mock_block11.transactions_ptr()->front()->hash(false), 0x03 },
                     script{},
                     witness{},
                     0x08
                 },
                 input
                 {
-                    point{ bogus_block11.transactions_ptr()->front()->hash(false), 0x04 },
+                    point{ mock_block11.transactions_ptr()->front()->hash(false), 0x04 },
                     script{},
                     witness{},
                     0x09
@@ -377,7 +377,7 @@ const block bogus_block12
         }
     }
 };
-const block bogus_block
+const block mock_block_a
 {
     header
     {

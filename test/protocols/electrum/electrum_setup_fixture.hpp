@@ -20,7 +20,7 @@
 #define LIBBITCOIN_SERVER_TEST_PROTOCOLS_ELECTRUM_ELECTRUM
 
 #include "../../test.hpp"
-#include "../blocks.hpp"
+#include "../../mocks/blocks.hpp"
 
 #define ELECTRUM_ENDPOINT "127.0.0.1:65000"
 

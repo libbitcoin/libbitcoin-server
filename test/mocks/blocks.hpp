@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_BLOCKS
-#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BLOCKS
+#ifndef LIBBITCOIN_SERVER_TEST_MOCKS_BLOCKS
+#define LIBBITCOIN_SERVER_TEST_MOCKS_BLOCKS
 
 #include "../test.hpp"
 
@@ -84,11 +84,11 @@ extern const system::chain::block block6;
 extern const system::chain::block block7;
 extern const system::chain::block block8;
 extern const system::chain::block block9;
-extern const system::chain::block bogus_block10;
-extern const system::chain::block bogus_block11;
-extern const system::chain::block bogus_block12;
+extern const system::chain::block mock_block10;
+extern const system::chain::block mock_block11;
+extern const system::chain::block mock_block12;
 
-extern const system::chain::block bogus_block;
+extern const system::chain::block mock_block_a;
 extern const system::chain::block block1a;
 extern const system::chain::block block2a;
 extern const system::chain::block block3a;

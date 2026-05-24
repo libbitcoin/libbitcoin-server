@@ -10,20 +10,23 @@
     <Filter Include="src">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000000}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\parsers">
+    <Filter Include="src\mocks">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols">
+    <Filter Include="src\parsers">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000002}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\bitcoind">
+    <Filter Include="src\protocols">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\electrum">
+    <Filter Include="src\protocols\bitcoind">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\native">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000006}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +38,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\main.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp">
+      <Filter>src\mocks</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp">
       <Filter>src\parsers</Filter>
@@ -59,9 +65,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp">
       <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\blocks.cpp">
-      <Filter>src\protocols</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp">
       <Filter>src\protocols\electrum</Filter>
@@ -131,11 +134,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp">
+      <Filter>src\mocks</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp">
       <Filter>src\protocols\bitcoind</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\test\protocols\blocks.hpp">
-      <Filter>src\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp">
       <Filter>src\protocols\electrum</Filter>

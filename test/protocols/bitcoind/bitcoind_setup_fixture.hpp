@@ -20,7 +20,7 @@
 #define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BITCOIND_BITCOIND
 
 #include "../../test.hpp"
-#include "../blocks.hpp"
+#include "../../mocks/blocks.hpp"
 
 #define BITCOIND_ENDPOINT "127.0.0.1:65000"
 

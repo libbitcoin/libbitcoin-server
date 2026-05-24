@@ -89,9 +89,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__confirmed_an
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed.
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":905,"method":"blockchain.scriptpubkey.get_balance","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % found_script).str());
@@ -100,11 +100,11 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__confirmed_an
     const auto& result = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(result.at("confirmed").is_int64());
     REQUIRE_NO_THROW_TRUE(result.at("unconfirmed").is_int64());
-    BOOST_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x09); // bogus_block10
+    BOOST_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x09); // mock_block10
 
     // Currently unconfirmed ALWAYS returns zero (no graph to order conflicts).
     BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
-    ////BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x10 + 0x11 + 0x12); // bogus_block11
+    ////BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x10 + 0x11 + 0x12); // mock_block11
 }
 
 // blockchain.scriptpubkey.get_history
@@ -160,10 +160,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.scriptpubkey.get_history","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % found_script).str());
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     const auto& history = response.at("result").as_array();
     BOOST_REQUIRE_EQUAL(history.size(), 3u);
 
-    const auto hash1 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash1 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);
     BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
-    const auto hash2 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash2 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);  // rooted
     BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
 
-    const auto hash3 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+    const auto hash3 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
     const auto& tx3 = history.at(2).as_object();
     REQUIRE_NO_THROW_TRUE(tx3.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx3.at("tx_hash").is_string());
@@ -250,10 +250,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__confirmed_an
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.scriptpubkey.get_mempool","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % found_script).str());
@@ -262,14 +262,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__confirmed_an
     const auto& history = response.at("result").as_array();
     BOOST_REQUIRE_EQUAL(history.size(), 2u);
 
-    const auto hash1 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash1 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
     BOOST_REQUIRE_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
     BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
-    const auto hash2 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+    const auto hash2 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
@@ -331,10 +331,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__confirmed_a
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.scriptpubkey.listunspent","params":["%1%"]})" "\n";
     const auto response = get((boost::format(request) % found_script).str());
@@ -343,21 +343,21 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__confirmed_a
     const auto& unspent = response.at("result").as_array();
     BOOST_REQUIRE_EQUAL(unspent.size(), 4u);
 
-    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& tx1 = unspent.at(0).as_object();
     BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash10));
     BOOST_REQUIRE_EQUAL(tx1.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
     BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);   // confirmed
     BOOST_REQUIRE_EQUAL(tx1.at("value").as_int64(), 0x09);
 
-    const auto hash11 = test::bogus_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto& tx2 = unspent.at(1).as_object();
     BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash11));
     BOOST_REQUIRE_EQUAL(tx2.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
     BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);    // unconfirmed
     BOOST_REQUIRE_EQUAL(tx2.at("value").as_int64(), 0x10);
 
-    const auto hash12 = test::bogus_block12.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
     const auto& tx4 = unspent.at(2).as_object();
     BOOST_REQUIRE_EQUAL(tx4.at("tx_hash").as_string(), encode_hash(hash12));
     BOOST_REQUIRE_EQUAL(tx4.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
