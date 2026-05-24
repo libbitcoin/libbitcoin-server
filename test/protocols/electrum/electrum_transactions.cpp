@@ -17,7 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../../test.hpp"
-#include "../blocks.hpp"
 #include "electrum_setup_fixture.hpp"
 #include <boost/format.hpp>
 
@@ -359,7 +358,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__mutiple_txs_bl
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto& txs = *test::bogus_block10.transactions_ptr();
+    const auto& txs = *test::mock_block10.transactions_ptr();
     const auto& tx0 = *txs.at(0);
     const auto& tx1 = *txs.at(1);
     const auto& tx2 = *txs.at(2);
@@ -368,8 +367,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__mutiple_txs_bl
     const auto tx2_hash = tx2.hash(false);
 
     // Add a confirmed multi-tx block.
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":104,"method":"blockchain.transaction.get_merkle","params":["%1%",10]})" "\n";
     const auto response = get((boost::format(request) % encode_hash(tx1_hash)).str());

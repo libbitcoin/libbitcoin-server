@@ -87,10 +87,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2kh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), false));
 
-    const auto hash = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
     const auto response = get((boost::format(request) % encode_hash(hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
@@ -104,10 +104,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), false));
 
-    const auto hash = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",1]})" "\n";
     const auto response = get((boost::format(request) % encode_hash(hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
@@ -181,15 +181,15 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_spent__
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
     const auto request = R"({"id":1107,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
     const auto response = get((boost::format(request) % encode_hash(hash1)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
-    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& history = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(history.at("spender_height").is_int64());
@@ -291,15 +291,15 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__one_spender__expec
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
     const auto request = R"({"id":1107,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
     const auto response = get((boost::format(request) % encode_hash(hash1)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
-    const auto hash10 = test::bogus_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& history = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(history.at("spender_height").is_int64());

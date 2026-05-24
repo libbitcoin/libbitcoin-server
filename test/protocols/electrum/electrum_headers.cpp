@@ -54,11 +54,11 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__notificati
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
 
     // Trigger node chaser events to electrum event subscriber.
     notify(node::chase::organized, { 10_u32 });
@@ -646,11 +646,11 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expe
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(test::header9_data));
 
-    BOOST_REQUIRE(query_.set(test::bogus_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::bogus_block12, database::context{ 0, 12, 0 }, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block10.hash()), true));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::bogus_block11.hash()), true));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
 
     // Trigger node chaser events to electrum event subscriber.
     notify(node::chase::organized, { 10_u32 });
@@ -669,7 +669,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expe
     REQUIRE_NO_THROW_TRUE(header1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(header1.at("hex").is_string());
     BOOST_CHECK_EQUAL(header1.at("height").as_int64(), 10);
-    BOOST_CHECK_EQUAL(header1.at("hex").as_string(), encode_base16(test::bogus_block10.header().to_data()));
+    BOOST_CHECK_EQUAL(header1.at("hex").as_string(), encode_base16(test::mock_block10.header().to_data()));
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expe
     REQUIRE_NO_THROW_TRUE(header2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(header2.at("hex").is_string());
     BOOST_CHECK_EQUAL(header2.at("height").as_int64(), 11);
-    BOOST_CHECK_EQUAL(header2.at("hex").as_string(), encode_base16(test::bogus_block11.header().to_data()));
+    BOOST_CHECK_EQUAL(header2.at("hex").as_string(), encode_base16(test::mock_block11.header().to_data()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

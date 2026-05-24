@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../../test.hpp"
-#include "../blocks.hpp"
+#include "../../mocks/blocks.hpp"
 #include "bitcoind_setup_fixture.hpp"
 #include <future>
 
