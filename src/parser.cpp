@@ -1359,11 +1359,6 @@ options_metadata parser::load_settings() THROWS
         "Limit of per channel cached peer block and tx announcements, to avoid replaying, defaults to '42'."
     )
     (
-        "node.allocation_multiple",
-        value<uint16_t>(&configured.node.allocation_multiple),
-        "Block deserialization buffer multiple of wire size, defaults to '20' (0 disables)."
-    )
-    (
         "node.maximum_height",
         value<uint32_t>(&configured.node.maximum_height),
         "Maximum block height to populate, defaults to 0 (unlimited)."
