@@ -124,7 +124,7 @@ parser::parser(system::chain::selection context,
     configured.database.tx_size = 17'000'000'000;
     configured.database.tx_rate = 5;
 
-    configured.database.txs_buckets = 900'001;
+    configured.database.txs_buckets = 950'001;
     configured.database.txs_size = 1'050'000'000;
     configured.database.txs_rate = 5;
 
@@ -150,7 +150,7 @@ parser::parser(system::chain::selection context,
     configured.database.prevout_size = 1;
     configured.database.prevout_rate = 5;
 
-    configured.database.validated_bk_buckets = 900'001;
+    configured.database.validated_bk_buckets = 950'001;
     configured.database.validated_bk_size = 1'700'000;
     configured.database.validated_bk_rate = 5;
 
@@ -517,7 +517,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoin.milestone",
         value<chain::checkpoint>(&configured.bitcoin.milestone),
-        "A block presumed to be valid but not required to be present, defaults to '000000000000000000010538edbfd2d5b809a33dd83f284aeea41c6d0d96968a:900000'."
+        "A block presumed to be valid but not required to be present, defaults to '000000000000000000010b93c9ea1c29fea277383f0f7d1f26de8b5802e885ff:950000'."
     )
     (
         "bitcoin.minimum_work",
