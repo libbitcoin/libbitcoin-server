@@ -251,6 +251,9 @@ private:
     // Utilities.
     // ------------------------------------------------------------------------
 
+    size_t get_stripped_height() NOEXCEPT;
+    size_t get_active_height(const system::hash_digest& hash) NOEXCEPT;
+
     void inject(boost::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
 
