@@ -124,7 +124,7 @@ parser::parser(system::chain::selection context,
     configured.database.tx_size = 17'000'000'000;
     configured.database.tx_rate = 5;
 
-    configured.database.txs_buckets = 900'001;
+    configured.database.txs_buckets = 950'001;
     configured.database.txs_size = 1'050'000'000;
     configured.database.txs_rate = 5;
 
@@ -150,7 +150,7 @@ parser::parser(system::chain::selection context,
     configured.database.prevout_size = 1;
     configured.database.prevout_rate = 5;
 
-    configured.database.validated_bk_buckets = 900'001;
+    configured.database.validated_bk_buckets = 950'001;
     configured.database.validated_bk_size = 1'700'000;
     configured.database.validated_bk_rate = 5;
 
