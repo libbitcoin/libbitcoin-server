@@ -84,14 +84,16 @@
     "   outs      :%8%\n" \
     "   candidate :%9%\n" \
     "   confirmed :%10%\n" \
-    "   duplicate :%11%\n" \
-    "   prevout   :%12%\n" \
-    "   strong_tx :%13%\n" \
-    "   valid_bk  :%14%\n" \
-    "   valid_tx  :%15%\n" \
-    "   filter_bk :%16%\n" \
-    "   filter_tx :%17%\n" \
-    "   address   :%18%"
+    "   ecdsa     :%11%\n" \
+    "   schnorr   :%12%\n" \
+    "   duplicate :%13%\n" \
+    "   prevout   :%14%\n" \
+    "   strong_tx :%15%\n" \
+    "   valid_bk  :%16%\n" \
+    "   valid_tx  :%17%\n" \
+    "   filter_bk :%18%\n" \
+    "   filter_tx :%19%\n" \
+    "   address   :%20%"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
     "   header    :%1%\n" \
@@ -101,10 +103,12 @@
     "   outs      :%5%\n" \
     "   candidate :%6%\n" \
     "   confirmed :%7%\n" \
-    "   duplicate :%8%\n" \
-    "   strong_tx :%9%\n" \
-    "   filter_bk :%10%\n" \
-    "   address   :%11%"
+    "   ecdsa     :%8%\n" \
+    "   schnorr   :%9%\n" \
+    "   duplicate :%10%\n" \
+    "   strong_tx :%11%\n" \
+    "   filter_bk :%12%\n" \
+    "   address   :%13%"
 #define BS_INFORMATION_SLABS \
     "Table slabs..."
 #define BS_INFORMATION_SLABS_ROW \
