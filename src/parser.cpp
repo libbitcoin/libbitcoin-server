@@ -142,6 +142,12 @@ parser::parser(system::chain::selection context,
 
     // database (caches)
 
+    configured.database.ecdsa_size = 1;
+    configured.database.ecdsa_rate = 5;
+
+    configured.database.schnorr_size = 1;
+    configured.database.schnorr_rate = 5;
+
     configured.database.duplicate_buckets = 1024;
     configured.database.duplicate_size = 44;
     configured.database.duplicate_rate = 5;
@@ -1587,6 +1593,30 @@ options_metadata parser::load_settings() THROWS
         "database.strong_tx_rate",
         value<uint16_t>(&configured.database.strong_tx_rate),
         "The percentage expansion of the strong_tx table body, defaults to '5'."
+    )
+
+    /* ecdsa */
+    (
+        "database.ecdsa_size",
+        value<uint64_t>(&configured.database.ecdsa_size),
+        "The minimum allocation of the ecdsa table body, defaults to '1'."
+    )
+    (
+        "database.ecdsa_rate",
+        value<uint16_t>(&configured.database.ecdsa_rate),
+        "The percentage expansion of the ecdsa table body, defaults to '5'."
+    )
+
+    /* schnorr */
+    (
+        "database.schnorr_size",
+        value<uint64_t>(&configured.database.schnorr_size),
+        "The minimum allocation of the schnorr table body, defaults to '1'."
+    )
+    (
+        "database.schnorr_rate",
+        value<uint16_t>(&configured.database.schnorr_rate),
+        "The percentage expansion of the schnorr table body, defaults to '5'."
     )
 
     /* duplicate */
