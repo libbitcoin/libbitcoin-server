@@ -1335,15 +1335,20 @@ options_metadata parser::load_settings() THROWS
         "Defer confirmation, defaults to 'false'."
     )
     (
-        "node.fee_estimate_horizon",
-        value<uint16_t>(&configured.node.fee_estimate_horizon),
-        "Fee estimation horizon, limited to 1008, defaults to '0' (0 disables)."
+        "node.batch_signatures",
+        value<bool>(&configured.node.batch_signatures),
+        "Verify signatures in a batch for each concurrency window, defaults to 'true'."
     )
     ////(
     ////    "node.headers_first",
     ////    value<bool>(&configured.node.headers_first),
     ////    "Obtain current header chain before obtaining associated blocks, defaults to 'true'."
     ////)
+    (
+        "node.fee_estimate_horizon",
+        value<uint16_t>(&configured.node.fee_estimate_horizon),
+        "Fee estimation horizon, limited to 1008, defaults to '0' (0 disables)."
+    )
     (
         "node.minimum_fee_rate",
         value<float>(&configured.node.minimum_fee_rate),
