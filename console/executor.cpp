@@ -111,13 +111,6 @@ void executor::handle_stop(int signal)
 // Manage race between console stop and server stop.
 void executor::stop(int signal)
 {
-    ////if (auto* log = fopen("shutdown.log", "a"))
-    ////{
-    ////    fprintf(log, "stop %lu at %llu\n", signal, GetTickCount64());
-    ////    fflush(log);
-    ////    fclose(log);
-    ////}
-
     // Implementation is limited to signal safe code.
     static_assert(std::atomic<int>::is_always_lock_free);
 

@@ -142,6 +142,12 @@ parser::parser(system::chain::selection context,
 
     // database (caches)
 
+    configured.database.ecdsa_size = 1;
+    configured.database.ecdsa_rate = 5;
+
+    configured.database.schnorr_size = 1;
+    configured.database.schnorr_rate = 5;
+
     configured.database.duplicate_buckets = 1024;
     configured.database.duplicate_size = 44;
     configured.database.duplicate_rate = 5;
@@ -1329,15 +1335,20 @@ options_metadata parser::load_settings() THROWS
         "Defer confirmation, defaults to 'false'."
     )
     (
-        "node.fee_estimate_horizon",
-        value<uint16_t>(&configured.node.fee_estimate_horizon),
-        "Fee estimation horizon, limited to 1008, defaults to '0' (0 disables)."
+        "node.batch_signatures",
+        value<bool>(&configured.node.batch_signatures),
+        "Verify signatures in a batch for each concurrency window, defaults to 'true'."
     )
     ////(
     ////    "node.headers_first",
     ////    value<bool>(&configured.node.headers_first),
     ////    "Obtain current header chain before obtaining associated blocks, defaults to 'true'."
     ////)
+    (
+        "node.fee_estimate_horizon",
+        value<uint16_t>(&configured.node.fee_estimate_horizon),
+        "Fee estimation horizon, limited to 1008, defaults to '0' (0 disables)."
+    )
     (
         "node.minimum_fee_rate",
         value<float>(&configured.node.minimum_fee_rate),
@@ -1587,6 +1598,30 @@ options_metadata parser::load_settings() THROWS
         "database.strong_tx_rate",
         value<uint16_t>(&configured.database.strong_tx_rate),
         "The percentage expansion of the strong_tx table body, defaults to '5'."
+    )
+
+    /* ecdsa */
+    (
+        "database.ecdsa_size",
+        value<uint64_t>(&configured.database.ecdsa_size),
+        "The minimum allocation of the ecdsa table body, defaults to '1'."
+    )
+    (
+        "database.ecdsa_rate",
+        value<uint16_t>(&configured.database.ecdsa_rate),
+        "The percentage expansion of the ecdsa table body, defaults to '5'."
+    )
+
+    /* schnorr */
+    (
+        "database.schnorr_size",
+        value<uint64_t>(&configured.database.schnorr_size),
+        "The minimum allocation of the schnorr table body, defaults to '1'."
+    )
+    (
+        "database.schnorr_rate",
+        value<uint16_t>(&configured.database.schnorr_rate),
+        "The percentage expansion of the schnorr table body, defaults to '5'."
     )
 
     /* duplicate */
