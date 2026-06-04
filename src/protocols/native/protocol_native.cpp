@@ -213,8 +213,8 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
             if (media != media_type::unknown)
             {
                 // Resets subscriber height to the fork point.
-                BC_ASSERT(std::holds_alternative<node::height_t>(value));
-                POST(do_top, std::get<node::height_t>(value), media);
+                BC_ASSERT(std::holds_alternative<node::header_t>(value));
+                POST(do_top, std::get<node::header_t>(value), media);
             }
 
             break;
