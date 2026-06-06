@@ -67,6 +67,7 @@
 #define BS_RESTORE_COMPLETE \
     "Restored the database in %1% secs."
 
+// TODO: table names should be derived from database constants and sorted.
 // --information
 #define BS_INFORMATION_START \
     "Configuration...\n" \
@@ -86,14 +87,15 @@
     "   confirmed :%10%\n" \
     "   ecdsa     :%11%\n" \
     "   schnorr   :%12%\n" \
-    "   duplicate :%13%\n" \
-    "   prevout   :%14%\n" \
-    "   strong_tx :%15%\n" \
-    "   valid_bk  :%16%\n" \
-    "   valid_tx  :%17%\n" \
-    "   filter_bk :%18%\n" \
-    "   filter_tx :%19%\n" \
-    "   address   :%20%"
+    "   multisig  :%13%\n" \
+    "   duplicate :%14%\n" \
+    "   prevout   :%15%\n" \
+    "   strong_tx :%16%\n" \
+    "   valid_bk  :%17%\n" \
+    "   valid_tx  :%18%\n" \
+    "   filter_bk :%19%\n" \
+    "   filter_tx :%20%\n" \
+    "   address   :%21%"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
     "   header    :%1%\n" \
@@ -105,10 +107,11 @@
     "   confirmed :%7%\n" \
     "   ecdsa     :%8%\n" \
     "   schnorr   :%9%\n" \
-    "   duplicate :%10%\n" \
-    "   strong_tx :%11%\n" \
-    "   filter_bk :%12%\n" \
-    "   address   :%13%"
+    "   multisig  :%10%\n" \
+    "   duplicate :%11%\n" \
+    "   strong_tx :%12%\n" \
+    "   filter_bk :%13%\n" \
+    "   address   :%14%"
 #define BS_INFORMATION_SLABS \
     "Table slabs..."
 #define BS_INFORMATION_SLABS_ROW \
