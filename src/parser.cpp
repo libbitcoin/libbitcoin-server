@@ -1382,6 +1382,26 @@ options_metadata parser::load_settings() THROWS
         value<uint32_t>(&configured.node.maximum_concurrency),
         "Maximum number of blocks to download concurrently, defaults to '50000' (0 disables)."
     )
+    (
+        "node.sample_period_seconds",
+        value<uint16_t>(&configured.node.sample_period_seconds),
+        "Sampling period for drop of stalled channels, defaults to '10' (0 disables)."
+    )
+    (
+        "node.currency_window_minutes",
+        value<uint32_t>(&configured.node.currency_window_minutes),
+        "Time from present that blocks are considered current, defaults to '1440' (0 disables)."
+    )
+    (
+        "node.warn_dirty_background_ratio",
+        value<uint16_t>(&configured.node.warn_dirty_background_ratio),
+        "Warn on linux if 'vm.dirty_background_ratio' is below value, defaults to 90 (0 disables)."
+    )
+    (
+        "node.warn_dirty_ratio",
+        value<uint16_t>(&configured.node.warn_dirty_ratio),
+        "Warn on linux if 'vm.dirty_ratio' is below value, defaults to 90 (0 disables)."
+    )
     ////(
     ////    "node.snapshot_bytes",
     ////    value<uint64_t>(&configured.node.snapshot_bytes),
@@ -1396,37 +1416,6 @@ options_metadata parser::load_settings() THROWS
     ////    "node.snapshot_confirm",
     ////    value<uint32_t>(&configured.node.snapshot_confirm),
     ////    "Completed confirmations that trigger snapshot, defaults to '0' (0 disables)."
-    ////)
-    (
-        "node.sample_period_seconds",
-        value<uint16_t>(&configured.node.sample_period_seconds),
-        "Sampling period for drop of stalled channels, defaults to '10' (0 disables)."
-    )
-    (
-        "node.currency_window_minutes",
-        value<uint32_t>(&configured.node.currency_window_minutes),
-        "Time from present that blocks are considered current, defaults to '1440' (0 disables)."
-    )
-    // #######################
-    ////(
-    ////    "node.notify_limit_hours",
-    ////    value<uint32_t>(&configured.node.notify_limit_hours),
-    ////    "Disable relay when top block age exceeds, defaults to '24' (0 disables)."
-    ////)
-    ////(
-    ////    "node.byte_fee_satoshis",
-    ////    value<float>(&configured.node.byte_fee_satoshis),
-    ////    "The minimum fee per byte, cumulative for conflicts, defaults to '1'."
-    ////)
-    ////(
-    ////    "node.sigop_fee_satoshis",
-    ////    value<float>(&configured.node.sigop_fee_satoshis),
-    ////    "The minimum fee per sigop, additional to byte fee, defaults to' 100'."
-    ////)
-    ////(
-    ////    "node.minimum_output_satoshis",
-    ////    value<uint64_t>(&configured.node.minimum_output_satoshis),
-    ////    "The minimum output value, defaults to '500'."
     ////)
 
     /* [database] */
@@ -1829,16 +1818,6 @@ options_metadata parser::load_settings() THROWS
         "Enable verbose logging, defaults to 'false'."
     )
 #endif
-    (
-        "log.dirty_ratio_minimum",
-        value<uint32_t>(&configured.log.dirty_ratio_minimum),
-        "Warn at startup if vm.dirty_ratio is below this threshold, defaults to 90 (0 disables)."
-    )
-    (
-        "log.dirty_background_ratio_minimum",
-        value<uint32_t>(&configured.log.dirty_background_ratio_minimum),
-        "Warn at startup if vm.dirty_background_ratio is below this threshold, defaults to 90 (0 disables)."
-    )
     (
         "log.maximum_size",
         value<uint32_t>(&configured.log.maximum_size),
