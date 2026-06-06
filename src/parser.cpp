@@ -358,6 +358,11 @@ options_metadata parser::load_settings() THROWS
         "Assume bip34, bip65, and bip66 activation if enabled, defaults to 'true' (hard fork)."
     )
     (
+        "forks.bip94",
+        value<bool>(&configured.bitcoin.forks.bip94),
+        "Assume bip94 activation if enabled, defaults to 'true' (hard fork)."
+    )
+    (
         "forks.bip68",
         value<bool>(&configured.bitcoin.forks.bip68),
         "Add relative locktime enforcement, defaults to 'true' (soft fork)."
