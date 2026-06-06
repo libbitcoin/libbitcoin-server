@@ -46,6 +46,8 @@ public:
     bool verbose;
 
     uint32_t maximum_size;
+    uint32_t dirty_ratio_minimum;
+    uint32_t dirty_background_ratio_minimum;
     std::filesystem::path path;
 
 #if defined (HAVE_MSC)

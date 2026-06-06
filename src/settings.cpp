@@ -44,7 +44,9 @@ settings::settings() NOEXCEPT
     quitting{ false /*levels::quitting_defined*/ },
     objects{ false /*levels::objects_defined*/ },
     verbose{ false /*levels::verbose_defined*/ },
-    maximum_size{ 1'000'000_u32 }
+    maximum_size{ 1'000'000_u32 },
+    dirty_ratio_minimum{ 90_u32 },
+    dirty_background_ratio_minimum{ 90_u32 }
 {
 }
 

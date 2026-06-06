@@ -150,6 +150,7 @@ bool executor::do_run()
     capture_.start();
     dump_version();
     dump_hardware();
+    dump_paging();
     dump_options();
     logger(BS_NODE_INTERRUPT);
 
