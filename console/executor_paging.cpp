@@ -19,79 +19,47 @@
 #include "executor.hpp"
 #include "localize.hpp"
 
-#if defined(HAVE_LINUX)
-#include <charconv>
-#include <fcntl.h>
-#include <unistd.h>
-
-namespace {
-
-// Read a single decimal integer from a /proc/sys/vm sysctl entry.
-std::optional<uint64_t> read_vm_param(const char* path) noexcept
-{
-    char buffer[24]{};
-    const int fd = ::open(path, O_RDONLY);
-    if (fd < 0)
-        return std::nullopt;
-
-    const auto count = ::read(fd, buffer, sizeof(buffer) - 1u);
-    ::close(fd);
-
-    if (count <= 0)
-        return std::nullopt;
-
-    uint64_t value{};
-    const auto [ptr, ec] = std::from_chars(buffer, buffer + count, value);
-    if (ec != std::errc{})
-        return std::nullopt;
-
-    return value;
-}
-
-} // namespace
-#endif
-
 namespace libbitcoin {
 namespace server {
 
-using boost::format;
-
-// Paging dump.
+// Linux paging info dump when less than configured.
 // ----------------------------------------------------------------------------
 
 void executor::dump_paging() const
 {
-#if defined(HAVE_LINUX)
-    const auto dirty_background_bytes    = read_vm_param("/proc/sys/vm/dirty_background_bytes");
-    const auto dirty_bytes               = read_vm_param("/proc/sys/vm/dirty_bytes");
-    const auto dirty_background_ratio    = read_vm_param("/proc/sys/vm/dirty_background_ratio");
-    const auto dirty_ratio               = read_vm_param("/proc/sys/vm/dirty_ratio");
-    const auto dirty_expire_centisecs    = read_vm_param("/proc/sys/vm/dirty_expire_centisecs");
-    const auto dirty_writeback_centisecs = read_vm_param("/proc/sys/vm/dirty_writeback_centisecs");
+#if !defined(HAVE_LINUX)
+    using namespace network::config;
+    const auto back_bytes   = get_memory_setting("dirty_background_bytes");
+    const auto fore_bytes   = get_memory_setting("dirty_bytes");
+    const auto back_ratio   = get_memory_setting("dirty_background_ratio");
+    const auto fore_ratio   = get_memory_setting("dirty_ratio");
+    const auto expire_csecs = get_memory_setting("dirty_expire_centisecs");
+    const auto write_csecs  = get_memory_setting("dirty_writeback_centisecs");
 
-    if (!dirty_background_bytes || !dirty_bytes || !dirty_background_ratio ||
-        !dirty_ratio || !dirty_expire_centisecs || !dirty_writeback_centisecs)
+    // Don't dump if did not read any one paramter.
+    if (!(back_bytes && fore_bytes && back_ratio && fore_ratio &&
+        expire_csecs && write_csecs))
         return;
 
-    const auto& log = metadata_.configured.log;
-    const auto bytes_mode = (*dirty_bytes != 0u) || (*dirty_background_bytes != 0u);
-    if (!bytes_mode)
-    {
-        if (log.dirty_ratio_minimum != 0u &&
-            *dirty_ratio >= log.dirty_ratio_minimum &&
-            log.dirty_background_ratio_minimum != 0u &&
-            *dirty_background_ratio >= log.dirty_background_ratio_minimum)
-            return;
-    }
+    const auto& node = metadata_.configured.node;
+    const auto ratio = is_zero(fore_bytes.value()) && is_zero(back_bytes.value());
+    const auto back_ok = back_ratio.value() >= node.warn_dirty_background_ratio;
+    const auto fore_ok = fore_ratio.value() >= node.warn_dirty_ratio;
+    const auto require = to_bool(node.warn_dirty_ratio) &&
+        to_bool(node.warn_dirty_background_ratio);
 
-    logger(format(BS_PAGING_TABLE)
-        % (bytes_mode ? "bytes" : "ratio")
-        % *dirty_bytes
-        % *dirty_ratio
-        % *dirty_background_bytes
-        % *dirty_background_ratio
-        % *dirty_expire_centisecs
-        % *dirty_writeback_centisecs);
+    // Don't dump if machine is in ratio mode and above both confgured ratios.
+    if (ratio && fore_ok && back_ok && require)
+        return;
+
+    logger(boost::format(BS_PAGING_TABLE)
+        % (ratio ? "ratio" : "bytes")
+        % fore_bytes.value()
+        % fore_ratio.value()
+        % back_bytes.value()
+        % back_ratio.value()
+        % expire_csecs.value()
+        % write_csecs.value());
 #endif
 }
 
