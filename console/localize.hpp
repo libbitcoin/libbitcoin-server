@@ -67,6 +67,7 @@
 #define BS_RESTORE_COMPLETE \
     "Restored the database in %1% secs."
 
+// TODO: table names should be derived from database constants and sorted.
 // --information
 #define BS_INFORMATION_START \
     "Configuration...\n" \
