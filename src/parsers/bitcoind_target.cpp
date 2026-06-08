@@ -28,13 +28,101 @@ namespace server {
 
 using namespace system;
 using namespace network::rpc;
+using namespace network::http;
 
 BC_PUSH_WARNING(NO_ARRAY_INDEXING)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-code bitcoind_target(request_t& , const std::string_view& ) NOEXCEPT
+static hash_cptr to_hash(const std::string_view& token) NOEXCEPT
 {
-    return {};
+    hash_digest out{};
+    return decode_hash(out, token) ?
+        emplace_shared<const hash_digest>(std::move(out)) : hash_cptr{};
+}
+
+// Map a Bitcoin Core REST file extension to a media value.
+static bool to_media(uint8_t& out, const std::string_view& extension) NOEXCEPT
+{
+    if (extension == "bin")
+    {
+        out = to_value(media_type::application_octet_stream);
+        return true;
+    }
+    if (extension == "hex")
+    {
+        out = to_value(media_type::text_plain);
+        return true;
+    }
+    if (extension == "json")
+    {
+        out = to_value(media_type::application_json);
+        return true;
+    }
+
+    return false;
+}
+
+// Parse a Bitcoin Core REST path into a json-rpc request model.
+// github.com/bitcoin/bitcoin/blob/master/doc/REST-interface.md
+// Currently supports: /rest/block/<hash>.<bin|hex|json>
+code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
+{
+    const auto clean = split(path, "?", false, false).front();
+    if (clean.empty())
+        return error::empty_path;
+
+    // Avoid conflict with node type.
+    using object_t = network::rpc::object_t;
+
+    // Initialize json-rpc.v2 named params message.
+    out = request_t
+    {
+        .jsonrpc = version::v2,
+        .id = null_t{},
+        .method = {},
+        .params = object_t{}
+    };
+
+    auto& method = out.method;
+    auto& params = std::get<object_t>(out.params.value());
+    const auto segments = split(clean, "/", false, true);
+    BC_ASSERT(!segments.empty());
+
+    size_t segment{};
+
+    // Accept an optional "rest" prefix (Core mounts endpoints under /rest/).
+    if (segments[segment] == "rest")
+        ++segment;
+
+    if (segment == segments.size())
+        return error::missing_target;
+
+    const auto target = segments[segment++];
+    if (target == "block")
+    {
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        // Final segment is "<hash>.<extension>".
+        const auto leaf = split(segments[segment++], ".", false, true);
+        if (leaf.size() != two)
+            return error::invalid_target;
+
+        const auto hash = to_hash(leaf.front());
+        if (!hash)
+            return error::invalid_hash;
+
+        uint8_t media{};
+        if (!to_media(media, leaf.back()))
+            return error::invalid_target;
+
+        method = "block";
+        params["media"] = media;
+        params["hash"] = hash;
+        return error::success;
+    }
+
+    return error::invalid_target;
 }
 
 BC_POP_WARNING()

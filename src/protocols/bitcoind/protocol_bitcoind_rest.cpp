@@ -21,6 +21,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
+#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -86,48 +87,139 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
-    // The post is saved off during asynchonous handling and used in send_json
+    // The get is saved off during asynchonous handling and used in send_json
     // to formulate response headers, isolating handlers from http semantics.
     set_request(get);
 
-    ////if (const auto code = rest_dispatcher_.notify({}))
-    ////    stop(code);
-    protocol_bitcoind_rpc::handle_receive_get(ec, get);
+    // Parse the REST url into a json-rpc model and dispatch to a handler.
+    request_t model{};
+    if (bitcoind_target(model, get->target()))
+    {
+        send_not_found();
+        return;
+    }
+
+    if (rest_dispatcher_.notify(model))
+        send_not_found();
 }
 
 // Handlers.
 // ----------------------------------------------------------------------------
 
-////constexpr auto data = to_value(media_type::application_octet_stream);
-////constexpr auto json = to_value(media_type::application_json);
-////constexpr auto text = to_value(media_type::text_plain);
+constexpr auto data = to_value(media_type::application_octet_stream);
+constexpr auto json = to_value(media_type::application_json);
+constexpr auto text = to_value(media_type::text_plain);
+
+template <typename Object, typename ...Args>
+data_chunk to_bin(const Object& object, size_t size, Args&&... args) NOEXCEPT
+{
+    data_chunk out(size);
+    stream::out::fast sink{ out };
+    write::bytes::fast writer{ sink };
+    object.to_data(writer, std::forward<Args>(args)...);
+    return out;
+}
+
+template <typename Object, typename ...Args>
+std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
+{
+    std::string out(two * size, '\0');
+    stream::out::fast sink{ out };
+    write::base16::fast writer{ sink };
+    object.to_data(writer, std::forward<Args>(args)...);
+    return out;
+}
 
 bool protocol_bitcoind_rest::handle_get_block(const code& ec,
-    rest_interface::block, uint8_t , system::hash_cptr ) NOEXCEPT
+    rest_interface::block, uint8_t media, system::hash_cptr hash) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    ////const auto& query = archive();
-    ////if (const auto block = query.get_block(query.to_header(*hash), true))
-    ////{
-    ////    const auto size = block->serialized_size(true);
-    ////    switch (media)
-    ////    {
-    ////        case data:
-    ////            send_chunk(to_bin(*block, size, true));
-    ////            return true;
-    ////        case text:
-    ////            send_text(to_hex(*block, size, true));
-    ////            return true;
-    ////        case json:
-    ////            send_json(value_from(block), two * size);
-    ////            return true;
-    ////    }
-    ////}
+    if (!hash)
+    {
+        send_not_found();
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto& query = archive();
+    const auto block = query.get_block(query.to_header(*hash), witness);
+    if (is_null(block))
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto size = block->serialized_size(witness);
+    switch (media)
+    {
+        case data:
+            send_data(to_bin(*block, size, witness));
+            return true;
+        case text:
+            send_hex(to_hex(*block, size, witness));
+            return true;
+        case json:
+            send_dom(value_from(bitcoind_verbose(*block)), two * size);
+            return true;
+    }
 
     send_not_found();
     return true;
+}
+
+// Raw-http response senders (mirror protocol_html, not json-rpc enveloped).
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_rest::send_data(data_chunk&& bytes) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    const auto request = reset_request();
+    network::http::response message{ network::http::status::ok,
+        request->version() };
+    add_common_headers(message, *request);
+    add_access_control_headers(message, *request);
+    message.set(network::http::field::content_type, network::http::
+        from_media_type(media_type::application_octet_stream));
+    message.body() = std::move(bytes);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_bitcoind_rest::send_hex(std::string&& text) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    const auto request = reset_request();
+    network::http::response message{ network::http::status::ok,
+        request->version() };
+    add_common_headers(message, *request);
+    add_access_control_headers(message, *request);
+    message.set(network::http::field::content_type, network::http::
+        from_media_type(media_type::text_plain));
+    message.body() = std::move(text);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_bitcoind_rest::send_dom(boost::json::value&& model,
+    size_t size_hint) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    const auto request = reset_request();
+    network::http::response message{ network::http::status::ok,
+        request->version() };
+    add_common_headers(message, *request);
+    add_access_control_headers(message, *request);
+    message.set(network::http::field::content_type, network::http::
+        from_media_type(media_type::application_json));
+    message.body() = network::http::json_value
+    {
+        .model = std::move(model),
+        .size_hint = size_hint
+    };
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
 }
 
 // private

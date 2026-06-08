@@ -59,6 +59,11 @@ protected:
     bool handle_get_block(const code& ec, rest_interface::block,
         uint8_t media, system::hash_cptr hash) NOEXCEPT;
 
+    /// REST raw-http response senders (not json-rpc enveloped).
+    void send_data(system::data_chunk&& bytes) NOEXCEPT;
+    void send_hex(std::string&& text) NOEXCEPT;
+    void send_dom(boost::json::value&& model, size_t size_hint) NOEXCEPT;
+
 private:
     template <class Derived, typename Method, typename... Args>
     inline void subscribe(Method&& method, Args&&... args) NOEXCEPT
