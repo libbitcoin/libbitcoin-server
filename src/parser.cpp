@@ -148,9 +148,6 @@ parser::parser(system::chain::selection context,
     configured.database.schnorr_size = 1;
     configured.database.schnorr_rate = 5;
 
-    configured.database.multisig_size = 1;
-    configured.database.multisig_rate = 5;
-
     configured.database.duplicate_buckets = 1024;
     configured.database.duplicate_size = 44;
     configured.database.duplicate_rate = 5;
@@ -323,7 +320,7 @@ options_metadata parser::load_settings() THROWS
     (
         "forks.retarget",
         value<bool>(&configured.bitcoin.forks.retarget),
-        "Retarget difficulty, defaults to 'true'."
+        "Retarget difficulty, defaults to 'true' (use false for regtest)."
     )
     (
         "forks.bip16",
@@ -403,17 +400,17 @@ options_metadata parser::load_settings() THROWS
     (
         "forks.time_warp_patch",
         value<bool>(&configured.bitcoin.forks.time_warp_patch),
-        "Fix time warp bug, defaults to 'false' (hard fork)."
+        "Fix time warp bug, defaults to 'false' (litecoin)."
     )
     (
         "forks.retarget_overflow_patch",
         value<bool>(&configured.bitcoin.forks.retarget_overflow_patch),
-        "Fix target overflow for very low difficulty, defaults to 'false' (hard fork)."
+        "Fix target overflow for very low difficulty, defaults to 'false' (litecoin)."
     )
     (
         "forks.scrypt_proof_of_work",
         value<bool>(&configured.bitcoin.forks.scrypt_proof_of_work),
-        "Use scrypt hashing for proof of work, defaults to 'false' (hard fork)."
+        "Use scrypt hashing for proof of work, defaults to 'false' (litecoin)."
     )
 
     /* [bitcoin] */
@@ -1614,18 +1611,6 @@ options_metadata parser::load_settings() THROWS
         "database.schnorr_rate",
         value<uint16_t>(&configured.database.schnorr_rate),
         "The percentage expansion of the batch_schnorr table body, defaults to '5'."
-    )
-
-    /* multisig */
-    (
-        "database.multisig_size",
-        value<uint64_t>(&configured.database.multisig_size),
-        "The minimum allocation of the batch_multisig table body, defaults to '1'."
-    )
-    (
-        "database.multisig_rate",
-        value<uint16_t>(&configured.database.multisig_rate),
-        "The percentage expansion of the batch_multisig table body, defaults to '5'."
     )
 
     /* duplicate */
