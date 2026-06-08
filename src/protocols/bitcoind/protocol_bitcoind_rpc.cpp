@@ -18,8 +18,11 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
+#include <algorithm>
+#include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
+#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -160,6 +163,93 @@ std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
     return out;
 }
 
+// Helpers.
+// ----------------------------------------------------------------------------
+
+namespace {
+
+// BIP113 median of up to 11 block timestamps ending at the given height.
+uint32_t median_time_past(const auto& query, size_t height) NOEXCEPT
+{
+    constexpr size_t window = 11;
+    const auto count = std::min(window, height + 1u);
+    std::vector<uint32_t> times{};
+    times.reserve(count);
+    for (size_t index = 0; index < count; ++index)
+    {
+        const auto header = query.get_header(query.to_confirmed(height - index));
+        if (header)
+            times.push_back(header->timestamp());
+    }
+
+    if (times.empty())
+        return 0;
+
+    std::sort(times.begin(), times.end());
+    return times.at(times.size() / 2u);
+}
+
+// Add the chain-context fields the bitcoind block/header serializers omit by
+// design (they require chain context not present in a bare block/header).
+void inject_block_context(boost::json::object& out, const auto& query,
+    const database::header_link& link, const chain::header& header) NOEXCEPT
+{
+    size_t height{};
+    if (!query.get_height(height, link))
+        return;
+
+    const auto top = query.get_top_confirmed();
+    const auto confirmed = query.is_confirmed_block(link);
+    out["height"] = static_cast<uint64_t>(height);
+    out["confirmations"] = confirmed ?
+        static_cast<int64_t>(top - height + 1u) : int64_t{ -1 };
+    out["mediantime"] = median_time_past(query, height);
+
+    if (header.previous_block_hash() != null_hash)
+        out["previousblockhash"] = encode_hash(header.previous_block_hash());
+
+    if (confirmed && height < top)
+        out["nextblockhash"] = encode_hash(
+            query.get_header_key(query.to_confirmed(height + 1u)));
+}
+
+// Build a bitcoind-format block header object (no system serializer exists,
+// mirrors the field set of the bitcoind block serializer).
+boost::json::object header_to_bitcoind(const chain::header& header) NOEXCEPT
+{
+    return boost::json::object
+    {
+        { "hash", encode_hash(header.hash()) },
+        { "version", header.version() },
+        { "versionHex", encode_base16(to_big_endian(header.version())) },
+        { "merkleroot", encode_hash(header.merkle_root()) },
+        { "time", header.timestamp() },
+        { "nonce", header.nonce() },
+        { "bits", encode_base16(to_big_endian(header.bits())) },
+        { "difficulty", header.difficulty() }
+    };
+}
+
+// Map the genesis block hash to Bitcoin Core's "chain" identifier.
+std::string chain_name(const auto& query) NOEXCEPT
+{
+    const auto genesis = encode_hash(
+        query.get_header_key(query.to_confirmed(0)));
+
+    if (genesis == "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
+        return "main";
+    if (genesis == "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
+        return "test";
+    if (genesis == "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6")
+        return "signet";
+    if (genesis == "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")
+        return "regtest";
+
+    return "unknown";
+}
+
+} // namespace
+
 // Handlers.
 // ----------------------------------------------------------------------------
 // github.com/bitcoin/bitcoin/blob/master/doc/JSON-RPC-interface.md
@@ -207,15 +297,23 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
         return true;
     }
 
-    if (verbosity == 1.0)
+    if (verbosity == 1.0 || verbosity == 2.0)
     {
-        send_error(error::not_implemented);
-        return true;
-    }
+        const auto block = query.get_block(link, witness);
+        if (is_null(block))
+        {
+            send_error(error::not_found, blockhash, blockhash.size());
+            return true;
+        }
 
-    if (verbosity == 2.0)
-    {
-        send_error(error::not_implemented);
+        // verbosity 1 lists txids; verbosity 2 embeds full tx objects.
+        auto model = (verbosity == 1.0) ?
+            value_from(bitcoind_hashed(*block)) :
+            value_from(bitcoind_verbose(*block));
+
+        inject_block_context(model.as_object(), query, link, block->header());
+        send_result(rpc::value_t(std::move(model)),
+            two * block->serialized_size(witness));
         return true;
     }
 
@@ -226,41 +324,141 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
 bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
     rpc_interface::get_block_chain_info) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto blocks = query.get_top_confirmed();
+    const auto link = query.to_confirmed(blocks);
+    const auto header = query.get_header(link);
+    if (is_null(header))
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    send_result(rpc::object_t
+    {
+        { "chain", chain_name(query) },
+        { "blocks", static_cast<uint64_t>(blocks) },
+        { "headers", static_cast<uint64_t>(query.get_top_candidate()) },
+        { "bestblockhash", encode_hash(query.get_header_key(link)) },
+        { "bits", encode_base16(to_big_endian(header->bits())) },
+        { "difficulty", header->difficulty() },
+        { "time", header->timestamp() },
+        { "mediantime", median_time_past(query, blocks) },
+        { "pruned", false }
+    }, 256);
     return true;
 }
 
 bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
     rpc_interface::get_block_count) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    send_result(rpc::value_t(static_cast<uint64_t>(
+        archive().get_top_confirmed())), 20);
     return true;
 }
 
 bool protocol_bitcoind_rpc::handle_get_block_filter(const code& ec,
-    rpc_interface::get_block_filter, const std::string&,
+    rpc_interface::get_block_filter, const std::string& blockhash,
     const std::string&) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    hash_digest hash{};
+    if (!decode_hash(hash, blockhash))
+    {
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
+
+    const auto& query = archive();
+    if (!query.filter_enabled())
+    {
+        send_error(error::not_implemented);
+        return true;
+    }
+
+    const auto link = query.to_header(hash);
+    data_chunk filter{};
+    hash_digest filter_header{};
+    if (!query.get_filter_body(filter, link) ||
+        !query.get_filter_head(filter_header, link))
+    {
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
+
+    send_result(rpc::object_t
+    {
+        { "filter", encode_base16(filter) },
+        { "header", encode_hash(filter_header) }
+    }, two * filter.size());
     return true;
 }
 
 bool protocol_bitcoind_rpc::handle_get_block_hash(const code& ec,
-    rpc_interface::get_block_hash, network::rpc::number_t) NOEXCEPT
+    rpc_interface::get_block_hash, double height) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (height < 0.0)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto& query = archive();
+    const auto link = query.to_confirmed(static_cast<size_t>(height));
+    if (link.is_terminal())
+    {
+        send_error(error::not_found);
+        return true;
+    }
+
+    send_result(encode_hash(query.get_header_key(link)), two * hash_size);
     return true;
 }
 
 bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
-    rpc_interface::get_block_header, const std::string&, bool) NOEXCEPT
+    rpc_interface::get_block_header, const std::string& blockhash,
+    bool verbose) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    hash_digest hash{};
+    if (!decode_hash(hash, blockhash))
+    {
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
+
+    const auto& query = archive();
+    const auto link = query.to_header(hash);
+    const auto header = query.get_header(link);
+    if (is_null(header))
+    {
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
+
+    if (!verbose)
+    {
+        send_text(to_hex(*header, chain::header::serialized_size()));
+        return true;
+    }
+
+    auto out = header_to_bitcoind(*header);
+    out["nTx"] = static_cast<uint64_t>(query.get_tx_count(link));
+    inject_block_context(out, query, link, *header);
+    send_result(rpc::value_t(boost::json::value(std::move(out))), 512);
     return true;
 }
 
@@ -290,10 +488,51 @@ bool protocol_bitcoind_rpc::handle_get_chain_work(const code& ec,
 }
 
 bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
-    rpc_interface::get_tx_out, const std::string&, double, bool) NOEXCEPT
+    rpc_interface::get_tx_out, const std::string& txid, double n,
+    bool) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    hash_digest hash{};
+    if (!decode_hash(hash, txid) || n < 0.0)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto& query = archive();
+    const auto index = static_cast<uint32_t>(n);
+    const auto output_fk = query.to_output(hash, index);
+
+    // Core returns json null for a missing or spent output (mempool ignored).
+    if (output_fk.is_terminal() || query.is_spent(output_fk))
+    {
+        send_result(rpc::value_t{}, 4);
+        return true;
+    }
+
+    const auto output = query.get_output(output_fk);
+    if (is_null(output))
+    {
+        send_result(rpc::value_t{}, 4);
+        return true;
+    }
+
+    const auto tx_fk = query.to_tx(hash);
+    size_t tx_height{};
+    const auto have_height = query.get_tx_height(tx_height, tx_fk);
+    const auto top = query.get_top_confirmed();
+
+    send_result(rpc::object_t
+    {
+        { "bestblock", encode_hash(query.get_top_confirmed_hash()) },
+        { "confirmations", have_height ?
+            static_cast<int64_t>(top - tx_height + 1u) : int64_t{ 0 } },
+        { "value", static_cast<double>(output->value()) / 100000000.0 },
+        { "scriptPubKey", value_from(bitcoind(output->script())) },
+        { "coinbase", query.is_coinbase(tx_fk) }
+    }, 256);
     return true;
 }
 
@@ -349,8 +588,27 @@ bool protocol_bitcoind_rpc::handle_verify_tx_out_set(const code& ec,
 bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     rpc_interface::get_network_info) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    // libbitcoin-server is a node, not a wallet/peer-introspection service;
+    // peer-dependent fields (connections, addresses) are reported as empty.
+    // TODO: surface live connection count and relay fee from node settings.
+    send_result(rpc::object_t
+    {
+        { "version", 0 },
+        { "subversion", "/libbitcoin:server/" },
+        { "protocolversion", 70016 },
+        { "localrelay", true },
+        { "timeoffset", 0 },
+        { "connections", 0 },
+        { "networkactive", true },
+        { "networks", rpc::array_t{} },
+        { "relayfee", 0.00001 },
+        { "incrementalfee", 0.00001 },
+        { "localaddresses", rpc::array_t{} },
+        { "warnings", "" }
+    }, 256);
     return true;
 }
 
