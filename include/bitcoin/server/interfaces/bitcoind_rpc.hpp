@@ -73,8 +73,8 @@ struct bitcoind_rpc_methods
         method<"getnetworkinfo">{},
 
         /// Rawtransactions methods (implemented).
-        method<"getrawtransaction", string_t, optional<0_u32>, optional<""_t>>{ "txid", "verbose", "blockhash" },
-        method<"sendrawtransaction", string_t, optional<0_u32>>{ "hexstring", "maxfeerate" }
+        method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbose", "blockhash" },
+        method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" }
         ////method<"getpeerinfo">{},
         ////method<"listbanned">{},
         ////method<"ping">{},

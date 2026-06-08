@@ -561,7 +561,10 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    auto model = value_from(bitcoind_verbose(*tx));
+    // bitcoind() (not bitcoind_verbose) yields Core's tx fields: txid/hash/
+    // size/vsize/weight/vin/vout/hex (bitcoind_verbose on a standalone tx
+    // falls back to libbitcoin's plain inputs/outputs form).
+    auto model = value_from(bitcoind(*tx));
     inject_tx_context(model.as_object(), query, link);
     send_result(rpc::value_t(std::move(model)),
         two * tx->serialized_size(witness));
