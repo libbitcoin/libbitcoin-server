@@ -38,7 +38,7 @@ struct bitcoind_rpc_methods
         method<"getblockfilter", string_t, optional<"basic"_t>>{ "blockhash", "filtertype" },
         method<"getblockhash", number_t>{ "height" },
         method<"getblockheader", string_t, optional<true>>{ "blockhash", "verbose" },
-        method<"getblockstats", string_t, optional<empty::array>>{ "hash_or_height", "stats" },
+        method<"getblockstats", value_t, optional<empty::array>>{ "hash_or_height", "stats" },
         method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ "nblocks", "blockhash" },
         method<"getchainwork">{},
         method<"gettxout", string_t, number_t, optional<true>>{ "txid", "n", "include_mempool" },
@@ -73,7 +73,7 @@ struct bitcoind_rpc_methods
         method<"getnetworkinfo">{},
 
         /// Rawtransactions methods (implemented).
-        method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbose", "blockhash" },
+        method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
         method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" }
         ////method<"getpeerinfo">{},
         ////method<"listbanned">{},

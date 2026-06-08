@@ -378,7 +378,7 @@ bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
 }
 
 bool protocol_bitcoind_rpc::handle_get_block_stats(const code& ec,
-    rpc_interface::get_block_stats, const std::string&,
+    rpc_interface::get_block_stats, const network::rpc::value_t&,
     const network::rpc::array_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
