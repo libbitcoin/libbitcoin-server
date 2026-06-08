@@ -58,6 +58,25 @@ protected:
     /// REST interface handlers.
     bool handle_get_block(const code& ec, rest_interface::block,
         uint8_t media, system::hash_cptr hash) NOEXCEPT;
+    bool handle_get_block_hash(const code& ec, rest_interface::block_hash,
+        uint8_t media, uint32_t height) NOEXCEPT;
+    bool handle_get_block_txs(const code& ec, rest_interface::block_txs,
+        uint8_t media, system::hash_cptr hash) NOEXCEPT;
+    bool handle_get_block_headers(const code& ec, rest_interface::block_headers,
+        uint8_t media, system::hash_cptr hash, uint32_t count) NOEXCEPT;
+    bool handle_get_block_part(const code& ec, rest_interface::block_part,
+        uint8_t media, system::hash_cptr hash, uint32_t offset,
+        uint32_t size) NOEXCEPT;
+    bool handle_get_block_spent_tx_outputs(const code& ec,
+        rest_interface::block_spent_tx_outputs, uint8_t media,
+        system::hash_cptr hash) NOEXCEPT;
+    bool handle_get_block_filter(const code& ec, rest_interface::block_filter,
+        uint8_t media, system::hash_cptr hash, uint8_t type) NOEXCEPT;
+    bool handle_get_block_filter_headers(const code& ec,
+        rest_interface::block_filter_headers, uint8_t media,
+        system::hash_cptr hash, uint8_t type) NOEXCEPT;
+    bool handle_get_chain_information(const code& ec,
+        rest_interface::chain_information) NOEXCEPT;
 
     /// REST raw-http response senders (not json-rpc enveloped).
     void send_data(system::data_chunk&& bytes) NOEXCEPT;

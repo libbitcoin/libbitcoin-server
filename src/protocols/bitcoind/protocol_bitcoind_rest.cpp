@@ -18,6 +18,9 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rest.hpp>
 
+#include <algorithm>
+#include <string>
+#include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
@@ -51,6 +54,14 @@ void protocol_bitcoind_rest::start() NOEXCEPT
         return;
 
     SUBSCRIBE_BITCOIND(handle_get_block, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_block_hash, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_block_txs, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_block_headers, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_block_part, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_get_block_spent_tx_outputs, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_block_filter, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
     protocol_bitcoind_rpc::start();
 }
 
@@ -130,6 +141,65 @@ std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
     return out;
 }
 
+namespace {
+
+// BIP113 median of up to 11 block timestamps ending at the given height.
+uint32_t median_time_past(const auto& query, size_t height) NOEXCEPT
+{
+    constexpr size_t window = 11;
+    const auto count = std::min(window, height + 1u);
+    std::vector<uint32_t> times{};
+    times.reserve(count);
+    for (size_t index = 0; index < count; ++index)
+    {
+        const auto header = query.get_header(query.to_confirmed(height - index));
+        if (header)
+            times.push_back(header->timestamp());
+    }
+
+    if (times.empty())
+        return 0;
+
+    std::sort(times.begin(), times.end());
+    return times.at(times.size() / 2u);
+}
+
+// Build a bitcoind-format block header object (mirrors the rpc protocol).
+boost::json::object header_to_bitcoind(const chain::header& header) NOEXCEPT
+{
+    return boost::json::object
+    {
+        { "hash", encode_hash(header.hash()) },
+        { "version", header.version() },
+        { "versionHex", encode_base16(to_big_endian(header.version())) },
+        { "merkleroot", encode_hash(header.merkle_root()) },
+        { "time", header.timestamp() },
+        { "nonce", header.nonce() },
+        { "bits", encode_base16(to_big_endian(header.bits())) },
+        { "difficulty", header.difficulty() }
+    };
+}
+
+// Map the genesis block hash to Bitcoin Core's "chain" identifier.
+std::string chain_name(const auto& query) NOEXCEPT
+{
+    const auto genesis = encode_hash(
+        query.get_header_key(query.to_confirmed(0)));
+
+    if (genesis == "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
+        return "main";
+    if (genesis == "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
+        return "test";
+    if (genesis == "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6")
+        return "signet";
+    if (genesis == "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")
+        return "regtest";
+
+    return "unknown";
+}
+
+} // namespace
+
 bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     rest_interface::block, uint8_t media, system::hash_cptr hash) NOEXCEPT
 {
@@ -166,6 +236,392 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     }
 
     send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
+    rest_interface::block_hash, uint8_t media, uint32_t height) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto link = query.to_confirmed(height);
+    if (link.is_terminal())
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto hash = query.get_header_key(link);
+    switch (media)
+    {
+        case data:
+            send_data(to_chunk(hash));
+            return true;
+        case text:
+            send_hex(encode_base16(hash));
+            return true;
+        case json:
+            send_dom(boost::json::object{ { "blockhash", encode_hash(hash) } },
+                two * hash_size);
+            return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
+    rest_interface::block_txs, uint8_t media, system::hash_cptr hash) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!hash)
+    {
+        send_not_found();
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto& query = archive();
+    const auto block = query.get_block(query.to_header(*hash), witness);
+    if (is_null(block))
+    {
+        send_not_found();
+        return true;
+    }
+
+    // notxdetails: raw block for bin/hex, txid list (bitcoind_hashed) for json.
+    const auto size = block->serialized_size(witness);
+    switch (media)
+    {
+        case data:
+            send_data(to_bin(*block, size, witness));
+            return true;
+        case text:
+            send_hex(to_hex(*block, size, witness));
+            return true;
+        case json:
+            send_dom(value_from(bitcoind_hashed(*block)), two * size);
+            return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
+    rest_interface::block_headers, uint8_t media, system::hash_cptr hash,
+    uint32_t count) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!hash || is_zero(count))
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto& query = archive();
+    const auto link = query.to_header(*hash);
+    size_t height{};
+    if (link.is_terminal() || !query.get_height(height, link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    // Core caps the header count at 2000.
+    constexpr size_t maximum = 2000;
+    constexpr auto header_size = chain::header::serialized_size();
+    const auto top = query.get_top_confirmed();
+    const auto limit = std::min(static_cast<size_t>(count), maximum);
+
+    std::vector<chain::header::cptr> headers{};
+    headers.reserve(limit);
+    for (size_t index = 0; index < limit && height + index <= top; ++index)
+    {
+        const auto header = query.get_header(query.to_confirmed(height + index));
+        if (!header)
+            break;
+
+        headers.push_back(header);
+    }
+
+    if (headers.empty())
+    {
+        send_not_found();
+        return true;
+    }
+
+    switch (media)
+    {
+        case data:
+        {
+            data_chunk out{};
+            out.reserve(headers.size() * header_size);
+            for (const auto& header: headers)
+            {
+                const auto bin = to_bin(*header, header_size);
+                out.insert(out.end(), bin.begin(), bin.end());
+            }
+
+            send_data(std::move(out));
+            return true;
+        }
+        case text:
+        {
+            std::string out{};
+            out.reserve(headers.size() * two * header_size);
+            for (const auto& header: headers)
+                out += to_hex(*header, header_size);
+
+            send_hex(std::move(out));
+            return true;
+        }
+        case json:
+        {
+            boost::json::array out{};
+            out.reserve(headers.size());
+            for (const auto& header: headers)
+                out.push_back(header_to_bitcoind(*header));
+
+            send_dom(std::move(out), headers.size() * two * header_size);
+            return true;
+        }
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
+    rest_interface::block_part, uint8_t media, system::hash_cptr hash,
+    uint32_t offset, uint32_t size) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!hash)
+    {
+        send_not_found();
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto& query = archive();
+    const auto block = query.get_block(query.to_header(*hash), witness);
+    if (is_null(block))
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto full = to_bin(*block, block->serialized_size(witness), witness);
+    if (offset >= full.size())
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto end = std::min(static_cast<size_t>(offset) + size, full.size());
+    data_chunk part(full.begin() + offset, full.begin() + end);
+    switch (media)
+    {
+        case data:
+            send_data(std::move(part));
+            return true;
+        case text:
+            send_hex(encode_base16(part));
+            return true;
+    }
+
+    // block_part is bin|hex only (json not supported).
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
+    rest_interface::block_spent_tx_outputs, uint8_t media,
+    system::hash_cptr hash) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!hash)
+    {
+        send_not_found();
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto& query = archive();
+    const auto block = query.get_block(query.to_header(*hash), witness);
+    if (is_null(block))
+    {
+        send_not_found();
+        return true;
+    }
+
+    // Resolve every prevout spent by the block's non-coinbase transactions.
+    chain::output_cptrs spent{};
+    const auto& txs = *block->transactions_ptr();
+    for (size_t tx = 1; tx < txs.size(); ++tx)
+        for (const auto& in: *txs.at(tx)->inputs_ptr())
+            if (const auto out = query.get_output(query.to_output(in->point())))
+                spent.push_back(out);
+
+    size_t size{};
+    for (const auto& output: spent)
+        size += output->serialized_size();
+
+    switch (media)
+    {
+        case data:
+        {
+            data_chunk out(size);
+            stream::out::fast sink{ out };
+            write::bytes::fast writer{ sink };
+            for (const auto& output: spent)
+                output->to_data(writer);
+
+            send_data(std::move(out));
+            return true;
+        }
+        case text:
+        {
+            std::string out(two * size, '\0');
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
+            for (const auto& output: spent)
+                output->to_data(writer);
+
+            send_hex(std::move(out));
+            return true;
+        }
+        case json:
+            send_dom(value_from(bitcoind(spent)), two * size);
+            return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
+    rest_interface::block_filter, uint8_t media, system::hash_cptr hash,
+    uint8_t) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    if (!hash || !query.filter_enabled())
+    {
+        send_not_found();
+        return true;
+    }
+
+    // libbitcoin stores only the neutrino (basic) filter; type is ignored.
+    data_chunk filter{};
+    if (!query.get_filter_body(filter, query.to_header(*hash)))
+    {
+        send_not_found();
+        return true;
+    }
+
+    switch (media)
+    {
+        case data:
+            send_data(std::move(filter));
+            return true;
+        case text:
+            send_hex(encode_base16(filter));
+            return true;
+        case json:
+            send_dom(boost::json::object
+            {
+                { "filter", encode_base16(filter) }
+            }, two * filter.size());
+            return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
+    rest_interface::block_filter_headers, uint8_t media, system::hash_cptr hash,
+    uint8_t) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    if (!hash || !query.filter_enabled())
+    {
+        send_not_found();
+        return true;
+    }
+
+    hash_digest filter_head{};
+    if (!query.get_filter_head(filter_head, query.to_header(*hash)))
+    {
+        send_not_found();
+        return true;
+    }
+
+    switch (media)
+    {
+        case data:
+            send_data(to_chunk(filter_head));
+            return true;
+        case text:
+            send_hex(encode_base16(filter_head));
+            return true;
+        case json:
+            send_dom(boost::json::object
+            {
+                { "filter_header", encode_hash(filter_head) }
+            }, two * hash_size);
+            return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
+    rest_interface::chain_information) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto blocks = query.get_top_confirmed();
+    const auto link = query.to_confirmed(blocks);
+    const auto header = query.get_header(link);
+    if (is_null(header))
+    {
+        send_not_found();
+        return true;
+    }
+
+    send_dom(boost::json::object
+    {
+        { "chain", chain_name(query) },
+        { "blocks", static_cast<uint64_t>(blocks) },
+        { "headers", static_cast<uint64_t>(query.get_top_candidate()) },
+        { "bestblockhash", encode_hash(query.get_header_key(link)) },
+        { "bits", encode_base16(to_big_endian(header->bits())) },
+        { "difficulty", header->difficulty() },
+        { "time", header->timestamp() },
+        { "mediantime", median_time_past(query, blocks) },
+        { "pruned", false }
+    }, 256);
     return true;
 }
 

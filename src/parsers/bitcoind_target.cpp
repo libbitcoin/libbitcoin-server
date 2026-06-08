@@ -62,9 +62,29 @@ static bool to_media(uint8_t& out, const std::string_view& extension) NOEXCEPT
     return false;
 }
 
+template <typename Number>
+static bool to_number(Number& out, const std::string_view& token) NOEXCEPT
+{
+    return !token.empty() && is_ascii_numeric(token) && (is_one(token.size()) ||
+        token.front() != '0') && deserialize(out, token);
+}
+
+// Split a "<name>.<extension>" leaf into its name and a media value.
+static bool split_leaf(std::string& name, uint8_t& media,
+    const std::string_view& leaf) NOEXCEPT
+{
+    const auto parts = split(leaf, ".", false, true);
+    if (parts.size() != two)
+        return false;
+
+    name = parts.front();
+    return to_media(media, parts.back());
+}
+
 // Parse a Bitcoin Core REST path into a json-rpc request model.
 // github.com/bitcoin/bitcoin/blob/master/doc/REST-interface.md
-// Currently supports: /rest/block/<hash>.<bin|hex|json>
+// Supports: block, block/notxdetails, blockhashbyheight, headers, blockpart,
+// chaininfo (remaining endpoints return invalid_target until implemented).
 code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
 {
     const auto clean = split(path, "?", false, false).front();
@@ -98,27 +118,159 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         return error::missing_target;
 
     const auto target = segments[segment++];
+
+    // /rest/chaininfo.json
+    if (target == "chaininfo" || target == "chaininfo.json")
+    {
+        method = "chain_information";
+        return error::success;
+    }
+
+    // /rest/block/<hash>.<ext>, /rest/block/notxdetails/<hash>.<ext> and
+    // /rest/block/spent/<hash>.<ext> (the latter is a libbitcoin extension).
     if (target == "block")
     {
         if (segment == segments.size())
             return error::missing_hash;
 
-        // Final segment is "<hash>.<extension>".
-        const auto leaf = split(segments[segment++], ".", false, true);
-        if (leaf.size() != two)
+        std::string rest_method = "block";
+        if (segments[segment] == "notxdetails")
+            rest_method = "block_txs";
+        else if (segments[segment] == "spent")
+            rest_method = "block_spent_tx_outputs";
+
+        if (rest_method != "block" && ++segment == segments.size())
+            return error::missing_hash;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
             return error::invalid_target;
 
-        const auto hash = to_hash(leaf.front());
+        const auto hash = to_hash(name);
         if (!hash)
             return error::invalid_hash;
 
-        uint8_t media{};
-        if (!to_media(media, leaf.back()))
-            return error::invalid_target;
-
-        method = "block";
+        method = rest_method;
         params["media"] = media;
         params["hash"] = hash;
+        return error::success;
+    }
+
+    // /rest/blockhashbyheight/<height>.<ext>
+    if (target == "blockhashbyheight")
+    {
+        if (segment == segments.size())
+            return error::missing_target;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
+            return error::invalid_target;
+
+        uint32_t height{};
+        if (!to_number(height, name))
+            return error::invalid_number;
+
+        method = "block_hash";
+        params["media"] = media;
+        params["height"] = height;
+        return error::success;
+    }
+
+    // /rest/headers/<count>/<hash>.<ext>
+    if (target == "headers")
+    {
+        if (segment == segments.size())
+            return error::missing_target;
+
+        uint32_t count{};
+        if (!to_number(count, segments[segment++]))
+            return error::invalid_number;
+
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
+            return error::invalid_target;
+
+        const auto hash = to_hash(name);
+        if (!hash)
+            return error::invalid_hash;
+
+        method = "block_headers";
+        params["media"] = media;
+        params["hash"] = hash;
+        params["count"] = count;
+        return error::success;
+    }
+
+    // /rest/blockfilter/<type>/<hash>.<ext> and blockfilterheaders likewise.
+    if (target == "blockfilter" || target == "blockfilterheaders")
+    {
+        if (segment == segments.size())
+            return error::missing_target;
+
+        // libbitcoin supports only the "basic" (neutrino) filter type.
+        if (segments[segment++] != "basic")
+            return error::invalid_target;
+
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
+            return error::invalid_target;
+
+        const auto hash = to_hash(name);
+        if (!hash)
+            return error::invalid_hash;
+
+        method = target == "blockfilter" ? "block_filter" :
+            "block_filter_headers";
+        params["media"] = media;
+        params["hash"] = hash;
+        params["type"] = uint8_t{ 0 };
+        return error::success;
+    }
+
+    // /rest/blockpart/<hash>/<offset>/<size>.<ext> (libbitcoin extension)
+    if (target == "blockpart")
+    {
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        const auto hash = to_hash(segments[segment++]);
+        if (!hash)
+            return error::invalid_hash;
+
+        if (segment == segments.size())
+            return error::missing_target;
+
+        uint32_t offset{};
+        if (!to_number(offset, segments[segment++]))
+            return error::invalid_number;
+
+        if (segment == segments.size())
+            return error::missing_target;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
+            return error::invalid_target;
+
+        uint32_t size{};
+        if (!to_number(size, name))
+            return error::invalid_number;
+
+        method = "block_part";
+        params["media"] = media;
+        params["hash"] = hash;
+        params["offset"] = offset;
+        params["size"] = size;
         return error::success;
     }
 
