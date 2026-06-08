@@ -18,10 +18,9 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
-#include <algorithm>
-#include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
+#include <bitcoin/server/protocols/bitcoind_json.hpp>
 #include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
@@ -162,93 +161,6 @@ std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
     BC_ASSERT(writer);
     return out;
 }
-
-// Helpers.
-// ----------------------------------------------------------------------------
-
-namespace {
-
-// BIP113 median of up to 11 block timestamps ending at the given height.
-uint32_t median_time_past(const auto& query, size_t height) NOEXCEPT
-{
-    constexpr size_t window = 11;
-    const auto count = std::min(window, height + 1u);
-    std::vector<uint32_t> times{};
-    times.reserve(count);
-    for (size_t index = 0; index < count; ++index)
-    {
-        const auto header = query.get_header(query.to_confirmed(height - index));
-        if (header)
-            times.push_back(header->timestamp());
-    }
-
-    if (times.empty())
-        return 0;
-
-    std::sort(times.begin(), times.end());
-    return times.at(times.size() / 2u);
-}
-
-// Add the chain-context fields the bitcoind block/header serializers omit by
-// design (they require chain context not present in a bare block/header).
-void inject_block_context(boost::json::object& out, const auto& query,
-    const database::header_link& link, const chain::header& header) NOEXCEPT
-{
-    size_t height{};
-    if (!query.get_height(height, link))
-        return;
-
-    const auto top = query.get_top_confirmed();
-    const auto confirmed = query.is_confirmed_block(link);
-    out["height"] = static_cast<uint64_t>(height);
-    out["confirmations"] = confirmed ?
-        static_cast<int64_t>(top - height + 1u) : int64_t{ -1 };
-    out["mediantime"] = median_time_past(query, height);
-
-    if (header.previous_block_hash() != null_hash)
-        out["previousblockhash"] = encode_hash(header.previous_block_hash());
-
-    if (confirmed && height < top)
-        out["nextblockhash"] = encode_hash(
-            query.get_header_key(query.to_confirmed(height + 1u)));
-}
-
-// Build a bitcoind-format block header object (no system serializer exists,
-// mirrors the field set of the bitcoind block serializer).
-boost::json::object header_to_bitcoind(const chain::header& header) NOEXCEPT
-{
-    return boost::json::object
-    {
-        { "hash", encode_hash(header.hash()) },
-        { "version", header.version() },
-        { "versionHex", encode_base16(to_big_endian(header.version())) },
-        { "merkleroot", encode_hash(header.merkle_root()) },
-        { "time", header.timestamp() },
-        { "nonce", header.nonce() },
-        { "bits", encode_base16(to_big_endian(header.bits())) },
-        { "difficulty", header.difficulty() }
-    };
-}
-
-// Map the genesis block hash to Bitcoin Core's "chain" identifier.
-std::string chain_name(const auto& query) NOEXCEPT
-{
-    const auto genesis = encode_hash(
-        query.get_header_key(query.to_confirmed(0)));
-
-    if (genesis == "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
-        return "main";
-    if (genesis == "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
-        return "test";
-    if (genesis == "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6")
-        return "signet";
-    if (genesis == "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")
-        return "regtest";
-
-    return "unknown";
-}
-
-} // namespace
 
 // Handlers.
 // ----------------------------------------------------------------------------
