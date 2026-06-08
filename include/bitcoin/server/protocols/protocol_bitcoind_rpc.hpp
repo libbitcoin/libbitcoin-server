@@ -103,6 +103,12 @@ protected:
         rpc_interface::verify_tx_out_set, const std::string&) NOEXCEPT;
     bool handle_get_network_info(const code& ec,
         rpc_interface::get_network_info) NOEXCEPT;
+    bool handle_get_raw_transaction(const code& ec,
+        rpc_interface::get_raw_transaction, const std::string& txid,
+        double verbose, const std::string& blockhash) NOEXCEPT;
+    bool handle_send_raw_transaction(const code& ec,
+        rpc_interface::send_raw_transaction, const std::string& hexstring,
+        double maxfeerate) NOEXCEPT;
 
     /// Senders.
     void send_error(const code& ec) NOEXCEPT;

@@ -21,6 +21,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/bitcoind_json.hpp>
+#include <bitcoin/network/messages/peer/peer.hpp>
 #include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
@@ -68,6 +69,8 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_verify_tx_out_set, _1, _2, _3);
 
     SUBSCRIBE_BITCOIND(handle_get_network_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4);
     network::protocol_http::start();
 }
 
@@ -521,6 +524,97 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
         { "localaddresses", rpc::array_t{} },
         { "warnings", std::string{} }
     }, 256);
+    return true;
+}
+
+// Rawtransactions methods.
+// ----------------------------------------------------------------------------
+
+bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
+    rpc_interface::get_raw_transaction, const std::string& txid,
+    double verbose, const std::string&) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // The blockhash hint is unused: libbitcoin archives all tx (global index).
+    hash_digest hash{};
+    if (!decode_hash(hash, txid))
+    {
+        send_error(error::not_found, txid, txid.size());
+        return true;
+    }
+
+    constexpr auto witness = true;
+    auto& query = archive();
+    const auto link = query.to_tx(hash);
+    const auto tx = query.get_transaction(link, witness);
+    if (is_null(tx))
+    {
+        send_error(error::not_found, txid, txid.size());
+        return true;
+    }
+
+    if (verbose == 0.0)
+    {
+        send_text(to_hex(*tx, tx->serialized_size(witness), witness));
+        return true;
+    }
+
+    auto model = value_from(bitcoind_verbose(*tx));
+    inject_tx_context(model.as_object(), query, link);
+    send_result(rpc::value_t(std::move(model)),
+        two * tx->serialized_size(witness));
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
+    rpc_interface::send_raw_transaction, const std::string& hexstring,
+    double) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexstring))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto tx = std::make_shared<const chain::transaction>(data, true);
+    if (!tx->is_valid())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    auto& query = archive();
+    const auto txid = tx->hash(false);
+
+    // Archive (so the out-relay can serve getdata) only if not already known.
+    // TODO: contextual validation (populate_with_metadata + connect) for policy.
+    if (query.to_tx(txid).is_terminal())
+    {
+        if (tx->check())
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        if (query.set_code(*tx))
+        {
+            send_error(database::error::integrity);
+            return true;
+        }
+    }
+
+    // Announce to peers; protocol_transaction_out_106 serves the tx on getdata.
+    broadcast<messages::peer::transaction>(
+        std::make_shared<const messages::peer::transaction>(
+            messages::peer::transaction{ tx }));
+
+    send_result(encode_hash(txid), two * system::hash_size);
     return true;
 }
 

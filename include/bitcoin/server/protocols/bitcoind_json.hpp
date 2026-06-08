@@ -78,6 +78,32 @@ inline void inject_block_context(boost::json::object& out, const auto& query,
             query.get_header_key(query.to_confirmed(height + 1u)));
 }
 
+/// Add the chain-context fields the bitcoind tx serializer omits (verbose tx).
+/// For a confirmed tx: in_active_chain/blockhash/confirmations/blocktime/time.
+/// For an archived-but-unconfirmed tx: confirmations = 0 (no block fields).
+inline void inject_tx_context(boost::json::object& out, const auto& query,
+    const database::tx_link& link) NOEXCEPT
+{
+    size_t height{};
+    if (!query.is_confirmed_tx(link) || !query.get_tx_height(height, link))
+    {
+        out["confirmations"] = 0;
+        return;
+    }
+
+    const auto block = query.to_confirmed(height);
+    const auto top = query.get_top_confirmed();
+    const auto header = query.get_header(block);
+    out["in_active_chain"] = true;
+    out["blockhash"] = system::encode_hash(query.get_header_key(block));
+    out["confirmations"] = static_cast<uint64_t>(top - height + 1u);
+    if (header)
+    {
+        out["blocktime"] = header->timestamp();
+        out["time"] = header->timestamp();
+    }
+}
+
 /// Build a bitcoind-format block header object (no system serializer exists).
 inline boost::json::object header_to_bitcoind(
     const system::chain::header& header) NOEXCEPT
