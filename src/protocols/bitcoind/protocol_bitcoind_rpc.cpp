@@ -509,7 +509,7 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     send_result(rpc::object_t
     {
         { "version", 0 },
-        { "subversion", "/libbitcoin:server/" },
+        { "subversion", std::string{ "/libbitcoin:server/" } },
         { "protocolversion", 70016 },
         { "localrelay", true },
         { "timeoffset", 0 },
@@ -519,7 +519,7 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
         { "relayfee", 0.00001 },
         { "incrementalfee", 0.00001 },
         { "localaddresses", rpc::array_t{} },
-        { "warnings", "" }
+        { "warnings", std::string{} }
     }, 256);
     return true;
 }
