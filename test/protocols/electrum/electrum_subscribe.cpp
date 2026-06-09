@@ -862,4 +862,48 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__subscribed__
     REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_notify__status_recomputed_clean)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
+    const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
+
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+
+    const auto expected_confirmed = encode_base16(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":11:" +
+        encode_hash(hash12) + ":12:"
+    ));
+
+    const auto request = R"({"id":1101,"method":"blockchain.scripthash.subscribe","params":["%1%"]})" "\n";
+    const auto response1 = get((boost::format(request) % found_scripthash).str());
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirmed);
+
+    // Reorg resets the accumulator and clears the cursor; the following organized
+    // event re-folds the unchanged history and must reproduce the same status.
+    notify(node::chase::reorganized);
+    notify(node::chase::organized);
+
+    const auto notification = receive();
+    REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification.at("params").is_array());
+    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.scripthash.subscribe");
+
+    const auto& params = notification.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 2u);
+    BOOST_REQUIRE(params.at(0).is_string());
+    BOOST_REQUIRE(params.at(1).is_string());
+    BOOST_REQUIRE_EQUAL(params.at(1).as_string(), expected_confirmed);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
