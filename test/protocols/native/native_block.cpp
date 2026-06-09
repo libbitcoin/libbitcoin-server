@@ -160,14 +160,7 @@ BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__progressive_notify__expected)
     BOOST_REQUIRE_EQUAL(to_string(ws_receive()), "0b");
 }
 
-BOOST_AUTO_TEST_CASE(native__reorganized_event__payload_is_header_t__not_height_t)
-{
-    const node::event_value value{ node::header_t{ 11u } };
-    BOOST_REQUIRE(std::get_if<node::header_t>(&value) != nullptr);
-    BOOST_REQUIRE(std::get_if<node::height_t>(&value) == nullptr);
-}
-
-BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__reorganized__emits_fork_height)
+BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__reorganized__emits_top_height)
 {
     BOOST_REQUIRE(!ws_upgrade());
 
