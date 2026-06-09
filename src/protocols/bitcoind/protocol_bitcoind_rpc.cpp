@@ -244,6 +244,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
 
     const auto& query = archive();
     const auto blocks = query.get_top_confirmed();
+    const auto headers = query.get_top_candidate();
     const auto link = query.to_confirmed(blocks);
     const auto header = query.get_header(link);
     if (is_null(header))
@@ -252,18 +253,29 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         return true;
     }
 
+    // verificationprogress is approximated as confirmed/candidate height, the
+    // best available estimate of the chain tip during sync (1.0 once current).
+    const auto progress = is_zero(headers) ? 1.0 :
+        std::min(1.0, static_cast<double>(blocks) /
+            static_cast<double>(headers));
+
     send_result(rpc::object_t
     {
         { "chain", chain_name(query) },
         { "blocks", static_cast<uint64_t>(blocks) },
-        { "headers", static_cast<uint64_t>(query.get_top_candidate()) },
+        { "headers", static_cast<uint64_t>(headers) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(header->bits())) },
+        { "target", encode_hash(from_uintx(
+            chain::compact::expand(header->bits()))) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
         { "mediantime", median_time_past(query, blocks) },
-        { "pruned", false }
-    }, 256);
+        { "verificationprogress", progress },
+        { "initialblockdownload", blocks < headers },
+        { "pruned", false },
+        { "warnings", std::string{} }
+    }, 512);
     return true;
 }
 
