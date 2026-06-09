@@ -24,7 +24,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
-#include <bitcoin/server/protocols/bitcoind_json.hpp>
 #include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
@@ -143,7 +142,7 @@ std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
 }
 
 bool protocol_bitcoind_rest::handle_get_block(const code& ec,
-    rest_interface::block, uint8_t media, system::hash_cptr hash) NOEXCEPT
+    rest_interface::block, uint8_t media, const system::hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -215,7 +214,7 @@ bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
-    rest_interface::block_txs, uint8_t media, system::hash_cptr hash) NOEXCEPT
+    rest_interface::block_txs, uint8_t media, const system::hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -255,7 +254,7 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
-    rest_interface::block_headers, uint8_t media, system::hash_cptr hash,
+    rest_interface::block_headers, uint8_t media, const system::hash_cptr& hash,
     uint32_t count) NOEXCEPT
 {
     if (stopped(ec))
@@ -341,7 +340,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
-    rest_interface::block_part, uint8_t media, system::hash_cptr hash,
+    rest_interface::block_part, uint8_t media, const system::hash_cptr& hash,
     uint32_t offset, uint32_t size) NOEXCEPT
 {
     if (stopped(ec))
@@ -388,7 +387,7 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
 
 bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
     rest_interface::block_spent_tx_outputs, uint8_t media,
-    system::hash_cptr hash) NOEXCEPT
+    const system::hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -454,7 +453,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
-    rest_interface::block_filter, uint8_t media, system::hash_cptr hash,
+    rest_interface::block_filter, uint8_t media, const system::hash_cptr& hash,
     uint8_t) NOEXCEPT
 {
     if (stopped(ec))
@@ -496,7 +495,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
-    rest_interface::block_filter_headers, uint8_t media, system::hash_cptr hash,
+    rest_interface::block_filter_headers, uint8_t media, const system::hash_cptr& hash,
     uint8_t) NOEXCEPT
 {
     if (stopped(ec))

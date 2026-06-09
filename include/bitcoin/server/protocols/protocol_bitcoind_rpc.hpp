@@ -24,6 +24,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
+#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -109,6 +110,18 @@ protected:
     bool handle_send_raw_transaction(const code& ec,
         rpc_interface::send_raw_transaction, const std::string& hexstring,
         double maxfeerate) NOEXCEPT;
+
+    /// Json context helpers (shared with rest, defined in *_json.cpp).
+    static uint32_t median_time_past(const node::query& query,
+        size_t height) NOEXCEPT;
+    static void inject_block_context(boost::json::object& out,
+        const node::query& query, const database::header_link& link,
+        const system::chain::header& header) NOEXCEPT;
+    static void inject_tx_context(boost::json::object& out,
+        const node::query& query, const database::tx_link& link) NOEXCEPT;
+    static boost::json::object header_to_bitcoind(
+        const system::chain::header& header) NOEXCEPT;
+    static std::string chain_name(const node::query& query) NOEXCEPT;
 
     /// Senders.
     void send_error(const code& ec) NOEXCEPT;

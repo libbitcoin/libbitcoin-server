@@ -20,7 +20,6 @@
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/bitcoind_json.hpp>
 #include <bitcoin/network/messages/peer/peer.hpp>
 #include <bitcoin/system/chain/json/json.hpp>
 

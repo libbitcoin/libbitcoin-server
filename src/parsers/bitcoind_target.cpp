@@ -18,6 +18,8 @@
  */
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 
+#include <charconv>
+#include <iterator>
 #include <ranges>
 #include <optional>
 #include <variant>
@@ -37,7 +39,7 @@ static hash_cptr to_hash(const std::string_view& token) NOEXCEPT
 {
     hash_digest out{};
     return decode_hash(out, token) ?
-        emplace_shared<const hash_digest>(std::move(out)) : hash_cptr{};
+        to_shared(std::move(out)) : hash_cptr{};
 }
 
 // Map a Bitcoin Core REST file extension to a media value.
@@ -65,8 +67,12 @@ static bool to_media(uint8_t& out, const std::string_view& extension) NOEXCEPT
 template <typename Number>
 static bool to_number(Number& out, const std::string_view& token) NOEXCEPT
 {
-    return !token.empty() && is_ascii_numeric(token) && (is_one(token.size()) ||
-        token.front() != '0') && deserialize(out, token);
+    if (token.empty() || (token.size() > one && token.front() == '0'))
+        return false;
+
+    const auto end = std::next(token.data(), token.size());
+    const auto result = std::from_chars(token.data(), end, out);
+    return result.ec == std::errc{} && result.ptr == end;
 }
 
 // Split a "<name>.<extension>" leaf into its name and a media value.
