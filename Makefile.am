@@ -93,6 +93,7 @@ test_libbitcoin_server_test_SOURCES = \
     test/parsers/electrum_version.cpp \
     test/parsers/native_query.cpp \
     test/parsers/native_target.cpp \
+    test/protocols/bitcoind/bitcoind_json.cpp \
     test/protocols/bitcoind/bitcoind_rest.cpp \
     test/protocols/bitcoind/bitcoind_rpc.cpp \
     test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
