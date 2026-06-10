@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call__returns_negotiat
     BOOST_REQUIRE(handshake(version));
 
     const auto request = R"({"id":42,"method":"server.version","params":["newname","%1%"]})" "\n";
-    const auto response = get((boost::format(request) % expected).str());
+    const auto response = get((boost_format(request) % expected).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 2u);
     BOOST_REQUIRE(response.at("result").as_array().at(1).is_string());
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__invalid_arg
 {
     // Exceeds max_client_name_length (protected).
     const std::string name(1025, 'a');
-    const auto response = get((boost::format(R"({"id":42,"method":"server.version","params":["%1%","1.4"]})" "\n") % name).str());
+    const auto response = get((boost_format(R"({"id":42,"method":"server.version","params":["%1%","1.4"]})" "\n") % name).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }

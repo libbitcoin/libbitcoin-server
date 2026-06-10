@@ -18,7 +18,6 @@
  */
 #include "../../test.hpp"
 #include "electrum_setup_fixture.hpp"
-#include <boost/format.hpp>
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
@@ -66,7 +65,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__v1_0_genesis_co
 
     const auto tx0_text = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
     constexpr auto request = R"({"id":73,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % tx0_text).str());
+    const auto response = get((boost_format(request) % tx0_text).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), coinbase_transaction.message());
 }
@@ -77,7 +76,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__v1_6_genesis_co
 
     const auto tx0_text = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
     constexpr auto request = R"({"id":74,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % tx0_text).str());
+    const auto response = get((boost_format(request) % tx0_text).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), coinbase_transaction.value());
 }
@@ -156,7 +155,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_tra
     const auto tx0_hash = encode_hash(test::genesis.transactions_ptr()->front()->hash(false));
     const auto tx1_hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
     constexpr auto request = R"({"id":73,"method":"blockchain.transaction.broadcast_package","params":[["%1%","%2%"]]})" "\n";
-    const auto response = get((boost::format(request) % tx0_text % tx1_text).str());
+    const auto response = get((boost_format(request) % tx0_text % tx1_text).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -208,7 +207,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__nonexistent_tx__not_f
 
     const auto bogus = "0000000000000000000000000000000000000000000000000000000000000042";
     const auto request = R"({"id":79,"method":"blockchain.transaction.get","params":["%1%",false]})" "\n";
-    const auto response = get((boost::format(request) % bogus).str());
+    const auto response = get((boost_format(request) % bogus).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
 }
@@ -220,7 +219,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__missing_verbose__defa
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":80,"method":"blockchain.transaction.get","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % tx0_hash).str());
+    const auto response = get((boost_format(request) % tx0_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
 }
@@ -232,7 +231,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__extra_param__dropped)
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":81,"method":"blockchain.transaction.get","params":["%1%",false,"extra"]})" "\n";
-    const auto response = get((boost::format(request) % tx0_hash).str());
+    const auto response = get((boost_format(request) % tx0_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -243,7 +242,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verb
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":82,"method":"blockchain.transaction.get","params":["%1%",false]})" "\n";
-    const auto response = get((boost::format(request) % tx0_hash).str());
+    const auto response = get((boost_format(request) % tx0_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
 }
@@ -255,7 +254,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_1_verbose__
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":83,"method":"blockchain.transaction.get","params":["%1%",true]})" "\n";
-    const auto response = get((boost::format(request) % tx0_hash).str());
+    const auto response = get((boost_format(request) % tx0_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
@@ -267,7 +266,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_2_verbose__
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":83,"method":"blockchain.transaction.get","params":["%1%",true]})" "\n";
-    const auto response = get((boost::format(request) % tx0_hash).str());
+    const auto response = get((boost_format(request) % tx0_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     auto expected = value_from(bitcoind(coinbase));
@@ -319,7 +318,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__nonexistent_he
 
     const auto bogus = "0000000000000000000000000000000000000000000000000000000000000042";
     const auto request = R"({"id":102,"method":"blockchain.transaction.get_merkle","params":["%1%",999]})" "\n";
-    const auto response = get((boost::format(request) % bogus).str());
+    const auto response = get((boost_format(request) % bogus).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
 }
@@ -330,7 +329,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__tx_not_in_bloc
 
     const auto bogus = "0000000000000000000000000000000000000000000000000000000000000042";
     const auto request = R"({"id":103,"method":"blockchain.transaction.get_merkle","params":["%1%",0]})" "\n";
-    const auto response = get((boost::format(request) % bogus).str());
+    const auto response = get((boost_format(request) % bogus).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
 }
@@ -342,7 +341,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__genesis_coinba
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":104,"method":"blockchain.transaction.get_merkle","params":["%1%",0]})" "\n";
-    const auto response = get((boost::format(request) % tx_hash).str());
+    const auto response = get((boost_format(request) % tx_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -371,7 +370,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__mutiple_txs_bl
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":104,"method":"blockchain.transaction.get_merkle","params":["%1%",10]})" "\n";
-    const auto response = get((boost::format(request) % encode_hash(tx1_hash)).str());
+    const auto response = get((boost_format(request) % encode_hash(tx1_hash)).str());
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -395,7 +394,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__missing_param_
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":105,"method":"blockchain.transaction.get_merkle","params":["%1%"]})" "\n";
-    const auto response = get((boost::format(request) % tx_hash).str());
+    const auto response = get((boost_format(request) % tx_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -406,7 +405,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__extra_param__d
     const auto& coinbase = *test::genesis.transactions_ptr()->front();
     const auto tx_hash = encode_hash(coinbase.hash(false));
     const auto request = R"({"id":106,"method":"blockchain.transaction.get_merkle","params":["%1%",0,"extra"]})" "\n";
-    const auto response = get((boost::format(request) % tx_hash).str());
+    const auto response = get((boost_format(request) % tx_hash).str());
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 

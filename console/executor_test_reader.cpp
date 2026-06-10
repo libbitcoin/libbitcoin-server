@@ -22,9 +22,9 @@
 namespace libbitcoin {
 namespace server {
 
-using boost::format;
 using namespace network;
 using namespace system;
+using format = boost_format;
 
 // arbitrary testing (const).
 

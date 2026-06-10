@@ -22,7 +22,7 @@
 namespace libbitcoin {
 namespace server {
 
-using boost::format;
+using format = boost_format;
 
 constexpr double to_double(auto integer)
 {

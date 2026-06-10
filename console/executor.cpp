@@ -27,9 +27,9 @@
 namespace libbitcoin {
 namespace server {
 
-using boost::format;
 using namespace system;
 using namespace std::placeholders;
+using format = boost_format;
 
 // Construction.
 // ----------------------------------------------------------------------------

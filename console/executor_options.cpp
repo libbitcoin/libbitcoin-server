@@ -26,7 +26,7 @@ namespace server {
 
 using namespace network;
 using namespace node;
-using boost::format;
+using format = boost_format;
 
 // local
 enum menu : uint8_t
