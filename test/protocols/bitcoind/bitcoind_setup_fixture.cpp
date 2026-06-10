@@ -182,9 +182,7 @@ std::string bitcoind_setup_fixture::rest_text(std::string_view target)
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
 
     auto body = response.body();
-    while (!body.empty() && (body.back() == '\n' || body.back() == '\r'))
-        body.pop_back();
-
+    system::trim_right(body);
     return body;
 }
 

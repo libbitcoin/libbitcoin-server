@@ -25,8 +25,9 @@ using namespace network::rpc;
 using object_t = network::rpc::object_t;
 using media_type = network::http::media_type;
 
-static const std::string test_hash =
-    "0000000000000000000000000000000000000000000000000000000000000042";
+constexpr auto expected_hash = base16_hash(
+    "0000000000000000000000000000000000000000000000000000000000000042");
+static const std::string test_hash = encode_hash(expected_hash);
 
 static const object_t& params_of(const request_t& request) NOEXCEPT
 {
@@ -129,7 +130,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_json__expected)
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(object.size(), 2u);
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
-    BOOST_REQUIRE_EQUAL(to_uintx(*hash_of(object)), uint256_t{ 0x42 });
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_media__mapped)
@@ -159,7 +160,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_notxdetails__block_txs)
 
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(object.size(), 2u);
-    BOOST_REQUIRE_EQUAL(to_uintx(*hash_of(object)), uint256_t{ 0x42 });
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_spent__block_spent_tx_outputs)
@@ -168,7 +169,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_spent__block_spent_tx_outpu
     const auto path = "/rest/block/spent/" + test_hash + ".json";
     BOOST_REQUIRE(!bitcoind_target(out, path));
     BOOST_REQUIRE_EQUAL(out.method, "block_spent_tx_outputs");
-    BOOST_REQUIRE_EQUAL(to_uintx(*hash_of(params_of(out))), uint256_t{ 0x42 });
+    BOOST_REQUIRE_EQUAL(*hash_of(params_of(out)), expected_hash);
 }
 
 // blockhashbyheight
@@ -205,7 +206,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__headers__block_headers)
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(object.size(), 3u);
     BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("count").value()), 3u);
-    BOOST_REQUIRE_EQUAL(to_uintx(*hash_of(object)), uint256_t{ 0x42 });
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
 }
 
@@ -221,7 +222,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilter_basic__block_filter)
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(object.size(), 3u);
     BOOST_REQUIRE_EQUAL(std::get<uint8_t>(object.at("type").value()), 0u);
-    BOOST_REQUIRE_EQUAL(to_uintx(*hash_of(object)), uint256_t{ 0x42 });
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_basic__block_filter_headers)
@@ -246,7 +247,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockpart__block_part)
     BOOST_REQUIRE_EQUAL(object.size(), 4u);
     BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("offset").value()), 0u);
     BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("size").value()), 80u);
-    BOOST_REQUIRE_EQUAL(to_uintx(*hash_of(object)), uint256_t{ 0x42 });
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_octet_stream));
 }
 

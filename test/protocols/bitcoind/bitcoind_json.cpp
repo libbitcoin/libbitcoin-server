@@ -18,8 +18,6 @@
  */
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
-#include <algorithm>
-#include <vector>
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
 using namespace system;
@@ -52,14 +50,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__header_to_bitcoind__block1_header__maps_fiel
 
     BOOST_REQUIRE_EQUAL(as_text(out.at("hash")), encode_hash(header.hash()));
     BOOST_REQUIRE_EQUAL(out.at("version").to_number<int64_t>(), header.version());
-    BOOST_REQUIRE_EQUAL(as_text(out.at("versionHex")),
-        encode_base16(to_big_endian(header.version())));
-    BOOST_REQUIRE_EQUAL(as_text(out.at("merkleroot")),
-        encode_hash(header.merkle_root()));
+    BOOST_REQUIRE_EQUAL(as_text(out.at("versionHex")), encode_base16(to_big_endian(header.version())));
+    BOOST_REQUIRE_EQUAL(as_text(out.at("merkleroot")), encode_hash(header.merkle_root()));
     BOOST_REQUIRE_EQUAL(out.at("time").to_number<uint64_t>(), header.timestamp());
     BOOST_REQUIRE_EQUAL(out.at("nonce").to_number<uint64_t>(), header.nonce());
-    BOOST_REQUIRE_EQUAL(as_text(out.at("bits")),
-        encode_base16(to_big_endian(header.bits())));
+    BOOST_REQUIRE_EQUAL(as_text(out.at("bits")), encode_base16(to_big_endian(header.bits())));
     BOOST_REQUIRE(out.at("difficulty").is_number());
     BOOST_REQUIRE(!out.contains("height"));
     BOOST_REQUIRE(!out.contains("confirmations"));
@@ -122,31 +117,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__chain_name__mainnet_genesis__main)
 
 // median_time_past
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__median_time_past__genesis__genesis_time)
+BOOST_AUTO_TEST_CASE(bitcoind_json__median_time_past__matches_stored_context)
 {
-    BOOST_REQUIRE_EQUAL(json::median_time_past(query_, 0),
-        test::genesis.header().timestamp());
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_json__median_time_past__height_nine__sorted_median)
-{
-    std::vector<uint32_t> times
-    {
-        test::genesis.header().timestamp(),
-        test::block1.header().timestamp(),
-        test::block2.header().timestamp(),
-        test::block3.header().timestamp(),
-        test::block4.header().timestamp(),
-        test::block5.header().timestamp(),
-        test::block6.header().timestamp(),
-        test::block7.header().timestamp(),
-        test::block8.header().timestamp(),
-        test::block9.header().timestamp()
-    };
-
-    std::sort(times.begin(), times.end());
-    BOOST_REQUIRE_EQUAL(json::median_time_past(query_, 9),
-        times.at(times.size() / 2u));
+    const auto link = query_.to_header(test::block5_hash);
+    chain::context ctx{};
+    BOOST_REQUIRE(query_.get_context(ctx, link));
+    BOOST_REQUIRE_EQUAL(json::median_time_past(query_, link), ctx.median_time_past);
 }
 
 // inject_block_context
@@ -160,14 +136,13 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__middle__height_confirm
     boost::json::object out{};
     json::inject_block_context(out, query_, link, *header);
 
+    chain::context ctx{};
+    BOOST_REQUIRE(query_.get_context(ctx, link));
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 5u);
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 5);
-    BOOST_REQUIRE_EQUAL(out.at("mediantime").to_number<uint64_t>(),
-        json::median_time_past(query_, 5));
-    BOOST_REQUIRE_EQUAL(as_text(out.at("previousblockhash")),
-        encode_hash(test::block4_hash));
-    BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")),
-        encode_hash(test::block6_hash));
+    BOOST_REQUIRE_EQUAL(out.at("mediantime").to_number<uint32_t>(), ctx.median_time_past);
+    BOOST_REQUIRE_EQUAL(as_text(out.at("previousblockhash")), encode_hash(test::block4_hash));
+    BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block6_hash));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__genesis__no_previous)
@@ -182,8 +157,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__genesis__no_previous)
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 0u);
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 10);
     BOOST_REQUIRE(!out.contains("previousblockhash"));
-    BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")),
-        encode_hash(test::block1_hash));
+    BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block1_hash));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__tip__no_next)
@@ -197,8 +171,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__tip__no_next)
 
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 9u);
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 1);
-    BOOST_REQUIRE_EQUAL(as_text(out.at("previousblockhash")),
-        encode_hash(test::block8_hash));
+    BOOST_REQUIRE_EQUAL(as_text(out.at("previousblockhash")), encode_hash(test::block8_hash));
     BOOST_REQUIRE(!out.contains("nextblockhash"));
 }
 
@@ -213,11 +186,9 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__confirmed_coinbase__block
     json::inject_tx_context(out, query_, link);
 
     BOOST_REQUIRE(out.at("in_active_chain").as_bool());
-    BOOST_REQUIRE_EQUAL(as_text(out.at("blockhash")),
-        encode_hash(test::block1_hash));
+    BOOST_REQUIRE_EQUAL(as_text(out.at("blockhash")), encode_hash(test::block1_hash));
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 9);
-    BOOST_REQUIRE_EQUAL(out.at("blocktime").to_number<uint64_t>(),
-        test::block1.header().timestamp());
+    BOOST_REQUIRE_EQUAL(out.at("blocktime").to_number<uint64_t>(), test::block1.header().timestamp());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__unknown__zero_confirmations)

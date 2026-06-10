@@ -67,7 +67,7 @@ static bool to_media(uint8_t& out, const std::string_view& extension) NOEXCEPT
 template <typename Number>
 static bool to_number(Number& out, const std::string_view& token) NOEXCEPT
 {
-    if (token.empty() || (token.size() > one && token.front() == '0'))
+    if (token.empty() || (token.size() > one && token.starts_with('0')))
         return false;
 
     const auto end = std::next(token.data(), token.size());

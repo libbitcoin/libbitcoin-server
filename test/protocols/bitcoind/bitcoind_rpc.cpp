@@ -21,32 +21,37 @@
 
 using namespace system;
 
-// Quote a hash as a single-element json-rpc params array.
-static std::string hash_param(const hash_digest& hash) NOEXCEPT
+namespace {
+
+const auto block0 = encode_hash(test::block0_hash);
+const auto block1 = encode_hash(test::block1_hash);
+const auto block5 = encode_hash(test::block5_hash);
+const auto block9 = encode_hash(test::block9_hash);
+
+std::string hash_param(const hash_digest& hash) NOEXCEPT
 {
     return "[\"" + encode_hash(hash) + "\"]";
 }
 
-// Quote a hash plus a trailing scalar (e.g. verbosity) as a params array.
-static std::string hash_param(const hash_digest& hash,
+std::string hash_param(const hash_digest& hash,
     const std::string& tail) NOEXCEPT
 {
     return "[\"" + encode_hash(hash) + "\", " + tail + "]";
 }
 
-// True if the json-rpc response carries a non-null error member.
-static bool has_error(const boost::json::value& response) NOEXCEPT
+bool has_error(const boost::json::value& response) NOEXCEPT
 {
     return response.is_object() && response.as_object().contains("error") &&
         !response.at("error").is_null();
 }
 
-static std::string as_text(const boost::json::value& value) NOEXCEPT
+std::string as_text(const boost::json::value& value) NOEXCEPT
 {
-    return std::string{ value.as_string().c_str() };
+    return { value.as_string().c_str() };
 }
 
-// The ten-block store contains mainnet blocks 0..9 (block9 is the tip).
+} // namespace
+
 BOOST_FIXTURE_TEST_SUITE(bitcoind_tests, bitcoind_ten_block_setup_fixture)
 
 // blockchain
@@ -62,30 +67,26 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__ten_block_store__nine)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getbestblockhash__ten_block_store__block9)
 {
     const auto response = rpc("getbestblockhash");
-    BOOST_REQUIRE_EQUAL(as_text(response.at("result")),
-        encode_hash(test::block9_hash));
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block9);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__height_five__block5)
 {
     const auto response = rpc("getblockhash", "[5]");
-    BOOST_REQUIRE_EQUAL(as_text(response.at("result")),
-        encode_hash(test::block5_hash));
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block5);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__genesis__block0)
 {
     const auto response = rpc("getblockhash", "[0]");
-    BOOST_REQUIRE_EQUAL(as_text(response.at("result")),
-        encode_hash(test::block0_hash));
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block0);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__block9__no_transactions)
 {
     const auto response = rpc("getblockheader", hash_param(test::block9_hash));
     const auto& result = response.at("result");
-    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")),
-        encode_hash(test::block9_hash));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
     BOOST_REQUIRE(!result.as_object().contains("tx"));
 }
@@ -94,8 +95,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity1__txid_list)
 {
     const auto response = rpc("getblock", hash_param(test::block9_hash, "1"));
     const auto& result = response.at("result");
-    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")),
-        encode_hash(test::block9_hash));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
     BOOST_REQUIRE(result.at("tx").is_array());
     BOOST_REQUIRE_EQUAL(result.at("tx").as_array().size(), 1u);
@@ -117,13 +117,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(as_text(result.at("chain")), "main");
     BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
-    // The mock store populates the confirmed chain only; headers (candidate
-    // top) reflects that, so assert presence/type rather than a height.
     BOOST_REQUIRE(result.at("headers").is_int64());
-    BOOST_REQUIRE_EQUAL(as_text(result.at("bestblockhash")),
-        encode_hash(test::block9_hash));
-
-    // Fields added alongside these tests.
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bestblockhash")), block9);
     BOOST_REQUIRE(result.as_object().contains("target"));
     BOOST_REQUIRE(result.at("warnings").is_string());
     BOOST_REQUIRE(!result.at("initialblockdownload").as_bool());
@@ -157,10 +152,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__coinbase_verbose__context)
     BOOST_REQUIRE_EQUAL(as_text(result.at("txid")), encode_hash(txid));
     BOOST_REQUIRE(result.at("vin").is_array());
     BOOST_REQUIRE(result.at("vout").is_array());
-
-    // Chain context injected at the protocol layer.
-    BOOST_REQUIRE_EQUAL(as_text(result.at("blockhash")),
-        encode_hash(test::block1_hash));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("blockhash")), block1);
     BOOST_REQUIRE_EQUAL(result.at("confirmations").as_int64(), 9);
 }
 
@@ -195,7 +187,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BOOST_REQUIRE(result.at("networks").is_array());
 }
 
-// declared but deliberately not implemented (structured not_implemented error)
+// not implemented (structured not_implemented error)
 // ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
@@ -217,7 +209,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
         BOOST_REQUIRE_MESSAGE(has_error(rpc(method, params)), method);
 }
 
-// getblockfilter is implemented but requires bip158 (disabled in this store).
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)
 {
     const auto response = rpc("getblockfilter",
@@ -234,16 +225,15 @@ BOOST_FIXTURE_TEST_SUITE(bitcoind_witness_tests, bitcoind_witness_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__witness_tx__wtxid_differs)
 {
-    // block1a's first transaction carries witnesses; wtxid differs from txid.
     const auto& tx = *test::block1a.transactions_ptr()->front();
     const auto txid = tx.hash(false);
+    const auto txid_hex = encode_hash(txid);
     const auto response = rpc("getrawtransaction", hash_param(txid, "1"));
     const auto& result = response.at("result");
 
-    BOOST_REQUIRE_EQUAL(as_text(result.at("txid")), encode_hash(txid));
-    BOOST_REQUIRE_NE(as_text(result.at("hash")), encode_hash(txid));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("txid")), txid_hex);
+    BOOST_REQUIRE_NE(as_text(result.at("hash")), txid_hex);
 
-    // Segwit weight accounting: vsize == ceil(weight / 4).
     const auto weight = result.at("weight").as_int64();
     BOOST_REQUIRE_EQUAL(result.at("vsize").as_int64(), (weight + 3) / 4);
 }

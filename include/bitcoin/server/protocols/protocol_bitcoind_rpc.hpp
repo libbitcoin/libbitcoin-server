@@ -113,7 +113,7 @@ protected:
 
     /// Json context helpers (shared with rest, defined in *_json.cpp).
     static uint32_t median_time_past(const node::query& query,
-        size_t height) NOEXCEPT;
+        const database::header_link& link) NOEXCEPT;
     static void inject_block_context(boost::json::object& out,
         const node::query& query, const database::header_link& link,
         const system::chain::header& header) NOEXCEPT;

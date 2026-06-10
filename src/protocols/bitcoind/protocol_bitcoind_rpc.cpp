@@ -201,7 +201,7 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
     if (verbosity == 0.0)
     {
         const auto block = query.get_block(link, witness);
-        if (is_null(block))
+        if (!block)
         {
             send_error(error::not_found, blockhash, blockhash.size());
             return true;
@@ -214,7 +214,7 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
     if (verbosity == 1.0 || verbosity == 2.0)
     {
         const auto block = query.get_block(link, witness);
-        if (is_null(block))
+        if (!block)
         {
             send_error(error::not_found, blockhash, blockhash.size());
             return true;
@@ -246,7 +246,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
     const auto headers = query.get_top_candidate();
     const auto link = query.to_confirmed(blocks);
     const auto header = query.get_header(link);
-    if (is_null(header))
+    if (!header)
     {
         send_error(database::error::integrity);
         return true;
@@ -269,7 +269,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
             chain::compact::expand(header->bits()))) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, blocks) },
+        { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
         { "initialblockdownload", blocks < headers },
         { "pruned", false },
@@ -369,7 +369,7 @@ bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
     const auto& query = archive();
     const auto link = query.to_header(hash);
     const auto header = query.get_header(link);
-    if (is_null(header))
+    if (!header)
     {
         send_error(error::not_found, blockhash, blockhash.size());
         return true;
@@ -382,7 +382,7 @@ bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
     }
 
     auto out = header_to_bitcoind(*header);
-    out["nTx"] = static_cast<uint64_t>(query.get_tx_count(link));
+    out["nTx"] = query.get_tx_count(link);
     inject_block_context(out, query, link, *header);
     send_result(rpc::value_t(boost::json::value(std::move(out))), 512);
     return true;
@@ -439,7 +439,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     }
 
     const auto output = query.get_output(output_fk);
-    if (is_null(output))
+    if (!output)
     {
         send_result(rpc::value_t{}, 4);
         return true;
@@ -454,7 +454,8 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     {
         { "bestblock", encode_hash(query.get_top_confirmed_hash()) },
         { "confirmations", have_height ?
-            static_cast<int64_t>(top - tx_height + 1u) : int64_t{ 0 } },
+            possible_sign_cast<int64_t>(add1(floored_subtract(top, tx_height))) :
+            0_i64 },
         { "value", static_cast<double>(output->value()) / 100000000.0 },
         { "scriptPubKey", value_from(bitcoind(output->script())) },
         { "coinbase", query.is_coinbase(tx_fk) }
@@ -560,7 +561,7 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
     auto& query = archive();
     const auto link = query.to_tx(hash);
     const auto tx = query.get_transaction(link, witness);
-    if (is_null(tx))
+    if (!tx)
     {
         send_error(error::not_found, txid, txid.size());
         return true;

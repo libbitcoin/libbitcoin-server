@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
-#include <algorithm>
 #include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/system/chain/json/json.hpp>
@@ -29,24 +28,10 @@ namespace server {
 using namespace system;
 
 uint32_t protocol_bitcoind_rpc::median_time_past(const node::query& query,
-    size_t height) NOEXCEPT
+    const database::header_link& link) NOEXCEPT
 {
-    constexpr size_t window = 11;
-    const auto count = std::min(window, height + 1u);
-    std::vector<uint32_t> times{};
-    times.reserve(count);
-    for (size_t index = 0; index < count; ++index)
-    {
-        const auto header = query.get_header(query.to_confirmed(height - index));
-        if (header)
-            times.push_back(header->timestamp());
-    }
-
-    if (times.empty())
-        return 0;
-
-    std::sort(times.begin(), times.end());
-    return times.at(times.size() / 2u);
+    chain::context ctx{};
+    return query.get_context(ctx, link) ? ctx.median_time_past : 0;
 }
 
 void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
@@ -59,24 +44,25 @@ void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
 
     const auto top = query.get_top_confirmed();
     const auto confirmed = query.is_confirmed_block(link);
-    out["height"] = static_cast<uint64_t>(height);
+    out["height"] = height;
     out["confirmations"] = confirmed ?
-        static_cast<int64_t>(top - height + 1u) : int64_t{ -1 };
-    out["mediantime"] = median_time_past(query, height);
+        possible_sign_cast<int64_t>(add1(floored_subtract(top, height))) :
+        1_ni64;
+    out["mediantime"] = median_time_past(query, link);
 
     if (header.previous_block_hash() != null_hash)
         out["previousblockhash"] = encode_hash(header.previous_block_hash());
 
     if (confirmed && height < top)
         out["nextblockhash"] = encode_hash(
-            query.get_header_key(query.to_confirmed(height + 1u)));
+            query.get_header_key(query.to_confirmed(add1(height))));
 }
 
 void protocol_bitcoind_rpc::inject_tx_context(boost::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT
 {
     size_t height{};
-    if (!query.is_confirmed_tx(link) || !query.get_tx_height(height, link))
+    if (!query.get_tx_height(height, link))
     {
         out["confirmations"] = 0;
         return;
@@ -87,7 +73,8 @@ void protocol_bitcoind_rpc::inject_tx_context(boost::json::object& out,
     const auto header = query.get_header(block);
     out["in_active_chain"] = true;
     out["blockhash"] = encode_hash(query.get_header_key(block));
-    out["confirmations"] = static_cast<uint64_t>(top - height + 1u);
+    out["confirmations"] =
+        possible_sign_cast<int64_t>(add1(floored_subtract(top, height)));
     if (header)
     {
         out["blocktime"] = header->timestamp();
@@ -116,15 +103,15 @@ std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
     const auto genesis = query.get_header_key(query.to_confirmed(0));
 
     using selection = chain::selection;
-    const std::pair<selection, std::string> networks[]
+    static const std::vector<std::pair<hash_digest, std::string>> networks
     {
-        { selection::mainnet, "main" },
-        { selection::testnet, "test" },
-        { selection::regtest, "regtest" }
+        { system::settings{ selection::mainnet }.genesis_block.hash(), "main" },
+        { system::settings{ selection::testnet }.genesis_block.hash(), "test" },
+        { system::settings{ selection::regtest }.genesis_block.hash(), "regtest" }
     };
 
-    for (const auto& [network, name]: networks)
-        if (system::settings{ network }.genesis_block.hash() == genesis)
+    for (const auto& [hash, name]: networks)
+        if (hash == genesis)
             return name;
 
     // Signet is not yet modeled in system::settings (stubbed by genesis hash).

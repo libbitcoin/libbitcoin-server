@@ -156,7 +156,7 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto block = query.get_block(query.to_header(*hash), witness);
-    if (is_null(block))
+    if (!block)
     {
         send_not_found();
         return true;
@@ -228,7 +228,7 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto block = query.get_block(query.to_header(*hash), witness);
-    if (is_null(block))
+    if (!block)
     {
         send_not_found();
         return true;
@@ -355,7 +355,7 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto block = query.get_block(query.to_header(*hash), witness);
-    if (is_null(block))
+    if (!block)
     {
         send_not_found();
         return true;
@@ -401,7 +401,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto block = query.get_block(query.to_header(*hash), witness);
-    if (is_null(block))
+    if (!block)
     {
         send_not_found();
         return true;
@@ -545,7 +545,7 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
     const auto blocks = query.get_top_confirmed();
     const auto link = query.to_confirmed(blocks);
     const auto header = query.get_header(link);
-    if (is_null(header))
+    if (!header)
     {
         send_not_found();
         return true;
@@ -554,13 +554,13 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
     send_dom(boost::json::object
     {
         { "chain", chain_name(query) },
-        { "blocks", static_cast<uint64_t>(blocks) },
-        { "headers", static_cast<uint64_t>(query.get_top_candidate()) },
+        { "blocks", blocks },
+        { "headers", query.get_top_candidate() },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(header->bits())) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, blocks) },
+        { "mediantime", median_time_past(query, link) },
         { "pruned", false }
     }, 256);
     return true;
