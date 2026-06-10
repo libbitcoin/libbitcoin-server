@@ -22,9 +22,9 @@
 namespace libbitcoin {
 namespace server {
 
-using boost::format;
 using namespace network;
 using namespace system;
+using format = boost_format;
 
 // arbitrary testing (non-const).
 void executor::write_test(const hash_digest&)
