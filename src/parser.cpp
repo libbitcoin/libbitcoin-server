@@ -398,18 +398,18 @@ options_metadata parser::load_settings() THROWS
         "Validation of taproot script, defaults to 'true' (soft fork)."
     )
     (
-        "forks.time_warp_patch",
-        value<bool>(&configured.bitcoin.forks.time_warp_patch),
+        "forks.ltc_time_warp_patch",
+        value<bool>(&configured.bitcoin.forks.ltc_time_warp_patch),
         "Fix time warp bug, defaults to 'false' (litecoin)."
     )
     (
-        "forks.retarget_overflow_patch",
-        value<bool>(&configured.bitcoin.forks.retarget_overflow_patch),
+        "forks.ltc_retarget_overflow_patch",
+        value<bool>(&configured.bitcoin.forks.ltc_retarget_overflow_patch),
         "Fix target overflow for very low difficulty, defaults to 'false' (litecoin)."
     )
     (
-        "forks.scrypt_proof_of_work",
-        value<bool>(&configured.bitcoin.forks.scrypt_proof_of_work),
+        "forks.ltc_scrypt_proof_of_work",
+        value<bool>(&configured.bitcoin.forks.ltc_scrypt_proof_of_work),
         "Use scrypt hashing for proof of work, defaults to 'false' (litecoin)."
     )
 
