@@ -28,35 +28,55 @@ using namespace node;
 
 const std::unordered_map<uint8_t, std::string> executor::fired_
 {
-    { events::header_archived,     "header_archived....." },
-    { events::header_organized,    "header_organized...." },
-    { events::header_reorganized,  "header_reorganized.." },
+    { events::header_archived,      "header_archived....." },
+    { events::header_organized,     "header_organized...." },
+    { events::header_reorganized,   "header_reorganized.." },
 
-    { events::block_archived,      "block_archived......" },
-    { events::block_buffered,      "block_buffered......" },
-    { events::block_validated,     "block_validated....." },
-    { events::block_confirmed,     "block_confirmed....." },
-    { events::block_unconfirmable, "block_unconfirmable." },
-    { events::validate_bypassed,   "validate_bypassed..." },
-    { events::confirm_bypassed,    "confirm_bypassed...." },
+    { events::block_archived,       "block_archived......" },
+    { events::block_buffered,       "block_buffered......" },
+    { events::block_validated,      "block_validated....." },
+    { events::block_confirmed,      "block_confirmed....." },
+    { events::block_unconfirmable,  "block_unconfirmable." },
+    { events::validate_bypassed,    "validate_bypassed..." },
+    { events::confirm_bypassed,     "confirm_bypassed...." },
 
-    { events::tx_archived,         "tx_archived........." },
-    { events::tx_validated,        "tx_validated........" },
-    { events::tx_invalidated,      "tx_invalidated......" },
+    { events::tx_archived,          "tx_archived........." },
+    { events::tx_validated,         "tx_validated........" },
+    { events::tx_invalidated,       "tx_invalidated......" },
 
-    { events::block_organized,     "block_organized....." },
-    { events::block_reorganized,   "block_reorganized..." },
+    { events::block_organized,      "block_organized....." },
+    { events::block_reorganized,    "block_reorganized..." },
 
-    { events::template_issued,     "template_issued....." },
+    { events::template_issued,      "template_issued....." },
 
-    { events::snapshot_secs,       "snapshot_secs......." },
-    { events::prune_msecs,         "prune_msecs........." },
-    { events::reload_msecs,        "reload_msecs........" },
-    { events::block_usecs,         "block_usecs........." },
-    { events::ancestry_msecs,      "ancestry_msecs......" },
-    { events::filter_msecs,        "filter_msecs........" },
-    { events::filterhashes_msecs,  "filterhashes_msecs.." },
-    { events::filterchecks_msecs,  "filterchecks_msecs.." }
+    { events::snapshot_secs,        "snapshot_secs......." },
+    { events::prune_msecs,          "prune_msecs........." },
+    { events::reload_msecs,         "reload_msecs........" },
+    { events::block_usecs,          "block_usecs........." },
+    { events::ancestry_msecs,       "ancestry_msecs......" },
+    { events::filter_msecs,         "filter_msecs........" },
+    { events::filterhashes_msecs,   "filterhashes_msecs.." },
+    { events::filterchecks_msecs,   "filterchecks_msecs.." },
+
+    { events::missed_ecdsa,         "missed_ecdsa........" },
+    { events::missed_multisig,      "missed_multisig....." },
+    { events::missed_schnorr,       "missed_schnorr......" },
+    { events::missed_overflow,      "missed_overflow....." },
+
+    { events::checksigverify,       "checksigverify......" },
+    { events::checkmultisigverify,  "checkmultisigverify." },
+    { events::checksigadd,          "checksigadd........." },
+    { events::checksig,             "checksig............" },
+    { events::numequal,             "numequal............" },
+    { events::numequalverify,       "numequalverify......" },
+    { events::numnotequal,          "numnotequal........." },
+    { events::lessthan,             "lessthan............" },
+    { events::greaterthan,          "greaterthan........." },
+    { events::lessthanorequal,      "lessthanorequal....." },
+    { events::greaterthanorequal,   "greaterthanorequal.." },
+    { events::within,               "within.............." },
+
+    { events::unknown,              "unknown............." }
 };
 
 // Events.

@@ -52,7 +52,7 @@ void executor::dump_paging() const
     if (ratio && fore_ok && back_ok && require)
         return;
 
-    logger(boost::format(BS_PAGING_TABLE)
+    logger(boost_format(BS_PAGING_TABLE)
         % (ratio ? "ratio" : "bytes")
         % fore_bytes.value()
         % fore_ratio.value()

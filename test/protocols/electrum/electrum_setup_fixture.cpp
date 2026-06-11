@@ -20,7 +20,6 @@
 #include "../../mocks/blocks.hpp"
 #include "electrum_setup_fixture.hpp"
 #include <future>
-#include <boost/format.hpp>
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -160,7 +159,7 @@ void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
 bool electrum_setup_fixture::handshake(electrum::version version,
     const std::string& name, network::rpc::code_t id)
 {
-    const auto request = boost::format
+    const auto request = boost_format
     (
         R"({"id":%1%,"method":"server.version","params":["%2%","%3%"]})" "\n"
     ) % id % name % electrum::version_to_string(version);

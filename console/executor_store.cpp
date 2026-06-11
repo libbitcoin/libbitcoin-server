@@ -22,8 +22,8 @@
 namespace libbitcoin {
 namespace server {
 
-using boost::format;
 using namespace network;
+using format = boost_format;
 
 // Store functions.
 // ----------------------------------------------------------------------------

@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__no_address_index_
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":901,"method":"blockchain.address.get_balance","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto result = get_error((boost_format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__no_address_index_
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1001,"method":"blockchain.address.get_history","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto result = get_error((boost_format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__no_address_index_
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1001,"method":"blockchain.address.get_mempool","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto result = get_error((boost_format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__no_address_index
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto request = R"({"id":1001,"method":"blockchain.address.listunspent","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
+    const auto result = get_error((boost_format(request) % "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn").str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__no_address_ind
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto request = R"({"id":901,"method":"blockchain.scripthash.get_balance","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_scripthash).str());
+    const auto result = get_error((boost_format(request) % bogus_scripthash).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__no_address_ind
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto request = R"({"id":1001,"method":"blockchain.scripthash.get_history","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_scripthash).str());
+    const auto result = get_error((boost_format(request) % bogus_scripthash).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__no_address_ind
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto request = R"({"id":1001,"method":"blockchain.scripthash.get_mempool","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_scripthash).str());
+    const auto result = get_error((boost_format(request) % bogus_scripthash).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__no_address_in
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto request = R"({"id":1001,"method":"blockchain.scripthash.listunspent","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_scripthash).str());
+    const auto result = get_error((boost_format(request) % bogus_scripthash).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__no_address_index__n
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto request = R"({"id":1001,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_address).str());
+    const auto result = get_error((boost_format(request) % bogus_address).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__no_address_index
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto request = R"({"id":1001,"method":"blockchain.scripthash.subscribe","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_scripthash).str());
+    const auto result = get_error((boost_format(request) % bogus_scripthash).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__no_address_ind
     BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
 
     const auto request = R"({"id":1001,"method":"blockchain.scripthash.unsubscribe","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_scripthash).str());
+    const auto result = get_error((boost_format(request) % bogus_scripthash).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__no_address_ind
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.subscribe","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_script).str());
+    const auto result = get_error((boost_format(request) % bogus_script).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__no_address_i
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":901,"method":"blockchain.scriptpubkey.get_balance","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_script).str());
+    const auto result = get_error((boost_format(request) % bogus_script).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__no_address_i
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.get_history","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_script).str());
+    const auto result = get_error((boost_format(request) % bogus_script).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__no_address_i
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.get_mempool","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_script).str());
+    const auto result = get_error((boost_format(request) % bogus_script).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__no_address_
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto request = R"({"id":1001,"method":"blockchain.scriptpubkey.listunspent","params":["%1%"]})" "\n";
-    const auto result = get_error((boost::format(request) % bogus_script).str());
+    const auto result = get_error((boost_format(request) % bogus_script).str());
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 

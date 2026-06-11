@@ -24,10 +24,7 @@
 #include <optional>
 #include <thread>
 #include <unordered_map>
-
-// Must pull in any base boost configuration before including boost.
 #include <bitcoin/server.hpp>
-#include <boost/format.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -127,7 +124,7 @@ private:
     system::ofstream create_event_sink() const;
     void subscribe_log(std::ostream& sink);
     void subscribe_events(std::ostream& sink);
-    void logger(const boost::format& message) const;
+    void logger(const boost_format& message) const;
     void logger(const std::string& message) const;
     void log_stopping();
 
