@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__progressive_notify__expected)
     BOOST_REQUIRE_EQUAL(ws_get_text("/v1/top/subscribe?format=text"), "0a");
 
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
-    notify(node::chase::organized, node::header_t{ 11 });
+    notify(node::chase::block, node::header_t{ 11 });
 
     BOOST_REQUIRE_EQUAL(to_string(ws_receive()), "0b");
 }
