@@ -187,7 +187,7 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
 
     switch (event_)
     {
-        case node::chase::organized:
+        case node::chase::block:
         {
             auto media = top_subscribe_.load(relaxed);
             if (media != media_type::unknown)
