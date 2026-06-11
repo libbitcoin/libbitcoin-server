@@ -358,11 +358,6 @@ options_metadata parser::load_settings() THROWS
         "Assume bip34, bip65, and bip66 activation if enabled, defaults to 'true' (hard fork)."
     )
     (
-        "forks.bip94",
-        value<bool>(&configured.bitcoin.forks.bip94),
-        "Assume bip94 activation if enabled, defaults to 'true' (hard fork)."
-    )
-    (
         "forks.bip68",
         value<bool>(&configured.bitcoin.forks.bip68),
         "Add relative locktime enforcement, defaults to 'true' (soft fork)."
@@ -401,6 +396,16 @@ options_metadata parser::load_settings() THROWS
         "forks.bip342",
         value<bool>(&configured.bitcoin.forks.bip342),
         "Validation of taproot script, defaults to 'true' (soft fork)."
+    )
+    (
+        "forks.time_warp_patch",
+        value<bool>(&configured.bitcoin.forks.time_warp_patch),
+        "Assume time_warp_patch activation if enabled, defaults to 'false' (testnet4)."
+    )
+    (
+        "forks.block_storm_patch",
+        value<bool>(&configured.bitcoin.forks.block_storm_patch),
+        "Assume block_storm_patch activation if enabled, defaults to 'false' (testnet4)."
     )
     (
         "forks.ltc_time_warp_patch",
