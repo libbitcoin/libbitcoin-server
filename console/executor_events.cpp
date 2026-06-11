@@ -58,24 +58,6 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
     { events::filterhashes_msecs,   "filterhashes_msecs.." },
     { events::filterchecks_msecs,   "filterchecks_msecs.." },
 
-    { events::missed_ecdsa,         "missed_ecdsa........" },
-    { events::missed_multisig,      "missed_multisig....." },
-    { events::missed_schnorr,       "missed_schnorr......" },
-    { events::missed_overflow,      "missed_overflow....." },
-
-    { events::checksigverify,       "checksigverify......" },
-    { events::checkmultisigverify,  "checkmultisigverify." },
-    { events::checksigadd,          "checksigadd........." },
-    { events::checksig,             "checksig............" },
-    { events::numequal,             "numequal............" },
-    { events::numequalverify,       "numequalverify......" },
-    { events::numnotequal,          "numnotequal........." },
-    { events::lessthan,             "lessthan............" },
-    { events::greaterthan,          "greaterthan........." },
-    { events::lessthanorequal,      "lessthanorequal....." },
-    { events::greaterthanorequal,   "greaterthanorequal.." },
-    { events::within,               "within.............." },
-
     { events::unknown,              "unknown............." }
 };
 
