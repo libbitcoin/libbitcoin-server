@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_bitcoind_rest.hpp>
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 #include <bitcoin/server/define.hpp>
@@ -122,7 +123,7 @@ constexpr auto json = to_value(media_type::application_json);
 constexpr auto text = to_value(media_type::text_plain);
 
 template <typename Object, typename ...Args>
-data_chunk to_bin(const Object& object, size_t size, Args&&... args) NOEXCEPT
+data_chunk to_data(const Object& object, size_t size, Args&&... args) NOEXCEPT
 {
     data_chunk out(size);
     stream::out::fast sink{ out };
@@ -132,7 +133,7 @@ data_chunk to_bin(const Object& object, size_t size, Args&&... args) NOEXCEPT
 }
 
 template <typename Object, typename ...Args>
-std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
+std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
 {
     std::string out(two * size, '\0');
     stream::out::fast sink{ out };
@@ -166,13 +167,13 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     switch (media)
     {
         case data:
-            send_data(to_bin(*block, size, witness));
+            send_data(to_data(*block, size, witness));
             return true;
         case text:
-            send_hex(to_hex(*block, size, witness));
+            send_text(to_text(*block, size, witness));
             return true;
         case json:
-            send_dom(value_from(bitcoind_verbose(*block)), two * size);
+            send_json(value_from(bitcoind_verbose(*block)), two * size);
             return true;
     }
 
@@ -201,10 +202,10 @@ bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
             send_data(to_chunk(hash));
             return true;
         case text:
-            send_hex(encode_base16(hash));
+            send_text(encode_base16(hash));
             return true;
         case json:
-            send_dom(boost::json::object{ { "blockhash", encode_hash(hash) } },
+            send_json(boost::json::object{ { "blockhash", encode_hash(hash) } },
                 two * hash_size);
             return true;
     }
@@ -239,13 +240,13 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
     switch (media)
     {
         case data:
-            send_data(to_bin(*block, size, witness));
+            send_data(to_data(*block, size, witness));
             return true;
         case text:
-            send_hex(to_hex(*block, size, witness));
+            send_text(to_text(*block, size, witness));
             return true;
         case json:
-            send_dom(value_from(bitcoind_hashed(*block)), two * size);
+            send_json(value_from(bitcoind_hashed(*block)), two * size);
             return true;
     }
 
@@ -267,9 +268,8 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
     }
 
     const auto& query = archive();
-    const auto link = query.to_header(*hash);
     size_t height{};
-    if (link.is_terminal() || !query.get_height(height, link))
+    if (!query.get_height(height, query.to_header(*hash)))
     {
         send_not_found();
         return true;
@@ -278,21 +278,9 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
     // Core caps the header count at 2000.
     constexpr size_t maximum = 2000;
     constexpr auto header_size = chain::header::serialized_size();
-    const auto top = query.get_top_confirmed();
-    const auto limit = std::min(static_cast<size_t>(count), maximum);
-
-    std::vector<chain::header::cptr> headers{};
-    headers.reserve(limit);
-    for (size_t index = 0; index < limit && height + index <= top; ++index)
-    {
-        const auto header = query.get_header(query.to_confirmed(height + index));
-        if (!header)
-            break;
-
-        headers.push_back(header);
-    }
-
-    if (headers.empty())
+    const auto limit = std::min(possible_wide_cast<size_t>(count), maximum);
+    const auto links = query.get_confirmed_headers(height, limit);
+    if (links.empty())
     {
         send_not_found();
         return true;
@@ -302,12 +290,16 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
     {
         case data:
         {
-            data_chunk out{};
-            out.reserve(headers.size() * header_size);
-            for (const auto& header: headers)
+            data_chunk out(links.size() * header_size);
+            stream::out::fast sink{ out };
+            write::bytes::fast writer{ sink };
+            for (const auto& link: links)
             {
-                const auto bin = to_bin(*header, header_size);
-                out.insert(out.end(), bin.begin(), bin.end());
+                if (!query.get_wire_header(writer, link))
+                {
+                    send_not_found();
+                    return true;
+                }
             }
 
             send_data(std::move(out));
@@ -315,22 +307,38 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         }
         case text:
         {
-            std::string out{};
-            out.reserve(headers.size() * two * header_size);
-            for (const auto& header: headers)
-                out += to_hex(*header, header_size);
+            std::string out(links.size() * two * header_size, '\0');
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
+            for (const auto& link: links)
+            {
+                if (!query.get_wire_header(writer, link))
+                {
+                    send_not_found();
+                    return true;
+                }
+            }
 
-            send_hex(std::move(out));
+            send_text(std::move(out));
             return true;
         }
         case json:
         {
             boost::json::array out{};
-            out.reserve(headers.size());
-            for (const auto& header: headers)
-                out.push_back(header_to_bitcoind(*header));
+            out.reserve(links.size());
+            for (const auto& link: links)
+            {
+                const auto header = query.get_header(link);
+                if (!header)
+                {
+                    send_not_found();
+                    return true;
+                }
 
-            send_dom(std::move(out), headers.size() * two * header_size);
+                out.push_back(header_to_bitcoind(*header));
+            }
+
+            send_json(std::move(out), links.size() * two * header_size);
             return true;
         }
     }
@@ -361,22 +369,22 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
         return true;
     }
 
-    const auto full = to_bin(*block, block->serialized_size(witness), witness);
-    if (offset >= full.size())
+    const auto full = to_data(*block, block->serialized_size(witness), witness);
+    if (!is_lesser(offset, full.size()))
     {
         send_not_found();
         return true;
     }
 
-    const auto end = std::min(static_cast<size_t>(offset) + size, full.size());
-    data_chunk part(full.begin() + offset, full.begin() + end);
+    const auto stop = std::min(ceilinged_add<size_t>(offset, size), full.size());
+    data_chunk part{ std::next(full.begin(), offset), std::next(full.begin(), stop) };
     switch (media)
     {
         case data:
             send_data(std::move(part));
             return true;
         case text:
-            send_hex(encode_base16(part));
+            send_text(encode_base16(part));
             return true;
     }
 
@@ -440,11 +448,11 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
             for (const auto& output: spent)
                 output->to_data(writer);
 
-            send_hex(std::move(out));
+            send_text(std::move(out));
             return true;
         }
         case json:
-            send_dom(value_from(bitcoind(spent)), two * size);
+            send_json(value_from(bitcoind(spent)), two * size);
             return true;
     }
 
@@ -480,10 +488,10 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
             send_data(std::move(filter));
             return true;
         case text:
-            send_hex(encode_base16(filter));
+            send_text(encode_base16(filter));
             return true;
         case json:
-            send_dom(boost::json::object
+            send_json(boost::json::object
             {
                 { "filter", encode_base16(filter) }
             }, two * filter.size());
@@ -521,10 +529,10 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
             send_data(to_chunk(filter_head));
             return true;
         case text:
-            send_hex(encode_base16(filter_head));
+            send_text(encode_base16(filter_head));
             return true;
         case json:
-            send_dom(boost::json::object
+            send_json(boost::json::object
             {
                 { "filter_header", encode_hash(filter_head) }
             }, two * hash_size);
@@ -551,7 +559,7 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         return true;
     }
 
-    send_dom(boost::json::object
+    send_json(boost::json::object
     {
         { "chain", chain_name(query) },
         { "blocks", blocks },
@@ -584,7 +592,7 @@ void protocol_bitcoind_rest::send_data(data_chunk&& bytes) NOEXCEPT
     SEND(std::move(message), handle_complete, _1, error::success);
 }
 
-void protocol_bitcoind_rest::send_hex(std::string&& text) NOEXCEPT
+void protocol_bitcoind_rest::send_text(std::string&& text) NOEXCEPT
 {
     BC_ASSERT(stranded());
     const auto request = reset_request();
@@ -599,7 +607,7 @@ void protocol_bitcoind_rest::send_hex(std::string&& text) NOEXCEPT
     SEND(std::move(message), handle_complete, _1, error::success);
 }
 
-void protocol_bitcoind_rest::send_dom(boost::json::value&& model,
+void protocol_bitcoind_rest::send_json(boost::json::value&& model,
     size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());

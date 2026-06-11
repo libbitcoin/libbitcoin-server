@@ -154,7 +154,7 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
 }
 
 template <typename Object, typename ...Args>
-std::string to_hex(const Object& object, size_t size, Args&&... args) NOEXCEPT
+std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
 {
     std::string out(two * size, '\0');
     stream::out::fast sink{ out };
@@ -207,7 +207,7 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
             return true;
         }
 
-        send_text(to_hex(*block, block->serialized_size(witness), witness));
+        send_text(to_text(*block, block->serialized_size(witness), witness));
         return true;
     }
 
@@ -261,8 +261,8 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
     send_result(rpc::object_t
     {
         { "chain", chain_name(query) },
-        { "blocks", static_cast<uint64_t>(blocks) },
-        { "headers", static_cast<uint64_t>(headers) },
+        { "blocks", possible_wide_cast<uint64_t>(blocks) },
+        { "headers", possible_wide_cast<uint64_t>(headers) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(header->bits())) },
         { "target", encode_hash(from_uintx(
@@ -271,7 +271,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "time", header->timestamp() },
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
-        { "initialblockdownload", blocks < headers },
+        { "initialblockdownload", !is_current(true) },
         { "pruned", false },
         { "warnings", std::string{} }
     }, 512);
@@ -284,7 +284,7 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(rpc::value_t(static_cast<uint64_t>(
+    send_result(rpc::value_t(possible_wide_cast<uint64_t>(
         archive().get_top_confirmed())), 20);
     return true;
 }
@@ -377,7 +377,7 @@ bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
 
     if (!verbose)
     {
-        send_text(to_hex(*header, chain::header::serialized_size()));
+        send_text(to_text(*header, chain::header::serialized_size()));
         return true;
     }
 
@@ -569,7 +569,7 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
 
     if (verbose == 0.0)
     {
-        send_text(to_hex(*tx, tx->serialized_size(witness), witness));
+        send_text(to_text(*tx, tx->serialized_size(witness), witness));
         return true;
     }
 

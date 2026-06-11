@@ -45,9 +45,7 @@ void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
     const auto top = query.get_top_confirmed();
     const auto confirmed = query.is_confirmed_block(link);
     out["height"] = height;
-    out["confirmations"] = confirmed ?
-        possible_sign_cast<int64_t>(add1(floored_subtract(top, height))) :
-        1_ni64;
+    out["confirmations"] = add1(floored_subtract(top, height));
     out["mediantime"] = median_time_past(query, link);
 
     if (header.previous_block_hash() != null_hash)
@@ -73,8 +71,7 @@ void protocol_bitcoind_rpc::inject_tx_context(boost::json::object& out,
     const auto header = query.get_header(block);
     out["in_active_chain"] = true;
     out["blockhash"] = encode_hash(query.get_header_key(block));
-    out["confirmations"] =
-        possible_sign_cast<int64_t>(add1(floored_subtract(top, height)));
+    out["confirmations"] = add1(floored_subtract(top, height));
     if (header)
     {
         out["blocktime"] = header->timestamp();
@@ -103,21 +100,19 @@ std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
     const auto genesis = query.get_header_key(query.to_confirmed(0));
 
     using selection = chain::selection;
+    constexpr auto signet = base16_hash(
+        "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6");
     static const std::vector<std::pair<hash_digest, std::string>> networks
     {
         { system::settings{ selection::mainnet }.genesis_block.hash(), "main" },
-        { system::settings{ selection::testnet }.genesis_block.hash(), "test" },
-        { system::settings{ selection::regtest }.genesis_block.hash(), "regtest" }
+        { system::settings{ selection::testnet3 }.genesis_block.hash(), "test" },
+        { system::settings{ selection::regtest }.genesis_block.hash(), "regtest" },
+        { signet, "signet" }
     };
 
     for (const auto& [hash, name]: networks)
         if (hash == genesis)
             return name;
-
-    // Signet is not yet modeled in system::settings (stubbed by genesis hash).
-    if (encode_hash(genesis) ==
-        "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6")
-        return "signet";
 
     return "unknown";
 }
