@@ -38,7 +38,7 @@ struct bitcoind_rpc_methods
         method<"getblockfilter", string_t, optional<"basic"_t>>{ "blockhash", "filtertype" },
         method<"getblockhash", number_t>{ "height" },
         method<"getblockheader", string_t, optional<true>>{ "blockhash", "verbose" },
-        method<"getblockstats", string_t, optional<empty::array>>{ "hash_or_height", "stats" },
+        method<"getblockstats", value_t, optional<empty::array>>{ "hash_or_height", "stats" },
         method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ "nblocks", "blockhash" },
         method<"getchainwork">{},
         method<"gettxout", string_t, number_t, optional<true>>{ "txid", "n", "include_mempool" },
@@ -70,7 +70,11 @@ struct bitcoind_rpc_methods
         ////method<"disconnectnode", string_t, optional<-1_i32>>{ "address", "nodeid" },
         ////method<"getaddednodeinfo", optional<false>, optional<true>, optional<""_t>>{ "include_chain_info", "dns", "addnode" },
         ////method<"getconnectioncount">{},
-        method<"getnetworkinfo">{}
+        method<"getnetworkinfo">{},
+
+        /// Rawtransactions methods (implemented).
+        method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
+        method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" }
         ////method<"getpeerinfo">{},
         ////method<"listbanned">{},
         ////method<"ping">{},
@@ -188,6 +192,8 @@ struct bitcoind_rpc_methods
     ////using get_added_node_info = at<31>;
     ////using get_connection_count = at<32>;
     using get_network_info = at<17>;
+    using get_raw_transaction = at<18>;
+    using send_raw_transaction = at<19>;
     ////using get_peer_info = at<34>;
     ////using list_banned = at<35>;
     ////using ping = at<36>;

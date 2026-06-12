@@ -20,6 +20,26 @@
 #include "../../mocks/blocks.hpp"
 #include "bitcoind_setup_fixture.hpp"
 #include <future>
+#include <sstream>
+
+using namespace boost::beast;
+
+namespace {
+
+// Internal linkage to avoid colliding with the native fixture's parse_json.
+boost::json::value parse_json(std::string_view value)
+{
+    try
+    {
+        return boost::json::parse(value);
+    }
+    catch (...)
+    {
+        return {};
+    }
+}
+
+} // namespace
 
 bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup)
   : config_
@@ -82,23 +102,99 @@ bitcoind_setup_fixture::~bitcoind_setup_fixture()
     BOOST_WARN_MESSAGE(test::clear(test::directory), "bitcoind cleanup");
 }
 
-boost::json::value bitcoind_setup_fixture::get(const std::string& request)
+bitcoind_setup_fixture::string_request
+bitcoind_setup_fixture::create_get(std::string_view target)
 {
-    socket_.send(boost::asio::buffer(request));
-    boost::asio::streambuf stream{};
+    string_request request{ http::verb::get, target,
+        network::http::version_1_1 };
+    request.set(http::field::host, "localhost");
+    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    request.keep_alive(true);
+    return request;
+}
 
-    try
-    {
-        boost::asio::read_until(socket_, stream, '\n');
-    }
-    catch (const boost::system::system_error&)
-    {
-        ////BOOST_WARN_MESSAGE(false, e.what());
-        return boost::json::parse(R"({"dropped":true})");
-    }
+bitcoind_setup_fixture::string_request
+bitcoind_setup_fixture::create_post(std::string_view target,
+    std::string_view body)
+{
+    string_request request{ http::verb::post, target,
+        network::http::version_1_1 };
+    request.set(http::field::host, "localhost");
+    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    request.set(http::field::content_type, "application/json");
+    request.body() = std::string{ body };
+    request.prepare_payload();
+    request.keep_alive(true);
+    return request;
+}
 
-    std::string response{};
-    std::istream response_stream{ &stream };
-    std::getline(response_stream, response);
-    return boost::json::parse(response);
+boost::json::value bitcoind_setup_fixture::rpc(std::string_view method,
+    std::string_view params)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
+        << R"(","params":)" << params << "}";
+    http::write(socket_, create_post("/", body.str()));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    return parse_json(response.body());
+}
+
+bitcoind_setup_fixture::status
+bitcoind_setup_fixture::rest_status(std::string_view target)
+{
+    http::write(socket_, create_get(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    return response.result();
+}
+
+boost::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
+{
+    http::write(socket_, create_get(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    return parse_json(response.body());
+}
+
+std::string bitcoind_setup_fixture::rest_text(std::string_view target)
+{
+    http::write(socket_, create_get(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<network::http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+
+    auto body = response.body();
+    system::trim_right(body);
+    return body;
+}
+
+system::data_chunk bitcoind_setup_fixture::rest_data(std::string_view target)
+{
+    http::write(socket_, create_get(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<network::http::chunk_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    return system::data_chunk(response.body().begin(), response.body().end());
 }

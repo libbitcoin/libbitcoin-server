@@ -49,6 +49,7 @@ src_libbitcoin_server_la_SOURCES = \
     src/protocols/protocol_http.cpp \
     src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
     src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
+    src/protocols/bitcoind/protocol_bitcoind_rpc_json.cpp \
     src/protocols/electrum/protocol_electrum.cpp \
     src/protocols/electrum/protocol_electrum_addresses.cpp \
     src/protocols/electrum/protocol_electrum_fees.cpp \
@@ -93,6 +94,7 @@ test_libbitcoin_server_test_SOURCES = \
     test/parsers/electrum_version.cpp \
     test/parsers/native_query.cpp \
     test/parsers/native_target.cpp \
+    test/protocols/bitcoind/bitcoind_json.cpp \
     test/protocols/bitcoind/bitcoind_rest.cpp \
     test/protocols/bitcoind/bitcoind_rpc.cpp \
     test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
