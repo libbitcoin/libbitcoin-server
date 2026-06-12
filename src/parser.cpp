@@ -398,6 +398,16 @@ options_metadata parser::load_settings() THROWS
         "Validation of taproot script, defaults to 'true' (soft fork)."
     )
     (
+        "forks.time_warp_patch",
+        value<bool>(&configured.bitcoin.forks.time_warp_patch),
+        "Assume time_warp_patch activation if enabled, defaults to 'false' (testnet4)."
+    )
+    (
+        "forks.block_storm_patch",
+        value<bool>(&configured.bitcoin.forks.block_storm_patch),
+        "Assume block_storm_patch activation if enabled, defaults to 'false' (testnet4)."
+    )
+    (
         "forks.ltc_time_warp_patch",
         value<bool>(&configured.bitcoin.forks.ltc_time_warp_patch),
         "Fix time warp bug, defaults to 'false' (litecoin)."
