@@ -78,6 +78,24 @@ def pytest_addoption(parser):
         default="50001",
         help="Port for Electrum protocol (default: 50001)"
     )
+    parser.addoption(
+        "--electrum-protocol",
+        action="store",
+        default="1.4:1.6",
+        help=(
+            "Electrum protocol version range offered in the server.version handshake. "
+            "Use 'min:max' (e.g. '1.4:1.6') or a single version (e.g. '1.6'). "
+            "The server will negotiate the highest mutually supported version. "
+            "(default: 1.4:1.6)"
+        )
+    )
+
+    parser.addoption(
+        "--subscription-timeout",
+        action="store",
+        default="60",
+        help="Timeout in seconds for subscription/notification tests (default: 60)"
+    )
 
     # Stratum v1 options
     parser.addoption(
@@ -114,6 +132,13 @@ def pytest_addoption(parser):
         default="30",
         help="Default timeout for requests in seconds (default: 30)"
     )
+
+
+def pytest_report_header(config):
+    host = config.getoption("--electrum-host")
+    port = config.getoption("--electrum-port")
+    proto = config.getoption("--electrum-protocol")
+    return [f"electrum: {host}:{port}  protocol offered: {proto}"]
 
 
 @pytest.fixture(scope="session")
@@ -175,10 +200,18 @@ def bitcoind_rest_config(request):
 @pytest.fixture(scope="session")
 def electrum_config(request):
     """Configuration for Electrum protocol tests."""
+    proto_str = request.config.getoption("--electrum-protocol")
+    if ":" in proto_str:
+        proto_min, proto_max = proto_str.split(":", 1)
+    else:
+        proto_min = proto_max = proto_str.strip()
+
     return {
         "host": request.config.getoption("--electrum-host"),
         "port": int(request.config.getoption("--electrum-port")),
-        "timeout": float(request.config.getoption("--timeout"))
+        "timeout": float(request.config.getoption("--timeout")),
+        "protocol": [proto_min.strip(), proto_max.strip()],
+        "subscription_timeout": float(request.config.getoption("--subscription-timeout")),
     }
 
 
