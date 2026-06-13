@@ -13,97 +13,33 @@
     <ProjectName>bs</ProjectName>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="DebugDEXE|Win32">
-      <Configuration>DebugDEXE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseDEXE|Win32">
-      <Configuration>ReleaseDEXE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugDEXE|x64">
-      <Configuration>DebugDEXE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseDEXE|x64">
-      <Configuration>ReleaseDEXE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugLEXE|Win32">
-      <Configuration>DebugLEXE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseLEXE|Win32">
-      <Configuration>ReleaseLEXE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugLEXE|x64">
-      <Configuration>DebugLEXE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseLEXE|x64">
-      <Configuration>ReleaseLEXE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="DebugSEXE|Win32">
       <Configuration>DebugSEXE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseSEXE|Win32">
-      <Configuration>ReleaseSEXE</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="DebugSEXE|x64">
       <Configuration>DebugSEXE</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseSEXE|x64">
-      <Configuration>ReleaseSEXE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugDEXE|ARM">
-      <Configuration>DebugDEXE</Configuration>
-      <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseDEXE|ARM">
-      <Configuration>ReleaseDEXE</Configuration>
-      <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugDEXE|ARM64">
-      <Configuration>DebugDEXE</Configuration>
-      <Platform>ARM64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseDEXE|ARM64">
-      <Configuration>ReleaseDEXE</Configuration>
-      <Platform>ARM64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugLEXE|ARM">
-      <Configuration>DebugLEXE</Configuration>
-      <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseLEXE|ARM">
-      <Configuration>ReleaseLEXE</Configuration>
-      <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="DebugLEXE|ARM64">
-      <Configuration>DebugLEXE</Configuration>
-      <Platform>ARM64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseLEXE|ARM64">
-      <Configuration>ReleaseLEXE</Configuration>
-      <Platform>ARM64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="DebugSEXE|ARM">
       <Configuration>DebugSEXE</Configuration>
-      <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseSEXE|ARM">
-      <Configuration>ReleaseSEXE</Configuration>
       <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="DebugSEXE|ARM64">
       <Configuration>DebugSEXE</Configuration>
       <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseSEXE|Win32">
+      <Configuration>ReleaseSEXE</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseSEXE|x64">
+      <Configuration>ReleaseSEXE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseSEXE|ARM">
+      <Configuration>ReleaseSEXE</Configuration>
+      <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="ReleaseSEXE|ARM64">
       <Configuration>ReleaseSEXE</Configuration>
@@ -117,20 +53,9 @@
     <Import Project="$(ProjectDir)..\..\properties\Output.props" />
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
+
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp" />
-    <ClCompile Include="..\..\..\..\console\executor.cpp">
-      <ObjectFileName>$(IntDir)console_executor.obj</ObjectFileName>
-    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_commands.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_daemon.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_dumps.cpp" />
@@ -146,22 +71,115 @@
     <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_window.cpp" />
     <ClCompile Include="..\..\..\..\console\main.cpp" />
+    <ClCompile Include="..\..\..\..\console\stack_trace.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp" />
+    <ClCompile Include="..\..\..\..\console\executor.cpp">
+      <ObjectFileName>$(IntDir)console_executor.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_commands.cpp">
+      <ObjectFileName>$(IntDir)console_executor_commands.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_daemon.cpp">
+      <ObjectFileName>$(IntDir)console_executor_daemon.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_dumps.cpp">
+      <ObjectFileName>$(IntDir)console_executor_dumps.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_events.cpp">
+      <ObjectFileName>$(IntDir)console_executor_events.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_logging.cpp">
+      <ObjectFileName>$(IntDir)console_executor_logging.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_options.cpp">
+      <ObjectFileName>$(IntDir)console_executor_options.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_paging.cpp">
+      <ObjectFileName>$(IntDir)console_executor_paging.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_runner.cpp">
+      <ObjectFileName>$(IntDir)console_executor_runner.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_scans.cpp">
+      <ObjectFileName>$(IntDir)console_executor_scans.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_signals.cpp">
+      <ObjectFileName>$(IntDir)console_executor_signals.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_store.cpp">
+      <ObjectFileName>$(IntDir)console_executor_store.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_test_reader.cpp">
+      <ObjectFileName>$(IntDir)console_executor_test_reader.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp">
+      <ObjectFileName>$(IntDir)console_executor_test_writer.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_window.cpp">
+      <ObjectFileName>$(IntDir)console_executor_window.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\main.cpp">
+      <ObjectFileName>$(IntDir)console_main.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\console\stack_trace.cpp">
       <ObjectFileName>$(IntDir)console_stack_trace.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_admin_css.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_admin_font.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_admin_html.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_admin_icon.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_amin_ecma.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_native_css.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_native_ecma.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_native_font.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_native_html.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp">
+      <ObjectFileName>$(IntDir)console_embedded_native_icon.obj</ObjectFileName>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\console\executor.hpp" />
+    <ClInclude Include="..\..\..\..\console\localize.hpp" />
+    <ClInclude Include="..\..\..\..\console\stack_trace.hpp" />
     <ClInclude Include="..\..\..\..\console\embedded\embedded.hpp" />
     <ClInclude Include="..\..\..\..\console\executor.hpp" />
     <ClInclude Include="..\..\..\..\console\localize.hpp" />
     <ClInclude Include="..\..\..\..\console\stack_trace.hpp" />
-    <ClInclude Include="..\..\resource.h" />
+    <ClInclude Include="..\..\..\..\console\embedded\embedded.hpp" />
+    <ClInclude Include="..\..\..\..\builds\msvc\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\resource.rc" />
+    <ResourceCompile Include="..\..\..\..\builds\msvc\resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
@@ -175,10 +193,11 @@
     <Import Project="$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets" Condition="Exists('$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets')" />
     <Import Project="$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets" Condition="Exists('$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets')" />
     <Import Project="$(NuGetPackageRoot)secp256k1_vc143.0.6.1\build\native\secp256k1_vc143.targets" Condition="Exists('$(NuGetPackageRoot)secp256k1_vc143.0.6.1\build\native\secp256k1_vc143.targets')" />
+    <Import Project="$(NuGetPackageRoot)UltrafastSecp256k1-vc143.4.1.1.4\build\native\UltrafastSecp256k1-vc143.targets" Condition="Exists('$(NuGetPackageRoot)UltrafastSecp256k1-vc143.4.1.1.4\build\native\UltrafastSecp256k1-vc143.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The Missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(NuGetPackageRoot)boost.1.86.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost.1.86.0\build\boost.targets'))" />
     <Error Condition="!Exists('$(NuGetPackageRoot)boost_container-vc143.1.86.0\build\boost_container-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_container-vc143.1.86.0\build\boost_container-vc143.targets'))" />
@@ -189,6 +208,7 @@
     <Error Condition="!Exists('$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_thread-vc143.1.86.0\build\boost_thread-vc143.targets'))" />
     <Error Condition="!Exists('$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_url-vc143.1.86.0\build\boost_url-vc143.targets'))" />
     <Error Condition="!Exists('$(NuGetPackageRoot)secp256k1_vc143.0.6.1\build\native\secp256k1_vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)secp256k1_vc143.0.6.1\build\native\secp256k1_vc143.targets'))" />
+    <Error Condition="!Exists('$(NuGetPackageRoot)UltrafastSecp256k1-vc143.4.1.1.4\build\native\UltrafastSecp256k1-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)UltrafastSecp256k1-vc143.4.1.1.4\build\native\UltrafastSecp256k1-vc143.targets'))" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\libbitcoin-server\libbitcoin-server.vcxproj">
