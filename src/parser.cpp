@@ -1335,6 +1335,16 @@ options_metadata parser::load_settings() THROWS
         "Delay accepting inbound connections until node is current, defaults to 'true'."
     )
     (
+        "node.batch_signatures",
+        value<bool>(&configured.node.batch_signatures),
+        "Verify signatures in a batch for each concurrency window, defaults to 'true'."
+    )
+    (
+        "node.mark_unconfirmable",
+        value<bool>(&configured.node.mark_unconfirmable),
+        "Save unconfirmable block state (prevents revalidation), defaults to 'true'."
+    )
+    (
         "node.defer_validation",
         value<bool>(&configured.node.defer_validation),
         "Defer validation, defaults to 'false'."
@@ -1343,11 +1353,6 @@ options_metadata parser::load_settings() THROWS
         "node.defer_confirmation",
         value<bool>(&configured.node.defer_confirmation),
         "Defer confirmation, defaults to 'false'."
-    )
-    (
-        "node.batch_signatures",
-        value<bool>(&configured.node.batch_signatures),
-        "Verify signatures in a batch for each concurrency window, defaults to 'true'."
     )
     ////(
     ////    "node.headers_first",
