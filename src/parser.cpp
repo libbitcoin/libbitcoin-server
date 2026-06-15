@@ -1339,21 +1339,6 @@ options_metadata parser::load_settings() THROWS
         value<bool>(&configured.node.batch_signatures),
         "Verify signatures in a batch for each concurrency window, defaults to 'true'."
     )
-    (
-        "node.mark_unconfirmable",
-        value<bool>(&configured.node.mark_unconfirmable),
-        "Save unconfirmable block state (prevents revalidation), defaults to 'true'."
-    )
-    (
-        "node.defer_validation",
-        value<bool>(&configured.node.defer_validation),
-        "Defer validation, defaults to 'false'."
-    )
-    (
-        "node.defer_confirmation",
-        value<bool>(&configured.node.defer_confirmation),
-        "Defer confirmation, defaults to 'false'."
-    )
     ////(
     ////    "node.headers_first",
     ////    value<bool>(&configured.node.headers_first),
@@ -1440,6 +1425,11 @@ options_metadata parser::load_settings() THROWS
         "database.turbo",
         value<bool>(&configured.database.turbo),
         "Allow indiviudal non-validation queries to use all CPUs, defaults to false."
+    )
+    (
+        "database.mark_unconfirmable",
+        value<bool>(&configured.database.mark_unconfirmable),
+        "Save unconfirmable block state (prevents revalidation), defaults to 'true'."
     )
     (
         "database.interval_depth",
