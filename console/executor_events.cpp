@@ -57,6 +57,8 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
     { events::filter_msecs,         "filter_msecs........" },
     { events::filterhashes_msecs,   "filterhashes_msecs.." },
     { events::filterchecks_msecs,   "filterchecks_msecs.." },
+    { events::ecdsa_msecs,          "ecdsa_msecs........." },
+    { events::schnorr_msecs,        "schnorr_msecs......." },
 
     { events::unknown,              "unknown............." }
 };
