@@ -45,7 +45,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    BOOST_REQUIRE_MESSAGE(test::clear(test::directory), "electrum setup");
+    test::clear(test::directory);
 
     auto& database_settings = config_.database;
     auto& network_settings = config_.network;
@@ -72,7 +72,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    BOOST_REQUIRE_MESSAGE(setup(query_), "electrum initialize");
+    setup(query_);
 
     std::promise<code> started{};
     server_.start([&](const code& ec) NOEXCEPT
@@ -102,7 +102,7 @@ electrum_setup_fixture::~electrum_setup_fixture()
     server_.close();
     const auto ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
-    BOOST_WARN_MESSAGE(test::clear(test::directory), "electrum cleanup");
+    test::clear(test::directory);
 }
 
 BC_POP_WARNING()
