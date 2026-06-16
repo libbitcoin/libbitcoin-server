@@ -44,7 +44,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    BOOST_CHECK_MESSAGE(test::clear(test::directory), "native setup");
+    test::clear(test::directory);
     auto& database_settings = config_.database;
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
@@ -63,8 +63,8 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    BOOST_CHECK_MESSAGE(setup(query_), "native initialize");
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    setup(query_);
 
     // Run the server.
     std::promise<code> running{};
@@ -75,7 +75,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
 
     // Block until server is running.
     ec = running.get_future().get();
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     socket_.connect(native.binds.back().to_endpoint());
 }
 
@@ -104,7 +104,7 @@ native_setup_fixture::~native_setup_fixture()
     server_.close();
     ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
-    BOOST_WARN_MESSAGE(test::clear(test::directory), "native cleanup");
+    test::clear(test::directory);
 }
 
 BC_POP_WARNING()
