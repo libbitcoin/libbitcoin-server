@@ -119,66 +119,16 @@
   </ImportGroup>
 
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_css.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_css.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_font.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_font.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_html.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_html.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_icon.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_admin_icon.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_amin_ecma.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_amin_ecma.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_css.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_css.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_ecma.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_ecma.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_font.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_font.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_html.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_html.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_icon.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp">
-      <ObjectFileName>$(IntDir)console_embedded_native_icon.obj</ObjectFileName>
-    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp" />
     <ClCompile Include="..\..\..\..\console\executor.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_commands.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_daemon.cpp" />
@@ -199,7 +149,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\builds\msvc\resource.h" />
-    <ClInclude Include="..\..\..\..\console\embedded\embedded.hpp" />
     <ClInclude Include="..\..\..\..\console\embedded\embedded.hpp" />
     <ClInclude Include="..\..\..\..\console\executor.hpp" />
     <ClInclude Include="..\..\..\..\console\localize.hpp" />
