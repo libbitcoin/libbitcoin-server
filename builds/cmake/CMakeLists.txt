@@ -6,8 +6,57 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.30 FATAL_ERROR)
 
+find_package(Git QUIET)
+
+set( GIT_COMMIT_HASH "unknown" )
+set( GIT_COMMIT_HEIGHT 0 )
+set( GIT_DIRTY 0 )
+set( GIT_ORIGIN_URL "https://github.com/libbitcoin/libbitcoin-server" )
+
+if ( GIT_EXECUTABLE )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET )
+
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-list --count HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HEIGHT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET )
+
+    if ( NOT GIT_COMMIT_HEIGHT )
+        set( GIT_COMMIT_HEIGHT 0 )
+    endif()
+
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} remote get-url origin
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_ORIGIN_URL
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET )
+
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} status --porcelain
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_STATUS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET )
+
+    if ( GIT_STATUS )
+        set( GIT_DIRTY 1 )
+    endif()
+endif()
+
+set( LIBBITCOIN_VERSION_MAJOR 4 )
+set( LIBBITCOIN_VERSION_MINOR 0 )
+set( LIBBITCOIN_VERSION_PATCH ${GIT_COMMIT_HEIGHT} )
+
 project( libbitcoin-server
-  VERSION 4.0.0
+  VERSION ${LIBBITCOIN_VERSION_MAJOR}.${LIBBITCOIN_VERSION_MINOR}.${LIBBITCOIN_VERSION_PATCH}
   DESCRIPTION "Bitcoin Full Node and Query Server"
   LANGUAGES C CXX )
 
@@ -121,6 +170,10 @@ endif()
 #------------------------------------------------------------------------------
 
 include(CheckLinkerFlag)
+
+#------------------------------------------------------------------------------
+# Configurable file(s).
+#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # libbitcoin-server library
@@ -275,14 +328,31 @@ if ( with-console )
       -fstack-protector-all
   )
 
+  file( GLOB_RECURSE bitcoin_server_HEADERS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.ipp"
+  )
+
   file( GLOB_RECURSE bitcoin_server_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.cpp"
   )
 
   target_sources( bitcoin-server
+    PUBLIC
+      FILE_SET HEADERS
+      BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../../console"
+      FILES
+        ${bitcoin_server_HEADERS}
     PRIVATE
       ${bitcoin_server_SOURCES}
+  )
+
+  target_include_directories( bitcoin-server
+    PRIVATE
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../console>
+      $<INSTALL_INTERFACE:console>
   )
 
   target_link_libraries( bitcoin-server
