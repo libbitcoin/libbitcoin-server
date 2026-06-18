@@ -117,7 +117,6 @@
     <Import Project="$(ProjectDir)..\..\properties\Output.props" />
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
-
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\configuration.cpp" />
     <ClCompile Include="..\..\..\..\test\error.cpp" />
