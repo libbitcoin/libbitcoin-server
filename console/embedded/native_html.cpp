@@ -29,6 +29,7 @@ DEFINE_EMBEDDED_PAGE(native_pages, char, html,
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="An embedded blockchain explorer for Libbitcoin Server." />
     <meta name="theme-color" content="#272822" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <title>Libbitcoin Server</title>
     <script type="module" crossorigin src="/script.js"></script>
     <link rel="stylesheet" crossorigin href="/style.css">
