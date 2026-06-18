@@ -196,5 +196,5 @@ system::data_chunk bitcoind_setup_fixture::rest_data(std::string_view target)
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
-    return system::data_chunk(response.body().begin(), response.body().end());
+    return system::to_chunk(response.body());
 }

@@ -297,7 +297,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
             {
                 if (!query.get_wire_header(writer, link))
                 {
-                    send_not_found();
+                    send_internal_server_error(database::error::integrity);
                     return true;
                 }
             }
@@ -314,7 +314,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
             {
                 if (!query.get_wire_header(writer, link))
                 {
-                    send_not_found();
+                    send_internal_server_error(database::error::integrity);
                     return true;
                 }
             }
@@ -331,7 +331,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
                 const auto header = query.get_header(link);
                 if (!header)
                 {
-                    send_not_found();
+                    send_internal_server_error(database::error::integrity);
                     return true;
                 }
 
