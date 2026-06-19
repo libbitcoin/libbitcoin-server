@@ -573,7 +573,7 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    // bitcoind() (not bitcoind_verbose) yields Core's tx fields: txid/hash/
+    // bitcoind() (not bitcoind_verbose) yields bitcoind's tx fields: txid/hash/
     // size/vsize/weight/vin/vout/hex (bitcoind_verbose on a standalone tx
     // falls back to libbitcoin's plain inputs/outputs form).
     auto model = value_from(bitcoind(*tx));

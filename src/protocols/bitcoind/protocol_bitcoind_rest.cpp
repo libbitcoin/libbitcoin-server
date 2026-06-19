@@ -275,7 +275,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         return true;
     }
 
-    // Core caps the header count at 2000.
+    // bitcoind caps the header count at 2000.
     constexpr size_t maximum = 2000;
     constexpr auto header_size = chain::header::serialized_size();
     const auto limit = std::min(possible_wide_cast<size_t>(count), maximum);
