@@ -385,7 +385,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     }, two * hash_size * add1(branch.size()));
 }
 
-// utility
+// utility (redundant with protocol_bitcoind_rpc)
 // ----------------------------------------------------------------------------
 // TODO: move this to node utility and pass through.
 
