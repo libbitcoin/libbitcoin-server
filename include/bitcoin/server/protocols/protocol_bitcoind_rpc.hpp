@@ -147,6 +147,11 @@ private:
         const network::rpc::id_option& id,
         const network::http::request_cptr& request) NOEXCEPT;
 
+    // Validate a transaction given next block context.
+    bool get_pool_context(system::chain::context& pool) const NOEXCEPT;
+    code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
+    code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
+
     // Obtain cached request and clear cache (requires strand).
     network::http::request_cptr reset_rpc_request() NOEXCEPT;
 

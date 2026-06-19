@@ -628,32 +628,40 @@ bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    auto& query = archive();
-    const auto txid = tx->hash(false);
+    // Tx archive not allowed in in v4, must move through node::tx_chaser (v5).
+    ////auto& query = archive();
+    ////const auto hash = tx->hash(false);
+    ////
+    ////// Archive (so the out-relay can serve getdata) only if not already known.
+    ////// TODO: contextual validation (populate_with_metadata + connect) for policy.
+    ////if (query.to_tx(hash).is_terminal())
+    ////{
+    ////    if (tx->check())
+    ////    {
+    ////        send_error(error::invalid_argument);
+    ////        return true;
+    ////    }
+    ////
+    ////    if (query.set_code(*tx))
+    ////    {
+    ////        send_error(database::error::integrity);
+    ////        return true;
+    ////    }
+    ////}
 
-    // Archive (so the out-relay can serve getdata) only if not already known.
-    // TODO: contextual validation (populate_with_metadata + connect) for policy.
-    if (query.to_tx(txid).is_terminal())
+    // Full validation (TODO above) handled in broadcast_tx() below.
+    ////// Announce to peers; protocol_transaction_out_106 serves the tx on getdata.
+    ////broadcast<messages::peer::transaction>(
+    ////    std::make_shared<const messages::peer::transaction>(
+    ////        messages::peer::transaction{ tx }));
+
+    if (const auto fault = broadcast_tx(tx); fault)
     {
-        if (tx->check())
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
-
-        if (query.set_code(*tx))
-        {
-            send_error(database::error::integrity);
-            return true;
-        }
+        send_error(fault);
+        return true;
     }
 
-    // Announce to peers; protocol_transaction_out_106 serves the tx on getdata.
-    broadcast<messages::peer::transaction>(
-        std::make_shared<const messages::peer::transaction>(
-            messages::peer::transaction{ tx }));
-
-    send_result(encode_hash(txid), two * system::hash_size);
+    send_result(encode_hash(tx->hash(false)), two * system::hash_size);
     return true;
 }
 
@@ -743,6 +751,58 @@ http::request_cptr protocol_bitcoind_rpc::reset_rpc_request() NOEXCEPT
     id_.reset();
     version_ = version::undefined;
     return reset_request();
+}
+
+// utility (redundant with protocol_electrum)
+// ----------------------------------------------------------------------------
+// TODO: move this to node utility and pass through.
+
+bool protocol_bitcoind_rpc::get_pool_context(chain::context& pool) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto& settings = system_settings();
+    const auto top = query.get_top_confirmed();
+    const auto link = query.to_confirmed(top);
+    const auto hash = query.get_header_key(link);
+    const auto state = query.get_chain_state(settings, hash);
+    if (!state) return false;
+    pool = chain::chain_state(*state, settings).context();
+    return true;
+}
+
+code protocol_bitcoind_rpc::validate_tx(
+    const chain::transaction& tx) const NOEXCEPT
+{
+    chain::context ctx{};
+    if (!get_pool_context(ctx))
+        return error::server_error;
+
+    code ec{};
+
+    // Ensure tx does not violate tx consensus rules.
+    if (!ec) ec = tx.check();
+    if (!ec) ec = tx.check(ctx);
+    if (!ec) archive().populate_with_metadata(tx, true);
+    if (!ec) ec = tx.accept(ctx);
+    if (!ec) ec = tx.confirm(ctx);
+    if (!ec) ec = tx.connect(ctx);
+
+    // Ensure tx does not violate presumed block consensus rules.
+    // This is a DoS guard when validating a tx outside of a block.
+    if (!ec) ec = tx.check_guard();
+    if (!ec) ec = tx.check_guard(ctx);
+    if (!ec) ec = tx.accept_guard(ctx);
+    return ec;
+}
+
+code protocol_bitcoind_rpc::broadcast_tx(
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    if (const auto ec = validate_tx(*tx))
+        return ec;
+
+    BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
+    return {};
 }
 
 BC_POP_WARNING()
