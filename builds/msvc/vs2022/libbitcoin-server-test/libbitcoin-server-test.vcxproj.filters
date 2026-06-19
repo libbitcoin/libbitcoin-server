@@ -42,9 +42,6 @@
     <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp">
       <Filter>src\mocks</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>

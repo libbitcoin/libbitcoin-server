@@ -124,7 +124,6 @@
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
     <ClCompile Include="..\..\..\..\src\error.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
-    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
@@ -179,7 +178,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\types.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp" />
