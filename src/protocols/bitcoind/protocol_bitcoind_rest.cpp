@@ -20,12 +20,9 @@
 
 #include <algorithm>
 #include <iterator>
-#include <string>
-#include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
-#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {

@@ -18,10 +18,10 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
+#include <algorithm>
+#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/network/messages/peer/peer.hpp>
-#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {

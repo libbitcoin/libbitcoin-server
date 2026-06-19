@@ -20,8 +20,6 @@
 
 #include <charconv>
 #include <iterator>
-#include <ranges>
-#include <optional>
 #include <variant>
 #include <bitcoin/server/define.hpp>
 

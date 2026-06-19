@@ -18,9 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
-#include <vector>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
