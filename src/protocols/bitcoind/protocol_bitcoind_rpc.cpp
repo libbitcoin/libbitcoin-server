@@ -32,8 +32,10 @@ namespace server {
 
 using namespace system;
 using namespace network;
-using namespace network::json;
+using namespace network::rpc;
+using namespace network::messages;
 using namespace std::placeholders;
+using namespace boost::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -133,7 +135,7 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
     }
 
     // Endpoint accepts only json-rpc posts.
-    if (!post->body().contains<rpc::request>())
+    if (!post->body().contains<request>())
     {
         send_bad_request(*post);
         return;
@@ -142,7 +144,7 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
     // Get the parsed json-rpc request object.
     // v1 or v2 both supported, batch not yet supported.
     // v1 null id and v2 missing id implies notification and no response.
-    const auto& message = post->body().get<rpc::request>().message;
+    const auto& message = post->body().get<request>().message;
 
     // The post is saved off during asynchonous handling and used in send_json
     // to formulate response headers, isolating handlers from http semantics.
@@ -226,8 +228,7 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
             value_from(bitcoind_verbose(*block));
 
         inject_block_context(model.as_object(), query, link, block->header());
-        send_result(rpc::value_t(std::move(model)),
-            two * block->serialized_size(witness));
+        send_result(std::move(model), two * block->serialized_size(witness));
         return true;
     }
 
@@ -258,15 +259,16 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         std::min(1.0, static_cast<double>(blocks) /
             static_cast<double>(headers));
 
-    send_result(rpc::object_t
+    // TODO: blocks/headers is a misnomer (off-by-one), intended?
+    using namespace chain;
+    send_result(object_t
     {
         { "chain", chain_name(query) },
         { "blocks", possible_wide_cast<uint64_t>(blocks) },
         { "headers", possible_wide_cast<uint64_t>(headers) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(header->bits())) },
-        { "target", encode_hash(from_uintx(
-            chain::compact::expand(header->bits()))) },
+        { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
         { "mediantime", median_time_past(query, link) },
@@ -320,7 +322,7 @@ bool protocol_bitcoind_rpc::handle_get_block_filter(const code& ec,
         return true;
     }
 
-    send_result(rpc::object_t
+    send_result(object_t
     {
         { "filter", encode_base16(filter) },
         { "header", encode_hash(filter_header) }
@@ -384,13 +386,12 @@ bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
     auto out = header_to_bitcoind(*header);
     out["nTx"] = query.get_tx_count(link);
     inject_block_context(out, query, link, *header);
-    send_result(rpc::value_t(boost::json::value(std::move(out))), 512);
+    send_result(value{ std::move(out) }, 512);
     return true;
 }
 
 bool protocol_bitcoind_rpc::handle_get_block_stats(const code& ec,
-    rpc_interface::get_block_stats, const network::rpc::value_t&,
-    const network::rpc::array_t&) NOEXCEPT
+    rpc_interface::get_block_stats, const value_t&, const array_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);
@@ -434,14 +435,14 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     // Core returns json null for a missing or spent output (mempool ignored).
     if (output_fk.is_terminal() || query.is_spent(output_fk))
     {
-        send_result(rpc::value_t{}, 4);
+        send_result({}, 42);
         return true;
     }
 
     const auto output = query.get_output(output_fk);
     if (!output)
     {
-        send_result(rpc::value_t{}, 4);
+        send_result({}, 42);
         return true;
     }
 
@@ -450,7 +451,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     const auto have_height = query.get_tx_height(tx_height, tx_fk);
     const auto top = query.get_top_confirmed();
 
-    send_result(rpc::object_t
+    send_result(object_t
     {
         { "bestblock", encode_hash(query.get_top_confirmed_hash()) },
         { "confirmations", have_height ?
@@ -489,7 +490,7 @@ bool protocol_bitcoind_rpc::handle_save_mem_pool(const code& ec,
 
 bool protocol_bitcoind_rpc::handle_scan_tx_out_set(const code& ec,
     rpc_interface::scan_tx_out_set, const std::string&,
-    const network::rpc::array_t&) NOEXCEPT
+    const array_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);
@@ -521,7 +522,7 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     // libbitcoin-server is a node, not a wallet/peer-introspection service;
     // peer-dependent fields (connections, addresses) are reported as empty.
     // TODO: surface live connection count and relay fee from node settings.
-    send_result(rpc::object_t
+    send_result(object_t
     {
         { "version", 0 },
         { "subversion", std::string{ "/libbitcoin:server/" } },
@@ -530,10 +531,10 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
         { "timeoffset", 0 },
         { "connections", 0 },
         { "networkactive", true },
-        { "networks", rpc::array_t{} },
+        { "networks", array_t{} },
         { "relayfee", 0.00001 },
         { "incrementalfee", 0.00001 },
-        { "localaddresses", rpc::array_t{} },
+        { "localaddresses", array_t{} },
         { "warnings", std::string{} }
     }, 256);
     return true;
@@ -578,8 +579,7 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
     // falls back to libbitcoin's plain inputs/outputs form).
     auto model = value_from(bitcoind(*tx));
     inject_tx_context(model.as_object(), query, link);
-    send_result(rpc::value_t(std::move(model)),
-        two * tx->serialized_size(witness));
+    send_result(std::move(model), two * tx->serialized_size(witness));
     return true;
 }
 
@@ -648,14 +648,14 @@ void protocol_bitcoind_rpc::send_error(const code& ec,
 }
 
 void protocol_bitcoind_rpc::send_error(const code& ec,
-    rpc::value_option&& error, size_t size_hint) NOEXCEPT
+    value_option&& error, size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
     send_rpc(
     {
         .jsonrpc = version_,
         .id = id_,
-        .error = rpc::result_t
+        .error = result_t
         {
             .code = ec.value(),
             .message = ec.message(),
@@ -670,7 +670,7 @@ void protocol_bitcoind_rpc::send_text(std::string&& hexidecimal) NOEXCEPT
     send_result(hexidecimal, hexidecimal.size());
 }
 
-void protocol_bitcoind_rpc::send_result(rpc::value_option&& result,
+void protocol_bitcoind_rpc::send_result(value_option&& result,
     size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -683,7 +683,7 @@ void protocol_bitcoind_rpc::send_result(rpc::value_option&& result,
 }
 
 // private
-void protocol_bitcoind_rpc::send_rpc(rpc::response_t&& model,
+void protocol_bitcoind_rpc::send_rpc(response_t&& model,
     size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -703,8 +703,8 @@ void protocol_bitcoind_rpc::send_rpc(rpc::response_t&& model,
 }
 
 // private
-void protocol_bitcoind_rpc::set_rpc_request(rpc::version version,
-    const rpc::id_option& id, const http::request_cptr& request) NOEXCEPT
+void protocol_bitcoind_rpc::set_rpc_request(version version,
+    const id_option& id, const http::request_cptr& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
     id_ = id;
@@ -717,7 +717,7 @@ http::request_cptr protocol_bitcoind_rpc::reset_rpc_request() NOEXCEPT
 {
     BC_ASSERT(stranded());
     id_.reset();
-    version_ = rpc::version::undefined;
+    version_ = version::undefined;
     return reset_request();
 }
 

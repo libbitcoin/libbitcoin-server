@@ -32,8 +32,8 @@ namespace server {
     subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
+using namespace network;
 using namespace network::rpc;
-using namespace network::http;
 using namespace std::placeholders;
 using namespace boost::json;
 
@@ -115,9 +115,9 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
 // Handlers.
 // ----------------------------------------------------------------------------
 
-constexpr auto data = to_value(media_type::application_octet_stream);
-constexpr auto json = to_value(media_type::application_json);
-constexpr auto text = to_value(media_type::text_plain);
+constexpr auto data = to_value(http::media_type::application_octet_stream);
+constexpr auto json = to_value(http::media_type::application_json);
+constexpr auto text = to_value(http::media_type::text_plain);
 
 template <typename Object, typename ...Args>
 data_chunk to_data(const Object& object, size_t size, Args&&... args) NOEXCEPT
@@ -140,7 +140,7 @@ std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
 }
 
 bool protocol_bitcoind_rest::handle_get_block(const code& ec,
-    rest_interface::block, uint8_t media, const system::hash_cptr& hash) NOEXCEPT
+    rest_interface::block, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -202,7 +202,7 @@ bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
             send_text(encode_base16(hash));
             return true;
         case json:
-            send_json(boost::json::object{ { "blockhash", encode_hash(hash) } },
+            send_json(object{ { "blockhash", encode_hash(hash) } },
                 two * hash_size);
             return true;
     }
@@ -212,7 +212,7 @@ bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
-    rest_interface::block_txs, uint8_t media, const system::hash_cptr& hash) NOEXCEPT
+    rest_interface::block_txs, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -252,7 +252,7 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
-    rest_interface::block_headers, uint8_t media, const system::hash_cptr& hash,
+    rest_interface::block_headers, uint8_t media, const hash_cptr& hash,
     uint32_t count) NOEXCEPT
 {
     if (stopped(ec))
@@ -321,7 +321,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         }
         case json:
         {
-            boost::json::array out{};
+            array out{};
             out.reserve(links.size());
             for (const auto& link: links)
             {
@@ -345,7 +345,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
-    rest_interface::block_part, uint8_t media, const system::hash_cptr& hash,
+    rest_interface::block_part, uint8_t media, const hash_cptr& hash,
     uint32_t offset, uint32_t size) NOEXCEPT
 {
     if (stopped(ec))
@@ -392,7 +392,7 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
 
 bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
     rest_interface::block_spent_tx_outputs, uint8_t media,
-    const system::hash_cptr& hash) NOEXCEPT
+    const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -458,7 +458,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
-    rest_interface::block_filter, uint8_t media, const system::hash_cptr& hash,
+    rest_interface::block_filter, uint8_t media, const hash_cptr& hash,
     uint8_t) NOEXCEPT
 {
     if (stopped(ec))
@@ -488,7 +488,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
             send_text(encode_base16(filter));
             return true;
         case json:
-            send_json(boost::json::object
+            send_json(object
             {
                 { "filter", encode_base16(filter) }
             }, two * filter.size());
@@ -500,7 +500,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
 }
 
 bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
-    rest_interface::block_filter_headers, uint8_t media, const system::hash_cptr& hash,
+    rest_interface::block_filter_headers, uint8_t media, const hash_cptr& hash,
     uint8_t) NOEXCEPT
 {
     if (stopped(ec))
@@ -529,7 +529,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
             send_text(encode_base16(filter_head));
             return true;
         case json:
-            send_json(boost::json::object
+            send_json(object
             {
                 { "filter_header", encode_hash(filter_head) }
             }, two * hash_size);
@@ -556,7 +556,7 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         return true;
     }
 
-    send_json(boost::json::object
+    send_json(object
     {
         { "chain", chain_name(query) },
         { "blocks", blocks },
@@ -577,13 +577,14 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
 void protocol_bitcoind_rest::send_data(data_chunk&& bytes) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    using namespace http;
+    static const auto data = from_media_type(
+        media_type::application_octet_stream);
     const auto request = reset_request();
-    network::http::response message{ network::http::status::ok,
-        request->version() };
+    http::response message{ status::ok, request->version() };
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
-    message.set(network::http::field::content_type, network::http::
-        from_media_type(media_type::application_octet_stream));
+    message.set(http::field::content_type, data);
     message.body() = std::move(bytes);
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, error::success);
@@ -592,30 +593,30 @@ void protocol_bitcoind_rest::send_data(data_chunk&& bytes) NOEXCEPT
 void protocol_bitcoind_rest::send_text(std::string&& text) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    using namespace http;
+    static const auto plain = from_media_type(media_type::text_plain);
     const auto request = reset_request();
-    network::http::response message{ network::http::status::ok,
-        request->version() };
+    http::response message{ status::ok, request->version() };
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
-    message.set(network::http::field::content_type, network::http::
-        from_media_type(media_type::text_plain));
+    message.set(field::content_type, plain);
     message.body() = std::move(text);
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, error::success);
 }
 
-void protocol_bitcoind_rest::send_json(boost::json::value&& model,
+void protocol_bitcoind_rest::send_json(value&& model,
     size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    using namespace http;
+    static const auto json = from_media_type(media_type::application_json);
     const auto request = reset_request();
-    network::http::response message{ network::http::status::ok,
-        request->version() };
+    http::response message{ status::ok, request->version() };
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
-    message.set(network::http::field::content_type, network::http::
-        from_media_type(media_type::application_json));
-    message.body() = network::http::json_value
+    message.set(field::content_type, json);
+    message.body() = json_value
     {
         .model = std::move(model),
         .size_hint = size_hint
