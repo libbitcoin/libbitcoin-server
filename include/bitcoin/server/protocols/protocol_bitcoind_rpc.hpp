@@ -24,6 +24,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
+#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -79,7 +80,7 @@ protected:
     bool handle_get_block_header(const code& ec,
         rpc_interface::get_block_header, const std::string&, bool) NOEXCEPT;
     bool handle_get_block_stats(const code& ec,
-        rpc_interface::get_block_stats, const std::string&,
+        rpc_interface::get_block_stats, const network::rpc::value_t&,
         const network::rpc::array_t&) NOEXCEPT;
     bool handle_get_chain_tx_stats(const code& ec,
         rpc_interface::get_chain_tx_stats, double,
@@ -103,6 +104,24 @@ protected:
         rpc_interface::verify_tx_out_set, const std::string&) NOEXCEPT;
     bool handle_get_network_info(const code& ec,
         rpc_interface::get_network_info) NOEXCEPT;
+    bool handle_get_raw_transaction(const code& ec,
+        rpc_interface::get_raw_transaction, const std::string& txid,
+        double verbose, const std::string& blockhash) NOEXCEPT;
+    bool handle_send_raw_transaction(const code& ec,
+        rpc_interface::send_raw_transaction, const std::string& hexstring,
+        double maxfeerate) NOEXCEPT;
+
+    /// Json context helpers (shared with rest, defined in *_json.cpp).
+    static uint32_t median_time_past(const node::query& query,
+        const database::header_link& link) NOEXCEPT;
+    static void inject_block_context(boost::json::object& out,
+        const node::query& query, const database::header_link& link,
+        const system::chain::header& header) NOEXCEPT;
+    static void inject_tx_context(boost::json::object& out,
+        const node::query& query, const database::tx_link& link) NOEXCEPT;
+    static boost::json::object header_to_bitcoind(
+        const system::chain::header& header) NOEXCEPT;
+    static std::string chain_name(const node::query& query) NOEXCEPT;
 
     /// Senders.
     void send_error(const code& ec) NOEXCEPT;

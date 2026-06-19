@@ -57,6 +57,9 @@
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_json.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
