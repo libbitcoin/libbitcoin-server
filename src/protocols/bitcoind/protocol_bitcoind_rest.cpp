@@ -272,10 +272,9 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         return true;
     }
 
-    // bitcoind caps the header count at 2000.
-    constexpr size_t maximum = 2000;
+    constexpr size_t maximum_headers = 2000;
     constexpr auto header_size = chain::header::serialized_size();
-    const auto limit = std::min(possible_wide_cast<size_t>(count), maximum);
+    const auto limit = lesser(count, maximum_headers);
     const auto links = query.get_confirmed_headers(height, limit);
     if (links.empty())
     {
@@ -373,8 +372,9 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
         return true;
     }
 
-    const auto stop = std::min(ceilinged_add<size_t>(offset, size), full.size());
-    data_chunk part{ std::next(full.begin(), offset), std::next(full.begin(), stop) };
+    const auto begin = full.begin();
+    const auto stop = lesser(ceilinged_add<size_t>(offset, size), full.size());
+    data_chunk part{ std::next(begin, offset), std::next(begin, stop) };
     switch (media)
     {
         case data:
@@ -415,7 +415,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
     // Resolve every prevout spent by the block's non-coinbase transactions.
     chain::output_cptrs spent{};
     const auto& txs = *block->transactions_ptr();
-    for (size_t tx = 1; tx < txs.size(); ++tx)
+    for (auto tx = one; tx < txs.size(); ++tx)
         for (const auto& in: *txs.at(tx)->inputs_ptr())
             if (const auto out = query.get_output(query.to_output(in->point())))
                 spent.push_back(out);

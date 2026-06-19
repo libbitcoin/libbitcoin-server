@@ -196,11 +196,18 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
         return true;
     }
 
+    size_t level{};
+    if (!to_integer(level, verbosity))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
 
-    if (verbosity == 0.0)
+    if (level == zero)
     {
         const auto block = query.get_block(link, witness);
         if (!block)
@@ -213,7 +220,7 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
         return true;
     }
 
-    if (verbosity == 1.0 || verbosity == 2.0)
+    if (level == one || level == two)
     {
         const auto block = query.get_block(link, witness);
         if (!block)
@@ -222,8 +229,9 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
             return true;
         }
 
+        // TODO: map "level/verbosity" to enumeration and remove comments.
         // verbosity 1 lists txids; verbosity 2 embeds full tx objects.
-        auto model = (verbosity == 1.0) ?
+        auto model = is_one(level) ?
             value_from(bitcoind_hashed(*block)) :
             value_from(bitcoind_verbose(*block));
 
@@ -253,6 +261,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         return true;
     }
 
+    // TODO: make utility method and move explanation there.
     // verificationprogress is approximated as confirmed/candidate height, the
     // best available estimate of the chain tip during sync (1.0 once current).
     const auto progress = is_zero(headers) ? 1.0 :
@@ -286,8 +295,8 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(rpc::value_t(possible_wide_cast<uint64_t>(
-        archive().get_top_confirmed())), 20);
+    const auto top = archive().get_top_confirmed();
+    send_result(possible_wide_cast<uint64_t>(top), 20);
     return true;
 }
 
@@ -336,14 +345,15 @@ bool protocol_bitcoind_rpc::handle_get_block_hash(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (height < 0.0)
+    size_t block_height{};
+    if (!to_integer(block_height, height))
     {
         send_error(error::invalid_argument);
         return true;
     }
 
     const auto& query = archive();
-    const auto link = query.to_confirmed(static_cast<size_t>(height));
+    const auto link = query.to_confirmed(block_height);
     if (link.is_terminal())
     {
         send_error(error::not_found);
@@ -421,45 +431,57 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     if (stopped(ec))
         return false;
 
+    uint32_t index{};
     hash_digest hash{};
-    if (!decode_hash(hash, txid) || n < 0.0)
+    if (!decode_hash(hash, txid) || !to_integer(index, n))
     {
         send_error(error::invalid_argument);
         return true;
     }
 
     const auto& query = archive();
-    const auto index = static_cast<uint32_t>(n);
-    const auto output_fk = query.to_output(hash, index);
+    const auto output_link = query.to_output(hash, index);
 
-    // Core returns json null for a missing or spent output (mempool ignored).
-    if (output_fk.is_terminal() || query.is_spent(output_fk))
+    // TODO: is this meant to be query.is_confirmed_spent(output_link)?
+    // bitcoind returns json null for missing or spent output (mempool ignored).
+    if (output_link.is_terminal() || query.is_spent(output_link))
     {
         send_result({}, 42);
         return true;
     }
 
-    const auto output = query.get_output(output_fk);
+    const auto output = query.get_output(output_link);
     if (!output)
     {
         send_result({}, 42);
         return true;
     }
 
-    const auto tx_fk = query.to_tx(hash);
-    size_t tx_height{};
-    const auto have_height = query.get_tx_height(tx_height, tx_fk);
+    // Output's tx must exist.
+    const auto tx_link = query.to_tx(hash);
+    if (tx_link.is_terminal())
+    {
+        send_error(error::server_error);
+        return true;
+    }
+
+    // Derive header from top for consistent depth result (also cheaper).
     const auto top = query.get_top_confirmed();
+    const auto header_link = query.to_confirmed(top);
+
+    size_t height{};
+    const auto strong = query.get_tx_height(height, tx_link);
+    const auto depth = strong ? add1(floored_subtract(top, height)) : 0_size;
+    const auto coins = to_floating(output->value()) /
+        chain::satoshi_per_bitcoin;
 
     send_result(object_t
     {
-        { "bestblock", encode_hash(query.get_top_confirmed_hash()) },
-        { "confirmations", have_height ?
-            possible_sign_cast<int64_t>(add1(floored_subtract(top, tx_height))) :
-            0_i64 },
-        { "value", static_cast<double>(output->value()) / 100000000.0 },
+        { "bestblock", encode_hash(query.get_header_key(header_link)) },
+        { "confirmations", depth },
+        { "value", coins },
         { "scriptPubKey", value_from(bitcoind(output->script())) },
-        { "coinbase", query.is_coinbase(tx_fk) }
+        { "coinbase", query.is_coinbase(tx_link) }
     }, 256);
     return true;
 }
@@ -519,9 +541,10 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     if (stopped(ec))
         return false;
 
+    // TODO: get most of these values from either config or network/node props.
+
     // libbitcoin-server is a node, not a wallet/peer-introspection service;
     // peer-dependent fields (connections, addresses) are reported as empty.
-    // TODO: surface live connection count and relay fee from node settings.
     send_result(object_t
     {
         { "version", 0 },
@@ -568,6 +591,7 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
+    // TODO: can verbose be validated, to_integer()?
     if (verbose == 0.0)
     {
         send_text(to_text(*tx, tx->serialized_size(witness), witness));
@@ -597,7 +621,7 @@ bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    const auto tx = std::make_shared<const chain::transaction>(data, true);
+    const auto tx = to_shared<const chain::transaction>(data, true);
     if (!tx->is_valid())
     {
         send_error(error::invalid_argument);

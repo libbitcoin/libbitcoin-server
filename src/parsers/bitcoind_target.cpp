@@ -237,7 +237,7 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
             "block_filter_headers";
         params["media"] = media;
         params["hash"] = hash;
-        params["type"] = uint8_t{ 0 };
+        params["type"] = 0_u8;
         return error::success;
     }
 
