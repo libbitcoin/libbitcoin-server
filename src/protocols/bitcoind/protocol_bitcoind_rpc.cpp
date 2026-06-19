@@ -282,7 +282,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "time", header->timestamp() },
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
-        { "initialblockdownload", !is_current(true) },
+        { "initialblockdownload", !is_current_chain(true) },
         { "pruned", false },
         { "warnings", std::string{} }
     }, 512);
