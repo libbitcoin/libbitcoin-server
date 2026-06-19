@@ -40,7 +40,6 @@ src_libbitcoin_server_la_SOURCES = \
     src/parser.cpp \
     src/server_node.cpp \
     src/settings.cpp \
-    src/parsers/bitcoind_query.cpp \
     src/parsers/bitcoind_target.cpp \
     src/parsers/electrum_version.cpp \
     src/parsers/native_query.cpp \
@@ -89,7 +88,6 @@ test_libbitcoin_server_test_SOURCES = \
     test/test.hpp \
     test/mocks/blocks.cpp \
     test/mocks/blocks.hpp \
-    test/parsers/bitcoind_query.cpp \
     test/parsers/bitcoind_target.cpp \
     test/parsers/electrum_version.cpp \
     test/parsers/native_query.cpp \
@@ -209,7 +207,6 @@ include_bitcoin_server_interfaces_HEADERS = \
 
 include_bitcoin_server_parsersdir = ${includedir}/bitcoin/server/parsers
 include_bitcoin_server_parsers_HEADERS = \
-    include/bitcoin/server/parsers/bitcoind_query.hpp \
     include/bitcoin/server/parsers/bitcoind_target.hpp \
     include/bitcoin/server/parsers/electrum_version.hpp \
     include/bitcoin/server/parsers/native_query.hpp \

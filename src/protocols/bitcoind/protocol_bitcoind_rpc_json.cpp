@@ -18,9 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
-#include <vector>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -31,7 +29,7 @@ uint32_t protocol_bitcoind_rpc::median_time_past(const node::query& query,
     const database::header_link& link) NOEXCEPT
 {
     chain::context ctx{};
-    return query.get_context(ctx, link) ? ctx.median_time_past : 0;
+    return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
 }
 
 void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
@@ -97,8 +95,9 @@ boost::json::object protocol_bitcoind_rpc::header_to_bitcoind(
 
 std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
 {
-    const auto genesis = query.get_header_key(query.to_confirmed(0));
+    const auto genesis = query.get_header_key(query.to_confirmed(zero));
 
+    // TODO: create signet chain selector.
     using selection = chain::selection;
     constexpr auto signet = base16_hash(
         "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6");

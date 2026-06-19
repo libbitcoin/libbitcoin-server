@@ -20,8 +20,6 @@
 
 #include <charconv>
 #include <iterator>
-#include <ranges>
-#include <optional>
 #include <variant>
 #include <bitcoin/server/define.hpp>
 
@@ -42,7 +40,7 @@ static hash_cptr to_hash(const std::string_view& token) NOEXCEPT
         to_shared(std::move(out)) : hash_cptr{};
 }
 
-// Map a Bitcoin Core REST file extension to a media value.
+// Map a bitcoind REST file extension to a media value.
 static bool to_media(uint8_t& out, const std::string_view& extension) NOEXCEPT
 {
     if (extension == "bin")
@@ -87,7 +85,7 @@ static bool split_leaf(std::string& name, uint8_t& media,
     return to_media(media, parts.back());
 }
 
-// Parse a Bitcoin Core REST path into a json-rpc request model.
+// Parse a bitcoind REST path into a json-rpc request model.
 // github.com/bitcoin/bitcoin/blob/master/doc/REST-interface.md
 // Supports: block, block/notxdetails, blockhashbyheight, headers, blockpart,
 // chaininfo (remaining endpoints return invalid_target until implemented).
@@ -116,7 +114,7 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
 
     size_t segment{};
 
-    // Accept an optional "rest" prefix (Core mounts endpoints under /rest/).
+    // Accept an optional "rest" prefix (bitcoind mounts endpoints under /rest/).
     if (segments[segment] == "rest")
         ++segment;
 
@@ -239,7 +237,7 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
             "block_filter_headers";
         params["media"] = media;
         params["hash"] = hash;
-        params["type"] = uint8_t{ 0 };
+        params["type"] = 0_u8;
         return error::success;
     }
 

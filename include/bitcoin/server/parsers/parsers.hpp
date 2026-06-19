@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
 #define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
 
-#include <bitcoin/server/parsers/bitcoind_query.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/electrum_version.hpp>
 #include <bitcoin/server/parsers/native_query.hpp>

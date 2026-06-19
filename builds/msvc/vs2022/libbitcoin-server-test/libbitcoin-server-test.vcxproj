@@ -122,7 +122,6 @@
     <ClCompile Include="..\..\..\..\test\error.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp" />
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_parsers_electrum_version.obj</ObjectFileName>

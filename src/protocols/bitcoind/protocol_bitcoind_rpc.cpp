@@ -18,10 +18,10 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
+#include <algorithm>
+#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/network/messages/peer/peer.hpp>
-#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -32,8 +32,10 @@ namespace server {
 
 using namespace system;
 using namespace network;
-using namespace network::json;
+using namespace network::rpc;
+using namespace network::messages;
 using namespace std::placeholders;
+using namespace boost::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -133,7 +135,7 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
     }
 
     // Endpoint accepts only json-rpc posts.
-    if (!post->body().contains<rpc::request>())
+    if (!post->body().contains<request>())
     {
         send_bad_request(*post);
         return;
@@ -142,7 +144,7 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
     // Get the parsed json-rpc request object.
     // v1 or v2 both supported, batch not yet supported.
     // v1 null id and v2 missing id implies notification and no response.
-    const auto& message = post->body().get<rpc::request>().message;
+    const auto& message = post->body().get<request>().message;
 
     // The post is saved off during asynchonous handling and used in send_json
     // to formulate response headers, isolating handlers from http semantics.
@@ -194,11 +196,18 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
         return true;
     }
 
+    size_t level{};
+    if (!to_integer(level, verbosity))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
 
-    if (verbosity == 0.0)
+    if (level == zero)
     {
         const auto block = query.get_block(link, witness);
         if (!block)
@@ -211,7 +220,7 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
         return true;
     }
 
-    if (verbosity == 1.0 || verbosity == 2.0)
+    if (level == one || level == two)
     {
         const auto block = query.get_block(link, witness);
         if (!block)
@@ -220,14 +229,14 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
             return true;
         }
 
+        // TODO: map "level/verbosity" to enumeration and remove comments.
         // verbosity 1 lists txids; verbosity 2 embeds full tx objects.
-        auto model = (verbosity == 1.0) ?
+        auto model = is_one(level) ?
             value_from(bitcoind_hashed(*block)) :
             value_from(bitcoind_verbose(*block));
 
         inject_block_context(model.as_object(), query, link, block->header());
-        send_result(rpc::value_t(std::move(model)),
-            two * block->serialized_size(witness));
+        send_result(std::move(model), two * block->serialized_size(witness));
         return true;
     }
 
@@ -252,26 +261,28 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         return true;
     }
 
+    // TODO: make utility method and move explanation there.
     // verificationprogress is approximated as confirmed/candidate height, the
     // best available estimate of the chain tip during sync (1.0 once current).
     const auto progress = is_zero(headers) ? 1.0 :
         std::min(1.0, static_cast<double>(blocks) /
             static_cast<double>(headers));
 
-    send_result(rpc::object_t
+    // TODO: blocks/headers is a misnomer (off-by-one), intended?
+    using namespace chain;
+    send_result(object_t
     {
         { "chain", chain_name(query) },
         { "blocks", possible_wide_cast<uint64_t>(blocks) },
         { "headers", possible_wide_cast<uint64_t>(headers) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(header->bits())) },
-        { "target", encode_hash(from_uintx(
-            chain::compact::expand(header->bits()))) },
+        { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
-        { "initialblockdownload", !is_current(true) },
+        { "initialblockdownload", !is_current_chain(true) },
         { "pruned", false },
         { "warnings", std::string{} }
     }, 512);
@@ -284,8 +295,8 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(rpc::value_t(possible_wide_cast<uint64_t>(
-        archive().get_top_confirmed())), 20);
+    const auto top = archive().get_top_confirmed();
+    send_result(possible_wide_cast<uint64_t>(top), 20);
     return true;
 }
 
@@ -320,7 +331,7 @@ bool protocol_bitcoind_rpc::handle_get_block_filter(const code& ec,
         return true;
     }
 
-    send_result(rpc::object_t
+    send_result(object_t
     {
         { "filter", encode_base16(filter) },
         { "header", encode_hash(filter_header) }
@@ -334,14 +345,15 @@ bool protocol_bitcoind_rpc::handle_get_block_hash(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (height < 0.0)
+    size_t block_height{};
+    if (!to_integer(block_height, height))
     {
         send_error(error::invalid_argument);
         return true;
     }
 
     const auto& query = archive();
-    const auto link = query.to_confirmed(static_cast<size_t>(height));
+    const auto link = query.to_confirmed(block_height);
     if (link.is_terminal())
     {
         send_error(error::not_found);
@@ -384,13 +396,12 @@ bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
     auto out = header_to_bitcoind(*header);
     out["nTx"] = query.get_tx_count(link);
     inject_block_context(out, query, link, *header);
-    send_result(rpc::value_t(boost::json::value(std::move(out))), 512);
+    send_result(value{ std::move(out) }, 512);
     return true;
 }
 
 bool protocol_bitcoind_rpc::handle_get_block_stats(const code& ec,
-    rpc_interface::get_block_stats, const network::rpc::value_t&,
-    const network::rpc::array_t&) NOEXCEPT
+    rpc_interface::get_block_stats, const value_t&, const array_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);
@@ -420,45 +431,57 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     if (stopped(ec))
         return false;
 
+    uint32_t index{};
     hash_digest hash{};
-    if (!decode_hash(hash, txid) || n < 0.0)
+    if (!decode_hash(hash, txid) || !to_integer(index, n))
     {
         send_error(error::invalid_argument);
         return true;
     }
 
     const auto& query = archive();
-    const auto index = static_cast<uint32_t>(n);
-    const auto output_fk = query.to_output(hash, index);
+    const auto output_link = query.to_output(hash, index);
 
-    // Core returns json null for a missing or spent output (mempool ignored).
-    if (output_fk.is_terminal() || query.is_spent(output_fk))
+    // TODO: is this meant to be query.is_confirmed_spent(output_link)?
+    // bitcoind returns json null for missing or spent output (mempool ignored).
+    if (output_link.is_terminal() || query.is_spent(output_link))
     {
-        send_result(rpc::value_t{}, 4);
+        send_result({}, 42);
         return true;
     }
 
-    const auto output = query.get_output(output_fk);
+    const auto output = query.get_output(output_link);
     if (!output)
     {
-        send_result(rpc::value_t{}, 4);
+        send_result({}, 42);
         return true;
     }
 
-    const auto tx_fk = query.to_tx(hash);
-    size_t tx_height{};
-    const auto have_height = query.get_tx_height(tx_height, tx_fk);
-    const auto top = query.get_top_confirmed();
-
-    send_result(rpc::object_t
+    // Output's tx must exist.
+    const auto tx_link = query.to_tx(hash);
+    if (tx_link.is_terminal())
     {
-        { "bestblock", encode_hash(query.get_top_confirmed_hash()) },
-        { "confirmations", have_height ?
-            possible_sign_cast<int64_t>(add1(floored_subtract(top, tx_height))) :
-            0_i64 },
-        { "value", static_cast<double>(output->value()) / 100000000.0 },
+        send_error(error::server_error);
+        return true;
+    }
+
+    // Derive header from top for consistent depth result (also cheaper).
+    const auto top = query.get_top_confirmed();
+    const auto header_link = query.to_confirmed(top);
+
+    size_t height{};
+    const auto strong = query.get_tx_height(height, tx_link);
+    const auto depth = strong ? add1(floored_subtract(top, height)) : 0_size;
+    const auto coins = to_floating(output->value()) /
+        chain::satoshi_per_bitcoin;
+
+    send_result(object_t
+    {
+        { "bestblock", encode_hash(query.get_header_key(header_link)) },
+        { "confirmations", depth },
+        { "value", coins },
         { "scriptPubKey", value_from(bitcoind(output->script())) },
-        { "coinbase", query.is_coinbase(tx_fk) }
+        { "coinbase", query.is_coinbase(tx_link) }
     }, 256);
     return true;
 }
@@ -489,7 +512,7 @@ bool protocol_bitcoind_rpc::handle_save_mem_pool(const code& ec,
 
 bool protocol_bitcoind_rpc::handle_scan_tx_out_set(const code& ec,
     rpc_interface::scan_tx_out_set, const std::string&,
-    const network::rpc::array_t&) NOEXCEPT
+    const array_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);
@@ -518,10 +541,11 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     if (stopped(ec))
         return false;
 
+    // TODO: get most of these values from either config or network/node props.
+
     // libbitcoin-server is a node, not a wallet/peer-introspection service;
     // peer-dependent fields (connections, addresses) are reported as empty.
-    // TODO: surface live connection count and relay fee from node settings.
-    send_result(rpc::object_t
+    send_result(object_t
     {
         { "version", 0 },
         { "subversion", std::string{ "/libbitcoin:server/" } },
@@ -530,10 +554,10 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
         { "timeoffset", 0 },
         { "connections", 0 },
         { "networkactive", true },
-        { "networks", rpc::array_t{} },
+        { "networks", array_t{} },
         { "relayfee", 0.00001 },
         { "incrementalfee", 0.00001 },
-        { "localaddresses", rpc::array_t{} },
+        { "localaddresses", array_t{} },
         { "warnings", std::string{} }
     }, 256);
     return true;
@@ -567,19 +591,19 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
+    // TODO: can verbose be validated, to_integer()?
     if (verbose == 0.0)
     {
         send_text(to_text(*tx, tx->serialized_size(witness), witness));
         return true;
     }
 
-    // bitcoind() (not bitcoind_verbose) yields Core's tx fields: txid/hash/
+    // bitcoind() (not bitcoind_verbose) yields bitcoind's tx fields: txid/hash/
     // size/vsize/weight/vin/vout/hex (bitcoind_verbose on a standalone tx
     // falls back to libbitcoin's plain inputs/outputs form).
     auto model = value_from(bitcoind(*tx));
     inject_tx_context(model.as_object(), query, link);
-    send_result(rpc::value_t(std::move(model)),
-        two * tx->serialized_size(witness));
+    send_result(std::move(model), two * tx->serialized_size(witness));
     return true;
 }
 
@@ -597,39 +621,47 @@ bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    const auto tx = std::make_shared<const chain::transaction>(data, true);
+    const auto tx = to_shared<const chain::transaction>(data, true);
     if (!tx->is_valid())
     {
         send_error(error::invalid_argument);
         return true;
     }
 
-    auto& query = archive();
-    const auto txid = tx->hash(false);
+    // Tx archive not allowed in in v4, must move through node::tx_chaser (v5).
+    ////auto& query = archive();
+    ////const auto hash = tx->hash(false);
+    ////
+    ////// Archive (so the out-relay can serve getdata) only if not already known.
+    ////// TODO: contextual validation (populate_with_metadata + connect) for policy.
+    ////if (query.to_tx(hash).is_terminal())
+    ////{
+    ////    if (tx->check())
+    ////    {
+    ////        send_error(error::invalid_argument);
+    ////        return true;
+    ////    }
+    ////
+    ////    if (query.set_code(*tx))
+    ////    {
+    ////        send_error(database::error::integrity);
+    ////        return true;
+    ////    }
+    ////}
 
-    // Archive (so the out-relay can serve getdata) only if not already known.
-    // TODO: contextual validation (populate_with_metadata + connect) for policy.
-    if (query.to_tx(txid).is_terminal())
+    // Full validation (TODO above) handled in broadcast_tx() below.
+    ////// Announce to peers; protocol_transaction_out_106 serves the tx on getdata.
+    ////broadcast<messages::peer::transaction>(
+    ////    std::make_shared<const messages::peer::transaction>(
+    ////        messages::peer::transaction{ tx }));
+
+    if (const auto fault = broadcast_tx(tx); fault)
     {
-        if (tx->check())
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
-
-        if (query.set_code(*tx))
-        {
-            send_error(database::error::integrity);
-            return true;
-        }
+        send_error(fault);
+        return true;
     }
 
-    // Announce to peers; protocol_transaction_out_106 serves the tx on getdata.
-    broadcast<messages::peer::transaction>(
-        std::make_shared<const messages::peer::transaction>(
-            messages::peer::transaction{ tx }));
-
-    send_result(encode_hash(txid), two * system::hash_size);
+    send_result(encode_hash(tx->hash(false)), two * system::hash_size);
     return true;
 }
 
@@ -648,14 +680,14 @@ void protocol_bitcoind_rpc::send_error(const code& ec,
 }
 
 void protocol_bitcoind_rpc::send_error(const code& ec,
-    rpc::value_option&& error, size_t size_hint) NOEXCEPT
+    value_option&& error, size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
     send_rpc(
     {
         .jsonrpc = version_,
         .id = id_,
-        .error = rpc::result_t
+        .error = result_t
         {
             .code = ec.value(),
             .message = ec.message(),
@@ -670,7 +702,7 @@ void protocol_bitcoind_rpc::send_text(std::string&& hexidecimal) NOEXCEPT
     send_result(hexidecimal, hexidecimal.size());
 }
 
-void protocol_bitcoind_rpc::send_result(rpc::value_option&& result,
+void protocol_bitcoind_rpc::send_result(value_option&& result,
     size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -683,7 +715,7 @@ void protocol_bitcoind_rpc::send_result(rpc::value_option&& result,
 }
 
 // private
-void protocol_bitcoind_rpc::send_rpc(rpc::response_t&& model,
+void protocol_bitcoind_rpc::send_rpc(response_t&& model,
     size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -703,8 +735,8 @@ void protocol_bitcoind_rpc::send_rpc(rpc::response_t&& model,
 }
 
 // private
-void protocol_bitcoind_rpc::set_rpc_request(rpc::version version,
-    const rpc::id_option& id, const http::request_cptr& request) NOEXCEPT
+void protocol_bitcoind_rpc::set_rpc_request(version version,
+    const id_option& id, const http::request_cptr& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
     id_ = id;
@@ -717,8 +749,60 @@ http::request_cptr protocol_bitcoind_rpc::reset_rpc_request() NOEXCEPT
 {
     BC_ASSERT(stranded());
     id_.reset();
-    version_ = rpc::version::undefined;
+    version_ = version::undefined;
     return reset_request();
+}
+
+// utility (redundant with protocol_electrum)
+// ----------------------------------------------------------------------------
+// TODO: move this to node utility and pass through.
+
+bool protocol_bitcoind_rpc::get_pool_context(chain::context& pool) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto& settings = system_settings();
+    const auto top = query.get_top_confirmed();
+    const auto link = query.to_confirmed(top);
+    const auto hash = query.get_header_key(link);
+    const auto state = query.get_chain_state(settings, hash);
+    if (!state) return false;
+    pool = chain::chain_state(*state, settings).context();
+    return true;
+}
+
+code protocol_bitcoind_rpc::validate_tx(
+    const chain::transaction& tx) const NOEXCEPT
+{
+    chain::context ctx{};
+    if (!get_pool_context(ctx))
+        return error::server_error;
+
+    code ec{};
+
+    // Ensure tx does not violate tx consensus rules.
+    if (!ec) ec = tx.check();
+    if (!ec) ec = tx.check(ctx);
+    if (!ec) archive().populate_with_metadata(tx, true);
+    if (!ec) ec = tx.accept(ctx);
+    if (!ec) ec = tx.confirm(ctx);
+    if (!ec) ec = tx.connect(ctx);
+
+    // Ensure tx does not violate presumed block consensus rules.
+    // This is a DoS guard when validating a tx outside of a block.
+    if (!ec) ec = tx.check_guard();
+    if (!ec) ec = tx.check_guard(ctx);
+    if (!ec) ec = tx.accept_guard(ctx);
+    return ec;
+}
+
+code protocol_bitcoind_rpc::broadcast_tx(
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    if (const auto ec = validate_tx(*tx))
+        return ec;
+
+    BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
+    return {};
 }
 
 BC_POP_WARNING()

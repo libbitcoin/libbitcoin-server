@@ -24,7 +24,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
-#include <bitcoin/system/chain/json/json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -147,6 +146,11 @@ private:
     void set_rpc_request(network::rpc::version version,
         const network::rpc::id_option& id,
         const network::http::request_cptr& request) NOEXCEPT;
+
+    // Validate a transaction given next block context.
+    bool get_pool_context(system::chain::context& pool) const NOEXCEPT;
+    code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
+    code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 
     // Obtain cached request and clear cache (requires strand).
     network::http::request_cptr reset_rpc_request() NOEXCEPT;

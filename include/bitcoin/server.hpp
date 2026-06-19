@@ -37,7 +37,6 @@
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
 #include <bitcoin/server/interfaces/stratum_v2.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
-#include <bitcoin/server/parsers/bitcoind_query.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/electrum_version.hpp>
 #include <bitcoin/server/parsers/native_query.hpp>
