@@ -1375,7 +1375,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.announcement_cache",
         value<uint16_t>(&configured.node.announcement_cache),
-        "Limit of per channel cached peer block and tx announcements, to avoid replaying, defaults to '42'."
+        "Limit of per channel cached peer block and tx announcements, to avoid replay, defaults to '42'."
     )
     (
         "node.maximum_height",
