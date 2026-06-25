@@ -1330,6 +1330,11 @@ options_metadata parser::load_settings() THROWS
         "Allow overlapped block requests, defaults to 'true'."
     )
     (
+        "node.allow_batch_race",
+        value<bool>(&configured.node.allow_batch_race),
+        "Allow downloads to when all window signatures are batched, defaults to 'true'."
+    )
+    (
         "node.delay_inbound",
         value<bool>(&configured.node.delay_inbound),
         "Delay accepting inbound connections until node is current, defaults to 'true'."
