@@ -148,6 +148,9 @@ parser::parser(system::chain::selection context,
     configured.database.schnorr_size = 1;
     configured.database.schnorr_rate = 5;
 
+    configured.database.silent_size = 1;
+    configured.database.silent_rate = 5;
+
     configured.database.duplicate_buckets = 1024;
     configured.database.duplicate_size = 44;
     configured.database.duplicate_rate = 5;
@@ -1330,11 +1333,6 @@ options_metadata parser::load_settings() THROWS
         "Allow overlapped block requests, defaults to 'true'."
     )
     (
-        "node.allow_batch_race",
-        value<bool>(&configured.node.allow_batch_race),
-        "Allow downloads to when all window signatures are batched, defaults to 'true'."
-    )
-    (
         "node.delay_inbound",
         value<bool>(&configured.node.delay_inbound),
         "Delay accepting inbound connections until node is current, defaults to 'true'."
@@ -1372,12 +1370,17 @@ options_metadata parser::load_settings() THROWS
     (
         "node.announcement_cache",
         value<uint16_t>(&configured.node.announcement_cache),
-        "Limit of per channel cached peer block and tx announcements, to avoid replaying, defaults to '42'."
+        "Limit of per channel cached peer block and tx announcements, to avoid replay, defaults to '42'."
     )
     (
         "node.maximum_height",
         value<uint32_t>(&configured.node.maximum_height),
         "Maximum block height to populate, defaults to 0 (unlimited)."
+    )
+    (
+        "node.silent_start_height",
+        value<uint32_t>(&configured.node.silent_start_height),
+        "Minimum height of silent payment indexation, defaults to '4294967295'."
     )
     (
         "node.maximum_concurrency",
@@ -1619,6 +1622,18 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "database.schnorr_rate",
+        value<uint16_t>(&configured.database.schnorr_rate),
+        "The percentage expansion of the batch_schnorr table body, defaults to '5'."
+    )
+
+    /* silent */
+    (
+        "database.silent_size",
+        value<uint64_t>(&configured.database.silent_size),
+        "The minimum allocation of the batch_silent table body, defaults to '1'."
+    )
+    (
+        "database.silent_rate",
         value<uint16_t>(&configured.database.schnorr_rate),
         "The percentage expansion of the batch_schnorr table body, defaults to '5'."
     )
