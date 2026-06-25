@@ -103,6 +103,7 @@ void executor::dump_body_sizes() const
         query_.confirmed_body_size() %
         query_.ecdsa_body_size() %
         query_.schnorr_body_size() %
+        query_.silent_body_size() %
         query_.duplicate_body_size() %
         query_.prevout_body_size() %
         query_.strong_tx_body_size() %
@@ -125,6 +126,7 @@ void executor::dump_records() const
         query_.confirmed_records() %
         query_.ecdsa_records() %
         query_.schnorr_records() %
+        query_.silent_records() %
         query_.duplicate_records() %
         query_.strong_tx_records() %
         query_.filter_bk_records() %
