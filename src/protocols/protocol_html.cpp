@@ -121,6 +121,7 @@ void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
         case media_type::image_png:
         case media_type::image_gif:
         case media_type::image_jpeg:
+        case media_type::image_x_icon:
             send_span(pages.icon(), media, request);
             break;
         default:
