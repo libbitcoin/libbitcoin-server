@@ -1383,6 +1383,11 @@ options_metadata parser::load_settings() THROWS
         "Maximum block height to populate, defaults to 0 (unlimited)."
     )
     (
+        "node.silent_start_height",
+        value<uint32_t>(&configured.node.silent_start_height),
+        "Minimum height of silent payment indexation, defaults to '4294967295'."
+    )
+    (
         "node.maximum_concurrency",
         value<uint32_t>(&configured.node.maximum_concurrency),
         "Maximum number of blocks to download concurrently, defaults to '50000' (0 disables)."
