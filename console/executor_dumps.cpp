@@ -104,8 +104,9 @@ void executor::dump_body_sizes() const
         query_.ecdsa_body_size() %
         query_.schnorr_body_size() %
         query_.silent_body_size() %
-        query_.duplicate_body_size() %
+        query_.prevalid_body_size() %
         query_.prevout_body_size() %
+        query_.duplicate_body_size() %
         query_.strong_tx_body_size() %
         query_.validated_bk_body_size() %
         query_.validated_tx_body_size() %
@@ -127,6 +128,7 @@ void executor::dump_records() const
         query_.ecdsa_records() %
         query_.schnorr_records() %
         query_.silent_records() %
+        query_.prevalid_records() %
         query_.duplicate_records() %
         query_.strong_tx_records() %
         query_.filter_bk_records() %
@@ -140,8 +142,8 @@ void executor::dump_buckets() const
         query_.txs_buckets() %
         query_.tx_buckets() %
         query_.point_buckets() %
-        query_.duplicate_buckets() %
         query_.prevout_buckets() %
+        query_.duplicate_buckets() %
         query_.strong_tx_buckets() %
         query_.validated_bk_buckets() %
         query_.validated_tx_buckets() %
