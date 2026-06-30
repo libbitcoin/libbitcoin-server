@@ -88,14 +88,15 @@
     "   ecdsa     :%11%\n" \
     "   schnorr   :%12%\n" \
     "   silent    :%13%\n" \
-    "   duplicate :%14%\n" \
+    "   prevalid  :%14%\n" \
     "   prevout   :%15%\n" \
-    "   strong_tx :%16%\n" \
-    "   valid_bk  :%17%\n" \
-    "   valid_tx  :%18%\n" \
-    "   filter_bk :%19%\n" \
-    "   filter_tx :%20%\n" \
-    "   address   :%21%"
+    "   duplicate :%16%\n" \
+    "   strong_tx :%17%\n" \
+    "   valid_bk  :%18%\n" \
+    "   valid_tx  :%19%\n" \
+    "   filter_bk :%20%\n" \
+    "   filter_tx :%21%\n" \
+    "   address   :%22%"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
     "   header    :%1%\n" \
@@ -108,10 +109,11 @@
     "   ecdsa     :%8%\n" \
     "   schnorr   :%9%\n" \
     "   silent    :%10%\n" \
-    "   duplicate :%11%\n" \
-    "   strong_tx :%12%\n" \
-    "   filter_bk :%13%\n" \
-    "   address   :%14%"
+    "   prevalid  :%11%\n" \
+    "   duplicate :%12%\n" \
+    "   strong_tx :%13%\n" \
+    "   filter_bk :%14%\n" \
+    "   address   :%15%"
 #define BS_INFORMATION_SLABS \
     "Table slabs..."
 #define BS_INFORMATION_SLABS_ROW \
@@ -126,8 +128,8 @@
     "   txs       :%2%\n" \
     "   tx        :%3%\n" \
     "   point     :%4%\n" \
-    "   duplicate :%5%\n" \
-    "   prevout   :%6%\n" \
+    "   prevout   :%5%\n" \
+    "   duplicate :%6%\n" \
     "   strong_tx :%7%\n" \
     "   valid_bk  :%8%\n" \
     "   valid_tx  :%9%\n" \

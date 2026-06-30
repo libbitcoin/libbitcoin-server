@@ -151,13 +151,17 @@ parser::parser(system::chain::selection context,
     configured.database.silent_size = 1;
     configured.database.silent_rate = 5;
 
-    configured.database.duplicate_buckets = 1024;
-    configured.database.duplicate_size = 44;
-    configured.database.duplicate_rate = 5;
+    // No need for size or rate, expands all in one shot (config disabled).
+    configured.database.prevalid_size = 1;
+    configured.database.prevalid_rate = 0;
 
     configured.database.prevout_buckets = 0;
     configured.database.prevout_size = 1;
     configured.database.prevout_rate = 5;
+
+    configured.database.duplicate_buckets = 1024;
+    configured.database.duplicate_size = 44;
+    configured.database.duplicate_rate = 5;
 
     configured.database.validated_bk_buckets = 950'001;
     configured.database.validated_bk_size = 1'700'000;
@@ -1638,22 +1642,17 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the batch_schnorr table body, defaults to '5'."
     )
 
-    /* duplicate */
-    (
-        "database.duplicate_buckets",
-        value<uint16_t>(&configured.database.duplicate_buckets),
-        "The minimum number of buckets in the cache_duplicate table head, defaults to '1024'."
-    )
-    (
-        "database.duplicate_size",
-        value<uint64_t>(&configured.database.duplicate_size),
-        "The minimum allocation of the cache_duplicate table body, defaults to '44'."
-    )
-    (
-        "database.duplicate_rate",
-        value<uint16_t>(&configured.database.duplicate_rate),
-        "The percentage expansion of the cache_duplicate table, defaults to '5'."
-    )
+    /////* prevalid */
+    ////(
+    ////    "database.prevalid_size",
+    ////    value<uint64_t>(&configured.database.prevalid_size),
+    ////    "The minimum allocation of the batch_prevalid table body, defaults to '1'."
+    ////)
+    ////(
+    ////    "database.prevalid_rate",
+    ////    value<uint16_t>(&configured.database.prevalid_rate),
+    ////    "The percentage expansion of the batch_prevalid table, defaults to '5'."
+    ////)
 
     /* prevout */
     (
@@ -1670,6 +1669,23 @@ options_metadata parser::load_settings() THROWS
         "database.prevout_rate",
         value<uint16_t>(&configured.database.prevout_rate),
         "The percentage expansion of the cache_prevout table, defaults to '5'."
+    )
+
+    /* duplicate */
+    (
+        "database.duplicate_buckets",
+        value<uint16_t>(&configured.database.duplicate_buckets),
+        "The minimum number of buckets in the cache_duplicate table head, defaults to '1024'."
+    )
+    (
+        "database.duplicate_size",
+        value<uint64_t>(&configured.database.duplicate_size),
+        "The minimum allocation of the cache_duplicate table body, defaults to '44'."
+    )
+    (
+        "database.duplicate_rate",
+        value<uint16_t>(&configured.database.duplicate_rate),
+        "The percentage expansion of the cache_duplicate table, defaults to '5'."
     )
 
     /* validated_bk */
