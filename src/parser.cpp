@@ -151,8 +151,9 @@ parser::parser(system::chain::selection context,
     configured.database.silent_size = 1;
     configured.database.silent_rate = 5;
 
+    // No need for size or rate, expands all in one shot (config disabled).
     configured.database.prevalid_size = 1;
-    configured.database.prevalid_rate = 5;
+    configured.database.prevalid_rate = 0;
 
     configured.database.prevout_buckets = 0;
     configured.database.prevout_size = 1;
@@ -1641,17 +1642,17 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the batch_schnorr table body, defaults to '5'."
     )
 
-    /* prevalid */
-    (
-        "database.prevalid_size",
-        value<uint64_t>(&configured.database.prevalid_size),
-        "The minimum allocation of the batch_prevalid table body, defaults to '1'."
-    )
-    (
-        "database.prevalid_rate",
-        value<uint16_t>(&configured.database.prevalid_rate),
-        "The percentage expansion of the batch_prevalid table, defaults to '5'."
-    )
+    /////* prevalid */
+    ////(
+    ////    "database.prevalid_size",
+    ////    value<uint64_t>(&configured.database.prevalid_size),
+    ////    "The minimum allocation of the batch_prevalid table body, defaults to '1'."
+    ////)
+    ////(
+    ////    "database.prevalid_rate",
+    ////    value<uint16_t>(&configured.database.prevalid_rate),
+    ////    "The percentage expansion of the batch_prevalid table, defaults to '5'."
+    ////)
 
     /* prevout */
     (
