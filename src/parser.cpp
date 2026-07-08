@@ -1344,7 +1344,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.batch_signatures",
         value<uint64_t>(&configured.node.batch_signatures),
-        "Count of signatures to verify in a batch, defaults to '100000' (0 disables)."
+        "Count of signatures to verify in a batch, defaults to '0' (0 disables)."
     )
     ////(
     ////    "node.headers_first",
