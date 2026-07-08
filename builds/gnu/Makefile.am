@@ -194,10 +194,11 @@ test_libbitcoin_server_test_LDADD = \
 
 test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/configuration.cpp \
-    ${srcdir}/../../test/main.cpp \
-    ${srcdir}/../../test/test.cpp \
     ${srcdir}/../../test/error.cpp \
+    ${srcdir}/../../test/main.cpp \
     ${srcdir}/../../test/settings.cpp \
+    ${srcdir}/../../test/test.cpp \
+    ${srcdir}/../../test/mocks/blocks.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
     ${srcdir}/../../test/parsers/electrum_version.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
@@ -225,8 +226,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/native/native_input.cpp \
     ${srcdir}/../../test/protocols/native/native_output.cpp \
     ${srcdir}/../../test/protocols/native/native_setup_fixture.cpp \
-    ${srcdir}/../../test/protocols/native/native_tx.cpp \
-    ${srcdir}/../../test/mocks/blocks.cpp
+    ${srcdir}/../../test/protocols/native/native_tx.cpp
 
 TESTS = test_runner.sh
 
@@ -252,23 +252,23 @@ console_bs_LDADD = \
     ${src_libbitcoin_server_la_LIBADD}
 
 console_bs_SOURCES = \
+    ${srcdir}/../../console/executor.cpp \
     ${srcdir}/../../console/executor_commands.cpp \
     ${srcdir}/../../console/executor_daemon.cpp \
-    ${srcdir}/../../console/executor_signals.cpp \
-    ${srcdir}/../../console/executor_window.cpp \
-    ${srcdir}/../../console/main.cpp \
-    ${srcdir}/../../console/stack_trace.cpp \
-    ${srcdir}/../../console/executor_runner.cpp \
-    ${srcdir}/../../console/executor.cpp \
+    ${srcdir}/../../console/executor_dumps.cpp \
+    ${srcdir}/../../console/executor_events.cpp \
     ${srcdir}/../../console/executor_logging.cpp \
     ${srcdir}/../../console/executor_options.cpp \
     ${srcdir}/../../console/executor_paging.cpp \
+    ${srcdir}/../../console/executor_runner.cpp \
     ${srcdir}/../../console/executor_scans.cpp \
+    ${srcdir}/../../console/executor_signals.cpp \
     ${srcdir}/../../console/executor_store.cpp \
     ${srcdir}/../../console/executor_test_reader.cpp \
     ${srcdir}/../../console/executor_test_writer.cpp \
-    ${srcdir}/../../console/executor_dumps.cpp \
-    ${srcdir}/../../console/executor_events.cpp \
+    ${srcdir}/../../console/executor_window.cpp \
+    ${srcdir}/../../console/main.cpp \
+    ${srcdir}/../../console/stack_trace.cpp \
     ${srcdir}/../../console/embedded/admin_css.cpp \
     ${srcdir}/../../console/embedded/admin_font.cpp \
     ${srcdir}/../../console/embedded/admin_html.cpp \

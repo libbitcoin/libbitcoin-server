@@ -25,8 +25,8 @@ namespace test {
 
 using block_data = system::data_array<215>;
 using header_data = system::data_array<80>;
-using store_t = database::store<database::map>;
-using query_t = database::query<database::store<database::map>>;
+using store_t = database::store<database::mmap>;
+using query_t = database::query<database::store<database::mmap>>;
 
 extern const server::settings::embedded_pages web_pages;
 
