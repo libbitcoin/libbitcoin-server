@@ -268,7 +268,8 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         std::min(1.0, static_cast<double>(blocks) /
             static_cast<double>(headers));
 
-    // TODO: blocks/headers is a misnomer (off-by-one), intended?
+    // blocks/headers are heights (not counts) per bitcoind convention: blocks is
+    // the confirmed tip height, headers the candidate (best-header) height.
     using namespace chain;
     send_result(object_t
     {
@@ -442,9 +443,10 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
 
-    // TODO: is this meant to be query.is_confirmed_spent(output_link)?
-    // bitcoind returns json null for missing or spent output (mempool ignored).
-    if (output_link.is_terminal() || query.is_spent(output_link))
+    // bitcoind returns json null for a missing or confirmed-spent output; with
+    // mempool ignored this matches gettxout's include_mempool=false semantics
+    // (is_spent would also count unconfirmed/conflicting/invalid-block spenders).
+    if (output_link.is_terminal() || query.is_confirmed_spent(output_link))
     {
         send_result({}, 42);
         return true;
@@ -591,8 +593,16 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    // TODO: can verbose be validated, to_integer()?
-    if (verbose == 0.0)
+    // bitcoind parses verbose as an integer (ParseVerbosity): level zero yields
+    // hex, nonzero yields the json object (verbosity 2 fee/prevout not yet done).
+    size_t level{};
+    if (!to_integer(level, verbose))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (level == zero)
     {
         send_text(to_text(*tx, tx->serialized_size(witness), witness));
         return true;
