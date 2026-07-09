@@ -153,6 +153,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     }
 
     // Tx archive not allowed in v4, must move through node::tx_chaser (v5).
+    // See libbitcoin-node#1075.
     ////auto& query = archive();
     ////const auto hash = tx->hash(false);
     ////

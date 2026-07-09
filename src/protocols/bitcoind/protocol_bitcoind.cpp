@@ -329,6 +329,7 @@ http::request_cptr protocol_bitcoind::reset_rpc_request() NOEXCEPT
 // utility (redundant with protocol_electrum)
 // ----------------------------------------------------------------------------
 // TODO: move this to node utility and pass through.
+// See libbitcoin-node#1075.
 
 bool protocol_bitcoind::get_pool_context(chain::context& pool) const NOEXCEPT
 {
