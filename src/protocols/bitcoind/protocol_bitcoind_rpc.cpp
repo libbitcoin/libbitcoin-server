@@ -271,6 +271,11 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
     // blocks/headers are heights (not counts) per bitcoind convention: blocks is
     // the confirmed tip height, headers the candidate (best-header) height.
     using namespace chain;
+
+    // Cumulative work to the tip, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    query.get_work(work, link);
+
     send_result(object_t
     {
         { "chain", chain_name(query) },
@@ -284,6 +289,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
         { "initialblockdownload", !is_current_chain(true) },
+        { "chainwork", encode_hash(from_uintx(work)) },
         { "pruned", false },
         { "warnings", std::string{} }
     }, 512);
@@ -303,10 +309,17 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
 
 bool protocol_bitcoind_rpc::handle_get_block_filter(const code& ec,
     rpc_interface::get_block_filter, const std::string& blockhash,
-    const std::string&) NOEXCEPT
+    const std::string& filtertype) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // bitcoind defines only the "basic" (neutrino) filter type.
+    if (filtertype != "basic")
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
 
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
@@ -638,7 +651,7 @@ bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    // Tx archive not allowed in in v4, must move through node::tx_chaser (v5).
+    // Tx archive not allowed in v4, must move through node::tx_chaser (v5).
     ////auto& query = archive();
     ////const auto hash = tx->hash(false);
     ////

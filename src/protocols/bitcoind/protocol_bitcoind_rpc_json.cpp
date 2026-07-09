@@ -43,8 +43,16 @@ void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
     const auto top = query.get_top_confirmed();
     const auto confirmed = query.is_confirmed_block(link);
     out["height"] = height;
-    out["confirmations"] = add1(floored_subtract(top, height));
+
+    // bitcoind reports -1 confirmations for a block not on the active chain.
+    out["confirmations"] = confirmed ?
+        static_cast<int64_t>(add1(floored_subtract(top, height))) : -1;
     out["mediantime"] = median_time_past(query, link);
+
+    // Cumulative work to this block, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    if (query.get_work(work, link))
+        out["chainwork"] = encode_hash(from_uintx(work));
 
     if (header.previous_block_hash() != null_hash)
         out["previousblockhash"] = encode_hash(header.previous_block_hash());
@@ -89,6 +97,7 @@ boost::json::object protocol_bitcoind_rpc::header_to_bitcoind(
         { "time", header.timestamp() },
         { "nonce", header.nonce() },
         { "bits", encode_base16(to_big_endian(header.bits())) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) },
         { "difficulty", header.difficulty() }
     };
 }
