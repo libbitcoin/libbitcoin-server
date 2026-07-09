@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
+#include <algorithm>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -30,6 +31,15 @@ uint32_t protocol_bitcoind::median_time_past(const node::query& query,
 {
     chain::context ctx{};
     return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
+}
+
+// verificationprogress is approximated as confirmed/candidate height, the best
+// available estimate of the chain top during sync (1.0 once current).
+double protocol_bitcoind::verification_progress(size_t blocks,
+    size_t headers) NOEXCEPT
+{
+    return is_zero(headers) ? 1.0 :
+        std::min(1.0, to_floating(blocks) / to_floating(headers));
 }
 
 void protocol_bitcoind::inject_block_context(boost::json::object& out,
@@ -137,11 +147,7 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
     if (!header)
         return false;
 
-    // TODO: make utility method and move explanation there.
-    // verificationprogress is approximated as confirmed/candidate height, the
-    // best available estimate of the chain top during sync (1.0 once current).
-    const auto progress = is_zero(headers) ? 1.0 :
-        std::min(1.0, to_floating(blocks) / to_floating(headers));
+    const auto progress = verification_progress(blocks, headers);
 
     // blocks/headers are heights (not counts) per bitcoind convention: blocks is
     // the confirmed top height, headers the candidate (best-header) height.
