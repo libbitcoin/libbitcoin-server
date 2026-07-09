@@ -37,6 +37,16 @@ using namespace network::messages;
 using namespace std::placeholders;
 using namespace boost::json;
 
+// bitcoind getblock verbosity levels (doc/JSON-RPC-interface.md).
+namespace {
+enum class block_verbosity : size_t
+{
+    hex = 0,      // serialized block, hex-encoded
+    hashed = 1,   // block object listing txids
+    verbose = 2   // block object embedding full tx objects
+};
+} // namespace
+
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
@@ -197,7 +207,8 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
     }
 
     size_t level{};
-    if (!to_integer(level, verbosity))
+    if (!to_integer(level, verbosity) ||
+        level > static_cast<size_t>(block_verbosity::verbose))
     {
         send_error(error::invalid_argument);
         return true;
@@ -206,41 +217,27 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
-
-    if (level == zero)
+    const auto block = query.get_block(link, witness);
+    if (!block)
     {
-        const auto block = query.get_block(link, witness);
-        if (!block)
-        {
-            send_error(error::not_found, blockhash, blockhash.size());
-            return true;
-        }
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
 
+    const auto detail = static_cast<block_verbosity>(level);
+    if (detail == block_verbosity::hex)
+    {
         send_text(to_text(*block, block->serialized_size(witness), witness));
         return true;
     }
 
-    if (level == one || level == two)
-    {
-        const auto block = query.get_block(link, witness);
-        if (!block)
-        {
-            send_error(error::not_found, blockhash, blockhash.size());
-            return true;
-        }
+    // hashed lists txids; verbose embeds full tx objects.
+    auto model = detail == block_verbosity::hashed ?
+        value_from(bitcoind_hashed(*block)) :
+        value_from(bitcoind_verbose(*block));
 
-        // TODO: map "level/verbosity" to enumeration and remove comments.
-        // verbosity 1 lists txids; verbosity 2 embeds full tx objects.
-        auto model = is_one(level) ?
-            value_from(bitcoind_hashed(*block)) :
-            value_from(bitcoind_verbose(*block));
-
-        inject_block_context(model.as_object(), query, link, block->header());
-        send_result(std::move(model), two * block->serialized_size(witness));
-        return true;
-    }
-
-    send_error(error::invalid_argument);
+    inject_block_context(model.as_object(), query, link, block->header());
+    send_result(std::move(model), two * block->serialized_size(witness));
     return true;
 }
 
@@ -261,12 +258,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         return true;
     }
 
-    // TODO: make utility method and move explanation there.
-    // verificationprogress is approximated as confirmed/candidate height, the
-    // best available estimate of the chain tip during sync (1.0 once current).
-    const auto progress = is_zero(headers) ? 1.0 :
-        std::min(1.0, static_cast<double>(blocks) /
-            static_cast<double>(headers));
+    const auto progress = verification_progress(blocks, headers);
 
     // blocks/headers are heights (not counts) per bitcoind convention: blocks is
     // the confirmed tip height, headers the candidate (best-header) height.
@@ -556,16 +548,16 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: get most of these values from either config or network/node props.
-
-    // libbitcoin-server is a node, not a wallet/peer-introspection service;
-    // peer-dependent fields (connections, addresses) are reported as empty.
+    // Protocol/relay values come from network configuration. libbitcoin-server
+    // is a node, not a wallet/peer-introspection service, so peer-dependent
+    // fields (connections, addresses) and fees are reported as empty/defaults.
+    const auto& network = network_settings();
     send_result(object_t
     {
         { "version", 0 },
-        { "subversion", std::string{ "/libbitcoin:server/" } },
-        { "protocolversion", 70016 },
-        { "localrelay", true },
+        { "subversion", network.user_agent },
+        { "protocolversion", network.protocol_maximum },
+        { "localrelay", network.enable_relay },
         { "timeoffset", 0 },
         { "connections", 0 },
         { "networkactive", true },

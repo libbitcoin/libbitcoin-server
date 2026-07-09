@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
+#include <algorithm>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -30,6 +31,16 @@ uint32_t protocol_bitcoind_rpc::median_time_past(const node::query& query,
 {
     chain::context ctx{};
     return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
+}
+
+// verificationprogress is approximated as confirmed/candidate height, the best
+// available estimate of the chain tip during sync (1.0 once current).
+double protocol_bitcoind_rpc::verification_progress(size_t blocks,
+    size_t headers) NOEXCEPT
+{
+    return is_zero(headers) ? 1.0 :
+        std::min(1.0, static_cast<double>(blocks) /
+            static_cast<double>(headers));
 }
 
 void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
