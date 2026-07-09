@@ -107,8 +107,16 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    // TODO: can verbose be validated, to_integer()?
-    if (verbose == 0.0)
+    // bitcoind parses verbose as an integer (ParseVerbosity): level zero yields
+    // hex, nonzero yields the json object (verbosity 2 fee/prevout not yet done).
+    size_t level{};
+    if (!to_integer(level, verbose))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (level == zero)
     {
         send_text(to_text(*tx, tx->serialized_size(witness), witness));
         return true;

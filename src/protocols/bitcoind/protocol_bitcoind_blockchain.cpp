@@ -339,9 +339,10 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
 
-    // TODO: is this meant to be query.is_confirmed_spent(output_link)?
-    // bitcoind returns json null for missing or spent output (mempool ignored).
-    if (output_link.is_terminal() || query.is_spent(output_link))
+    // bitcoind returns json null for a missing or confirmed-spent output; with
+    // mempool ignored this matches gettxout's include_mempool=false semantics
+    // (is_spent would also count unconfirmed/conflicting/invalid-block spenders).
+    if (output_link.is_terminal() || query.is_confirmed_spent(output_link))
     {
         send_result({}, 42);
         return true;

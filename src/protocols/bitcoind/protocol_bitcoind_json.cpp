@@ -134,7 +134,8 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
     const auto progress = is_zero(headers) ? 1.0 :
         std::min(1.0, to_floating(blocks) / to_floating(headers));
 
-    // TODO: blocks/headers is a misnomer (off-by-one), intended?
+    // blocks/headers are heights (not counts) per bitcoind convention: blocks is
+    // the confirmed top height, headers the candidate (best-header) height.
     using namespace chain;
     out = network::rpc::object_t
     {
