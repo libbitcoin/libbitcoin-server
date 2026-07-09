@@ -118,6 +118,7 @@ std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
     const auto genesis = query.get_header_key(query.to_confirmed(zero));
 
     // TODO: create signet chain selector.
+    // See libbitcoin-system#1908.
     using selection = chain::selection;
     constexpr auto signet = base16_hash(
         "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6");
