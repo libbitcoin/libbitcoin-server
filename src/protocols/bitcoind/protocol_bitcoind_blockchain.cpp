@@ -207,10 +207,17 @@ bool protocol_bitcoind_blockchain::handle_get_block_count(const code& ec,
 
 bool protocol_bitcoind_blockchain::handle_get_block_filter(const code& ec,
     rpc_interface::get_block_filter, const std::string& blockhash,
-    const std::string&) NOEXCEPT
+    const std::string& filtertype) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // bitcoind defines only the "basic" (neutrino) filter type.
+    if (filtertype != "basic")
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
 
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))

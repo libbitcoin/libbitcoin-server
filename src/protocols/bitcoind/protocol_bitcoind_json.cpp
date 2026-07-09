@@ -43,8 +43,16 @@ void protocol_bitcoind::inject_block_context(boost::json::object& out,
     const auto top = query.get_top_confirmed();
     const auto confirmed = query.is_confirmed_block(link);
     out["height"] = height;
-    out["confirmations"] = add1(floored_subtract(top, height));
+
+    // bitcoind reports -1 confirmations for a block not on the active chain.
+    out["confirmations"] = confirmed ?
+        static_cast<int64_t>(add1(floored_subtract(top, height))) : -1;
     out["mediantime"] = median_time_past(query, link);
+
+    // Cumulative work to this block, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    if (query.get_work(work, link))
+        out["chainwork"] = encode_hash(from_uintx(work));
 
     if (header.previous_block_hash() != null_hash)
         out["previousblockhash"] = encode_hash(header.previous_block_hash());
@@ -89,6 +97,7 @@ boost::json::object protocol_bitcoind::header_to_bitcoind(
         { "time", header.timestamp() },
         { "nonce", header.nonce() },
         { "bits", encode_base16(to_big_endian(header.bits())) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) },
         { "difficulty", header.difficulty() }
     };
 }
@@ -137,6 +146,11 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
     // blocks/headers are heights (not counts) per bitcoind convention: blocks is
     // the confirmed top height, headers the candidate (best-header) height.
     using namespace chain;
+
+    // Cumulative work to the top, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    query.get_work(work, link);
+
     out = network::rpc::object_t
     {
         { "chain", chain_name(query) },
@@ -150,6 +164,7 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
         { "initialblockdownload", !current },
+        { "chainwork", encode_hash(from_uintx(work)) },
         { "pruned", pruned },
         { "warnings", std::string{} }
     };
