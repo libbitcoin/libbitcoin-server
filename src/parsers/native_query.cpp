@@ -112,7 +112,7 @@ bool native_query(rpc::request_t& out, const std::string& target,
     else if (!format.empty())
         return false;
 
-    // Priotize: json, html, text, data (ignores accept priorities).
+    // Prioritize: json, html, text, data (ignores accept priorities).
     else if (contains(accepts, json))
         set_media(params, json);
     else if (contains(accepts, html))
