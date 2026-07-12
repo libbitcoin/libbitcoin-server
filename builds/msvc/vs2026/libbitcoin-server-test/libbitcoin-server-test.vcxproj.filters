@@ -19,14 +19,17 @@
     <Filter Include="src\protocols">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\bitcoind">
+    <Filter Include="src\protocols\admin">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\electrum">
+    <Filter Include="src\protocols\bitcoind">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\native">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000007}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -42,6 +45,12 @@
     <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp">
       <Filter>src\mocks</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\admin_query.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -53,6 +62,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\admin\admin_diagnostics.cpp">
+      <Filter>src\protocols\admin</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.cpp">
+      <Filter>src\protocols\admin</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_json.cpp">
       <Filter>src\protocols\bitcoind</Filter>
@@ -136,6 +151,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp">
       <Filter>src\mocks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.hpp">
+      <Filter>src\protocols\admin</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp">
       <Filter>src\protocols\bitcoind</Filter>

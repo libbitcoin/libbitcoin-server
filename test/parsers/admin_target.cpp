@@ -16,20 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_TARGET_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_TARGET_HPP
+#include "../test.hpp"
 
-#include <bitcoin/server/define.hpp>
+BOOST_AUTO_TEST_SUITE(admin_target_tests)
 
-namespace libbitcoin {
-namespace server {
-
-// TODO: move into bitcoind namespace.
-
-BCS_API code bitcoind_target(network::rpc::request_t& out,
-    const std::string_view& path) NOEXCEPT;
-
-} // namespace server
-} // namespace libbitcoin
-
-#endif
+BOOST_AUTO_TEST_SUITE_END()

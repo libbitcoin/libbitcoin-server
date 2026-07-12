@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__witness_false__true)
     BOOST_REQUIRE(native_query(out, "/?witness=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    const auto it = params.find(token::witness);
+    const auto it = params.find(native::token::witness);
     BOOST_REQUIRE(it != params.end());
     BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
     BOOST_REQUIRE(!std::get<bool>(it->second.value()));
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__witness_true__true)
     BOOST_REQUIRE(native_query(out, "/?witness=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(token::witness) == params.end());
+    BOOST_REQUIRE(params.find(native::token::witness) == params.end());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_false__true)
@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_false__true)
     BOOST_REQUIRE(native_query(out, "/?turbo=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    const auto it = params.find(token::turbo);
+    const auto it = params.find(native::token::turbo);
     BOOST_REQUIRE(it != params.end());
     BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
     BOOST_REQUIRE(!std::get<bool>(it->second.value()));
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_true__true)
     BOOST_REQUIRE(native_query(out, "/?turbo=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(token::turbo) == params.end());
+    BOOST_REQUIRE(params.find(native::token::turbo) == params.end());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__stop_true__true)
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__stop_true__true)
     BOOST_REQUIRE(native_query(out, "/?stop=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    const auto it = params.find(token::stop);
+    const auto it = params.find(native::token::stop);
     BOOST_REQUIRE(it != params.end());
     BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
     BOOST_REQUIRE(std::get<bool>(it->second.value()));
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__stop_false__true)
     BOOST_REQUIRE(native_query(out, "/?stop=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(token::stop) == params.end());
+    BOOST_REQUIRE(params.find(native::token::stop) == params.end());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__stop_invalid__false)

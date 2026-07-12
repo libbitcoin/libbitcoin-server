@@ -18,7 +18,7 @@
  */
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
-#include "native_setup_fixture.hpp"
+#include "admin_setup_fixture.hpp"
 #include <future>
 
 using namespace system;
@@ -26,7 +26,7 @@ using namespace boost::beast;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-native_setup_fixture::native_setup_fixture(const initializer& setup)
+admin_setup_fixture::admin_setup_fixture(const initializer& setup)
   : config_
     {
         system::chain::selection::mainnet,
@@ -49,12 +49,12 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
     auto& server_settings = config_.server;
-    auto& native = server_settings.native;
+    auto& admin = server_settings.admin;
 
-    native.binds = { { NATIVE_ENDPOINT } };
-    native.connections = 1;
-    native.path = "unused";
-    native.inactivity_minutes = 1;
+    admin.binds = { { NATIVE_ENDPOINT } };
+    admin.connections = 1;
+    admin.path = "unused";
+    admin.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;
@@ -76,10 +76,10 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(native.binds.back().to_endpoint());
+    socket_.connect(admin.binds.back().to_endpoint());
 }
 
-native_setup_fixture::~native_setup_fixture()
+admin_setup_fixture::~admin_setup_fixture()
 {
     network::boost_code ec{};
     if (websocket_.has_value())
@@ -109,8 +109,8 @@ native_setup_fixture::~native_setup_fixture()
 
 BC_POP_WARNING()
 
-native_setup_fixture::string_request
-native_setup_fixture::create_request(std::string_view target)
+admin_setup_fixture::string_request
+admin_setup_fixture::create_request(std::string_view target)
 {
     // Build HTTP/1.1 GET string request.
     string_request request{ http::verb::get, target, network::http::version_1_1 };
@@ -120,7 +120,7 @@ native_setup_fixture::create_request(std::string_view target)
     return request;
 }
 
-bool native_setup_fixture::expect_dropped(std::string_view target)
+bool admin_setup_fixture::expect_dropped(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
@@ -131,7 +131,7 @@ bool native_setup_fixture::expect_dropped(std::string_view target)
     return ec == boost::beast::net::error::eof;
 }
 
-http::status native_setup_fixture::get_status(std::string_view target)
+http::status admin_setup_fixture::get_status(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
@@ -144,7 +144,7 @@ http::status native_setup_fixture::get_status(std::string_view target)
     return response.result();
 }
 
-std::string native_setup_fixture::get_text(std::string_view target)
+std::string admin_setup_fixture::get_text(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
@@ -158,7 +158,7 @@ std::string native_setup_fixture::get_text(std::string_view target)
     return response.body();
 }
 
-system::data_chunk native_setup_fixture::get_data(std::string_view target)
+system::data_chunk admin_setup_fixture::get_data(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
@@ -175,7 +175,7 @@ system::data_chunk native_setup_fixture::get_data(std::string_view target)
 // The network json body does not support reading a document consisting
 // of only a top-level primitive, because it supports streaming and non-
 // streaming. So instead just use a string buffer and parse explicitly.
-boost::json::value native_setup_fixture::get_json(std::string_view target)
+boost::json::value admin_setup_fixture::get_json(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
@@ -189,7 +189,7 @@ boost::json::value native_setup_fixture::get_json(std::string_view target)
     return test::parse_json(response.body());
 }
 
-network::boost_code native_setup_fixture::ws_upgrade()
+network::boost_code admin_setup_fixture::ws_upgrade()
 {
     network::boost_code ec{};
     BOOST_CHECK(!websocket_.has_value());
@@ -200,7 +200,7 @@ network::boost_code native_setup_fixture::ws_upgrade()
     return ec;
 }
 
-data_chunk native_setup_fixture::ws_receive()
+data_chunk admin_setup_fixture::ws_receive()
 {
     flat_buffer buffer{};
     network::boost_code ec{};
@@ -213,7 +213,7 @@ data_chunk native_setup_fixture::ws_receive()
     return { data, std::next(data, buffer.data().size()) };
 }
 
-bool native_setup_fixture::ws_dropped(std::string_view message)
+bool admin_setup_fixture::ws_dropped(std::string_view message)
 {
     network::boost_code ec{};
     BOOST_CHECK(websocket_.has_value());
@@ -226,7 +226,7 @@ bool native_setup_fixture::ws_dropped(std::string_view message)
     return ec == boost::asio::error::eof;
 }
 
-std::string native_setup_fixture::ws_get_text(std::string_view message)
+std::string admin_setup_fixture::ws_get_text(std::string_view message)
 {
     network::boost_code ec{};
     BOOST_CHECK(websocket_.has_value());
@@ -237,13 +237,13 @@ std::string native_setup_fixture::ws_get_text(std::string_view message)
     return to_string(ws_receive());
 }
 
-boost::json::value native_setup_fixture::ws_get_json(
+boost::json::value admin_setup_fixture::ws_get_json(
     std::string_view message)
 {
     return test::parse_json(ws_get_text(message));
 }
 
-data_chunk native_setup_fixture::ws_get_data(std::string_view message)
+data_chunk admin_setup_fixture::ws_get_data(std::string_view message)
 {
     network::boost_code ec{};
     BOOST_CHECK(websocket_.has_value());
@@ -254,7 +254,7 @@ data_chunk native_setup_fixture::ws_get_data(std::string_view message)
     return ws_receive();
 }
 
-void native_setup_fixture::notify(node::chase event_, node::event_value value)
+void admin_setup_fixture::notify(node::chase event_, node::event_value value)
 {
     server_.notify(node::error::success, event_, value);
 }

@@ -93,10 +93,6 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_address_unconfirmed, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_balance, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_NATIVE(handle_get_address_subscribe, _1, _2, _3, _4, _5, _6, _7);
-
-    // Admin endpoint methods (TODO: move to admin interface).
-    SUBSCRIBE_NATIVE(handle_get_log_subscribe, _1, _2, _3, _4, _5);
-    SUBSCRIBE_NATIVE(handle_get_event_subscribe, _1, _2, _3, _4, _5);
     protocol_html::start();
 }
 
@@ -237,32 +233,6 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
     }
 
     return true;
-}
-
-bool protocol_native::handle_log(const code& ec, uint8_t , time_t ,
-    const std::string& ) NOEXCEPT
-{
-    if (stopped(ec) || !log_subscribe_.load(relaxed))
-        return false;
-
-    if (!websocket())
-        return true;
-
-    // TODO: map subscribed flags to event filter, emit single json event.
-    return false;
-}
-
-bool protocol_native::handle_events(const code& ec, uint8_t ,
-    uint64_t , const logger::time& ) NOEXCEPT
-{
-    if (stopped(ec) || !event_subscribe_.load(relaxed))
-        return false;
-
-    if (!websocket())
-        return true;
-
-    // TODO: map subscribed flags to event filter, emit single json event.
-    return false;
 }
 
 // Utilities.

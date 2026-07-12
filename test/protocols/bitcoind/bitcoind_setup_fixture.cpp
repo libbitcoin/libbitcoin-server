@@ -24,23 +24,6 @@
 
 using namespace boost::beast;
 
-namespace {
-
-// Internal linkage to avoid colliding with the native fixture's parse_json.
-boost::json::value parse_json(std::string_view value)
-{
-    try
-    {
-        return boost::json::parse(value);
-    }
-    catch (...)
-    {
-        return {};
-    }
-}
-
-} // namespace
-
 bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup)
   : config_
     {
@@ -141,7 +124,7 @@ boost::json::value bitcoind_setup_fixture::rpc(std::string_view method,
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
-    return parse_json(response.body());
+    return test::parse_json(response.body());
 }
 
 bitcoind_setup_fixture::status
@@ -167,7 +150,7 @@ boost::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
-    return parse_json(response.body());
+    return test::parse_json(response.body());
 }
 
 std::string bitcoind_setup_fixture::rest_text(std::string_view target)

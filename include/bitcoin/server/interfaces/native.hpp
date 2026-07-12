@@ -67,11 +67,7 @@ struct native_methods
         method<"address_confirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_unconfirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_balance", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
-        method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, optional<true>, optional<false>>{ "version", "media", "hash", "turbo", "stop" },
-
-        // TODO: move to admin interface (security).
-        method<"log_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
-        method<"event_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" }
+        method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, optional<true>, optional<false>>{ "version", "media", "hash", "turbo", "stop" }
     };
 
     template <typename... Args>
@@ -120,14 +116,10 @@ struct native_methods
     using address_unconfirmed = at<29>;
     using address_balance = at<30>;
     using address_subscribe = at<31>;
-
-    // TODO: move to admin interface (security).
-    using log_subscribe = at<32>;
-    using event_subscribe = at<33>;
 };
 
 /// ?format=data|text|json (via query string).
-/// -----------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
 
 /// /v1/configuration {1}
 
@@ -160,20 +152,20 @@ struct native_methods
 /// /v1/block/hash/[bkhash]/tx/[position] {1}
 /// /v1/block/height/[height]/tx/[position] {1}
 
-/// -----------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
 
 /// /v1/tx/[txhash] {1}
 /// /v1/tx/[txhash]/header {1 - if confirmed}
 /// /v1/tx/[txhash]/details {1}
 
-/// -----------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
 
 /// /v1/input/[txhash] {all inputs in the tx}
 /// /v1/input/[txhash]/[index] {1}
 /// /v1/input/[txhash]/[index]/script {1}
 /// /v1/input/[txhash]/[index]/witness {1}
 
-/// -----------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
 
 /// /v1/output/[txhash] {all outputs in the tx}
 /// /v1/output/[txhash]/[index] {1}
@@ -181,7 +173,7 @@ struct native_methods
 /// /v1/output/[txhash]/[index]/spender {1 - if confirmed}
 /// /v1/output/[txhash]/[index]/spenders {all}
 
-/// -----------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
 
 /// /v1/address/[output-script-hash] {all}
 /// /v1/address/[output-script-hash]/unconfirmed {all unconfirmed}

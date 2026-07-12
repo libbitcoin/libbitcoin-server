@@ -29,6 +29,8 @@ using namespace std::placeholders;
 
 #define CLASS protocol_native
 
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
 bool protocol_native::handle_get_configuration(const code& ec,
     interface::configuration, uint8_t, uint8_t media) NOEXCEPT
 {
@@ -41,8 +43,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         return true;
     }
 
-    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    boost::json::object object
+    send_json(boost::json::object
     {
         { "address", archive().address_enabled() },
         { "filter", archive().filter_enabled() },
@@ -51,54 +52,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         { "retarget", system_settings().forks.retarget },
         { "difficult", system_settings().forks.difficult },
         { "stripped", get_stripped_height() },
-    };
-    BC_POP_WARNING()
-
-    send_json(std::move(object), 64);
-    return true;
-}
-
-bool protocol_native::handle_get_log_subscribe(const code& ec,
-    interface::log_subscribe, uint8_t , uint8_t ,
-    bool stop) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    // TODO: add levels param, if empty implies stop.
-    // TODO: implement as bit flags that map to levels here.
-    log_subscribe_.store(stop, std::memory_order_relaxed);
-    if (stop)
-    {
-        send_empty();
-        return true;
-    }
-
-    // handle_log will unsubscribe when !log_subscribe_ upon any message.
-    log.subscribe_messages(BIND(handle_log, _1, _2, _3, _4));
-    send_empty();
-    return true;
-}
-
-bool protocol_native::handle_get_event_subscribe(const code& ec,
-    interface::event_subscribe, uint8_t , uint8_t ,
-    bool stop) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    // TODO: add events param, if empty implies stop.
-    // TODO: implement as bit flags that map to events here.
-    event_subscribe_.store(stop, std::memory_order_relaxed);
-    if (stop)
-    {
-        send_empty();
-        return true;
-    }
-
-    // handle_events will unsubscribe when !log_subscribe_ upon any event.
-    log.subscribe_events(BIND(handle_events, _1, _2, _3, _4));
-    send_empty();
+    }, 64);
     return true;
 }
 
@@ -136,6 +90,8 @@ size_t protocol_native::get_active_height(
         ctx.is_enabled(system::chain::bip141_rule) && 
         query.is_candidate_header(link) ? ctx.height : zero;
 }
+
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin

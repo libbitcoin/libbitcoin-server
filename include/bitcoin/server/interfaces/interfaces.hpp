@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_INTERFACES_HPP
 #define LIBBITCOIN_SERVER_INTERFACES_HPP
 
+#include <bitcoin/server/interfaces/admin.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rest.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rpc.hpp>
 #include <bitcoin/server/interfaces/btcd.hpp>
@@ -31,7 +32,8 @@
 namespace libbitcoin {
 namespace server {
 namespace interface {
-
+    
+using admin         = publish<admin_methods>;
 using bitcoind_rest = publish<bitcoind_rest_methods>;
 using bitcoind_rpc  = publish<bitcoind_rpc_methods>;
 using btcd          = publish<btcd_methods>;
