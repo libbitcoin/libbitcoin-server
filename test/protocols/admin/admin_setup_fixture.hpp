@@ -44,13 +44,16 @@ struct admin_setup_fixture
 
     network::boost_code ws_upgrade();
     system::data_chunk ws_receive();
+    std::string ws_receive_text();
+    boost::json::value ws_receive_json();
     bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
     boost::json::value ws_get_json(std::string_view message);
     system::data_chunk ws_get_data(std::string_view message);
 
-    // 0_32 vs {} for xcode variant issue.
-    void notify(node::chase event_, node::event_value value=0_u32);
+    // Fire logger message/event (admin stream sources).
+    void write(uint8_t level, const std::string& message);
+    void fire(uint8_t event_, uint64_t value=zero);
 
 protected:
     server::configuration config_;

@@ -213,6 +213,16 @@ data_chunk admin_setup_fixture::ws_receive()
     return { data, std::next(data, buffer.data().size()) };
 }
 
+std::string admin_setup_fixture::ws_receive_text()
+{
+    return to_string(ws_receive());
+}
+
+boost::json::value admin_setup_fixture::ws_receive_json()
+{
+    return test::parse_json(ws_receive_text());
+}
+
 bool admin_setup_fixture::ws_dropped(std::string_view message)
 {
     network::boost_code ec{};
@@ -254,7 +264,12 @@ data_chunk admin_setup_fixture::ws_get_data(std::string_view message)
     return ws_receive();
 }
 
-void admin_setup_fixture::notify(node::chase event_, node::event_value value)
+void admin_setup_fixture::write(uint8_t level, const std::string& message)
 {
-    server_.notify(node::error::success, event_, value);
+    log_.write(level) << message;
+}
+
+void admin_setup_fixture::fire(uint8_t event_, uint64_t value)
+{
+    log_.fire(event_, value);
 }
