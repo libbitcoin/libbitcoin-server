@@ -22,7 +22,7 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define ELECTRUM_ENDPOINT "127.0.0.1:65000"
+#define ELECTRUM_ENDPOINT "127.0.0.1:65002"
 
 struct electrum_setup_fixture
 {

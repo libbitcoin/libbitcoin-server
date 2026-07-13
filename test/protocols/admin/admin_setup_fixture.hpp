@@ -22,7 +22,7 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define NATIVE_ENDPOINT "127.0.0.1:65001"
+#define ADMIN_ENDPOINT "127.0.0.1:65001"
 
 // TODO: admin is http so use boost::beast.
 

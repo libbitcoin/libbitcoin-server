@@ -22,7 +22,7 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define BITCOIND_ENDPOINT "127.0.0.1:65000"
+#define BITCOIND_ENDPOINT "127.0.0.1:65003"
 
 struct bitcoind_setup_fixture
 {

@@ -51,7 +51,7 @@ admin_setup_fixture::admin_setup_fixture(const initializer& setup)
     auto& server_settings = config_.server;
     auto& admin = server_settings.admin;
 
-    admin.binds = { { NATIVE_ENDPOINT } };
+    admin.binds = { { ADMIN_ENDPOINT } };
     admin.connections = 1;
     admin.path = "unused";
     admin.inactivity_minutes = 1;
