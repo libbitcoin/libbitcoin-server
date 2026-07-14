@@ -77,15 +77,27 @@ bool protocol_admin::try_dispatch_object(const http::request& request) NOEXCEPT
 
     rpc::request_t model{};
     if (const auto ec = admin_target(model, target))
+    {
+        // Allow invalid interface target to be retried as a page request.
         return !ec;
+    }
 
+    // No media defaults injected for an http request.
     if (!admin_query(model, request))
+    {
+        send_bad_request(request);
+        return true;
+    }
+
+    const auto media = strip_media(model);
+    if (media == media_type::unknown)
     {
         send_not_acceptable(request);
         return true;
     }
 
-    if (strip_media(model) == media_type::text_html)
+    // Falls through to html page dispatch.
+    if (media == media_type::text_html)
         return false;
 
     if (const auto ec = dispatcher_.notify(model))
@@ -113,8 +125,13 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
         return;
 
     // Default to json by simulating a json accept header (format overrides).
-    if (!admin_query(model, target, { media_type::application_json }) ||
-        strip_media(model) == media_type::text_html)
+    if (!admin_query(model, target, { media_type::application_json }))
+    {
+        stop(network::error::bad_request);
+        return;
+    }
+
+    if (strip_media(model) != media_type::application_json)
     {
         stop(network::error::not_acceptable);
         return;
@@ -138,9 +155,10 @@ bool protocol_admin::handle_get_log_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
+    // log outlives node, so cannot hold shared_ptr to the protocol.
     uint64_t previous{};
     if (update_filter(previous, filter, log_state_))
-        log.subscribe_messages(BIND(handle_log, _1, _2, _3, _4));
+        log.subscribe_messages(BIND_WEAK(handle_log, _1, _2, _3, _4));
 
     send_json({ { "previous", previous } }, 42);
     return true;
@@ -154,9 +172,10 @@ bool protocol_admin::handle_get_event_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
+    // log outlives node, so cannot hold shared_ptr to the protocol.
     uint64_t previous{};
     if (update_filter(previous, filter, event_state_))
-        log.subscribe_events(BIND(handle_event, _1, _2, _3, _4));
+        log.subscribe_events(BIND_WEAK(handle_event, _1, _2, _3, _4));
 
     send_json({ { "previous", previous } }, 42);
     return true;
@@ -246,7 +265,7 @@ bool protocol_admin::get_filter(bool& filtered, size_t bit,
     filter_t& filter) NOEXCEPT
 {
     auto state = filter.load(relaxed);
-    const auto next = set_left(state, false);
+    const auto next = set_left(state, zero, false);
 
     // Empty filter unregisters, failure implies a new filter arrived.
     if (is_zero(next) && filter.compare_exchange_strong(state, next, relaxed))
@@ -260,11 +279,11 @@ bool protocol_admin::get_filter(bool& filtered, size_t bit,
 bool protocol_admin::update_filter(uint64_t& prior, uint64_t value,
     filter_t& filter) NOEXCEPT
 {
-    const auto next = set_left(value, true);
+    const auto next = set_left(value, zero, true);
     const auto state = is_zero(value) ? filter.fetch_and(next, relaxed) :
         filter.exchange(next, relaxed);
 
-    prior = set_left(state, false);
+    prior = set_left(state, zero, false);
     return !is_zero(value) && !get_left(state);
 }
 

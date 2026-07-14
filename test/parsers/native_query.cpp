@@ -17,20 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../test.hpp"
-
-namespace libbitcoin {
-namespace network {
-namespace http {
-
-std::ostream& operator<<(std::ostream& os, const media_type& media)
-{
-    os << from_media_type(media);
-    return os;
-}
-
-} // namespace http
-} // namespace network
-} // namespace libbitcoin
+#include "../mocks/blocks.hpp"
 
 BOOST_AUTO_TEST_SUITE(native_query_tests)
 

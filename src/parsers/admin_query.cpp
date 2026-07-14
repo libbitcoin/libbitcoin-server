@@ -96,10 +96,9 @@ bool admin_query(rpc::request_t& out, const std::string& target,
         set_media(params, json);
     else if (contains(accepts, html))
         set_media(params, html);
-    else
-        return false;
+    //else no media type is set, which results in not acceptable.
 
-    // Media type has been set.
+    // Parse successful, media type not acceptable if not set.
     return true;
 }
 
