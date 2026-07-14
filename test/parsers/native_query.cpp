@@ -43,11 +43,13 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__invalid_uri_target__false)
     BOOST_REQUIRE(!native_query(out, "invalid uri with spaces?foo=bar", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_accepts__false)
+// valid parse doesn't require acceptable.
+BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_accepts__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!native_query(out, "/", {}));
+    BOOST_REQUIRE(native_query(out, "/", {}));
+    BOOST_REQUIRE_EQUAL(get_media(out), media_type::unknown);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_json__true)
@@ -122,12 +124,14 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_data__true)
     BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_matching_accept__false)
+// valid parse doesn't require acceptable.
+BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_matching_accept__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::unknown };
-    BOOST_REQUIRE(!native_query(out, "/", accepts));
+    BOOST_REQUIRE(native_query(out, "/", accepts));
+    BOOST_REQUIRE_EQUAL(get_media(out), media_type::unknown);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_json__true)

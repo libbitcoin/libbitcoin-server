@@ -46,15 +46,15 @@ BOOST_AUTO_TEST_CASE(native__top__data__expected)
     BOOST_REQUIRE_EQUAL(body, base16_chunk("09"));
 }
 
-BOOST_AUTO_TEST_CASE(native__top__xml__not_acceptable)
+BOOST_AUTO_TEST_CASE(native__top__xml__bad_request)
 {
     const auto status = get_status("/v1/top?format=xml");
-    BOOST_REQUIRE_EQUAL(status, http::status::not_acceptable);
+    BOOST_REQUIRE_EQUAL(status, http::status::bad_request);
 }
 
 BOOST_AUTO_TEST_CASE(native__top__default__not_acceptable)
 {
-    const auto status = get_status("/v1/top?format=xml");
+    const auto status = get_status("/v1/top");
     BOOST_REQUIRE_EQUAL(status, http::status::not_acceptable);
 }
 

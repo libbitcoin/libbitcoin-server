@@ -122,10 +122,9 @@ bool native_query(rpc::request_t& out, const std::string& target,
         set_media(params, text);
     else if (contains(accepts, data))
         set_media(params, data);
-    else
-        return false;
+    //else no media type is set, which results in not acceptable.
 
-    // Media type has been set.
+    // Parse successful, media type not acceptable if not set.
     return true;
 }
 

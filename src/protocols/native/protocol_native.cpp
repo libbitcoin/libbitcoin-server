@@ -118,15 +118,27 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
 
     rpc::request_t model{};
     if (const auto ec = native_target(model, target))
+    {
+        // Allow invalid interface target to be retried as a page request.
         return !ec;
+    }
 
+    // No media defaults injected for an http request.
     if (!native_query(model, request))
+    {
+        send_bad_request(request);
+        return true;
+    }
+
+    const auto media = get_media(model);
+    if (media == media_type::unknown)
     {
         send_not_acceptable(request);
         return true;
     }
 
-    if (get_media(model) == media_type::text_html)
+    // Falls through to html page dispatch.
+    if (media == media_type::text_html)
         return false;
 
     if (const auto ec = dispatcher_.notify(model))
@@ -154,8 +166,13 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
         return;
 
     // Default to json by simulating a json accept header (format overrides).
-    if (!native_query(model, target, { media_type::application_json }) ||
-        get_media(model) == media_type::text_html)
+    if (!native_query(model, target, { media_type::application_json }))
+    {
+        stop(network::error::bad_request);
+        return;
+    }
+
+    if (get_media(model) == media_type::text_html)
     {
         stop(network::error::not_acceptable);
         return;
