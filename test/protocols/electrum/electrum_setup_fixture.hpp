@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_ELECTRUM_ELECTRUM
-#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_ELECTRUM_ELECTRUM
+#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_ELECTRUM_ELECTRUM_SETUP_FIXTURE
+#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_ELECTRUM_ELECTRUM_SETUP_FIXTURE
 
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define ELECTRUM_ENDPOINT "127.0.0.1:65000"
+#define ELECTRUM_ENDPOINT "127.0.0.1:65002"
 
 struct electrum_setup_fixture
 {

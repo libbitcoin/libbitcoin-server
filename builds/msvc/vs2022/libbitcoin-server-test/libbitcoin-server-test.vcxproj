@@ -122,12 +122,16 @@
     <ClCompile Include="..\..\..\..\test\error.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\admin_query.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_parsers_electrum_version.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\admin\admin_diagnostics.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp" />
@@ -159,6 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />

@@ -16,24 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_NATIVE_NATIVE_SETUP_FIXTURE
-#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_NATIVE_NATIVE_SETUP_FIXTURE
+#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_ADMIN_ADMIN_SETUP_FIXTURE
+#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_ADMIN_ADMIN_SETUP_FIXTURE
 
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define NATIVE_ENDPOINT "127.0.0.1:65000"
+#define ADMIN_ENDPOINT "127.0.0.1:65001"
 
-// TODO: native is http so use boost::beast.
+// TODO: admin is http so use boost::beast.
 
-struct native_setup_fixture
+struct admin_setup_fixture
 {
     using status = boost::beast::http::status;
     using initializer = std::function<bool(test::query_t&)>;
 
-    DELETE_COPY_MOVE(native_setup_fixture);
-    explicit native_setup_fixture(const initializer& setup);
-    ~native_setup_fixture();
+    DELETE_COPY_MOVE(admin_setup_fixture);
+    explicit admin_setup_fixture(const initializer& setup);
+    ~admin_setup_fixture();
 
     bool expect_dropped(std::string_view target);
     status get_status(std::string_view target);
@@ -44,13 +44,16 @@ struct native_setup_fixture
 
     network::boost_code ws_upgrade();
     system::data_chunk ws_receive();
+    std::string ws_receive_text();
+    boost::json::value ws_receive_json();
     bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
     boost::json::value ws_get_json(std::string_view message);
     system::data_chunk ws_get_data(std::string_view message);
 
-    // 0_32 vs {} for xcode variant issue.
-    void notify(node::chase event_, node::event_value value=0_u32);
+    // Fire logger message/event (admin stream sources).
+    void write(uint8_t level, const std::string& message);
+    void fire(uint8_t event_, uint64_t value=zero);
 
 protected:
     server::configuration config_;
@@ -72,11 +75,11 @@ private:
     std::optional<websocket_stream> websocket_{};
 };
 
-struct native_ten_block_setup_fixture
-  : native_setup_fixture
+struct admin_ten_block_setup_fixture
+  : admin_setup_fixture
 {
-    inline native_ten_block_setup_fixture()
-      : native_setup_fixture([](test::query_t& query)
+    inline admin_ten_block_setup_fixture()
+      : admin_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
         })

@@ -124,10 +124,13 @@
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
     <ClCompile Include="..\..\..\..\src\error.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\admin_query.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc_json.cpp" />
@@ -168,6 +171,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rest.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp" />
@@ -178,6 +182,8 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\types.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_query.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp" />

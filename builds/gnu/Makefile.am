@@ -52,12 +52,15 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parser.cpp \
     ${srcdir}/../../src/server_node.cpp \
     ${srcdir}/../../src/settings.cpp \
+    ${srcdir}/../../src/parsers/admin_query.cpp \
+    ${srcdir}/../../src/parsers/admin_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_target.cpp \
     ${srcdir}/../../src/parsers/electrum_version.cpp \
     ${srcdir}/../../src/parsers/native_query.cpp \
     ${srcdir}/../../src/parsers/native_target.cpp \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
     ${srcdir}/../../src/protocols/protocol_http.cpp \
+    ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc_json.cpp \
@@ -121,6 +124,7 @@ include_bitcoin_server_interfacesdir = \
     ${includedir}/bitcoin/server/interfaces
 
 include_bitcoin_server_interfaces_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/interfaces/admin.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rest.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rpc.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
@@ -135,6 +139,8 @@ include_bitcoin_server_parsersdir = \
     ${includedir}/bitcoin/server/parsers
 
 include_bitcoin_server_parsers_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/parsers/admin_query.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/admin_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_query.hpp \
@@ -199,10 +205,14 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/settings.cpp \
     ${srcdir}/../../test/test.cpp \
     ${srcdir}/../../test/mocks/blocks.cpp \
+    ${srcdir}/../../test/parsers/admin_query.cpp \
+    ${srcdir}/../../test/parsers/admin_target.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
     ${srcdir}/../../test/parsers/electrum_version.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \
+    ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
+    ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_json.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rpc.cpp \

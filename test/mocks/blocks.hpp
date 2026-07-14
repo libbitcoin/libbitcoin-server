@@ -104,6 +104,24 @@ bool setup_three_block_witness_store(query_t& query) NOEXCEPT;
 bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT;
 bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT;
 
+// TODO: move.
+boost::json::value parse_json(std::string_view value) NOEXCEPT;
+
 } // namespace test
+
+namespace libbitcoin {
+namespace network {
+namespace http {
+
+// TODO: move.
+inline std::ostream& operator<<(std::ostream& os, const media_type& media)
+{
+    os << from_media_type(media);
+    return os;
+}
+
+} // namespace http
+} // namespace network
+} // namespace libbitcoin
 
 #endif

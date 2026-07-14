@@ -82,6 +82,18 @@ const block block9{ block9_data, true };
 
 const server::settings::embedded_pages web_pages{};
 
+boost::json::value parse_json(std::string_view value) NOEXCEPT
+{
+    try
+    {
+        return boost::json::parse(value);
+    }
+    catch (...)
+    {
+        return {};
+    }
+}
+
 bool setup_ten_block_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&

@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_BITCOIND_BITCOIND
-#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BITCOIND_BITCOIND
+#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_BITCOIND_BITCOIND_SETUP_FIXTURE
+#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BITCOIND_BITCOIND_SETUP_FIXTURE
 
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define BITCOIND_ENDPOINT "127.0.0.1:65000"
+#define BITCOIND_ENDPOINT "127.0.0.1:65003"
 
 struct bitcoind_setup_fixture
 {

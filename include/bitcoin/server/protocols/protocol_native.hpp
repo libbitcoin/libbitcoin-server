@@ -70,10 +70,6 @@ protected:
 
     bool handle_chase(const code&, node::chase event_,
         node::event_value) NOEXCEPT;
-    bool handle_log(const code& ec, uint8_t level, time_t time,
-        const std::string& message) NOEXCEPT;
-    bool handle_events(const code& ec, uint8_t event_, uint64_t value,
-        const network::logger::time& point) NOEXCEPT;
 
     /// Interface handlers.
     /// -----------------------------------------------------------------------
@@ -180,12 +176,6 @@ protected:
         interface::address_subscribe, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo, bool stop) NOEXCEPT;
 
-    // TODO: move to admin interface.
-    bool handle_get_log_subscribe(const code& ec, interface::log_subscribe,
-        uint8_t version, uint8_t media, bool stop) NOEXCEPT;
-    bool handle_get_event_subscribe(const code& ec, interface::event_subscribe,
-        uint8_t version, uint8_t media, bool stop) NOEXCEPT;
-
 protected:
     using media_type = network::http::media_type;
 
@@ -276,12 +266,6 @@ private:
 
     // TODO: map of scripthashes (notify on instances).
     std::atomic_bool address_subscribe_{};
-
-    // TODO: map of log levels.
-    std::atomic_bool log_subscribe_{};
-
-    // TODO: map of events.
-    std::atomic_bool event_subscribe_{};
 
     // This is protected by strand.
     dispatcher dispatcher_{};

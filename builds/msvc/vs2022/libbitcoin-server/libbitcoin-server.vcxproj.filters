@@ -49,17 +49,20 @@
     <Filter Include="src\protocols">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\bitcoind">
+    <Filter Include="src\protocols\admin">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\electrum">
+    <Filter Include="src\protocols\bitcoind">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\stratum_v1">
+    <Filter Include="src\protocols\native">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\stratum_v1">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -72,6 +75,12 @@
     <ClCompile Include="..\..\..\..\src\parser.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\admin_query.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -83,6 +92,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp">
+      <Filter>src\protocols\admin</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp">
       <Filter>src\protocols\bitcoind</Filter>
@@ -200,6 +212,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\admin.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rest.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
@@ -229,6 +244,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parser.hpp">
       <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_query.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_target.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>

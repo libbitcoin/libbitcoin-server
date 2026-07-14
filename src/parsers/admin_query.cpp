@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/parsers/native_query.hpp>
+#include <bitcoin/server/parsers/admin_query.hpp>
 
 #include <bitcoin/server/define.hpp>
 
@@ -30,14 +30,14 @@ using namespace network::http;
 BC_PUSH_WARNING(NO_ARRAY_INDEXING)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-inline bool is_true(const std::string& value) NOEXCEPT
-{
-    return value == native::token::true_;
-}
+// Masks are constrained to exact json number (ieee double) representation.
+constexpr auto maximum_filter = sub1(power2<uint64_t>(53u));
 
-inline bool is_false(const std::string& value) NOEXCEPT
+template <typename Number>
+static bool to_number(Number& out, const std::string& token) NOEXCEPT
 {
-    return value == native::token::false_;
+    return !token.empty() && is_ascii_numeric(token) && (is_one(token.size()) ||
+        token.front() != '0') && deserialize(out, token);
 }
 
 inline void set_media(rpc::object_t& params, media_type media) NOEXCEPT
@@ -45,13 +45,13 @@ inline void set_media(rpc::object_t& params, media_type media) NOEXCEPT
     params["media"] = to_value(media);
 }
 
-bool native_query(rpc::request_t& out, const request& request) NOEXCEPT
+bool admin_query(rpc::request_t& out, const request& request) NOEXCEPT
 {
     const auto accepts = to_media_types((request)[field::accept]);
-    return native_query(out, request.target(), accepts);
+    return admin_query(out, request.target(), accepts);
 }
 
-bool native_query(rpc::request_t& out, const std::string& target,
+bool admin_query(rpc::request_t& out, const std::string& target,
     const media_types& accepts) NOEXCEPT
 {
     wallet::uri uri{};
@@ -59,44 +59,26 @@ bool native_query(rpc::request_t& out, const std::string& target,
         return false;
 
     constexpr auto html = media_type::text_html;
-    constexpr auto text = media_type::text_plain;
     constexpr auto json = media_type::application_json;
-    constexpr auto data = media_type::application_octet_stream;
 
     // Caller must have provided a request.params object.
     if (!out.params.has_value() ||
         !std::holds_alternative<rpc::object_t>(out.params.value()))
         return false;
 
-    using namespace server::native;
+    using namespace server::admin;
     auto query = uri.decode_query();
     auto& params = std::get<rpc::object_t>(out.params.value());
 
-    // Witness is optional<true> (where applicable), so only set if false.
-    if (const auto witness = query.find(token::witness); witness != query.end())
+    // Filter is required by admin methods but not html (page) requests.
+    // Omission for dispatched (non-html) requests is rejected by dispatch.
+    if (const auto filter = query.find(token::filter); filter != query.end())
     {
-        if (is_false(witness->second))
-            params[token::witness] = false;
-        else if (!is_true(witness->second))
+        uint64_t value{};
+        if (!to_number(value, filter->second) || value > maximum_filter)
             return false;
-    }
 
-    // Turbo is optional<true> (where applicable), so only set if false.
-    if (const auto turbo = query.find(token::turbo); turbo != query.end())
-    {
-        if (is_false(turbo->second))
-            params[token::turbo] = false;
-        else if (!is_true(turbo->second))
-            return false;
-    }
-
-    // Stop is optional<false> (where applicable), so only set if true.
-    if (const auto stop = query.find(token::stop); stop != query.end())
-    {
-        if (is_true(stop->second))
-            params[token::stop] = true;
-        else if (!is_false(stop->second))
-            return false;
+        params[token::filter] = value;
     }
 
     const auto format = query[token::format];
@@ -104,35 +86,27 @@ bool native_query(rpc::request_t& out, const std::string& target,
     // Prioritize query string format over http headers.
     if (format == token::formats::json)
         set_media(params, json);
-    else if (format == token::formats::text)
-        set_media(params, text);
-    else if (format == token::formats::data)
-        set_media(params, data);
     else if (format == token::formats::html)
         set_media(params, html);
     else if (!format.empty())
         return false;
 
-    // Prioritize: json, html, text, data (ignores accept priorities).
+    // Priotize: json, html (ignores accept priorities).
     else if (contains(accepts, json))
         set_media(params, json);
     else if (contains(accepts, html))
         set_media(params, html);
-    else if (contains(accepts, text))
-        set_media(params, text);
-    else if (contains(accepts, data))
-        set_media(params, data);
     //else no media type is set, which results in not acceptable.
 
     // Parse successful, media type not acceptable if not set.
     return true;
 }
 
-media_type get_media(const rpc::request_t& model) NOEXCEPT
+media_type strip_media(rpc::request_t& model) NOEXCEPT
 {
     if (model.params.has_value())
     {
-        const auto& params = std::get<rpc::object_t>(model.params.value());
+        auto& params = std::get<rpc::object_t>(model.params.value());
         const auto& media = params.find("media");
         if (media != params.end() && std::holds_alternative<uint8_t>(
             media->second.value()))
@@ -141,10 +115,11 @@ media_type get_media(const rpc::request_t& model) NOEXCEPT
                 std::get<uint8_t>(media->second.value())))
             {
                 case media_type::text_html:
-                case media_type::text_plain:
                 case media_type::application_json:
-                case media_type::application_octet_stream:
+                {
+                    params.erase("media");
                     return value;
+                }
                 default:
                     return media_type::unknown;
             }

@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_NATIVE_QUERY_HPP
-#define LIBBITCOIN_SERVER_PARSERS_NATIVE_QUERY_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_ADMIN_QUERY_HPP
+#define LIBBITCOIN_SERVER_PARSERS_ADMIN_QUERY_HPP
 
 #include <bitcoin/server/define.hpp>
 
@@ -25,41 +25,33 @@ namespace libbitcoin {
 namespace server {
 
 /// Query string tokens.
-namespace native
+namespace admin
 {
     namespace token
     {
         /// Names.
-        constexpr auto stop = "stop";
-        constexpr auto turbo = "turbo";
+        constexpr auto filter = "filter";
         constexpr auto format = "format";
-        constexpr auto witness = "witness";
-
-        /// Boolean values.
-        constexpr auto true_ = "true";
-        constexpr auto false_ = "false";
 
         /// Format values.
         namespace formats
         {
             constexpr auto html = "html";
-            constexpr auto text = "text";
             constexpr auto json = "json";
-            constexpr auto data = "data";
         }
     }
 }
 
-// TODO: move into native namespace.
+// TODO: move into admin namespace.
 
-BCS_API bool native_query(network::rpc::request_t& out,
+BCS_API bool admin_query(network::rpc::request_t& out,
     const network::http::request& request) NOEXCEPT;
-BCS_API bool native_query(network::rpc::request_t& out,
+BCS_API bool admin_query(network::rpc::request_t& out,
     const std::string& target,
     const network::http::media_types& accepts) NOEXCEPT;
 
-BCS_API network::http::media_type get_media(
-    const network::rpc::request_t& model) NOEXCEPT;
+BCS_API network::http::media_type strip_media(
+    network::rpc::request_t& model) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

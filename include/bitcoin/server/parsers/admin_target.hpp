@@ -16,17 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_TARGET_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_TARGET_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_ADMIN_TARGET_HPP
+#define LIBBITCOIN_SERVER_PARSERS_ADMIN_TARGET_HPP
 
+#include <string_view>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-// TODO: move into bitcoind namespace.
+// TODO: move into admin namespace.
 
-BCS_API code bitcoind_target(network::rpc::request_t& out,
+BCS_API code admin_target(network::rpc::request_t& out,
     const std::string_view& path) NOEXCEPT;
 
 } // namespace server

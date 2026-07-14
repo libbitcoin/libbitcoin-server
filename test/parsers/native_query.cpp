@@ -17,20 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../test.hpp"
-
-namespace libbitcoin {
-namespace network {
-namespace http {
-
-std::ostream& operator<<(std::ostream& os, const media_type& media)
-{
-    os << from_media_type(media);
-    return os;
-}
-
-} // namespace http
-} // namespace network
-} // namespace libbitcoin
+#include "../mocks/blocks.hpp"
 
 BOOST_AUTO_TEST_SUITE(native_query_tests)
 
@@ -56,11 +43,13 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__invalid_uri_target__false)
     BOOST_REQUIRE(!native_query(out, "invalid uri with spaces?foo=bar", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_accepts__false)
+// valid parse doesn't require acceptable.
+BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_accepts__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!native_query(out, "/", {}));
+    BOOST_REQUIRE(native_query(out, "/", {}));
+    BOOST_REQUIRE_EQUAL(get_media(out), media_type::unknown);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_json__true)
@@ -135,12 +124,14 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_data__true)
     BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_matching_accept__false)
+// valid parse doesn't require acceptable.
+BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_matching_accept__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::unknown };
-    BOOST_REQUIRE(!native_query(out, "/", accepts));
+    BOOST_REQUIRE(native_query(out, "/", accepts));
+    BOOST_REQUIRE_EQUAL(get_media(out), media_type::unknown);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_json__true)
@@ -208,7 +199,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__witness_false__true)
     BOOST_REQUIRE(native_query(out, "/?witness=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    const auto it = params.find(token::witness);
+    const auto it = params.find(native::token::witness);
     BOOST_REQUIRE(it != params.end());
     BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
     BOOST_REQUIRE(!std::get<bool>(it->second.value()));
@@ -222,7 +213,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__witness_true__true)
     BOOST_REQUIRE(native_query(out, "/?witness=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(token::witness) == params.end());
+    BOOST_REQUIRE(params.find(native::token::witness) == params.end());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_false__true)
@@ -233,7 +224,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_false__true)
     BOOST_REQUIRE(native_query(out, "/?turbo=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    const auto it = params.find(token::turbo);
+    const auto it = params.find(native::token::turbo);
     BOOST_REQUIRE(it != params.end());
     BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
     BOOST_REQUIRE(!std::get<bool>(it->second.value()));
@@ -247,7 +238,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_true__true)
     BOOST_REQUIRE(native_query(out, "/?turbo=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(token::turbo) == params.end());
+    BOOST_REQUIRE(params.find(native::token::turbo) == params.end());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__stop_true__true)
@@ -258,7 +249,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__stop_true__true)
     BOOST_REQUIRE(native_query(out, "/?stop=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    const auto it = params.find(token::stop);
+    const auto it = params.find(native::token::stop);
     BOOST_REQUIRE(it != params.end());
     BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
     BOOST_REQUIRE(std::get<bool>(it->second.value()));
@@ -272,7 +263,7 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__stop_false__true)
     BOOST_REQUIRE(native_query(out, "/?stop=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(token::stop) == params.end());
+    BOOST_REQUIRE(params.find(native::token::stop) == params.end());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__native_query__stop_invalid__false)
