@@ -208,9 +208,7 @@ BOOST_AUTO_TEST_CASE(admin__ws_log_subscribe__live_level__eventually_notified)
     write(0, "sentinel");
 
     // Server self-logging may interleave; drain to the sentinel.
-    while (true)
-        if (ws_receive_json().at("message").as_string() == "sentinel")
-            break;
+    while (ws_receive_json().at("message").as_string() != "sentinel");
 }
 
 BOOST_AUTO_TEST_CASE(admin__ws_event_subscribe__fire__notified)
