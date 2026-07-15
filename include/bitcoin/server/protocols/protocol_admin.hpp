@@ -82,14 +82,15 @@ protected:
 protected:
     /// Notification event handlers (protocol strand).
     /// -----------------------------------------------------------------------
-    void do_log(uint8_t level, time_t zulu, const std::string& message) NOEXCEPT;
-    void do_event(uint8_t event_, time_t zulu, uint64_t value) NOEXCEPT;
+    void do_event(uint8_t event_, uint64_t zulu, uint64_t value) NOEXCEPT;
+    void do_log(uint8_t level, uint64_t zulu,
+        const std::string& message) NOEXCEPT;
 
 private:
     using filter_t = std::atomic<uint64_t>;
 
     // Utils.
-    static time_t to_zulu(const network::logger::time& point) NOEXCEPT;
+    static uint64_t to_zulu(const network::logger::time& point) NOEXCEPT;
     static bool get_filter(bool& filtered, size_t bit,
         filter_t& filter) NOEXCEPT;
     static bool update_filter(uint64_t& prior, uint64_t value,
