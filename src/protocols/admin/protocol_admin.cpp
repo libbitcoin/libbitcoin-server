@@ -194,7 +194,7 @@ bool protocol_admin::handle_log(const code& ec, uint8_t level, time_t zulu,
     if (!filtered || !websocket())
         return true;
 
-    POST(do_log, level, zulu, message);
+    POST(do_log, level, zulu * 1'000_u64, message);
     return true;
 }
 
@@ -216,7 +216,7 @@ bool protocol_admin::handle_event(const code& ec, uint8_t event_,
 // ----------------------------------------------------------------------------
 // Posted to the protocol strand.
 
-void protocol_admin::do_log(uint8_t level, time_t zulu,
+void protocol_admin::do_log(uint8_t level, uint64_t zulu,
     const std::string& message) NOEXCEPT
 {
     BC_ASSERT(stranded() && websocket());
@@ -232,7 +232,7 @@ void protocol_admin::do_log(uint8_t level, time_t zulu,
     }, message.size() + 64u);
 }
 
-void protocol_admin::do_event(uint8_t event_, time_t zulu,
+void protocol_admin::do_event(uint8_t event_, uint64_t zulu,
     uint64_t value_) NOEXCEPT
 {
     BC_ASSERT(stranded() && websocket());
@@ -252,12 +252,14 @@ void protocol_admin::do_event(uint8_t event_, time_t zulu,
 // ----------------------------------------------------------------------------
 // static/private
 
-time_t protocol_admin::to_zulu(const logger::time& point) NOEXCEPT
+// zulu time in milliseconds since epoch (native js time format).
+uint64_t protocol_admin::to_zulu(const logger::time& point) NOEXCEPT
 {
     using namespace std::chrono;
     const auto now = logger::now();
     const auto delta = duration_cast<system_clock::duration>(now - point);
-    return system_clock::to_time_t(system_clock::now() - delta);
+    const auto time = (system_clock::now() - delta).time_since_epoch();
+    return duration_cast<milliseconds>(time).count();
 }
 
 // Unsubscribe if false.

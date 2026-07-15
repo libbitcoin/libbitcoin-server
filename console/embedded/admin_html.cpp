@@ -29,12 +29,23 @@ R"(<html>
     <meta charset="utf-8">
     <meta name="description" content="libbitcoin server admin site">
     <link rel="stylesheet" href="style.css"/>
-    <link rel="icon" href="icon.png" type="image/png"/>
-    <link rel="preload" href="boston.woff2" type="font/woff2" as="font">
     <script src="script.js" defer></script>
 </head>
 <body>
-    <p>Hello world!</p>
+    <h1>Admin Console</h1>
+    <div id="tabs">
+        <button id="show-log">Log</button>
+        <button id="show-events">Events</button>
+    </div>
+    <div id="log-tab">
+        <div id="levels"></div>
+        <pre id="log"></pre>
+    </div>
+    <div id="event-tab" hidden>
+        <div id="kinds"></div>
+        <pre id="events"></pre>
+    </div>
+    <div id="status">disconnected</div>
 </body>
 </html>)")
 
