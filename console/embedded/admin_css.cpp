@@ -23,10 +23,12 @@ namespace server {
 
 // Simple test css for embedded page, links in font.
 DEFINE_EMBEDDED_PAGE(admin_pages, char, css,
-R"(@font-face
+R"(#log, #events
 {
-    font-family: 'Boston';
-    src: url('boston.woff2');
+    font-family: monospace;
+    height: 70vh;
+    overflow-y: scroll;
+    white-space: pre-wrap;
 })")
 
 } // namespace server
