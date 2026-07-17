@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\admin_ecma.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
@@ -28,9 +31,6 @@
       <Filter>src\embedded</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp">
-      <Filter>src\embedded</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp">
