@@ -119,10 +119,10 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\admin_ecma.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\amin_ecma.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp" />
