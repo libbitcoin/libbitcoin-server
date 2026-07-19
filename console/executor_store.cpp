@@ -113,6 +113,14 @@ code executor::open_store_coded(bool details)
         return ec;
     }
 
+    // TODO: compare configured fork flags to genesis archive.
+    ////if (!query_.consistent_forks())
+    ////{
+    ////    const code ec{ database::error::inconsistent_forks };
+    ////    logger(format(BS_DATABASE_START_FAIL) % ec.message());
+    ////    return ec;
+    ////}
+
     logger(BS_DATABASE_STARTED);
     return error::success;
 }
