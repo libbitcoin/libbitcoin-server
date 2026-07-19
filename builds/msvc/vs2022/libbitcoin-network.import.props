@@ -14,7 +14,7 @@
   <!-- Options -->
 
   <PropertyGroup>
-    <Option-ssl>true</Option-ssl>
+    <Option-ssl Condition="'$(Option-ssl)' == ''">true</Option-ssl>
   </PropertyGroup>
 
   <!-- Messages -->
