@@ -19,7 +19,7 @@
 
   <!-- Messages -->
 
-  <Target Name="OptionInfo" BeforeTargets="PrepareForBuild">
+  <Target Name="NetworkOptionInfo" BeforeTargets="PrepareForBuild">
     <Message Text="Option-ssl        : $(Option-ssl)" Importance="high"/>
   </Target>
 
