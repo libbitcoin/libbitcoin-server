@@ -37,6 +37,10 @@ struct bitcoind_setup_fixture
     // object). Returns the parsed json-rpc response object (with result/error).
     boost::json::value rpc(std::string_view method, std::string_view params="[]");
 
+    // JSON-RPC over HTTP POST to "/" with a raw body (e.g. a batch). Returns
+    // the parsed json response, or {"dropped":true} if the channel dropped.
+    boost::json::value rpc_body(std::string_view body);
+
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);
     boost::json::value rest_json(std::string_view target);

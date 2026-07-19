@@ -216,6 +216,84 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+// batch
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__two_requests__two_ordered_responses)
+{
+    const auto response = rpc_body(
+        R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},)"
+        R"({"jsonrpc":"2.0","id":2,"method":"getbestblockhash","params":[]}])");
+
+    BOOST_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BOOST_REQUIRE_EQUAL(batch.size(), 2u);
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(as_text(batch.at(1).at("result")), block9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__single_element__array_of_one)
+{
+    const auto response = rpc_body(
+        R"([{"jsonrpc":"2.0","id":7,"method":"getblockcount","params":[]}])");
+
+    BOOST_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BOOST_REQUIRE_EQUAL(batch.size(), 1u);
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 7);
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__error_element__delivered_in_order)
+{
+    const auto unknown = hash_param(null_hash, "1");
+    const auto response = rpc_body((boost_format(
+        R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},)"
+        R"({"jsonrpc":"2.0","id":2,"method":"getrawtransaction","params":%1%},)"
+        R"({"jsonrpc":"2.0","id":3,"method":"getblockcount","params":[]}])") %
+            unknown).str());
+
+    BOOST_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BOOST_REQUIRE_EQUAL(batch.size(), 3u);
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BOOST_REQUIRE(has_error(batch.at(1)));
+    BOOST_REQUIRE_EQUAL(batch.at(2).at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__v1_second_element__closed_partial_batch)
+{
+    // The batched v1 policy stop closes the open batch response (the first
+    // element was delivered and responded).
+    const auto response = rpc_body(
+        R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},)"
+        R"({"id":2,"method":"getblockcount","params":[]}])");
+
+    BOOST_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BOOST_REQUIRE_EQUAL(batch.size(), 1u);
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__v1_element__dropped)
+{
+    // Batch participation of a v1 message (no jsonrpc field) drops (http).
+    const auto response = rpc_body(
+        R"([{"id":1,"method":"getblockcount","params":[]}])");
+
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__dropped)
+{
+    const auto response = rpc_body("[]");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // segwit (witness store: genesis + two blocks carrying witness transactions)
