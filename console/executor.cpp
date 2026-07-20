@@ -44,6 +44,10 @@ std::optional<std::thread> executor::poller_thread_{};
 executor& executor::factory(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
 {
+    // TODO: expose fork_flags() mapping from system static chain_state method.
+    ////metadata.configured.database.fork_flags = 
+    ////    metadata.configured.bitcoin.fork_flags();
+
     static executor instance(metadata, input, output, error);
     return instance;
 }
