@@ -109,12 +109,9 @@ parser::parser(system::chain::selection context,
     configured.database.output_size = 25'300'000'000;
     configured.database.output_rate = 5;
 
-    // point table set to 2.2LF @ ~900k.
-    configured.database.point_buckets = 1'365'977'136;
-    configured.database.point_size = 25'700'000'000;
-    configured.database.point_rate = 5;
-
-    configured.database.ins_size = 8'550'000'000;
+    // ins table set to 2.2LF @ ~900k.
+    configured.database.ins_buckets = 1'365'977'136;
+    configured.database.ins_size = 34'250'000'000;
     configured.database.ins_rate = 5;
 
     configured.database.outs_size = 3'700'000'000;
@@ -1489,28 +1486,16 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_output table body, defaults to '5'."
     )
 
-    /* point */
-    (
-        "database.point_buckets",
-        value<uint32_t>(&configured.database.point_buckets),
-        "The number of buckets in the archive_point table head, defaults to '1365977136'."
-    )
-    (
-        "database.point_size",
-        value<uint64_t>(&configured.database.point_size),
-        "The minimum allocation of the archive_point table body, defaults to '25700000000'."
-    )
-    (
-        "database.point_rate",
-        value<uint16_t>(&configured.database.point_rate),
-        "The percentage expansion of the archive_point table body, defaults to '5'."
-    )
-
     /* ins */
+    (
+        "database.ins_buckets",
+        value<uint32_t>(&configured.database.ins_buckets),
+        "The number of buckets in the archive_ins table head, defaults to '1365977136'."
+    )
     (
         "database.ins_size",
         value<uint64_t>(&configured.database.ins_size),
-        "The minimum allocation of the archive_ins table body, defaults to '8550000000'."
+        "The minimum allocation of the archive_ins table body, defaults to '34250000000'."
     )
     (
         "database.ins_rate",

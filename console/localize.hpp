@@ -78,42 +78,40 @@
     "   header    :%1%\n" \
     "   txs       :%2%\n" \
     "   tx        :%3%\n" \
-    "   point     :%4%\n" \
-    "   input     :%5%\n" \
-    "   output    :%6%\n" \
-    "   ins       :%7%\n" \
-    "   outs      :%8%\n" \
-    "   candidate :%9%\n" \
-    "   confirmed :%10%\n" \
-    "   ecdsa     :%11%\n" \
-    "   schnorr   :%12%\n" \
-    "   silent    :%13%\n" \
-    "   prevalid  :%14%\n" \
-    "   prevout   :%15%\n" \
-    "   duplicate :%16%\n" \
-    "   strong_tx :%17%\n" \
-    "   valid_bk  :%18%\n" \
-    "   valid_tx  :%19%\n" \
-    "   filter_bk :%20%\n" \
-    "   filter_tx :%21%\n" \
-    "   address   :%22%"
+    "   input     :%4%\n" \
+    "   output    :%5%\n" \
+    "   ins       :%6%\n" \
+    "   outs      :%7%\n" \
+    "   candidate :%8%\n" \
+    "   confirmed :%9%\n" \
+    "   ecdsa     :%10%\n" \
+    "   schnorr   :%11%\n" \
+    "   silent    :%12%\n" \
+    "   prevalid  :%13%\n" \
+    "   prevout   :%14%\n" \
+    "   duplicate :%15%\n" \
+    "   strong_tx :%16%\n" \
+    "   valid_bk  :%17%\n" \
+    "   valid_tx  :%18%\n" \
+    "   filter_bk :%19%\n" \
+    "   filter_tx :%20%\n" \
+    "   address   :%21%"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
     "   header    :%1%\n" \
     "   tx        :%2%\n" \
-    "   point     :%3%\n" \
-    "   ins       :%4%\n" \
-    "   outs      :%5%\n" \
-    "   candidate :%6%\n" \
-    "   confirmed :%7%\n" \
-    "   ecdsa     :%8%\n" \
-    "   schnorr   :%9%\n" \
-    "   silent    :%10%\n" \
-    "   prevalid  :%11%\n" \
-    "   duplicate :%12%\n" \
-    "   strong_tx :%13%\n" \
-    "   filter_bk :%14%\n" \
-    "   address   :%15%"
+    "   ins       :%3%\n" \
+    "   outs      :%4%\n" \
+    "   candidate :%5%\n" \
+    "   confirmed :%6%\n" \
+    "   ecdsa     :%7%\n" \
+    "   schnorr   :%8%\n" \
+    "   silent    :%9%\n" \
+    "   prevalid  :%10%\n" \
+    "   duplicate :%11%\n" \
+    "   strong_tx :%12%\n" \
+    "   filter_bk :%13%\n" \
+    "   address   :%14%"
 #define BS_INFORMATION_SLABS \
     "Table slabs..."
 #define BS_INFORMATION_SLABS_ROW \
@@ -127,7 +125,7 @@
     "   header    :%1%\n" \
     "   txs       :%2%\n" \
     "   tx        :%3%\n" \
-    "   point     :%4%\n" \
+    "   ins       :%4%\n" \
     "   prevout   :%5%\n" \
     "   duplicate :%6%\n" \
     "   strong_tx :%7%\n" \
@@ -140,7 +138,7 @@
     "Collision rates...\n" \
     "   header    :%1%\n" \
     "   tx        :%2%\n" \
-    "   point     :%3%\n" \
+    "   ins       :%3%\n" \
     "   strong_tx :%4%\n" \
     "   valid_tx  :%5%\n" \
     "   address   :%6%"
