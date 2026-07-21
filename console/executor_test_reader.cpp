@@ -195,7 +195,7 @@ void executor::read_test(const hash_digest&) const
                 return;
             }
 
-            point_link pt_fk{};
+            ins_link pt_fk{};
             input_link in_fk{};
             tx_link pt_tx_fk{};
 

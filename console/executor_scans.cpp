@@ -160,7 +160,7 @@ void executor::scan_buckets() const
     filled = zero;
     bucket = max_size_t;
     start = logger::now();
-    while (!canceled() && (++bucket < query_.point_buckets()))
+    while (!canceled() && (++bucket < query_.ins_buckets()))
     {
         const auto top = query_.top_point(bucket);
         if (!top.is_terminal())
@@ -326,7 +326,7 @@ void executor::scan_collisions() const
 
     index = max_size_t;
     start = logger::now();
-    const auto point_buckets = query_.point_buckets();
+    const auto point_buckets = query_.ins_buckets();
     std_vector<size_t> spend(point_buckets, empty);
     auto inserts = zero;
 
