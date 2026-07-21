@@ -59,9 +59,6 @@
     <Linkage-libbitcoin-node>static</Linkage-libbitcoin-node>
     <Linkage-libbitcoin-server>static</Linkage-libbitcoin-server>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Option-ultrafast)' == 'true' And '$(Option-cuda)' == 'true'">
-    <Linkage-ultrafast>cuda</Linkage-ultrafast>
-  </PropertyGroup>
 
   <!-- Messages -->
 
