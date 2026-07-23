@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PARSERS_ELECTRUM_VERSION_HPP
 #define LIBBITCOIN_SERVER_PARSERS_ELECTRUM_VERSION_HPP
 
-#include <unordered_map>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -78,8 +77,18 @@ enum class version
     v1_7
 };
 
-std::string_view version_to_string(version value) NOEXCEPT;
-version version_from_string(const std::string_view& value) NOEXCEPT;
+/// The numeric form of a defined version (0.0 if undefined).
+system::config::version version_to_number(version value) NOEXCEPT;
+
+/// Serialized form of a defined version ("0.0" if undefined).
+std::string version_to_string(version value) NOEXCEPT;
+
+/// Parse any dotted numeric version, defined or not (false if malformed).
+bool version_from_string(system::config::version& out,
+    const std::string_view& value) NOEXCEPT;
+
+/// The greatest defined version not exceeding value (v0_0 if none).
+version version_floor(const system::config::version& value) NOEXCEPT;
 
 } // namespace electrum
 } // namespace server

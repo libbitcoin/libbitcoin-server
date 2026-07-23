@@ -74,6 +74,46 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__valid_range__expected)
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.7");
 }
 
+BOOST_AUTO_TEST_CASE(electrum__server_version__future_range__negotiates_maximum)
+{
+    // An undefined future maximum negotiates down to the defined maximum.
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.4","2.0"]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.7");
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__undefined_minimum__negotiates_maximum)
+{
+    // An undefined past minimum negotiates up to the defined maximum.
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["0.7","1.7"]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.7");
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__undefined_within_range__negotiates_floor)
+{
+    // An undefined version within the range floors to a defined version.
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.4","1.5"]]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__future_version__invalid_argument)
+{
+    // A single undefined future version cannot be served.
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.8"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__undefined_exact__invalid_argument)
+{
+    // A single undefined version within bounds floors below the minimum.
+    const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.5"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__server_version__invalid__invalid_argument)
 {
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","42"]})" "\n");

@@ -25,7 +25,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
-#include <bitcoin/server/protocols/protocol_electrum_version.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 
 namespace libbitcoin {
@@ -320,9 +319,6 @@ private:
     // Aliases.
     using array_t = network::rpc::array_t;
     using object_t = network::rpc::object_t;
-    using version_t = protocol_electrum_version;
-    static constexpr electrum::version minimum = version_t::minimum;
-    static constexpr electrum::version maximum = version_t::maximum;
 
     // Post to notification strand.
     template <class Derived, typename Method, typename... Args>
