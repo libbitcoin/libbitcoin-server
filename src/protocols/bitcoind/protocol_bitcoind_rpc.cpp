@@ -37,6 +37,16 @@ using namespace network::messages;
 using namespace std::placeholders;
 using namespace boost::json;
 
+// bitcoind getblock verbosity levels (doc/JSON-RPC-interface.md).
+namespace {
+enum class block_verbosity : size_t
+{
+    hex = 0,      // serialized block, hex-encoded
+    hashed = 1,   // block object listing txids
+    verbose = 2   // block object embedding full tx objects
+};
+} // namespace
+
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
@@ -197,7 +207,8 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
     }
 
     size_t level{};
-    if (!to_integer(level, verbosity))
+    if (!to_integer(level, verbosity) ||
+        level > static_cast<size_t>(block_verbosity::verbose))
     {
         send_error(error::invalid_argument);
         return true;
@@ -206,41 +217,27 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
-
-    if (level == zero)
+    const auto block = query.get_block(link, witness);
+    if (!block)
     {
-        const auto block = query.get_block(link, witness);
-        if (!block)
-        {
-            send_error(error::not_found, blockhash, blockhash.size());
-            return true;
-        }
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
 
+    const auto detail = static_cast<block_verbosity>(level);
+    if (detail == block_verbosity::hex)
+    {
         send_text(to_text(*block, block->serialized_size(witness), witness));
         return true;
     }
 
-    if (level == one || level == two)
-    {
-        const auto block = query.get_block(link, witness);
-        if (!block)
-        {
-            send_error(error::not_found, blockhash, blockhash.size());
-            return true;
-        }
+    // hashed lists txids; verbose embeds full tx objects.
+    auto model = detail == block_verbosity::hashed ?
+        value_from(bitcoind_hashed(*block)) :
+        value_from(bitcoind_verbose(*block));
 
-        // TODO: map "level/verbosity" to enumeration and remove comments.
-        // verbosity 1 lists txids; verbosity 2 embeds full tx objects.
-        auto model = is_one(level) ?
-            value_from(bitcoind_hashed(*block)) :
-            value_from(bitcoind_verbose(*block));
-
-        inject_block_context(model.as_object(), query, link, block->header());
-        send_result(std::move(model), two * block->serialized_size(witness));
-        return true;
-    }
-
-    send_error(error::invalid_argument);
+    inject_block_context(model.as_object(), query, link, block->header());
+    send_result(std::move(model), two * block->serialized_size(witness));
     return true;
 }
 
@@ -261,15 +258,16 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         return true;
     }
 
-    // TODO: make utility method and move explanation there.
-    // verificationprogress is approximated as confirmed/candidate height, the
-    // best available estimate of the chain tip during sync (1.0 once current).
-    const auto progress = is_zero(headers) ? 1.0 :
-        std::min(1.0, static_cast<double>(blocks) /
-            static_cast<double>(headers));
+    const auto progress = verification_progress(blocks, headers);
 
-    // TODO: blocks/headers is a misnomer (off-by-one), intended?
+    // blocks/headers are heights (not counts) per bitcoind convention: blocks is
+    // the confirmed tip height, headers the candidate (best-header) height.
     using namespace chain;
+
+    // Cumulative work to the tip, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    query.get_work(work, link);
+
     send_result(object_t
     {
         { "chain", chain_name(query) },
@@ -283,6 +281,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
         { "initialblockdownload", !is_current_chain(true) },
+        { "chainwork", encode_hash(from_uintx(work)) },
         { "pruned", false },
         { "warnings", std::string{} }
     }, 512);
@@ -302,10 +301,17 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
 
 bool protocol_bitcoind_rpc::handle_get_block_filter(const code& ec,
     rpc_interface::get_block_filter, const std::string& blockhash,
-    const std::string&) NOEXCEPT
+    const std::string& filtertype) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // bitcoind defines only the "basic" (neutrino) filter type.
+    if (filtertype != "basic")
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
 
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
@@ -442,9 +448,10 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
 
-    // TODO: is this meant to be query.is_confirmed_spent(output_link)?
-    // bitcoind returns json null for missing or spent output (mempool ignored).
-    if (output_link.is_terminal() || query.is_spent(output_link))
+    // bitcoind returns json null for a missing or confirmed-spent output; with
+    // mempool ignored this matches gettxout's include_mempool=false semantics
+    // (is_spent would also count unconfirmed/conflicting/invalid-block spenders).
+    if (output_link.is_terminal() || query.is_confirmed_spent(output_link))
     {
         send_result({}, 42);
         return true;
@@ -541,16 +548,16 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: get most of these values from either config or network/node props.
-
-    // libbitcoin-server is a node, not a wallet/peer-introspection service;
-    // peer-dependent fields (connections, addresses) are reported as empty.
+    // Protocol/relay values come from network configuration. libbitcoin-server
+    // is a node, not a wallet/peer-introspection service, so peer-dependent
+    // fields (connections, addresses) and fees are reported as empty/defaults.
+    const auto& network = network_settings();
     send_result(object_t
     {
         { "version", 0 },
-        { "subversion", std::string{ "/libbitcoin:server/" } },
-        { "protocolversion", 70016 },
-        { "localrelay", true },
+        { "subversion", network.user_agent },
+        { "protocolversion", network.protocol_maximum },
+        { "localrelay", network.enable_relay },
         { "timeoffset", 0 },
         { "connections", 0 },
         { "networkactive", true },
@@ -591,8 +598,16 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    // TODO: can verbose be validated, to_integer()?
-    if (verbose == 0.0)
+    // bitcoind parses verbose as an integer (ParseVerbosity): level zero yields
+    // hex, nonzero yields the json object (verbosity 2 fee/prevout not yet done).
+    size_t level{};
+    if (!to_integer(level, verbose))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (level == zero)
     {
         send_text(to_text(*tx, tx->serialized_size(witness), witness));
         return true;
@@ -628,7 +643,8 @@ bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    // Tx archive not allowed in in v4, must move through node::tx_chaser (v5).
+    // Tx archive not allowed in v4, must move through node::tx_chaser (v5).
+    // See libbitcoin-node#1075.
     ////auto& query = archive();
     ////const auto hash = tx->hash(false);
     ////
@@ -756,6 +772,7 @@ http::request_cptr protocol_bitcoind_rpc::reset_rpc_request() NOEXCEPT
 // utility (redundant with protocol_electrum)
 // ----------------------------------------------------------------------------
 // TODO: move this to node utility and pass through.
+// See libbitcoin-node#1075.
 
 bool protocol_bitcoind_rpc::get_pool_context(chain::context& pool) const NOEXCEPT
 {
