@@ -113,8 +113,8 @@ void protocol_electrum::handle_server_features(const code& ec,
         { "genesis_hash", encode_hash(hash) },
         { "hosts", self_hosts() },
         { "server_version", options().server_name },
-        { "protocol_min", string_t{ version_to_string(minimum) } },
-        { "protocol_max", string_t{ version_to_string(maximum) } },
+        { "protocol_min", string_t{ options().protocol_minimum.to_string() } },
+        { "protocol_max", string_t{ options().protocol_maximum.to_string() } },
         { "pruning", null_t{} }
     };
 

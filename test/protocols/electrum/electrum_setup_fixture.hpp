@@ -29,8 +29,9 @@ struct electrum_setup_fixture
     DELETE_COPY_MOVE(electrum_setup_fixture);
 
     using initializer = std::function<bool(test::query_t&)>;
+    using configurator = std::function<void(configuration&)>;
     explicit electrum_setup_fixture(const initializer& setup,
-        bool address_index=true);
+        bool address_index=true, const configurator& configure={});
     ~electrum_setup_fixture();
 
     boost::json::value receive();
@@ -87,6 +88,23 @@ struct electrum_disabled_address_index_setup_fixture
         {
             return test::setup_three_block_confirmed_address_store(query);
         }, false)
+    {
+    }
+};
+
+struct electrum_restricted_version_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_restricted_version_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            // Restricted bounds, maximum is intentionally undefined (1.5).
+            config.server.electrum.protocol_minimum = { 1, 2 };
+            config.server.electrum.protocol_maximum = { 1, 5 };
+        })
     {
     }
 };

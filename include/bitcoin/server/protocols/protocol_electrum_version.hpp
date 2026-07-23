@@ -37,9 +37,6 @@ public:
     typedef std::shared_ptr<protocol_electrum_version> ptr;
     using rpc_interface = interface::electrum;
 
-    static constexpr electrum::version minimum = electrum::version::v1_0;
-    static constexpr electrum::version maximum = electrum::version::v1_7;
-
     inline protocol_electrum_version(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
@@ -60,10 +57,10 @@ protected:
         rpc_interface::server_version, const std::string& client_name,
         const interface::value_t& protocol_version) NOEXCEPT;
 
-    electrum::version version() const NOEXCEPT;
-    std::string_view negotiated_version() const NOEXCEPT;
+    std::string negotiated_version() const NOEXCEPT;
     bool set_version(const interface::value_t& version) NOEXCEPT;
-    bool get_versions(electrum::version& min, electrum::version& max,
+    bool get_versions(system::config::version& min,
+        system::config::version& max,
         const interface::value_t& version) NOEXCEPT;
 
     std::string_view server_name() const NOEXCEPT;

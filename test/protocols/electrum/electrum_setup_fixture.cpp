@@ -24,7 +24,7 @@
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
-    bool address_index)
+    bool address_index, const configurator& configure)
   : config_
     {
       system::chain::selection::mainnet,
@@ -68,6 +68,10 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     node_settings.fee_estimate_horizon = 8;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
+
+    // Apply test-specific configuration overrides.
+    if (configure)
+        configure(config_);
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});

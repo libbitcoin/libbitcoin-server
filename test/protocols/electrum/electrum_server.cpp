@@ -147,9 +147,8 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
     REQUIRE_NO_THROW_TRUE(result.at("pruning").is_null());
     REQUIRE_NO_THROW_TRUE(result.at("hosts").is_object());
 
-    using namespace electrum;
-    const auto min = version_to_string(protocol_electrum_version::minimum);
-    const auto max = version_to_string(protocol_electrum_version::maximum);
+    const auto min = config_.server.electrum.protocol_minimum.to_string();
+    const auto max = config_.server.electrum.protocol_maximum.to_string();
     const auto server_name = config_.server.electrum.server_name;
     const auto genesis_hash = encode_hash(test::genesis.hash());
     BOOST_REQUIRE_EQUAL(result.at("genesis_hash").as_string(), genesis_hash);

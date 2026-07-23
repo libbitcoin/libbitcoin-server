@@ -154,32 +154,35 @@ std::string protocol_electrum_version::escape_client(
 // Negotiated version.
 // ----------------------------------------------------------------------------
 
-std::string_view protocol_electrum_version::negotiated_version() const NOEXCEPT
+std::string protocol_electrum_version::negotiated_version() const NOEXCEPT
 {
     return electrum::version_to_string(channel_->version());
 }
 
 bool protocol_electrum_version::set_version(const value_t& version) NOEXCEPT
 {
-    electrum::version client_min{};
-    electrum::version client_max{};
+    system::config::version client_min{};
+    system::config::version client_max{};
     if (!get_versions(client_min, client_max, version))
         return false;
 
-    const auto lower = std::max(client_min, minimum);
-    const auto upper = std::min(client_max, maximum);
-    if (lower > upper)
+    // Clients may specify undefined (e.g. future) versions, negotiation is
+    // numeric and settles on the greatest defined version in the overlap.
+    const auto lower = std::max(client_min, options().protocol_minimum);
+    const auto upper = std::min(client_max, options().protocol_maximum);
+    const auto floor = electrum::version_floor(upper);
+    if (electrum::version_to_number(floor) < lower)
         return false;
 
     LOGA("Electrum [" << opposite() << "] version ("
-        << electrum::version_to_string(client_max) << ") " << client_name());
+        << client_max.to_string() << ") " << client_name());
 
-    channel_->set_version(upper);
+    channel_->set_version(floor);
     return true;
 }
 
-bool protocol_electrum_version::get_versions(electrum::version& min,
-    electrum::version& max, const interface::value_t& version) NOEXCEPT
+bool protocol_electrum_version::get_versions(system::config::version& min,
+    system::config::version& max, const interface::value_t& version) NOEXCEPT
 {
     // Optional value_t can be string_t or array_t of two string_t.
     const auto& value = version.value();
@@ -188,7 +191,9 @@ bool protocol_electrum_version::get_versions(electrum::version& min,
     if (std::holds_alternative<null_t>(value))
     {
         // An interface default can't be set for optional<value_t>.
-        max = min = maximum;
+        // An unspecified version accepts any, subject to configured limits.
+        min = {};
+        max = options().protocol_maximum;
         return true;
     }
 
@@ -196,8 +201,11 @@ bool protocol_electrum_version::get_versions(electrum::version& min,
     if (std::holds_alternative<string_t>(value))
     {
         // A single value implies minimum is the same as maximum.
-        max = min = electrum::version_from_string(std::get<string_t>(value));
-        return min != electrum::version::v0_0;
+        if (!electrum::version_from_string(min, std::get<string_t>(value)))
+            return false;
+
+        max = min;
+        return true;
     }
 
     // Two versions.
@@ -214,10 +222,10 @@ bool protocol_electrum_version::get_versions(electrum::version& min,
             !std::holds_alternative<string_t>(max_version))
             return false;
 
-        min = electrum::version_from_string(std::get<string_t>(min_version));
-        max = electrum::version_from_string(std::get<string_t>(max_version));
-        return min != electrum::version::v0_0
-            && max != electrum::version::v0_0;
+        return electrum::version_from_string(min,
+                std::get<string_t>(min_version))
+            && electrum::version_from_string(max,
+                std::get<string_t>(max_version));
     }
 
     return false;
