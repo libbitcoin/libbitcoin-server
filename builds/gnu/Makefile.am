@@ -22,7 +22,7 @@ pkgconfig_DATA = \
 #------------------------------------------------------------------------------
 doc_DATA = \
     AUTHORS \
-    COPYING \
+    ../../COPYING \
     ChangeLog \
     INSTALL \
     NEWS \
