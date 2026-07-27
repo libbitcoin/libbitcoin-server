@@ -102,25 +102,23 @@ parser::parser(system::chain::selection context,
     configured.database.header.buckets = 386'364;
     configured.database.header.size = 21'000'000;
 
-    configured.database.input.size = 92'500'000'000;
-    configured.database.output.size = 25'300'000'000;
-
-    // ins table set to 2.2LF @ ~900k.
-    configured.database.ins.buckets = 1'365'977'136;
-    configured.database.ins.size = 34'250'000'000;
-
-    configured.database.outs.size = 3'700'000'000;
+    configured.database.txs.buckets = 950'001;
+    configured.database.txs.size = 1'050'000'000;
 
     configured.database.tx.buckets = 469'222'525;
     configured.database.tx.size = 17'000'000'000;
 
-    configured.database.txs.buckets = 950'001;
-    configured.database.txs.size = 1'050'000'000;
+    // ins table set to 2.2LF @ ~900k.
+    configured.database.ins.buckets = 1'365'977'136;
+    configured.database.ins.size = 34'250'000'000;
+    configured.database.outs.size = 3'700'000'000;
+
+    configured.database.input.size = 92'500'000'000;
+    configured.database.output.size = 25'300'000'000;
 
     // database (indexes)
 
     configured.database.candidate.size = 2'575'500;
-
     configured.database.confirmed.size = 2'575'500;
 
     configured.database.strong_tx.buckets = 469'222'525;
@@ -1420,9 +1418,9 @@ options_metadata parser::load_settings() THROWS
         "The interval depth for merkle proof optimization, defaults to '11'."
     )
 
-    /* [table] */
+    /* [table.*] */
 
-    /* header */
+    /* table.header */
     (
         "table.header.buckets",
         value<uint32_t>(&configured.database.header.buckets),
@@ -1439,7 +1437,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_header table body, defaults to '5'."
     )
 
-    /* input */
+    /* table.input */
     (
         "table.input.size",
         value<uint64_t>(&configured.database.input.size),
@@ -1451,7 +1449,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_input table body, defaults to '5'."
     )
 
-    /* output */
+    /* table.output */
     (
         "table.output.size",
         value<uint64_t>(&configured.database.output.size),
@@ -1463,7 +1461,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_output table body, defaults to '5'."
     )
 
-    /* ins */
+    /* table.ins */
     (
         "table.ins.buckets",
         value<uint32_t>(&configured.database.ins.buckets),
@@ -1480,7 +1478,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_ins table body, defaults to '5'."
     )
 
-    /* outs */
+    /* table.outs */
     (
         "table.outs.size",
         value<uint64_t>(&configured.database.outs.size),
@@ -1492,7 +1490,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_puts table body, defaults to '5'."
     )
 
-    /* tx */
+    /* table.tx */
     (
         "table.tx.buckets",
         value<uint32_t>(&configured.database.tx.buckets),
@@ -1509,7 +1507,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_tx table body, defaults to '5'."
     )
 
-    /* txs */
+    /* table.txs */
     (
         "table.txs.buckets",
         value<uint32_t>(&configured.database.txs.buckets),
@@ -1526,7 +1524,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the archive_txs table body, defaults to '5'."
     )
 
-    /* candidate */
+    /* table.candidate */
     (
         "table.candidate.size",
         value<uint64_t>(&configured.database.candidate.size),
@@ -1538,7 +1536,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the index_candidate table body, defaults to '5'."
     )
 
-    /* confirmed */
+    /* table.confirmed */
     (
         "table.confirmed.size",
         value<uint64_t>(&configured.database.confirmed.size),
@@ -1550,24 +1548,24 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the index_confirmed table body, defaults to '5'."
     )
 
-    /* strong_tx */
+    /* table.strong */
     (
-        "table.strong_tx.buckets",
+        "table.strong.buckets",
         value<uint32_t>(&configured.database.strong_tx.buckets),
         "The number of buckets in the index_strong table head, defaults to '469222525'."
     )
     (
-        "table.strong_tx.size",
+        "table.strong.size",
         value<uint64_t>(&configured.database.strong_tx.size),
         "The minimum allocation of the index_strong table body, defaults to '2900000000'."
     )
     (
-        "table.strong_tx.rate",
+        "table.strong.rate",
         value<uint16_t>(&configured.database.strong_tx.rate),
         "The percentage expansion of the index_strong table body, defaults to '5'."
     )
 
-    /* ecdsa */
+    /* table.ecdsa */
     (
         "table.ecdsa.size",
         value<uint64_t>(&configured.database.ecdsa.size),
@@ -1579,7 +1577,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the batch_ecdsa table body, defaults to '5'."
     )
 
-    /* schnorr */
+    /* table.schnorr */
     (
         "table.schnorr.size",
         value<uint64_t>(&configured.database.schnorr.size),
@@ -1591,7 +1589,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the batch_schnorr table body, defaults to '5'."
     )
 
-    /* silent */
+    /* table.silent */
     (
         "table.silent.size",
         value<uint64_t>(&configured.database.silent.size),
@@ -1603,7 +1601,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the batch_silent table body, defaults to '5'."
     )
 
-    /* prevalid */
+    /* table.prevalid */
     (
         "table.prevalid.size",
         value<uint64_t>(&configured.database.prevalid.size),
@@ -1615,7 +1613,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the batch_prevalid table, defaults to '5'."
     )
 
-    /* prevout */
+    /* table.prevout */
     (
         "table.prevout.buckets",
         value<uint32_t>(&configured.database.prevout.buckets),
@@ -1632,7 +1630,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the cache_prevout table, defaults to '5'."
     )
 
-    /* duplicate */
+    /* table.duplicate */
     (
         "table.duplicate.buckets",
         value<uint32_t>(&configured.database.duplicate.buckets),
@@ -1649,7 +1647,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the cache_duplicate table, defaults to '5'."
     )
 
-    /* validated_bk */
+    /* table.validated_bk */
     (
         "table.validated_bk.buckets",
         value<uint32_t>(&configured.database.validated_bk.buckets),
@@ -1666,7 +1664,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the validated_bk table body, defaults to '5'."
     )
 
-    /* validated_tx */
+    /* table.validated_tx */
     (
         "table.validated_tx.buckets",
         value<uint32_t>(&configured.database.validated_tx.buckets),
@@ -1683,7 +1681,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the validated_tx table body, defaults to '5'."
     )
 
-    /* address */
+    /* table.address */
     (
         "table.address.buckets",
         value<uint32_t>(&configured.database.address.buckets),
@@ -1700,7 +1698,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the option_address table body, defaults to '5'."
     )
 
-    /* filter_bk */
+    /* table.filter_bk */
     (
         "table.filter_bk.buckets",
         value<uint32_t>(&configured.database.filter_bk.buckets),
@@ -1717,7 +1715,7 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the option_filter_bk table body, defaults to '5'."
     )
 
-    /* filter_tx */
+    /* table.filter_tx */
     (
         "table.filter_tx.buckets",
         value<uint32_t>(&configured.database.filter_tx.buckets),
