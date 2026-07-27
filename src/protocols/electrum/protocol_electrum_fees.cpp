@@ -86,6 +86,9 @@ void protocol_electrum::handle_estimate_fee(const code& ec,
     POST(complete_estimate_fee, ec, fee);
 }
 
+constexpr int64_t no_fee_estimate = -1;
+constexpr double sats_per_vbyte_to_btc_per_vkbyte = 100'000.0;
+
 void protocol_electrum::complete_estimate_fee(const code& ec,
     uint64_t fee) NOEXCEPT
 {
@@ -106,15 +109,13 @@ void protocol_electrum::complete_estimate_fee(const code& ec,
         return;
     }
 
-    // If not enough information to make an estimate, -1 is returned.
     if (disabled)
     {
-        send_result(int64_t{ -1 }, 42);
+        send_result(no_fee_estimate, 42);
         return;
     }
 
-    // Protocol requires BTC/kB; estimator returns satoshis/vbyte.
-    send_result(fee / 100'000.0, 42);
+    send_result(fee / sats_per_vbyte_to_btc_per_vkbyte, 42);
 }
 
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
