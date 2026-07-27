@@ -269,9 +269,13 @@ def http_rpc(config: dict, method: str, params: Optional[list] = None) -> dict:
         "params": params if params is not None else [],
     }
     url = f"http://{config['host']}:{config['port']}/"
+    auth = None
+    if config.get("username"):
+        auth = (config["username"], config.get("password") or "")
     response = requests.post(
         url, json=payload,
         headers={"Content-Type": "application/json", "Connection": "close"},
+        auth=auth,
         timeout=config.get("timeout", TestConfig.DEFAULT_RPC_TIMEOUT),
     )
     response.raise_for_status()
@@ -282,13 +286,32 @@ def http_rpc(config: dict, method: str, params: Optional[list] = None) -> dict:
 
 @pytest.fixture
 def conn(btcd_config: dict) -> BtcdConnection:
-    """Fresh btcd websocket connection per test."""
+    """Fresh btcd websocket connection per test, authenticated up front if
+    the server has credentials configured.
+
+    Every method other than 'authenticate' itself is rejected over ws until
+    the connection has authenticated (see protocol_btcd_rpc::dispatch_
+    websocket) -- a real client always does this handshake first, so this
+    fixture does it here rather than in every single test.
+
+    The authenticate-specific tests (test_authenticate_*) intentionally
+    don't rely on this and drive their own connections/authenticate calls,
+    since they're testing that handshake itself.
+    """
     host, port = btcd_config["host"], btcd_config["port"]
     timeout = btcd_config.get("timeout", TestConfig.DEFAULT_SOCKET_TIMEOUT)
     try:
         c = BtcdConnection(host, port, connect_timeout=timeout)
     except (OSError, ConnectionError) as exc:
         pytest.skip(f"Cannot connect to btcd at {host}:{port}: {exc}")
+
+    username = btcd_config.get("username")
+    if username:
+        auth = c.raw_rpc("authenticate", [username, btcd_config.get("password") or ""])
+        if auth.get("error") is not None:
+            c.close()
+            pytest.fail(f"authenticate failed in fixture setup: {auth['error']}")
+
     yield c
     c.close()
 
@@ -309,7 +332,12 @@ def test_authenticate_no_credentials_configured(conn, btcd_config):
 
 def test_authenticate_with_configured_credentials(conn, btcd_config):
     """When btcd.username/password are configured, authenticate must accept
-    the matching credentials and reject a mismatch (closing the connection).
+    the matching credentials. The mismatch case is covered separately by
+    test_authenticate_wrong_password_rejected.
+
+    Note: the conn fixture already authenticated once during setup (it must,
+    to run anything else) -- this repeats the call explicitly to verify
+    authenticate itself is idempotent and still reports success.
     """
     username = btcd_config.get("username")
     password = btcd_config.get("password")
@@ -532,10 +560,17 @@ def test_method_not_yet_wired(conn, method, params):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def test_response_id_matches_request(conn):
+    """Each response echoes its own request's id, in order.
+
+    Not asserted as absolute ids 0/1: when credentials are configured the
+    conn fixture already consumed one id authenticating, so the starting
+    id here depends on whether that happened -- only the relative order
+    (each new request's id is exactly one more than the last) is a stable
+    guarantee.
+    """
     r0 = conn.send_rpc("session")
     r1 = conn.send_rpc("notifyblocks")
-    assert r0.get("id") == 0
-    assert r1.get("id") == 1
+    assert r1.get("id") == r0.get("id") + 1
 
 
 def test_unknown_method_errors_without_dropping_connection(conn):
