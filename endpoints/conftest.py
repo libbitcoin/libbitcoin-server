@@ -65,6 +65,32 @@ def pytest_addoption(parser):
         help="Port for bitcoind REST (default: 8332)"
     )
 
+    # btcd options
+    parser.addoption(
+        "--btcd-host",
+        action="store",
+        default="localhost",
+        help="Host for btcd JSON-RPC/websocket (default: localhost)"
+    )
+    parser.addoption(
+        "--btcd-port",
+        action="store",
+        default="8334",
+        help="Port for btcd JSON-RPC/websocket (default: 8334)"
+    )
+    parser.addoption(
+        "--btcd-username",
+        action="store",
+        default=None,
+        help="Username for btcd basic auth / ws authenticate (default: none configured)"
+    )
+    parser.addoption(
+        "--btcd-password",
+        action="store",
+        default=None,
+        help="Password for btcd basic auth / ws authenticate (default: none configured)"
+    )
+
     # Electrum options
     parser.addoption(
         "--electrum-host",
@@ -194,6 +220,19 @@ def bitcoind_rest_config(request):
         "host": host,
         "port": port,
         "base_url": f"http://{host}:{port}/rest"
+    }
+
+
+@pytest.fixture(scope="session")
+def btcd_config(request):
+    """Configuration for btcd JSON-RPC/websocket tests."""
+    return {
+        "host": request.config.getoption("--btcd-host"),
+        "port": int(request.config.getoption("--btcd-port")),
+        "username": request.config.getoption("--btcd-username"),
+        "password": request.config.getoption("--btcd-password"),
+        "timeout": float(request.config.getoption("--timeout")),
+        "subscription_timeout": float(request.config.getoption("--subscription-timeout")),
     }
 
 
