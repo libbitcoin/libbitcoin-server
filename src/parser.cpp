@@ -99,89 +99,64 @@ parser::parser(system::chain::selection context,
 
     // database (archive)
 
-    configured.database.header_buckets = 386'364;
-    configured.database.header_size = 21'000'000;
-    configured.database.header_rate = 5;
+    configured.database.header.buckets = 386'364;
+    configured.database.header.size = 21'000'000;
 
-    configured.database.input_size = 92'500'000'000;
-    configured.database.input_rate = 5;
-
-    configured.database.output_size = 25'300'000'000;
-    configured.database.output_rate = 5;
+    configured.database.input.size = 92'500'000'000;
+    configured.database.output.size = 25'300'000'000;
 
     // ins table set to 2.2LF @ ~900k.
-    configured.database.ins_buckets = 1'365'977'136;
-    configured.database.ins_size = 34'250'000'000;
-    configured.database.ins_rate = 5;
+    configured.database.ins.buckets = 1'365'977'136;
+    configured.database.ins.size = 34'250'000'000;
 
-    configured.database.outs_size = 3'700'000'000;
-    configured.database.outs_rate = 5;
+    configured.database.outs.size = 3'700'000'000;
 
-    configured.database.tx_buckets = 469'222'525;
-    configured.database.tx_size = 17'000'000'000;
-    configured.database.tx_rate = 5;
+    configured.database.tx.buckets = 469'222'525;
+    configured.database.tx.size = 17'000'000'000;
 
-    configured.database.txs_buckets = 950'001;
-    configured.database.txs_size = 1'050'000'000;
-    configured.database.txs_rate = 5;
+    configured.database.txs.buckets = 950'001;
+    configured.database.txs.size = 1'050'000'000;
 
     // database (indexes)
 
-    configured.database.candidate_size = 2'575'500;
-    configured.database.candidate_rate = 5;
+    configured.database.candidate.size = 2'575'500;
 
-    configured.database.confirmed_size = 2'575'500;
-    configured.database.confirmed_rate = 5;
+    configured.database.confirmed.size = 2'575'500;
 
-    configured.database.strong_tx_buckets = 469'222'525;
-    configured.database.strong_tx_size = 2'900'000'000;
-    configured.database.strong_tx_rate = 5;
+    configured.database.strong_tx.buckets = 469'222'525;
+    configured.database.strong_tx.size = 2'900'000'000;
 
     // database (caches)
 
-    configured.database.ecdsa_size = 1;
-    configured.database.ecdsa_rate = 5;
+    configured.database.ecdsa.size = 1;
+    configured.database.schnorr.size = 1;
+    configured.database.silent.size = 1;
+    configured.database.prevalid.size = 1;
 
-    configured.database.schnorr_size = 1;
-    configured.database.schnorr_rate = 5;
+    configured.database.prevout.buckets = 0;
+    configured.database.prevout.size = 1;
 
-    configured.database.silent_size = 1;
-    configured.database.silent_rate = 5;
+    configured.database.duplicate.buckets = 1024;
+    configured.database.duplicate.size = 44;
 
-    configured.database.prevalid_size = 1;
-    configured.database.prevalid_rate = 0;
+    configured.database.validated_bk.buckets = 950'001;
+    configured.database.validated_bk.size = 1'700'000;
 
-    configured.database.prevout_buckets = 0;
-    configured.database.prevout_size = 1;
-    configured.database.prevout_rate = 5;
-
-    configured.database.duplicate_buckets = 1024;
-    configured.database.duplicate_size = 44;
-    configured.database.duplicate_rate = 5;
-
-    configured.database.validated_bk_buckets = 950'001;
-    configured.database.validated_bk_size = 1'700'000;
-    configured.database.validated_bk_rate = 5;
-
-    configured.database.validated_tx_buckets = 1;
-    configured.database.validated_tx_size = 1;
-    configured.database.validated_tx_rate = 5;
+    configured.database.validated_tx.buckets = 1;
+    configured.database.validated_tx.size = 1;
 
     // database (optionals)
 
-    configured.database.address_buckets = 1;
-    configured.database.address_size = 1;
-    configured.database.address_rate = 5;
+    configured.database.address.buckets = 1;
+    configured.database.address.size = 1;
 
     // also disabled by filter_tx
-    configured.database.filter_bk_buckets = 0;
-    configured.database.filter_bk_size = 1;
-    configured.database.filter_bk_rate = 5;
+    configured.database.filter_bk.buckets = 0;
+    configured.database.filter_bk.size = 1;
 
     // also disabled by filter_bk
-    configured.database.filter_tx_buckets = 0;
-    configured.database.filter_tx_size = 1;
-    configured.database.filter_tx_rate = 5;
+    configured.database.filter_tx.buckets = 0;
+    configured.database.filter_tx.size = 1;
 }
 
 options_metadata parser::load_options() THROWS
@@ -1445,315 +1420,317 @@ options_metadata parser::load_settings() THROWS
         "The interval depth for merkle proof optimization, defaults to '11'."
     )
 
+    /* [table] */
+
     /* header */
     (
-        "database.header_buckets",
-        value<uint32_t>(&configured.database.header_buckets),
+        "table.header.buckets",
+        value<uint32_t>(&configured.database.header.buckets),
         "The number of buckets in the archive_header table head, defaults to '386364'."
     )
     (
-        "database.header_size",
-        value<uint64_t>(&configured.database.header_size),
+        "table.header.size",
+        value<uint64_t>(&configured.database.header.size),
         "The minimum allocation of the archive_header table body, defaults to '21000000'."
     )
     (
-        "database.header_rate",
-        value<uint16_t>(&configured.database.header_rate),
+        "table.header.rate",
+        value<uint16_t>(&configured.database.header.rate),
         "The percentage expansion of the archive_header table body, defaults to '5'."
     )
 
     /* input */
     (
-        "database.input_size",
-        value<uint64_t>(&configured.database.input_size),
+        "table.input.size",
+        value<uint64_t>(&configured.database.input.size),
         "The minimum allocation of the archive_input table body, defaults to '92500000000'."
     )
     (
-        "database.input_rate",
-        value<uint16_t>(&configured.database.input_rate),
+        "table.input.rate",
+        value<uint16_t>(&configured.database.input.rate),
         "The percentage expansion of the archive_input table body, defaults to '5'."
     )
 
     /* output */
     (
-        "database.output_size",
-        value<uint64_t>(&configured.database.output_size),
+        "table.output.size",
+        value<uint64_t>(&configured.database.output.size),
         "The minimum allocation of the archive_output table body, defaults to '25300000000'."
     )
     (
-        "database.output_rate",
-        value<uint16_t>(&configured.database.output_rate),
+        "table.output.rate",
+        value<uint16_t>(&configured.database.output.rate),
         "The percentage expansion of the archive_output table body, defaults to '5'."
     )
 
     /* ins */
     (
-        "database.ins_buckets",
-        value<uint32_t>(&configured.database.ins_buckets),
+        "table.ins.buckets",
+        value<uint32_t>(&configured.database.ins.buckets),
         "The number of buckets in the archive_ins table head, defaults to '1365977136'."
     )
     (
-        "database.ins_size",
-        value<uint64_t>(&configured.database.ins_size),
+        "table.ins.size",
+        value<uint64_t>(&configured.database.ins.size),
         "The minimum allocation of the archive_ins table body, defaults to '34250000000'."
     )
     (
-        "database.ins_rate",
-        value<uint16_t>(&configured.database.ins_rate),
+        "table.ins.rate",
+        value<uint16_t>(&configured.database.ins.rate),
         "The percentage expansion of the archive_ins table body, defaults to '5'."
     )
 
     /* outs */
     (
-        "database.outs_size",
-        value<uint64_t>(&configured.database.outs_size),
+        "table.outs.size",
+        value<uint64_t>(&configured.database.outs.size),
         "The minimum allocation of the archive_puts table body, defaults to '3700000000'."
     )
     (
-        "database.outs_rate",
-        value<uint16_t>(&configured.database.outs_rate),
+        "table.outs.rate",
+        value<uint16_t>(&configured.database.outs.rate),
         "The percentage expansion of the archive_puts table body, defaults to '5'."
     )
 
     /* tx */
     (
-        "database.tx_buckets",
-        value<uint32_t>(&configured.database.tx_buckets),
+        "table.tx.buckets",
+        value<uint32_t>(&configured.database.tx.buckets),
         "The number of buckets in the archive_tx table head, defaults to '469222525'."
     )
     (
-        "database.tx_size",
-        value<uint64_t>(&configured.database.tx_size),
+        "table.tx.size",
+        value<uint64_t>(&configured.database.tx.size),
         "The minimum allocation of the archive_tx table body, defaults to '17000000000'."
     )
     (
-        "database.tx_rate",
-        value<uint16_t>(&configured.database.tx_rate),
+        "table.tx.rate",
+        value<uint16_t>(&configured.database.tx.rate),
         "The percentage expansion of the archive_tx table body, defaults to '5'."
     )
 
     /* txs */
     (
-        "database.txs_buckets",
-        value<uint32_t>(&configured.database.txs_buckets),
+        "table.txs.buckets",
+        value<uint32_t>(&configured.database.txs.buckets),
         "The number of buckets in the archive_txs table head, defaults to '900001'."
     )
     (
-        "database.txs_size",
-        value<uint64_t>(&configured.database.txs_size),
+        "table.txs.size",
+        value<uint64_t>(&configured.database.txs.size),
         "The minimum allocation of the archive_txs table body, defaults to '1050000000'."
     )
     (
-        "database.txs_rate",
-        value<uint16_t>(&configured.database.txs_rate),
+        "table.txs.rate",
+        value<uint16_t>(&configured.database.txs.rate),
         "The percentage expansion of the archive_txs table body, defaults to '5'."
     )
 
     /* candidate */
     (
-        "database.candidate_size",
-        value<uint64_t>(&configured.database.candidate_size),
+        "table.candidate.size",
+        value<uint64_t>(&configured.database.candidate.size),
         "The minimum allocation of the index_candidate table body, defaults to '2575500'."
     )
     (
-        "database.candidate_rate",
-        value<uint16_t>(&configured.database.candidate_rate),
+        "table.candidate.rate",
+        value<uint16_t>(&configured.database.candidate.rate),
         "The percentage expansion of the index_candidate table body, defaults to '5'."
     )
 
     /* confirmed */
     (
-        "database.confirmed_size",
-        value<uint64_t>(&configured.database.confirmed_size),
+        "table.confirmed.size",
+        value<uint64_t>(&configured.database.confirmed.size),
         "The minimum allocation of the index_confirmed table body, defaults to '2575500'."
     )
     (
-        "database.confirmed_rate",
-        value<uint16_t>(&configured.database.confirmed_rate),
+        "table.confirmed.rate",
+        value<uint16_t>(&configured.database.confirmed.rate),
         "The percentage expansion of the index_confirmed table body, defaults to '5'."
     )
 
     /* strong_tx */
     (
-        "database.strong_tx_buckets",
-        value<uint32_t>(&configured.database.strong_tx_buckets),
+        "table.strong_tx.buckets",
+        value<uint32_t>(&configured.database.strong_tx.buckets),
         "The number of buckets in the index_strong table head, defaults to '469222525'."
     )
     (
-        "database.strong_tx_size",
-        value<uint64_t>(&configured.database.strong_tx_size),
+        "table.strong_tx.size",
+        value<uint64_t>(&configured.database.strong_tx.size),
         "The minimum allocation of the index_strong table body, defaults to '2900000000'."
     )
     (
-        "database.strong_tx_rate",
-        value<uint16_t>(&configured.database.strong_tx_rate),
+        "table.strong_tx.rate",
+        value<uint16_t>(&configured.database.strong_tx.rate),
         "The percentage expansion of the index_strong table body, defaults to '5'."
     )
 
     /* ecdsa */
     (
-        "database.ecdsa_size",
-        value<uint64_t>(&configured.database.ecdsa_size),
+        "table.ecdsa.size",
+        value<uint64_t>(&configured.database.ecdsa.size),
         "The minimum allocation of the batch_ecdsa table body, defaults to '1'."
     )
     (
-        "database.ecdsa_rate",
-        value<uint16_t>(&configured.database.ecdsa_rate),
+        "table.ecdsa.rate",
+        value<uint16_t>(&configured.database.ecdsa.rate),
         "The percentage expansion of the batch_ecdsa table body, defaults to '5'."
     )
 
     /* schnorr */
     (
-        "database.schnorr_size",
-        value<uint64_t>(&configured.database.schnorr_size),
+        "table.schnorr.size",
+        value<uint64_t>(&configured.database.schnorr.size),
         "The minimum allocation of the batch_schnorr table body, defaults to '1'."
     )
     (
-        "database.schnorr_rate",
-        value<uint16_t>(&configured.database.schnorr_rate),
+        "table.schnorr.rate",
+        value<uint16_t>(&configured.database.schnorr.rate),
         "The percentage expansion of the batch_schnorr table body, defaults to '5'."
     )
 
     /* silent */
     (
-        "database.silent_size",
-        value<uint64_t>(&configured.database.silent_size),
+        "table.silent.size",
+        value<uint64_t>(&configured.database.silent.size),
         "The minimum allocation of the batch_silent table body, defaults to '1'."
     )
     (
-        "database.silent_rate",
-        value<uint16_t>(&configured.database.silent_rate),
+        "table.silent.rate",
+        value<uint16_t>(&configured.database.silent.rate),
         "The percentage expansion of the batch_silent table body, defaults to '5'."
     )
 
     /* prevalid */
     (
-        "database.prevalid_size",
-        value<uint64_t>(&configured.database.prevalid_size),
+        "table.prevalid.size",
+        value<uint64_t>(&configured.database.prevalid.size),
         "The minimum allocation of the batch_prevalid table body, defaults to '1'."
     )
     (
-        "database.prevalid_rate",
-        value<uint16_t>(&configured.database.prevalid_rate),
+        "table.prevalid.rate",
+        value<uint16_t>(&configured.database.prevalid.rate),
         "The percentage expansion of the batch_prevalid table, defaults to '5'."
     )
 
     /* prevout */
     (
-        "database.prevout_buckets",
-        value<uint32_t>(&configured.database.prevout_buckets),
+        "table.prevout.buckets",
+        value<uint32_t>(&configured.database.prevout.buckets),
         "The minimum number of buckets in the cache_prevout table head, defaults to '0'."
     )
     (
-        "database.prevout_size",
-        value<uint64_t>(&configured.database.prevout_size),
+        "table.prevout.size",
+        value<uint64_t>(&configured.database.prevout.size),
         "The minimum allocation of the cache_prevout table body, defaults to '1'."
     )
     (
-        "database.prevout_rate",
-        value<uint16_t>(&configured.database.prevout_rate),
+        "table.prevout.rate",
+        value<uint16_t>(&configured.database.prevout.rate),
         "The percentage expansion of the cache_prevout table, defaults to '5'."
     )
 
     /* duplicate */
     (
-        "database.duplicate_buckets",
-        value<uint16_t>(&configured.database.duplicate_buckets),
+        "table.duplicate.buckets",
+        value<uint32_t>(&configured.database.duplicate.buckets),
         "The minimum number of buckets in the cache_duplicate table head, defaults to '1024'."
     )
     (
-        "database.duplicate_size",
-        value<uint64_t>(&configured.database.duplicate_size),
+        "table.duplicate.size",
+        value<uint64_t>(&configured.database.duplicate.size),
         "The minimum allocation of the cache_duplicate table body, defaults to '44'."
     )
     (
-        "database.duplicate_rate",
-        value<uint16_t>(&configured.database.duplicate_rate),
+        "table.duplicate.rate",
+        value<uint16_t>(&configured.database.duplicate.rate),
         "The percentage expansion of the cache_duplicate table, defaults to '5'."
     )
 
     /* validated_bk */
     (
-        "database.validated_bk_buckets",
-        value<uint32_t>(&configured.database.validated_bk_buckets),
+        "table.validated_bk.buckets",
+        value<uint32_t>(&configured.database.validated_bk.buckets),
         "The number of buckets in the validated_bk table head, defaults to '900001'."
     )
     (
-        "database.validated_bk_size",
-        value<uint64_t>(&configured.database.validated_bk_size),
+        "table.validated_bk.size",
+        value<uint64_t>(&configured.database.validated_bk.size),
         "The minimum allocation of the validated_bk table body, defaults to '1700000'."
     )
     (
-        "database.validated_bk_rate",
-        value<uint16_t>(&configured.database.validated_bk_rate),
+        "table.validated_bk.rate",
+        value<uint16_t>(&configured.database.validated_bk.rate),
         "The percentage expansion of the validated_bk table body, defaults to '5'."
     )
 
     /* validated_tx */
     (
-        "database.validated_tx_buckets",
-        value<uint32_t>(&configured.database.validated_tx_buckets),
+        "table.validated_tx.buckets",
+        value<uint32_t>(&configured.database.validated_tx.buckets),
         "The number of buckets in the validated_tx table head, defaults to '1'."
     )
     (
-        "database.validated_tx_size",
-        value<uint64_t>(&configured.database.validated_tx_size),
+        "table.validated_tx.size",
+        value<uint64_t>(&configured.database.validated_tx.size),
         "The minimum allocation of the validated_tx table body, defaults to '1'."
     )
     (
-        "database.validated_tx_rate",
-        value<uint16_t>(&configured.database.validated_tx_rate),
+        "table.validated_tx.rate",
+        value<uint16_t>(&configured.database.validated_tx.rate),
         "The percentage expansion of the validated_tx table body, defaults to '5'."
     )
 
     /* address */
     (
-        "database.address_buckets",
-        value<uint32_t>(&configured.database.address_buckets),
+        "table.address.buckets",
+        value<uint32_t>(&configured.database.address.buckets),
         "The number of buckets in the option_address table head, defaults to '1' (0|1 disables)."
     )
     (
-        "database.address_size",
-        value<uint64_t>(&configured.database.address_size),
+        "table.address.size",
+        value<uint64_t>(&configured.database.address.size),
         "The minimum allocation of the option_address table body, defaults to '1'."
     )
     (
-        "database.address_rate",
-        value<uint16_t>(&configured.database.address_rate),
+        "table.address.rate",
+        value<uint16_t>(&configured.database.address.rate),
         "The percentage expansion of the option_address table body, defaults to '5'."
     )
 
     /* filter_bk */
     (
-        "database.filter_bk_buckets",
-        value<uint32_t>(&configured.database.filter_bk_buckets),
+        "table.filter_bk.buckets",
+        value<uint32_t>(&configured.database.filter_bk.buckets),
         "The number of buckets in the option_filter_bk table head, defaults to '0' (0 disables)."
     )
     (
-        "database.filter_bk_size",
-        value<uint64_t>(&configured.database.filter_bk_size),
+        "table.filter_bk.size",
+        value<uint64_t>(&configured.database.filter_bk.size),
         "The minimum allocation of the option_filter_bk table body, defaults to '1'."
     )
     (
-        "database.filter_bk_rate",
-        value<uint16_t>(&configured.database.filter_bk_rate),
+        "table.filter_bk.rate",
+        value<uint16_t>(&configured.database.filter_bk.rate),
         "The percentage expansion of the option_filter_bk table body, defaults to '5'."
     )
 
     /* filter_tx */
     (
-        "database.filter_tx_buckets",
-        value<uint32_t>(&configured.database.filter_tx_buckets),
+        "table.filter_tx.buckets",
+        value<uint32_t>(&configured.database.filter_tx.buckets),
         "The number of buckets in the option_filter_tx table head, defaults to '0' (0 disables)."
     )
     (
-        "database.filter_tx_size",
-        value<uint64_t>(&configured.database.filter_tx_size),
+        "table.filter_tx.size",
+        value<uint64_t>(&configured.database.filter_tx.size),
         "The minimum allocation of the option_filter_tx table body, defaults to '1'."
     )
     (
-        "database.filter_tx_rate",
-        value<uint16_t>(&configured.database.filter_tx_rate),
+        "table.filter_tx.rate",
+        value<uint16_t>(&configured.database.filter_tx.rate),
         "The percentage expansion of the option_filter_tx table body, defaults to '5'."
     )
 
