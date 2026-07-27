@@ -1043,14 +1043,9 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
-        "bitcoind.username",
-        value<std::string>(&configured.server.bitcoind.username),
-        "The http basic authorization username (not secure)."
-    )
-    (
-        "bitcoind.password",
-        value<std::string>(&configured.server.bitcoind.password),
-        "The http basic authorization password (not secure)."
+        "bitcoind.credential",
+        value<network::config::credentials>(&configured.server.bitcoind.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
         "bitcoind.connections",

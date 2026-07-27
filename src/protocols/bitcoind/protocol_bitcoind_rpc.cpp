@@ -150,6 +150,13 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
     // to formulate response headers, isolating handlers from http semantics.
     set_rpc_request(message.jsonrpc, message.id, post);
 
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(message.method))
+    {
+        send_error(error::unauthorized);
+        return;
+    }
+
     // Dispatch the request to subscribers.
     if (const auto code = rpc_dispatcher_.notify(message))
         stop(code);
