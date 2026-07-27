@@ -67,6 +67,12 @@
 #define BS_RESTORE_COMPLETE \
     "Restored the database in %1% secs."
 
+// --daemon
+#define BS_DAEMON_UNSUPPORTED \
+    "Service installation is not supported on this platform."
+#define BS_DAEMON_UNIMPLEMENTED \
+    "Service installation is not yet implemented."
+
 // TODO: table names should be derived from database constants and sorted.
 // --information
 #define BS_INFORMATION_START \
@@ -187,8 +193,6 @@
     "Please wait while network is starting..."
 #define BS_NODE_START_FAIL \
     "Node failed to start with error '%1%'."
-#define BS_INVALID_CREDENTIAL \
-    "Invalid server credential configuration."
 #define BS_NODE_UNAVAILABLE \
     "Command not available until node started."
 #define BS_NODE_INTERRUPTED \
