@@ -42,6 +42,19 @@ using native        = publish<native_methods>;
 using stratum_v1    = publish<stratum_v1_methods>;
 using stratum_v2    = publish<stratum_v2_methods>;
 
+/// True if credentials are unique and their methods defined by interface(s).
+template <typename... Interfaces>
+inline bool validated(
+    const network::settings::http_server& options) NOEXCEPT
+{
+    for (const auto& credential: options.credentials)
+        for (const auto& method: credential.methods())
+            if (!(... || system::contains(Interfaces::names, method)))
+                return false;
+
+    return !options.duplicated();
+}
+
 } // namespace interface
 } // namespace server
 } // namespace libbitcoin

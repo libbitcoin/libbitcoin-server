@@ -58,7 +58,8 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
     { target_overflow, "target_overflow" },
     { maximum_depth, "maximum_depth" },
     { wrong_version, "wrong_version" },
-    { server_error, "server_error" }
+    { server_error, "server_error" },
+    { unauthorized, "unauthorized" }
 };
 
 DEFINE_ERROR_T_CATEGORY(error, "server", "server code")
