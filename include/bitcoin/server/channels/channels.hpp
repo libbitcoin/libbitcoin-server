@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNELS_HPP
 
 #include <bitcoin/server/channels/channel.hpp>
+#include <bitcoin/server/channels/channel_btcd.hpp>
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
@@ -39,6 +40,7 @@ network::channel
 │   └── [server::channel_electrum]
 ├── channel_http
 │   ├── [server::channel_http]
+│   └── [server::channel_btcd]
 └── channel_peer
     └── [node::channel_peer]
 
@@ -51,5 +53,6 @@ server::channel → node::channel
 ├── channel_stratum_v1 → network::channel_rpc<interface::stratum_v1>
 ├── channel_electrum   → network::channel_rpc<interface::electrum>
 ├── channel_http       → network::channel_http
+├── channel_btcd       → network::channel_http
 
 */

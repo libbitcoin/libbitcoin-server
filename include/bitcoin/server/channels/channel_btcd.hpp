@@ -69,6 +69,18 @@ protected:
         return value;
     }
 
+    /// Basic auth is a per-http-request header, which websocket data frames
+    /// structurally cannot carry (only the upgrade handshake has headers,
+    /// and that request never reaches this check -- see channel_http's
+    /// error::upgraded short-circuit). Once upgraded, auth is instead
+    /// enforced in-band by the ws 'authenticate' method (see
+    /// protocol_btcd_rpc::dispatch_websocket); the plain http post path
+    /// (e.g. inherited chain methods) keeps the normal per-request check.
+    inline bool unauthorized(const network::http::request& request) NOEXCEPT override
+    {
+        return websocket() ? false : network::channel_http::unauthorized(request);
+    }
+
 private:
     // This is protected by strand.
     bool authenticated_{};

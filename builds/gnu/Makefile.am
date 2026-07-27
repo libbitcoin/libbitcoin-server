@@ -64,6 +64,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc_json.cpp \
+    ${srcdir}/../../src/protocols/btcd/protocol_btcd_rpc.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_addresses.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_fees.cpp \
@@ -108,6 +109,7 @@ include_bitcoin_server_channelsdir = \
 
 include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel.hpp \
+    ${srcdir}/../../include/bitcoin/server/channels/channel_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_http.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v1.hpp \
@@ -155,6 +157,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_admin.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_rest.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_rpc.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_rpc.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_html.hpp \
@@ -217,6 +220,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rpc.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
+    ${srcdir}/../../test/protocols/btcd/btcd_rpc.cpp \
+    ${srcdir}/../../test/protocols/btcd/btcd_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_addresses.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_disabled.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_fees.cpp \

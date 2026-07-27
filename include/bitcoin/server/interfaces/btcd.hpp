@@ -49,6 +49,9 @@ struct btcd_methods
         method<"loadtxfilter", boolean_t, value_t, value_t>{ "reload", "addresses", "outpoints" },
         method<"rescanblocks", value_t>{ "blockhashes" },
 
+        /// Admin (not_implemented; no secure remote-shutdown path exists).
+        method<"stop">{},
+
         /// Deprecated (address/outpoint filtering).
         method<"notifyreceived", value_t>{ "addresses" },
         method<"stopnotifyreceived", value_t>{ "addresses" },
@@ -72,11 +75,12 @@ struct btcd_methods
     using stop_notify_new_transactions = at<5>;
     using load_tx_filter = at<6>;
     using rescan_blocks = at<7>;
-    using notify_received = at<8>;
-    using stop_notify_received = at<9>;
-    using notify_spent = at<10>;
-    using stop_notify_spent = at<11>;
-    using rescan = at<12>;
+    using stop = at<8>;
+    using notify_received = at<9>;
+    using stop_notify_received = at<10>;
+    using notify_spent = at<11>;
+    using stop_notify_spent = at<12>;
+    using rescan = at<13>;
 };
 
 } // namespace interface
