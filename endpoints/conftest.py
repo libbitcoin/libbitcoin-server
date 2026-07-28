@@ -158,6 +158,30 @@ def pytest_addoption(parser):
         default="30",
         help="Default timeout for requests in seconds (default: 30)"
     )
+    parser.addoption(
+        "--run-slow",
+        action="store_true",
+        default=False,
+        help="Run tests marked @pytest.mark.slow (wait on a real external "
+             "event, e.g. a live block, up to --subscription-timeout)"
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "slow: waits on a real external event (e.g. a live block); "
+        "skipped by default, use --run-slow to include"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--run-slow"):
+        return
+    skip_slow = pytest.mark.skip(reason="needs --run-slow (waits on a real external event)")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)
 
 
 def pytest_report_header(config):

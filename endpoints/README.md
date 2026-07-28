@@ -205,6 +205,16 @@ pytest test_native.py \
   --timeout=30
 ```
 
+- `--run-slow` — Include tests marked `@pytest.mark.slow`: these wait on a
+  real external event (e.g. `test_blockconnected_notification` waits up to
+  `--subscription-timeout` for an actual new block) and are skipped by
+  default so a normal run stays fast.
+
+```bash
+# Include slow/live-event tests, e.g. against a node expecting a block soon
+pytest test_btcd_rpc.py --run-slow --subscription-timeout=120
+```
+
 ## Test Organization
 
 ### test_native.py — Native REST
