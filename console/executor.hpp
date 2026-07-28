@@ -94,13 +94,14 @@ private:
     bool do_new_store();
     bool do_backup();
     bool do_restore();
+    bool do_daemon();
     bool do_flags();
     bool do_information();
     bool do_slabs();
     bool do_buckets();
     bool do_collisions();
-    bool do_read(const system::hash_digest& hash);
-    bool do_write(const system::hash_digest& hash);
+    bool do_get(const system::hash_digest& hash);
+    bool do_put(const system::hash_digest& hash);
 
     // Runtime options.
     void do_hot_backup();

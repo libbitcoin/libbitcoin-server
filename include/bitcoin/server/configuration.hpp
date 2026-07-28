@@ -47,6 +47,7 @@ public:
     bool newstore{};
     bool backup{};
     bool restore{};
+    bool daemon{};
 
     /// Chain scans.
     bool flags{};
@@ -56,8 +57,8 @@ public:
     bool collisions{};
 
     /// Ad-hoc Testing.
-    system::config::hash256 test{};
-    system::config::hash256 write{};
+    system::config::hash256 get{};
+    system::config::hash256 put{};
 
     /// Settings.
     log::settings log;

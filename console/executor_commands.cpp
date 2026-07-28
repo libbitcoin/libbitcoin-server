@@ -39,7 +39,7 @@ bool executor::do_help()
     return true;
 }
 
-// --[d]hardware
+// --hard[w]are
 bool executor::do_hardware()
 {
     log_.stop();
@@ -171,8 +171,8 @@ bool executor::do_collisions()
     return close_store();
 }
 
-// --[t]read
-bool executor::do_read(const system::hash_digest& hash)
+// --[g]et
+bool executor::do_get(const system::hash_digest& hash)
 {
     log_.stop();
     if (!check_store_path() ||
@@ -183,8 +183,8 @@ bool executor::do_read(const system::hash_digest& hash)
     return close_store();
 }
 
-// --[w]rite
-bool executor::do_write(const system::hash_digest& hash)
+// --[p]ut
+bool executor::do_put(const system::hash_digest& hash)
 {
     log_.stop();
     if (!check_store_path() ||
@@ -217,6 +217,9 @@ bool executor::dispatch()
     if (config.restore)
         return do_restore();
 
+    if (config.daemon)
+        return do_daemon();
+
     if (config.hardware)
         return do_hardware();
 
@@ -241,11 +244,11 @@ bool executor::dispatch()
     if (config.version)
         return do_version();
 
-    if (config.test != system::null_hash)
-        return do_read(config.test);
+    if (config.get != system::null_hash)
+        return do_get(config.get);
 
-    if (config.write != system::null_hash)
-        return do_write(config.write);
+    if (config.put != system::null_hash)
+        return do_put(config.put);
 
     return do_run();
 }

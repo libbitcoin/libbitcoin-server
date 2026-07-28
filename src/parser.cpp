@@ -174,7 +174,7 @@ options_metadata parser::load_options() THROWS
         "Display command line options."
     )
     (
-        BS_HARDWARE_VARIABLE ",d",
+        BS_HARDWARE_VARIABLE ",w",
         value<bool>(&configured.hardware)->
             default_value(false)->zero_tokens(),
         "Display hardware compatibility."
@@ -210,6 +210,12 @@ options_metadata parser::load_options() THROWS
             default_value(false)->zero_tokens(),
         "Restore from most recent snapshot."
     )
+    (
+        BS_DAEMON_VARIABLE ",d",
+        value<bool>(&configured.daemon)->
+            default_value(false)->zero_tokens(),
+        "Install as a system service (daemon)."
+    )
     // Chain scans.
     (
         BS_FLAGS_VARIABLE ",f",
@@ -243,14 +249,14 @@ options_metadata parser::load_options() THROWS
     )
     // Ad-hoc Testing.
     (
-        BS_READ_VARIABLE ",t",
-        value<config::hash256>(&configured.test)->
+        BS_GET_VARIABLE ",g",
+        value<config::hash256>(&configured.get)->
             default_value(system::null_hash),
         "Run built-in read test and display."
     )
     (
-        BS_WRITE_VARIABLE ",w",
-        value<config::hash256>(&configured.write)->
+        BS_PUT_VARIABLE ",p",
+        value<config::hash256>(&configured.put)->
             default_value(system::null_hash),
         "Run built-in write test and display."
     );

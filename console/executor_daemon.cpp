@@ -17,9 +17,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "executor.hpp"
+#include "localize.hpp"
 
 namespace libbitcoin {
 namespace server {
+
+// TODO: register with the service control manager (CreateServiceW).
+// TODO: install a systemd unit (linux) and launchd plist (osx).
+
+// --[d]aemon
+bool executor::do_daemon()
+{
+    log_.stop();
+#if defined(HAVE_MSC)
+    logger(BS_DAEMON_UNIMPLEMENTED);
+#else
+    logger(BS_DAEMON_UNSUPPORTED);
+#endif
+    return false;
+}
 
 } // namespace server
 } // namespace libbitcoin
