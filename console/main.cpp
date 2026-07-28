@@ -102,6 +102,10 @@ int bc::system::main(int argc, char* argv[])
 
     set_memory_priority(metadata.configured.node.memory_priority_());
 
+    // Blocks until stopped if started by the service control manager.
+    if (executor::service(metadata, cin, cerr))
+        return 0;
+
     executor& host = executor::factory(metadata, cin, cout, cerr);
     return host.dispatch() ? 0 : -1;
 }

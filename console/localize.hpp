@@ -21,8 +21,11 @@
 
 /// Localizable messages.
 
-#define BS_WINDOW_TITLE L"Libbitcoin Server"
-#define BS_WINDOW_TEXT L"Flushing tables..."
+// Windows
+#define BS_WINDOW_TITLE  L"Libbitcoin Server"
+#define BS_WINDOW_TEXT   L"Flushing tables..."
+#define BS_SERVICE_TITLE L"Libbitcoin Server"
+#define BS_SERVICE_TEXT  L"Full node bitcoin server."
 
 #define BS_OPERATION_INTERRUPT \
     "Press CTRL-C to cancel operation."
@@ -70,8 +73,24 @@
 // --daemon
 #define BS_DAEMON_UNSUPPORTED \
     "Service installation is not supported on this platform."
-#define BS_DAEMON_UNIMPLEMENTED \
-    "Service installation is not yet implemented."
+#define BS_DAEMON_INVALID_USER \
+    "Service logon credential must not specify methods."
+#define BS_DAEMON_UNKNOWN_USER \
+    "The service logon account does not exist."
+#define BS_DAEMON_INSTALLED \
+    "Installed the service."
+#define BS_DAEMON_UNINSTALLED \
+    "Uninstalled the service."
+#define BS_DAEMON_ELEVATION \
+    "Service configuration requires elevation."
+#define BS_DAEMON_EXISTS \
+    "The service is already installed."
+#define BS_DAEMON_ABSENT \
+    "The service is not installed."
+#define BS_DAEMON_INSTALL_FAILURE \
+    "Service installation failed with error %1%."
+#define BS_DAEMON_UNINSTALL_FAILURE \
+    "Service removal failed with error %1%."
 
 // TODO: table names should be derived from database constants and sorted.
 // --information

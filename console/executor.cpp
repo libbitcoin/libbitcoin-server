@@ -97,6 +97,7 @@ void executor::initialize_stop()
 void executor::uninitialize_stop()
 {
     stop();
+    exited_.store(true);
     if (poller_thread_.has_value() && poller_thread_.value().joinable())
     {
         poller_thread_.value().join();
@@ -134,10 +135,24 @@ void executor::poll_for_stopping()
 {
     poller_thread_.emplace(std::thread([]()
     {
-        while (!canceled())
+        // Report start progress each second, until running or canceled, as
+        // the manager otherwise assumes a hang (never entered in console mode).
+        for (size_t count{}; !canceled(); ++count)
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            if (service_ && is_zero(count % 10u))
+                notify_starting();
+        }
 
         stopping_.set_value(true);
+
+        // The node drain exceeds the manager's patience, so report progress
+        // until the service reports stopped (never entered in console mode).
+        while (service_ && !exited_.load())
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            notify_stopping();
+        }
     }));
 }
 
@@ -194,6 +209,7 @@ void executor::handle_running(const code& ec)
     }
 
     logger(BS_NODE_RUNNING);
+    notify_running();
 }
 
 bool executor::handle_stopped(const code& ec)

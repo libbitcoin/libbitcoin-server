@@ -47,6 +47,11 @@ public:
     // Called from main.
     bool dispatch();
 
+    // Called from main, blocks until stopped if started by the service
+    // control manager, otherwise returns false (and is a noop on posix).
+    static bool service(parser& metadata, std::istream& input,
+        std::ostream& error);
+
     // Release shutdown monitor.
     ~executor();
 
@@ -174,6 +179,13 @@ private:
     static std::promise<bool> stopping_;
     static std::optional<std::thread> poller_thread_;
 
+    // Service (supervisor) notifications, noops unless running as a service.
+    static bool service_;
+    static std::atomic_bool exited_;
+    static void notify_starting();
+    static void notify_running();
+    static void notify_stopping();
+
     static void initialize_stop();
     static void uninitialize_stop();
     static void poll_for_stopping();
@@ -192,6 +204,25 @@ private:
     static BOOL WINAPI control_handler(DWORD signal);
     static LRESULT CALLBACK window_proc(HWND handle, UINT message,
         WPARAM wparam, LPARAM lparam);
+
+    static std::atomic<DWORD> state_;
+    static std::atomic_bool failed_;
+    static SERVICE_STATUS_HANDLE status_handle_;
+    static parser* service_metadata_;
+    static std::istream* service_input_;
+    static std::ostream* service_error_;
+
+    static void report_status(DWORD state) NOEXCEPT;
+    static void WINAPI service_main(DWORD argc, LPWSTR* argv) NOEXCEPT;
+    static DWORD WINAPI service_handler(DWORD control, DWORD type,
+        LPVOID data, LPVOID context) NOEXCEPT;
+
+    static DWORD delete_service() NOEXCEPT;
+    static DWORD create_service(const std::string& command,
+        const std::string& account, const std::string& password) NOEXCEPT;
+    static DWORD grant_logon_right(const std::string& account) NOEXCEPT;
+    static std::string command_line(
+        const std::filesystem::path& config) NOEXCEPT;
 #endif
 };
 
