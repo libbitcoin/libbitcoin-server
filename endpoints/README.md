@@ -158,7 +158,7 @@ pytest test_btcd_rpc.py \
 - `--btcd-host` — Host for btcd JSON-RPC/websocket (default: localhost)
 - `--btcd-port` — Port for btcd JSON-RPC/websocket (default: 8334)
 - `--btcd-username` / `--btcd-password` — Credentials to test `authenticate`
-  against, if the server has `btcd.username`/`btcd.password` configured
+  against, if the server has `btcd.credential=username:password` configured
   (default: none — the credential-specific tests are skipped)
 
 No extra Python dependency is required: the websocket client is a small

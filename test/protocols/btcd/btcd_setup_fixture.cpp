@@ -27,7 +27,9 @@ using namespace boost::beast;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-btcd_setup_fixture::btcd_setup_fixture(const initializer& setup)
+btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
+    std::string_view username, std::string_view password,
+    std::string_view methods)
   : config_
     {
         system::chain::selection::mainnet,
@@ -54,6 +56,10 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup)
 
     btcd.binds = { { BTCD_ENDPOINT } };
     btcd.connections = 1;
+    if (!username.empty())
+        btcd.credentials.emplace_back(std::string{ username } + ":" +
+            std::string{ password } +
+            (methods.empty() ? "" : ":" + std::string{ methods }));
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;

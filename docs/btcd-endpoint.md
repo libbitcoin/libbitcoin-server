@@ -23,12 +23,14 @@ btcd exposes two transports on the same port (default `8334`):
 
 Real btcd authenticates via TLS + HTTP Basic Auth, with two credential tiers:
 `rpcuser`/`rpcpass` (full access) and `rpclimituser`/`rpclimitpass` (restricted to
-a fixed allowlist of chain-read methods). **Decision: this endpoint uses a single
-credential tier** (reusing `network::settings::http_server`'s existing
-`username`/`password`/`authenticated()`, same as `bitcoind.*`). Sensitive methods
-(`stop`, mining/peer-management) are stubbed to `not_implemented` unconditionally,
-so a limited-user tier adds no security value here; it can be revisited if a
-future phase implements a real `stop` path.
+a fixed allowlist of chain-read methods). **Decision: this endpoint does not build
+a bespoke two-tier scheme.** It reuses `network::settings::http_server`'s
+credential model as-is (`btcd.credential = username:password[:method,...]`, same
+config shape as `bitcoind.*`), which happens to already support scoping a
+credential to a method allowlist generically; `channel_btcd::permitted()` enforces
+that scope over both http and ws. Sensitive methods (`stop`, mining/peer
+management) are stubbed to `not_implemented` unconditionally regardless of scope,
+so this is revisited only if a future phase implements a real `stop` path.
 
 ## Architecture
 
@@ -54,6 +56,28 @@ upgrade — to route btcd's WS-only notification/subscription methods.
 
 `channel_btcd` extends `channel_http` with an `authenticated_` flag, set once the
 WS `authenticate` command (or HTTP Basic Auth header) succeeds.
+
+**A `session_handshake<protocol_btcd_auth, protocol_btcd_rpc>` variant of this was
+tried and reverted.** The idea was to model btcd's auth on
+`protocol_electrum_version`'s handshake pattern: a dedicated protocol object that
+gates attachment of the real one. It doesn't fit. `session_handshake` calls
+`channel->resume()` immediately after the handshake protocol attaches, on the
+assumption that the handshake can only complete by reading a real message
+(true for electrum's `server.version`, true for p2p's version message) — but
+btcd's handshake, when no credential is configured, completes without reading
+anything at all. That created a real async gap between "handshake decided
+it's done" and "`protocol_btcd_rpc` has actually subscribed its handlers" —
+harmless for a websocket client (the upgrade round-trip masks it), but a
+plain HTTP client can land a request in that gap before anything is
+listening, and did, reliably, in testing. Real btcd has no such gap because
+it has no handshake protocol at all: `session_server` (used here) never calls
+`resume()` until *after* `attach_protocols()` has synchronously subscribed
+the real handlers — the same shape bitcoind already uses, and the reason
+bitcoind never had this problem. `authenticate` is just an ordinary
+extension method on `protocol_btcd_rpc`, exactly matching real btcd, where it
+is described as "disallowed when basic auth has already been established" —
+an alternative to Basic Auth for the one transport that can't carry headers
+per-message, not a mandatory step every connection passes through.
 
 Notification/subscription state (watched blocks, watched scripts/outpoints)
 follows the pattern already established in `protocol_electrum`
@@ -191,7 +215,7 @@ node, so `estimatesmartfee`-equivalent support is not on the critical path.
 
 New `[btcd]` section, mirroring `[bitcoind]`'s shape in `parser.cpp`/
 `settings.hpp` (`bind`, `safe`, `cert_auth`, `cert_path`, `key_path`, `key_pass`,
-`username`, `password`, `connections`, `inactivity_minutes`,
+`credential`, `connections`, `inactivity_minutes`,
 `expiration_minutes`, `minimum_buffer`, `maximum_request`, `host`, `origin`,
 `allow_opaque_origin`). No dedicated `stop`-gating config key: `stop` has no
 conditional path at all right now (always `not_implemented`, unconditionally),

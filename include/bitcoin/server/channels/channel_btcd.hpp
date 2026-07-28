@@ -40,7 +40,8 @@ public:
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
         network::channel_http(log, socket, identifier, config.network, options),
-        network::tracker<channel_btcd>(log)
+        network::tracker<channel_btcd>(log),
+        options_(options)
     {
     }
 
@@ -51,9 +52,38 @@ public:
         return authenticated_;
     }
 
-    inline void set_authenticated(bool value) NOEXCEPT
+    /// Latch the credential digest that satisfied the in-band 'authenticate'
+    /// call (see protocol_btcd_rpc::handle_authenticate), so that permitted()
+    /// can later apply that credential's method scoping to ws traffic.
+    inline void set_authenticated(const system::hash_digest& digest) NOEXCEPT
     {
-        authenticated_ = value;
+        authenticated_ = true;
+        authenticated_digest_ = digest;
+    }
+
+    /// True if the credential that authorized this channel permits the rpc
+    /// method. Plain http traffic defers entirely to channel_http's own
+    /// header-latched digest (unchanged from bitcoind). For ws traffic, real
+    /// btcd recognizes two alternative ways a connection can be authorized --
+    /// basic auth already established on the ws upgrade request (also
+    /// channel_http's header-latched digest, since the upgrade request has
+    /// real headers even though subsequent ws data frames don't), or the
+    /// in-band 'authenticate' call (digest latched above); its own docs
+    /// describe 'authenticate' as "disallowed when basic auth has already
+    /// been established" -- i.e. an alternative to it, not an additional
+    /// requirement on top of it.
+    inline bool permitted(const std::string& method) const NOEXCEPT override
+    {
+        if (!websocket())
+            return network::channel_http::permitted(method);
+
+        if (!options_.authorize())
+            return true;
+
+        if (network::channel_http::permitted(method))
+            return true;
+
+        return authenticated_ && options_.permitted(authenticated_digest_, method);
     }
 
 protected:
@@ -69,21 +99,28 @@ protected:
         return value;
     }
 
-    /// Basic auth is a per-http-request header, which websocket data frames
-    /// structurally cannot carry (only the upgrade handshake has headers,
-    /// and that request never reaches this check -- see channel_http's
-    /// error::upgraded short-circuit). Once upgraded, auth is instead
-    /// enforced in-band by the ws 'authenticate' method (see
-    /// protocol_btcd_rpc::dispatch_websocket); the plain http post path
-    /// (e.g. inherited chain methods) keeps the normal per-request check.
-    inline bool unauthorized(const network::http::request& request) NOEXCEPT override
+    /// channel_http's authorized() only latches basic-auth from the ws
+    /// upgrade request (the upgrade request has real headers); subsequent ws
+    /// data frames are synthesized and structurally cannot carry a
+    /// per-frame Authorization header. Deferring to the base check here
+    /// would therefore reject every ws frame once a credential is
+    /// configured, unless basic auth happened to be presented on the
+    /// upgrade itself -- permitted() (above) is the real per-method gate for
+    /// ws traffic, so this base check must never reject a ws frame on its
+    /// own. The plain http post path (e.g. inherited bitcoind-compatible
+    /// chain methods) keeps the normal per-request enforcement.
+    inline bool authorized() const NOEXCEPT override
     {
-        return websocket() ? false : network::channel_http::unauthorized(request);
+        return websocket() ? true : network::channel_http::authorized();
     }
 
 private:
-    // This is protected by strand.
+    // This is thread safe.
+    const options_t& options_;
+
+    // These are protected by strand.
     bool authenticated_{};
+    system::hash_digest authenticated_digest_{};
 };
 
 } // namespace server

@@ -128,3 +128,75 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__error_keeps_connection_alive)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// Method-scoped credentials (channel_btcd::permitted()): a credential's
+// optional 'user:pass:method,...' suffix restricts which methods it may
+// call, enforced over ws by protocol_btcd_rpc::dispatch_websocket.
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(btcd_scoped_credential_tests,
+    btcd_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_scoped_credential__listed_method__permitted)
+{
+    const auto auth = rpc("authenticate",
+        R"([")" BTCD_TEST_USERNAME R"(", ")" BTCD_TEST_PASSWORD R"("])");
+    BOOST_REQUIRE(!has_error(auth));
+
+    // BTCD_TEST_SCOPED_METHOD ("session") is the credential's only permitted
+    // method.
+    const auto session = rpc("session");
+    BOOST_REQUIRE(!has_error(session));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_scoped_credential__unlisted_method__rejected)
+{
+    const auto auth = rpc("authenticate",
+        R"([")" BTCD_TEST_USERNAME R"(", ")" BTCD_TEST_PASSWORD R"("])");
+    BOOST_REQUIRE(!has_error(auth));
+
+    // notifyblocks is a real, implemented handler, not scoped by this
+    // credential -- confirms rejection is permitted()'s doing, not the
+    // method being unimplemented.
+    const auto response = rpc("notifyblocks");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// authenticate (protocol_btcd_rpc::handle_authenticate): exercises the
+// credential-configured branch, not covered by btcd_rpc_tests above (whose
+// fixture leaves btcd.credential unset, so every one of those connections
+// takes the no-op path).
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(btcd_auth_tests, btcd_credentialed_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_auth__correct_credentials__succeeds_then_session_works)
+{
+    const auto auth = rpc("authenticate",
+        R"([")" BTCD_TEST_USERNAME R"(", ")" BTCD_TEST_PASSWORD R"("])");
+    BOOST_REQUIRE(!has_error(auth));
+
+    // Connection survives a successful handshake; other methods now work.
+    const auto session = rpc("session");
+    BOOST_REQUIRE(!has_error(session));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_auth__wrong_password__rejected)
+{
+    const auto response = rpc("authenticate",
+        R"([")" BTCD_TEST_USERNAME R"(", "definitely-wrong"])");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_auth__other_method_before_authenticating__rejected)
+{
+    // 'session' instead of 'authenticate' as the first message: the
+    // handshake requires authenticate specifically when a credential is
+    // configured.
+    const auto response = rpc("session");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_SUITE_END()

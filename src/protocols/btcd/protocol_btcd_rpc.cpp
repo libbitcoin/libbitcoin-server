@@ -85,13 +85,21 @@ void protocol_btcd_rpc::stopping(const code& ec) NOEXCEPT
 
 // Websocket dispatch.
 // ----------------------------------------------------------------------------
-// btcd extension methods (session/notify/filter/admin) arrive as ws frames
-// here. Standard chain methods (getblockcount etc.) remain reachable via
-// plain http post on the same endpoint, unchanged, via the inherited
-// handle_receive_post. They are NOT yet bridged into this ws dispatcher: that
-// requires reconciling protocol_bitcoind_rpc's post-oriented private send
-// path (which caches the original http::request for header derivation) with
-// this class's ws-oriented senders. Tracked for phase B.
+// btcd extension methods (session/notify/filter/admin, including
+// authenticate) arrive as ws frames here. Standard chain methods
+// (getblockcount etc.) remain reachable via plain http post on the same
+// endpoint, unchanged, via the inherited handle_receive_post. They are NOT
+// yet bridged into this ws dispatcher: that requires reconciling
+// protocol_bitcoind_rpc's post-oriented private send path (which caches the
+// original http::request for header derivation) with this class's
+// ws-oriented senders. Tracked for phase B.
+//
+// A credential may be scoped to a subset of methods (see config::credential
+// / channel_btcd::permitted()), so each call is checked against that scope --
+// except 'authenticate' itself, which must always reach handle_authenticate
+// regardless of current auth state: permitted() requires authentication to
+// already be established, so gating 'authenticate' on it would make
+// authenticating impossible in the first place.
 
 void protocol_btcd_rpc::dispatch_websocket(
     const network::http::request& request) NOEXCEPT
@@ -112,16 +120,10 @@ void protocol_btcd_rpc::dispatch_websocket(
     btcd_version_ = message.jsonrpc;
     btcd_id_ = message.id;
 
-    // channel_btcd::unauthorized() bypasses the (structurally per-http-
-    // request-only) basic auth check for the whole ws session, so when a
-    // credential is configured, enforcement happens here instead: every
-    // method other than 'authenticate' itself is rejected until it succeeds.
-    if (options_.authorize() && !btcd_channel_->authenticated() &&
-        message.method != btcd_interface::authenticate::name)
+    if (message.method != btcd_interface::authenticate::name &&
+        !permitted(message.method))
     {
-        const code unauthorized{ network::error::unauthorized };
-        send_btcd_error(unauthorized, two * unauthorized.message().size(),
-            unauthorized);
+        send_btcd_error(network::error::unauthorized);
         return;
     }
 
@@ -148,22 +150,35 @@ bool protocol_btcd_rpc::handle_authenticate(const code& ec,
     if (stopped(ec))
         return false;
 
-    // No-op when no server-side credential is configured. Otherwise the
-    // username/password must match the configured single-tier credential.
-    if (!options_.authorize() ||
-        (username == options_.username && password == options_.password))
+    // No credential configured: nothing to check against, so a no-op
+    // success (matches real btcd's own no-auth-required mode -- there is no
+    // "wrong" answer when authorization was never required in the first
+    // place).
+    if (!options_.authorize())
     {
-        btcd_channel_->set_authenticated(true);
         send_btcd_result({}, 4);
         return true;
     }
 
-    // Close once the error response has actually been written, rather than
-    // stopping synchronously here and racing the (async) send.
+    // Same digest scheme as config::credential (settings::http_server has no
+    // direct username:password lookup, only digest-keyed authorized()).
+    const auto digest = sha256_hash(
+        "Basic " + encode_base64(username + ":" + password));
+
+    if (options_.authorized(digest))
+    {
+        btcd_channel_->set_authenticated(digest);
+        send_btcd_result({}, 4);
+        return true;
+    }
+
+    // A failed authenticate ends the session (matches real btcd: invalid
+    // credentials close the connection rather than leave it open for a
+    // retry) -- but only once the error has actually reached the client.
     const code unauthorized{ network::error::unauthorized };
     send_btcd_error(unauthorized, two * unauthorized.message().size(),
         unauthorized);
-    return false;
+    return true;
 }
 
 bool protocol_btcd_rpc::handle_session(const code& ec,
@@ -407,7 +422,7 @@ void protocol_btcd_rpc::send_btcd_result(value_option&& result,
         .jsonrpc = btcd_version_,
         .id = btcd_id_,
         .result = std::move(result)
-    }, size_hint);
+    }, size_hint, error::success);
 }
 
 void protocol_btcd_rpc::send_btcd_error(const code& ec) NOEXCEPT
@@ -479,9 +494,9 @@ void protocol_btcd_rpc::send_btcd_rpc(response_t&& model, size_t size_hint,
     };
     message.prepare_payload();
 
-    // SEND restarts the ws reader so the next client frame is accepted.
-    // handle_complete only stops the channel if close_reason is truthy, and
-    // only after this write actually completes -- never synchronously here.
+    // handle_complete only stops (if close_reason is truthy) once this write
+    // has actually completed -- SEND still restarts the ws reader on success,
+    // matching the base behavior for every other response this class sends.
     SEND(std::move(message), handle_complete, _1, close_reason);
 }
 

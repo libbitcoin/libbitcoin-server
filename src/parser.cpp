@@ -1125,14 +1125,9 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
-        "btcd.username",
-        value<std::string>(&configured.server.btcd.username),
-        "The basic authorization username (not secure), also used for the ws 'authenticate' method."
-    )
-    (
-        "btcd.password",
-        value<std::string>(&configured.server.btcd.password),
-        "The basic authorization password (not secure), also used for the ws 'authenticate' method."
+        "btcd.credential",
+        value<network::config::credentials>(&configured.server.btcd.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), also used for the ws 'authenticate' method, multiple allowed."
     )
     (
         "btcd.connections",

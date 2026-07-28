@@ -29,7 +29,15 @@ struct btcd_setup_fixture
     using initializer = std::function<bool(test::query_t&)>;
 
     DELETE_COPY_MOVE(btcd_setup_fixture);
-    explicit btcd_setup_fixture(const initializer& setup);
+
+    // username/password configure a single btcd.credential entry (no auth
+    // required if username is empty), matching the one-tier credential model.
+    // methods, if non-empty, scopes that credential to a comma-separated
+    // method list (config::credential's own "user:pass:method,..." syntax);
+    // empty (the default) leaves the credential unscoped (all methods).
+    explicit btcd_setup_fixture(const initializer& setup,
+        std::string_view username={}, std::string_view password={},
+        std::string_view methods={});
     ~btcd_setup_fixture();
 
     // JSON-RPC 1.0 over websocket. params must be a json array (json-rpc-v1
@@ -67,6 +75,41 @@ struct btcd_ten_block_setup_fixture
         {
             return test::setup_ten_block_store(query);
         })
+    {
+    }
+};
+
+#define BTCD_TEST_USERNAME "user"
+#define BTCD_TEST_PASSWORD "pass"
+
+// Configured with a credential but does not authenticate -- for tests that
+// exercise the in-band 'authenticate' call itself (success, wrong-password
+// rejection, calling another method before authenticating).
+struct btcd_credentialed_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_credentialed_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD)
+    {
+    }
+};
+
+#define BTCD_TEST_SCOPED_METHOD "session"
+
+// Configured with a credential scoped to a single method -- for tests that
+// verify channel_btcd::permitted() enforces per-method credential scoping
+// over ws once authenticated.
+struct btcd_scoped_credential_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_scoped_credential_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD, BTCD_TEST_SCOPED_METHOD)
     {
     }
 };

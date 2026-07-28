@@ -32,11 +32,19 @@ namespace server {
 using session_admin = session_server<protocol_admin>;
 using session_native = session_server<protocol_native>;
 using session_bitcoind = session_server<protocol_bitcoind_rest>;
-using session_btcd = session_server<protocol_btcd_rpc>;
 using session_stratum_v1 = session_server<protocol_stratum_v1>;
 using session_stratum_v2 = session_server<protocol_stratum_v2>;
 using session_electrum = session_handshake<protocol_electrum_version,
     protocol_electrum>;
+
+// No session_handshake here: unlike electrum/p2p, btcd has no negotiation to
+// wait for -- real btcd authenticates via plain HTTP Basic Auth (checked
+// synchronously per request, same as bitcoind) or an in-band ws
+// 'authenticate' method that is just an ordinary extension method, not a
+// separate handshake stage (see protocol_btcd_rpc's class comment and
+// docs/btcd-endpoint.md for why session_handshake<protocol_btcd_auth,
+// protocol_btcd_rpc> was tried and reverted).
+using session_btcd = session_server<protocol_btcd_rpc>;
 
 } // namespace server
 } // namespace libbitcoin
@@ -72,12 +80,15 @@ node::session
 
 server::session → node::session
 └── server::session_server<...Protocols> → network::session_server
-    ╞══ session_admin      = server::session_server<protocol_admin>         
+    ╞══ session_admin      = server::session_server<protocol_admin>
     ╞══ session_native     = server::session_server<protocol_native>
     ╞══ session_bitcoind   = server::session_server<protocol_bitcoind_rest>
-    ╞══ session_btcd       = server::session_server<protocol_btcd_rpc>
     ╞══ session_stratum_v1 = server::session_server<protocol_stratum_v1>
     ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
+    ╞══ session_btcd       = server::session_server<protocol_btcd_rpc>
+    │       (no handshake stage -- real btcd has no negotiation to wait
+    │        for; auth is a synchronous per-request/per-connection check,
+    │        same shape as bitcoind, not a separate protocol)
     └── server::session_handshake<...Protocols>
         ╘══ session_electrum = server::session_handshake<
                 protocol_electrum_version, protocol_electrum>
