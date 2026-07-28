@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_CONFIGURATION_HPP
 #define LIBBITCOIN_SERVER_CONFIGURATION_HPP
 
+#include <optional>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
@@ -47,7 +48,10 @@ public:
     bool newstore{};
     bool backup{};
     bool restore{};
-    bool daemon{};
+
+    /// Service (unset implies no service action).
+    std::optional<bool> daemon{};
+    std::optional<network::config::credential> credential{};
 
     /// Chain scans.
     bool flags{};

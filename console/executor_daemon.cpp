@@ -22,15 +22,16 @@
 namespace libbitcoin {
 namespace server {
 
-// TODO: register with the service control manager (CreateServiceW).
+// TODO: register with the service control manager (CreateServiceW/DeleteService).
 // TODO: install a systemd unit (linux) and launchd plist (osx).
 
-// --[d]aemon
+// --[d]aemon [--cr[e]dential]
 bool executor::do_daemon()
 {
     log_.stop();
 #if defined(HAVE_MSC)
-    logger(BS_DAEMON_UNIMPLEMENTED);
+    logger(metadata_.configured.daemon.value() ? BS_DAEMON_INSTALL :
+        BS_DAEMON_UNINSTALL);
 #else
     logger(BS_DAEMON_UNSUPPORTED);
 #endif

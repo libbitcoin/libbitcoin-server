@@ -70,8 +70,10 @@
 // --daemon
 #define BS_DAEMON_UNSUPPORTED \
     "Service installation is not supported on this platform."
-#define BS_DAEMON_UNIMPLEMENTED \
+#define BS_DAEMON_INSTALL \
     "Service installation is not yet implemented."
+#define BS_DAEMON_UNINSTALL \
+    "Service removal is not yet implemented."
 
 // TODO: table names should be derived from database constants and sorted.
 // --information

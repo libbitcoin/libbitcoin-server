@@ -35,6 +35,7 @@ BOOST_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
     BOOST_REQUIRE(!instance.backup);
     BOOST_REQUIRE(!instance.restore);
     BOOST_REQUIRE(!instance.daemon);
+    BOOST_REQUIRE(!instance.credential);
     BOOST_REQUIRE(!instance.flags);
     BOOST_REQUIRE(!instance.information);
     BOOST_REQUIRE(!instance.slabs);

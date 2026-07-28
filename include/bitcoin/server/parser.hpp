@@ -32,6 +32,7 @@
 #define BS_BACKUP_VARIABLE "backup"
 #define BS_RESTORE_VARIABLE "restore"
 #define BS_DAEMON_VARIABLE "daemon"
+#define BS_CREDENTIAL_VARIABLE "credential"
 
 #define BS_FLAGS_VARIABLE "flags"
 #define BS_SLABS_VARIABLE "slabs"

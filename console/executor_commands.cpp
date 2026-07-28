@@ -217,7 +217,8 @@ bool executor::dispatch()
     if (config.restore)
         return do_restore();
 
-    if (config.daemon)
+    // Set implies install, unset implies uninstall (absent implies neither).
+    if (config.daemon.has_value())
         return do_daemon();
 
     if (config.hardware)

@@ -210,11 +210,19 @@ options_metadata parser::load_options() THROWS
             default_value(false)->zero_tokens(),
         "Restore from most recent snapshot."
     )
+    // Service.
     (
         BS_DAEMON_VARIABLE ",d",
-        value<bool>(&configured.daemon)->
-            default_value(false)->zero_tokens(),
-        "Install as a system service (daemon)."
+        value<bool>()->implicit_value(true)->
+            notifier([&](bool value) { configured.daemon = value; }),
+        "Install ('true') or uninstall ('false') as a system service."
+    )
+    (
+        BS_CREDENTIAL_VARIABLE ",e",
+        value<network::config::credential>()->
+            notifier([&](const network::config::credential& value)
+                { configured.credential = value; }),
+        "The service logon credential, defaults to the system account."
     )
     // Chain scans.
     (
