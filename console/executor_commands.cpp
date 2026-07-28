@@ -135,7 +135,7 @@ bool executor::do_information()
     return close_store();
 }
 
-// --[a]slabs
+// --sl[a]bs
 bool executor::do_slabs()
 {
     log_.stop();
@@ -147,7 +147,7 @@ bool executor::do_slabs()
     return close_store();
 }
 
-// --[k]buckets
+// --buc[k]ets
 bool executor::do_buckets()
 {
     log_.stop();
@@ -159,7 +159,7 @@ bool executor::do_buckets()
     return close_store();
 }
 
-// --[l]collisions
+// --co[l]lisions
 bool executor::do_collisions()
 {
     log_.stop();
