@@ -111,6 +111,7 @@ protected:
         double maxfeerate) NOEXCEPT;
 
     /// Json context helpers (shared with rest, defined in *_json.cpp).
+    static double verification_progress(size_t blocks, size_t headers) NOEXCEPT;
     static uint32_t median_time_past(const node::query& query,
         const database::header_link& link) NOEXCEPT;
     static void inject_block_context(boost::json::object& out,

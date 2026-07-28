@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
 
+#include <algorithm>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -32,6 +33,16 @@ uint32_t protocol_bitcoind_rpc::median_time_past(const node::query& query,
     return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
 }
 
+// verificationprogress is approximated as confirmed/candidate height, the best
+// available estimate of the chain tip during sync (1.0 once current).
+double protocol_bitcoind_rpc::verification_progress(size_t blocks,
+    size_t headers) NOEXCEPT
+{
+    return is_zero(headers) ? 1.0 :
+        std::min(1.0, static_cast<double>(blocks) /
+            static_cast<double>(headers));
+}
+
 void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
     const node::query& query, const database::header_link& link,
     const chain::header& header) NOEXCEPT
@@ -43,8 +54,16 @@ void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
     const auto top = query.get_top_confirmed();
     const auto confirmed = query.is_confirmed_block(link);
     out["height"] = height;
-    out["confirmations"] = add1(floored_subtract(top, height));
+
+    // bitcoind reports -1 confirmations for a block not on the active chain.
+    out["confirmations"] = confirmed ?
+        static_cast<int64_t>(add1(floored_subtract(top, height))) : -1;
     out["mediantime"] = median_time_past(query, link);
+
+    // Cumulative work to this block, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    if (query.get_work(work, link))
+        out["chainwork"] = encode_hash(from_uintx(work));
 
     if (header.previous_block_hash() != null_hash)
         out["previousblockhash"] = encode_hash(header.previous_block_hash());
@@ -89,6 +108,7 @@ boost::json::object protocol_bitcoind_rpc::header_to_bitcoind(
         { "time", header.timestamp() },
         { "nonce", header.nonce() },
         { "bits", encode_base16(to_big_endian(header.bits())) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) },
         { "difficulty", header.difficulty() }
     };
 }
@@ -98,6 +118,7 @@ std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
     const auto genesis = query.get_header_key(query.to_confirmed(zero));
 
     // TODO: create signet chain selector.
+    // See libbitcoin-system#1908.
     using selection = chain::selection;
     constexpr auto signet = base16_hash(
         "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6");
