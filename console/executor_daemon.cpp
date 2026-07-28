@@ -25,10 +25,19 @@ namespace server {
 // TODO: register with the service control manager (CreateServiceW/DeleteService).
 // TODO: install a systemd unit (linux) and launchd plist (osx).
 
-// --[d]aemon [--cr[e]dential]
+// --[d]aemon [--[u]ser]
 bool executor::do_daemon()
 {
     log_.stop();
+
+    // The methods element of a credential does not apply to a service logon.
+    if (metadata_.configured.user.has_value() &&
+        !metadata_.configured.user.value().methods().empty())
+    {
+        logger(BS_DAEMON_INVALID_USER);
+        return false;
+    }
+
 #if defined(HAVE_MSC)
     logger(metadata_.configured.daemon.value() ? BS_DAEMON_INSTALL :
         BS_DAEMON_UNINSTALL);

@@ -70,6 +70,8 @@
 // --daemon
 #define BS_DAEMON_UNSUPPORTED \
     "Service installation is not supported on this platform."
+#define BS_DAEMON_INVALID_USER \
+    "Service logon credential must not specify methods."
 #define BS_DAEMON_INSTALL \
     "Service installation is not yet implemented."
 #define BS_DAEMON_UNINSTALL \

@@ -218,10 +218,10 @@ options_metadata parser::load_options() THROWS
         "Install ('true') or uninstall ('false') as a system service."
     )
     (
-        BS_CREDENTIAL_VARIABLE ",e",
+        BS_USER_VARIABLE ",u",
         value<network::config::credential>()->
             notifier([&](const network::config::credential& value)
-                { configured.credential = value; }),
+                { configured.user = value; }),
         "The service logon credential, defaults to the system account."
     )
     // Chain scans.
@@ -274,9 +274,8 @@ options_metadata parser::load_options() THROWS
 
 arguments_metadata parser::load_arguments() THROWS
 {
-    arguments_metadata description;
-    return description
-        .add(BS_CONFIG_VARIABLE, 1);
+    // There are no positional arguments, the config path requires --config.
+    return arguments_metadata{};
 }
 
 options_metadata parser::load_environment() THROWS

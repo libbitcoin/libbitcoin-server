@@ -51,7 +51,7 @@ public:
 
     /// Service (unset implies no service action).
     std::optional<bool> daemon{};
-    std::optional<network::config::credential> credential{};
+    std::optional<network::config::credential> user{};
 
     /// Chain scans.
     bool flags{};
