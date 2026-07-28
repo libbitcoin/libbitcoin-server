@@ -192,6 +192,13 @@ private:
     static BOOL WINAPI control_handler(DWORD signal);
     static LRESULT CALLBACK window_proc(HWND handle, UINT message,
         WPARAM wparam, LPARAM lparam);
+
+    static DWORD delete_service() NOEXCEPT;
+    static DWORD create_service(const std::string& command,
+        const std::string& account, const std::string& password) NOEXCEPT;
+    static DWORD grant_logon_right(const std::string& account) NOEXCEPT;
+    static std::string command_line(
+        const std::filesystem::path& config) NOEXCEPT;
 #endif
 };
 
