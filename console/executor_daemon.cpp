@@ -18,7 +18,9 @@
  */
 #include "executor.hpp"
 
+#include <atomic>
 #include <filesystem>
+#include <iostream>
 #if defined(HAVE_MSC)
     #include <ntsecapi.h>
 #endif
@@ -29,13 +31,124 @@ namespace server {
 
 using format = boost_format;
 
-// TODO: install a systemd unit (linux) and launchd plist (osx).
+// TODO: register a systemd unit (linux) and launchd plist (osx), and notify
+// TODO: readiness/stopping via sd_notify, in place of the manager below.
+
+bool executor::service_{ false };
+std::atomic_bool executor::exited_{ false };
 
 #if defined(HAVE_MSC)
 
 // Node drain exceeds the default shutdown window, so preshutdown is required.
 // This has no effect until the service accepts SERVICE_ACCEPT_PRESHUTDOWN.
 constexpr DWORD preshutdown_milliseconds = 600'000;
+
+// The manager terminates a pending start that does not progress within this.
+constexpr DWORD pending_milliseconds = 30'000;
+
+std::atomic<DWORD> executor::state_{ SERVICE_START_PENDING };
+std::atomic_bool executor::failed_{ false };
+SERVICE_STATUS_HANDLE executor::status_handle_{};
+parser* executor::service_metadata_{};
+std::istream* executor::service_input_{};
+std::ostream* executor::service_error_{};
+
+// Service runtime.
+// ----------------------------------------------------------------------------
+
+// A null status handle implies console mode, in which this is a noop. Pending
+// states must advance the checkpoint, as the manager otherwise assumes a hang.
+// Reported from the manager, network, and poller threads, so holds no state
+// apart from the atomics that the reported status is composed from.
+void executor::report_status(DWORD state) NOEXCEPT
+{
+    if (is_null(status_handle_))
+        return;
+
+    static std::atomic<DWORD> checkpoint{};
+
+    const auto starting = (state == SERVICE_START_PENDING);
+    const auto stopping = (state == SERVICE_STOP_PENDING);
+    const auto failed = failed_.load();
+    const DWORD code = failed ? ERROR_SERVICE_SPECIFIC_ERROR : NO_ERROR;
+    const DWORD specific = failed ? 1u : 0u;
+    state_.store(state);
+
+    SERVICE_STATUS status
+    {
+        .dwServiceType = SERVICE_WIN32_OWN_PROCESS,
+        .dwCurrentState = state,
+        .dwControlsAccepted = (state == SERVICE_RUNNING) ?
+            (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN) : 0u,
+        .dwWin32ExitCode = code,
+        .dwServiceSpecificExitCode = specific,
+        .dwCheckPoint = (starting || stopping) ? ++checkpoint : 0u,
+        .dwWaitHint = starting ? pending_milliseconds :
+            (stopping ? preshutdown_milliseconds : 0u)
+    };
+
+    ::SetServiceStatus(status_handle_, &status);
+}
+
+// Every stop source converges on the one signal-safe latch.
+DWORD WINAPI executor::service_handler(DWORD control, DWORD, LPVOID,
+    LPVOID) NOEXCEPT
+{
+    switch (control)
+    {
+        case SERVICE_CONTROL_STOP:
+        case SERVICE_CONTROL_PRESHUTDOWN:
+        {
+            report_status(SERVICE_STOP_PENDING);
+            handle_stop(system::possible_narrow_sign_cast<int>(control));
+            return NO_ERROR;
+        }
+        case SERVICE_CONTROL_INTERROGATE:
+        {
+            report_status(state_.load());
+            return NO_ERROR;
+        }
+        default:
+        {
+            return ERROR_CALL_NOT_IMPLEMENTED;
+        }
+    }
+}
+
+// Invoked by the manager on its own thread, and returns when the node stops.
+void WINAPI executor::service_main(DWORD, LPWSTR*) NOEXCEPT
+{
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    const auto name = system::to_utf16(name_);
+    BC_POP_WARNING()
+
+    status_handle_ = ::RegisterServiceCtrlHandlerExW(name.c_str(),
+        &executor::service_handler, NULL);
+
+    if (is_null(status_handle_))
+        return;
+
+    // Suppresses the hidden window and console capture, which have no meaning
+    // in session zero, and are otherwise created by the executor constructor.
+    service_ = true;
+    report_status(SERVICE_START_PENDING);
+
+    // The service has no console, so console output is discarded. This must
+    // outlive the executor, which retains a reference to it.
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    static std::ostream discard{ nullptr };
+    auto& host = executor::factory(*service_metadata_, *service_input_,
+        discard, *service_error_);
+
+    // Reports running from handle_running, and blocks until the node stops.
+    const auto result = host.dispatch();
+    BC_POP_WARNING()
+
+    // Releases the poller from reporting stop progress.
+    exited_.store(true);
+    failed_.store(!result);
+    report_status(SERVICE_STOPPED);
+}
 
 // Grant the account the right to log on as a service, without which the
 // service control manager cannot start the service. This is idempotent, and
@@ -198,6 +311,68 @@ std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
         (format(R"("%1%")") % from_path(module)).str() :
         (format(R"("%1%" --%2% "%3%")") % from_path(module) %
             BS_CONFIG_VARIABLE % from_path(qualified_path(config))).str();
+}
+
+#endif // HAVE_MSC
+
+// Supervisor notification (noop unless running as a service).
+// ----------------------------------------------------------------------------
+
+void executor::notify_starting()
+{
+#if defined(HAVE_MSC)
+    // Reported only while starting, as this merely advances the checkpoint.
+    if (state_.load() == SERVICE_START_PENDING)
+        report_status(SERVICE_START_PENDING);
+#endif
+}
+
+void executor::notify_running()
+{
+#if defined(HAVE_MSC)
+    report_status(SERVICE_RUNNING);
+#endif
+}
+
+void executor::notify_stopping()
+{
+#if defined(HAVE_MSC)
+    report_status(SERVICE_STOP_PENDING);
+#endif
+}
+
+// Service dispatch.
+// ----------------------------------------------------------------------------
+
+#if defined(HAVE_MSC)
+
+bool executor::service(parser& metadata, std::istream& input,
+    std::ostream& error)
+{
+    service_metadata_ = &metadata;
+    service_input_ = &input;
+    service_error_ = &error;
+
+    auto name = system::to_utf16(name_);
+    const SERVICE_TABLE_ENTRYW table[]
+    {
+        { name.data(), &executor::service_main },
+        { NULL, NULL }
+    };
+
+    // Blocks until the service stops, and fails immediately (without any
+    // connection attempt) when the process was not started by the manager.
+    if (!is_zero(::StartServiceCtrlDispatcherW(table)))
+        return true;
+
+    return ::GetLastError() != ERROR_FAILED_SERVICE_CONTROLLER_CONNECT;
+}
+
+#else
+
+bool executor::service(parser&, std::istream&, std::ostream&)
+{
+    return false;
 }
 
 #endif // HAVE_MSC

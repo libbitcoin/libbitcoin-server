@@ -60,6 +60,10 @@ std::optional<std::thread> executor::window_thread_{};
 void executor::create_hidden_window()
 {
 #if defined(HAVE_MSC)
+    // A service has no interactive session, and is stopped by the manager.
+    if (service_)
+        return;
+
     static constexpr auto window_name = L"HiddenShutdownWindow";
 
     window_thread_.emplace(std::thread([]()
@@ -118,6 +122,9 @@ void executor::create_hidden_window()
 void executor::destroy_hidden_window()
 {
 #if defined(HAVE_MSC)
+    if (service_)
+        return;
+
     // Wait until window is accepting messages, so WM_QUIT isn't missed.
     window_ready_.get_future().wait();
 
