@@ -182,9 +182,16 @@ private:
     // Service (supervisor) notifications, noops unless running as a service.
     static bool service_;
     static std::atomic_bool exited_;
+    static std::atomic_bool starting_;
     static void notify_starting();
     static void notify_running();
     static void notify_stopping();
+
+    // Service installation, platform-specific. Returns a system error code
+    // (win32 or errno), where zero is success.
+    static uint32_t create_service(const std::filesystem::path& config,
+        const std::string& account, const std::string& password) NOEXCEPT;
+    static uint32_t delete_service() NOEXCEPT;
 
     static void initialize_stop();
     static void uninitialize_stop();
@@ -217,13 +224,11 @@ private:
     static DWORD WINAPI service_handler(DWORD control, DWORD type,
         LPVOID data, LPVOID context) NOEXCEPT;
 
-    static DWORD delete_service() NOEXCEPT;
-    static DWORD create_service(const std::string& command,
-        const std::string& account, const std::string& password) NOEXCEPT;
     static DWORD grant_logon_right(const std::string& account) NOEXCEPT;
+#endif
+
     static std::string command_line(
         const std::filesystem::path& config) NOEXCEPT;
-#endif
 };
 
 } // namespace server
