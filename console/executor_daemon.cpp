@@ -52,7 +52,7 @@ constexpr uint32_t daemon_denied = ERROR_ACCESS_DENIED;
 constexpr uint32_t daemon_exists = ERROR_SERVICE_EXISTS;
 constexpr uint32_t daemon_absent = ERROR_SERVICE_DOES_NOT_EXIST;
 constexpr uint32_t daemon_unknown_user = ERROR_INVALID_SERVICE_ACCOUNT;
-#elif defined(HAVE_LINUX) || defined(HAVE_APPLE)
+#elif defined(HAVE_POSIX)
 constexpr uint32_t daemon_success = 0;
 constexpr uint32_t daemon_denied = EACCES;
 constexpr uint32_t daemon_exists = EEXIST;
@@ -326,7 +326,7 @@ uint32_t executor::delete_service() NOEXCEPT
 // Posix service installation.
 // ----------------------------------------------------------------------------
 
-#if defined(HAVE_LINUX) || defined(HAVE_APPLE)
+#if defined(HAVE_POSIX)
 
 // The drain exceeds the default stop timeout on both platforms.
 constexpr auto stop_timeout_seconds = 600;
@@ -457,7 +457,7 @@ uint32_t executor::delete_service() NOEXCEPT
     return std::filesystem::remove(unit, ec) ? 0_u32 : EACCES;
 }
 
-#endif // HAVE_LINUX || HAVE_APPLE
+#endif // HAVE_POSIX
 
 // Command line.
 // ----------------------------------------------------------------------------
@@ -623,7 +623,7 @@ bool executor::do_daemon()
         return false;
     }
 
-#if defined(HAVE_MSC) || defined(HAVE_LINUX) || defined(HAVE_APPLE)
+#if defined(HAVE_MSC) || defined(HAVE_POSIX)
     std::string account{}, password{};
     if (user.has_value())
     {
