@@ -27,6 +27,10 @@
 #define BS_SERVICE_TITLE L"Libbitcoin Server"
 #define BS_SERVICE_TEXT  L"Full node bitcoin server."
 
+// Posix
+#define BS_SERVICE_LABEL "org.libbitcoin.bs"
+#define BS_SERVICE_DESCRIPTION "Full node bitcoin server."
+
 #define BS_OPERATION_INTERRUPT \
     "Press CTRL-C to cancel operation."
 #define BS_OPERATION_CANCELED \

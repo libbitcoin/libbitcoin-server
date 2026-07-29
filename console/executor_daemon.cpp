@@ -24,10 +24,17 @@
 #if defined(HAVE_MSC)
     #include <ntsecapi.h>
 #endif
+#if defined(HAVE_LINUX)
+    #include <sys/socket.h>
+    #include <sys/un.h>
+    #include <unistd.h>
+#endif
 #include "localize.hpp"
 
 namespace libbitcoin {
 namespace server {
+
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 using format = boost_format;
 
@@ -36,6 +43,21 @@ using format = boost_format;
 
 bool executor::service_{ false };
 std::atomic_bool executor::exited_{ false };
+std::atomic_bool executor::starting_{ true };
+
+// Installation results, as reported by the platform service manager.
+#if defined(HAVE_MSC)
+constexpr uint32_t daemon_success = ERROR_SUCCESS;
+constexpr uint32_t daemon_denied = ERROR_ACCESS_DENIED;
+constexpr uint32_t daemon_exists = ERROR_SERVICE_EXISTS;
+constexpr uint32_t daemon_absent = ERROR_SERVICE_DOES_NOT_EXIST;
+constexpr uint32_t daemon_unknown_user = ERROR_INVALID_SERVICE_ACCOUNT;
+#elif defined(HAVE_POSIX)
+constexpr uint32_t daemon_success = 0;
+constexpr uint32_t daemon_denied = EACCES;
+constexpr uint32_t daemon_exists = EEXIST;
+constexpr uint32_t daemon_absent = ENOENT;
+#endif
 
 #if defined(HAVE_MSC)
 
@@ -118,10 +140,7 @@ DWORD WINAPI executor::service_handler(DWORD control, DWORD, LPVOID,
 // Invoked by the manager on its own thread, and returns when the node stops.
 void WINAPI executor::service_main(DWORD, LPWSTR*) NOEXCEPT
 {
-    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
     const auto name = system::to_utf16(name_);
-    BC_POP_WARNING()
-
     status_handle_ = ::RegisterServiceCtrlHandlerExW(name.c_str(),
         &executor::service_handler, NULL);
 
@@ -135,14 +154,12 @@ void WINAPI executor::service_main(DWORD, LPWSTR*) NOEXCEPT
 
     // The service has no console, so console output is discarded. This must
     // outlive the executor, which retains a reference to it.
-    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
     static std::ostream discard{ nullptr };
     auto& host = executor::factory(*service_metadata_, *service_input_,
         discard, *service_error_);
 
     // Reports running from handle_running, and blocks until the node stops.
     const auto result = host.dispatch();
-    BC_POP_WARNING()
 
     // Releases the poller from reporting stop progress.
     exited_.store(true);
@@ -212,10 +229,14 @@ DWORD executor::grant_logon_right(const std::string& account) NOEXCEPT
 }
 
 // Returns a win32 error code, where zero is success.
-DWORD executor::create_service(const std::string& command,
+uint32_t executor::create_service(const std::filesystem::path& config,
     const std::string& account, const std::string& password) NOEXCEPT
 {
     using namespace system;
+    const auto command = command_line(config);
+    if (command.empty())
+        return ERROR_BAD_PATHNAME;
+
     const auto manager = ::OpenSCManagerW(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
     if (is_null(manager))
         return ::GetLastError();
@@ -276,7 +297,7 @@ DWORD executor::create_service(const std::string& command,
 }
 
 // Returns a win32 error code, where zero is success.
-DWORD executor::delete_service() NOEXCEPT
+uint32_t executor::delete_service() NOEXCEPT
 {
     const auto manager = ::OpenSCManagerW(NULL, NULL, SC_MANAGER_CONNECT);
     if (is_null(manager))
@@ -300,6 +321,169 @@ DWORD executor::delete_service() NOEXCEPT
     return result;
 }
 
+#endif // HAVE_MSC
+
+// Posix service installation.
+// ----------------------------------------------------------------------------
+
+#if defined(HAVE_POSIX)
+
+// The drain exceeds the default stop timeout on both platforms.
+constexpr auto stop_timeout_seconds = 600;
+
+#if defined(HAVE_LINUX)
+
+// A systemd unit, and the symlink by which the unit is enabled.
+static std::filesystem::path unit_path(const std::string& name) NOEXCEPT
+{
+    return { "/etc/systemd/system/" + name + ".service" };
+}
+
+static std::filesystem::path enabled_path(const std::string& name) NOEXCEPT
+{
+    return { "/etc/systemd/system/multi-user.target.wants/" + name + ".service" };
+}
+
+// Type=notify defers dependent units until the node reports ready, which is
+// the posix counterpart to reporting SERVICE_RUNNING to the manager.
+static std::string unit_text(const std::string& command,
+    const std::string& account) NOEXCEPT
+{
+    return
+        "[Unit]\n"
+        "Description=" BS_SERVICE_DESCRIPTION "\n"
+        "After=network-online.target\n"
+        "Wants=network-online.target\n"
+        "\n"
+        "[Service]\n"
+        "Type=notify\n"
+        "ExecStart=" + command + "\n" +
+        (account.empty() ? "" : "User=" + account + "\n") +
+        "TimeoutStopSec=" + std::to_string(stop_timeout_seconds) + "\n"
+        "Restart=on-failure\n"
+        "\n"
+        "[Install]\n"
+        "WantedBy=multi-user.target\n";
+}
+
+#else // HAVE_APPLE
+
+static std::filesystem::path unit_path(const std::string&) NOEXCEPT
+{
+    return { "/Library/LaunchDaemons/" BS_SERVICE_LABEL ".plist" };
+}
+
+// launchd has no readiness protocol, so the job is simply run at load.
+static std::string unit_text(const std::string& command,
+    const std::string& account) NOEXCEPT
+{
+    return
+        R"(<?xml version="1.0" encoding="UTF-8"?>)" "\n"
+        R"(<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" )"
+        R"("http://www.apple.com/DTDs/PropertyList-1.0.dtd">)" "\n"
+        R"(<plist version="1.0">)" "\n"
+        "<dict>\n"
+        "    <key>Label</key><string>" BS_SERVICE_LABEL "</string>\n"
+        "    <key>ProgramArguments</key>\n"
+        "    <array>\n" + command +
+        "    </array>\n" +
+        (account.empty() ? "" :
+            "    <key>UserName</key><string>" + account + "</string>\n") +
+        "    <key>RunAtLoad</key><true/>\n"
+        "    <key>KeepAlive</key><true/>\n"
+        "    <key>ExitTimeOut</key><integer>" +
+            std::to_string(stop_timeout_seconds) + "</integer>\n"
+        "</dict>\n"
+        "</plist>\n";
+}
+
+#endif // HAVE_LINUX
+
+// Returns an errno value, where zero is success.
+uint32_t executor::create_service(const std::filesystem::path& config,
+    const std::string& account, const std::string&) NOEXCEPT
+{
+    const auto command = command_line(config);
+    if (command.empty())
+        return EINVAL;
+
+    code ec{};
+    const auto unit = unit_path(name_);
+    if (std::filesystem::exists(unit, ec))
+        return EEXIST;
+
+    // The directory is absent when the service manager is not installed.
+    if (!std::filesystem::is_directory(unit.parent_path(), ec))
+        return ENOENT;
+
+    system::ofstream file{ unit };
+    if (!file.good())
+        return EACCES;
+
+    file << unit_text(command, account);
+    file.flush();
+    if (!file.good())
+        return EIO;
+
+#if defined(HAVE_LINUX)
+    // This is what enabling a unit does, avoiding a systemctl invocation.
+    // A reload is required before the unit can be started without a reboot.
+    file.close();
+    const auto enabled = enabled_path(name_);
+    std::filesystem::create_directories(enabled.parent_path(), ec);
+    if (ec)
+        return EACCES;
+
+    std::filesystem::create_symlink(unit, enabled, ec);
+    if (ec)
+        return EACCES;
+#endif
+
+    return {};
+}
+
+// Returns an errno value, where zero is success.
+uint32_t executor::delete_service() NOEXCEPT
+{
+    const auto unit = unit_path(name_);
+    code ec{};
+    if (!std::filesystem::exists(unit, ec))
+        return ENOENT;
+
+#if defined(HAVE_LINUX)
+    std::filesystem::remove(enabled_path(name_), ec);
+#endif
+
+    return std::filesystem::remove(unit, ec) ? 0_u32 : EACCES;
+}
+
+#endif // HAVE_POSIX
+
+// Command line.
+// ----------------------------------------------------------------------------
+
+#if defined(HAVE_APPLE)
+
+// launchd requires the arguments as discrete elements, not a command line.
+std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
+{
+    using namespace system;
+    const auto module = module_path();
+    if (module.empty())
+        return {};
+
+    const auto element = [](const std::string& text) NOEXCEPT
+    {
+        return "        <string>" + text + "</string>\n";
+    };
+
+    return config.empty() ? element(from_path(module)) :
+        element(from_path(module)) + element("--" BS_CONFIG_VARIABLE) +
+            element(from_path(qualified_path(config)));
+}
+
+#else
+
 std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
 {
     using namespace system;
@@ -313,24 +497,63 @@ std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
             BS_CONFIG_VARIABLE % from_path(qualified_path(config))).str();
 }
 
-#endif // HAVE_MSC
+#endif // HAVE_APPLE
 
 // Supervisor notification (noop unless running as a service).
 // ----------------------------------------------------------------------------
 
+#if defined(HAVE_LINUX)
+
+// Notify the service manager, as defined by sd_notify(3). The socket is unset
+// unless the unit is Type=notify, in which case this is a noop. Implemented
+// here to avoid a libsystemd dependency for two datagrams.
+static void notify_manager(const std::string& state) NOEXCEPT
+{
+    const auto path = std::getenv("NOTIFY_SOCKET");
+    if (is_null(path))
+        return;
+
+    const auto descriptor = ::socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+    if (system::is_negative(descriptor))
+        return;
+
+    sockaddr_un address{};
+    address.sun_family = AF_UNIX;
+    std::strncpy(address.sun_path, path, sizeof(address.sun_path) - 1u);
+
+    // A leading '@' denotes the abstract namespace, encoded as a null.
+    if (address.sun_path[0] == '@')
+        address.sun_path[0] = '\0';
+
+    ::sendto(descriptor, state.data(), state.size(), MSG_NOSIGNAL,
+        system::pointer_cast<const sockaddr>(&address), sizeof(address));
+
+    ::close(descriptor);
+}
+
+#endif // HAVE_LINUX
+
 void executor::notify_starting()
 {
+    // Reported only while starting, as this merely extends the timeout.
+    if (!starting_.load())
+        return;
+
 #if defined(HAVE_MSC)
-    // Reported only while starting, as this merely advances the checkpoint.
-    if (state_.load() == SERVICE_START_PENDING)
-        report_status(SERVICE_START_PENDING);
+    report_status(SERVICE_START_PENDING);
+#elif defined(HAVE_LINUX)
+    notify_manager("EXTEND_TIMEOUT_USEC=30000000");
 #endif
 }
 
 void executor::notify_running()
 {
+    starting_.store(false);
+
 #if defined(HAVE_MSC)
     report_status(SERVICE_RUNNING);
+#elif defined(HAVE_LINUX)
+    notify_manager("READY=1");
 #endif
 }
 
@@ -338,6 +561,8 @@ void executor::notify_stopping()
 {
 #if defined(HAVE_MSC)
     report_status(SERVICE_STOP_PENDING);
+#elif defined(HAVE_LINUX)
+    notify_manager("STOPPING=1\nEXTEND_TIMEOUT_USEC=30000000");
 #endif
 }
 
@@ -370,8 +595,18 @@ bool executor::service(parser& metadata, std::istream& input,
 
 #else
 
+// A posix daemon runs in the foreground under its manager, so there is no
+// dispatcher to connect. This only detects that a manager is supervising.
 bool executor::service(parser&, std::istream&, std::ostream&)
 {
+#if defined(HAVE_LINUX)
+    // Set by systemd for a Type=notify unit.
+    service_ = !is_null(std::getenv("NOTIFY_SOCKET"));
+#elif defined(HAVE_APPLE)
+    // Set by launchd for a managed job.
+    service_ = !is_null(std::getenv("XPC_SERVICE_NAME"));
+#endif
+
     return false;
 }
 
@@ -388,7 +623,7 @@ bool executor::do_daemon()
         return false;
     }
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_MSC) || defined(HAVE_POSIX)
     std::string account{}, password{};
     if (user.has_value())
     {
@@ -396,51 +631,44 @@ bool executor::do_daemon()
         password = user.value().password();
     }
 
-    std::string command{};
-    if (metadata_.configured.daemon.value())
-    {
-        if (command = command_line(metadata_.configured.file); command.empty())
-        {
-            logger(format(BS_DAEMON_INSTALL_FAILURE) % ERROR_BAD_PATHNAME);
-            return false;
-        }
-    }
-
-    const auto result = command.empty() ? delete_service() :
-        create_service(command, account, password);
+    const auto install = metadata_.configured.daemon.value();
+    const auto result = install ?
+        create_service(metadata_.configured.file, account, password) :
+        delete_service();
 
     switch (result)
     {
-        case ERROR_SUCCESS:
+        case daemon_success:
         {
-            logger(command.empty() ? BS_DAEMON_UNINSTALLED : BS_DAEMON_INSTALLED);
+            logger(install ? BS_DAEMON_INSTALLED : BS_DAEMON_UNINSTALLED);
             return true;
         }
-        case ERROR_ACCESS_DENIED:
+        case daemon_denied:
         {
             logger(BS_DAEMON_ELEVATION);
             return false;
         }
-        case ERROR_SERVICE_EXISTS:
+        case daemon_exists:
         {
             logger(BS_DAEMON_EXISTS);
             return false;
         }
-        case ERROR_SERVICE_DOES_NOT_EXIST:
+        case daemon_absent:
         {
             logger(BS_DAEMON_ABSENT);
             return false;
         }
-        case ERROR_INVALID_SERVICE_ACCOUNT:
+#if defined(HAVE_MSC)
+        case daemon_unknown_user:
         {
             logger(BS_DAEMON_UNKNOWN_USER);
             return false;
         }
+#endif
         default:
         {
-            logger(format(command.empty() ?
-                BS_DAEMON_UNINSTALL_FAILURE :
-                BS_DAEMON_INSTALL_FAILURE) % result);
+            logger(format(install ? BS_DAEMON_INSTALL_FAILURE :
+                BS_DAEMON_UNINSTALL_FAILURE) % result);
             return false;
         }
     }
@@ -449,6 +677,8 @@ bool executor::do_daemon()
     return false;
 #endif
 }
+
+BC_POP_WARNING()
 
 } // namespace server
 } // namespace libbitcoin
