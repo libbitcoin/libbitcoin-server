@@ -50,6 +50,11 @@ struct btcd_setup_fixture
     // notification. Returns the parsed json-rpc notification object.
     boost::json::value receive_notification();
 
+    // Synthesize a node chase event (e.g. a block organized/confirmed after
+    // a direct query_.set/push_confirmed) without a live p2p sync -- mirrors
+    // electrum_setup_fixture::notify.
+    void notify(node::chase event_, node::event_value value=0_u32);
+
 protected:
     configuration config_;
     test::store_t store_;

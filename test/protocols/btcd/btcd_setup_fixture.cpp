@@ -137,3 +137,8 @@ boost::json::value btcd_setup_fixture::receive_notification()
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     return test::parse_json(buffers_to_string(buffer.data()));
 }
+
+void btcd_setup_fixture::notify(node::chase event_, node::event_value value)
+{
+    server_.notify(system::error::success, event_, value);
+}

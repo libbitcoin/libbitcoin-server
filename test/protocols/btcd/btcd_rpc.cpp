@@ -58,6 +58,17 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__session__returns_id)
     BOOST_REQUIRE(response.at("result").as_object().contains("id"));
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet_magic)
+{
+    // btcd_setup_fixture configures system::chain::selection::mainnet, whose
+    // network_settings().identifier (p2p handshake magic) is 3652501241
+    // (0xd9b4bef9) -- the same value real btcd returns from getcurrentnet.
+    const auto response = rpc("getcurrentnet");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 3652501241);
+}
+
 // block subscription
 // ----------------------------------------------------------------------------
 
@@ -75,10 +86,324 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__returns_null_result)
     BOOST_REQUIRE(!has_error(response));
 }
 
-// Standard chain methods (getblockcount etc.) are inherited from
-// protocol_bitcoind_rpc and remain reachable via plain http post on the same
-// endpoint (see test/protocols/bitcoind), but are not yet bridged into this
-// ws dispatcher -- see the phase B TODO on protocol_btcd_rpc.hpp.
+// Standard chain methods (bridged, B0)
+// ----------------------------------------------------------------------------
+// Inherited from protocol_bitcoind_rpc, reachable both via plain http post on
+// the same endpoint (see test/protocols/bitcoind) and, bridged, over this ws
+// connection (dispatch_websocket falls back to dispatch_rpc on
+// unexpected_method from the btcd-only dispatcher).
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
+{
+    // btcd_ten_block_setup_fixture populates a ten-block confirmed store
+    // (genesis + 9), so top confirmed height is 9 (matches the equivalent
+    // bitcoind_rpc__getblockcount__ten_block_store__nine test).
+    const auto response = rpc("getblockcount");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+// Address/outpoint filtering (loadtxfilter, filteredblockconnected/
+// disconnected, rescanblocks) -- implemented, B2.
+// ----------------------------------------------------------------------------
+// blocks 1-9 (btcd_ten_block_setup_fixture) are real early mainnet blocks,
+// each a single p2pk coinbase with no inter-block spends (first real tx in
+// mainnet history isn't until block 170), so none of them can exercise
+// loadtxfilter's actual address matching -- block10() below (a controlled
+// p2kh output chained after block9) is built for that purpose.
+
+namespace {
+
+const short_hash& filter_test_hash() NOEXCEPT
+{
+    static const short_hash hash{ base16_array(
+        "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a") };
+    return hash;
+}
+
+const wallet::payment_address& filter_test_address() NOEXCEPT
+{
+    static const wallet::payment_address address{ filter_test_hash() };
+    return address;
+}
+
+const std::string& filter_test_address_text() NOEXCEPT
+{
+    static const std::string text{ filter_test_address().encoded() };
+    return text;
+}
+
+const chain::block& block10() NOEXCEPT
+{
+    static const chain::block instance
+    {
+        [&]() NOEXCEPT
+        {
+            using namespace wallet;
+            const chain::transaction coinbase
+            {
+                1,
+                chain::inputs{ chain::input
+                {
+                    chain::point{}, chain::script{}, 0xffffffff
+                } },
+                chain::outputs{ chain::output
+                {
+                    50'0000'0000, filter_test_address().output_script(
+                        payment_address::mainnet_p2kh,
+                        payment_address::mainnet_p2sh)
+                } },
+                0
+            };
+
+            // query.set()/push_confirmed() are raw persistence calls (no
+            // organize-time consensus validation), so an internally-
+            // consistent merkle root is not required for this fixture --
+            // chain::block::generate_merkle_root() is private besides.
+            return chain::block
+            {
+                chain::header
+                {
+                    1, test::block9_hash, null_hash,
+                    test::block9.header().timestamp() + 600,
+                    test::block9.header().bits(), 0
+                },
+                chain::transactions{ coinbase }
+            };
+        }()
+    };
+
+    return instance;
+}
+
+} // namespace
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_address__acknowledges)
+{
+    const auto response = rpc("loadtxfilter",
+        "[true,[\"" + filter_test_address_text() + "\"],[]]");
+    BOOST_REQUIRE(!has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__invalid_address__invalid_argument)
+{
+    const auto response = rpc("loadtxfilter",
+        R"([true,["not-an-address"],[]])");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_outpoint__acknowledges)
+{
+    const auto txid = encode_hash(
+        test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("loadtxfilter", "[true,[],[{\"hash\":\"" +
+        txid + "\",\"index\":0}]]");
+    BOOST_REQUIRE(!has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__malformed_outpoint__invalid_argument)
+{
+    const auto response = rpc("loadtxfilter", R"([true,[],[{"hash":"00"}]])");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
+{
+    // 'blockhashes' is one positional arg that is itself an array, so the
+    // wire params need double-wrapping: [[...]], not [...].
+    const auto response = rpc("rescanblocks", "[[\"" + encode_hash(null_hash) +
+        "\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__no_filter_match__empty_result)
+{
+    rpc("loadtxfilter", "[true,[\"" + filter_test_address_text() + "\"],[]]");
+
+    const auto response = rpc("rescanblocks",
+        "[[\"" + encode_hash(test::block1_hash) + "\"]]");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__address_match__returns_matched_tx)
+{
+    BOOST_REQUIRE(query_.set(block10(), database::context{ 0, 10, 0 }, false,
+        false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10().hash()),
+        true));
+
+    rpc("loadtxfilter", "[true,[\"" + filter_test_address_text() + "\"],[]]");
+
+    const auto response = rpc("rescanblocks",
+        "[[\"" + encode_hash(block10().hash()) + "\"]]");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+    BOOST_REQUIRE_EQUAL(result.front().at("hash").as_string(),
+        encode_hash(block10().hash()));
+    BOOST_REQUIRE_EQUAL(result.front().at("transactions").as_array().size(),
+        1u);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
+{
+    rpc("notifyblocks");
+    rpc("loadtxfilter", "[true,[\"" + filter_test_address_text() + "\"],[]]");
+
+    BOOST_REQUIRE(query_.set(block10(), database::context{ 0, 10, 0 }, false,
+        false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10().hash()),
+        true));
+
+    notify(node::chase::organized, { 10_u32 });
+
+    const auto blockconnected = receive_notification();
+    BOOST_REQUIRE_EQUAL(blockconnected.at("method").as_string(),
+        "blockconnected");
+
+    const auto filtered = receive_notification();
+    BOOST_REQUIRE_EQUAL(filtered.at("method").as_string(),
+        "filteredblockconnected");
+
+    const auto& params = filtered.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 3u);
+    BOOST_REQUIRE_EQUAL(params[0].as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(params[2].as_array().size(), 1u);
+}
+
+// Phase C: generic btcd-tooling compatibility (implemented, no lnd consumer)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__returns_number)
+{
+    const auto response = rpc("getdifficulty");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE(response.at("result").is_double());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__ten_block_store__nine)
+{
+    const auto response = rpc("getinfo");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("testnet").as_bool(), false);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getnettotals__returns_object)
+{
+    const auto response = rpc("getnettotals");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE(result.contains("totalbytesrecv"));
+    BOOST_REQUIRE(result.contains("totalbytessent"));
+    BOOST_REQUIRE(result.at("timemillis").as_int64() > 0);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getnetworkhashps__returns_number)
+{
+    const auto response = rpc("getnetworkhashps");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE(response.at("result").is_double());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__well_formed_hex)
+{
+    const auto txid = encode_hash(
+        test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("createrawtransaction",
+        "[[{\"txid\":\"" + txid + "\",\"vout\":0}],{\"" +
+        filter_test_address_text() + "\":0.01}]");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+
+    data_chunk data{};
+    BOOST_REQUIRE(decode_base16(data, response.at("result").as_string()));
+
+    const chain::transaction tx{ data, false };
+    BOOST_REQUIRE(tx.is_valid());
+    BOOST_REQUIRE_EQUAL(tx.inputs_ptr()->size(), 1u);
+    BOOST_REQUIRE_EQUAL(tx.outputs_ptr()->size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase)
+{
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto hex = encode_base16(coinbase.to_data(false));
+
+    const auto response = rpc("decoderawtransaction", "[\"" + hex + "\"]");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("txid").as_string(),
+        encode_hash(coinbase.hash(false)));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__invalid_argument)
+{
+    const auto response = rpc("decoderawtransaction", R"(["not-hex"])");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__decodescript__pubkey_script__typed_correctly)
+{
+    // block1's coinbase output is a p2pk script (early mainnet convention).
+    const auto& script =
+        test::block1.transactions_ptr()->front()->outputs_ptr()->front()->
+            script();
+    const auto hex = encode_base16(script.to_data(false));
+
+    const auto response = rpc("decodescript", "[\"" + hex + "\"]");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("type").as_string(), "pubkey");
+    BOOST_REQUIRE(result.contains("asm"));
+    BOOST_REQUIRE(result.contains("p2sh"));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
+{
+    const auto response = rpc("validateaddress",
+        "[\"" + filter_test_address_text() + "\"]");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("isvalid").as_bool(), true);
+    BOOST_REQUIRE_EQUAL(result.at("address").as_string(),
+        filter_test_address_text());
+    BOOST_REQUIRE_EQUAL(result.at("iswitness").as_bool(), false);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__validateaddress__invalid_address__isvalid_false)
+{
+    const auto response = rpc("validateaddress", R"(["not-an-address"])");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE_EQUAL(
+        response.at("result").as_object().at("isvalid").as_bool(), false);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__help__returns_method_list)
+{
+    const auto response = rpc("help");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE(response.at("result").as_string().find("getcurrentnet") !=
+        std::string::npos);
+}
 
 // not implemented stubs
 // ----------------------------------------------------------------------------
@@ -90,8 +415,6 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__not_implemented__error)
         { "stop",                      "[]" },
         { "notifynewtransactions",     "[false]" },
         { "stopnotifynewtransactions", "[]" },
-        { "loadtxfilter",              R"([false,[],[]])" },
-        { "rescanblocks",              "[[]]" },
         { "notifyreceived",            "[[]]" },
         { "stopnotifyreceived",        "[[]]" },
         { "notifyspent",               "[[]]" },
