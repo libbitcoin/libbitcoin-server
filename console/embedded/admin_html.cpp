@@ -23,31 +23,28 @@ namespace server {
 
 // Simple test html for embedded page, links in css and page icon.
 DEFINE_EMBEDDED_PAGE(admin_pages, char, html,
-R"(<html>
-<head>
-    <title>Libbitcoin Server</title>
-    <meta charset="utf-8">
-    <meta name="description" content="libbitcoin server admin site">
-    <link rel="stylesheet" href="style.css"/>
-    <script src="script.js" defer></script>
-</head>
-<body>
-    <h1>Admin Console</h1>
-    <div id="tabs">
-        <button id="show-log">Log</button>
-        <button id="show-events">Events</button>
-    </div>
-    <div id="log-tab">
-        <div id="levels"></div>
-        <pre id="log"></pre>
-    </div>
-    <div id="event-tab" hidden>
-        <div id="kinds"></div>
-        <pre id="events"></pre>
-    </div>
-    <div id="status">disconnected</div>
-</body>
-</html>)")
+R"DELIM(<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An embedded administration dashboard for Libbitcoin Server."
+    />
+    <meta name="theme-color" content="#272822" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <title>Libbitcoin Server Admin</title>
+    <script type="module" crossorigin src="/script.js"></script>
+    <link rel="stylesheet" crossorigin href="/style.css">
+  </head>
+  <body class="bg-background text-textPrimary h-full">
+    <div id="root" class="h-full"></div>
+  </body>
+</html>
+)DELIM"
+
+)
 
 } // namespace server
 } // namespace libbitcoin
