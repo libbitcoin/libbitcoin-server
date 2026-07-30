@@ -55,7 +55,9 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
     auto& btcd = config_.server.btcd;
 
     btcd.binds = { { BTCD_ENDPOINT } };
-    btcd.connections = 1;
+    // 2: the ws connection (websocket_/socket_) plus the plain http one
+    // (http_socket_) used by http_rpc().
+    btcd.connections = 2;
     if (!username.empty())
         btcd.credentials.emplace_back(std::string{ username } + ":" +
             std::string{ password } +
@@ -88,6 +90,8 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
     websocket_.text(true);
     websocket_.handshake("localhost", "/", wec);
     BOOST_REQUIRE_MESSAGE(!wec, wec.message());
+
+    http_socket_.connect(btcd.binds.back().to_endpoint());
 }
 
 btcd_setup_fixture::~btcd_setup_fixture()
@@ -103,6 +107,7 @@ btcd_setup_fixture::~btcd_setup_fixture()
         BOOST_WARN_MESSAGE(false, ec.message());
     }
 
+    http_socket_.close();
     server_.close();
     ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
@@ -136,6 +141,31 @@ boost::json::value btcd_setup_fixture::receive_notification()
     websocket_.read(buffer, ec);
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     return test::parse_json(buffers_to_string(buffer.data()));
+}
+
+boost::json::value btcd_setup_fixture::http_rpc(std::string_view method,
+    std::string_view params)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":)" << http_request_id_++
+         << R"(,"method":")" << method
+         << R"(","params":)" << params << "}";
+
+    http::request<http::string_body> request{ http::verb::post, "/",
+        network::http::version_1_1 };
+    request.set(http::field::host, "localhost");
+    request.set(http::field::content_type, "application/json");
+    request.body() = body.str();
+    request.prepare_payload();
+    request.keep_alive(true);
+    http::write(http_socket_, request);
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(http_socket_, buffer, response, ec);
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    return test::parse_json(response.body());
 }
 
 void btcd_setup_fixture::notify(node::chase event_, node::event_value value)

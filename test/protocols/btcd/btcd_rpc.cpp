@@ -69,6 +69,22 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet_magic)
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 3652501241);
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__btcd_only_method__reachable_over_http_post)
+{
+    // A real lnd integration test found that btcwallet's chain.RPCClient
+    // issues capability-check calls (getblockchaininfo, then getinfo) over
+    // plain http post immediately on connect, before any subscription
+    // traffic that requires ws. getinfo is btcd-only (not in the inherited
+    // rpc_dispatcher_), so this exercises protocol_bitcoind_rpc::
+    // dispatch_extension (protocol_btcd_rpc's override tries
+    // btcd_dispatcher_) -- the post-side mirror of dispatch_websocket's
+    // existing ws-side fallback to the inherited chain dispatcher.
+    const auto response = http_rpc("getinfo");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+    BOOST_REQUIRE(response.at("result").as_object().contains("blocks"));
+}
+
 // block subscription
 // ----------------------------------------------------------------------------
 

@@ -664,6 +664,26 @@ def test_getinfo_returns_object(conn):
     assert result.get("testnet") is False
 
 
+def test_btcd_only_method_reachable_over_http_post(btcd_config):
+    """A real lnd integration test found that btcwallet's chain.RPCClient
+    issues capability-check calls (getblockchaininfo, then getinfo) over
+    plain http post immediately on connect, before any subscription traffic
+    that requires ws. getblockchaininfo (inherited from protocol_bitcoind_rpc)
+    already worked over post; getinfo (a btcd-only method, previously only
+    reachable via the ws dispatcher) did not -- protocol_bitcoind_rpc::
+    handle_receive_post had no fallback to a derived class's own dispatcher,
+    and unconditionally dropped the connection on any unrecognized method,
+    so lnd's client retried forever without ever succeeding. Fixed via
+    protocol_bitcoind_rpc::dispatch_extension (an override point,
+    protocol_btcd_rpc's implementation tries btcd_dispatcher_) -- this is
+    the post-side mirror of dispatch_websocket's existing ws-side fallback
+    to the inherited chain dispatcher."""
+    data = http_rpc(btcd_config, "getinfo")
+    assert data.get("error") is None
+    assert isinstance(data.get("result"), dict)
+    assert isinstance(data["result"].get("blocks"), int)
+
+
 def test_getnettotals_returns_object(conn):
     result = conn.send_rpc("getnettotals").get("result")
     assert isinstance(result, dict)

@@ -46,6 +46,13 @@ struct btcd_setup_fixture
     boost::json::value rpc(std::string_view method,
         std::string_view params = "[]");
 
+    // JSON-RPC 2.0 over plain HTTP POST to "/" (a separate connection from
+    // the ws one rpc() uses) -- same transport the inherited chain methods
+    // use, and the one a real btcd/lnd client's capability-check calls
+    // (e.g. getinfo) go over before any ws-only subscription traffic.
+    boost::json::value http_rpc(std::string_view method,
+        std::string_view params = "[]");
+
     // Read one further (unprompted) server push, e.g. a blockconnected
     // notification. Returns the parsed json-rpc notification object.
     boost::json::value receive_notification();
@@ -69,7 +76,9 @@ private:
     boost::asio::io_context io_{};
     tcp_stream socket_{ io_.get_executor() };
     websocket_stream websocket_{ socket_ };
+    tcp_stream http_socket_{ io_.get_executor() };
     int request_id_{};
+    int http_request_id_{};
 };
 
 struct btcd_ten_block_setup_fixture
