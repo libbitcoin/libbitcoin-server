@@ -162,15 +162,17 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
         stop(code);
 }
 
-template <typename Object, typename ...Args>
-std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
+// Dispatch a chain-rpc message with no post-http context (websocket). Mirrors
+// handle_receive_post's id/version caching (set_rpc_request) and dispatcher
+// notify, without the post-specific host/origin/body checks -- those are
+// meaningless for a ws frame (channel_btcd::permitted() and the ws upgrade
+// itself already gate access) and are handled by the caller.
+code protocol_bitcoind_rpc::dispatch_rpc(const request_t& message) NOEXCEPT
 {
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    BC_ASSERT(writer);
-    return out;
+    BC_ASSERT(stranded());
+    id_ = message.id;
+    version_ = message.jsonrpc;
+    return rpc_dispatcher_.notify(message);
 }
 
 // Handlers.
@@ -728,6 +730,27 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model,
     BC_ASSERT(stranded());
     using namespace http;
     static const auto json = from_media_type(media_type::application_json);
+
+    // Websocket frames carry no cached post request (dispatch_rpc does not
+    // set one, unlike handle_receive_post) and have no per-message headers
+    // to echo (add_common_headers/add_access_control_headers is a post-only
+    // concept) -- send a minimal response, matching protocol_btcd_rpc's own
+    // ws senders.
+    if (websocket())
+    {
+        id_.reset();
+        version_ = version::undefined;
+        http::response message{ status::ok, 11 };
+        message.set(field::content_type, json);
+        message.body() = rpc::response
+        {
+            { .size_hint = size_hint }, std::move(model),
+        };
+        message.prepare_payload();
+        SEND(std::move(message), handle_complete, _1, error::success);
+        return;
+    }
+
     const auto request = reset_rpc_request();
     http::response message{ status::ok, request->version() };
     add_common_headers(message, *request);

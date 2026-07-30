@@ -57,7 +57,21 @@ struct btcd_methods
         method<"stopnotifyreceived", value_t>{ "addresses" },
         method<"notifyspent", value_t>{ "outpoints" },
         method<"stopnotifyspent", value_t>{ "outpoints" },
-        method<"rescan", string_t, value_t, value_t, optional<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
+        method<"rescan", string_t, value_t, value_t, optional<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" },
+
+        /// Admin (network magic, checked once by btcwallet/lnd at connect).
+        method<"getcurrentnet">{},
+
+        /// Phase C: generic btcd-tooling compatibility (no lnd consumer).
+        method<"getdifficulty">{},
+        method<"getinfo">{},
+        method<"getnettotals">{},
+        method<"getnetworkhashps", optional<120_u32>, optional<-1_i32>>{ "blocks", "height" },
+        method<"createrawtransaction", array_t, object_t, optional<0_u32>>{ "inputs", "outputs", "locktime" },
+        method<"decoderawtransaction", string_t>{ "hexstring" },
+        method<"decodescript", string_t>{ "hex" },
+        method<"validateaddress", string_t>{ "address" },
+        method<"help", optional<""_t>>{ "command" }
     };
 
     template <typename... Args>
@@ -81,6 +95,16 @@ struct btcd_methods
     using notify_spent = at<11>;
     using stop_notify_spent = at<12>;
     using rescan = at<13>;
+    using get_current_net = at<14>;
+    using get_difficulty = at<15>;
+    using get_info = at<16>;
+    using get_net_totals = at<17>;
+    using get_network_hash_ps = at<18>;
+    using create_raw_transaction = at<19>;
+    using decode_raw_transaction = at<20>;
+    using decode_script = at<21>;
+    using validate_address = at<22>;
+    using help = at<23>;
 };
 
 } // namespace interface

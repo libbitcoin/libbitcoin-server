@@ -21,6 +21,8 @@
 
 #include <atomic>
 #include <memory>
+#include <set>
+#include <unordered_set>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -31,9 +33,12 @@ namespace server {
 
 /// btcd-compatible json-rpc-v1 over websocket. Inherits the standard chain
 /// handlers (getblockcount, getblock, etc.) from protocol_bitcoind_rpc, which
-/// remain reachable via the inherited http post path (unchanged). Adds the
-/// btcd-only extension methods (session/notification/filter/admin) over
-/// websocket via a second dispatcher (dispatch_websocket, below).
+/// remain reachable both via the inherited http post path (unchanged) and,
+/// bridged, over this class's ws dispatcher (dispatch_websocket falls back to
+/// protocol_bitcoind_rpc::dispatch_rpc when the btcd-only dispatcher reports
+/// unexpected_method). Adds the btcd-only extension methods (session/
+/// notification/filter/admin) over websocket via a second dispatcher
+/// (dispatch_websocket, below).
 ///
 /// Attaches immediately on connect (session_btcd = session_server<
 /// protocol_btcd_rpc>, no separate handshake protocol/stage) -- matching real
@@ -51,10 +56,6 @@ namespace server {
 /// http client (no upgrade round-trip to mask the gap, unlike ws) could land
 /// in before this class ever subscribed its handlers.
 ///
-/// TODO (phase B): bridge the standard chain handlers into the ws dispatcher
-/// too, so a single ws connection can also reach them (real btcd/btcwallet
-/// clients expect this); requires reconciling protocol_bitcoind_rpc's
-/// post-oriented private send path with this class's ws-oriented senders.
 class BCS_API protocol_btcd_rpc
   : public server::protocol_bitcoind_rpc,
     protected network::tracker<protocol_btcd_rpc>
@@ -73,7 +74,13 @@ public:
       : server::protocol_bitcoind_rpc(session, channel, options),
         network::tracker<protocol_btcd_rpc>(session->log),
         options_(options),
-        btcd_channel_(std::dynamic_pointer_cast<channel_btcd>(channel))
+        btcd_channel_(std::dynamic_pointer_cast<channel_btcd>(channel)),
+        p2kh_(session->system_settings().forks.difficult ?
+            system::wallet::payment_address::mainnet_p2kh :
+            system::wallet::payment_address::testnet_p2kh),
+        p2sh_(session->system_settings().forks.difficult ?
+            system::wallet::payment_address::mainnet_p2sh :
+            system::wallet::payment_address::testnet_p2sh)
     {
     }
 
@@ -81,8 +88,10 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    /// Dispatch btcd ws frames (standard chain requests dispatch normally
-    /// over http post via the inherited handle_receive_post).
+    /// Dispatch btcd ws frames: tries the btcd-only dispatcher first, then
+    /// falls back to the inherited chain dispatcher (dispatch_rpc) so
+    /// standard methods (getblockcount etc.) are also reachable over ws, not
+    /// only via the inherited handle_receive_post's http post path.
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
 
@@ -104,6 +113,46 @@ protected:
         const std::string& username, const std::string& password) NOEXCEPT;
     bool handle_session(const code& ec, btcd_interface::session) NOEXCEPT;
 
+    /// Handler (network magic; btcwallet/lnd check this once at connect to
+    /// confirm they're talking to the expected network).
+    bool handle_get_current_net(const code& ec,
+        btcd_interface::get_current_net) NOEXCEPT;
+
+    /// Handlers (Phase C: generic btcd-tooling compatibility, no lnd
+    /// consumer -- see docs/btcd-endpoint.md).
+    bool handle_get_difficulty(const code& ec,
+        btcd_interface::get_difficulty) NOEXCEPT;
+    bool handle_get_info(const code& ec, btcd_interface::get_info) NOEXCEPT;
+    bool handle_get_net_totals(const code& ec,
+        btcd_interface::get_net_totals) NOEXCEPT;
+    bool handle_get_network_hash_ps(const code& ec,
+        btcd_interface::get_network_hash_ps, uint32_t blocks,
+        int32_t height) NOEXCEPT;
+    bool handle_create_raw_transaction(const code& ec,
+        btcd_interface::create_raw_transaction,
+        const network::rpc::array_t& inputs,
+        const network::rpc::object_t& outputs, uint32_t locktime) NOEXCEPT;
+    bool handle_decode_raw_transaction(const code& ec,
+        btcd_interface::decode_raw_transaction,
+        const std::string& hexstring) NOEXCEPT;
+    bool handle_decode_script(const code& ec,
+        btcd_interface::decode_script, const std::string& hex) NOEXCEPT;
+    bool handle_validate_address(const code& ec,
+        btcd_interface::validate_address,
+        const std::string& address) NOEXCEPT;
+    bool handle_help(const code& ec, btcd_interface::help,
+        const std::string& command) NOEXCEPT;
+
+    /// Address string (base58 p2kh/p2sh or bech32/bech32m p2wpkh/p2wsh/p2tr)
+    /// to output script, for createrawtransaction. A separate, standalone
+    /// helper from parse_filter_addresses (which classifies into this
+    /// class's watch-list hash buckets, not a reusable script) -- kept
+    /// duplicated rather than forcing a shared abstraction onto already-
+    /// tested filter-parsing code for a small amount of address-string
+    /// parsing logic.
+    code parse_output_script(const std::string& text,
+        system::chain::script& out) NOEXCEPT;
+
     /// Handlers (block subscription).
     bool handle_notify_blocks(const code& ec,
         btcd_interface::notify_blocks) NOEXCEPT;
@@ -116,7 +165,15 @@ protected:
     bool handle_stop_notify_new_transactions(const code& ec,
         btcd_interface::stop_notify_new_transactions) NOEXCEPT;
 
-    /// Handlers (address/outpoint filtering, not_implemented pending phase B).
+    /// Handlers (address/outpoint filtering). loadtxfilter never itself
+    /// triggers notifications (matching real btcd) -- notifyblocks remains
+    /// the only thing that arms delivery; once armed, do_block_connected/
+    /// do_block_disconnected send filteredblockconnected/disconnected
+    /// alongside the existing unfiltered blockconnected/disconnected,
+    /// unconditionally (an empty/never-loaded filter just yields an empty
+    /// subscribedtxs array, matching real btcd's own behavior). rescanblocks
+    /// replays the same match logic against explicitly named historical
+    /// blocks using the already-loaded filter.
     bool handle_load_tx_filter(const code& ec,
         btcd_interface::load_tx_filter, bool reload,
         const network::rpc::value_t& addresses,
@@ -124,6 +181,24 @@ protected:
     bool handle_rescan_blocks(const code& ec,
         btcd_interface::rescan_blocks,
         const network::rpc::value_t& blockhashes) NOEXCEPT;
+
+    /// Filter parsing (loadtxfilter). Merges into the existing filter unless
+    /// reload clears it first. Returns error::invalid_argument if any address
+    /// fails to parse as either a base58 (p2kh/p2sh) or bech32/bech32m
+    /// (p2wpkh/p2wsh/p2tr) address, or any outpoint is malformed.
+    code parse_filter_addresses(bool reload,
+        const network::rpc::value_t& addresses) NOEXCEPT;
+    code parse_filter_outpoints(bool reload,
+        const network::rpc::value_t& outpoints) NOEXCEPT;
+
+    /// Match a block's transactions against the loaded filter: an output
+    /// paying a watched address, or an input spending a watched outpoint.
+    /// A matched address-output's own outpoint is added to the watched set
+    /// (auto-tracking a future spend of it), matching real btcd's
+    /// wsClientFilter behavior. Returns the hex-encoded (witness) matched
+    /// transactions, in block order; empty if none matched.
+    network::rpc::array_t match_filtered_transactions(
+        const system::chain::block& block) NOEXCEPT;
 
     /// Handler (admin, permanently not_implemented).
     bool handle_stop(const code& ec, btcd_interface::stop) NOEXCEPT;
@@ -182,11 +257,27 @@ private:
     std::atomic_bool subscribed_blocks_{};
     const options_t& options_;
     const channel_btcd::ptr btcd_channel_;
+    const uint8_t p2kh_;
+    const uint8_t p2sh_;
 
     // These are protected by strand.
     btcd_dispatcher btcd_dispatcher_{};
     network::rpc::version btcd_version_{};
     network::rpc::id_option btcd_id_{};
+
+    // Tx filter (loadtxfilter), protected by strand -- populated by
+    // handle_load_tx_filter, read/mutated by match_filtered_transactions
+    // (do_block_connected/do_block_disconnected, handle_rescan_blocks), all
+    // of which run stranded (ws dispatch and POST_BTCD-posted chase handlers
+    // alike). p2kh_/p2wpkh_ share one hash set (both 20-byte hash160 payloads
+    // but under different script templates, kept separate so a p2kh watch
+    // never matches a p2wpkh output or vice versa); p2sh_/p2wsh_ likewise.
+    std::unordered_set<system::short_hash> pay_key_hashes_{};
+    std::unordered_set<system::short_hash> pay_script_hashes_{};
+    std::set<system::data_chunk> pay_witness_key_hash_programs_{};
+    std::set<system::data_chunk> pay_witness_script_hash_programs_{};
+    std::set<system::data_chunk> pay_witness_taproot_programs_{};
+    std::unordered_set<system::chain::point> filter_outpoints_{};
 };
 
 } // namespace server

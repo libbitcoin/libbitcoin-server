@@ -58,6 +58,16 @@ void protocol_btcd_rpc::start() NOEXCEPT
 
     SUBSCRIBE_BTCD(handle_authenticate, _1, _2, _3, _4);
     SUBSCRIBE_BTCD(handle_session, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_current_net, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_difficulty, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_info, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_net_totals, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_network_hash_ps, _1, _2, _3, _4);
+    SUBSCRIBE_BTCD(handle_create_raw_transaction, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BTCD(handle_decode_raw_transaction, _1, _2, _3);
+    SUBSCRIBE_BTCD(handle_decode_script, _1, _2, _3);
+    SUBSCRIBE_BTCD(handle_validate_address, _1, _2, _3);
+    SUBSCRIBE_BTCD(handle_help, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_notify_blocks, _1, _2);
     SUBSCRIBE_BTCD(handle_stop_notify_blocks, _1, _2);
     SUBSCRIBE_BTCD(handle_notify_new_transactions, _1, _2, _3);
@@ -86,13 +96,12 @@ void protocol_btcd_rpc::stopping(const code& ec) NOEXCEPT
 // Websocket dispatch.
 // ----------------------------------------------------------------------------
 // btcd extension methods (session/notify/filter/admin, including
-// authenticate) arrive as ws frames here. Standard chain methods
-// (getblockcount etc.) remain reachable via plain http post on the same
-// endpoint, unchanged, via the inherited handle_receive_post. They are NOT
-// yet bridged into this ws dispatcher: that requires reconciling
-// protocol_bitcoind_rpc's post-oriented private send path (which caches the
-// original http::request for header derivation) with this class's
-// ws-oriented senders. Tracked for phase B.
+// authenticate) arrive as ws frames here, and are tried first. Standard
+// chain methods (getblockcount etc.), inherited from protocol_bitcoind_rpc,
+// remain reachable via plain http post on the same endpoint (unchanged, via
+// the inherited handle_receive_post) and are also bridged into this ws
+// dispatcher via dispatch_rpc, once the btcd-only dispatcher reports
+// unexpected_method.
 //
 // A credential may be scoped to a subset of methods (see config::credential
 // / channel_btcd::permitted()), so each call is checked against that scope --
@@ -127,7 +136,15 @@ void protocol_btcd_rpc::dispatch_websocket(
         return;
     }
 
-    const auto code = btcd_dispatcher_.notify(message);
+    // Try the btcd-only extension methods first, then fall back to the
+    // standard chain handlers inherited from protocol_bitcoind_rpc (dispatch_
+    // rpc), so a single ws connection can reach both. dispatcher::notify only
+    // returns unexpected_method for a method-name lookup miss (never for an
+    // argument mismatch), so this fallback cannot mask a real handler error.
+    auto code = btcd_dispatcher_.notify(message);
+    if (code == network::error::unexpected_method)
+        code = dispatch_rpc(message);
+
     if (!code)
         return;
 
@@ -195,6 +212,22 @@ bool protocol_btcd_rpc::handle_session(const code& ec,
     return true;
 }
 
+bool protocol_btcd_rpc::handle_get_current_net(const code& ec,
+    btcd_interface::get_current_net) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // network_settings().identifier is the p2p handshake magic (e.g.
+    // 3652501241 / 0xd9b4bef9 for mainnet) -- the same value real btcd
+    // returns from getcurrentnet, verified once by btcwallet/lnd at connect
+    // to confirm they're talking to the expected network.
+    send_btcd_result(
+        value_t{ possible_sign_cast<int64_t>(network_settings().identifier) },
+        20);
+    return true;
+}
+
 // Handlers (block subscription).
 // ----------------------------------------------------------------------------
 
@@ -239,25 +272,8 @@ bool protocol_btcd_rpc::handle_stop_notify_new_transactions(const code& ec,
     return true;
 }
 
-// Handlers (address/outpoint filtering, not_implemented pending phase B).
+// Handlers (address/outpoint filtering): see protocol_btcd_rpc_filter.cpp.
 // ----------------------------------------------------------------------------
-
-bool protocol_btcd_rpc::handle_load_tx_filter(const code& ec,
-    btcd_interface::load_tx_filter, bool, const value_t&,
-    const value_t&) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_btcd_error(error::not_implemented);
-    return true;
-}
-
-bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
-    btcd_interface::rescan_blocks, const value_t&) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_btcd_error(error::not_implemented);
-    return true;
-}
 
 // Handler (admin, permanently not_implemented).
 // ----------------------------------------------------------------------------
@@ -380,6 +396,28 @@ void protocol_btcd_rpc::do_block_connected(node::header_t link_value) NOEXCEPT
         header->timestamp()) });
 
     send_btcd_notification("blockconnected", std::move(params), 256);
+
+    // btcd 'filteredblockconnected': [height, header, subscribedtxs]
+    // (matching btcjson.FilteredBlockConnectedNtfn). Sent unconditionally
+    // alongside blockconnected, same as real btcd (verified against
+    // rpcwebsocket.go's notificationHandler: both notifyBlockConnected and
+    // notifyFilteredBlockConnected fire for every notifyblocks client
+    // regardless of whether a filter was ever loaded) -- an empty/never-
+    // loaded filter just yields an empty subscribedtxs array.
+    constexpr auto witness = true;
+    const auto block = query.get_block(link, witness);
+    if (!block)
+        return;
+
+    array_t filtered_params{};
+    filtered_params.emplace_back(value_t{
+        possible_sign_cast<int64_t>(height) });
+    filtered_params.emplace_back(value_t{
+        to_text(*header, chain::header::serialized_size()) });
+    filtered_params.emplace_back(value_t{ match_filtered_transactions(*block) });
+
+    send_btcd_notification("filteredblockconnected",
+        std::move(filtered_params), 256);
 }
 
 void protocol_btcd_rpc::do_block_disconnected(
@@ -408,6 +446,17 @@ void protocol_btcd_rpc::do_block_disconnected(
         header->timestamp()) });
 
     send_btcd_notification("blockdisconnected", std::move(params), 256);
+
+    // btcd 'filteredblockdisconnected': [height, header] (no subscribedtxs
+    // field -- matching btcjson.FilteredBlockDisconnectedNtfn).
+    array_t filtered_params{};
+    filtered_params.emplace_back(value_t{
+        possible_sign_cast<int64_t>(height) });
+    filtered_params.emplace_back(value_t{
+        to_text(*header, chain::header::serialized_size()) });
+
+    send_btcd_notification("filteredblockdisconnected",
+        std::move(filtered_params), 256);
 }
 
 // Senders.

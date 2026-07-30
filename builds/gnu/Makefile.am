@@ -65,6 +65,8 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc_json.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_rpc.cpp \
+    ${srcdir}/../../src/protocols/btcd/protocol_btcd_rpc_filter.cpp \
+    ${srcdir}/../../src/protocols/btcd/protocol_btcd_rpc_utility.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_addresses.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_fees.cpp \
