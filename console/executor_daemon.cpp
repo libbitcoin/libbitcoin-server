@@ -230,7 +230,8 @@ DWORD executor::grant_logon_right(const std::string& account) NOEXCEPT
 
 // Returns a win32 error code, where zero is success.
 uint32_t executor::create_service(const std::filesystem::path& config,
-    const std::string& account, const std::string& password) NOEXCEPT
+    const std::filesystem::path&, const std::string& account,
+    const std::string& password) NOEXCEPT
 {
     using namespace system;
     const auto command = command_line(config);
@@ -328,8 +329,18 @@ uint32_t executor::delete_service() NOEXCEPT
 
 #if defined(HAVE_POSIX)
 
-// The drain exceeds the default stop timeout on both platforms.
+// The drain exceeds the default stop timeout on both platforms, and can run
+// to minutes, depending on dirty page volume and disk speed.
 constexpr auto stop_timeout_seconds = 600;
+
+// Console redirection file, within the configured log directory. Distinct
+// from the rotated log files, which the node writes and buffers itself.
+constexpr auto console_file = "console.log";
+
+// launchd clamps a positive ExitTimeOut to 60 seconds (600 reports as 60), so
+// this is the effective drain ceiling on osx. Do not "fix" this with zero,
+// which launchd documents as infinite but which kills without draining.
+constexpr auto exit_timeout_seconds = stop_timeout_seconds;
 
 #if defined(HAVE_LINUX)
 
@@ -349,8 +360,9 @@ static std::filesystem::path enabled_path(const std::string& name) NOEXCEPT
 // is not configured, as a store that fails to open does so deterministically,
 // and retrying only obscures the fault (as does the manager on windows).
 static std::string unit_text(const std::string& command,
-    const std::string& account) NOEXCEPT
+    const std::string&, const std::string& account) NOEXCEPT
 {
+    // Console output is captured to the journal, so it is not redirected.
     return
         "[Unit]\n"
         "Description=" BS_SERVICE_DESCRIPTION "\n"
@@ -377,8 +389,10 @@ static std::filesystem::path unit_path(const std::string&) NOEXCEPT
 // launchd has no readiness protocol, so the job is simply run at load.
 // KeepAlive is not configured, as it restarts upon any exit, and a store that
 // fails to open does so deterministically (as with the other two managers).
+// launchd discards console output, and the log file is buffered, so redirect
+// it to obtain the live view that the journal provides on linux.
 static std::string unit_text(const std::string& command,
-    const std::string& account) NOEXCEPT
+    const std::string& console, const std::string& account) NOEXCEPT
 {
     return
         R"(<?xml version="1.0" encoding="UTF-8"?>)" "\n"
@@ -392,9 +406,13 @@ static std::string unit_text(const std::string& command,
         "    </array>\n" +
         (account.empty() ? "" :
             "    <key>UserName</key><string>" + account + "</string>\n") +
+        (console.empty() ? "" :
+            "    <key>StandardOutPath</key><string>" + console + "</string>\n"
+            "    <key>StandardErrorPath</key><string>" + console +
+                "</string>\n") +
         "    <key>RunAtLoad</key><true/>\n"
         "    <key>ExitTimeOut</key><integer>" +
-            std::to_string(stop_timeout_seconds) + "</integer>\n"
+            std::to_string(exit_timeout_seconds) + "</integer>\n"
         "</dict>\n"
         "</plist>\n";
 }
@@ -403,11 +421,16 @@ static std::string unit_text(const std::string& command,
 
 // Returns an errno value, where zero is success.
 uint32_t executor::create_service(const std::filesystem::path& config,
-    const std::string& account, const std::string&) NOEXCEPT
+    const std::filesystem::path& logs, const std::string& account,
+    const std::string&) NOEXCEPT
 {
     const auto command = command_line(config);
     if (command.empty())
         return EINVAL;
+
+    // Unconfigured logging implies no console redirection (linux ignores it).
+    const auto console = logs.empty() ? std::string{} :
+        system::from_path(system::qualified_path(logs) / console_file);
 
     code ec{};
     const auto unit = unit_path(name_);
@@ -422,7 +445,7 @@ uint32_t executor::create_service(const std::filesystem::path& config,
     if (!file.good())
         return EACCES;
 
-    file << unit_text(command, account);
+    file << unit_text(command, console, account);
     file.flush();
     if (!file.good())
         return EIO;
@@ -635,7 +658,8 @@ bool executor::do_daemon()
 
     const auto install = metadata_.configured.daemon.value();
     const auto result = install ?
-        create_service(metadata_.configured.file, account, password) :
+        create_service(metadata_.configured.file, metadata_.configured.log.path,
+            account, password) :
         delete_service();
 
     switch (result)

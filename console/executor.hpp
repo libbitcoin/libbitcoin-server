@@ -190,7 +190,8 @@ private:
     // Service installation, platform-specific. Returns a system error code
     // (win32 or errno), where zero is success.
     static uint32_t create_service(const std::filesystem::path& config,
-        const std::string& account, const std::string& password) NOEXCEPT;
+        const std::filesystem::path& logs, const std::string& account,
+        const std::string& password) NOEXCEPT;
     static uint32_t delete_service() NOEXCEPT;
 
     static void initialize_stop();
