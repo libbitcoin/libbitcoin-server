@@ -124,6 +124,21 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     BOOST_REQUIRE(result.at("initialblockdownload").is_bool());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__present)
+{
+    // lnd's chainreg.backendSupportsTaproot (chainreg/taproot_check.go)
+    // requires this exact key to treat any btcd/bitcoind backend as usable
+    // -- it checks only for the "taproot" key's presence, not its field
+    // values (verified against lnd's own source, real lnd integration
+    // test, 2026-07-30). Real btcd's own getblockchaininfo response
+    // includes this too (per lnd's own source comment), so this is shared,
+    // correct behavior for both endpoints, not a btcd-only workaround.
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
+    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unspent_coinbase__output)
 {
     const auto txid = test::block1.transactions_ptr()->front()->hash(false);

@@ -316,7 +316,34 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "verificationprogress", progress },
         { "initialblockdownload", !is_current_chain(true) },
         { "pruned", false },
-        { "warnings", std::string{} }
+        { "warnings", std::string{} },
+
+        // Taproot is a permanent, long-since-locked-in consensus rule (no
+        // live BIP9 signaling to track), so this is reported unconditionally
+        // rather than computed -- present specifically because real
+        // clients check for it: lnd's chainreg.backendSupportsTaproot
+        // (chainreg/taproot_check.go) requires a "taproot" entry here
+        // (mainnet activation height 709632, BIP9 bit 2) before it will
+        // treat *any* btcd/bitcoind backend as usable, checking only for
+        // this key's presence, not its field values. Confirmed via lnd's
+        // own source that "bitcoind versions before 0.19 and also btcd use
+        // the SoftForks fields" -- this is the real btcd-compatible path,
+        // not a workaround; getdeploymentinfo (lnd's fallback if this is
+        // absent) has no equivalent in real btcd at all.
+        { "bip9_softforks", object_t
+            {
+                { "taproot", object_t
+                    {
+                        { "status", std::string{ "active" } },
+                        { "bit", 2 },
+                        { "startTime", -1 },
+                        { "timeout", -1 },
+                        { "since", 709632 },
+                        { "min_activation_height", 0 }
+                    }
+                }
+            }
+        }
     }, 512);
     return true;
 }
