@@ -157,9 +157,32 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
         return;
     }
 
-    // Dispatch the request to subscribers.
-    if (const auto code = rpc_dispatcher_.notify(message))
+    // Dispatch the request to subscribers, falling back to a derived
+    // class's own extension dispatcher (e.g. protocol_btcd_rpc's btcd-only
+    // methods) if this dispatcher doesn't recognize the method -- the post-
+    // side mirror of dispatch_websocket's ws-side fallback to dispatch_rpc.
+    auto code = rpc_dispatcher_.notify(message);
+    if (code == network::error::unexpected_method)
+        code = dispatch_extension(message);
+
+    if (!code)
+        return;
+
+    // Unknown to every dispatcher tried: reply with a json-rpc error and
+    // keep the connection alive for a subsequent request on the same
+    // keep-alive connection (matches dispatch_websocket's handling of the
+    // same case, and ordinary http semantics -- an error response body is
+    // not itself a reason to drop the TCP connection).
+    if (code == network::error::unexpected_method)
+        send_error(code);
+    else
         stop(code);
+}
+
+// Default: no extension dispatcher (see protocol_btcd_rpc for an override).
+code protocol_bitcoind_rpc::dispatch_extension(const request_t&) NOEXCEPT
+{
+    return network::error::unexpected_method;
 }
 
 // Dispatch a chain-rpc message with no post-http context (websocket). Mirrors

@@ -95,6 +95,16 @@ protected:
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
 
+    /// Post-side mirror of the above: lets handle_receive_post reach
+    /// btcd-only methods (e.g. getinfo) over plain http post too. Real
+    /// clients are not guaranteed to call these exclusively over an
+    /// upgraded ws connection -- confirmed via a live lnd integration test,
+    /// whose chain.RPCClient issues getblockchaininfo/getinfo as post-based
+    /// capability checks immediately on connect, before any subscription
+    /// traffic that actually requires ws (notifyblocks/loadtxfilter/etc).
+    code dispatch_extension(
+        const network::rpc::request_t& message) NOEXCEPT override;
+
     /// Handlers (session/handshake). 'authenticate' is a real, ordinary
     /// extension method here (not a separate handshake stage, see class
     /// comment): it hashes the given credential the same way

@@ -157,6 +157,20 @@ void protocol_btcd_rpc::dispatch_websocket(
         stop(code);
 }
 
+// Post-side mirror of the above: reached from the inherited
+// handle_receive_post when rpc_dispatcher_ reports unexpected_method, so
+// btcd-only methods are also callable over plain http post (see class
+// comment -- real lnd/btcwallet issue capability-check calls, e.g.
+// getinfo, this way before any ws-only subscription traffic).
+code protocol_btcd_rpc::dispatch_extension(
+    const network::rpc::request_t& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    btcd_version_ = message.jsonrpc;
+    btcd_id_ = message.id;
+    return btcd_dispatcher_.notify(message);
+}
+
 // Handlers (session/handshake).
 // ----------------------------------------------------------------------------
 

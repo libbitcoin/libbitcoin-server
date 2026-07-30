@@ -69,6 +69,15 @@ protected:
     /// the standard chain handlers (getblockcount etc.) over websocket.
     code dispatch_rpc(const network::rpc::request_t& message) NOEXCEPT;
 
+    /// Extension point for a derived class's own additional dispatcher (e.g.
+    /// protocol_btcd_rpc's btcd_dispatcher_), tried by handle_receive_post
+    /// when rpc_dispatcher_ reports unexpected_method -- the post-side
+    /// mirror of dispatch_rpc above (ws falling back to the chain
+    /// dispatcher). Default: no extension dispatcher, always
+    /// unexpected_method.
+    virtual code dispatch_extension(
+        const network::rpc::request_t& message) NOEXCEPT;
+
     /// Handlers.
     bool handle_get_best_block_hash(const code& ec,
         rpc_interface::get_best_block_hash) NOEXCEPT;
