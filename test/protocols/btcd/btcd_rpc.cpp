@@ -35,6 +35,13 @@ bool has_result(const boost::json::value& response) NOEXCEPT
         !response.at("result").is_null();
 }
 
+std::string as_text(const boost::json::value& value) NOEXCEPT
+{
+    return { value.as_string().c_str() };
+}
+
+const auto block9 = encode_hash(test::block9_hash);
+
 } // namespace
 
 BOOST_FIXTURE_TEST_SUITE(btcd_rpc_tests, btcd_ten_block_setup_fixture)
@@ -67,6 +74,20 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet_magic)
     BOOST_REQUIRE(!has_error(response));
     BOOST_REQUIRE(has_result(response));
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 3652501241);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
+{
+    // btcd extension distinct from getbestblockhash: {hash, height} together.
+    // Required by btcwallet's own rpcclient connection (separate from lnd's
+    // own chain.RPCClient) during wallet chain-sync bootstrap.
+    const auto response = rpc("getbestblock");
+    BOOST_REQUIRE(!has_error(response));
+    BOOST_REQUIRE(has_result(response));
+
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__btcd_only_method__reachable_over_http_post)

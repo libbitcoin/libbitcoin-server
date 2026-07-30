@@ -59,6 +59,7 @@ void protocol_btcd_rpc::start() NOEXCEPT
     SUBSCRIBE_BTCD(handle_authenticate, _1, _2, _3, _4);
     SUBSCRIBE_BTCD(handle_session, _1, _2);
     SUBSCRIBE_BTCD(handle_get_current_net, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_best_block, _1, _2);
     SUBSCRIBE_BTCD(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BTCD(handle_get_info, _1, _2);
     SUBSCRIBE_BTCD(handle_get_net_totals, _1, _2);
@@ -239,6 +240,25 @@ bool protocol_btcd_rpc::handle_get_current_net(const code& ec,
     send_btcd_result(
         value_t{ possible_sign_cast<int64_t>(network_settings().identifier) },
         20);
+    return true;
+}
+
+bool protocol_btcd_rpc::handle_get_best_block(const code& ec,
+    btcd_interface::get_best_block) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // btcd extension distinct from getbestblockhash: returns hash and height
+    // together. Found to be required by btcwallet's own rpcclient connection
+    // (separate from lnd's own chain.RPCClient) during wallet chain-sync
+    // bootstrap -- a real lnd integration test hangs here without it.
+    const auto& query = archive();
+    object_t result{};
+    result.emplace("hash", value_t{ encode_hash(query.get_top_confirmed_hash()) });
+    result.emplace("height", value_t{
+        possible_sign_cast<int64_t>(query.get_top_confirmed()) });
+    send_btcd_result(value_t{ std::move(result) }, 96);
     return true;
 }
 

@@ -128,6 +128,12 @@ protected:
     bool handle_get_current_net(const code& ec,
         btcd_interface::get_current_net) NOEXCEPT;
 
+    /// Handler (chain tip; btcwallet's own rpcclient connection calls this
+    /// during wallet chain-sync bootstrap, distinct from getbestblockhash
+    /// which lnd's own chain.RPCClient uses).
+    bool handle_get_best_block(const code& ec,
+        btcd_interface::get_best_block) NOEXCEPT;
+
     /// Handlers (Phase C: generic btcd-tooling compatibility, no lnd
     /// consumer -- see docs/btcd-endpoint.md).
     bool handle_get_difficulty(const code& ec,

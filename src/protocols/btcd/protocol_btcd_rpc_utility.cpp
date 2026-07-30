@@ -398,10 +398,10 @@ bool protocol_btcd_rpc::handle_help(const code& ec, btcd_interface::help,
     // (getblockcount etc., inherited from protocol_bitcoind_rpc) are
     // documented by bitcoind's own docs, unchanged.
     send_btcd_result(std::string{
-        "authenticate session getcurrentnet notifyblocks stopnotifyblocks "
-        "loadtxfilter rescanblocks getdifficulty getinfo getnettotals "
-        "getnetworkhashps createrawtransaction decoderawtransaction "
-        "decodescript validateaddress help stop" }, 256);
+        "authenticate session getcurrentnet getbestblock notifyblocks "
+        "stopnotifyblocks loadtxfilter rescanblocks getdifficulty getinfo "
+        "getnettotals getnetworkhashps createrawtransaction "
+        "decoderawtransaction decodescript validateaddress help stop" }, 256);
     return true;
 }
 

@@ -71,7 +71,12 @@ struct btcd_methods
         method<"decoderawtransaction", string_t>{ "hexstring" },
         method<"decodescript", string_t>{ "hex" },
         method<"validateaddress", string_t>{ "address" },
-        method<"help", optional<""_t>>{ "command" }
+        method<"help", optional<""_t>>{ "command" },
+
+        /// btcd extension: {hash, height} of the best chain tip, used by
+        /// btcwallet's own rpcclient connection (distinct from lnd's own
+        /// chain.RPCClient) during wallet chain-sync bootstrap.
+        method<"getbestblock">{}
     };
 
     template <typename... Args>
@@ -105,6 +110,7 @@ struct btcd_methods
     using decode_script = at<21>;
     using validate_address = at<22>;
     using help = at<23>;
+    using get_best_block = at<24>;
 };
 
 } // namespace interface
