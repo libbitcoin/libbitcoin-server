@@ -489,6 +489,37 @@ def test_rescanblocks_known_block_no_match_empty_result(conn):
     assert response.get("result") == []
 
 
+def test_rescan_unknown_beginblock_rejected(conn):
+    response = conn.raw_rpc("rescan", ["00" * 32, [], [], ""])
+    assert response.get("error") is not None
+
+
+def test_rescan_no_addrs_no_outpoints_finishes_immediately(conn):
+    """Minimal implementation of this deprecated method: matches real btcd's
+    own "skip scanning, report immediate completion" branch for an empty
+    addr/outpoint list -- the exact call btcwallet's own rpcclient makes to
+    bootstrap its initial sync starting point (found via a real lnd
+    integration test), distinct from rescanblocks/loadtxfilter's actual
+    address-watching path. The finished notification always carries the
+    current chain tip, not the requested beginblock.
+    """
+    response = conn.send_rpc("rescan", [ReferenceData.GENESIS_HASH, [], [], ""])
+    assert response.get("error") is None
+
+    notification = conn.read_notification(10.0)
+    assert notification is not None, "no rescanfinished notification received"
+    assert notification["method"] == "rescanfinished"
+    assert len(notification["params"]) == 3
+
+
+def test_rescan_with_addresses_not_implemented(conn):
+    # A real historical address/outpoint scan is deliberately not
+    # implemented -- no observed real caller needs it.
+    response = conn.raw_rpc("rescan",
+        [ReferenceData.GENESIS_HASH, [ReferenceData.EXAMPLE_ADDRESS], [], ""])
+    assert response.get("error") is not None
+
+
 @pytest.mark.slow
 def test_filteredblockconnected_notification(conn, btcd_config):
     """
@@ -616,7 +647,6 @@ DEPRECATED_STUBS = [
     ("stopnotifyreceived", [[]]),
     ("notifyspent", [[]]),
     ("stopnotifyspent", [[]]),
-    ("rescan", ["", [""], [""], ""]),
 ]
 
 

@@ -313,6 +313,43 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
     BOOST_REQUIRE_EQUAL(params[2].as_array().size(), 1u);
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
+{
+    const auto response = rpc("rescan",
+        "[\"" + encode_hash(null_hash) + "\",[],[],\"\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addrs_no_outpoints__finishes_immediately)
+{
+    // Minimal implementation of this deprecated method: matches real btcd's
+    // own "skip scanning, report immediate completion" branch for an empty
+    // addr/outpoint list -- the exact call btcwallet's own rpcclient makes
+    // to bootstrap its initial sync starting point (found via a real lnd
+    // integration test), distinct from rescanblocks/loadtxfilter's actual
+    // address-watching path.
+    const auto response = rpc("rescan", "[\"" + block9 + "\",[],[],\"\"]");
+    BOOST_REQUIRE(!has_error(response));
+
+    const auto finished = receive_notification();
+    BOOST_REQUIRE_EQUAL(finished.at("method").as_string(), "rescanfinished");
+
+    const auto& params = finished.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 3u);
+    BOOST_REQUIRE_EQUAL(params[0].as_string(), block9);
+    BOOST_REQUIRE_EQUAL(params[1].as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
+{
+    // A real historical address/outpoint scan (recvtx/redeemingtx
+    // notifications, chunked progress, reorg recovery) is deliberately not
+    // implemented -- no observed real caller needs it.
+    const auto response = rpc("rescan",
+        "[\"" + block9 + "\",[\"" + filter_test_address_text() + "\"],[],\"\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
 // Phase C: generic btcd-tooling compatibility (implemented, no lnd consumer)
 // ----------------------------------------------------------------------------
 
@@ -455,8 +492,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__not_implemented__error)
         { "notifyreceived",            "[[]]" },
         { "stopnotifyreceived",        "[[]]" },
         { "notifyspent",               "[[]]" },
-        { "stopnotifyspent",           "[[]]" },
-        { "rescan",                    R"(["",[""],[""],""])" }
+        { "stopnotifyspent",           "[[]]" }
     };
 
     for (const auto& method: methods)

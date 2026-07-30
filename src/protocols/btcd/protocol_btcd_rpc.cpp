@@ -359,11 +359,73 @@ bool protocol_btcd_rpc::handle_stop_notify_spent(const code& ec,
 }
 
 bool protocol_btcd_rpc::handle_rescan(const code& ec,
-    btcd_interface::rescan, const std::string&, const value_t&,
-    const value_t&, const std::string&) NOEXCEPT
+    btcd_interface::rescan, const std::string& beginblock,
+    const value_t& addresses, const value_t& outpoints,
+    const std::string&) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_btcd_error(error::not_implemented);
+
+    // Minimal implementation of this deprecated method: real btcd's own
+    // handleRescan (rpcwebsocket.go) skips scanning entirely and reports
+    // immediate completion when given no addresses/outpoints to watch ("
+    // Skipping rescan as client has no addrs/utxos") -- exactly the call
+    // btcwallet's own rpcclient makes purely to bootstrap its initial
+    // sync starting point, confirmed via a real lnd integration test. A
+    // non-empty address/outpoint list would require a real historical
+    // block scan (recvtx/redeemingtx notifications, chunked progress,
+    // reorg recovery) -- deliberately left not_implemented; no observed
+    // real caller needs it (loadtxfilter/rescanblocks already cover actual
+    // address/outpoint watching for lnd).
+    hash_digest begin_hash{};
+    if (!decode_hash(begin_hash, beginblock))
+    {
+        send_btcd_error(error::not_found, two * beginblock.size());
+        return true;
+    }
+
+    const auto& query = archive();
+    if (query.to_header(begin_hash).is_terminal())
+    {
+        send_btcd_error(error::not_found, two * beginblock.size());
+        return true;
+    }
+
+    const auto has_addresses = std::holds_alternative<array_t>(
+        addresses.value()) && !std::get<array_t>(addresses.value()).empty();
+    const auto has_outpoints = std::holds_alternative<array_t>(
+        outpoints.value()) && !std::get<array_t>(outpoints.value()).empty();
+
+    if (has_addresses || has_outpoints)
+    {
+        send_btcd_error(error::not_implemented);
+        return true;
+    }
+
+    // Nothing to watch: report the current chain tip as already-finished,
+    // ignoring beginblock (real btcd does the same -- the finished
+    // notification always carries chain.BestSnapshot(), not the requested
+    // beginblock, in this branch).
+    const auto top = query.get_top_confirmed();
+    const auto header = query.get_header(query.to_confirmed(top));
+    if (!header)
+    {
+        send_btcd_error(error::not_found);
+        return true;
+    }
+
+    // Reply to the rescan call itself before the separate, unprompted
+    // notification -- unlike do_block_connected's pushes (which never race
+    // a pending reply), this handler owns both writes in the same call, so
+    // ordering them ordinary-reply-first-then-push keeps a single request/
+    // response exchange recognizable as such on the wire.
+    send_btcd_result({}, 4);
+
+    array_t params{};
+    params.emplace_back(value_t{ encode_hash(query.get_top_confirmed_hash()) });
+    params.emplace_back(value_t{ possible_sign_cast<int64_t>(top) });
+    params.emplace_back(value_t{
+        possible_sign_cast<int64_t>(header->timestamp()) });
+    send_btcd_notification("rescanfinished", std::move(params), 256);
     return true;
 }
 
