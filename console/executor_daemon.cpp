@@ -345,7 +345,9 @@ static std::filesystem::path enabled_path(const std::string& name) NOEXCEPT
 }
 
 // Type=notify defers dependent units until the node reports ready, which is
-// the posix counterpart to reporting SERVICE_RUNNING to the manager.
+// the posix counterpart to reporting SERVICE_RUNNING to the manager. Restart
+// is not configured, as a store that fails to open does so deterministically,
+// and retrying only obscures the fault (as does the manager on windows).
 static std::string unit_text(const std::string& command,
     const std::string& account) NOEXCEPT
 {
@@ -360,7 +362,6 @@ static std::string unit_text(const std::string& command,
         "ExecStart=" + command + "\n" +
         (account.empty() ? "" : "User=" + account + "\n") +
         "TimeoutStopSec=" + std::to_string(stop_timeout_seconds) + "\n"
-        "Restart=on-failure\n"
         "\n"
         "[Install]\n"
         "WantedBy=multi-user.target\n";
@@ -374,6 +375,8 @@ static std::filesystem::path unit_path(const std::string&) NOEXCEPT
 }
 
 // launchd has no readiness protocol, so the job is simply run at load.
+// KeepAlive is not configured, as it restarts upon any exit, and a store that
+// fails to open does so deterministically (as with the other two managers).
 static std::string unit_text(const std::string& command,
     const std::string& account) NOEXCEPT
 {
@@ -390,7 +393,6 @@ static std::string unit_text(const std::string& command,
         (account.empty() ? "" :
             "    <key>UserName</key><string>" + account + "</string>\n") +
         "    <key>RunAtLoad</key><true/>\n"
-        "    <key>KeepAlive</key><true/>\n"
         "    <key>ExitTimeOut</key><integer>" +
             std::to_string(stop_timeout_seconds) + "</integer>\n"
         "</dict>\n"
