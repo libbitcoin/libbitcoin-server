@@ -379,6 +379,15 @@ def test_session_returns_id(conn):
     assert "id" in result
 
 
+def test_getcurrentnet_returns_network_magic(conn):
+    """getcurrentnet returns the p2p handshake magic number (network_settings
+    ().identifier) -- the same value real btcd returns, checked once by
+    btcwallet/lnd at connect to confirm they're talking to the expected
+    network (implemented in B1)."""
+    response = conn.send_rpc("getcurrentnet")
+    assert response.get("result") == ReferenceData.MAINNET_MAGIC
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # BLOCK SUBSCRIPTION (implemented)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -436,9 +445,109 @@ def test_blockconnected_notification(conn, btcd_config):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STANDARD CHAIN METHODS -- reachable today only via plain http post.
-# Development target: bridge these into the ws dispatcher (phase B).
+# ADDRESS/OUTPOINT FILTERING (implemented, B2)
 # ═══════════════════════════════════════════════════════════════════════════════
+# loadtxfilter never itself triggers notifications (matching real btcd) --
+# notifyblocks remains the only thing that arms delivery; once armed,
+# filteredblockconnected/disconnected are sent alongside the existing
+# unfiltered blockconnected/disconnected. rescanblocks replays the same match
+# logic against explicitly named historical blocks using the loaded filter.
+
+def test_loadtxfilter_valid_address_acknowledges(conn):
+    response = conn.send_rpc("loadtxfilter",
+        [True, [ReferenceData.EXAMPLE_ADDRESS], []])
+    assert response.get("error") is None
+
+
+def test_loadtxfilter_invalid_address_rejected(conn):
+    response = conn.raw_rpc("loadtxfilter", [True, ["not-an-address"], []])
+    assert response.get("error") is not None
+
+
+def test_loadtxfilter_valid_outpoint_acknowledges(conn):
+    response = conn.send_rpc("loadtxfilter",
+        [True, [], [{"hash": ReferenceData.GENESIS_TX_HASH, "index": 0}]])
+    assert response.get("error") is None
+
+
+def test_loadtxfilter_malformed_outpoint_rejected(conn):
+    response = conn.raw_rpc("loadtxfilter", [True, [], [{"hash": "00"}]])
+    assert response.get("error") is not None
+
+
+def test_rescanblocks_unknown_hash_rejected(conn):
+    response = conn.raw_rpc("rescanblocks", [["00" * 32]])
+    assert response.get("error") is not None
+
+
+def test_rescanblocks_known_block_no_match_empty_result(conn):
+    # An arbitrary (real, valid-format) address that does not own the
+    # genesis coinbase output -- exercises the "no match" path, not a
+    # specific claim about what the genesis output actually pays.
+    conn.send_rpc("loadtxfilter", [True, [ReferenceData.EXAMPLE_ADDRESS], []])
+    response = conn.send_rpc("rescanblocks", [[ReferenceData.GENESIS_HASH]])
+    assert response.get("result") == []
+
+
+@pytest.mark.slow
+def test_filteredblockconnected_notification(conn, btcd_config):
+    """
+    filteredblockconnected must be delivered alongside blockconnected for
+    every notifyblocks client, even with no address loaded (empty
+    subscribedtxs) -- verified against btcd's own rpcwebsocket.go: both
+    notifications fire unconditionally together, the filtered one just
+    carries an empty list when nothing matches.
+
+    Notification format (verified against btcsuite/btcd/btcjson):
+        {"method": "filteredblockconnected", "params": [height, header, subscribedtxs]}
+    """
+    sub_timeout = btcd_config.get("subscription_timeout", 60.0)
+
+    ack = conn.send_rpc("notifyblocks")
+    assert ack.get("error") is None
+
+    cmd = os.getenv("BTCD_TRIGGER_BLOCK")
+    if cmd:
+        os.system(cmd)
+    else:
+        print(f"\n  Waiting up to {sub_timeout:.0f}s for a "
+              "filteredblockconnected notification (set BTCD_TRIGGER_BLOCK "
+              "to trigger one).", flush=True)
+
+    # blockconnected and filteredblockconnected are sent back-to-back for the
+    # same block; read up to two frames to find the filtered one.
+    notif = conn.read_notification(timeout_s=sub_timeout)
+    if notif is not None and notif.get("method") != "filteredblockconnected":
+        notif = conn.read_notification(timeout_s=sub_timeout)
+
+    if notif is None:
+        pytest.skip(f"No filteredblockconnected notification within "
+                     f"{sub_timeout:.0f}s. Increase --subscription-timeout "
+                     "or set BTCD_TRIGGER_BLOCK.")
+
+    assert notif.get("method") == "filteredblockconnected"
+    params = notif.get("params", [])
+    assert isinstance(params, list) and len(params) == 3, (
+        "filteredblockconnected params must be [height, header, "
+        f"subscribedtxs], got {params!r}"
+    )
+    height, header, subscribed_txs = params
+    assert isinstance(height, int) and height > 0
+    assert isinstance(header, str) and len(header) == 160  # 80-byte header
+    assert isinstance(subscribed_txs, list)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STANDARD CHAIN METHODS (implemented, bridged into the ws dispatcher -- B0)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Inherited from protocol_bitcoind_rpc. Reachable both over plain http post
+# (unchanged from bitcoind) and, since B0, over the same ws connection used
+# for session/notifyblocks/etc: protocol_btcd_rpc::dispatch_websocket falls
+# back to protocol_bitcoind_rpc::dispatch_rpc when the btcd-only dispatcher
+# reports "unexpected method". This is what a real lnd/btcwallet client
+# needs -- it can't open a second plain-http connection once it has upgraded
+# to ws, so authenticate/session/notifyblocks and getblockcount etc. must all
+# work on the one connection.
 
 CHAIN_METHODS = [
     ("getbestblockhash", []),
@@ -452,25 +561,39 @@ CHAIN_METHODS = [
 
 @pytest.mark.parametrize("method,params", CHAIN_METHODS)
 def test_chain_method_over_http_post(btcd_config, method, params):
-    """Positive control: the chain logic itself works today, reachable over
-    plain http post to the same endpoint (unchanged from bitcoind)."""
+    """Positive control: the chain logic itself works, reachable over plain
+    http post to the same endpoint (unchanged from bitcoind)."""
     data = http_rpc(btcd_config, method, params)
     if data.get("error") is not None:
         pytest.xfail(f"Server sent valid error response: {data['error']}")
     assert "result" in data
 
 
-@pytest.mark.xfail(reason="phase B: standard chain methods not yet bridged "
-                          "into the ws dispatcher (see docs/btcd-endpoint.md)",
-                    strict=False)
 @pytest.mark.parametrize("method,params", CHAIN_METHODS)
 def test_chain_method_over_websocket(conn, method, params):
-    """Development target: once bridged, chain methods should also work over
-    the same ws connection used for session/notifyblocks/etc -- this is what
-    a real lnd/btcwallet client needs (it can't open a second plain-http
-    connection once it has upgraded to ws)."""
+    """Standard chain methods now also work over the same ws connection used
+    for session/notifyblocks/etc (bridged in B0, see
+    protocol_btcd_rpc::dispatch_websocket / protocol_bitcoind_rpc::
+    dispatch_rpc)."""
     response = conn.send_rpc(method, params)
     assert "result" in response
+
+
+def test_btcd_and_chain_method_share_one_websocket_connection(conn):
+    """The actual point of B0: a single persistent ws connection -- the kind
+    a real lnd/btcwallet client opens once and keeps -- can reach both a
+    btcd-only extension method (session) and a standard chain method
+    (getblockcount) without reconnecting or falling back to plain http post.
+    """
+    session = conn.send_rpc("session")
+    assert isinstance(session.get("result"), dict)
+
+    block_count = conn.send_rpc("getblockcount")
+    assert isinstance(block_count.get("result"), int)
+
+    # Same connection still answers a second btcd-only method afterwards.
+    notify = conn.send_rpc("notifyblocks")
+    assert notify.get("error") is None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -483,8 +606,6 @@ def test_chain_method_over_websocket(conn, method, params):
 NOT_YET_IMPLEMENTED_STUBS = [
     ("notifynewtransactions", [False]),
     ("stopnotifynewtransactions", []),
-    ("loadtxfilter", [False, [], []]),
-    ("rescanblocks", [[]]),
 ]
 
 # Deprecated upstream (superseded by loadtxfilter/rescanblocks) but still
@@ -525,34 +646,80 @@ def test_stop_always_not_implemented(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# NOT YET WIRED AT ALL (phase B/C development targets)
+# PHASE C: generic btcd-tooling compatibility (implemented, no lnd consumer)
 # ═══════════════════════════════════════════════════════════════════════════════
-# These aren't in interfaces/btcd.hpp's method table yet, so today they hit
-# "unexpected method". Each is a checklist item for the generic-tooling
-# compatibility phase (see docs/btcd-endpoint.md, Phase C).
+# See docs/btcd-endpoint.md for scope/fidelity notes (getnetworkhashps is an
+# approximation, getnettotals's byte counters are untracked zeros, help lists
+# method names only).
 
-NOT_YET_WIRED = [
-    ("getcurrentnet", []),
-    ("getdifficulty", []),
-    ("getinfo", []),
-    ("getnettotals", []),
-    ("getnetworkhashps", []),
-    ("createrawtransaction", [[], {}]),
-    ("decoderawtransaction", ["00"]),
-    ("decodescript", [""]),
-    ("validateaddress", [ReferenceData.EXAMPLE_ADDRESS]),
-    ("help", []),
-]
+def test_getdifficulty_returns_number(conn):
+    response = conn.send_rpc("getdifficulty")
+    assert isinstance(response.get("result"), float)
 
 
-@pytest.mark.xfail(reason="phase B/C: method not yet wired in interfaces/btcd.hpp",
-                    strict=False)
-@pytest.mark.parametrize("method,params", NOT_YET_WIRED)
-def test_method_not_yet_wired(conn, method, params):
-    data = conn.raw_rpc(method, params)
-    assert data.get("error") is None, (
-        f"{method} still unwired: {data.get('error')}"
-    )
+def test_getinfo_returns_object(conn):
+    result = conn.send_rpc("getinfo").get("result")
+    assert isinstance(result, dict)
+    assert isinstance(result.get("blocks"), int)
+    assert result.get("testnet") is False
+
+
+def test_getnettotals_returns_object(conn):
+    result = conn.send_rpc("getnettotals").get("result")
+    assert isinstance(result, dict)
+    assert "totalbytesrecv" in result
+    assert "totalbytessent" in result
+    assert result.get("timemillis", 0) > 0
+
+
+def test_getnetworkhashps_returns_number(conn):
+    response = conn.send_rpc("getnetworkhashps")
+    assert isinstance(response.get("result"), (int, float))
+
+
+def test_createrawtransaction_and_decoderawtransaction_roundtrip(conn):
+    raw = conn.send_rpc("createrawtransaction",
+        [[{"txid": ReferenceData.FIRST_TX_HASH, "vout": 0}],
+         {ReferenceData.EXAMPLE_ADDRESS: 0.01}])
+    hexstring = raw.get("result")
+    assert isinstance(hexstring, str) and len(hexstring) > 0
+
+    result = conn.send_rpc("decoderawtransaction", [hexstring]).get("result")
+    assert isinstance(result, dict)
+    assert len(result.get("vin", [])) == 1
+    assert len(result.get("vout", [])) == 1
+
+
+def test_decoderawtransaction_malformed_hex_rejected(conn):
+    response = conn.raw_rpc("decoderawtransaction", ["not-hex"])
+    assert response.get("error") is not None
+
+
+def test_decodescript_null_data_script(conn):
+    # OP_RETURN <2-byte push "hi"> -- self-contained, doesn't depend on live
+    # chain contents. A bare "6a" (OP_RETURN with no push at all) does not
+    # match the standard null-data template.
+    result = conn.send_rpc("decodescript", ["6a026869"]).get("result")
+    assert result.get("type") == "nulldata"
+    assert "asm" in result
+
+
+def test_validateaddress_valid_address(conn):
+    result = conn.send_rpc("validateaddress",
+        [ReferenceData.EXAMPLE_ADDRESS]).get("result")
+    assert result.get("isvalid") is True
+    assert result.get("address") == ReferenceData.EXAMPLE_ADDRESS
+    assert result.get("iswitness") is False
+
+
+def test_validateaddress_invalid_address(conn):
+    result = conn.send_rpc("validateaddress", ["not-an-address"]).get("result")
+    assert result.get("isvalid") is False
+
+
+def test_help_returns_method_list(conn):
+    result = conn.send_rpc("help").get("result")
+    assert isinstance(result, str) and "getcurrentnet" in result
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

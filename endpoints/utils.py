@@ -122,6 +122,9 @@ class ReferenceData:
     FILTER_TYPE_BLOOM = "bloom"
     FILTER_TYPE_COMPACT = "compact"
 
+    # p2p handshake magic (network_settings().identifier), mainnet
+    MAINNET_MAGIC = 3652501241
+
 
 class TestConfig:
     """Default test configuration values."""
