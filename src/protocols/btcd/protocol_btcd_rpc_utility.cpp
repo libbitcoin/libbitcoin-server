@@ -37,7 +37,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Phase C: generic btcd-tooling compatibility (no lnd consumer).
+// Generic btcd-tooling compatibility (no lnd consumer).
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd_rpc::handle_get_difficulty(const code& ec,

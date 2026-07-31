@@ -383,7 +383,7 @@ def test_getcurrentnet_returns_network_magic(conn):
     """getcurrentnet returns the p2p handshake magic number (network_settings
     ().identifier) -- the same value real btcd returns, checked once by
     btcwallet/lnd at connect to confirm they're talking to the expected
-    network (implemented in B1)."""
+    network."""
     response = conn.send_rpc("getcurrentnet")
     assert response.get("result") == ReferenceData.MAINNET_MAGIC
 
@@ -445,7 +445,7 @@ def test_blockconnected_notification(conn, btcd_config):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ADDRESS/OUTPOINT FILTERING (implemented, B2)
+# ADDRESS/OUTPOINT FILTERING
 # ═══════════════════════════════════════════════════════════════════════════════
 # loadtxfilter never itself triggers notifications (matching real btcd) --
 # notifyblocks remains the only thing that arms delivery; once armed,
@@ -569,10 +569,10 @@ def test_filteredblockconnected_notification(conn, btcd_config):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STANDARD CHAIN METHODS (implemented, bridged into the ws dispatcher -- B0)
+# STANDARD CHAIN METHODS (bridged into the ws dispatcher)
 # ═══════════════════════════════════════════════════════════════════════════════
 # Inherited from protocol_bitcoind_rpc. Reachable both over plain http post
-# (unchanged from bitcoind) and, since B0, over the same ws connection used
+# (unchanged from bitcoind) and over the same ws connection used
 # for session/notifyblocks/etc: protocol_btcd_rpc::dispatch_websocket falls
 # back to protocol_bitcoind_rpc::dispatch_rpc when the btcd-only dispatcher
 # reports "unexpected method". This is what a real lnd/btcwallet client
@@ -603,15 +603,14 @@ def test_chain_method_over_http_post(btcd_config, method, params):
 @pytest.mark.parametrize("method,params", CHAIN_METHODS)
 def test_chain_method_over_websocket(conn, method, params):
     """Standard chain methods now also work over the same ws connection used
-    for session/notifyblocks/etc (bridged in B0, see
-    protocol_btcd_rpc::dispatch_websocket / protocol_bitcoind_rpc::
-    dispatch_rpc)."""
+    for session/notifyblocks/etc (see protocol_btcd_rpc::dispatch_websocket /
+    protocol_bitcoind_rpc::dispatch_rpc)."""
     response = conn.send_rpc(method, params)
     assert "result" in response
 
 
 def test_btcd_and_chain_method_share_one_websocket_connection(conn):
-    """The actual point of B0: a single persistent ws connection -- the kind
+    """The actual point of the ws bridge: a single persistent ws connection -- the kind
     a real lnd/btcwallet client opens once and keeps -- can reach both a
     btcd-only extension method (session) and a standard chain method
     (getblockcount) without reconnecting or falling back to plain http post.
@@ -628,7 +627,7 @@ def test_btcd_and_chain_method_share_one_websocket_connection(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# WIRED BUT NOT YET IMPLEMENTED (phase B/C development targets)
+# WIRED BUT NOT YET IMPLEMENTED (blocked on a v5 mempool, see docs/btcd-endpoint.md)
 # ═══════════════════════════════════════════════════════════════════════════════
 # These methods are present in interfaces/btcd.hpp's method table today, but
 # every handler unconditionally returns not_implemented. Each xfail here is a
@@ -650,7 +649,7 @@ DEPRECATED_STUBS = [
 ]
 
 
-@pytest.mark.xfail(reason="phase B: wired stub, handler not yet implemented",
+@pytest.mark.xfail(reason="wired stub, handler not yet implemented",
                     strict=False)
 @pytest.mark.parametrize("method,params", NOT_YET_IMPLEMENTED_STUBS)
 def test_stub_not_yet_implemented(conn, method, params):

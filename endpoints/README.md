@@ -272,18 +272,20 @@ pytest test_bitcoind_rpc.py -k "getblock"
 Tests the btcd-compatible endpoint: JSON-RPC 1.0 over a persistent websocket
 connection (session/notification/filter/admin extension methods) plus plain
 http post (chain methods inherited from `protocol_bitcoind_rpc`, same shape
-as `bitcoind`). See `docs/btcd-endpoint.md` for the full design and phase
-scope this suite tracks against.
+as `bitcoind`). See `docs/btcd-endpoint.md` for the full design, method
+scope, and the lnd/btcwallet compatibility analysis (verified end-to-end
+against a real lnd binary).
 
 Unlike the other endpoint suites, this one is explicitly split into two
 kinds of test:
 - **No `xfail` marker** — asserts real, currently-implemented behavior. A
   failure here is a regression.
 - **`@pytest.mark.xfail(strict=False)`** — describes intended behavior that
-  isn't implemented (or not yet reachable over ws) yet. Expected to fail
-  today; flips to XPASS once implemented, which is the cue to tighten the
-  assertion and remove the marker. Use `pytest -m xfail -rx` to see the
-  current development checklist.
+  isn't implemented yet (currently: only the mempool-dependent
+  `notifynewtransactions`/`stopnotifynewtransactions`, blocked on a v5
+  mempool). Expected to fail today; flips to XPASS once implemented, which
+  is the cue to tighten the assertion and remove the marker. Use
+  `pytest -m xfail -rx` to see the current development checklist.
 
 **Coverage:**
 - ✅ Session management — `authenticate` (no-op / credential match / credential
@@ -291,20 +293,24 @@ kinds of test:
 - ✅ Block subscription — `notifyblocks`/`stopnotifyblocks` (ack), a real
   `blockconnected` push-notification test (positional `[hash, height, time]`,
   verified against upstream btcd's actual wire format)
-- ✅ Chain methods over http post (positive control — `getbestblockhash`,
-  `getblockcount`, `getblockhash`, `getblockheader`, `gettxout`,
-  `getrawtransaction`)
-- ✅ Deprecated methods stay rejected — `notifyreceived`, `stopnotifyreceived`,
-  `notifyspent`, `stopnotifyspent`, `rescan`; `stop` (permanent, no
-  dev-target xfail — these are guarded against ever silently "working")
-- ✅ Response envelope — id echo across requests, unknown-method error
-  without dropping the connection
-- 🚧 (xfail, phase B) Chain methods bridged into the *ws* connection itself
-- 🚧 (xfail, phase B) `notifynewtransactions`/`stopnotifynewtransactions`,
-  `loadtxfilter`, `rescanblocks`
-- 🚧 (xfail, phase B/C) `getcurrentnet`, `getdifficulty`, `getinfo`,
+- ✅ Chain methods, both over http post and over the persistent ws
+  connection (`getbestblockhash`, `getblockcount`, `getblockhash`,
+  `getblockheader`, `gettxout`, `getrawtransaction`)
+- ✅ `loadtxfilter`/`rescanblocks` (address/outpoint watch-list, filtered
+  block notifications), `getcurrentnet`, `getbestblock`, `rescan` (empty-
+  addrs/outpoints bootstrap case), `getdifficulty`, `getinfo`,
   `getnettotals`, `getnetworkhashps`, `createrawtransaction`,
   `decoderawtransaction`, `decodescript`, `validateaddress`, `help`
+- ✅ btcd-only methods (e.g. `getinfo`) reachable over plain http post too,
+  not only ws
+- ✅ Deprecated methods stay rejected — `notifyreceived`, `stopnotifyreceived`,
+  `notifyspent`, `stopnotifyspent`; `stop`; `rescan` with a non-empty
+  address/outpoint list (permanent, no dev-target xfail — these are guarded
+  against ever silently "working")
+- ✅ Response envelope — id echo across requests, unknown-method error
+  without dropping the connection
+- 🚧 (xfail) `notifynewtransactions`/`stopnotifynewtransactions` — blocked on
+  a v5 mempool
 
 **Example test runs:**
 

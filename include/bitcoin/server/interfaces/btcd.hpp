@@ -62,7 +62,7 @@ struct btcd_methods
         /// Admin (network magic, checked once by btcwallet/lnd at connect).
         method<"getcurrentnet">{},
 
-        /// Phase C: generic btcd-tooling compatibility (no lnd consumer).
+        /// Generic btcd-tooling compatibility (no lnd consumer).
         method<"getdifficulty">{},
         method<"getinfo">{},
         method<"getnettotals">{},

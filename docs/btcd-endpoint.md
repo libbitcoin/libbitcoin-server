@@ -30,7 +30,7 @@ config shape as `bitcoind.*`), which happens to already support scoping a
 credential to a method allowlist generically; `channel_btcd::permitted()` enforces
 that scope over both http and ws. Sensitive methods (`stop`, mining/peer
 management) are stubbed to `not_implemented` unconditionally regardless of scope,
-so this is revisited only if a future phase implements a real `stop` path.
+so this is revisited only if a real `stop` path is implemented later.
 
 ## Architecture
 
@@ -102,14 +102,14 @@ template).
 
 ## Method Scope
 
-### Already covered (inherited from `protocol_bitcoind_rpc`)
+### Inherited from `protocol_bitcoind_rpc`
 
 `getbestblockhash`, `getblock`, `getblockhash`, `getblockheader`, `getblockcount`,
 `gettxout`, `getrawtransaction`, `sendrawtransaction`. No btcd-specific work
-needed; response shapes already match Core/btcd conventions closely enough for
-Phase A. **Bridged into the ws dispatcher (B0)**: `dispatch_websocket` tries
+needed; response shapes already match Core/btcd conventions closely enough as-is.
+**Bridged into the ws dispatcher**: `dispatch_websocket` tries
 the btcd-only extension dispatcher first, then falls back to
-`protocol_bitcoind_rpc::dispatch_rpc` (new) when that dispatcher reports
+`protocol_bitcoind_rpc::dispatch_rpc` when that dispatcher reports
 `unexpected_method` — a pure method-name lookup miss, never conflated with an
 argument-mismatch error, so the fallback cannot mask a real handler fault.
 `send_rpc` (the shared sender all inherited chain handlers funnel through)
@@ -121,41 +121,68 @@ echo in the first place (`channel_http::create_request()`), matching
 `authenticate`/`session`/`notifyblocks`) can now also call `getblockcount`
 etc. on that same connection, as a real lnd/btcwallet client needs.
 
-### Phase A — wiring
+**`getblockchaininfo`** (shared with `bitcoind`, not btcd-only) also reports a
+`bip9_softforks.taproot` entry unconditionally — real btcd includes this too
+(taproot is a permanent, long-since-locked-in consensus rule, no live
+signaling left to track). Added specifically because lnd's
+`chainreg.backendSupportsTaproot` requires this key's presence before it will
+treat *any* btcd/bitcoind backend as usable.
 
-`channel_btcd`, `protocol_btcd_rpc`, `authenticate`, `session` (must be
-functionally correct, not stubbed — see [lnd Compatibility](#lnd-compatibility)),
-`notifyblocks`/`stopnotifyblocks`, `not_implemented` stubs for every other btcd
-method, Boost.Test suite.
+### btcd-only methods — implemented
 
-### Phase B — lnd-critical, promoted ahead of generic filler — implemented
-
-`getcurrentnet` (network-match check lnd/btcwallet performs once at connect —
-**B1**: returns `network_settings().identifier`, the same p2p handshake magic
-real btcd returns from this call). `loadtxfilter` + filtered block
-notifications (`filteredblockconnected`/`filteredblockdisconnected`) +
-`rescanblocks` — **B2**: per-connection in-memory watch-list (base58 p2kh/p2sh
-via `wallet::payment_address`, bech32/bech32m p2wpkh/p2wsh/p2tr via
-`wallet::witness_address` + `chain::script::output_pattern()`, plus outpoints),
-matched by direct script inspection of each newly-connected (or, for
-`rescanblocks`, explicitly named historical) block's own transactions — not
-the persisted address index (`address_enabled`/`get_history`), which is the
-wrong tool for "does this one block match this small watch-list" and would
-needlessly require the address index to be built at all. An output that
-matches a watched address has its own outpoint auto-added to the watched set
-(matching real btcd's `wsClientFilter`), so a later spend of it also matches
-without an explicit re-subscribe. None of this is on the critical path for a
-generic btcd client — it's implemented here specifically because
-`btcwallet`'s `chain.RPCClient` and lnd's own `chainntnfs/btcdnotify` depend
-on it (see [lnd Compatibility](#lnd-compatibility)).
-
-### Phase C — remaining plain RPC methods (generic btcd-tooling compatibility) — implemented
-
-`getdifficulty`, `getinfo`, `getnettotals`, `getnetworkhashps`,
-`createrawtransaction`, `decoderawtransaction`, `decodescript`,
-`validateaddress`, `help`. No specific named consumer — these round out
-compatibility for generic btcd-speaking tooling (block explorers, mining-pool
-stats, monitoring dashboards, tx-building/debug scripts), not lnd.
+- **`authenticate`**, **`session`** — ordinary extension methods, not a
+  handshake stage (see [Architecture](#architecture)); `session` returns a
+  real per-channel id, `btcwallet` uses it to detect reconnect-to-a-fresh-
+  server and re-arm filters.
+- **`notifyblocks`/`stopnotifyblocks`** — subscribes to
+  `node::chase::organized`/`reorganized`, pushes `blockconnected`/
+  `blockdisconnected` (positional `[hash, height, time]`, verified against
+  `btcsuite/btcd/btcjson/chainsvrwsntfns.go`).
+- **`getcurrentnet`** — the network-match check lnd/btcwallet performs once at
+  connect; returns `network_settings().identifier`, the same p2p handshake
+  magic real btcd returns.
+- **`loadtxfilter`** + filtered block notifications
+  (`filteredblockconnected`/`filteredblockdisconnected`) + **`rescanblocks`** —
+  a per-connection in-memory watch-list (base58 p2kh/p2sh via
+  `wallet::payment_address`, bech32/bech32m p2wpkh/p2wsh/p2tr via
+  `wallet::witness_address` + `chain::script::output_pattern()`, plus
+  outpoints), matched by direct script inspection of each newly-connected (or,
+  for `rescanblocks`, explicitly named historical) block's own transactions —
+  not the persisted address index (`address_enabled`/`get_history`), which is
+  the wrong tool for "does this one block match this small watch-list" and
+  would needlessly require the address index to be built at all. An output
+  that matches a watched address has its own outpoint auto-added to the
+  watched set (matching real btcd's `wsClientFilter`), so a later spend of it
+  also matches without an explicit re-subscribe. This is the mechanism both
+  `btcwallet`'s `chain.RPCClient` and lnd's own `chainntnfs/btcdnotify`
+  depend on (see [lnd Compatibility](#lnd-compatibility)).
+- **`getbestblock`** — a distinct btcd extension from `getbestblockhash`,
+  returning `{hash, height}` of the chain tip together. Found to be required
+  by `btcwallet`'s own separate rpcclient connection (not lnd's own
+  `chain.RPCClient`, which uses `getbestblockhash`) during wallet chain-sync
+  bootstrap, via a real lnd integration test.
+- **`rescan`** (deprecated upstream, superseded by `rescanblocks`) — implemented
+  only for its empty-addresses/empty-outpoints case: real btcd's own
+  `handleRescan` skips scanning entirely and reports immediate completion
+  (`rescanfinished` notification carrying the current chain tip) when given
+  nothing to watch. This is the exact call `btcwallet`'s own rpcclient makes
+  purely to bootstrap its initial sync starting point — found via the same
+  real lnd integration test. A non-empty address/outpoint list remains
+  `not_implemented` (see [Permanently stubbed](#permanently-stubbed-not_implemented)).
+- Every btcd-only method above is also reachable over plain HTTP POST, not
+  only the websocket connection — real lnd/btcwallet clients issue
+  capability-check calls (e.g. `getinfo`) this way immediately on connect,
+  before establishing the persistent ws connection that subscriptions need.
+  Found missing (a real, silent connection-killing bug) via a live lnd
+  integration test; fixed by adding `protocol_bitcoind_rpc::
+  dispatch_extension`, the post-side mirror of the ws-side fallback described
+  above.
+- **`getdifficulty`, `getinfo`, `getnettotals`, `getnetworkhashps`,
+  `createrawtransaction`, `decoderawtransaction`, `decodescript`,
+  `validateaddress`, `help`** — no specific named consumer; these round out
+  compatibility for generic btcd-speaking tooling (block explorers,
+  mining-pool stats, monitoring dashboards, tx-building/debug scripts), not
+  lnd.
 
 Notes on scope/fidelity (all verified against real btcd's `btcjson`
 result/command structs before implementing):
@@ -171,7 +198,7 @@ result/command structs before implementing):
   in the codebase, so `decodescript`'s `type`/`address`/`p2sh` fields and
   `validateaddress` are new, built from `chain::script::output_pattern()` and
   `wallet::payment_address`/`witness_address` (the same dual-parse approach
-  as B2's `loadtxfilter`, kept as a separate small helper rather than forcing
+  as `loadtxfilter`'s, kept as a separate small helper rather than forcing
   a shared abstraction onto that already-tested code).
 - `getnetworkhashps` approximates from the requested height's difficulty and
   a fixed 600s target spacing, not a true windowed average over the `blocks`
@@ -184,15 +211,21 @@ result/command structs before implementing):
   peer-dependent fields (rather than `not_implemented`).
 - `help` lists method names only; no per-command argument usage text.
 
-### Permanently stubbed (`not_implemented`, all phases)
+### Permanently stubbed (`not_implemented`)
 
 - **`stop`** — no secure remote-shutdown path exists in libbitcoin-server; always
   returns `not_implemented` regardless of auth tier or config.
 - **`notifynewtransactions`**, and the deprecated WS methods `notifyreceived`,
-  `stopnotifyreceived`, `notifyspent`, `stopnotifyspent`, `rescan` (all superseded
+  `stopnotifyreceived`, `notifyspent`, `stopnotifyspent` (all superseded
   upstream by `loadtxfilter`/`rescanblocks`) — no mempool exists in v4, revisit in
   v5.
-- **`submitblock`** — future-phase only, not in current scope.
+- **`rescan`'s non-empty-address/outpoint case** — a real historical block scan
+  (chunked `rescanprogress` notifications, per-tx `recvtx`/`redeemingtx`
+  notifications — a different wire shape than `filteredblockconnected`'s
+  per-block shape —, reorg recovery) that no observed real caller needs;
+  `loadtxfilter`/`rescanblocks` already cover actual address/outpoint watching
+  for lnd. The empty-case bootstrap call is implemented (see above).
+- **`submitblock`** — not in current scope.
 - Mining (`getgenerate`, `gethashespersec`, `getmininginfo`, `setgenerate`) and
   peer-management (`addnode`, `getaddednodeinfo`, `getconnectioncount`,
   `getpeerinfo`) — out of scope; libbitcoin-server is not a miner and peer
@@ -204,24 +237,32 @@ btcd's own websocket API is one of lnd's three supported chain backends (the
 others being `bitcoind` via ZMQ, and `neutrino`). Hooking an `lnd` node up to
 libbitcoin-server through this endpoint means satisfying the calls
 `btcwallet`'s `chain.RPCClient` (`btcsuite/btcwallet/chain/btcd.go`) and lnd's own
-`chainntnfs/btcdnotify` package make against a btcd-style server. Verified against
-both sources:
+`chainntnfs/btcdnotify` package make against a btcd-style server.
 
-**Plain RPC** (all either inherited from bitcoind or trivial to add):
+**Verified end-to-end against a real lnd 0.21.1-beta binary**: pointed
+directly at a libbitcoin-server instance running this endpoint
+(`--bitcoin.node=btcd`), lnd reaches `Chain backend is fully synced!` —
+wallet opened/unlocked, chain-sync bootstrap completed, headers walked to
+the live chain tip. Every gap below was found this way, not by reading
+source alone; each is confirmed fixed by a subsequent clean run one step
+further than the last.
+
+**Plain RPC** (all either inherited from bitcoind or btcd extensions):
 `getbestblockhash`/`getblockcount` (chain tip), `getblockhash`, `getblockheader`
 (chain-view / `IsCurrent` checks), `getblock` (verbose, block scanning),
 `getrawtransaction`, `sendrawtransaction` (broadcasting funding/commitment/
 sweep/justice transactions), `gettxout` (UTXO-existence checks), `getcurrentnet`
-(network-match validation performed once at connect — implemented, B1).
+(network-match validation performed once at connect), `getbestblock`
+(`btcwallet`'s own separate rpcclient connection, used during its own
+chain-sync bootstrap — distinct from `getbestblockhash`).
 
-**WebSocket notification surface — the real gap.** Both `btcwallet`'s RPCClient
+**WebSocket notification surface.** Both `btcwallet`'s RPCClient
 and lnd's `btcdnotify` depend on:
 
-- `NotifyBlocks` → `OnBlockConnected`/`OnBlockDisconnected` — covered by Phase A.
+- `NotifyBlocks` → `OnBlockConnected`/`OnBlockDisconnected` — implemented.
 - A working `session` on connect — `btcwallet` uses the session id to detect a
   reconnect to a fresh server instance, which must trigger re-registration of all
-  filters/rescans. If this is left as a stub, reconnect handling is undefined; it
-  should be implemented for real in Phase A, not deferred.
+  filters/rescans. Implemented for real (not stubbed), for exactly this reason.
 - **`loadtxfilter`** (address/outpoint watch-list registration) plus
   block-filtered notification delivery (the modern wire methods
   `filteredblockconnected`/`filteredblockdisconnected`, which drive lnd's
@@ -229,17 +270,19 @@ and lnd's `btcdnotify` depend on:
   `btcsuite/btcd/btcjson/chainsvrwsntfns.go` and `rpcclient/notify.go`; the
   deprecated per-tx `OnRecvTx`/`OnRedeemingTx` callbacks are fed by a
   different, older wire pair (`recvtx`/`redeemingtx`) that modern
-  `btcwallet`/`lnd` don't use) — **implemented, B2**. This is the mechanism
+  `btcwallet`/`lnd` don't use) — implemented. This is the mechanism
   both the wallet and lnd's own notifier use to detect channel-funding
   confirmations and on-chain spends of channel outputs (breach/force-close
   detection); not optional legacy behavior.
 - **`rescanblocks`** — used at wallet startup (birthday scan) and after any
   downtime to replay historical blocks against the loaded filter —
-  **implemented, B2**, same match logic as live filtered notifications,
+  implemented, same match logic as live filtered notifications,
   applied to explicitly named blocks instead of the newly-connected one.
-  (The older, deprecated `rescan` — arbitrary address/outpoint scans over an
-  address-index-backed height range — remains permanently stubbed; modern
-  `btcwallet`/`lnd` use `rescanblocks` instead.)
+- **`rescan`** (older, deprecated upstream) — `btcwallet`'s own rpcclient
+  still calls this once, with an empty address/outpoint list, purely to
+  bootstrap its initial sync starting point; implemented for that case (see
+  [Method Scope](#method-scope)). A general historical address/outpoint scan
+  remains stubbed; no observed real caller needs it.
 
 **Hard blocker: mempool.** Both sources confirm unconfirmed-transaction awareness
 is an exercised, not merely optional, code path: `relevanttxaccepted` (the modern
@@ -249,8 +292,8 @@ mempool-resident transaction matching the loaded filter, and
 lnd's notifier has a dedicated mempool-spend lookup path
 (`LookupInputMempoolSpend`) used for fast breach/force-close reaction ahead of
 confirmation. **libbitcoin-server v4 has no mempool**, so `relevanttxaccepted`
-cannot be implemented now — the confirmed-only fallback (`filteredblockconnected`,
-**implemented, B2**) covers the same address/outpoint watch-list, just one block
+cannot be implemented now — the confirmed-only fallback (`filteredblockconnected`)
+covers the same address/outpoint watch-list, just one block
 later than a mempool-aware node would, so it means lnd would lose
 unconfirmed-spend awareness and any zero-conf-style UX. Final safety in Lightning
 still rests on confirmation + CSV/CLTV timeout margins, so this is a

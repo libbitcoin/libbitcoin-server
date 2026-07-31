@@ -134,8 +134,8 @@ protected:
     bool handle_get_best_block(const code& ec,
         btcd_interface::get_best_block) NOEXCEPT;
 
-    /// Handlers (Phase C: generic btcd-tooling compatibility, no lnd
-    /// consumer -- see docs/btcd-endpoint.md).
+    /// Handlers (generic btcd-tooling compatibility, no lnd consumer -- see
+    /// docs/btcd-endpoint.md).
     bool handle_get_difficulty(const code& ec,
         btcd_interface::get_difficulty) NOEXCEPT;
     bool handle_get_info(const code& ec, btcd_interface::get_info) NOEXCEPT;

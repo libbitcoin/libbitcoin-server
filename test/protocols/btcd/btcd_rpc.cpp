@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__returns_null_result)
     BOOST_REQUIRE(!has_error(response));
 }
 
-// Standard chain methods (bridged, B0)
+// Standard chain methods (bridged into the ws dispatcher)
 // ----------------------------------------------------------------------------
 // Inherited from protocol_bitcoind_rpc, reachable both via plain http post on
 // the same endpoint (see test/protocols/bitcoind) and, bridged, over this ws
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
 }
 
 // Address/outpoint filtering (loadtxfilter, filteredblockconnected/
-// disconnected, rescanblocks) -- implemented, B2.
+// disconnected, rescanblocks).
 // ----------------------------------------------------------------------------
 // blocks 1-9 (btcd_ten_block_setup_fixture) are real early mainnet blocks,
 // each a single p2pk coinbase with no inter-block spends (first real tx in
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
     BOOST_REQUIRE(has_error(response));
 }
 
-// Phase C: generic btcd-tooling compatibility (implemented, no lnd consumer)
+// Generic btcd-tooling compatibility (no lnd consumer)
 // ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__returns_number)
