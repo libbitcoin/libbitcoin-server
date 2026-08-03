@@ -549,7 +549,7 @@ options_metadata parser::load_settings() THROWS
     (
         "network.rate_limit",
         value<uint32_t>(&configured.network.rate_limit),
-        "The peer download rate limit (not implemented)."
+        "The per channel send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "network.blacklist",
