@@ -54,8 +54,19 @@ chain-read/rawtx handlers both APIs share (`getbestblockhash`, `getblock`,
 the extension point `protocol_http` already exposes for handling an HTTP→WS
 upgrade — to route btcd's WS-only notification/subscription methods.
 
-`channel_btcd` extends `channel_http` with an `authenticated_` flag, set once the
-WS `authenticate` command (or HTTP Basic Auth header) succeeds.
+`channel_btcd` extends `channel_http` with an `authenticated_` flag. Nothing is
+composed or re-sent per ws message -- ws data frames structurally cannot carry
+a per-message Authorization header at all. Instead, authorization for the
+whole connection is established exactly **once**, by whichever happens first:
+real Basic Auth on the one-time ws upgrade request (a normal HTTP request,
+with real headers, checked the same way a plain http request is), or the
+in-band `authenticate` command, called once as a substitute for that header.
+Either way the result is a cached credential digest (`authenticated_`/
+`authenticated_digest_`) consulted on every later call via `permitted()`, not
+re-verified against anything sent with that call. Plain HTTP POST traffic
+(the inherited bitcoind-style chain methods) is unaffected by any of this --
+it keeps real per-request Basic Auth headers, checked on every request, same
+as bitcoind's own endpoint always did.
 
 **A `session_handshake<protocol_btcd_auth, protocol_btcd_rpc>` variant of this was
 tried and reverted.** The idea was to model btcd's auth on
@@ -76,8 +87,9 @@ the real handlers — the same shape bitcoind already uses, and the reason
 bitcoind never had this problem. `authenticate` is just an ordinary
 extension method on `protocol_btcd_rpc`, exactly matching real btcd, where it
 is described as "disallowed when basic auth has already been established" —
-an alternative to Basic Auth for the one transport that can't carry headers
-per-message, not a mandatory step every connection passes through.
+a one-time alternative to a Basic Auth header (see the note above on how
+authorization is cached, not composed, for ws traffic), not a mandatory step
+every connection passes through.
 
 Notification/subscription state (watched blocks, watched scripts/outpoints)
 follows the pattern already established in `protocol_electrum`

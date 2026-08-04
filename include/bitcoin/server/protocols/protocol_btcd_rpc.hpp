@@ -44,10 +44,20 @@ namespace server {
 /// protocol_btcd_rpc>, no separate handshake protocol/stage) -- matching real
 /// btcd's own model, which has no handshake either: HTTP Basic Auth is
 /// checked synchronously per plain-http request (channel_http::authorized(),
-/// unchanged from bitcoind), and ws 'authenticate' is just an ordinary
-/// extension method that lets a client establish the same authorization
-/// in-band, for the one transport (websocket data frames) that structurally
-/// cannot carry a per-message Authorization header. See docs/btcd-endpoint.md
+/// unchanged from bitcoind, and re-checked on every request since ordinary
+/// HTTP headers accompany each one). Over the persistent ws connection,
+/// nothing is re-sent or re-checked per-message -- ws data frames
+/// structurally cannot carry a per-message Authorization header at all, so
+/// there is no way to compose one even if this wanted to. Instead,
+/// authorization for the whole connection is established exactly once, by
+/// whichever of two events happens first: real Basic Auth presented on the
+/// one-time ws upgrade request (which does have real headers, latched via
+/// the same channel_http mechanism as a plain http request), or the in-band
+/// 'authenticate' extension method below, called once as a substitute for
+/// that header. Either way the result (a credential digest) is cached on
+/// channel_btcd for the connection's lifetime (see channel_btcd::
+/// set_authenticated/permitted) and consulted, not re-verified, on every
+/// subsequent call. See docs/btcd-endpoint.md
 /// for why an earlier session_handshake<protocol_btcd_auth, protocol_btcd_rpc>
 /// design (modeled on electrum/p2p's version negotiation) was reverted: those
 /// protocols' handshakes always wait for a real message to complete, but
