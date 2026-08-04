@@ -136,6 +136,8 @@
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_rpc.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_disabled.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_fees.cpp" />
@@ -165,6 +167,7 @@
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\test.hpp" />

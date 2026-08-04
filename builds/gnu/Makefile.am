@@ -61,6 +61,13 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
     ${srcdir}/../../src/protocols/protocol_http.cpp \
     ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \
+    ${srcdir}/../../src/protocols/native/protocol_native.cpp \
+    ${srcdir}/../../src/protocols/native/protocol_native_address.cpp \
+    ${srcdir}/../../src/protocols/native/protocol_native_block.cpp \
+    ${srcdir}/../../src/protocols/native/protocol_native_configuration.cpp \
+    ${srcdir}/../../src/protocols/native/protocol_native_input.cpp \
+    ${srcdir}/../../src/protocols/native/protocol_native_output.cpp \
+    ${srcdir}/../../src/protocols/native/protocol_native_tx.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc_json.cpp \
@@ -79,13 +86,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_subscribe.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_transactions.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_version.cpp \
-    ${srcdir}/../../src/protocols/native/protocol_native.cpp \
-    ${srcdir}/../../src/protocols/native/protocol_native_address.cpp \
-    ${srcdir}/../../src/protocols/native/protocol_native_block.cpp \
-    ${srcdir}/../../src/protocols/native/protocol_native_configuration.cpp \
-    ${srcdir}/../../src/protocols/native/protocol_native_input.cpp \
-    ${srcdir}/../../src/protocols/native/protocol_native_output.cpp \
-    ${srcdir}/../../src/protocols/native/protocol_native_tx.cpp \
     ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp
 
 include_bitcoindir = \
@@ -106,6 +106,21 @@ include_bitcoin_server_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/settings.hpp \
     ${srcdir}/../../include/bitcoin/server/version.hpp
 
+include_bitcoin_server_impl_protocolsdir = \
+    ${includedir}/bitcoin/server/impl/protocols
+
+include_bitcoin_server_impl_protocols_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_native.ipp
+
+include_bitcoin_server_sessionsdir = \
+    ${includedir}/bitcoin/server/sessions
+
+include_bitcoin_server_sessions_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/sessions/session.hpp \
+    ${srcdir}/../../include/bitcoin/server/sessions/session_handshake.hpp \
+    ${srcdir}/../../include/bitcoin/server/sessions/session_server.hpp \
+    ${srcdir}/../../include/bitcoin/server/sessions/sessions.hpp
+
 include_bitcoin_server_channelsdir = \
     ${includedir}/bitcoin/server/channels
 
@@ -117,27 +132,6 @@ include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channels.hpp
-
-include_bitcoin_server_impl_protocolsdir = \
-    ${includedir}/bitcoin/server/impl/protocols
-
-include_bitcoin_server_impl_protocols_HEADERS = \
-    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_native.ipp
-
-include_bitcoin_server_interfacesdir = \
-    ${includedir}/bitcoin/server/interfaces
-
-include_bitcoin_server_interfaces_HEADERS = \
-    ${srcdir}/../../include/bitcoin/server/interfaces/admin.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rest.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rpc.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/interfaces.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/native.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v1.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v2.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/types.hpp
 
 include_bitcoin_server_parsersdir = \
     ${includedir}/bitcoin/server/parsers
@@ -170,14 +164,20 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocols.hpp
 
-include_bitcoin_server_sessionsdir = \
-    ${includedir}/bitcoin/server/sessions
+include_bitcoin_server_interfacesdir = \
+    ${includedir}/bitcoin/server/interfaces
 
-include_bitcoin_server_sessions_HEADERS = \
-    ${srcdir}/../../include/bitcoin/server/sessions/session.hpp \
-    ${srcdir}/../../include/bitcoin/server/sessions/session_handshake.hpp \
-    ${srcdir}/../../include/bitcoin/server/sessions/session_server.hpp \
-    ${srcdir}/../../include/bitcoin/server/sessions/sessions.hpp
+include_bitcoin_server_interfaces_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/interfaces/admin.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rest.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rpc.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/interfaces.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/native.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v1.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v2.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/types.hpp
 
 # Tests.
 #==============================================================================
@@ -209,7 +209,6 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/main.cpp \
     ${srcdir}/../../test/settings.cpp \
     ${srcdir}/../../test/test.cpp \
-    ${srcdir}/../../test/mocks/blocks.cpp \
     ${srcdir}/../../test/parsers/admin_query.cpp \
     ${srcdir}/../../test/parsers/admin_target.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
@@ -218,6 +217,13 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/parsers/native_target.cpp \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
     ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
+    ${srcdir}/../../test/protocols/native/native_address.cpp \
+    ${srcdir}/../../test/protocols/native/native_block.cpp \
+    ${srcdir}/../../test/protocols/native/native_configuration.cpp \
+    ${srcdir}/../../test/protocols/native/native_input.cpp \
+    ${srcdir}/../../test/protocols/native/native_output.cpp \
+    ${srcdir}/../../test/protocols/native/native_setup_fixture.cpp \
+    ${srcdir}/../../test/protocols/native/native_tx.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_json.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rpc.cpp \
@@ -237,13 +243,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/electrum/electrum_subscribe.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_transactions.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_version.cpp \
-    ${srcdir}/../../test/protocols/native/native_address.cpp \
-    ${srcdir}/../../test/protocols/native/native_block.cpp \
-    ${srcdir}/../../test/protocols/native/native_configuration.cpp \
-    ${srcdir}/../../test/protocols/native/native_input.cpp \
-    ${srcdir}/../../test/protocols/native/native_output.cpp \
-    ${srcdir}/../../test/protocols/native/native_setup_fixture.cpp \
-    ${srcdir}/../../test/protocols/native/native_tx.cpp
+    ${srcdir}/../../test/mocks/blocks.cpp
 
 TESTS = test_runner.sh
 
