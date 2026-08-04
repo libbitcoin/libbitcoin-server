@@ -187,8 +187,6 @@
     "Please wait while network is starting..."
 #define BS_NODE_START_FAIL \
     "Node failed to start with error '%1%'."
-#define BS_INVALID_CREDENTIAL \
-    "Invalid server credential configuration."
 #define BS_NODE_UNAVAILABLE \
     "Command not available until node started."
 #define BS_NODE_INTERRUPTED \

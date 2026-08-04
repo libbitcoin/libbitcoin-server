@@ -155,20 +155,7 @@ bool executor::do_run()
     logger(BS_NODE_INTERRUPT);
 
     // Create node.
-    // Only the bitcoind interface exposes basic authorization.
-    using rpc_t = interface::bitcoind_rpc;
-    using rest_t = interface::bitcoind_rest;
-
-    const auto& servers = metadata_.configured.server;
     metadata_.configured.network.manual.initialize();
-
-    if (!interface::validated<rpc_t, rest_t>(servers.bitcoind))
-    {
-        logger(BS_INVALID_CREDENTIAL);
-        stopper(BS_NODE_STOPPED);
-        return false;
-    }
-
     node_ = std::make_shared<server_node>(query_, metadata_.configured, log_);
 
     // Subscribe node.
