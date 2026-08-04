@@ -97,7 +97,7 @@ AC_SUBST([pkgconfigdir],[${with_pkgconfigdir}])
 AC_MSG_CHECKING([--enable-ndebug option])
 AC_ARG_ENABLE([ndebug],
     AS_HELP_STRING([--enable-ndebug],
-        [Compile with NDEBUG assertion. @<:@default=yes@:>@]),
+        [Compile with NDEBUG (no debug assertions). @<:@default=yes@:>@]),
     [enable_ndebug=$enableval],
     [enable_ndebug=yes])
 AC_MSG_RESULT([$enable_ndebug])
