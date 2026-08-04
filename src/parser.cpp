@@ -174,7 +174,7 @@ options_metadata parser::load_options() THROWS
         "Display command line options."
     )
     (
-        BS_HARDWARE_VARIABLE ",d",
+        BS_HARDWARE_VARIABLE ",w",
         value<bool>(&configured.hardware)->
             default_value(false)->zero_tokens(),
         "Display hardware compatibility."
@@ -210,6 +210,20 @@ options_metadata parser::load_options() THROWS
             default_value(false)->zero_tokens(),
         "Restore from most recent snapshot."
     )
+    // Service.
+    (
+        BS_DAEMON_VARIABLE ",d",
+        value<bool>()->implicit_value(true)->
+            notifier([&](bool value) { configured.daemon = value; }),
+        "Install ('true') or uninstall ('false') as a system service."
+    )
+    (
+        BS_USER_VARIABLE ",u",
+        value<network::config::credential>()->
+            notifier([&](const network::config::credential& value)
+                { configured.user = value; }),
+        "The service logon credential, defaults to the system account."
+    )
     // Chain scans.
     (
         BS_FLAGS_VARIABLE ",f",
@@ -243,14 +257,14 @@ options_metadata parser::load_options() THROWS
     )
     // Ad-hoc Testing.
     (
-        BS_READ_VARIABLE ",t",
-        value<config::hash256>(&configured.test)->
+        BS_GET_VARIABLE ",g",
+        value<config::hash256>(&configured.get)->
             default_value(system::null_hash),
         "Run built-in read test and display."
     )
     (
-        BS_WRITE_VARIABLE ",w",
-        value<config::hash256>(&configured.write)->
+        BS_PUT_VARIABLE ",p",
+        value<config::hash256>(&configured.put)->
             default_value(system::null_hash),
         "Run built-in write test and display."
     );
@@ -260,9 +274,8 @@ options_metadata parser::load_options() THROWS
 
 arguments_metadata parser::load_arguments() THROWS
 {
-    arguments_metadata description;
-    return description
-        .add(BS_CONFIG_VARIABLE, 1);
+    // There are no positional arguments, the config path requires --config.
+    return arguments_metadata{};
 }
 
 options_metadata parser::load_environment() THROWS

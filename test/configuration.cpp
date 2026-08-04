@@ -34,13 +34,15 @@ BOOST_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
     BOOST_REQUIRE(!instance.newstore);
     BOOST_REQUIRE(!instance.backup);
     BOOST_REQUIRE(!instance.restore);
+    BOOST_REQUIRE(!instance.daemon);
+    BOOST_REQUIRE(!instance.user);
     BOOST_REQUIRE(!instance.flags);
     BOOST_REQUIRE(!instance.information);
     BOOST_REQUIRE(!instance.slabs);
     BOOST_REQUIRE(!instance.buckets);
     BOOST_REQUIRE(!instance.collisions);
-    BOOST_REQUIRE_EQUAL(instance.test, system::null_hash);
-    BOOST_REQUIRE_EQUAL(instance.write, system::null_hash);
+    BOOST_REQUIRE_EQUAL(instance.get, system::null_hash);
+    BOOST_REQUIRE_EQUAL(instance.put, system::null_hash);
 
     // Just a sample of settings.
     BOOST_REQUIRE(instance.node.headers_first);

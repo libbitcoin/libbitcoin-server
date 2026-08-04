@@ -31,6 +31,8 @@
 #define BS_NEWSTORE_VARIABLE "newstore"
 #define BS_BACKUP_VARIABLE "backup"
 #define BS_RESTORE_VARIABLE "restore"
+#define BS_DAEMON_VARIABLE "daemon"
+#define BS_USER_VARIABLE "user"
 
 #define BS_FLAGS_VARIABLE "flags"
 #define BS_SLABS_VARIABLE "slabs"
@@ -38,8 +40,8 @@
 #define BS_COLLISIONS_VARIABLE "collisions"
 #define BS_INFORMATION_VARIABLE "information"
 
-#define BS_READ_VARIABLE "test"
-#define BS_WRITE_VARIABLE "write"
+#define BS_GET_VARIABLE "get"
+#define BS_PUT_VARIABLE "put"
 
 // This must be lower case but the env var part can be any case.
 #define BS_CONFIG_VARIABLE "config"

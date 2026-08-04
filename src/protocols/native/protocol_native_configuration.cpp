@@ -51,7 +51,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         { "witness", network_settings().witness_node() },
         { "retarget", system_settings().forks.retarget },
         { "difficult", system_settings().forks.difficult },
-        { "stripped", get_stripped_height() },
+        { "pruned", get_pruned_height() },
     }, 64);
     return true;
 }
@@ -59,10 +59,9 @@ bool protocol_native::handle_get_configuration(const code& ec,
 // utility
 // ----------------------------------------------------------------------------
 
-size_t protocol_native::get_stripped_height() NOEXCEPT
+size_t protocol_native::get_pruned_height() NOEXCEPT
 {
-    if (!network_settings().pruned_node() ||
-        !network_settings().witness_node())
+    if (!network_settings().pruned_node())
         return {};
 
     const auto& system_ = system_settings();

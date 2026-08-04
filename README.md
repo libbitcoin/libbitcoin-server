@@ -311,19 +311,19 @@ Options (named):
 -a [--slabs]         Scan and display store slab measures.               
 -b [--backup]        Backup to a snapshot (can also do live).            
 -c [--config]        Specify path to a configuration settings file.      
--d [--hardware]      Display hardware compatibility.                     
 -f [--flags]         Scan and display all flag transitions.              
+-g [--get]           Run built-in read test and display.                 
 -h [--help]          Display command line options.                       
 -i [--information]   Scan and display store information.                 
 -k [--buckets]       Scan and display all bucket densities.              
 -l [--collisions]    Scan and display hashmap collision stats (may exceed
                      RAM and result in SIGKILL).                         
 -n [--newstore]      Create new store in configured directory.           
+-p [--put]           Run built-in write test and display.                
 -r [--restore]       Restore from most recent snapshot.                  
 -s [--settings]      Display all configuration settings.                 
--t [--test]          Run built-in read test and display.                 
--v [--version]       Display version information.                        
--w [--write]         Run built-in write test and display.
+-v [--version]       Display version information.           
+-w [--hardware]      Display hardware compatibility.                                  
 ```
 
 ### Startup Process

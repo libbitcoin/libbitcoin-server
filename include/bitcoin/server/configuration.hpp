@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_CONFIGURATION_HPP
 #define LIBBITCOIN_SERVER_CONFIGURATION_HPP
 
+#include <optional>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
@@ -48,6 +49,10 @@ public:
     bool backup{};
     bool restore{};
 
+    /// Service (unset implies no service action).
+    std::optional<bool> daemon{};
+    std::optional<network::config::credential> user{};
+
     /// Chain scans.
     bool flags{};
     bool information{};
@@ -56,8 +61,8 @@ public:
     bool collisions{};
 
     /// Ad-hoc Testing.
-    system::config::hash256 test{};
-    system::config::hash256 write{};
+    system::config::hash256 get{};
+    system::config::hash256 put{};
 
     /// Settings.
     log::settings log;

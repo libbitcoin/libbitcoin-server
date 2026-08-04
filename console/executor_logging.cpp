@@ -87,7 +87,11 @@ void executor::subscribe_log(std::ostream& sink)
                 output_ << prefix << message << std::endl;
                 sink << prefix << BS_NODE_FOOTER << std::endl;
                 output_ << prefix << BS_NODE_FOOTER << std::endl;
-                output_ << prefix << BS_NODE_TERMINATE << std::endl;
+
+                // A service has no console to await, and posix captures
+                // console output to the service log, where this is noise.
+                if (!service_)
+                    output_ << prefix << BS_NODE_TERMINATE << std::endl;
 
                 // Release subscription and signal termination of log.
                 // Log destruct blocks on its own threadpool join, which occurs

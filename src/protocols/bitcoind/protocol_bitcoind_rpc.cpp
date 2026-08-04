@@ -315,7 +315,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
         { "initialblockdownload", !is_current_chain(true) },
-        { "pruned", false },
+        { "pruned", network_settings().pruned_node() },
         { "warnings", std::string{} },
 
         // Taproot is a permanent, long-since-locked-in consensus rule (no

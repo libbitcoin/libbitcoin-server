@@ -115,7 +115,11 @@ bool executor::do_run()
     // These all use std iostreams (exception risk).
     subscribe_log(log);
     subscribe_events(events);
-    subscribe_capture();
+
+    // A service has no console input.
+    if (!service_)
+        subscribe_capture();
+
     logger(BS_LOG_HEADER);
 
     if (check_store_path())
@@ -147,7 +151,9 @@ bool executor::do_run()
     ////dump_progress();
 
     // Stopped by stopper.
-    capture_.start();
+    if (!service_)
+        capture_.start();
+
     dump_version();
     dump_hardware();
     dump_paging();
