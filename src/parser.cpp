@@ -701,6 +701,11 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowed request size, defaults to '4000000'."
     )
     (
+        "outbound.rate_limit",
+        value<uint32_t>(&configured.network.outbound.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
+    )
+    (
         "outbound.use_ipv6",
         value<bool>(&configured.network.outbound.use_ipv6),
         "Use internet protocol version 6 (IPv6) addresses, defaults to 'false'."
@@ -778,6 +783,11 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowed request size, defaults to '4000000'."
     )
     (
+        "inbound.rate_limit",
+        value<uint32_t>(&configured.network.inbound.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
+    )
+    (
         "inbound.enable_loopback",
         value<bool>(&configured.network.inbound.enable_loopback),
         "Allow connections from the node to itself, defaults to 'false'."
@@ -823,6 +833,11 @@ options_metadata parser::load_settings() THROWS
         "manual.maximum_request",
         value<uint32_t>(&configured.network.manual.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "manual.rate_limit",
+        value<uint32_t>(&configured.network.manual.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "manual.peer",
@@ -900,6 +915,11 @@ options_metadata parser::load_settings() THROWS
         "admin.maximum_request",
         value<uint32_t>(&configured.server.admin.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "admin.rate_limit",
+        value<uint32_t>(&configured.server.admin.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "admin.server",
@@ -987,6 +1007,11 @@ options_metadata parser::load_settings() THROWS
         "native.maximum_request",
         value<uint32_t>(&configured.server.native.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "native.rate_limit",
+        value<uint32_t>(&configured.server.native.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "native.server",
@@ -1086,6 +1111,11 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowed request size, defaults to '4000000'."
     )
     (
+        "bitcoind.rate_limit",
+        value<uint32_t>(&configured.server.bitcoind.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
+    )
+    (
         "bitcoind.server",
         value<std::string>(&configured.server.bitcoind.server),
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
@@ -1151,6 +1181,11 @@ options_metadata parser::load_settings() THROWS
         "electrum.maximum_request",
         value<uint32_t>(&configured.server.electrum.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "electrum.rate_limit",
+        value<uint32_t>(&configured.server.electrum.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "electrum.maximum_headers",
@@ -1259,6 +1294,11 @@ options_metadata parser::load_settings() THROWS
         value<uint32_t>(&configured.server.stratum_v1.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
     )
+    (
+        "stratum_v1.rate_limit",
+        value<uint32_t>(&configured.server.stratum_v1.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
+    )
 
     /* [stratum_v2] */
     (
@@ -1290,6 +1330,11 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.maximum_request",
         value<uint32_t>(&configured.server.stratum_v2.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "stratum_v2.rate_limit",
+        value<uint32_t>(&configured.server.stratum_v2.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
 
     /* [node] */
