@@ -314,8 +314,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
     // verificationprogress is approximated as confirmed/candidate height, the
     // best available estimate of the chain tip during sync (1.0 once current).
     const auto progress = is_zero(headers) ? 1.0 :
-        std::min(1.0, static_cast<double>(blocks) /
-            static_cast<double>(headers));
+        std::min(1.0, to_floating(blocks) / to_floating(headers));
 
     // Softfork activation is configured, not assumable. Taproot is reported
     // when configured active, with its configured activation height -- lnd's
@@ -331,8 +330,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
             { "bit", 2 },
             { "startTime", -1 },
             { "timeout", -1 },
-            { "since", possible_sign_cast<int64_t>(
-                settings.bip9_bit2_active_checkpoint.height()) },
+            { "since", settings.bip9_bit2_active_checkpoint.height() },
             { "min_activation_height", 0 }
         });
     }
@@ -342,8 +340,8 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
     send_result(object_t
     {
         { "chain", chain_name(query) },
-        { "blocks", possible_wide_cast<uint64_t>(blocks) },
-        { "headers", possible_wide_cast<uint64_t>(headers) },
+        { "blocks", blocks },
+        { "headers", headers },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(header->bits())) },
         { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
@@ -366,7 +364,7 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
         return false;
 
     const auto top = archive().get_top_confirmed();
-    send_result(possible_wide_cast<uint64_t>(top), 20);
+    send_result(top, 20);
     return true;
 }
 
