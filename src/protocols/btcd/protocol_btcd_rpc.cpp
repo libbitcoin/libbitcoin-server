@@ -233,8 +233,8 @@ bool protocol_btcd_rpc::handle_session(const code& ec,
     // The channel identifier is unique per connection for the process
     // lifetime, satisfying btcwallet's reconnect-detection use of session ids.
     object_t result{};
-    result.emplace("id", value_t{ possible_sign_cast<int64_t>(identifier()) });
-    send_result(value_t{ std::move(result) }, 32);
+    result.emplace("id", identifier());
+    send_result(std::move(result), 32);
     return true;
 }
 
@@ -246,9 +246,7 @@ bool protocol_btcd_rpc::handle_get_current_net(const code& ec,
 
     // The p2p handshake magic, the same value btcd returns (checked once by
     // btcwallet/lnd at connect to confirm the expected network).
-    send_result(
-        value_t{ possible_sign_cast<int64_t>(network_settings().identifier) },
-        20);
+    send_result(network_settings().identifier, 20);
     return true;
 }
 
@@ -261,10 +259,9 @@ bool protocol_btcd_rpc::handle_get_best_block(const code& ec,
     // Required by btcwallet during wallet chain-sync bootstrap.
     const auto& query = archive();
     object_t result{};
-    result.emplace("hash", value_t{ encode_hash(query.get_top_confirmed_hash()) });
-    result.emplace("height", value_t{
-        possible_sign_cast<int64_t>(query.get_top_confirmed()) });
-    send_result(value_t{ std::move(result) }, 96);
+    result.emplace("hash", encode_hash(query.get_top_confirmed_hash()));
+    result.emplace("height", query.get_top_confirmed());
+    send_result(std::move(result), 96);
     return true;
 }
 
@@ -414,12 +411,12 @@ bool protocol_btcd_rpc::handle_rescan(const code& ec,
     // Reply to the rescan call itself before the unprompted notification.
     send_result({}, 4);
 
-    array_t params{};
-    params.emplace_back(value_t{ encode_hash(query.get_top_confirmed_hash()) });
-    params.emplace_back(value_t{ possible_sign_cast<int64_t>(top) });
-    params.emplace_back(value_t{
-        possible_sign_cast<int64_t>(header->timestamp()) });
-    send_notification("rescanfinished", std::move(params), 256);
+    send_notification("rescanfinished", array_t
+    {
+        encode_hash(query.get_top_confirmed_hash()),
+        top,
+        header->timestamp()
+    }, 256);
     return true;
 }
 

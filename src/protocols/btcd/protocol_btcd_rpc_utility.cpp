@@ -18,7 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_btcd_rpc.hpp>
 
-#include <cmath>
+#include <algorithm>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -86,7 +86,7 @@ bool protocol_btcd_rpc::handle_get_info(const code& ec,
     {
         { "version", version },
         { "protocolversion", network_settings().protocol_maximum },
-        { "blocks", possible_sign_cast<int64_t>(top) },
+        { "blocks", top },
         { "timeoffset", 0 },
         { "connections", 0 },
         { "proxy", std::string{} },
@@ -109,7 +109,7 @@ bool protocol_btcd_rpc::handle_get_net_totals(const code& ec,
     {
         { "totalbytesrecv", 0 },
         { "totalbytessent", 0 },
-        { "timemillis", possible_sign_cast<int64_t>(zulu_time()) * 1000 }
+        { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 }
     }, 64);
     return true;
 }
@@ -124,8 +124,8 @@ bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
     // target spacing, not a windowed average over 'blocks'.
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
-    const auto target = (height < 0) ? top :
-        std::min(static_cast<size_t>(height), top);
+    const auto target = is_negative(height) ? top :
+        std::min(possible_sign_cast<size_t>(height), top);
 
     const auto header = query.get_header(query.to_confirmed(target));
     if (!header)
@@ -221,9 +221,17 @@ bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
             return true;
         }
 
+        // Scale to satoshis and validate, the value is client-provided and
+        // the product may exceed the integer domain (not whole, as scaling
+        // a decimal fraction carries floating point representation error).
+        uint64_t satoshi{};
         const auto btc = std::get<number_t>(pair.second.value());
-        const auto satoshi = static_cast<uint64_t>(
-            std::llround(btc * chain::satoshi_per_bitcoin));
+        if (!to_integer(satoshi, btc * chain::satoshi_per_bitcoin, false))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
         outs.emplace_back(satoshi, std::move(script));
     }
 
@@ -288,7 +296,7 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
 
     using namespace chain;
     object_t result{};
-    result.emplace("asm", value_t{ script.to_string(flags::all_rules, true) });
+    result.emplace("asm", script.to_string(flags::all_rules, true));
 
     std::string kind{ "nonstandard" };
     switch (script.output_pattern())
@@ -320,7 +328,7 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
         default:
             break;
     }
-    result.emplace("type", value_t{ kind });
+    result.emplace("type", kind);
 
     if (script.output_pattern() == script_pattern::pay_key_hash ||
         script.output_pattern() == script_pattern::pay_script_hash)
@@ -328,15 +336,15 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
         const auto address = wallet::payment_address::extract_output(script,
             p2kh_, p2sh_);
         if (address)
-            result.emplace("address", value_t{ address.encoded() });
+            result.emplace("address", address.encoded());
     }
 
     // The p2sh-wrapping address of this exact script (btcd's "p2sh" field).
     const wallet::payment_address wrapped{ script, p2sh_ };
     if (wrapped)
-        result.emplace("p2sh", value_t{ wrapped.encoded() });
+        result.emplace("p2sh", wrapped.encoded());
 
-    send_result(value_t{ std::move(result) }, 256);
+    send_result(std::move(result), 256);
     return true;
 }
 
@@ -352,7 +360,7 @@ bool protocol_btcd_rpc::handle_validate_address(const code& ec,
         send_result(object_t
         {
             { "isvalid", true },
-            { "address", value_t{ base58.encoded() } },
+            { "address", base58.encoded() },
             { "isscript", base58.prefix() == p2sh_ },
             { "iswitness", false }
         }, 128);
@@ -365,13 +373,12 @@ bool protocol_btcd_rpc::handle_validate_address(const code& ec,
         send_result(object_t
         {
             { "isvalid", true },
-            { "address", value_t{ segwit.encoded() } },
+            { "address", segwit.encoded() },
             { "isscript", segwit.identifier() ==
                 wallet::witness_address::program_type::version0_p2sh },
             { "iswitness", true },
-            { "witness_version", value_t{
-                possible_sign_cast<int64_t>(segwit.version()) } },
-            { "witness_program", value_t{ encode_base16(segwit.program()) } }
+            { "witness_version", segwit.version() },
+            { "witness_program", encode_base16(segwit.program()) }
         }, 128);
         return true;
     }

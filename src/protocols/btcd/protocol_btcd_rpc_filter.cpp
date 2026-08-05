@@ -341,11 +341,11 @@ void protocol_btcd_rpc::do_rescan_watches(
         const auto at = matched.find(height);
         if (at != matched.end() && !at->second.empty())
         {
-            discovered.emplace_back(value_t{ object_t
+            discovered.emplace_back(object_t
             {
-                { "hash", value_t{ encode_hash(hash) } },
-                { "transactions", value_t{ serialize_matches(at->second) } }
-            } });
+                { "hash", encode_hash(hash) },
+                { "transactions", serialize_matches(at->second) }
+            });
         }
     }
 
@@ -367,7 +367,7 @@ void protocol_btcd_rpc::complete_rescan_blocks(const code& ec,
         return;
     }
 
-    send_result(value_t{ discovered }, 256);
+    send_result(discovered, 256);
 }
 
 // Notification event handlers.
@@ -458,16 +458,16 @@ void protocol_btcd_rpc::notify_connected(const std::string& hash,
 
     send_notification("blockconnected", array_t
     {
-        value_t{ hash },
-        value_t{ possible_sign_cast<int64_t>(height) },
-        value_t{ possible_sign_cast<int64_t>(time) }
+        hash,
+        height,
+        time
     }, 256);
 
     send_notification("filteredblockconnected", array_t
     {
-        value_t{ possible_sign_cast<int64_t>(height) },
-        value_t{ header },
-        value_t{ txs }
+        height,
+        header,
+        txs
     }, 256);
 }
 
@@ -483,15 +483,15 @@ void protocol_btcd_rpc::notify_disconnected(const std::string& hash,
 
     send_notification("blockdisconnected", array_t
     {
-        value_t{ hash },
-        value_t{ possible_sign_cast<int64_t>(height) },
-        value_t{ possible_sign_cast<int64_t>(time) }
+        hash,
+        height,
+        time
     }, 256);
 
     send_notification("filteredblockdisconnected", array_t
     {
-        value_t{ possible_sign_cast<int64_t>(height) },
-        value_t{ header }
+        height,
+        header
     }, 256);
 }
 
@@ -546,8 +546,8 @@ array_t protocol_btcd_rpc::serialize_matches(const matched_txs& txs) NOEXCEPT
 
         const auto tx = query.get_transaction(query.to_tx(hash), witness);
         if (tx)
-            out.emplace_back(value_t{ to_text(*tx,
-                tx->serialized_size(witness), witness) });
+            out.emplace_back(to_text(*tx,
+                tx->serialized_size(witness), witness));
     }
 
     return out;
