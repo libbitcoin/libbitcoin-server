@@ -1,7 +1,7 @@
-/*
+/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
- * This file is part of libbitcoin-server.
+ * This file is part of libbitcoin.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -31,7 +31,7 @@ struct btcd_methods
     /// BTCD protocol (unversioned, json-rpc v1.0 over ws/s).
     static constexpr std::tuple methods
     {
-        /// Handshake (disallowed when basic auth has been established).
+        /// Authentication (one-time, in-band alternative to basic auth).
         method<"authenticate", string_t, string_t>{ "username", "password" },
 
         /// Admin.
@@ -59,10 +59,10 @@ struct btcd_methods
         method<"stopnotifyspent", value_t>{ "outpoints" },
         method<"rescan", string_t, value_t, value_t, optional<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" },
 
-        /// Admin (network magic, checked once by btcwallet/lnd at connect).
+        /// Admin (network magic).
         method<"getcurrentnet">{},
 
-        /// Generic btcd-tooling compatibility (no lnd consumer).
+        /// Generic btcd-tooling compatibility.
         method<"getdifficulty">{},
         method<"getinfo">{},
         method<"getnettotals">{},
@@ -73,9 +73,7 @@ struct btcd_methods
         method<"validateaddress", string_t>{ "address" },
         method<"help", optional<""_t>>{ "command" },
 
-        /// btcd extension: {hash, height} of the best chain tip, used by
-        /// btcwallet's own rpcclient connection (distinct from lnd's own
-        /// chain.RPCClient) during wallet chain-sync bootstrap.
+        /// btcd extension: {hash, height} of the best chain tip.
         method<"getbestblock">{}
     };
 

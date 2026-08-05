@@ -272,9 +272,7 @@ pytest test_bitcoind_rpc.py -k "getblock"
 Tests the btcd-compatible endpoint: JSON-RPC 1.0 over a persistent websocket
 connection (session/notification/filter/admin extension methods) plus plain
 http post (chain methods inherited from `protocol_bitcoind_rpc`, same shape
-as `bitcoind`). See `docs/btcd-endpoint.md` for the full design, method
-scope, and the lnd/btcwallet compatibility analysis (verified end-to-end
-against a real lnd binary).
+as `bitcoind`).
 
 Unlike the other endpoint suites, this one is explicitly split into two
 kinds of test:

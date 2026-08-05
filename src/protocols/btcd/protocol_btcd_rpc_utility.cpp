@@ -37,7 +37,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Generic btcd-tooling compatibility (no lnd consumer).
+// Generic btcd-tooling compatibility.
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd_rpc::handle_get_difficulty(const code& ec,
@@ -74,10 +74,8 @@ bool protocol_btcd_rpc::handle_get_info(const code& ec,
         return true;
     }
 
-    // Peer-dependent fields (connections) and errors are reported as
-    // empty/zero -- libbitcoin-server is not a peer-introspection service,
-    // matching the same honesty convention already used by the inherited
-    // bitcoind getnetworkinfo handler.
+    // Untracked peer-dependent fields are reported as empty/zero, matching
+    // the inherited getnetworkinfo handler's convention.
     send_btcd_result(object_t
     {
         { "version", 0 },
@@ -100,9 +98,7 @@ bool protocol_btcd_rpc::handle_get_net_totals(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Byte counters are not tracked by this node; reported as zero rather
-    // than not_implemented (matches getnetworkinfo's own convention for
-    // untracked peer-dependent fields). timemillis is real (current time).
+    // Untracked byte counters are reported as zero; timemillis is real.
     send_btcd_result(object_t
     {
         { "totalbytesrecv", 0 },
@@ -119,10 +115,7 @@ bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
         return false;
 
     // Approximated from the requested height's difficulty and the standard
-    // 600s target spacing, not a windowed average over 'blocks' -- there is
-    // no existing big-integer cumulative-work-over-a-range helper in this
-    // codebase to build a real windowed estimate from, and this is generic-
-    // tooling scope (no lnd consumer), not consensus-critical.
+    // 600s target spacing, not a windowed average over 'blocks'.
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     const auto target = (height < 0) ? top :
@@ -145,7 +138,6 @@ bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
 // Raw transaction/script utilities.
 // ----------------------------------------------------------------------------
 
-// A separate, standalone helper from parse_filter_addresses (see header).
 code protocol_btcd_rpc::parse_output_script(const std::string& text,
     chain::script& out) NOEXCEPT
 {
@@ -261,9 +253,8 @@ bool protocol_btcd_rpc::handle_decode_raw_transaction(const code& ec,
         return true;
     }
 
-    // bitcoind(tx) alone (no inject_tx_context) is exactly the bare
-    // decoderawtransaction shape -- no block-context fields to add for a
-    // standalone, possibly-unbroadcast transaction.
+    // bitcoind(tx) alone (no inject_tx_context) is the bare
+    // decoderawtransaction shape -- a standalone tx has no block context.
     send_btcd_result(value_from(bitcoind(tx)),
         two * tx.serialized_size(witness));
     return true;
@@ -335,9 +326,7 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
             result.emplace("address", value_t{ address.encoded() });
     }
 
-    // The p2sh-wrapping address of this exact script (i.e. the address that
-    // pays a redeem script equal to this one), regardless of this script's
-    // own pattern -- matches real btcd's "p2sh" field.
+    // The p2sh-wrapping address of this exact script (btcd's "p2sh" field).
     const wallet::payment_address wrapped{ script, p2sh_ };
     if (wrapped)
         result.emplace("p2sh", value_t{ wrapped.encoded() });
@@ -392,11 +381,7 @@ bool protocol_btcd_rpc::handle_help(const code& ec, btcd_interface::help,
     if (stopped(ec))
         return false;
 
-    // Minimal, generic-tooling-only implementation: no specific consumer
-    // (see docs/btcd-endpoint.md), so this lists method names rather than
-    // building full per-command argument usage text. Chain methods
-    // (getblockcount etc., inherited from protocol_bitcoind_rpc) are
-    // documented by bitcoind's own docs, unchanged.
+    // Lists method names only, no per-command argument usage text.
     send_btcd_result(std::string{
         "authenticate session getcurrentnet getbestblock notifyblocks "
         "stopnotifyblocks loadtxfilter rescanblocks getdifficulty getinfo "

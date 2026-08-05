@@ -157,10 +157,8 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
         return;
     }
 
-    // Dispatch the request to subscribers, falling back to a derived
-    // class's own extension dispatcher (e.g. protocol_btcd_rpc's btcd-only
-    // methods) if this dispatcher doesn't recognize the method -- the post-
-    // side mirror of dispatch_websocket's ws-side fallback to dispatch_rpc.
+    // Dispatch the request to subscribers, falling back to a derived class's
+    // own extension dispatcher if this one doesn't recognize the method.
     auto code = rpc_dispatcher_.notify(message);
     if (code == network::error::unexpected_method)
         code = dispatch_extension(message);
@@ -168,11 +166,7 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
     if (!code)
         return;
 
-    // Unknown to every dispatcher tried: reply with a json-rpc error and
-    // keep the connection alive for a subsequent request on the same
-    // keep-alive connection (matches dispatch_websocket's handling of the
-    // same case, and ordinary http semantics -- an error response body is
-    // not itself a reason to drop the TCP connection).
+    // Unknown method: reply with an error and keep the connection alive.
     if (code == network::error::unexpected_method)
         send_error(code);
     else
@@ -185,11 +179,8 @@ code protocol_bitcoind_rpc::dispatch_extension(const request_t&) NOEXCEPT
     return network::error::unexpected_method;
 }
 
-// Dispatch a chain-rpc message with no post-http context (websocket). Mirrors
-// handle_receive_post's id/version caching (set_rpc_request) and dispatcher
-// notify, without the post-specific host/origin/body checks -- those are
-// meaningless for a ws frame (channel_btcd::permitted() and the ws upgrade
-// itself already gate access) and are handled by the caller.
+// Dispatch a chain-rpc message with no post-http context (websocket) -- the
+// post-specific host/origin/body checks are meaningless for a ws frame.
 code protocol_bitcoind_rpc::dispatch_rpc(const request_t& message) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -318,18 +309,10 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "pruned", network_settings().pruned_node() },
         { "warnings", std::string{} },
 
-        // Taproot is a permanent, long-since-locked-in consensus rule (no
-        // live BIP9 signaling to track), so this is reported unconditionally
-        // rather than computed -- present specifically because real
-        // clients check for it: lnd's chainreg.backendSupportsTaproot
-        // (chainreg/taproot_check.go) requires a "taproot" entry here
-        // (mainnet activation height 709632, BIP9 bit 2) before it will
-        // treat *any* btcd/bitcoind backend as usable, checking only for
-        // this key's presence, not its field values. Confirmed via lnd's
-        // own source that "bitcoind versions before 0.19 and also btcd use
-        // the SoftForks fields" -- this is the real btcd-compatible path,
-        // not a workaround; getdeploymentinfo (lnd's fallback if this is
-        // absent) has no equivalent in real btcd at all.
+        // Taproot is a permanent consensus rule (no live signaling to
+        // track), so this is reported unconditionally rather than computed.
+        // lnd's backendSupportsTaproot requires the key's presence (not its
+        // field values) before treating any btcd/bitcoind backend as usable.
         { "bip9_softforks", object_t
             {
                 { "taproot", object_t
@@ -781,11 +764,8 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model,
     using namespace http;
     static const auto json = from_media_type(media_type::application_json);
 
-    // Websocket frames carry no cached post request (dispatch_rpc does not
-    // set one, unlike handle_receive_post) and have no per-message headers
-    // to echo (add_common_headers/add_access_control_headers is a post-only
-    // concept) -- send a minimal response, matching protocol_btcd_rpc's own
-    // ws senders.
+    // Websocket frames carry no cached post request and no per-message
+    // headers to echo -- send a minimal response.
     if (websocket())
     {
         id_.reset();

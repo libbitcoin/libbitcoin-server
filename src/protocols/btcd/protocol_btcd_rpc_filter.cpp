@@ -37,10 +37,6 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
 // Filter parsing (loadtxfilter).
 // ----------------------------------------------------------------------------
-// Addresses/outpoints arrive as generic value_t (not pre-typed by the
-// dispatcher, unlike single-valued params), so each is unpacked here via the
-// same std::holds_alternative/std::get idiom the dispatcher itself uses
-// internally (see network::rpc::dispatcher::get_array/get_object).
 
 code protocol_btcd_rpc::parse_filter_addresses(bool reload,
     const value_t& addresses) NOEXCEPT
@@ -222,15 +218,10 @@ bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
 
 // Filter matching.
 // ----------------------------------------------------------------------------
-// Manual per-block script inspection, not the persisted address index
-// (get_history/address_enabled etc.) -- that index is for whole-chain
-// historical lookups by address, the wrong tool for "does this one just-
-// connected (or explicitly named, for rescanblocks) block match this small
-// in-memory watch-list", and would require the address index to be enabled
-// at all. Mirrors real btcd's own per-client wsClientFilter (rpcwebsocket.go:
-// notifyForTx/subscribedClients), including auto-tracking: an output that
-// matches a watched address has its own outpoint added to filter_outpoints_,
-// so a later spend of it also matches without an explicit re-subscribe.
+// Manual per-block script inspection, not the persisted address index --
+// that index is for whole-chain lookups, the wrong tool for matching one
+// block against a small in-memory watch-list, and would require the index
+// to be enabled. Mirrors btcd's per-client wsClientFilter.
 
 array_t protocol_btcd_rpc::match_filtered_transactions(
     const chain::block& block) NOEXCEPT

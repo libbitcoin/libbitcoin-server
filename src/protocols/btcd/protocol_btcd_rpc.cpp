@@ -96,20 +96,8 @@ void protocol_btcd_rpc::stopping(const code& ec) NOEXCEPT
 
 // Websocket dispatch.
 // ----------------------------------------------------------------------------
-// btcd extension methods (session/notify/filter/admin, including
-// authenticate) arrive as ws frames here, and are tried first. Standard
-// chain methods (getblockcount etc.), inherited from protocol_bitcoind_rpc,
-// remain reachable via plain http post on the same endpoint (unchanged, via
-// the inherited handle_receive_post) and are also bridged into this ws
-// dispatcher via dispatch_rpc, once the btcd-only dispatcher reports
-// unexpected_method.
-//
-// A credential may be scoped to a subset of methods (see config::credential
-// / channel_btcd::permitted()), so each call is checked against that scope --
-// except 'authenticate' itself, which must always reach handle_authenticate
-// regardless of current auth state: permitted() requires authentication to
-// already be established, so gating 'authenticate' on it would make
-// authenticating impossible in the first place.
+// 'authenticate' bypasses permitted(), which requires authentication to
+// already be established -- gating it would make authenticating impossible.
 
 void protocol_btcd_rpc::dispatch_websocket(
     const network::http::request& request) NOEXCEPT
@@ -137,11 +125,9 @@ void protocol_btcd_rpc::dispatch_websocket(
         return;
     }
 
-    // Try the btcd-only extension methods first, then fall back to the
-    // standard chain handlers inherited from protocol_bitcoind_rpc (dispatch_
-    // rpc), so a single ws connection can reach both. dispatcher::notify only
-    // returns unexpected_method for a method-name lookup miss (never for an
-    // argument mismatch), so this fallback cannot mask a real handler error.
+    // Fall back to the inherited chain dispatcher on a method-name lookup
+    // miss (notify never returns unexpected_method for an argument mismatch,
+    // so the fallback cannot mask a real handler error).
     auto code = btcd_dispatcher_.notify(message);
     if (code == network::error::unexpected_method)
         code = dispatch_rpc(message);
@@ -149,9 +135,7 @@ void protocol_btcd_rpc::dispatch_websocket(
     if (!code)
         return;
 
-    // Unknown method: reply with a json-rpc error and keep the ws connection
-    // alive (matches real btcd behavior, and the same guard already applied
-    // to protocol_bitcoind_rpc::handle_receive_post for its own dispatcher).
+    // Unknown method: reply with an error and keep the connection alive.
     if (code == network::error::unexpected_method)
         send_btcd_error(code);
     else
@@ -159,10 +143,7 @@ void protocol_btcd_rpc::dispatch_websocket(
 }
 
 // Post-side mirror of the above: reached from the inherited
-// handle_receive_post when rpc_dispatcher_ reports unexpected_method, so
-// btcd-only methods are also callable over plain http post (see class
-// comment -- real lnd/btcwallet issue capability-check calls, e.g.
-// getinfo, this way before any ws-only subscription traffic).
+// handle_receive_post, so btcd-only methods are also callable over post.
 code protocol_btcd_rpc::dispatch_extension(
     const network::rpc::request_t& message) NOEXCEPT
 {
@@ -172,7 +153,7 @@ code protocol_btcd_rpc::dispatch_extension(
     return btcd_dispatcher_.notify(message);
 }
 
-// Handlers (session/handshake).
+// Handlers (authentication/admin).
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd_rpc::handle_authenticate(const code& ec,
@@ -182,10 +163,7 @@ bool protocol_btcd_rpc::handle_authenticate(const code& ec,
     if (stopped(ec))
         return false;
 
-    // No credential configured: nothing to check against, so a no-op
-    // success (matches real btcd's own no-auth-required mode -- there is no
-    // "wrong" answer when authorization was never required in the first
-    // place).
+    // No credential configured: nothing to check against, no-op success.
     if (!options_.authorize())
     {
         send_btcd_result({}, 4);
@@ -204,9 +182,8 @@ bool protocol_btcd_rpc::handle_authenticate(const code& ec,
         return true;
     }
 
-    // A failed authenticate ends the session (matches real btcd: invalid
-    // credentials close the connection rather than leave it open for a
-    // retry) -- but only once the error has actually reached the client.
+    // A failed authenticate ends the session (as btcd), once the error has
+    // reached the client.
     const code unauthorized{ network::error::unauthorized };
     send_btcd_error(unauthorized, two * unauthorized.message().size(),
         unauthorized);
@@ -220,7 +197,7 @@ bool protocol_btcd_rpc::handle_session(const code& ec,
         return false;
 
     // The channel identifier is unique per connection for the process
-    // lifetime, satisfying btcd's reconnect-detection use of session ids.
+    // lifetime, satisfying btcwallet's reconnect-detection use of session ids.
     object_t result{};
     result.emplace("id", value_t{ possible_sign_cast<int64_t>(identifier()) });
     send_btcd_result(value_t{ std::move(result) }, 32);
@@ -233,10 +210,8 @@ bool protocol_btcd_rpc::handle_get_current_net(const code& ec,
     if (stopped(ec))
         return false;
 
-    // network_settings().identifier is the p2p handshake magic (e.g.
-    // 3652501241 / 0xd9b4bef9 for mainnet) -- the same value real btcd
-    // returns from getcurrentnet, verified once by btcwallet/lnd at connect
-    // to confirm they're talking to the expected network.
+    // The p2p handshake magic, the same value btcd returns (checked once by
+    // btcwallet/lnd at connect to confirm the expected network).
     send_btcd_result(
         value_t{ possible_sign_cast<int64_t>(network_settings().identifier) },
         20);
@@ -249,10 +224,7 @@ bool protocol_btcd_rpc::handle_get_best_block(const code& ec,
     if (stopped(ec))
         return false;
 
-    // btcd extension distinct from getbestblockhash: returns hash and height
-    // together. Found to be required by btcwallet's own rpcclient connection
-    // (separate from lnd's own chain.RPCClient) during wallet chain-sync
-    // bootstrap -- a real lnd integration test hangs here without it.
+    // Required by btcwallet during wallet chain-sync bootstrap.
     const auto& query = archive();
     object_t result{};
     result.emplace("hash", value_t{ encode_hash(query.get_top_confirmed_hash()) });
@@ -365,17 +337,11 @@ bool protocol_btcd_rpc::handle_rescan(const code& ec,
 {
     if (stopped(ec)) return false;
 
-    // Minimal implementation of this deprecated method: real btcd's own
-    // handleRescan (rpcwebsocket.go) skips scanning entirely and reports
-    // immediate completion when given no addresses/outpoints to watch ("
-    // Skipping rescan as client has no addrs/utxos") -- exactly the call
-    // btcwallet's own rpcclient makes purely to bootstrap its initial
-    // sync starting point, confirmed via a real lnd integration test. A
-    // non-empty address/outpoint list would require a real historical
-    // block scan (recvtx/redeemingtx notifications, chunked progress,
-    // reorg recovery) -- deliberately left not_implemented; no observed
-    // real caller needs it (loadtxfilter/rescanblocks already cover actual
-    // address/outpoint watching for lnd).
+    // Deprecated method, implemented only for the empty addrs/outpoints
+    // case (btcd skips scanning and reports immediate completion) -- the
+    // call btcwallet makes to bootstrap its initial sync starting point. A
+    // non-empty list would require a real historical scan; no observed
+    // caller needs it (loadtxfilter/rescanblocks cover actual watching).
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
@@ -402,9 +368,7 @@ bool protocol_btcd_rpc::handle_rescan(const code& ec,
     }
 
     // Nothing to watch: report the current chain tip as already-finished,
-    // ignoring beginblock (real btcd does the same -- the finished
-    // notification always carries chain.BestSnapshot(), not the requested
-    // beginblock, in this branch).
+    // ignoring beginblock (as btcd).
     const auto top = query.get_top_confirmed();
     const auto header = query.get_header(query.to_confirmed(top));
     if (!header)
@@ -413,11 +377,7 @@ bool protocol_btcd_rpc::handle_rescan(const code& ec,
         return true;
     }
 
-    // Reply to the rescan call itself before the separate, unprompted
-    // notification -- unlike do_block_connected's pushes (which never race
-    // a pending reply), this handler owns both writes in the same call, so
-    // ordering them ordinary-reply-first-then-push keeps a single request/
-    // response exchange recognizable as such on the wire.
+    // Reply to the rescan call itself before the unprompted notification.
     send_btcd_result({}, 4);
 
     array_t params{};
@@ -482,9 +442,7 @@ void protocol_btcd_rpc::do_block_connected(node::header_t link_value) NOEXCEPT
     if (!header)
         return;
 
-    // btcd 'blockconnected' notification: [hash, height, time] (positional,
-    // matching btcjson.BlockConnectedNtfn -- the unfiltered notification
-    // fired by notifyblocks, distinct from loadtxfilter's filtered variant).
+    // btcd 'blockconnected' notification: [hash, height, time].
     array_t params{};
     params.emplace_back(value_t{ encode_hash(query.get_header_key(link)) });
     params.emplace_back(value_t{ possible_sign_cast<int64_t>(height) });
@@ -493,12 +451,8 @@ void protocol_btcd_rpc::do_block_connected(node::header_t link_value) NOEXCEPT
 
     send_btcd_notification("blockconnected", std::move(params), 256);
 
-    // btcd 'filteredblockconnected': [height, header, subscribedtxs]
-    // (matching btcjson.FilteredBlockConnectedNtfn). Sent unconditionally
-    // alongside blockconnected, same as real btcd (verified against
-    // rpcwebsocket.go's notificationHandler: both notifyBlockConnected and
-    // notifyFilteredBlockConnected fire for every notifyblocks client
-    // regardless of whether a filter was ever loaded) -- an empty/never-
+    // btcd 'filteredblockconnected': [height, header, subscribedtxs]. Sent
+    // unconditionally alongside blockconnected (as btcd) -- an empty/never-
     // loaded filter just yields an empty subscribedtxs array.
     constexpr auto witness = true;
     const auto block = query.get_block(link, witness);
@@ -543,8 +497,7 @@ void protocol_btcd_rpc::do_block_disconnected(
 
     send_btcd_notification("blockdisconnected", std::move(params), 256);
 
-    // btcd 'filteredblockdisconnected': [height, header] (no subscribedtxs
-    // field -- matching btcjson.FilteredBlockDisconnectedNtfn).
+    // btcd 'filteredblockdisconnected': [height, header].
     array_t filtered_params{};
     filtered_params.emplace_back(value_t{
         possible_sign_cast<int64_t>(height) });
@@ -615,8 +568,7 @@ void protocol_btcd_rpc::send_btcd_notification(const std::string& method,
     message.body() = std::move(notification);
     message.prepare_payload();
 
-    // NOTIFY does not restart the reader (the ws reader is already active,
-    // independent of this unprompted push).
+    // NOTIFY does not restart the (already active) ws reader.
     NOTIFY(std::move(message), handle_complete, _1, error::success);
 }
 
@@ -639,9 +591,8 @@ void protocol_btcd_rpc::send_btcd_rpc(response_t&& model, size_t size_hint,
     };
     message.prepare_payload();
 
-    // handle_complete only stops (if close_reason is truthy) once this write
-    // has actually completed -- SEND still restarts the ws reader on success,
-    // matching the base behavior for every other response this class sends.
+    // handle_complete stops (if close_reason is truthy) only once the write
+    // has completed; SEND restarts the ws reader on success.
     SEND(std::move(message), handle_complete, _1, close_reason);
 }
 

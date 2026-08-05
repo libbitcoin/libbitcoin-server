@@ -31,10 +31,8 @@ struct btcd_setup_fixture
     DELETE_COPY_MOVE(btcd_setup_fixture);
 
     // username/password configure a single btcd.credential entry (no auth
-    // required if username is empty), matching the one-tier credential model.
-    // methods, if non-empty, scopes that credential to a comma-separated
-    // method list (config::credential's own "user:pass:method,..." syntax);
-    // empty (the default) leaves the credential unscoped (all methods).
+    // required if username is empty); methods, if non-empty, scopes it to a
+    // comma-separated method list ("user:pass:method,..." syntax).
     explicit btcd_setup_fixture(const initializer& setup,
         std::string_view username={}, std::string_view password={},
         std::string_view methods={});
@@ -47,9 +45,7 @@ struct btcd_setup_fixture
         std::string_view params = "[]");
 
     // JSON-RPC 2.0 over plain HTTP POST to "/" (a separate connection from
-    // the ws one rpc() uses) -- same transport the inherited chain methods
-    // use, and the one a real btcd/lnd client's capability-check calls
-    // (e.g. getinfo) go over before any ws-only subscription traffic.
+    // the ws one rpc() uses).
     boost::json::value http_rpc(std::string_view method,
         std::string_view params = "[]");
 

@@ -4,8 +4,7 @@ Tests for libbitcoin-server btcd JSON-RPC/websocket compatibility interface.
 btcd speaks JSON-RPC 1.0 over a persistent websocket connection (preferred,
 required for the session/notification extension methods) or plain HTTP POST
 (same request/response shape as the bitcoind endpoint, for the chain methods
-inherited from protocol_bitcoind_rpc). See docs/btcd-endpoint.md for the full
-design and phased scope.
+inherited from protocol_bitcoind_rpc).
 
 This suite is split into what's real today and what's a development target:
 
@@ -627,7 +626,7 @@ def test_btcd_and_chain_method_share_one_websocket_connection(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# WIRED BUT NOT YET IMPLEMENTED (blocked on a v5 mempool, see docs/btcd-endpoint.md)
+# WIRED BUT NOT YET IMPLEMENTED (blocked on a v5 mempool)
 # ═══════════════════════════════════════════════════════════════════════════════
 # These methods are present in interfaces/btcd.hpp's method table today, but
 # every handler unconditionally returns not_implemented. Each xfail here is a
@@ -675,11 +674,10 @@ def test_stop_always_not_implemented(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# PHASE C: generic btcd-tooling compatibility (implemented, no lnd consumer)
+# Generic btcd-tooling compatibility (implemented)
 # ═══════════════════════════════════════════════════════════════════════════════
-# See docs/btcd-endpoint.md for scope/fidelity notes (getnetworkhashps is an
-# approximation, getnettotals's byte counters are untracked zeros, help lists
-# method names only).
+# getnetworkhashps is an approximation, getnettotals's byte counters are
+# untracked zeros, help lists method names only.
 
 def test_getdifficulty_returns_number(conn):
     response = conn.send_rpc("getdifficulty")

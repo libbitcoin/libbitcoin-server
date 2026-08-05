@@ -62,19 +62,12 @@ protected:
         const post::cptr& post) NOEXCEPT override;
 
     /// Dispatch a chain-rpc message with no post-http context (websocket).
-    /// Caches id/version (as handle_receive_post does via set_rpc_request)
-    /// and notifies rpc_dispatcher_ directly; returns error::unexpected_method
-    /// if the message names a method this dispatcher does not recognize.
-    /// Callers (e.g. protocol_btcd_rpc::dispatch_websocket) use this to reach
-    /// the standard chain handlers (getblockcount etc.) over websocket.
+    /// Returns error::unexpected_method on a method-name lookup miss.
     code dispatch_rpc(const network::rpc::request_t& message) NOEXCEPT;
 
-    /// Extension point for a derived class's own additional dispatcher (e.g.
-    /// protocol_btcd_rpc's btcd_dispatcher_), tried by handle_receive_post
-    /// when rpc_dispatcher_ reports unexpected_method -- the post-side
-    /// mirror of dispatch_rpc above (ws falling back to the chain
-    /// dispatcher). Default: no extension dispatcher, always
-    /// unexpected_method.
+    /// Extension point for a derived class's own additional dispatcher,
+    /// tried by handle_receive_post when rpc_dispatcher_ reports
+    /// unexpected_method. Default: always unexpected_method.
     virtual code dispatch_extension(
         const network::rpc::request_t& message) NOEXCEPT;
 
@@ -128,9 +121,7 @@ protected:
         double maxfeerate) NOEXCEPT;
 
     /// Serialize an object (chain::header, chain::transaction, ...) to a
-    /// base16 string. Template, so defined here (not *_json.cpp) -- shared
-    /// with derived classes (e.g. protocol_btcd_rpc's filtered-notification
-    /// tx serialization), not just this class's own handlers.
+    /// base16 string.
     template <typename Object, typename ...Args>
     static std::string to_text(const Object& object, size_t size,
         Args&&... args) NOEXCEPT

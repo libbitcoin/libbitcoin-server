@@ -67,9 +67,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__session__returns_id)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet_magic)
 {
-    // btcd_setup_fixture configures system::chain::selection::mainnet, whose
-    // network_settings().identifier (p2p handshake magic) is 3652501241
-    // (0xd9b4bef9) -- the same value real btcd returns from getcurrentnet.
+    // The fixture configures mainnet, magic 3652501241 (0xd9b4bef9).
     const auto response = rpc("getcurrentnet");
     BOOST_REQUIRE(!has_error(response));
     BOOST_REQUIRE(has_result(response));
@@ -78,9 +76,6 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet_magic)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
 {
-    // btcd extension distinct from getbestblockhash: {hash, height} together.
-    // Required by btcwallet's own rpcclient connection (separate from lnd's
-    // own chain.RPCClient) during wallet chain-sync bootstrap.
     const auto response = rpc("getbestblock");
     BOOST_REQUIRE(!has_error(response));
     BOOST_REQUIRE(has_result(response));
@@ -92,14 +87,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__btcd_only_method__reachable_over_http_post)
 {
-    // A real lnd integration test found that btcwallet's chain.RPCClient
-    // issues capability-check calls (getblockchaininfo, then getinfo) over
-    // plain http post immediately on connect, before any subscription
-    // traffic that requires ws. getinfo is btcd-only (not in the inherited
-    // rpc_dispatcher_), so this exercises protocol_bitcoind_rpc::
-    // dispatch_extension (protocol_btcd_rpc's override tries
-    // btcd_dispatcher_) -- the post-side mirror of dispatch_websocket's
-    // existing ws-side fallback to the inherited chain dispatcher.
+    // getinfo is btcd-only, so this exercises dispatch_extension (real
+    // clients issue post-based capability checks before any ws traffic).
     const auto response = http_rpc("getinfo");
     BOOST_REQUIRE(!has_error(response));
     BOOST_REQUIRE(has_result(response));
@@ -125,16 +114,9 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__returns_null_result)
 
 // Standard chain methods (bridged into the ws dispatcher)
 // ----------------------------------------------------------------------------
-// Inherited from protocol_bitcoind_rpc, reachable both via plain http post on
-// the same endpoint (see test/protocols/bitcoind) and, bridged, over this ws
-// connection (dispatch_websocket falls back to dispatch_rpc on
-// unexpected_method from the btcd-only dispatcher).
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
 {
-    // btcd_ten_block_setup_fixture populates a ten-block confirmed store
-    // (genesis + 9), so top confirmed height is 9 (matches the equivalent
-    // bitcoind_rpc__getblockcount__ten_block_store__nine test).
     const auto response = rpc("getblockcount");
     BOOST_REQUIRE(!has_error(response));
     BOOST_REQUIRE(has_result(response));
@@ -144,11 +126,9 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
 // Address/outpoint filtering (loadtxfilter, filteredblockconnected/
 // disconnected, rescanblocks).
 // ----------------------------------------------------------------------------
-// blocks 1-9 (btcd_ten_block_setup_fixture) are real early mainnet blocks,
-// each a single p2pk coinbase with no inter-block spends (first real tx in
-// mainnet history isn't until block 170), so none of them can exercise
-// loadtxfilter's actual address matching -- block10() below (a controlled
-// p2kh output chained after block9) is built for that purpose.
+// blocks 1-9 are p2pk coinbases with no inter-block spends, so they cannot
+// exercise address matching -- block10() (a controlled p2kh output chained
+// after block9) is built for that purpose.
 
 namespace {
 
@@ -194,10 +174,8 @@ const chain::block& block10() NOEXCEPT
                 0
             };
 
-            // query.set()/push_confirmed() are raw persistence calls (no
-            // organize-time consensus validation), so an internally-
-            // consistent merkle root is not required for this fixture --
-            // chain::block::generate_merkle_root() is private besides.
+            // Raw persistence (no organize-time validation), so a consistent
+            // merkle root is not required.
             return chain::block
             {
                 chain::header
@@ -322,12 +300,6 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addrs_no_outpoints__finishes_immediately)
 {
-    // Minimal implementation of this deprecated method: matches real btcd's
-    // own "skip scanning, report immediate completion" branch for an empty
-    // addr/outpoint list -- the exact call btcwallet's own rpcclient makes
-    // to bootstrap its initial sync starting point (found via a real lnd
-    // integration test), distinct from rescanblocks/loadtxfilter's actual
-    // address-watching path.
     const auto response = rpc("rescan", "[\"" + block9 + "\",[],[],\"\"]");
     BOOST_REQUIRE(!has_error(response));
 
@@ -342,15 +314,12 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addrs_no_outpoints__finishes_immediate
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
 {
-    // A real historical address/outpoint scan (recvtx/redeemingtx
-    // notifications, chunked progress, reorg recovery) is deliberately not
-    // implemented -- no observed real caller needs it.
     const auto response = rpc("rescan",
         "[\"" + block9 + "\",[\"" + filter_test_address_text() + "\"],[],\"\"]");
     BOOST_REQUIRE(has_error(response));
 }
 
-// Generic btcd-tooling compatibility (no lnd consumer)
+// Generic btcd-tooling compatibility
 // ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__returns_number)
