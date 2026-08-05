@@ -31,13 +31,12 @@
 namespace libbitcoin {
 namespace server {
 
-/// btcd-compatible json-rpc-v1 over http/ws. Inherits the bitcoind interface
-/// handlers (getblockcount etc.) from protocol_bitcoind_rpc and adds the
-/// btcd-only extension methods via a second dispatcher. Both dispatchers are
-/// bridged in both directions, so all methods are reachable over both
-/// transports. ws authorization is established once per connection, by basic
-/// auth on the ws upgrade request or by the in-band 'authenticate' method,
-/// and latched on the channel (see dispatch_websocket).
+/// btcd-compatible json-rpc-v1 over http/ws. Adds the btcd extension
+/// interface to the inherited bitcoind interface, each verb handler trying
+/// its own dispatcher and deferring to the base transport handler on a miss.
+/// ws authorization is established once per connection, by basic auth on the
+/// ws upgrade request or by the in-band 'authenticate' method, and latched
+/// on the channel (see dispatch_websocket).
 class BCS_API protocol_btcd_rpc
   : public server::protocol_bitcoind_rpc,
     protected network::tracker<protocol_btcd_rpc>
@@ -66,16 +65,13 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    /// Dispatch btcd ws frames: tries the btcd-only dispatcher first, then
-    /// falls back to the inherited bitcoind dispatcher (dispatch_rpc).
+    /// Dispatch (the post and websocket transports of the btcd extension
+    /// interface). Each defers to the base transport handler on a method
+    /// name miss (the interfaces have disjoint method names).
+    void handle_receive_post(const code& ec,
+        const post::cptr& post) NOEXCEPT override;
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
-
-    /// Post-side mirror of the above: lets handle_receive_post reach the
-    /// btcd-only methods over plain http post too (real clients issue e.g.
-    /// getinfo as post-based capability checks before any ws traffic).
-    code dispatch_extension(
-        const network::rpc::request_t& message) NOEXCEPT override;
 
     /// Handlers (authentication/admin). A failed authenticate ends the
     /// session, once the error response has reached the client (btcd closes
@@ -185,16 +181,8 @@ protected:
     void do_block_connected(node::header_t link) NOEXCEPT;
     void do_block_disconnected(node::header_t link) NOEXCEPT;
 
-    /// Senders (btcd envelope, distinct id/version cache from the inherited
-    /// senders). close_reason (if truthy) stops the channel only once the
-    /// write has completed, so the error reaches the client first.
-    void send_btcd_result(network::rpc::value_option&& result,
-        size_t size_hint) NOEXCEPT;
-    void send_btcd_error(const code& ec) NOEXCEPT;
-    void send_btcd_error(const code& ec, size_t size_hint) NOEXCEPT;
-    void send_btcd_error(const code& ec, size_t size_hint,
-        const code& close_reason) NOEXCEPT;
-    void send_btcd_notification(const std::string& method,
+    /// Sender (btcd server push, json-rpc-v1 request shape with no id).
+    void send_notification(const std::string& method,
         network::rpc::array_t&& params, size_t size_hint) NOEXCEPT;
 
 private:
@@ -204,20 +192,14 @@ private:
         btcd_dispatcher_.subscribe(BIND_SHARED(method, args));
     }
 
-    // Senders.
-    void send_btcd_rpc(network::rpc::response_t&& model, size_t size_hint,
-        const code& close_reason) NOEXCEPT;
-
     // These are thread safe.
     std::atomic_bool subscribed_blocks_{};
     const options_t& options_;
     const uint8_t p2kh_;
     const uint8_t p2sh_;
 
-    // These are protected by strand.
+    // This is protected by strand.
     btcd_dispatcher btcd_dispatcher_{};
-    network::rpc::version btcd_version_{};
-    network::rpc::id_option btcd_id_{};
 
     // Tx filter (loadtxfilter). Hash sets are kept per script template so a
     // p2kh watch never matches a p2wpkh output or vice versa.

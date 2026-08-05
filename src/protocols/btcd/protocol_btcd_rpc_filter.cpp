@@ -148,17 +148,17 @@ bool protocol_btcd_rpc::handle_load_tx_filter(const code& ec,
 
     if (const auto fault = parse_filter_addresses(reload, addresses))
     {
-        send_btcd_error(fault);
+        send_error(fault);
         return true;
     }
 
     if (const auto fault = parse_filter_outpoints(reload, outpoints))
     {
-        send_btcd_error(fault);
+        send_error(fault);
         return true;
     }
 
-    send_btcd_result({}, 4);
+    send_result({}, 4);
     return true;
 }
 
@@ -170,7 +170,7 @@ bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
 
     if (!std::holds_alternative<array_t>(blockhashes.value()))
     {
-        send_btcd_error(error::invalid_argument);
+        send_error(error::invalid_argument);
         return true;
     }
 
@@ -182,7 +182,7 @@ bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
     {
         if (!std::holds_alternative<string_t>(item.value()))
         {
-            send_btcd_error(error::invalid_argument);
+            send_error(error::invalid_argument);
             return true;
         }
 
@@ -190,14 +190,14 @@ bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
         hash_digest hash{};
         if (!decode_hash(hash, text))
         {
-            send_btcd_error(error::invalid_argument);
+            send_error(error::invalid_argument);
             return true;
         }
 
         const auto block = query.get_block(query.to_header(hash), witness);
         if (!block)
         {
-            send_btcd_error(error::not_found);
+            send_error(error::not_found);
             return true;
         }
 
@@ -212,7 +212,7 @@ bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
         }
     }
 
-    send_btcd_result(value_t{ std::move(discovered) }, 256);
+    send_result(value_t{ std::move(discovered) }, 256);
     return true;
 }
 

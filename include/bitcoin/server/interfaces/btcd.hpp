@@ -28,7 +28,7 @@ namespace interface {
 
 struct btcd_methods
 {
-    /// BTCD protocol (unversioned, json-rpc v1.0 over ws/s).
+    /// BTCD protocol (unversioned, json-rpc v1.0 over http/ws).
     static constexpr std::tuple methods
     {
         /// Authentication (one-time, in-band alternative to basic auth).

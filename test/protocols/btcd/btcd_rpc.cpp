@@ -87,10 +87,18 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__http_post__dispatched)
 {
-    // getinfo is btcd-only, so this exercises dispatch_extension (real
+    // getinfo is btcd-only, so this exercises the btcd post transport (real
     // clients issue post-based capability checks before any ws traffic).
     const auto response = http_rpc("getinfo");
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().contains("blocks"));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__unexpected_method)
+{
+    // authenticate is websocket-only (as btcd): not part of the post surface.
+    const auto response = http_rpc("authenticate", R"(["user","pass"])");
+    REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), unexpected_method.value());
 }
 
 // block subscription

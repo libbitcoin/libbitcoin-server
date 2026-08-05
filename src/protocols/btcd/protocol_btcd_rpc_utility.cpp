@@ -51,11 +51,11 @@ bool protocol_btcd_rpc::handle_get_difficulty(const code& ec,
         query.get_top_confirmed()));
     if (!header)
     {
-        send_btcd_error(database::error::integrity);
+        send_error(database::error::integrity);
         return true;
     }
 
-    send_btcd_result(header->difficulty(), 20);
+    send_result(header->difficulty(), 20);
     return true;
 }
 
@@ -70,13 +70,13 @@ bool protocol_btcd_rpc::handle_get_info(const code& ec,
     const auto header = query.get_header(query.to_confirmed(top));
     if (!header)
     {
-        send_btcd_error(database::error::integrity);
+        send_error(database::error::integrity);
         return true;
     }
 
     // Untracked peer-dependent fields are reported as empty/zero, matching
     // the inherited getnetworkinfo handler's convention.
-    send_btcd_result(object_t
+    send_result(object_t
     {
         { "version", 0 },
         { "protocolversion", 70016 },
@@ -99,7 +99,7 @@ bool protocol_btcd_rpc::handle_get_net_totals(const code& ec,
         return false;
 
     // Untracked byte counters are reported as zero; timemillis is real.
-    send_btcd_result(object_t
+    send_result(object_t
     {
         { "totalbytesrecv", 0 },
         { "totalbytessent", 0 },
@@ -124,13 +124,13 @@ bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
     const auto header = query.get_header(query.to_confirmed(target));
     if (!header)
     {
-        send_btcd_error(database::error::integrity);
+        send_error(database::error::integrity);
         return true;
     }
 
     constexpr auto average_seconds_per_block = 600.0;
     constexpr auto two_to_the_32 = 4294967296.0;
-    send_btcd_result(
+    send_result(
         header->difficulty() * two_to_the_32 / average_seconds_per_block, 20);
     return true;
 }
@@ -171,7 +171,7 @@ bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
     {
         if (!std::holds_alternative<object_t>(item.value()))
         {
-            send_btcd_error(error::invalid_argument);
+            send_error(error::invalid_argument);
             return true;
         }
 
@@ -182,7 +182,7 @@ bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
             !std::holds_alternative<string_t>(txid_it->second.value()) ||
             !std::holds_alternative<number_t>(vout_it->second.value()))
         {
-            send_btcd_error(error::invalid_argument);
+            send_error(error::invalid_argument);
             return true;
         }
 
@@ -191,7 +191,7 @@ bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
         if (!decode_hash(hash, std::get<string_t>(txid_it->second.value())) ||
             !to_integer(vout, std::get<number_t>(vout_it->second.value())))
         {
-            send_btcd_error(error::invalid_argument);
+            send_error(error::invalid_argument);
             return true;
         }
 
@@ -205,14 +205,14 @@ bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
     {
         if (!std::holds_alternative<number_t>(pair.second.value()))
         {
-            send_btcd_error(error::invalid_argument);
+            send_error(error::invalid_argument);
             return true;
         }
 
         chain::script script{};
         if (const auto fault = parse_output_script(pair.first, script))
         {
-            send_btcd_error(fault);
+            send_error(fault);
             return true;
         }
 
@@ -227,7 +227,7 @@ bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
 
     // Unsigned, so no witness data yet -- plain (non-witness) serialization.
     constexpr auto witness = false;
-    send_btcd_result(to_text(tx, tx.serialized_size(witness), witness), 400);
+    send_result(to_text(tx, tx.serialized_size(witness), witness), 400);
     return true;
 }
 
@@ -241,7 +241,7 @@ bool protocol_btcd_rpc::handle_decode_raw_transaction(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
-        send_btcd_error(error::invalid_argument);
+        send_error(error::invalid_argument);
         return true;
     }
 
@@ -249,13 +249,13 @@ bool protocol_btcd_rpc::handle_decode_raw_transaction(const code& ec,
     const chain::transaction tx{ data, witness };
     if (!tx.is_valid())
     {
-        send_btcd_error(error::invalid_argument);
+        send_error(error::invalid_argument);
         return true;
     }
 
     // bitcoind(tx) alone (no inject_tx_context) is the bare
     // decoderawtransaction shape -- a standalone tx has no block context.
-    send_btcd_result(value_from(bitcoind(tx)),
+    send_result(value_from(bitcoind(tx)),
         two * tx.serialized_size(witness));
     return true;
 }
@@ -269,7 +269,7 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hex))
     {
-        send_btcd_error(error::invalid_argument);
+        send_error(error::invalid_argument);
         return true;
     }
 
@@ -277,7 +277,7 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
     const chain::script script{ data, false };
     if (!script.is_valid())
     {
-        send_btcd_error(error::invalid_argument);
+        send_error(error::invalid_argument);
         return true;
     }
 
@@ -331,7 +331,7 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
     if (wrapped)
         result.emplace("p2sh", value_t{ wrapped.encoded() });
 
-    send_btcd_result(value_t{ std::move(result) }, 256);
+    send_result(value_t{ std::move(result) }, 256);
     return true;
 }
 
@@ -344,7 +344,7 @@ bool protocol_btcd_rpc::handle_validate_address(const code& ec,
     const wallet::payment_address base58(address);
     if (base58)
     {
-        send_btcd_result(object_t
+        send_result(object_t
         {
             { "isvalid", true },
             { "address", value_t{ base58.encoded() } },
@@ -357,7 +357,7 @@ bool protocol_btcd_rpc::handle_validate_address(const code& ec,
     const wallet::witness_address segwit(address);
     if (segwit)
     {
-        send_btcd_result(object_t
+        send_result(object_t
         {
             { "isvalid", true },
             { "address", value_t{ segwit.encoded() } },
@@ -371,7 +371,7 @@ bool protocol_btcd_rpc::handle_validate_address(const code& ec,
         return true;
     }
 
-    send_btcd_result(object_t{ { "isvalid", false } }, 32);
+    send_result(object_t{ { "isvalid", false } }, 32);
     return true;
 }
 
@@ -382,7 +382,7 @@ bool protocol_btcd_rpc::handle_help(const code& ec, btcd_interface::help,
         return false;
 
     // Lists method names only, no per-command argument usage text.
-    send_btcd_result(std::string{
+    send_result(std::string{
         "authenticate session getcurrentnet getbestblock notifyblocks "
         "stopnotifyblocks loadtxfilter rescanblocks getdifficulty getinfo "
         "getnettotals getnetworkhashps createrawtransaction "
