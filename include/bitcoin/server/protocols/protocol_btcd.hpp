@@ -23,7 +23,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <vector>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -32,12 +31,7 @@
 namespace libbitcoin {
 namespace server {
 
-/// btcd-compatible json-rpc-v1 over http/ws. Adds the btcd extension
-/// interface to the inherited bitcoind interface, each verb handler trying
-/// its own dispatcher and deferring to the base transport handler on a miss.
-/// ws authorization is established once per connection, by basic auth on the
-/// ws upgrade request or by the in-band 'authenticate' method, and latched
-/// on the channel (see dispatch_websocket).
+/// btcd interface, added to the inherited bitcoind interface.
 class BCS_API protocol_btcd
   : public server::protocol_bitcoind_rpc,
     protected network::tracker<protocol_btcd>
@@ -68,30 +62,25 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    /// Dispatch (the post and websocket transports of the btcd extension
-    /// interface). Each defers to the base transport handler on a method
-    /// name miss (the interfaces have disjoint method names).
+    /// Dispatch.
     void handle_receive_post(const code& ec,
         const post::cptr& post) NOEXCEPT override;
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
 
-    /// Handlers (authentication/admin). A failed authenticate ends the
-    /// session, once the error response has reached the client (btcd closes
-    /// the connection on invalid credentials).
+    /// Handlers (administrative).
     bool handle_authenticate(const code& ec, btcd_interface::authenticate,
         const std::string& username, const std::string& password) NOEXCEPT;
+    bool handle_help(const code& ec, btcd_interface::help,
+        const std::string& command) NOEXCEPT;
     bool handle_session(const code& ec, btcd_interface::session) NOEXCEPT;
+    bool handle_stop(const code& ec, btcd_interface::stop) NOEXCEPT;
 
-    /// Handler (network magic).
-    bool handle_get_current_net(const code& ec,
-        btcd_interface::get_current_net) NOEXCEPT;
-
-    /// Handler (chain tip {hash, height}).
+    /// Handlers (getters).
     bool handle_get_best_block(const code& ec,
         btcd_interface::get_best_block) NOEXCEPT;
-
-    /// Handlers (generic btcd-tooling compatibility).
+    bool handle_get_current_net(const code& ec,
+        btcd_interface::get_current_net) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,
         btcd_interface::get_difficulty) NOEXCEPT;
     bool handle_get_info(const code& ec, btcd_interface::get_info) NOEXCEPT;
@@ -100,6 +89,8 @@ protected:
     bool handle_get_network_hash_ps(const code& ec,
         btcd_interface::get_network_hash_ps, uint32_t blocks,
         int32_t height) NOEXCEPT;
+
+    /// Handlers (tools).
     bool handle_create_raw_transaction(const code& ec,
         btcd_interface::create_raw_transaction,
         const network::rpc::array_t& inputs,
@@ -112,30 +103,18 @@ protected:
     bool handle_validate_address(const code& ec,
         btcd_interface::validate_address,
         const std::string& address) NOEXCEPT;
-    bool handle_help(const code& ec, btcd_interface::help,
-        const std::string& command) NOEXCEPT;
 
-    /// Address string (base58 or bech32/bech32m) to output script, for
-    /// createrawtransaction.
-    code parse_output_script(const std::string& text,
-        system::chain::script& out) NOEXCEPT;
-
-    /// Handlers (block subscription).
+    /// Handlers (subscription, mempool pending v5).
     bool handle_notify_blocks(const code& ec,
         btcd_interface::notify_blocks) NOEXCEPT;
     bool handle_stop_notify_blocks(const code& ec,
         btcd_interface::stop_notify_blocks) NOEXCEPT;
-
-    /// Handlers (mempool subscription, not_implemented pending v5 mempool).
     bool handle_notify_new_transactions(const code& ec,
         btcd_interface::notify_new_transactions, bool verbose) NOEXCEPT;
     bool handle_stop_notify_new_transactions(const code& ec,
         btcd_interface::stop_notify_new_transactions) NOEXCEPT;
 
-    /// Handlers (address/outpoint filtering). notifyblocks arms delivery;
-    /// loadtxfilter only populates the filter (as btcd). rescanblocks
-    /// replays the match logic against explicitly named historical blocks.
-    /// Address watching requires the address index (not_implemented).
+    /// Handlers (filters, address watch requires the address index).
     bool handle_load_tx_filter(const code& ec,
         btcd_interface::load_tx_filter, bool reload,
         const network::rpc::value_t& addresses,
@@ -144,10 +123,7 @@ protected:
         btcd_interface::rescan_blocks,
         const network::rpc::value_t& blockhashes) NOEXCEPT;
 
-    /// Handler (admin, permanently not_implemented).
-    bool handle_stop(const code& ec, btcd_interface::stop) NOEXCEPT;
-
-    /// Handlers (deprecated, permanently not_implemented).
+    /// Handlers (deprecated, not_implemented).
     bool handle_notify_received(const code& ec,
         btcd_interface::notify_received,
         const network::rpc::value_t& addresses) NOEXCEPT;
@@ -165,11 +141,15 @@ protected:
         const network::rpc::value_t& outpoints,
         const std::string& endblock) NOEXCEPT;
 
-    /// Chase event subscription (block connect/disconnect for notifyblocks).
+    /// Event handlers.
     bool handle_chase(const code& ec, node::chase event_,
         node::event_value value) NOEXCEPT;
 
-    /// Sender (btcd server push, json-rpc-v1 request shape with no id).
+    /// Address to output script.
+    code parse_output_script(const std::string& text,
+        system::chain::script& out) NOEXCEPT;
+
+    /// Sender (server push, no id).
     void send_notification(const std::string& method,
         network::rpc::array_t&& params, size_t size_hint) NOEXCEPT;
 
@@ -180,35 +160,32 @@ protected:
     using histories = database::histories;
     using cursor_t = database::height_link;
 
-    /// Watch of an address (by index key), matched via cursored history.
     struct address_watch final
     {
         cursor_t cursor{};
     };
 
-    /// Watch of an outpoint, matched via spender differencing.
     struct outpoint_watch final
     {
         database::history outpoint{};
         database::histories spenders{};
     };
 
-    /// Filter (loadtxfilter).
+    /// Completion handlers (for long-running or other async queries).
     /// -----------------------------------------------------------------------
 
-    code parse_filter_keys(const network::rpc::value_t& addresses,
-        std::vector<hash_digest>& out) NOEXCEPT;
-    code parse_filter_points(const network::rpc::value_t& outpoints,
-        std::vector<point>& out) NOEXCEPT;
+    code parse_filter_keys(system::hashes& out,
+        const network::rpc::value_t& addresses) NOEXCEPT;
+    code parse_filter_points(system::chain::points& out,
+        const network::rpc::value_t& outpoints) NOEXCEPT;
 
-    void do_load_tx_filter(bool reload, const std::vector<hash_digest>& keys,
-        const std::vector<point>& points) NOEXCEPT;
+    void do_load_tx_filter(bool reload, const system::hashes& keys,
+        const system::chain::points& points) NOEXCEPT;
     void complete_load_tx_filter(const code& ec) NOEXCEPT;
 
-    void do_rescan_blocks(const std::vector<hash_digest>& hashes) NOEXCEPT;
-    void do_rescan_watches(const std::vector<hash_digest>& hashes,
-        const std::vector<hash_digest>& keys,
-        const std::vector<point>& points) NOEXCEPT;
+    void do_rescan_blocks(const system::hashes& hashes) NOEXCEPT;
+    void do_rescan_watches(const system::hashes& hashes,
+        const system::hashes& keys, system::chain::points& points) NOEXCEPT;
     void complete_rescan_blocks(const code& ec,
         const network::rpc::array_t& discovered) NOEXCEPT;
 
@@ -223,22 +200,16 @@ protected:
     void notify_disconnected(const std::string& hash, size_t height,
         uint32_t time, const std::string& header) NOEXCEPT;
 
-    /// Utilities (notification strand).
+    /// Utilities.
     /// -----------------------------------------------------------------------
-
-    /// Matched transactions by height, ordered by block position.
     using matched_txs = std::map<size_t, hash_digest>;
     using matches = std::map<size_t, matched_txs>;
+    using sizes = std::set<size_t>;
 
-    /// Accumulate watched-address matches at the given heights.
     code match_addresses(matches& out, address_watch& sub,
-        const hash_digest& key, const std::set<size_t>& heights) NOEXCEPT;
-
-    /// Accumulate new watched-outpoint spender matches at the given heights.
+        const hash_digest& key, const sizes& heights) NOEXCEPT;
     void match_outpoints(matches& out, outpoint_watch& sub,
-        const point& prevout, const std::set<size_t>& heights) NOEXCEPT;
-
-    /// Serialize one block's matched transactions (base16, position order).
+        const point& prevout, const sizes& heights) NOEXCEPT;
     network::rpc::array_t serialize_matches(const matched_txs& txs) NOEXCEPT;
 
 private:
@@ -257,12 +228,12 @@ private:
     }
 
     // These are thread safe.
-    std::atomic_bool subscribed_blocks_{};
-    std::atomic_bool stopping_{};
     const options_t& options_;
     const bool turbo_;
     const uint8_t p2kh_;
     const uint8_t p2sh_;
+    std::atomic_bool stopping_{};
+    std::atomic_bool subscribed_blocks_{};
 
     // This is protected by strand.
     btcd_dispatcher btcd_dispatcher_{};
@@ -271,8 +242,8 @@ private:
     network::asio::strand notification_strand_;
 
     // These are protected by notification strand.
-    std::map<hash_digest, address_watch> address_watches_{};
     std::map<point, outpoint_watch> outpoint_watches_{};
+    std::map<hash_digest, address_watch> address_watches_{};
 };
 
 } // namespace server

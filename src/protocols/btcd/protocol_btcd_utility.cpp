@@ -37,8 +37,35 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Generic btcd-tooling compatibility.
+// Handlers (getters).
 // ----------------------------------------------------------------------------
+
+bool protocol_btcd::handle_get_best_block(const code& ec,
+    btcd_interface::get_best_block) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // Required by btcwallet during wallet chain-sync bootstrap.
+    const auto& query = archive();
+    object_t result{};
+    result.emplace("hash", encode_hash(query.get_top_confirmed_hash()));
+    result.emplace("height", query.get_top_confirmed());
+    send_result(std::move(result), 96);
+    return true;
+}
+
+bool protocol_btcd::handle_get_current_net(const code& ec,
+    btcd_interface::get_current_net) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // The p2p handshake magic, the same value btcd returns (checked once by
+    // btcwallet/lnd at connect to confirm the expected network).
+    send_result(network_settings().identifier, 20);
+    return true;
+}
 
 bool protocol_btcd::handle_get_difficulty(const code& ec,
     btcd_interface::get_difficulty) NOEXCEPT
@@ -140,28 +167,8 @@ bool protocol_btcd::handle_get_network_hash_ps(const code& ec,
     return true;
 }
 
-// Raw transaction/script utilities.
+// Handlers (tools).
 // ----------------------------------------------------------------------------
-
-code protocol_btcd::parse_output_script(const std::string& text,
-    chain::script& out) NOEXCEPT
-{
-    const wallet::payment_address base58(text);
-    if (base58)
-    {
-        out = base58.output_script(p2kh_, p2sh_);
-        return error::success;
-    }
-
-    const wallet::witness_address segwit(text);
-    if (segwit)
-    {
-        out = segwit.script();
-        return error::success;
-    }
-
-    return error::invalid_argument;
-}
 
 bool protocol_btcd::handle_create_raw_transaction(const code& ec,
     btcd_interface::create_raw_transaction, const array_t& inputs,
@@ -221,9 +228,8 @@ bool protocol_btcd::handle_create_raw_transaction(const code& ec,
             return true;
         }
 
-        // Scale to satoshis and validate, the value is client-provided and
-        // the product may exceed the integer domain (not whole, as scaling
-        // a decimal fraction carries floating point representation error).
+        // Scale to satoshis and validate the domain (not whole, as scaling
+        // carries floating point representation error).
         uint64_t satoshi{};
         const auto btc = std::get<number_t>(pair.second.value());
         if (!to_integer(satoshi, btc * chain::satoshi_per_bitcoin, false))
@@ -387,19 +393,27 @@ bool protocol_btcd::handle_validate_address(const code& ec,
     return true;
 }
 
-bool protocol_btcd::handle_help(const code& ec, btcd_interface::help,
-    const std::string&) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
+// Utilities.
+// ----------------------------------------------------------------------------
 
-    // Lists method names only, no per-command argument usage text.
-    send_result(std::string{
-        "authenticate session getcurrentnet getbestblock notifyblocks "
-        "stopnotifyblocks loadtxfilter rescanblocks getdifficulty getinfo "
-        "getnettotals getnetworkhashps createrawtransaction "
-        "decoderawtransaction decodescript validateaddress help stop" }, 256);
-    return true;
+code protocol_btcd::parse_output_script(const std::string& text,
+    chain::script& out) NOEXCEPT
+{
+    const wallet::payment_address base58(text);
+    if (base58)
+    {
+        out = base58.output_script(p2kh_, p2sh_);
+        return error::success;
+    }
+
+    const wallet::witness_address segwit(text);
+    if (segwit)
+    {
+        out = segwit.script();
+        return error::success;
+    }
+
+    return error::invalid_argument;
 }
 
 BC_POP_WARNING()

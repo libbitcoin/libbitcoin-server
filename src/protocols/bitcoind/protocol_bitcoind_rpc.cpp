@@ -312,7 +312,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
 
     // TODO: make utility method and move explanation there.
     // verificationprogress is approximated as confirmed/candidate height, the
-    // best available estimate of the chain tip during sync (1.0 once current).
+    // best available estimate of the chain top during sync (1.0 once current).
     const auto progress = is_zero(headers) ? 1.0 :
         std::min(1.0, to_floating(blocks) / to_floating(headers));
 

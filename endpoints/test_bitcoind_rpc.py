@@ -172,7 +172,7 @@ def raw_rpc(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def test_getbestblockhash(bitcoind_rpc_config):
-    """Test getbestblockhash - returns hash of the best (tip) block"""
+    """Test getbestblockhash - returns hash of the top block"""
     response = send_rpc(bitcoind_rpc_config, "getbestblockhash")
 
     assert "error" not in response or response["error"] is None
@@ -222,7 +222,7 @@ def test_getblockchaininfo(bitcoind_rpc_config):
     assert "chain" in result
     # chainwork and size_on_disk are intentionally omitted by the implementation:
     # chainwork needs a cumulative-work index (cf. getchainwork, not implemented)
-    # and size_on_disk needs store-size accounting. The remaining Core fields are
+    # and size_on_disk needs store-size accounting. The remaining bitcoind fields are
     # returned.
     assert "difficulty" in result
     assert "headers" in result
@@ -500,7 +500,7 @@ def test_getrawtransaction_segwit(bitcoind_rpc_config):
     assert result["hash"] != result["txid"]
     # Segwit weight accounting: vsize == ceil(weight / 4).
     # (Note: libbitcoin reports "size" as the stripped, non-witness size, whereas
-    # Core reports the total witnessed size, so size/vsize ordering is not
+    # bitcoind reports the total witnessed size, so size/vsize ordering is not
     # asserted here.)
     if "weight" in result and "vsize" in result:
         assert result["vsize"] == (result["weight"] + 3) // 4

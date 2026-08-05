@@ -50,26 +50,37 @@ void protocol_btcd::start() NOEXCEPT
 
     subscribe_chase(BIND(handle_chase, _1, _2, _3));
 
+    // Administrative methods.
     SUBSCRIBE_BTCD(handle_authenticate, _1, _2, _3, _4);
+    SUBSCRIBE_BTCD(handle_help, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_session, _1, _2);
-    SUBSCRIBE_BTCD(handle_get_current_net, _1, _2);
+    SUBSCRIBE_BTCD(handle_stop, _1, _2);
+
+    // Getter methods.
     SUBSCRIBE_BTCD(handle_get_best_block, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_current_net, _1, _2);
     SUBSCRIBE_BTCD(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BTCD(handle_get_info, _1, _2);
     SUBSCRIBE_BTCD(handle_get_net_totals, _1, _2);
     SUBSCRIBE_BTCD(handle_get_network_hash_ps, _1, _2, _3, _4);
+
+    // Tool methods.
     SUBSCRIBE_BTCD(handle_create_raw_transaction, _1, _2, _3, _4, _5);
     SUBSCRIBE_BTCD(handle_decode_raw_transaction, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_decode_script, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_validate_address, _1, _2, _3);
-    SUBSCRIBE_BTCD(handle_help, _1, _2, _3);
+
+    // Subscription methods.
     SUBSCRIBE_BTCD(handle_notify_blocks, _1, _2);
     SUBSCRIBE_BTCD(handle_stop_notify_blocks, _1, _2);
     SUBSCRIBE_BTCD(handle_notify_new_transactions, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_stop_notify_new_transactions, _1, _2);
+
+    // Filter methods.
     SUBSCRIBE_BTCD(handle_load_tx_filter, _1, _2, _3, _4, _5);
     SUBSCRIBE_BTCD(handle_rescan_blocks, _1, _2, _3);
-    SUBSCRIBE_BTCD(handle_stop, _1, _2);
+
+    // Deprecated methods.
     SUBSCRIBE_BTCD(handle_notify_received, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_stop_notify_received, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_notify_spent, _1, _2, _3);
@@ -90,12 +101,8 @@ void protocol_btcd::stopping(const code& ec) NOEXCEPT
     protocol_bitcoind_rpc::stopping(ec);
 }
 
-// Dispatch (the post and websocket transports of the btcd interface).
+// Dispatch.
 // ----------------------------------------------------------------------------
-// ws authorization is established at most once per connection, by basic auth
-// on the upgrade request or by exactly one authenticate call -- so a ws call
-// is invalid if authorized and the method is authenticate, or not authorized
-// and the method is not authenticate (as btcd).
 
 void protocol_btcd::handle_receive_post(const code& ec,
     const post::cptr& post) NOEXCEPT
@@ -197,7 +204,7 @@ void protocol_btcd::dispatch_websocket(
         stop(code);
 }
 
-// Handlers (authentication/admin).
+// Handlers (administrative).
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd::handle_authenticate(const code& ec,
@@ -224,6 +231,22 @@ bool protocol_btcd::handle_authenticate(const code& ec,
     return true;
 }
 
+bool protocol_btcd::handle_help(const code& ec, btcd_interface::help,
+    const std::string&) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // Lists method names only, no per-command argument usage text.
+    send_result(std::string{
+        "authenticate help session stop getbestblock getcurrentnet "
+        "getdifficulty getinfo getnettotals getnetworkhashps "
+        "createrawtransaction decoderawtransaction decodescript "
+        "validateaddress notifyblocks stopnotifyblocks loadtxfilter "
+        "rescanblocks" }, 256);
+    return true;
+}
+
 bool protocol_btcd::handle_session(const code& ec,
     btcd_interface::session) NOEXCEPT
 {
@@ -238,34 +261,24 @@ bool protocol_btcd::handle_session(const code& ec,
     return true;
 }
 
-bool protocol_btcd::handle_get_current_net(const code& ec,
-    btcd_interface::get_current_net) NOEXCEPT
+bool protocol_btcd::handle_stop(const code& ec,
+    btcd_interface::stop) NOEXCEPT
 {
-    if (stopped(ec))
-        return false;
+    if (stopped(ec)) return false;
 
-    // The p2p handshake magic, the same value btcd returns (checked once by
-    // btcwallet/lnd at connect to confirm the expected network).
-    send_result(network_settings().identifier, 20);
+    // No secure remote-shutdown path exists; always rejected regardless of
+    // configuration or auth state.
+    send_error(error::not_implemented);
     return true;
 }
 
-bool protocol_btcd::handle_get_best_block(const code& ec,
-    btcd_interface::get_best_block) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
+// Handlers (getters): see protocol_btcd_utility.cpp.
+// ----------------------------------------------------------------------------
 
-    // Required by btcwallet during wallet chain-sync bootstrap.
-    const auto& query = archive();
-    object_t result{};
-    result.emplace("hash", encode_hash(query.get_top_confirmed_hash()));
-    result.emplace("height", query.get_top_confirmed());
-    send_result(std::move(result), 96);
-    return true;
-}
+// Handlers (tools): see protocol_btcd_utility.cpp.
+// ----------------------------------------------------------------------------
 
-// Handlers (block subscription).
+// Handlers (subscription, mempool not_implemented pending v5 mempool).
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd::handle_notify_blocks(const code& ec,
@@ -290,9 +303,6 @@ bool protocol_btcd::handle_stop_notify_blocks(const code& ec,
     return true;
 }
 
-// Handlers (mempool subscription, not_implemented pending v5 mempool).
-// ----------------------------------------------------------------------------
-
 bool protocol_btcd::handle_notify_new_transactions(const code& ec,
     btcd_interface::notify_new_transactions, bool) NOEXCEPT
 {
@@ -309,22 +319,8 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     return true;
 }
 
-// Handlers (address/outpoint filtering): see protocol_btcd_filter.cpp.
+// Handlers (filters): see protocol_btcd_filter.cpp.
 // ----------------------------------------------------------------------------
-
-// Handler (admin, permanently not_implemented).
-// ----------------------------------------------------------------------------
-
-bool protocol_btcd::handle_stop(const code& ec,
-    btcd_interface::stop) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-
-    // No secure remote-shutdown path exists; always rejected regardless of
-    // configuration or auth state.
-    send_error(error::not_implemented);
-    return true;
-}
 
 // Handlers (deprecated, permanently not_implemented).
 // ----------------------------------------------------------------------------
@@ -368,11 +364,8 @@ bool protocol_btcd::handle_rescan(const code& ec,
 {
     if (stopped(ec)) return false;
 
-    // Deprecated method, implemented only for the empty addrs/outpoints
-    // case (btcd skips scanning and reports immediate completion) -- the
-    // call btcwallet makes to bootstrap its initial sync starting point. A
-    // non-empty list would require a real historical scan; no observed
-    // caller needs it (loadtxfilter/rescanblocks cover actual watching).
+    // Implemented only for the empty addrs/outpoints case (as btcd), the
+    // call btcwallet makes to bootstrap its sync starting point.
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
@@ -398,7 +391,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
         return true;
     }
 
-    // Nothing to watch: report the current chain tip as already-finished,
+    // Nothing to watch: report the current chain top as already-finished,
     // ignoring beginblock (as btcd).
     const auto top = query.get_top_confirmed();
     const auto header = query.get_header(query.to_confirmed(top));
@@ -422,8 +415,6 @@ bool protocol_btcd::handle_rescan(const code& ec,
 
 // Chase events.
 // ----------------------------------------------------------------------------
-// Block events are matched against the watch-list on the notification strand
-// (see protocol_btcd_filter.cpp) and notified back on the channel strand.
 
 bool protocol_btcd::handle_chase(const code&, node::chase event_,
     node::event_value value) NOEXCEPT
@@ -478,9 +469,7 @@ void protocol_btcd::send_notification(const std::string& method,
     message.body() = std::move(notification);
     message.prepare_payload();
 
-    // The notification strand poster (notify, see POST_NOTIFY) shadows
-    // network::protocol_http::notify. Qualify explicitly (as POST_BTCD).
-    // NOTIFY does not restart the (already active) ws reader.
+    // The notification strand poster shadows notify, qualify (as POST_BTCD).
     this->network::protocol_http::template notify<CLASS>(std::move(message),
         &CLASS::handle_complete, _1, error::success);
 }

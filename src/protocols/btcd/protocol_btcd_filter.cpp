@@ -40,15 +40,11 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Filter (loadtxfilter).
+// Filter parsing (loadtxfilter).
 // ----------------------------------------------------------------------------
-// The watch-list is matched via the address index and spender lookups (the
-// electrum subscription model), never by block scanning. Watches are keyed
-// by index key (sha256 of the output script), matched by cursored history
-// delta, so each connected block costs one bounded index walk per watch.
 
-code protocol_btcd::parse_filter_keys(const value_t& addresses,
-    std::vector<hash_digest>& out) NOEXCEPT
+code protocol_btcd::parse_filter_keys(hashes& out,
+    const value_t& addresses) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -71,8 +67,8 @@ code protocol_btcd::parse_filter_keys(const value_t& addresses,
     return error::success;
 }
 
-code protocol_btcd::parse_filter_points(const value_t& outpoints,
-    std::vector<point>& out) NOEXCEPT
+code protocol_btcd::parse_filter_points(chain::points& out,
+    const value_t& outpoints) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -92,8 +88,8 @@ code protocol_btcd::parse_filter_points(const value_t& outpoints,
             !std::holds_alternative<number_t>(index_it->second.value()))
             return error::invalid_argument;
 
-        hash_digest hash{};
         uint32_t index{};
+        hash_digest hash{};
         if (!decode_hash(hash, std::get<string_t>(hash_it->second.value())) ||
             !to_integer(index, std::get<number_t>(index_it->second.value())))
             return error::invalid_argument;
@@ -104,7 +100,7 @@ code protocol_btcd::parse_filter_points(const value_t& outpoints,
     return error::success;
 }
 
-// Handlers (address/outpoint filtering).
+// Handlers (filters).
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd::handle_load_tx_filter(const code& ec,
@@ -114,15 +110,15 @@ bool protocol_btcd::handle_load_tx_filter(const code& ec,
     if (stopped(ec))
         return false;
 
-    std::vector<hash_digest> keys{};
-    if (const auto fault = parse_filter_keys(addresses, keys))
+    hashes keys{};
+    if (const auto fault = parse_filter_keys(keys, addresses))
     {
         send_error(fault);
         return true;
     }
 
-    std::vector<point> points{};
-    if (const auto fault = parse_filter_points(outpoints, points))
+    chain::points points{};
+    if (const auto fault = parse_filter_points(points, outpoints))
     {
         send_error(fault);
         return true;
@@ -140,9 +136,8 @@ bool protocol_btcd::handle_load_tx_filter(const code& ec,
     return true;
 }
 
-void protocol_btcd::do_load_tx_filter(bool reload,
-    const std::vector<hash_digest>& keys,
-    const std::vector<point>& points) NOEXCEPT
+void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
+    const chain::points& points) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -237,7 +232,7 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
         return true;
     }
 
-    std::vector<hash_digest> hashes{};
+    hashes block_hashes{};
     for (const auto& item: std::get<array_t>(blockhashes.value()))
     {
         hash_digest hash{};
@@ -248,7 +243,7 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
             return true;
         }
 
-        hashes.push_back(hash);
+        block_hashes.push_back(hash);
     }
 
     if (!archive().address_enabled())
@@ -258,43 +253,39 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
     }
 
     monitor(true);
-    POST_NOTIFY(do_rescan_blocks, std::move(hashes));
+    POST_NOTIFY(do_rescan_blocks, std::move(block_hashes));
     return true;
 }
 
-// Snapshot the watch-list on the notification strand, so the query itself
-// runs parallel (as electrum's one-shot queries) without serializing against
-// this channel's notifications.
-void protocol_btcd::do_rescan_blocks(
-    const std::vector<hash_digest>& hashes) NOEXCEPT
+// Snapshot the watch-list, so the query runs parallel (not on the strand).
+void protocol_btcd::do_rescan_blocks(const hashes& block_hashes) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    std::vector<hash_digest> keys{};
+    hashes keys{};
     keys.reserve(address_watches_.size());
     for (const auto& watch: address_watches_)
         keys.push_back(watch.first);
 
-    std::vector<point> points{};
+    chain::points points{};
     points.reserve(outpoint_watches_.size());
     for (const auto& watch: outpoint_watches_)
         points.push_back(watch.first);
 
-    PARALLEL(do_rescan_watches, hashes, std::move(keys), std::move(points));
+    PARALLEL(do_rescan_watches, block_hashes, std::move(keys),
+        std::move(points));
 }
 
-void protocol_btcd::do_rescan_watches(
-    const std::vector<hash_digest>& hashes,
-    const std::vector<hash_digest>& keys,
-    const std::vector<point>& points) NOEXCEPT
+void protocol_btcd::do_rescan_watches(const hashes& block_hashes,
+    const hashes& keys, chain::points& points) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     // Resolve named blocks to heights (result retains request order).
-    std::set<size_t> heights{};
+    sizes heights{};
     std::vector<std::pair<hash_digest, size_t>> named{};
     const auto& query = archive();
-    for (const auto& hash: hashes)
+    for (const auto& hash: block_hashes)
     {
         if (stopping_)
             return;
@@ -391,7 +382,7 @@ void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
     // Match the watch-list against the connected block (cursored delta).
     // Cursors advance here, so this stays on the notification strand.
     matches matched{};
-    const std::set<size_t> heights{ height };
+    const sizes heights{ height };
     for (auto& [key, sub]: address_watches_)
     {
         if (stopping_)
@@ -444,9 +435,8 @@ void protocol_btcd::do_disconnected(node::header_t link_value) NOEXCEPT
         to_text(*header, chain::header::serialized_size()));
 }
 
-// btcd 'blockconnected' [hash, height, time] and 'filteredblockconnected'
-// [height, header, subscribedtxs]. filtered is sent unconditionally
-// alongside (as btcd) -- an empty filter just yields an empty array.
+// blockconnected [hash, height, time] and filteredblockconnected [height,
+// header, subscribedtxs], the latter sent unconditionally (as btcd).
 void protocol_btcd::notify_connected(const std::string& hash,
     size_t height, uint32_t time, const std::string& header,
     const array_t& txs) NOEXCEPT
@@ -471,8 +461,8 @@ void protocol_btcd::notify_connected(const std::string& hash,
     }, 256);
 }
 
-// btcd 'blockdisconnected' [hash, height, time] and
-// 'filteredblockdisconnected' [height, header].
+// blockdisconnected [hash, height, time] and filteredblockdisconnected
+// [height, header].
 void protocol_btcd::notify_disconnected(const std::string& hash,
     size_t height, uint32_t time, const std::string& header) NOEXCEPT
 {
@@ -495,13 +485,12 @@ void protocol_btcd::notify_disconnected(const std::string& hash,
     }, 256);
 }
 
-// Utilities (notification strand).
+// Utilities.
 // ----------------------------------------------------------------------------
 
-// Called from the notification strand (live, cursors advance) and parallel
-// (rescan, against a snapshot), so neither strand is asserted here.
+// Called from notification strand (live) and parallel (rescan), so unasserted.
 code protocol_btcd::match_addresses(matches& out, address_watch& sub,
-    const hash_digest& key, const std::set<size_t>& heights) NOEXCEPT
+    const hash_digest& key, const sizes& heights) NOEXCEPT
 {
     histories delta{};
     const auto& query = archive();
@@ -519,7 +508,7 @@ code protocol_btcd::match_addresses(matches& out, address_watch& sub,
 }
 
 void protocol_btcd::match_outpoints(matches& out, outpoint_watch& sub,
-    const point& prevout, const std::set<size_t>& heights) NOEXCEPT
+    const point& prevout, const sizes& heights) NOEXCEPT
 {
     outpoint_watch next{};
     const auto& query = archive();
