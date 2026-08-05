@@ -38,7 +38,7 @@ network::channel
 │   └── [server::channel_stratum_v1]
 │   └── [server::channel_electrum]
 ├── channel_http
-│   └── [server::channel_http]
+│   └── [server::channel_http<Body>]
 └── channel_peer
     └── [node::channel_peer]
 
@@ -50,6 +50,6 @@ server::channel → node::channel
 ├── channel_stratum_v2 → network::channel
 ├── channel_stratum_v1 → network::channel_rpc<interface::stratum_v1>
 ├── channel_electrum   → network::channel_rpc<interface::electrum>
-└── channel_http       → network::channel_http
+└── channel_http<Body> → network::channel_http
 
 */

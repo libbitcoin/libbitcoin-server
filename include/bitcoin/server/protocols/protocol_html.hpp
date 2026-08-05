@@ -34,7 +34,7 @@ class BCS_API protocol_html
 {
 public:
     using options_t = server::settings::html_server;
-    using channel_t = channel_http;
+    using channel_t = channel_http<>;
 
 protected:
     inline protocol_html(const auto& session,

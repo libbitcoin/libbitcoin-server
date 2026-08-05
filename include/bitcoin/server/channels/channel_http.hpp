@@ -27,10 +27,13 @@
 namespace libbitcoin {
 namespace server {
 
+/// Channel for http services, websocket frames read as Body (a json-rpc
+/// service instantiates with network::rpc::request).
+template <typename Body = network::http::string_value>
 class BCS_API channel_http
   : public server::channel,
     public network::channel_http,
-    protected network::tracker<channel_http>
+    protected network::tracker<channel_http<Body>>
 {
 public:
     typedef std::shared_ptr<channel_http> ptr;
@@ -40,19 +43,19 @@ public:
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
         network::channel_http(log, socket, identifier, config.network, options),
-        network::tracker<channel_http>(log)
+        network::tracker<channel_http<Body>>(log)
     {
     }
 
 protected:
     using value_type = network::http::body::value_type;
 
-    /// Overridden to change default websocket reader to string.
+    /// Overridden to set the websocket reader body type.
     inline value_type websocket_body() const NOEXCEPT override
     {
         // There is no forwarding constructor so assign and move.
-        network::http::body::value_type value{};
-        value = network::http::string_value{};
+        value_type value{};
+        value = Body{};
         return value;
     }
 };

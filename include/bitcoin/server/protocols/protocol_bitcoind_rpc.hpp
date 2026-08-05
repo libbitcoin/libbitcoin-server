@@ -33,8 +33,8 @@ class BCS_API protocol_bitcoind_rpc
     protected network::tracker<protocol_bitcoind_rpc>
 {
 public:
-    // Replace base class channel_t (network::channel_http). 
-    using channel_t = channel_http;
+    // Replace base class channel_t (json-rpc websocket reader body).
+    using channel_t = channel_http<network::rpc::request>;
 
     typedef std::shared_ptr<protocol_bitcoind_rpc> ptr;
     using rpc_interface = interface::bitcoind_rpc;

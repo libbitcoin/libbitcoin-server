@@ -38,7 +38,6 @@ using namespace system;
 using namespace network;
 using namespace network::rpc;
 using namespace std::placeholders;
-using namespace boost::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -161,24 +160,14 @@ void protocol_btcd_rpc::dispatch_websocket(
 {
     BC_ASSERT(stranded());
 
-    // Websocket frames are json-rpc text (channel default reader).
-    if (!request.body().contains<http::string_value>())
+    // Websocket frames are parsed as json-rpc requests (websocket_rpc).
+    if (!request.body().contains<rpc::request>())
     {
         stop(error::invalid_argument);
         return;
     }
 
-    request_t message{};
-    try
-    {
-        message = value_to<request_t>(parse(
-            request.body().get<http::string_value>()));
-    }
-    catch (const std::exception&)
-    {
-        stop(error::invalid_argument);
-        return;
-    }
+    const auto& message = request.body().get<rpc::request>().message;
 
     // Cache request context for response building (version + id).
     set_rpc_request(message);
