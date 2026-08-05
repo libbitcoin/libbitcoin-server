@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_btcd_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_btcd.hpp>
 
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -25,7 +25,7 @@
 namespace libbitcoin {
 namespace server {
 
-#define CLASS protocol_btcd_rpc
+#define CLASS protocol_btcd
 
 // protocol_bitcoind_rpc declares 'using post = network::http::method::post',
 // which shadows network::protocol::post<Derived>. Qualify explicitly.
@@ -47,7 +47,7 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // by index key (sha256 of the output script), matched by cursored history
 // delta, so each connected block costs one bounded index walk per watch.
 
-code protocol_btcd_rpc::parse_filter_keys(const value_t& addresses,
+code protocol_btcd::parse_filter_keys(const value_t& addresses,
     std::vector<hash_digest>& out) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -71,7 +71,7 @@ code protocol_btcd_rpc::parse_filter_keys(const value_t& addresses,
     return error::success;
 }
 
-code protocol_btcd_rpc::parse_filter_points(const value_t& outpoints,
+code protocol_btcd::parse_filter_points(const value_t& outpoints,
     std::vector<point>& out) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -107,7 +107,7 @@ code protocol_btcd_rpc::parse_filter_points(const value_t& outpoints,
 // Handlers (address/outpoint filtering).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_load_tx_filter(const code& ec,
+bool protocol_btcd::handle_load_tx_filter(const code& ec,
     btcd_interface::load_tx_filter, bool reload, const value_t& addresses,
     const value_t& outpoints) NOEXCEPT
 {
@@ -140,7 +140,7 @@ bool protocol_btcd_rpc::handle_load_tx_filter(const code& ec,
     return true;
 }
 
-void protocol_btcd_rpc::do_load_tx_filter(bool reload,
+void protocol_btcd::do_load_tx_filter(bool reload,
     const std::vector<hash_digest>& keys,
     const std::vector<point>& points) NOEXCEPT
 {
@@ -208,7 +208,7 @@ void protocol_btcd_rpc::do_load_tx_filter(bool reload,
     POST_BTCD(complete_load_tx_filter, ec);
 }
 
-void protocol_btcd_rpc::complete_load_tx_filter(const code& ec) NOEXCEPT
+void protocol_btcd::complete_load_tx_filter(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -225,7 +225,7 @@ void protocol_btcd_rpc::complete_load_tx_filter(const code& ec) NOEXCEPT
     send_result({}, 4);
 }
 
-bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
+bool protocol_btcd::handle_rescan_blocks(const code& ec,
     btcd_interface::rescan_blocks, const value_t& blockhashes) NOEXCEPT
 {
     if (stopped(ec))
@@ -265,7 +265,7 @@ bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
 // Snapshot the watch-list on the notification strand, so the query itself
 // runs parallel (as electrum's one-shot queries) without serializing against
 // this channel's notifications.
-void protocol_btcd_rpc::do_rescan_blocks(
+void protocol_btcd::do_rescan_blocks(
     const std::vector<hash_digest>& hashes) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
@@ -283,7 +283,7 @@ void protocol_btcd_rpc::do_rescan_blocks(
     PARALLEL(do_rescan_watches, hashes, std::move(keys), std::move(points));
 }
 
-void protocol_btcd_rpc::do_rescan_watches(
+void protocol_btcd::do_rescan_watches(
     const std::vector<hash_digest>& hashes,
     const std::vector<hash_digest>& keys,
     const std::vector<point>& points) NOEXCEPT
@@ -352,7 +352,7 @@ void protocol_btcd_rpc::do_rescan_watches(
     POST_BTCD(complete_rescan_blocks, error::success, std::move(discovered));
 }
 
-void protocol_btcd_rpc::complete_rescan_blocks(const code& ec,
+void protocol_btcd::complete_rescan_blocks(const code& ec,
     const array_t& discovered) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -373,7 +373,7 @@ void protocol_btcd_rpc::complete_rescan_blocks(const code& ec,
 // Notification event handlers.
 // ----------------------------------------------------------------------------
 
-void protocol_btcd_rpc::do_connected(node::header_t link_value) NOEXCEPT
+void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -420,7 +420,7 @@ void protocol_btcd_rpc::do_connected(node::header_t link_value) NOEXCEPT
         to_text(*header, chain::header::serialized_size()), std::move(txs));
 }
 
-void protocol_btcd_rpc::do_disconnected(node::header_t link_value) NOEXCEPT
+void protocol_btcd::do_disconnected(node::header_t link_value) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -447,7 +447,7 @@ void protocol_btcd_rpc::do_disconnected(node::header_t link_value) NOEXCEPT
 // btcd 'blockconnected' [hash, height, time] and 'filteredblockconnected'
 // [height, header, subscribedtxs]. filtered is sent unconditionally
 // alongside (as btcd) -- an empty filter just yields an empty array.
-void protocol_btcd_rpc::notify_connected(const std::string& hash,
+void protocol_btcd::notify_connected(const std::string& hash,
     size_t height, uint32_t time, const std::string& header,
     const array_t& txs) NOEXCEPT
 {
@@ -473,7 +473,7 @@ void protocol_btcd_rpc::notify_connected(const std::string& hash,
 
 // btcd 'blockdisconnected' [hash, height, time] and
 // 'filteredblockdisconnected' [height, header].
-void protocol_btcd_rpc::notify_disconnected(const std::string& hash,
+void protocol_btcd::notify_disconnected(const std::string& hash,
     size_t height, uint32_t time, const std::string& header) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -500,7 +500,7 @@ void protocol_btcd_rpc::notify_disconnected(const std::string& hash,
 
 // Called from the notification strand (live, cursors advance) and parallel
 // (rescan, against a snapshot), so neither strand is asserted here.
-code protocol_btcd_rpc::match_addresses(matches& out, address_watch& sub,
+code protocol_btcd::match_addresses(matches& out, address_watch& sub,
     const hash_digest& key, const std::set<size_t>& heights) NOEXCEPT
 {
     histories delta{};
@@ -518,7 +518,7 @@ code protocol_btcd_rpc::match_addresses(matches& out, address_watch& sub,
     return error::success;
 }
 
-void protocol_btcd_rpc::match_outpoints(matches& out, outpoint_watch& sub,
+void protocol_btcd::match_outpoints(matches& out, outpoint_watch& sub,
     const point& prevout, const std::set<size_t>& heights) NOEXCEPT
 {
     outpoint_watch next{};
@@ -534,7 +534,7 @@ void protocol_btcd_rpc::match_outpoints(matches& out, outpoint_watch& sub,
     sub = std::move(next);
 }
 
-array_t protocol_btcd_rpc::serialize_matches(const matched_txs& txs) NOEXCEPT
+array_t protocol_btcd::serialize_matches(const matched_txs& txs) NOEXCEPT
 {
     constexpr auto witness = true;
     array_t out{};

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_btcd_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_btcd.hpp>
 
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -25,7 +25,7 @@
 namespace libbitcoin {
 namespace server {
 
-#define CLASS protocol_btcd_rpc
+#define CLASS protocol_btcd
 #define SUBSCRIBE_BTCD(method, ...) \
     btcd_subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
@@ -41,7 +41,7 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Start.
 // ----------------------------------------------------------------------------
 
-void protocol_btcd_rpc::start() NOEXCEPT
+void protocol_btcd::start() NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -81,7 +81,7 @@ void protocol_btcd_rpc::start() NOEXCEPT
 }
 
 // Events unsubscription is asynchronous, race is ok.
-void protocol_btcd_rpc::stopping(const code& ec) NOEXCEPT
+void protocol_btcd::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     stopping_.store(true);
@@ -97,7 +97,7 @@ void protocol_btcd_rpc::stopping(const code& ec) NOEXCEPT
 // is invalid if authorized and the method is authenticate, or not authorized
 // and the method is not authenticate (as btcd).
 
-void protocol_btcd_rpc::handle_receive_post(const code& ec,
+void protocol_btcd::handle_receive_post(const code& ec,
     const post::cptr& post) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -152,7 +152,7 @@ void protocol_btcd_rpc::handle_receive_post(const code& ec,
         stop(code);
 }
 
-void protocol_btcd_rpc::dispatch_websocket(
+void protocol_btcd::dispatch_websocket(
     const network::http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -200,7 +200,7 @@ void protocol_btcd_rpc::dispatch_websocket(
 // Handlers (authentication/admin).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_authenticate(const code& ec,
+bool protocol_btcd::handle_authenticate(const code& ec,
     btcd_interface::authenticate, const std::string& username,
     const std::string& password) NOEXCEPT
 {
@@ -224,7 +224,7 @@ bool protocol_btcd_rpc::handle_authenticate(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_session(const code& ec,
+bool protocol_btcd::handle_session(const code& ec,
     btcd_interface::session) NOEXCEPT
 {
     if (stopped(ec))
@@ -238,7 +238,7 @@ bool protocol_btcd_rpc::handle_session(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_get_current_net(const code& ec,
+bool protocol_btcd::handle_get_current_net(const code& ec,
     btcd_interface::get_current_net) NOEXCEPT
 {
     if (stopped(ec))
@@ -250,7 +250,7 @@ bool protocol_btcd_rpc::handle_get_current_net(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_get_best_block(const code& ec,
+bool protocol_btcd::handle_get_best_block(const code& ec,
     btcd_interface::get_best_block) NOEXCEPT
 {
     if (stopped(ec))
@@ -268,7 +268,7 @@ bool protocol_btcd_rpc::handle_get_best_block(const code& ec,
 // Handlers (block subscription).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_notify_blocks(const code& ec,
+bool protocol_btcd::handle_notify_blocks(const code& ec,
     btcd_interface::notify_blocks) NOEXCEPT
 {
     if (stopped(ec))
@@ -279,7 +279,7 @@ bool protocol_btcd_rpc::handle_notify_blocks(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_stop_notify_blocks(const code& ec,
+bool protocol_btcd::handle_stop_notify_blocks(const code& ec,
     btcd_interface::stop_notify_blocks) NOEXCEPT
 {
     if (stopped(ec))
@@ -293,7 +293,7 @@ bool protocol_btcd_rpc::handle_stop_notify_blocks(const code& ec,
 // Handlers (mempool subscription, not_implemented pending v5 mempool).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_notify_new_transactions(const code& ec,
+bool protocol_btcd::handle_notify_new_transactions(const code& ec,
     btcd_interface::notify_new_transactions, bool) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -301,7 +301,7 @@ bool protocol_btcd_rpc::handle_notify_new_transactions(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_stop_notify_new_transactions(const code& ec,
+bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     btcd_interface::stop_notify_new_transactions) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -309,13 +309,13 @@ bool protocol_btcd_rpc::handle_stop_notify_new_transactions(const code& ec,
     return true;
 }
 
-// Handlers (address/outpoint filtering): see protocol_btcd_rpc_filter.cpp.
+// Handlers (address/outpoint filtering): see protocol_btcd_filter.cpp.
 // ----------------------------------------------------------------------------
 
 // Handler (admin, permanently not_implemented).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_stop(const code& ec,
+bool protocol_btcd::handle_stop(const code& ec,
     btcd_interface::stop) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -329,7 +329,7 @@ bool protocol_btcd_rpc::handle_stop(const code& ec,
 // Handlers (deprecated, permanently not_implemented).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_notify_received(const code& ec,
+bool protocol_btcd::handle_notify_received(const code& ec,
     btcd_interface::notify_received, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -337,7 +337,7 @@ bool protocol_btcd_rpc::handle_notify_received(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_stop_notify_received(const code& ec,
+bool protocol_btcd::handle_stop_notify_received(const code& ec,
     btcd_interface::stop_notify_received, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -345,7 +345,7 @@ bool protocol_btcd_rpc::handle_stop_notify_received(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_notify_spent(const code& ec,
+bool protocol_btcd::handle_notify_spent(const code& ec,
     btcd_interface::notify_spent, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -353,7 +353,7 @@ bool protocol_btcd_rpc::handle_notify_spent(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_stop_notify_spent(const code& ec,
+bool protocol_btcd::handle_stop_notify_spent(const code& ec,
     btcd_interface::stop_notify_spent, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -361,7 +361,7 @@ bool protocol_btcd_rpc::handle_stop_notify_spent(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_rescan(const code& ec,
+bool protocol_btcd::handle_rescan(const code& ec,
     btcd_interface::rescan, const std::string& beginblock,
     const value_t& addresses, const value_t& outpoints,
     const std::string&) NOEXCEPT
@@ -423,9 +423,9 @@ bool protocol_btcd_rpc::handle_rescan(const code& ec,
 // Chase events.
 // ----------------------------------------------------------------------------
 // Block events are matched against the watch-list on the notification strand
-// (see protocol_btcd_rpc_filter.cpp) and notified back on the channel strand.
+// (see protocol_btcd_filter.cpp) and notified back on the channel strand.
 
-bool protocol_btcd_rpc::handle_chase(const code&, node::chase event_,
+bool protocol_btcd::handle_chase(const code&, node::chase event_,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped, it is not a call status.
@@ -460,7 +460,7 @@ bool protocol_btcd_rpc::handle_chase(const code&, node::chase event_,
 // Senders.
 // ----------------------------------------------------------------------------
 
-void protocol_btcd_rpc::send_notification(const std::string& method,
+void protocol_btcd::send_notification(const std::string& method,
     array_t&& params, size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());

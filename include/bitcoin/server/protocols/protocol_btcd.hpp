@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BTCD_RPC_HPP
-#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BTCD_RPC_HPP
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BTCD_HPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BTCD_HPP
 
 #include <atomic>
 #include <map>
@@ -38,20 +38,20 @@ namespace server {
 /// ws authorization is established once per connection, by basic auth on the
 /// ws upgrade request or by the in-band 'authenticate' method, and latched
 /// on the channel (see dispatch_websocket).
-class BCS_API protocol_btcd_rpc
+class BCS_API protocol_btcd
   : public server::protocol_bitcoind_rpc,
-    protected network::tracker<protocol_btcd_rpc>
+    protected network::tracker<protocol_btcd>
 {
 public:
-    typedef std::shared_ptr<protocol_btcd_rpc> ptr;
+    typedef std::shared_ptr<protocol_btcd> ptr;
     using btcd_interface = interface::btcd;
     using btcd_dispatcher = network::rpc::dispatcher<btcd_interface>;
 
-    inline protocol_btcd_rpc(const auto& session,
+    inline protocol_btcd(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol_bitcoind_rpc(session, channel, options),
-        network::tracker<protocol_btcd_rpc>(session->log),
+        network::tracker<protocol_btcd>(session->log),
         options_(options),
         turbo_(session->database_settings().turbo),
         p2kh_(session->system_settings().forks.difficult ?

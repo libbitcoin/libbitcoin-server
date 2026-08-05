@@ -49,7 +49,7 @@
 #include <bitcoin/server/protocols/protocol_admin.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_rest.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
-#include <bitcoin/server/protocols/protocol_btcd_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
 #include <bitcoin/server/protocols/protocol_html.hpp>

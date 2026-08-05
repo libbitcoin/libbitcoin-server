@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_btcd_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_btcd.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -26,7 +26,7 @@
 namespace libbitcoin {
 namespace server {
 
-#define CLASS protocol_btcd_rpc
+#define CLASS protocol_btcd
 
 using namespace system;
 using namespace network;
@@ -40,7 +40,7 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Generic btcd-tooling compatibility.
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_get_difficulty(const code& ec,
+bool protocol_btcd::handle_get_difficulty(const code& ec,
     btcd_interface::get_difficulty) NOEXCEPT
 {
     if (stopped(ec))
@@ -59,7 +59,7 @@ bool protocol_btcd_rpc::handle_get_difficulty(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_get_info(const code& ec,
+bool protocol_btcd::handle_get_info(const code& ec,
     btcd_interface::get_info) NOEXCEPT
 {
     if (stopped(ec))
@@ -98,7 +98,7 @@ bool protocol_btcd_rpc::handle_get_info(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_get_net_totals(const code& ec,
+bool protocol_btcd::handle_get_net_totals(const code& ec,
     btcd_interface::get_net_totals) NOEXCEPT
 {
     if (stopped(ec))
@@ -114,7 +114,7 @@ bool protocol_btcd_rpc::handle_get_net_totals(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
+bool protocol_btcd::handle_get_network_hash_ps(const code& ec,
     btcd_interface::get_network_hash_ps, uint32_t, int32_t height) NOEXCEPT
 {
     if (stopped(ec))
@@ -143,7 +143,7 @@ bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
 // Raw transaction/script utilities.
 // ----------------------------------------------------------------------------
 
-code protocol_btcd_rpc::parse_output_script(const std::string& text,
+code protocol_btcd::parse_output_script(const std::string& text,
     chain::script& out) NOEXCEPT
 {
     const wallet::payment_address base58(text);
@@ -163,7 +163,7 @@ code protocol_btcd_rpc::parse_output_script(const std::string& text,
     return error::invalid_argument;
 }
 
-bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
+bool protocol_btcd::handle_create_raw_transaction(const code& ec,
     btcd_interface::create_raw_transaction, const array_t& inputs,
     const object_t& outputs, uint32_t locktime) NOEXCEPT
 {
@@ -244,7 +244,7 @@ bool protocol_btcd_rpc::handle_create_raw_transaction(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_decode_raw_transaction(const code& ec,
+bool protocol_btcd::handle_decode_raw_transaction(const code& ec,
     btcd_interface::decode_raw_transaction,
     const std::string& hexstring) NOEXCEPT
 {
@@ -273,7 +273,7 @@ bool protocol_btcd_rpc::handle_decode_raw_transaction(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_decode_script(const code& ec,
+bool protocol_btcd::handle_decode_script(const code& ec,
     btcd_interface::decode_script, const std::string& hex) NOEXCEPT
 {
     if (stopped(ec))
@@ -348,7 +348,7 @@ bool protocol_btcd_rpc::handle_decode_script(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_validate_address(const code& ec,
+bool protocol_btcd::handle_validate_address(const code& ec,
     btcd_interface::validate_address, const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
@@ -387,7 +387,7 @@ bool protocol_btcd_rpc::handle_validate_address(const code& ec,
     return true;
 }
 
-bool protocol_btcd_rpc::handle_help(const code& ec, btcd_interface::help,
+bool protocol_btcd::handle_help(const code& ec, btcd_interface::help,
     const std::string&) NOEXCEPT
 {
     if (stopped(ec))

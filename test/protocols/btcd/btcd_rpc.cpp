@@ -460,7 +460,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 // Method-scoped credentials (channel_http::permitted()): a credential's
 // optional 'user:pass:method,...' suffix restricts which methods it may
-// call, enforced over ws by protocol_btcd_rpc::dispatch_websocket.
+// call, enforced over ws by protocol_btcd::dispatch_websocket.
 // ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(btcd_scoped_credential_tests, btcd_scoped_credential_setup_fixture)
@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__unau
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// authenticate (protocol_btcd_rpc::handle_authenticate): exercises the
+// authenticate (protocol_btcd::handle_authenticate): exercises the
 // credential-configured branch, not covered by btcd_tests above (whose
 // fixture leaves btcd.credential unset, so every one of those connections
 // takes the no-op path).

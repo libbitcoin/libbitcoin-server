@@ -32,7 +32,7 @@ namespace server {
 using session_admin = session_server<protocol_admin>;
 using session_native = session_server<protocol_native>;
 using session_bitcoind = session_server<protocol_bitcoind_rest>;
-using session_btcd = session_server<protocol_btcd_rpc>;
+using session_btcd = session_server<protocol_btcd>;
 using session_stratum_v1 = session_server<protocol_stratum_v1>;
 using session_stratum_v2 = session_server<protocol_stratum_v2>;
 using session_electrum = session_handshake<protocol_electrum_version,
@@ -75,7 +75,7 @@ server::session → node::session
     ╞══ session_admin      = server::session_server<protocol_admin>
     ╞══ session_native     = server::session_server<protocol_native>
     ╞══ session_bitcoind   = server::session_server<protocol_bitcoind_rest>
-    ╞══ session_btcd       = server::session_server<protocol_btcd_rpc>
+    ╞══ session_btcd       = server::session_server<protocol_btcd>
     ╞══ session_stratum_v1 = server::session_server<protocol_stratum_v1>
     ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
     └── server::session_handshake<...Protocols>

@@ -134,9 +134,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc_json.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_rpc.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_rpc_filter.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_rpc_utility.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_filter.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_utility.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_addresses.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_fees.cpp" />
@@ -196,7 +196,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rest.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rpc.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_rpc.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_html.hpp" />
