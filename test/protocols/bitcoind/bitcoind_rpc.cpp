@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BOOST_REQUIRE(result.at("networks").is_array());
 }
 
-// not implemented (structured not_implemented error)
+// not implemented
 // ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
@@ -306,10 +306,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-// websocket transport
+// websocket
 // ----------------------------------------------------------------------------
-// The same interface dispatched over ws (dispatch_websocket): each frame is
-// a json-rpc text message.
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__websocket__nine)
 {
@@ -368,7 +366,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// segwit (witness store: genesis + two blocks carrying witness transactions)
+// witness
 // ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_witness_tests, bitcoind_witness_setup_fixture)

@@ -32,18 +32,16 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 code output_script(chain::script& out, const std::string& text, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness) NOEXCEPT
 {
-    const wallet::payment_address base58(text);
-    if (base58)
+    if (const wallet::payment_address payment{ text }; payment)
     {
-        out = base58.output_script(p2kh, p2sh);
+        out = payment.output_script(p2kh, p2sh);
         return error::success;
     }
 
-    // The parse accepts any prefix, so the configured one is a check.
-    const wallet::witness_address segwit(text);
-    if (segwit && segwit.prefix() == witness)
+    if (const wallet::witness_address payment{ text };
+        payment && payment.prefix() == witness)
     {
-        out = segwit.script();
+        out = payment.script();
         return error::success;
     }
 

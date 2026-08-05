@@ -375,18 +375,18 @@ bool protocol_btcd::handle_validate_address(const code& ec,
         return true;
     }
 
-    const wallet::witness_address segwit(address);
-    if (segwit && segwit.prefix() == witness_)
+    const wallet::witness_address witness(address);
+    if (witness && witness.prefix() == witness_)
     {
         send_result(object_t
         {
             { "isvalid", true },
-            { "address", segwit.encoded() },
-            { "isscript", segwit.identifier() ==
+            { "address", witness.encoded() },
+            { "isscript", witness.identifier() ==
                 wallet::witness_address::program_type::version0_p2sh },
             { "iswitness", true },
-            { "witness_version", segwit.version() },
-            { "witness_program", encode_base16(segwit.program()) }
+            { "witness_version", witness.version() },
+            { "witness_program", encode_base16(witness.program()) }
         }, 128);
         return true;
     }
