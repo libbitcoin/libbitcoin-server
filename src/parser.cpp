@@ -1213,6 +1213,11 @@ options_metadata parser::load_settings() THROWS
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
     )
     (
+        "btcd.version",
+        value<version>(&configured.server.btcd.version),
+        "The version identity (getinfo), defaults to '0.0'."
+    )
+    (
         "btcd.host",
         value<network::config::endpoints>(&configured.server.btcd.hosts),
         "The host name (http verification), multiple allowed, defaults to empty (disabled)."

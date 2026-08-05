@@ -160,7 +160,7 @@ void protocol_btcd_rpc::dispatch_websocket(
 {
     BC_ASSERT(stranded());
 
-    // Websocket frames are parsed as json-rpc requests (websocket_rpc).
+    // Websocket frames are parsed as json-rpc requests (channel body type).
     if (!request.body().contains<rpc::request>())
     {
         stop(error::invalid_argument);

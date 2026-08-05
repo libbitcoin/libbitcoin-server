@@ -163,6 +163,16 @@ public:
         std::string subversion{ "/libbitcoin:server/" };
     };
 
+    struct btcd_server
+      : public network::settings::http_server
+    {
+        using base = network::settings::http_server;
+        using base::base;
+
+        /// Arbitrary version identity returned by getinfo.
+        system::config::version version{};
+    };
+
     // html_server precludes copy.
     DELETE_COPY(settings);
 
@@ -179,7 +189,7 @@ public:
     bitcoind_server bitcoind{ "bitcoind" };
 
     /// btcd compat interface (http/s + websocket, json-rpc-v1)
-    network::settings::http_server btcd{ "btcd" };
+    btcd_server btcd{ "btcd" };
 
     /// electrum compat interface (tcp/s, json-rpc-v2)
     electrum_server electrum{ "electrum" };

@@ -74,19 +74,25 @@ bool protocol_btcd_rpc::handle_get_info(const code& ec,
         return true;
     }
 
+    // btcd's numeric version encoding (1'000'000 major, 10'000 minor, 100
+    // patch).
+    const auto& segments = server_settings().btcd.version.segments();
+    const auto version = 1'000'000 * segments[0] + 10'000 * segments[1] +
+        100 * segments[2];
+
     // Untracked peer-dependent fields are reported as empty/zero, matching
     // the inherited getnetworkinfo handler's convention.
     send_result(object_t
     {
-        { "version", 0 },
-        { "protocolversion", 70016 },
+        { "version", version },
+        { "protocolversion", network_settings().protocol_maximum },
         { "blocks", possible_sign_cast<int64_t>(top) },
         { "timeoffset", 0 },
         { "connections", 0 },
         { "proxy", std::string{} },
         { "difficulty", header->difficulty() },
         { "testnet", chain_name(query) != "main" },
-        { "relayfee", 0.00001 },
+        { "relayfee", node_settings().minimum_fee_rate },
         { "errors", std::string{} }
     }, 256);
     return true;
@@ -114,8 +120,8 @@ bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Approximated from the requested height's difficulty and the standard
-    // 600s target spacing, not a windowed average over 'blocks'.
+    // Approximated from the requested height's difficulty and the configured
+    // target spacing, not a windowed average over 'blocks'.
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     const auto target = (height < 0) ? top :
@@ -128,10 +134,9 @@ bool protocol_btcd_rpc::handle_get_network_hash_ps(const code& ec,
         return true;
     }
 
-    constexpr auto average_seconds_per_block = 600.0;
     constexpr auto two_to_the_32 = 4294967296.0;
-    send_result(
-        header->difficulty() * two_to_the_32 / average_seconds_per_block, 20);
+    const auto spacing = system_settings().block_spacing_seconds;
+    send_result(header->difficulty() * two_to_the_32 / spacing, 20);
     return true;
 }
 
