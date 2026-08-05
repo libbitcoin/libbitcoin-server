@@ -111,7 +111,6 @@ include_bitcoin_server_channelsdir = \
 
 include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel.hpp \
-    ${srcdir}/../../include/bitcoin/server/channels/channel_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_http.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v1.hpp \

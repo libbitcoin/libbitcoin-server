@@ -166,7 +166,6 @@
     <ClInclude Include="..\..\..\..\builds\msvc\resource.h" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_btcd.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp" />
