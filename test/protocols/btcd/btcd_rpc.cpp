@@ -53,11 +53,12 @@ BOOST_FIXTURE_TEST_SUITE(btcd_tests, btcd_ten_block_setup_fixture)
 // session management
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__no_credential_configured__null_result)
+BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__no_credential_configured__unauthorized)
 {
-    // Without a credential configured, authenticate is a no-op success.
-    const auto response = rpc("authenticate", R"(["user","pass"])");
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+    // Without a credential configured the connection is authorized from the
+    // start, and authenticate is invalid once authorization is established.
+    const auto result = rpc_error("authenticate", R"(["user","pass"])");
+    BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__session__default__returns_id)
@@ -401,7 +402,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__unexpected_method)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// Method-scoped credentials (channel_btcd::permitted()): a credential's
+// Method-scoped credentials (channel_http::permitted()): a credential's
 // optional 'user:pass:method,...' suffix restricts which methods it may
 // call, enforced over ws by protocol_btcd_rpc::dispatch_websocket.
 // ----------------------------------------------------------------------------
@@ -460,9 +461,19 @@ BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__wrong_password__unauthorized)
 
 BOOST_AUTO_TEST_CASE(btcd_auth__session__not_authenticated__unauthorized)
 {
-    // 'session' as the first message, with a credential configured:
-    // permitted() rejects until authenticate has latched a digest.
+    // 'session' as the first message, with a credential configured: any
+    // method but authenticate is invalid until authorization is established.
     BOOST_REQUIRE_EQUAL(rpc_error("session"), unauthorized.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__already_authenticated__unauthorized)
+{
+    BOOST_REQUIRE(authenticate());
+
+    // authenticate is invalid once authorization is established (as btcd).
+    const auto request = R"(["%1%","%2%"])";
+    const auto result = rpc_error("authenticate", (boost_format(request) % BTCD_TEST_USERNAME % BTCD_TEST_PASSWORD).str());
+    BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

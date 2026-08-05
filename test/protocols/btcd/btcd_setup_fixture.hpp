@@ -120,7 +120,7 @@ struct btcd_credentialed_setup_fixture
 };
 
 // Configured with a credential scoped to a single method -- for tests that
-// verify channel_btcd::permitted() enforces per-method credential scoping
+// verify channel_http::permitted() enforces per-method credential scoping
 // over ws once authenticated.
 struct btcd_scoped_credential_setup_fixture
   : btcd_setup_fixture

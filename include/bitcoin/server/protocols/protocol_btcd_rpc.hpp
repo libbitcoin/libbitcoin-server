@@ -35,17 +35,14 @@ namespace server {
 /// handlers (getblockcount etc.) from protocol_bitcoind_rpc and adds the
 /// btcd-only extension methods via a second dispatcher. Both dispatchers are
 /// bridged in both directions, so all methods are reachable over both
-/// transports. Connection authorization is established once, by basic auth
-/// on the ws upgrade request or by the in-band 'authenticate' method (see
-/// channel_btcd::permitted).
+/// transports. ws authorization is established once per connection, by basic
+/// auth on the ws upgrade request or by the in-band 'authenticate' method,
+/// and latched on the channel (see dispatch_websocket).
 class BCS_API protocol_btcd_rpc
   : public server::protocol_bitcoind_rpc,
     protected network::tracker<protocol_btcd_rpc>
 {
 public:
-    // Replace channel_t so session_server creates channel_btcd instances.
-    using channel_t = channel_btcd;
-
     typedef std::shared_ptr<protocol_btcd_rpc> ptr;
     using btcd_interface = interface::btcd;
     using btcd_dispatcher = network::rpc::dispatcher<btcd_interface>;
@@ -56,7 +53,6 @@ public:
       : server::protocol_bitcoind_rpc(session, channel, options),
         network::tracker<protocol_btcd_rpc>(session->log),
         options_(options),
-        btcd_channel_(std::dynamic_pointer_cast<channel_btcd>(channel)),
         p2kh_(session->system_settings().forks.difficult ?
             system::wallet::payment_address::mainnet_p2kh :
             system::wallet::payment_address::testnet_p2kh),
@@ -215,7 +211,6 @@ private:
     // These are thread safe.
     std::atomic_bool subscribed_blocks_{};
     const options_t& options_;
-    const channel_btcd::ptr btcd_channel_;
     const uint8_t p2kh_;
     const uint8_t p2sh_;
 

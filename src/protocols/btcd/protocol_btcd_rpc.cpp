@@ -96,30 +96,50 @@ void protocol_btcd_rpc::stopping(const code& ec) NOEXCEPT
 
 // Websocket dispatch.
 // ----------------------------------------------------------------------------
-// 'authenticate' bypasses permitted(), which requires authentication to
-// already be established -- gating it would make authenticating impossible.
+// ws frames carry no headers, so ws authorization is enforced here, not by
+// the channel. It is established at most once per connection, by basic auth
+// on the upgrade request or by exactly one authenticate call -- so a call is
+// invalid if authorized and the method is authenticate, or not authorized
+// and the method is not authenticate (as btcd).
 
 void protocol_btcd_rpc::dispatch_websocket(
     const network::http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    // channel_btcd::websocket_body() preselects the json-rpc request parser.
-    if (!request.body().contains<rpc::request>())
+    // btcd websocket frames are json-rpc text (channel default reader).
+    if (!request.body().contains<http::string_value>())
     {
         send_btcd_error(error::invalid_argument);
         return;
     }
 
-    const auto& body = request.body().get<rpc::request>();
-    const auto& message = body.message;
+    request_t message{};
+    try
+    {
+        message = value_to<request_t>(parse(
+            request.body().get<http::string_value>()));
+    }
+    catch (const std::exception&)
+    {
+        send_btcd_error(error::invalid_argument);
+        return;
+    }
 
     // Cache request context for response building (version + id).
     btcd_version_ = message.jsonrpc;
     btcd_id_ = message.id;
 
-    if (message.method != btcd_interface::authenticate::name &&
-        !permitted(message.method))
+    const auto authenticate =
+        (message.method == btcd_interface::authenticate::name);
+
+    if (authenticate == authorized())
+    {
+        send_btcd_error(network::error::unauthorized);
+        return;
+    }
+
+    if (!authenticate && !permitted(message.method))
     {
         send_btcd_error(network::error::unauthorized);
         return;
@@ -163,21 +183,11 @@ bool protocol_btcd_rpc::handle_authenticate(const code& ec,
     if (stopped(ec))
         return false;
 
-    // No credential configured: nothing to check against, no-op success.
-    if (!options_.authorize())
+    // Reachable only when not authorized (see dispatch_websocket). The
+    // channel latches the digest only if it matches a configured credential.
+    set_authorized(network::config::credential::to_digest(username, password));
+    if (authorized())
     {
-        send_btcd_result({}, 4);
-        return true;
-    }
-
-    // Same digest scheme as config::credential (settings::http_server has no
-    // direct username:password lookup, only digest-keyed authorized()).
-    const auto digest = sha256_hash(
-        "Basic " + encode_base64(username + ":" + password));
-
-    if (options_.authorized(digest))
-    {
-        btcd_channel_->set_authenticated(digest);
         send_btcd_result({}, 4);
         return true;
     }
