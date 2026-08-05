@@ -402,7 +402,7 @@ bool protocol_btcd_rpc::handle_rescan(const code& ec,
 // Chase events.
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd_rpc::handle_chase(const code& ec, node::chase event_,
+bool protocol_btcd_rpc::handle_chase(const code&, node::chase event_,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped, it is not a call status.
