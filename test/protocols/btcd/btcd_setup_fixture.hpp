@@ -35,7 +35,7 @@ struct btcd_setup_fixture
     DELETE_COPY_MOVE(btcd_setup_fixture);
 
     explicit btcd_setup_fixture(const initializer& setup,
-        const configurator& configure={});
+        bool address_index=true, const configurator& configure={});
     ~btcd_setup_fixture();
 
     // JSON-RPC 1.0 over websocket. params must be a json array (json-rpc-v1
@@ -108,7 +108,7 @@ struct btcd_credentialed_setup_fixture
       : btcd_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
-        }, [](configuration& config)
+        }, true, [](configuration& config)
         {
             config.server.btcd.credentials =
             {
@@ -129,7 +129,7 @@ struct btcd_scoped_credential_setup_fixture
       : btcd_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
-        }, [](configuration& config)
+        }, true, [](configuration& config)
         {
             config.server.btcd.credentials =
             {
@@ -137,6 +137,37 @@ struct btcd_scoped_credential_setup_fixture
                     BTCD_TEST_SCOPED_METHOD }
             };
         })
+    {
+    }
+};
+
+// Configured with a single-watch filter limit -- for tests that verify
+// loadtxfilter enforces maximum_filters.
+struct btcd_limited_filter_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_limited_filter_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.btcd.maximum_filters = 1;
+        })
+    {
+    }
+};
+
+// Configured without the address index -- for tests that verify address
+// watching and rescan report not_implemented.
+struct btcd_no_index_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_no_index_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, false)
     {
     }
 };

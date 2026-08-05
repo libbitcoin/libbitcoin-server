@@ -1220,7 +1220,12 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.maximum_filters",
         value<uint32_t>(&configured.server.btcd.maximum_filters),
-        "The maximum number of loadtxfilter entries, defaults to '1000000'."
+        "The maximum number of loadtxfilter watches, defaults to '1000000'."
+    )
+    (
+        "btcd.maximum_history",
+        value<uint32_t>(&configured.server.btcd.maximum_history),
+        "The maximum number of address history entries, defaults to '1000000'."
     )
     (
         "btcd.host",

@@ -23,6 +23,7 @@ using namespace system;
 static const code not_found{ server::error::not_found };
 static const code not_implemented{ server::error::not_implemented };
 static const code invalid_argument{ server::error::invalid_argument };
+static const code subscription_limit{ server::error::subscription_limit };
 static const code unauthorized{ network::error::unauthorized };
 static const code unexpected_method{ network::error::unexpected_method };
 
@@ -30,6 +31,7 @@ static const code unexpected_method{ network::error::unexpected_method };
 // transaction only (its other outputs pay distinct key/script hashes), so a
 // filter watching found_address matches exactly one of its transactions.
 static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
+static const std::string other_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
 static const std::string bogus_address{ "not-an-address" };
 
 namespace {
@@ -406,6 +408,52 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__unexpected_method)
     // The connection survives an unknown method (as btcd).
     const auto follow_up = rpc("session");
     REQUIRE_NO_THROW_TRUE(follow_up.at("result").is_object());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// Filter limit (btcd.maximum_filters): loadtxfilter watches are bounded per
+// channel (DoS guard).
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(btcd_limited_filter_tests, btcd_limited_filter_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_limited_filter__loadtxfilter__over_limit__subscription_limit)
+{
+    // The fixture allows one watch; the second address exceeds it.
+    const auto request = R"([true,["%1%","%2%"],[]])";
+    const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address % other_address).str());
+    BOOST_REQUIRE_EQUAL(result, subscription_limit.value());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// Address index requirement: address watching and rescan are index queries,
+// not_implemented when the index is disabled.
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(btcd_no_index_tests, btcd_no_index_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__address__not_implemented)
+{
+    const auto request = R"([true,["%1%"],[]])";
+    const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__outpoint_only__null_result)
+{
+    // Outpoint watching is spender lookup, not an address index query.
+    const auto request = R"([true,[],[{"hash":"%1%","index":0}]])";
+    const auto response = rpc("loadtxfilter", (boost_format(request) % coinbase_txid(test::block1)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__rescanblocks__any__not_implemented)
+{
+    const auto request = R"([["%1%"]])";
+    const auto result = rpc_error("rescanblocks", (boost_format(request) % encode_hash(test::block1_hash)).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

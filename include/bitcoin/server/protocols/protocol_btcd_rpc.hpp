@@ -20,9 +20,10 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BTCD_RPC_HPP
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <set>
-#include <unordered_set>
+#include <vector>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -52,12 +53,14 @@ public:
       : server::protocol_bitcoind_rpc(session, channel, options),
         network::tracker<protocol_btcd_rpc>(session->log),
         options_(options),
+        turbo_(session->database_settings().turbo),
         p2kh_(session->system_settings().forks.difficult ?
             system::wallet::payment_address::mainnet_p2kh :
             system::wallet::payment_address::testnet_p2kh),
         p2sh_(session->system_settings().forks.difficult ?
             system::wallet::payment_address::mainnet_p2sh :
-            system::wallet::payment_address::testnet_p2sh)
+            system::wallet::payment_address::testnet_p2sh),
+        notification_strand_(channel->service().get_executor())
     {
     }
 
@@ -132,6 +135,7 @@ protected:
     /// Handlers (address/outpoint filtering). notifyblocks arms delivery;
     /// loadtxfilter only populates the filter (as btcd). rescanblocks
     /// replays the match logic against explicitly named historical blocks.
+    /// Address watching requires the address index (not_implemented).
     bool handle_load_tx_filter(const code& ec,
         btcd_interface::load_tx_filter, bool reload,
         const network::rpc::value_t& addresses,
@@ -139,24 +143,6 @@ protected:
     bool handle_rescan_blocks(const code& ec,
         btcd_interface::rescan_blocks,
         const network::rpc::value_t& blockhashes) NOEXCEPT;
-
-    /// Cumulative number of filter entries, bounded by maximum_filters.
-    size_t filters() const NOEXCEPT;
-    bool filtered() const NOEXCEPT;
-
-    /// Filter parsing (loadtxfilter). Merges into the existing filter unless
-    /// reload clears it first.
-    code parse_filter_addresses(bool reload,
-        const network::rpc::value_t& addresses) NOEXCEPT;
-    code parse_filter_outpoints(bool reload,
-        const network::rpc::value_t& outpoints) NOEXCEPT;
-
-    /// Match a block's transactions against the loaded filter: an output
-    /// paying a watched address, or an input spending a watched outpoint. A
-    /// matched output's own outpoint is added to the watched set (as btcd).
-    /// Returns the matched transactions as base16, in block order.
-    network::rpc::array_t match_filtered_transactions(
-        const system::chain::block& block) NOEXCEPT;
 
     /// Handler (admin, permanently not_implemented).
     bool handle_stop(const code& ec, btcd_interface::stop) NOEXCEPT;
@@ -182,12 +168,78 @@ protected:
     /// Chase event subscription (block connect/disconnect for notifyblocks).
     bool handle_chase(const code& ec, node::chase event_,
         node::event_value value) NOEXCEPT;
-    void do_block_connected(node::header_t link) NOEXCEPT;
-    void do_block_disconnected(node::header_t link) NOEXCEPT;
 
     /// Sender (btcd server push, json-rpc-v1 request shape with no id).
     void send_notification(const std::string& method,
         network::rpc::array_t&& params, size_t size_hint) NOEXCEPT;
+
+protected:
+    using point = system::chain::point;
+    using hash_digest = system::hash_digest;
+    using history = database::history;
+    using histories = database::histories;
+    using cursor_t = database::height_link;
+
+    /// Watch of an address (by index key), matched via cursored history.
+    struct address_watch final
+    {
+        cursor_t cursor{};
+    };
+
+    /// Watch of an outpoint, matched via spender differencing.
+    struct outpoint_watch final
+    {
+        database::history outpoint{};
+        database::histories spenders{};
+    };
+
+    /// Filter (loadtxfilter).
+    /// -----------------------------------------------------------------------
+
+    code parse_filter_keys(const network::rpc::value_t& addresses,
+        std::vector<hash_digest>& out) NOEXCEPT;
+    code parse_filter_points(const network::rpc::value_t& outpoints,
+        std::vector<point>& out) NOEXCEPT;
+
+    void do_load_tx_filter(bool reload, const std::vector<hash_digest>& keys,
+        const std::vector<point>& points) NOEXCEPT;
+    void complete_load_tx_filter(const code& ec) NOEXCEPT;
+
+    void do_rescan_blocks(const std::vector<hash_digest>& hashes) NOEXCEPT;
+    void do_rescan_watches(const std::vector<hash_digest>& hashes,
+        const std::vector<hash_digest>& keys,
+        const std::vector<point>& points) NOEXCEPT;
+    void complete_rescan_blocks(const code& ec,
+        const network::rpc::array_t& discovered) NOEXCEPT;
+
+    /// Notification event handlers.
+    /// -----------------------------------------------------------------------
+
+    void do_connected(node::header_t link) NOEXCEPT;
+    void do_disconnected(node::header_t link) NOEXCEPT;
+    void notify_connected(const std::string& hash, size_t height,
+        uint32_t time, const std::string& header,
+        const network::rpc::array_t& txs) NOEXCEPT;
+    void notify_disconnected(const std::string& hash, size_t height,
+        uint32_t time, const std::string& header) NOEXCEPT;
+
+    /// Utilities (notification strand).
+    /// -----------------------------------------------------------------------
+
+    /// Matched transactions by height, ordered by block position.
+    using matched_txs = std::map<size_t, hash_digest>;
+    using matches = std::map<size_t, matched_txs>;
+
+    /// Accumulate watched-address matches at the given heights.
+    code match_addresses(matches& out, address_watch& sub,
+        const hash_digest& key, const std::set<size_t>& heights) NOEXCEPT;
+
+    /// Accumulate new watched-outpoint spender matches at the given heights.
+    void match_outpoints(matches& out, outpoint_watch& sub,
+        const point& prevout, const std::set<size_t>& heights) NOEXCEPT;
+
+    /// Serialize one block's matched transactions (base16, position order).
+    network::rpc::array_t serialize_matches(const matched_txs& txs) NOEXCEPT;
 
 private:
     template <class Derived, typename Method, typename... Args>
@@ -196,23 +248,31 @@ private:
         btcd_dispatcher_.subscribe(BIND_SHARED(method, args));
     }
 
+    // Post to notification strand.
+    template <class Derived, typename Method, typename... Args>
+    inline auto notify(Method&& method, Args&&... args) NOEXCEPT
+    {
+        return boost::asio::post(notification_strand_,
+            BIND_SAFE(BIND_SHARED(method, args)));
+    }
+
     // These are thread safe.
     std::atomic_bool subscribed_blocks_{};
+    std::atomic_bool stopping_{};
     const options_t& options_;
+    const bool turbo_;
     const uint8_t p2kh_;
     const uint8_t p2sh_;
 
     // This is protected by strand.
     btcd_dispatcher btcd_dispatcher_{};
 
-    // Tx filter (loadtxfilter). Hash sets are kept per script template so a
-    // p2kh watch never matches a p2wpkh output or vice versa.
-    std::unordered_set<system::short_hash> pay_key_hashes_{};
-    std::unordered_set<system::short_hash> pay_script_hashes_{};
-    std::set<system::data_chunk> pay_witness_key_hash_programs_{};
-    std::set<system::data_chunk> pay_witness_script_hash_programs_{};
-    std::set<system::data_chunk> pay_witness_taproot_programs_{};
-    std::unordered_set<system::chain::point> filter_outpoints_{};
+    // This is thread safe, uses network threadpool.
+    network::asio::strand notification_strand_;
+
+    // These are protected by notification strand.
+    std::map<hash_digest, address_watch> address_watches_{};
+    std::map<point, outpoint_watch> outpoint_watches_{};
 };
 
 } // namespace server

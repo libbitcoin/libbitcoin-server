@@ -28,7 +28,7 @@ using namespace boost::beast;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
-    const configurator& configure)
+    bool address_index, const configurator& configure)
   : config_
     {
         system::chain::selection::mainnet,
@@ -39,6 +39,9 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            if (!address_index)
+                config_.database.address.buckets = 0;
+
             config_.database.path = TEST_DIRECTORY;
             return config_.database;
         }()

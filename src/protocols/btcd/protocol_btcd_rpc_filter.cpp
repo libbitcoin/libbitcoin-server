@@ -27,6 +27,11 @@ namespace server {
 
 #define CLASS protocol_btcd_rpc
 
+// protocol_bitcoind_rpc declares 'using post = network::http::method::post',
+// which shadows network::protocol::post<Derived>. Qualify explicitly.
+#define POST_BTCD(method, ...) \
+    this->network::protocol::template post<CLASS>(&CLASS::method, __VA_ARGS__)
+
 using namespace system;
 using namespace network;
 using namespace network::rpc;
@@ -35,102 +40,41 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Filter bounds.
+// Filter (loadtxfilter).
 // ----------------------------------------------------------------------------
-// The filter is per channel and grows from client calls (loadtxfilter) and
-// from chain data (match_filtered_transactions auto-tracks the outpoint of a
-// matched output, as btcd). Both are bounded by maximum_filters.
+// The watch-list is matched via the address index and spender lookups (the
+// electrum subscription model), never by block scanning. Watches are keyed
+// by index key (sha256 of the output script), matched by cursored history
+// delta, so each connected block costs one bounded index walk per watch.
 
-size_t protocol_btcd_rpc::filters() const NOEXCEPT
+code protocol_btcd_rpc::parse_filter_keys(const value_t& addresses,
+    std::vector<hash_digest>& out) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    return pay_key_hashes_.size() + pay_script_hashes_.size() +
-        pay_witness_key_hash_programs_.size() +
-        pay_witness_script_hash_programs_.size() +
-        pay_witness_taproot_programs_.size() + filter_outpoints_.size();
-}
-
-bool protocol_btcd_rpc::filtered() const NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    return filters() >= options_.maximum_filters;
-}
-
-// Filter parsing (loadtxfilter).
-// ----------------------------------------------------------------------------
-
-code protocol_btcd_rpc::parse_filter_addresses(bool reload,
-    const value_t& addresses) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (reload)
-    {
-        pay_key_hashes_.clear();
-        pay_script_hashes_.clear();
-        pay_witness_key_hash_programs_.clear();
-        pay_witness_script_hash_programs_.clear();
-        pay_witness_taproot_programs_.clear();
-    }
 
     if (!std::holds_alternative<array_t>(addresses.value()))
         return error::invalid_argument;
 
     for (const auto& item: std::get<array_t>(addresses.value()))
     {
-        if (filtered())
-            return error::oversubscribed;
-
         if (!std::holds_alternative<string_t>(item.value()))
             return error::invalid_argument;
 
-        const auto& text = std::get<string_t>(item.value());
+        chain::script script{};
+        if (const auto ec = parse_output_script(
+            std::get<string_t>(item.value()), script))
+            return ec;
 
-        // Try base58 (p2kh/p2sh) first.
-        const wallet::payment_address base58(text);
-        if (base58)
-        {
-            if (base58.prefix() == p2kh_)
-                pay_key_hashes_.insert(base58.hash());
-            else if (base58.prefix() == p2sh_)
-                pay_script_hashes_.insert(base58.hash());
-            else
-                return error::invalid_argument;
-
-            continue;
-        }
-
-        // Otherwise bech32/bech32m (p2wpkh/p2wsh/p2tr).
-        const wallet::witness_address segwit(text);
-        if (!segwit)
-            return error::invalid_argument;
-
-        switch (segwit.identifier())
-        {
-            case wallet::witness_address::program_type::version0_p2kh:
-                pay_witness_key_hash_programs_.insert(segwit.program());
-                break;
-            case wallet::witness_address::program_type::version0_p2sh:
-                pay_witness_script_hash_programs_.insert(segwit.program());
-                break;
-            case wallet::witness_address::program_type::version1_taproot:
-                pay_witness_taproot_programs_.insert(segwit.program());
-                break;
-            default:
-                return error::invalid_argument;
-        }
+        out.push_back(script.hash());
     }
 
     return error::success;
 }
 
-code protocol_btcd_rpc::parse_filter_outpoints(bool reload,
-    const value_t& outpoints) NOEXCEPT
+code protocol_btcd_rpc::parse_filter_points(const value_t& outpoints,
+    std::vector<point>& out) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
-    if (reload)
-        filter_outpoints_.clear();
 
     if (!std::holds_alternative<array_t>(outpoints.value()))
         return error::invalid_argument;
@@ -154,7 +98,7 @@ code protocol_btcd_rpc::parse_filter_outpoints(bool reload,
             !to_integer(index, std::get<number_t>(index_it->second.value())))
             return error::invalid_argument;
 
-        filter_outpoints_.emplace(hash, index);
+        out.emplace_back(hash, index);
     }
 
     return error::success;
@@ -170,20 +114,115 @@ bool protocol_btcd_rpc::handle_load_tx_filter(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (const auto fault = parse_filter_addresses(reload, addresses))
+    std::vector<hash_digest> keys{};
+    if (const auto fault = parse_filter_keys(addresses, keys))
     {
         send_error(fault);
         return true;
     }
 
-    if (const auto fault = parse_filter_outpoints(reload, outpoints))
+    std::vector<point> points{};
+    if (const auto fault = parse_filter_points(outpoints, points))
     {
         send_error(fault);
         return true;
+    }
+
+    if (!keys.empty() && !archive().address_enabled())
+    {
+        send_error(error::not_implemented);
+        return true;
+    }
+
+    monitor(true);
+    POST_NOTIFY(do_load_tx_filter, reload, std::move(keys),
+        std::move(points));
+    return true;
+}
+
+void protocol_btcd_rpc::do_load_tx_filter(bool reload,
+    const std::vector<hash_digest>& keys,
+    const std::vector<point>& points) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    if (reload)
+    {
+        address_watches_.clear();
+        outpoint_watches_.clear();
+    }
+
+    code ec{ error::success };
+    const auto& query = archive();
+    const auto maximum = server_settings().btcd.maximum_filters;
+    const auto limit = server_settings().btcd.maximum_history;
+
+    for (const auto& key: keys)
+    {
+        if (stopping_)
+            return;
+
+        if (address_watches_.size() + outpoint_watches_.size() >= maximum)
+        {
+            ec = error::subscription_limit;
+            break;
+        }
+
+        // Prime the cursor to present, so matching reports new blocks only.
+        const auto at = address_watches_.try_emplace(key, address_watch{});
+        if (at.second)
+        {
+            histories discard{};
+            const auto fault = query.get_history(stopping_,
+                at.first->second.cursor, discard, key, limit, turbo_);
+            if (fault == database::error::query_canceled)
+                return;
+        }
+    }
+
+    for (const auto& prevout: points)
+    {
+        if (stopping_)
+            return;
+
+        if (ec)
+            break;
+
+        if (address_watches_.size() + outpoint_watches_.size() >= maximum)
+        {
+            ec = error::subscription_limit;
+            break;
+        }
+
+        // Prime the spender set to present, so matching reports new only.
+        const auto at = outpoint_watches_.try_emplace(prevout,
+            outpoint_watch{});
+        if (at.second)
+        {
+            auto& sub = at.first->second;
+            sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
+            sub.spenders = query.get_spenders_history(prevout);
+        }
+    }
+
+    POST_BTCD(complete_load_tx_filter, ec);
+}
+
+void protocol_btcd_rpc::complete_load_tx_filter(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_error(ec);
+        return;
     }
 
     send_result({}, 4);
-    return true;
 }
 
 bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
@@ -198,145 +237,320 @@ bool protocol_btcd_rpc::handle_rescan_blocks(const code& ec,
         return true;
     }
 
-    constexpr auto witness = true;
-    const auto& query = archive();
-    array_t discovered{};
-
+    std::vector<hash_digest> hashes{};
     for (const auto& item: std::get<array_t>(blockhashes.value()))
     {
-        if (!std::holds_alternative<string_t>(item.value()))
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
-
-        const auto& text = std::get<string_t>(item.value());
         hash_digest hash{};
-        if (!decode_hash(hash, text))
+        if (!std::holds_alternative<string_t>(item.value()) ||
+            !decode_hash(hash, std::get<string_t>(item.value())))
         {
             send_error(error::invalid_argument);
             return true;
         }
 
-        const auto block = query.get_block(query.to_header(hash), witness);
-        if (!block)
+        hashes.push_back(hash);
+    }
+
+    if (!archive().address_enabled())
+    {
+        send_error(error::not_implemented);
+        return true;
+    }
+
+    monitor(true);
+    POST_NOTIFY(do_rescan_blocks, std::move(hashes));
+    return true;
+}
+
+// Snapshot the watch-list on the notification strand, so the query itself
+// runs parallel (as electrum's one-shot queries) without serializing against
+// this channel's notifications.
+void protocol_btcd_rpc::do_rescan_blocks(
+    const std::vector<hash_digest>& hashes) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    std::vector<hash_digest> keys{};
+    keys.reserve(address_watches_.size());
+    for (const auto& watch: address_watches_)
+        keys.push_back(watch.first);
+
+    std::vector<point> points{};
+    points.reserve(outpoint_watches_.size());
+    for (const auto& watch: outpoint_watches_)
+        points.push_back(watch.first);
+
+    PARALLEL(do_rescan_watches, hashes, std::move(keys), std::move(points));
+}
+
+void protocol_btcd_rpc::do_rescan_watches(
+    const std::vector<hash_digest>& hashes,
+    const std::vector<hash_digest>& keys,
+    const std::vector<point>& points) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    // Resolve named blocks to heights (result retains request order).
+    std::set<size_t> heights{};
+    std::vector<std::pair<hash_digest, size_t>> named{};
+    const auto& query = archive();
+    for (const auto& hash: hashes)
+    {
+        if (stopping_)
+            return;
+
+        size_t height{};
+        if (!query.get_height(height, query.to_header(hash)))
         {
-            send_error(error::not_found);
-            return true;
+            POST_BTCD(complete_rescan_blocks, error::not_found, array_t{});
+            return;
         }
 
-        auto matched = match_filtered_transactions(*block);
-        if (!matched.empty())
+        heights.insert(height);
+        named.emplace_back(hash, height);
+    }
+
+    // Match the snapshot against the named heights (full replay).
+    matches matched{};
+    for (const auto& key: keys)
+    {
+        if (stopping_)
+            return;
+
+        address_watch replay{};
+        const auto fault = match_addresses(matched, replay, key, heights);
+        if (fault == database::error::query_canceled)
+            return;
+    }
+
+    for (const auto& prevout: points)
+    {
+        if (stopping_)
+            return;
+
+        outpoint_watch replay{};
+        match_outpoints(matched, replay, prevout, heights);
+    }
+
+    array_t discovered{};
+    for (const auto& [hash, height]: named)
+    {
+        if (stopping_)
+            return;
+
+        const auto at = matched.find(height);
+        if (at != matched.end() && !at->second.empty())
         {
             discovered.emplace_back(value_t{ object_t
             {
-                { "hash", value_t{ text } },
-                { "transactions", value_t{ std::move(matched) } }
+                { "hash", value_t{ encode_hash(hash) } },
+                { "transactions", value_t{ serialize_matches(at->second) } }
             } });
         }
     }
 
-    send_result(value_t{ std::move(discovered) }, 256);
-    return true;
+    POST_BTCD(complete_rescan_blocks, error::success, std::move(discovered));
 }
 
-// Filter matching.
-// ----------------------------------------------------------------------------
-// Manual per-block script inspection, not the persisted address index --
-// that index is for whole-chain lookups, the wrong tool for matching one
-// block against a small in-memory watch-list, and would require the index
-// to be enabled. Mirrors btcd's per-client wsClientFilter.
-
-array_t protocol_btcd_rpc::match_filtered_transactions(
-    const chain::block& block) NOEXCEPT
+void protocol_btcd_rpc::complete_rescan_blocks(const code& ec,
+    const array_t& discovered) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    constexpr auto witness = true;
 
-    array_t matched{};
-    for (const auto& tx: *block.transactions_ptr())
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
     {
-        auto hit = false;
+        send_error(ec);
+        return;
+    }
 
-        for (const auto& input: *tx->inputs_ptr())
-            if (filter_outpoints_.contains(input->point()))
-                hit = true;
+    send_result(value_t{ discovered }, 256);
+}
 
-        const auto hash = tx->hash(false);
-        const auto& outputs = *tx->outputs_ptr();
-        for (size_t index = 0; index < outputs.size(); ++index)
-        {
-            const auto& script = outputs[index]->script();
-            const auto point_index = possible_narrow_cast<uint32_t>(index);
+// Notification event handlers.
+// ----------------------------------------------------------------------------
 
-            switch (script.output_pattern())
-            {
-                case chain::script_pattern::pay_key_hash:
-                {
-                    const auto address = wallet::payment_address::
-                        extract_output(script, p2kh_, p2sh_);
-                    if (address && pay_key_hashes_.contains(address.hash()))
-                    {
-                        hit = true;
-                        filter_outpoints_.emplace(hash, point_index);
-                    }
-                    break;
-                }
-                case chain::script_pattern::pay_script_hash:
-                {
-                    const auto address = wallet::payment_address::
-                        extract_output(script, p2kh_, p2sh_);
-                    if (address && pay_script_hashes_.contains(address.hash()))
-                    {
-                        hit = true;
-                        filter_outpoints_.emplace(hash, point_index);
-                    }
-                    break;
-                }
-                case chain::script_pattern::pay_witness_key_hash:
-                {
-                    const auto& program = script.witness_program();
-                    if (program && pay_witness_key_hash_programs_.contains(
-                        *program))
-                    {
-                        hit = true;
-                        filter_outpoints_.emplace(hash, point_index);
-                    }
-                    break;
-                }
-                case chain::script_pattern::pay_witness_script_hash:
-                {
-                    const auto& program = script.witness_program();
-                    if (program && pay_witness_script_hash_programs_.contains(
-                        *program))
-                    {
-                        hit = true;
-                        filter_outpoints_.emplace(hash, point_index);
-                    }
-                    break;
-                }
-                case chain::script_pattern::pay_witness_v1_taproot:
-                {
-                    const auto& program = script.witness_program();
-                    if (program && pay_witness_taproot_programs_.contains(
-                        *program))
-                    {
-                        hit = true;
-                        filter_outpoints_.emplace(hash, point_index);
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
+void protocol_btcd_rpc::do_connected(node::header_t link_value) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
 
-        if (hit)
-            matched.emplace_back(value_t{ to_text(*tx,
+    const database::header_link link{ link_value };
+    const auto& query = archive();
+
+    size_t height{};
+    if (!query.get_height(height, link))
+        return;
+
+    const auto header = query.get_header(link);
+    if (!header)
+        return;
+
+    // Match the watch-list against the connected block (cursored delta).
+    // Cursors advance here, so this stays on the notification strand.
+    matches matched{};
+    const std::set<size_t> heights{ height };
+    for (auto& [key, sub]: address_watches_)
+    {
+        if (stopping_)
+            return;
+
+        const auto fault = match_addresses(matched, sub, key, heights);
+        if (fault == database::error::query_canceled)
+            return;
+    }
+
+    for (auto& [prevout, sub]: outpoint_watches_)
+    {
+        if (stopping_)
+            return;
+
+        match_outpoints(matched, sub, prevout, heights);
+    }
+
+    array_t txs{};
+    const auto at = matched.find(height);
+    if (at != matched.end())
+        txs = serialize_matches(at->second);
+
+    POST_BTCD(notify_connected, encode_hash(query.get_header_key(link)),
+        height, header->timestamp(),
+        to_text(*header, chain::header::serialized_size()), std::move(txs));
+}
+
+void protocol_btcd_rpc::do_disconnected(node::header_t link_value) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    // Reset watch cursors, disconnected blocks invalidate the walks.
+    for (auto& [key, sub]: address_watches_)
+        sub.cursor = {};
+
+    const database::header_link link{ link_value };
+    const auto& query = archive();
+
+    size_t height{};
+    if (!query.get_height(height, link))
+        return;
+
+    const auto header = query.get_header(link);
+    if (!header)
+        return;
+
+    POST_BTCD(notify_disconnected, encode_hash(query.get_header_key(link)),
+        height, header->timestamp(),
+        to_text(*header, chain::header::serialized_size()));
+}
+
+// btcd 'blockconnected' [hash, height, time] and 'filteredblockconnected'
+// [height, header, subscribedtxs]. filtered is sent unconditionally
+// alongside (as btcd) -- an empty filter just yields an empty array.
+void protocol_btcd_rpc::notify_connected(const std::string& hash,
+    size_t height, uint32_t time, const std::string& header,
+    const array_t& txs) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || !subscribed_blocks_.load(std::memory_order_relaxed))
+        return;
+
+    send_notification("blockconnected", array_t
+    {
+        value_t{ hash },
+        value_t{ possible_sign_cast<int64_t>(height) },
+        value_t{ possible_sign_cast<int64_t>(time) }
+    }, 256);
+
+    send_notification("filteredblockconnected", array_t
+    {
+        value_t{ possible_sign_cast<int64_t>(height) },
+        value_t{ header },
+        value_t{ txs }
+    }, 256);
+}
+
+// btcd 'blockdisconnected' [hash, height, time] and
+// 'filteredblockdisconnected' [height, header].
+void protocol_btcd_rpc::notify_disconnected(const std::string& hash,
+    size_t height, uint32_t time, const std::string& header) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || !subscribed_blocks_.load(std::memory_order_relaxed))
+        return;
+
+    send_notification("blockdisconnected", array_t
+    {
+        value_t{ hash },
+        value_t{ possible_sign_cast<int64_t>(height) },
+        value_t{ possible_sign_cast<int64_t>(time) }
+    }, 256);
+
+    send_notification("filteredblockdisconnected", array_t
+    {
+        value_t{ possible_sign_cast<int64_t>(height) },
+        value_t{ header }
+    }, 256);
+}
+
+// Utilities (notification strand).
+// ----------------------------------------------------------------------------
+
+// Called from the notification strand (live, cursors advance) and parallel
+// (rescan, against a snapshot), so neither strand is asserted here.
+code protocol_btcd_rpc::match_addresses(matches& out, address_watch& sub,
+    const hash_digest& key, const std::set<size_t>& heights) NOEXCEPT
+{
+    histories delta{};
+    const auto& query = archive();
+    const auto limit = server_settings().btcd.maximum_history;
+    const auto ec = query.get_history(stopping_, sub.cursor, delta, key,
+        limit, turbo_);
+    if (ec)
+        return ec;
+
+    for (const auto& entry: delta)
+        if (entry.confirmed() && heights.contains(entry.tx.height()))
+            out[entry.tx.height()].emplace(entry.position, entry.tx.hash());
+
+    return error::success;
+}
+
+void protocol_btcd_rpc::match_outpoints(matches& out, outpoint_watch& sub,
+    const point& prevout, const std::set<size_t>& heights) NOEXCEPT
+{
+    outpoint_watch next{};
+    const auto& query = archive();
+    next.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
+    next.spenders = query.get_spenders_history(prevout);
+
+    for (const auto& spender: difference(next.spenders, sub.spenders))
+        if (spender.confirmed() && heights.contains(spender.tx.height()))
+            out[spender.tx.height()].emplace(spender.position,
+                spender.tx.hash());
+
+    sub = std::move(next);
+}
+
+array_t protocol_btcd_rpc::serialize_matches(const matched_txs& txs) NOEXCEPT
+{
+    constexpr auto witness = true;
+    array_t out{};
+    const auto& query = archive();
+    for (const auto& [position, hash]: txs)
+    {
+        if (stopping_)
+            return out;
+
+        const auto tx = query.get_transaction(query.to_tx(hash), witness);
+        if (tx)
+            out.emplace_back(value_t{ to_text(*tx,
                 tx->serialized_size(witness), witness) });
     }
 
-    return matched;
+    return out;
 }
 
 BC_POP_WARNING()

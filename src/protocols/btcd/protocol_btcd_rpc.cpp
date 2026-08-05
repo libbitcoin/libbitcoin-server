@@ -29,11 +29,6 @@ namespace server {
 #define SUBSCRIBE_BTCD(method, ...) \
     btcd_subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
-// protocol_bitcoind_rpc declares 'using post = network::http::method::post',
-// which shadows network::protocol::post<Derived>. Qualify explicitly.
-#define POST_BTCD(method, ...) \
-    this->network::protocol::template post<CLASS>(&CLASS::method, __VA_ARGS__)
-
 using namespace system;
 using namespace network;
 using namespace network::rpc;
@@ -85,9 +80,11 @@ void protocol_btcd_rpc::start() NOEXCEPT
     protocol_bitcoind_rpc::start();
 }
 
+// Events unsubscription is asynchronous, race is ok.
 void protocol_btcd_rpc::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    stopping_.store(true);
     btcd_dispatcher_.stop(ec);
     unsubscribe_chase();
     protocol_bitcoind_rpc::stopping(ec);
@@ -160,7 +157,7 @@ void protocol_btcd_rpc::dispatch_websocket(
 {
     BC_ASSERT(stranded());
 
-    // Websocket frames are parsed as json-rpc requests (channel body type).
+    // Websocket frames are parsed as json-rpc requests (websocket_rpc).
     if (!request.body().contains<rpc::request>())
     {
         stop(error::invalid_argument);
@@ -428,6 +425,8 @@ bool protocol_btcd_rpc::handle_rescan(const code& ec,
 
 // Chase events.
 // ----------------------------------------------------------------------------
+// Block events are matched against the watch-list on the notification strand
+// (see protocol_btcd_rpc_filter.cpp) and notified back on the channel strand.
 
 bool protocol_btcd_rpc::handle_chase(const code&, node::chase event_,
     node::event_value value) NOEXCEPT
@@ -442,7 +441,7 @@ bool protocol_btcd_rpc::handle_chase(const code&, node::chase event_,
             if (subscribed_blocks_.load(std::memory_order_relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST_BTCD(do_block_connected, std::get<node::header_t>(value));
+                POST_NOTIFY(do_connected, std::get<node::header_t>(value));
             }
             break;
 
@@ -450,7 +449,7 @@ bool protocol_btcd_rpc::handle_chase(const code&, node::chase event_,
             if (subscribed_blocks_.load(std::memory_order_relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST_BTCD(do_block_disconnected, std::get<node::header_t>(value));
+                POST_NOTIFY(do_disconnected, std::get<node::header_t>(value));
             }
             break;
 
@@ -459,90 +458,6 @@ bool protocol_btcd_rpc::handle_chase(const code&, node::chase event_,
     }
 
     return !stopped();
-}
-
-void protocol_btcd_rpc::do_block_connected(node::header_t link_value) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (stopped() || !subscribed_blocks_.load(std::memory_order_relaxed))
-        return;
-
-    const database::header_link link{ link_value };
-    const auto& query = archive();
-
-    size_t height{};
-    if (!query.get_height(height, link))
-        return;
-
-    const auto header = query.get_header(link);
-    if (!header)
-        return;
-
-    // btcd 'blockconnected' notification: [hash, height, time].
-    array_t params{};
-    params.emplace_back(value_t{ encode_hash(query.get_header_key(link)) });
-    params.emplace_back(value_t{ possible_sign_cast<int64_t>(height) });
-    params.emplace_back(value_t{ possible_sign_cast<int64_t>(
-        header->timestamp()) });
-
-    send_notification("blockconnected", std::move(params), 256);
-
-    // btcd 'filteredblockconnected': [height, header, subscribedtxs]. Sent
-    // unconditionally alongside blockconnected (as btcd) -- an empty/never-
-    // loaded filter just yields an empty subscribedtxs array.
-    constexpr auto witness = true;
-    const auto block = query.get_block(link, witness);
-    if (!block)
-        return;
-
-    array_t filtered_params{};
-    filtered_params.emplace_back(value_t{
-        possible_sign_cast<int64_t>(height) });
-    filtered_params.emplace_back(value_t{
-        to_text(*header, chain::header::serialized_size()) });
-    filtered_params.emplace_back(value_t{ match_filtered_transactions(*block) });
-
-    send_notification("filteredblockconnected",
-        std::move(filtered_params), 256);
-}
-
-void protocol_btcd_rpc::do_block_disconnected(
-    node::header_t link_value) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (stopped() || !subscribed_blocks_.load(std::memory_order_relaxed))
-        return;
-
-    const database::header_link link{ link_value };
-    const auto& query = archive();
-
-    size_t height{};
-    if (!query.get_height(height, link))
-        return;
-
-    const auto header = query.get_header(link);
-    if (!header)
-        return;
-
-    array_t params{};
-    params.emplace_back(value_t{ encode_hash(query.get_header_key(link)) });
-    params.emplace_back(value_t{ possible_sign_cast<int64_t>(height) });
-    params.emplace_back(value_t{ possible_sign_cast<int64_t>(
-        header->timestamp()) });
-
-    send_notification("blockdisconnected", std::move(params), 256);
-
-    // btcd 'filteredblockdisconnected': [height, header].
-    array_t filtered_params{};
-    filtered_params.emplace_back(value_t{
-        possible_sign_cast<int64_t>(height) });
-    filtered_params.emplace_back(value_t{
-        to_text(*header, chain::header::serialized_size()) });
-
-    send_notification("filteredblockdisconnected",
-        std::move(filtered_params), 256);
 }
 
 // Senders.
@@ -566,8 +481,11 @@ void protocol_btcd_rpc::send_notification(const std::string& method,
     message.body() = std::move(notification);
     message.prepare_payload();
 
+    // The notification strand poster (notify, see POST_NOTIFY) shadows
+    // network::protocol_http::notify. Qualify explicitly (as POST_BTCD).
     // NOTIFY does not restart the (already active) ws reader.
-    NOTIFY(std::move(message), handle_complete, _1, error::success);
+    this->network::protocol_http::template notify<CLASS>(std::move(message),
+        &CLASS::handle_complete, _1, error::success);
 }
 
 BC_POP_WARNING()
