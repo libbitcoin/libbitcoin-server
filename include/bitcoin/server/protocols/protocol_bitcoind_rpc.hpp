@@ -55,21 +55,13 @@ protected:
     using post = network::http::method::post;
     using options = network::http::method::options;
 
-    /// Dispatch.
+    /// Dispatch (the post and websocket transports of the interface).
     void handle_receive_options(const code& ec,
         const network::http::method::options::cptr& options) NOEXCEPT override;
     void handle_receive_post(const code& ec,
         const post::cptr& post) NOEXCEPT override;
-
-    /// Dispatch an rpc message with no post-http context (websocket).
-    /// Returns error::unexpected_method on a method-name lookup miss.
-    code dispatch_rpc(const network::rpc::request_t& message) NOEXCEPT;
-
-    /// Extension point for a derived class's own additional dispatcher,
-    /// tried by handle_receive_post when rpc_dispatcher_ reports
-    /// unexpected_method. Default: always unexpected_method.
-    virtual code dispatch_extension(
-        const network::rpc::request_t& message) NOEXCEPT;
+    void dispatch_websocket(
+        const network::http::request& request) NOEXCEPT override;
 
     /// Handlers.
     bool handle_get_best_block_hash(const code& ec,
@@ -146,14 +138,24 @@ protected:
         const system::chain::header& header) NOEXCEPT;
     static std::string chain_name(const node::query& query) NOEXCEPT;
 
-    /// Senders.
+    /// Senders. close_reason (if truthy) stops the channel only once the
+    /// write has completed, so the error reaches the client first.
     void send_error(const code& ec) NOEXCEPT;
     void send_error(const code& ec, size_t size_hint) NOEXCEPT;
+    void send_error(const code& ec, size_t size_hint,
+        const code& close_reason) NOEXCEPT;
     void send_error(const code& ec, network::rpc::value_option&& error,
         size_t size_hint) NOEXCEPT;
     void send_text(std::string&& hexidecimal) NOEXCEPT;
     void send_result(network::rpc::value_option&& result,
         size_t size_hint) NOEXCEPT;
+
+    /// Cache rpc response context for serialization (requires strand). The
+    /// websocket overload has no http request to echo headers from.
+    void set_rpc_request(network::rpc::version version,
+        const network::rpc::id_option& id,
+        const network::http::request_cptr& request) NOEXCEPT;
+    void set_rpc_request(const network::rpc::request_t& message) NOEXCEPT;
 
 private:
     template <class Derived, typename Method, typename... Args>
@@ -165,11 +167,8 @@ private:
     // Senders.
     void send_rpc(network::rpc::response_t&& model,
         size_t size_hint) NOEXCEPT;
-
-    // Cache request for serialization (requires strand).
-    void set_rpc_request(network::rpc::version version,
-        const network::rpc::id_option& id,
-        const network::http::request_cptr& request) NOEXCEPT;
+    void send_rpc(network::rpc::response_t&& model, size_t size_hint,
+        const code& close_reason) NOEXCEPT;
 
     // Validate a transaction given next block context.
     bool get_pool_context(system::chain::context& pool) const NOEXCEPT;

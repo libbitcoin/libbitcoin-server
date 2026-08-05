@@ -157,12 +157,8 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
         return;
     }
 
-    // Dispatch the request to subscribers, falling back to a derived class's
-    // own extension dispatcher if this one doesn't recognize the method.
-    auto code = rpc_dispatcher_.notify(message);
-    if (code == network::error::unexpected_method)
-        code = dispatch_extension(message);
-
+    // Dispatch the request to the interface dispatcher.
+    const auto code = rpc_dispatcher_.notify(message);
     if (!code)
         return;
 
@@ -173,20 +169,60 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
         stop(code);
 }
 
-// Default: no extension dispatcher (see protocol_btcd_rpc for an override).
-code protocol_bitcoind_rpc::dispatch_extension(const request_t&) NOEXCEPT
-{
-    return network::error::unexpected_method;
-}
-
-// Dispatch an rpc message with no post-http context (websocket) -- the
-// post-specific host/origin/body checks are meaningless for a ws frame.
-code protocol_bitcoind_rpc::dispatch_rpc(const request_t& message) NOEXCEPT
+// The websocket transport of the interface: parse the ws text frame as a
+// json-rpc request and dispatch as an http post would.
+void protocol_bitcoind_rpc::dispatch_websocket(
+    const network::http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    id_ = message.id;
-    version_ = message.jsonrpc;
-    return rpc_dispatcher_.notify(message);
+
+    // ws frames carry no headers, so ws authorization is enforced here, not
+    // by the channel (established by basic auth on the upgrade request).
+    if (!authorized())
+    {
+        stop(network::error::unauthorized);
+        return;
+    }
+
+    // Websocket frames are json-rpc text (channel default reader).
+    if (!request.body().contains<http::string_value>())
+    {
+        stop(error::invalid_argument);
+        return;
+    }
+
+    request_t message{};
+    try
+    {
+        message = value_to<request_t>(parse(
+            request.body().get<http::string_value>()));
+    }
+    catch (const std::exception&)
+    {
+        stop(error::invalid_argument);
+        return;
+    }
+
+    // Cache request context for response building (version + id).
+    set_rpc_request(message);
+
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(message.method))
+    {
+        send_error(error::unauthorized);
+        return;
+    }
+
+    // Dispatch the request to the interface dispatcher.
+    const auto code = rpc_dispatcher_.notify(message);
+    if (!code)
+        return;
+
+    // Unknown method: reply with an error and keep the connection alive.
+    if (code == network::error::unexpected_method)
+        send_error(code);
+    else
+        stop(code);
 }
 
 // Handlers.
@@ -721,6 +757,22 @@ void protocol_bitcoind_rpc::send_error(const code& ec,
     send_error(ec, {}, size_hint);
 }
 
+void protocol_bitcoind_rpc::send_error(const code& ec, size_t size_hint,
+    const code& close_reason) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    send_rpc(
+    {
+        .jsonrpc = version_,
+        .id = id_,
+        .error = result_t
+        {
+            .code = ec.value(),
+            .message = ec.message()
+        }
+    }, size_hint, close_reason);
+}
+
 void protocol_bitcoind_rpc::send_error(const code& ec,
     value_option&& error, size_t size_hint) NOEXCEPT
 {
@@ -760,6 +812,12 @@ void protocol_bitcoind_rpc::send_result(value_option&& result,
 void protocol_bitcoind_rpc::send_rpc(response_t&& model,
     size_t size_hint) NOEXCEPT
 {
+    send_rpc(std::move(model), size_hint, error::success);
+}
+
+void protocol_bitcoind_rpc::send_rpc(response_t&& model, size_t size_hint,
+    const code& close_reason) NOEXCEPT
+{
     BC_ASSERT(stranded());
     using namespace http;
     static const auto json = from_media_type(media_type::application_json);
@@ -777,7 +835,7 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model,
             { .size_hint = size_hint }, std::move(model),
         };
         message.prepare_payload();
-        SEND(std::move(message), handle_complete, _1, error::success);
+        SEND(std::move(message), handle_complete, _1, close_reason);
         return;
     }
 
@@ -791,10 +849,10 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model,
         { .size_hint = size_hint }, std::move(model),
     };
     message.prepare_payload();
-    SEND(std::move(message), handle_complete, _1, error::success);
+    SEND(std::move(message), handle_complete, _1, close_reason);
 }
 
-// private
+// protected
 void protocol_bitcoind_rpc::set_rpc_request(version version,
     const id_option& id, const http::request_cptr& request) NOEXCEPT
 {
@@ -802,6 +860,14 @@ void protocol_bitcoind_rpc::set_rpc_request(version version,
     id_ = id;
     version_ = version;
     set_request(request);
+}
+
+// protected
+void protocol_bitcoind_rpc::set_rpc_request(const request_t& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    id_ = message.id;
+    version_ = message.jsonrpc;
 }
 
 // private
