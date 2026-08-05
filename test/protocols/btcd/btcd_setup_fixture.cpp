@@ -28,8 +28,7 @@ using namespace boost::beast;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
-    std::string_view username, std::string_view password,
-    std::string_view methods)
+    const configurator& configure)
   : config_
     {
         system::chain::selection::mainnet,
@@ -55,18 +54,20 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
     auto& btcd = config_.server.btcd;
 
     btcd.binds = { { BTCD_ENDPOINT } };
+
     // 2: the ws connection (websocket_/socket_) plus the plain http one
     // (http_socket_) used by http_rpc().
     btcd.connections = 2;
-    if (!username.empty())
-        btcd.credentials.emplace_back(std::string{ username } + ":" +
-            std::string{ password } +
-            (methods.empty() ? "" : ":" + std::string{ methods }));
+    btcd.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
+
+    // Apply test-specific configuration overrides.
+    if (configure)
+        configure(config_);
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
@@ -99,10 +100,14 @@ btcd_setup_fixture::~btcd_setup_fixture()
     network::boost_code ec{};
     websocket_.close(websocket::close_code::normal, ec);
 
-    // Expected and harmless during fixture teardown.
+    // Expected and harmless during fixture teardown:
+    // beast::websocket::error::closed : normal (graceful handshake).
+    // asio::error::operation_aborted  : hard (invalid request test).
+    // asio::error::connection_reset   : peer gone (failed authenticate test).
     if (ec &&
         ec != boost::beast::websocket::error::closed &&
-        ec != boost::asio::error::operation_aborted)
+        ec != boost::asio::error::operation_aborted &&
+        ec != boost::asio::error::connection_reset)
     {
         BOOST_WARN_MESSAGE(false, ec.message());
     }
@@ -132,6 +137,37 @@ boost::json::value btcd_setup_fixture::rpc(std::string_view method,
     websocket_.read(buffer, ec);
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     return test::parse_json(buffers_to_string(buffer.data()));
+}
+
+int64_t btcd_setup_fixture::rpc_error(std::string_view method,
+    std::string_view params)
+{
+    try
+    {
+        return rpc(method, params).at("error").as_object().at("code")
+            .as_int64();
+    }
+    catch (const boost::system::system_error&)
+    {
+        return -1;
+    }
+}
+
+bool btcd_setup_fixture::authenticate(const std::string& username,
+    const std::string& password)
+{
+    const auto request = R"(["%1%","%2%"])";
+    const auto response = rpc("authenticate",
+        (boost_format(request) % username % password).str());
+
+    try
+    {
+        return response.at("error").is_null();
+    }
+    catch (const boost::system::system_error&)
+    {
+        return false;
+    }
 }
 
 boost::json::value btcd_setup_fixture::receive_notification()
