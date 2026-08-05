@@ -152,6 +152,19 @@ public:
         virtual bool enabled() const NOEXCEPT;
     };
 
+    /// Address encoding, implied by coin and network (not by forks).
+    struct wallet_settings
+    {
+        DEFAULT_COPY_MOVE_DESTRUCT(wallet_settings);
+
+        wallet_settings() NOEXCEPT;
+        wallet_settings(system::chain::selection context) NOEXCEPT;
+
+        system::config::byte p2kh_prefix;
+        system::config::byte p2sh_prefix;
+        std::string witness_prefix;
+    };
+
     struct bitcoind_server
       : public network::settings::http_server
     {
@@ -184,6 +197,9 @@ public:
 
     settings(system::chain::selection context, const embedded_pages& native,
         const embedded_pages& admin) NOEXCEPT;
+
+    /// address encoding (coin/network identity)
+    wallet_settings wallet;
 
     /// admin web interface, isolated (http/s, stateless html)
     server::settings::html_server admin;

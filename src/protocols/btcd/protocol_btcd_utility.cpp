@@ -374,7 +374,7 @@ bool protocol_btcd::handle_validate_address(const code& ec,
     }
 
     const wallet::witness_address segwit(address);
-    if (segwit)
+    if (segwit && segwit.prefix() == witness_)
     {
         send_result(object_t
         {
@@ -406,8 +406,9 @@ code protocol_btcd::parse_output_script(const std::string& text,
         return error::success;
     }
 
+    // The parse accepts any prefix, so the configured one is a check.
     const wallet::witness_address segwit(text);
-    if (segwit)
+    if (segwit && segwit.prefix() == witness_)
     {
         out = segwit.script();
         return error::success;

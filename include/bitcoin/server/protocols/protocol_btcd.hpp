@@ -48,12 +48,9 @@ public:
         network::tracker<protocol_btcd>(session->log),
         options_(options),
         turbo_(session->database_settings().turbo),
-        p2kh_(session->system_settings().forks.difficult ?
-            system::wallet::payment_address::mainnet_p2kh :
-            system::wallet::payment_address::testnet_p2kh),
-        p2sh_(session->system_settings().forks.difficult ?
-            system::wallet::payment_address::mainnet_p2sh :
-            system::wallet::payment_address::testnet_p2sh),
+        p2kh_(session->server_settings().wallet.p2kh_prefix),
+        p2sh_(session->server_settings().wallet.p2sh_prefix),
+        witness_(session->server_settings().wallet.witness_prefix),
         notification_strand_(channel->service().get_executor())
     {
     }
@@ -232,6 +229,7 @@ private:
     const bool turbo_;
     const uint8_t p2kh_;
     const uint8_t p2sh_;
+    const std::string witness_;
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_blocks_{};
 

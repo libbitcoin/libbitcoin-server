@@ -860,6 +860,23 @@ options_metadata parser::load_settings() THROWS
         "The socks5 proxy endpoint (port required)."
     )
 
+    /* [wallet] */
+    (
+        "wallet.p2kh_prefix",
+        value<config::byte>(&configured.server.wallet.p2kh_prefix),
+        "The pay-to-public-key-hash address prefix, defaults to '0' (use '111' for testnet)."
+    )
+    (
+        "wallet.p2sh_prefix",
+        value<config::byte>(&configured.server.wallet.p2sh_prefix),
+        "The pay-to-script-hash address prefix, defaults to '5' (use '196' for testnet)."
+    )
+    (
+        "wallet.witness_prefix",
+        value<std::string>(&configured.server.wallet.witness_prefix),
+        "The witness address prefix, defaults to 'bc' (use 'tb' for testnet)."
+    )
+
     /* [admin] */
     (
         "admin.bind",
