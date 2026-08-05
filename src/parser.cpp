@@ -1136,6 +1136,88 @@ options_metadata parser::load_settings() THROWS
         "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
     )
 
+    /* [btcd] */
+    (
+        "btcd.bind",
+        value<network::config::authorities>(&configured.server.btcd.binds),
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "btcd.safe",
+        value<network::config::authorities>(&configured.server.btcd.safes),
+        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "btcd.cert_auth",
+        value<std::filesystem::path>(&configured.server.btcd.cert_auth),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
+        "btcd.cert_path",
+        value<std::filesystem::path>(&configured.server.btcd.cert_path),
+        "The path to the server certificate file (.PEM), defaults to unused."
+    )
+    (
+        "btcd.key_path",
+        value<std::filesystem::path>(&configured.server.btcd.key_path),
+        "The path to the server private key file (.PEM), defaults to unused."
+    )
+    (
+        "btcd.key_pass",
+        value<std::string>(&configured.server.btcd.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "btcd.credential",
+        value<network::config::credentials>(&configured.server.btcd.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), also used for the ws 'authenticate' method, multiple allowed."
+    )
+    (
+        "btcd.connections",
+        value<uint16_t>(&configured.server.btcd.connections),
+        "The required maximum number of connections, defaults to '0'."
+    )
+    (
+        "btcd.inactivity_minutes",
+        value<uint32_t>(&configured.server.btcd.inactivity_minutes),
+        "The idle timeout (http/ws keep-alive), defaults to '10'."
+    )
+    (
+        "btcd.expiration_minutes",
+        value<uint32_t>(&configured.server.btcd.expiration_minutes),
+        "The idle timeout (http/ws keep-alive), defaults to '60'."
+    )
+    (
+        "btcd.minimum_buffer",
+        value<uint32_t>(&configured.server.btcd.minimum_buffer),
+        "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "btcd.maximum_request",
+        value<uint32_t>(&configured.server.btcd.maximum_request),
+        "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "btcd.server",
+        value<std::string>(&configured.server.btcd.server),
+        "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+    )
+    (
+        "btcd.host",
+        value<network::config::endpoints>(&configured.server.btcd.hosts),
+        "The host name (http verification), multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "btcd.origin",
+        value<network::config::endpoints>(&configured.server.btcd.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "btcd.allow_opaque_origin",
+        value<bool>(&configured.server.btcd.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
+    )
+
     /* [electrum] */
     (
         "electrum.bind",

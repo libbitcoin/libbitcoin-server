@@ -157,20 +157,45 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
         return;
     }
 
-    // Dispatch the request to subscribers.
-    if (const auto code = rpc_dispatcher_.notify(message))
+    // Dispatch the request to subscribers, falling back to a derived
+    // class's own extension dispatcher (e.g. protocol_btcd_rpc's btcd-only
+    // methods) if this dispatcher doesn't recognize the method -- the post-
+    // side mirror of dispatch_websocket's ws-side fallback to dispatch_rpc.
+    auto code = rpc_dispatcher_.notify(message);
+    if (code == network::error::unexpected_method)
+        code = dispatch_extension(message);
+
+    if (!code)
+        return;
+
+    // Unknown to every dispatcher tried: reply with a json-rpc error and
+    // keep the connection alive for a subsequent request on the same
+    // keep-alive connection (matches dispatch_websocket's handling of the
+    // same case, and ordinary http semantics -- an error response body is
+    // not itself a reason to drop the TCP connection).
+    if (code == network::error::unexpected_method)
+        send_error(code);
+    else
         stop(code);
 }
 
-template <typename Object, typename ...Args>
-std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
+// Default: no extension dispatcher (see protocol_btcd_rpc for an override).
+code protocol_bitcoind_rpc::dispatch_extension(const request_t&) NOEXCEPT
 {
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    BC_ASSERT(writer);
-    return out;
+    return network::error::unexpected_method;
+}
+
+// Dispatch a chain-rpc message with no post-http context (websocket). Mirrors
+// handle_receive_post's id/version caching (set_rpc_request) and dispatcher
+// notify, without the post-specific host/origin/body checks -- those are
+// meaningless for a ws frame (channel_btcd::permitted() and the ws upgrade
+// itself already gate access) and are handled by the caller.
+code protocol_bitcoind_rpc::dispatch_rpc(const request_t& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    id_ = message.id;
+    version_ = message.jsonrpc;
+    return rpc_dispatcher_.notify(message);
 }
 
 // Handlers.
@@ -291,7 +316,34 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "verificationprogress", progress },
         { "initialblockdownload", !is_current_chain(true) },
         { "pruned", network_settings().pruned_node() },
-        { "warnings", std::string{} }
+        { "warnings", std::string{} },
+
+        // Taproot is a permanent, long-since-locked-in consensus rule (no
+        // live BIP9 signaling to track), so this is reported unconditionally
+        // rather than computed -- present specifically because real
+        // clients check for it: lnd's chainreg.backendSupportsTaproot
+        // (chainreg/taproot_check.go) requires a "taproot" entry here
+        // (mainnet activation height 709632, BIP9 bit 2) before it will
+        // treat *any* btcd/bitcoind backend as usable, checking only for
+        // this key's presence, not its field values. Confirmed via lnd's
+        // own source that "bitcoind versions before 0.19 and also btcd use
+        // the SoftForks fields" -- this is the real btcd-compatible path,
+        // not a workaround; getdeploymentinfo (lnd's fallback if this is
+        // absent) has no equivalent in real btcd at all.
+        { "bip9_softforks", object_t
+            {
+                { "taproot", object_t
+                    {
+                        { "status", std::string{ "active" } },
+                        { "bit", 2 },
+                        { "startTime", -1 },
+                        { "timeout", -1 },
+                        { "since", 709632 },
+                        { "min_activation_height", 0 }
+                    }
+                }
+            }
+        }
     }, 512);
     return true;
 }
@@ -728,6 +780,27 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model,
     BC_ASSERT(stranded());
     using namespace http;
     static const auto json = from_media_type(media_type::application_json);
+
+    // Websocket frames carry no cached post request (dispatch_rpc does not
+    // set one, unlike handle_receive_post) and have no per-message headers
+    // to echo (add_common_headers/add_access_control_headers is a post-only
+    // concept) -- send a minimal response, matching protocol_btcd_rpc's own
+    // ws senders.
+    if (websocket())
+    {
+        id_.reset();
+        version_ = version::undefined;
+        http::response message{ status::ok, 11 };
+        message.set(field::content_type, json);
+        message.body() = rpc::response
+        {
+            { .size_hint = size_hint }, std::move(model),
+        };
+        message.prepare_payload();
+        SEND(std::move(message), handle_complete, _1, error::success);
+        return;
+    }
+
     const auto request = reset_rpc_request();
     http::response message{ status::ok, request->version() };
     add_common_headers(message, *request);

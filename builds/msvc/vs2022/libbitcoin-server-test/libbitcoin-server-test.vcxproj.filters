@@ -25,11 +25,14 @@
     <Filter Include="src\protocols\bitcoind">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\electrum">
+    <Filter Include="src\protocols\btcd">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\protocols\native">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000008}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -80,6 +83,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp">
       <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_rpc.cpp">
+      <Filter>src\protocols\btcd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.cpp">
+      <Filter>src\protocols\btcd</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp">
       <Filter>src\protocols\electrum</Filter>
@@ -157,6 +166,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp">
       <Filter>src\protocols\bitcoind</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.hpp">
+      <Filter>src\protocols\btcd</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp">
       <Filter>src\protocols\electrum</Filter>

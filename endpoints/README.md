@@ -41,6 +41,11 @@ bind = 0.0.0.0:8332
 bind = [::]:8332
 connections = 10
 
+[btcd]
+bind = 0.0.0.0:8334
+bind = [::]:8334
+connections = 10
+
 [electrum]
 bind = 0.0.0.0:50001
 bind = [::]:50001
@@ -79,6 +84,9 @@ pytest test_native.py
 
 # Test only bitcoind RPC
 pytest test_bitcoind_rpc.py
+
+# Test only btcd JSON-RPC/websocket
+pytest test_btcd_rpc.py
 
 # Test only Electrum protocol
 pytest test_electrum.py
@@ -130,6 +138,34 @@ pytest test_bitcoind_rpc.py \
 - `--bitcoind-auth` — Enable authentication (cookie file)
 - `--bitcoind-cookie` — Path to cookie file (default: /mnt/core/.cookie)
 
+### btcd JSON-RPC/WebSocket Options
+
+```bash
+pytest test_btcd_rpc.py \
+  --btcd-host=localhost \
+  --btcd-port=8334
+```
+
+**With basic auth / ws `authenticate` credentials configured:**
+
+```bash
+pytest test_btcd_rpc.py \
+  --btcd-username=user \
+  --btcd-password=pass
+```
+
+**Available options:**
+- `--btcd-host` — Host for btcd JSON-RPC/websocket (default: localhost)
+- `--btcd-port` — Port for btcd JSON-RPC/websocket (default: 8334)
+- `--btcd-username` / `--btcd-password` — Credentials to test `authenticate`
+  against, if the server has `btcd.credential=username:password` configured
+  (default: none — the credential-specific tests are skipped)
+
+No extra Python dependency is required: the websocket client is a small
+stdlib-only implementation (see `WebSocketConnection` in `test_btcd_rpc.py`),
+matching this suite's existing preference for hand-rolled wire protocol over
+Electrum's raw TCP handling.
+
 ### Electrum Protocol Options
 
 ```bash
@@ -167,6 +203,16 @@ pytest test_native.py \
   --native-host=192.168.1.100 \
   --native-port=8181 \
   --timeout=30
+```
+
+- `--run-slow` — Include tests marked `@pytest.mark.slow`: these wait on a
+  real external event (e.g. `test_blockconnected_notification` waits up to
+  `--subscription-timeout` for an actual new block) and are skipped by
+  default so a normal run stays fast.
+
+```bash
+# Include slow/live-event tests, e.g. against a node expecting a block soon
+pytest test_btcd_rpc.py --run-slow --subscription-timeout=120
 ```
 
 ## Test Organization
@@ -219,6 +265,66 @@ pytest test_bitcoind_rpc.py \
   --bitcoind-auth \
   --bitcoind-cookie=/path/to/.cookie
 pytest test_bitcoind_rpc.py -k "getblock"
+```
+
+### test_btcd_rpc.py — btcd JSON-RPC/WebSocket Compatibility
+
+Tests the btcd-compatible endpoint: JSON-RPC 1.0 over a persistent websocket
+connection (session/notification/filter/admin extension methods) plus plain
+http post (chain methods inherited from `protocol_bitcoind_rpc`, same shape
+as `bitcoind`). See `docs/btcd-endpoint.md` for the full design, method
+scope, and the lnd/btcwallet compatibility analysis (verified end-to-end
+against a real lnd binary).
+
+Unlike the other endpoint suites, this one is explicitly split into two
+kinds of test:
+- **No `xfail` marker** — asserts real, currently-implemented behavior. A
+  failure here is a regression.
+- **`@pytest.mark.xfail(strict=False)`** — describes intended behavior that
+  isn't implemented yet (currently: only the mempool-dependent
+  `notifynewtransactions`/`stopnotifynewtransactions`, blocked on a v5
+  mempool). Expected to fail today; flips to XPASS once implemented, which
+  is the cue to tighten the assertion and remove the marker. Use
+  `pytest -m xfail -rx` to see the current development checklist.
+
+**Coverage:**
+- ✅ Session management — `authenticate` (no-op / credential match / credential
+  mismatch), `session`
+- ✅ Block subscription — `notifyblocks`/`stopnotifyblocks` (ack), a real
+  `blockconnected` push-notification test (positional `[hash, height, time]`,
+  verified against upstream btcd's actual wire format)
+- ✅ Chain methods, both over http post and over the persistent ws
+  connection (`getbestblockhash`, `getblockcount`, `getblockhash`,
+  `getblockheader`, `gettxout`, `getrawtransaction`)
+- ✅ `loadtxfilter`/`rescanblocks` (address/outpoint watch-list, filtered
+  block notifications), `getcurrentnet`, `getbestblock`, `rescan` (empty-
+  addrs/outpoints bootstrap case), `getdifficulty`, `getinfo`,
+  `getnettotals`, `getnetworkhashps`, `createrawtransaction`,
+  `decoderawtransaction`, `decodescript`, `validateaddress`, `help`
+- ✅ btcd-only methods (e.g. `getinfo`) reachable over plain http post too,
+  not only ws
+- ✅ Deprecated methods stay rejected — `notifyreceived`, `stopnotifyreceived`,
+  `notifyspent`, `stopnotifyspent`; `stop`; `rescan` with a non-empty
+  address/outpoint list (permanent, no dev-target xfail — these are guarded
+  against ever silently "working")
+- ✅ Response envelope — id echo across requests, unknown-method error
+  without dropping the connection
+- 🚧 (xfail) `notifynewtransactions`/`stopnotifynewtransactions` — blocked on
+  a v5 mempool
+
+**Example test runs:**
+
+```bash
+pytest test_btcd_rpc.py
+pytest test_btcd_rpc.py --btcd-port=8334
+pytest test_btcd_rpc.py -k "not xfail"      # only currently-real behavior
+pytest test_btcd_rpc.py -m xfail -rx        # what's left to implement
+BTCD_DEBUG=1 pytest test_btcd_rpc.py -s -k session
+
+# blockconnected waits for a real block; trigger one instead of waiting out
+# the timeout (regtest/testnet), or just let it wait on a synced mainnet node
+BTCD_TRIGGER_BLOCK="bitcoin-cli generatetoaddress 1 <address>" \
+  pytest test_btcd_rpc.py -k blockconnected --subscription-timeout=120
 ```
 
 ### test_electrum.py — Electrum Protocol
@@ -508,6 +614,7 @@ Each test module supports a debug environment variable that enables pretty-print
 | `test_electrum.py` | `ELECTRUM_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response with elapsed time |
 | `test_native.py` | `NATIVE_DEBUG=1` | `>>> GET <url>` / `<<<` response JSON with elapsed time |
 | `test_bitcoind_rpc.py` | `BITCOIND_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response with elapsed time |
+| `test_btcd_rpc.py` | `BTCD_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response over websocket |
 
 ```bash
 # Electrum — pretty-print all requests and responses

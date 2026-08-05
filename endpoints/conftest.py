@@ -65,6 +65,32 @@ def pytest_addoption(parser):
         help="Port for bitcoind REST (default: 8332)"
     )
 
+    # btcd options
+    parser.addoption(
+        "--btcd-host",
+        action="store",
+        default="localhost",
+        help="Host for btcd JSON-RPC/websocket (default: localhost)"
+    )
+    parser.addoption(
+        "--btcd-port",
+        action="store",
+        default="8334",
+        help="Port for btcd JSON-RPC/websocket (default: 8334)"
+    )
+    parser.addoption(
+        "--btcd-username",
+        action="store",
+        default=None,
+        help="Username for btcd basic auth / ws authenticate (default: none configured)"
+    )
+    parser.addoption(
+        "--btcd-password",
+        action="store",
+        default=None,
+        help="Password for btcd basic auth / ws authenticate (default: none configured)"
+    )
+
     # Electrum options
     parser.addoption(
         "--electrum-host",
@@ -132,6 +158,30 @@ def pytest_addoption(parser):
         default="30",
         help="Default timeout for requests in seconds (default: 30)"
     )
+    parser.addoption(
+        "--run-slow",
+        action="store_true",
+        default=False,
+        help="Run tests marked @pytest.mark.slow (wait on a real external "
+             "event, e.g. a live block, up to --subscription-timeout)"
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "slow: waits on a real external event (e.g. a live block); "
+        "skipped by default, use --run-slow to include"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--run-slow"):
+        return
+    skip_slow = pytest.mark.skip(reason="needs --run-slow (waits on a real external event)")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)
 
 
 def pytest_report_header(config):
@@ -194,6 +244,19 @@ def bitcoind_rest_config(request):
         "host": host,
         "port": port,
         "base_url": f"http://{host}:{port}/rest"
+    }
+
+
+@pytest.fixture(scope="session")
+def btcd_config(request):
+    """Configuration for btcd JSON-RPC/websocket tests."""
+    return {
+        "host": request.config.getoption("--btcd-host"),
+        "port": int(request.config.getoption("--btcd-port")),
+        "username": request.config.getoption("--btcd-username"),
+        "password": request.config.getoption("--btcd-password"),
+        "timeout": float(request.config.getoption("--timeout")),
+        "subscription_timeout": float(request.config.getoption("--subscription-timeout")),
     }
 
 

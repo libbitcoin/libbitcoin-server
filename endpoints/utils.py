@@ -122,6 +122,9 @@ class ReferenceData:
     FILTER_TYPE_BLOOM = "bloom"
     FILTER_TYPE_COMPACT = "compact"
 
+    # p2p handshake magic (network_settings().identifier), mainnet
+    MAINNET_MAGIC = 3652501241
+
 
 class TestConfig:
     """Default test configuration values."""
@@ -136,6 +139,7 @@ class TestConfig:
     DEFAULT_BITCOIND_RPC_PORT = 8332
     DEFAULT_BITCOIND_REST_PORT = 8332
     DEFAULT_ELECTRUM_PORT = 50001
+    DEFAULT_BTCD_PORT = 8334
     DEFAULT_STRATUM_V1_PORT = 3333
     DEFAULT_STRATUM_V2_PORT = 3336
 

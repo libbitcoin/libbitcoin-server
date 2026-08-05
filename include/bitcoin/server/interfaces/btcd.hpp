@@ -49,12 +49,34 @@ struct btcd_methods
         method<"loadtxfilter", boolean_t, value_t, value_t>{ "reload", "addresses", "outpoints" },
         method<"rescanblocks", value_t>{ "blockhashes" },
 
+        /// Admin (not_implemented; no secure remote-shutdown path exists).
+        method<"stop">{},
+
         /// Deprecated (address/outpoint filtering).
         method<"notifyreceived", value_t>{ "addresses" },
         method<"stopnotifyreceived", value_t>{ "addresses" },
         method<"notifyspent", value_t>{ "outpoints" },
         method<"stopnotifyspent", value_t>{ "outpoints" },
-        method<"rescan", string_t, value_t, value_t, optional<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
+        method<"rescan", string_t, value_t, value_t, optional<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" },
+
+        /// Admin (network magic, checked once by btcwallet/lnd at connect).
+        method<"getcurrentnet">{},
+
+        /// Generic btcd-tooling compatibility (no lnd consumer).
+        method<"getdifficulty">{},
+        method<"getinfo">{},
+        method<"getnettotals">{},
+        method<"getnetworkhashps", optional<120_u32>, optional<-1_i32>>{ "blocks", "height" },
+        method<"createrawtransaction", array_t, object_t, optional<0_u32>>{ "inputs", "outputs", "locktime" },
+        method<"decoderawtransaction", string_t>{ "hexstring" },
+        method<"decodescript", string_t>{ "hex" },
+        method<"validateaddress", string_t>{ "address" },
+        method<"help", optional<""_t>>{ "command" },
+
+        /// btcd extension: {hash, height} of the best chain tip, used by
+        /// btcwallet's own rpcclient connection (distinct from lnd's own
+        /// chain.RPCClient) during wallet chain-sync bootstrap.
+        method<"getbestblock">{}
     };
 
     template <typename... Args>
@@ -72,11 +94,23 @@ struct btcd_methods
     using stop_notify_new_transactions = at<5>;
     using load_tx_filter = at<6>;
     using rescan_blocks = at<7>;
-    using notify_received = at<8>;
-    using stop_notify_received = at<9>;
-    using notify_spent = at<10>;
-    using stop_notify_spent = at<11>;
-    using rescan = at<12>;
+    using stop = at<8>;
+    using notify_received = at<9>;
+    using stop_notify_received = at<10>;
+    using notify_spent = at<11>;
+    using stop_notify_spent = at<12>;
+    using rescan = at<13>;
+    using get_current_net = at<14>;
+    using get_difficulty = at<15>;
+    using get_info = at<16>;
+    using get_net_totals = at<17>;
+    using get_network_hash_ps = at<18>;
+    using create_raw_transaction = at<19>;
+    using decode_raw_transaction = at<20>;
+    using decode_script = at<21>;
+    using validate_address = at<22>;
+    using help = at<23>;
+    using get_best_block = at<24>;
 };
 
 } // namespace interface
