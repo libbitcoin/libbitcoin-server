@@ -1218,6 +1218,11 @@ options_metadata parser::load_settings() THROWS
         "The version identity (getinfo), defaults to '0.0'."
     )
     (
+        "btcd.maximum_filters",
+        value<uint32_t>(&configured.server.btcd.maximum_filters),
+        "The maximum number of loadtxfilter entries, defaults to '1000000'."
+    )
+    (
         "btcd.host",
         value<network::config::endpoints>(&configured.server.btcd.hosts),
         "The host name (http verification), multiple allowed, defaults to empty (disabled)."

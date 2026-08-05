@@ -171,6 +171,9 @@ public:
 
         /// Arbitrary version identity returned by getinfo.
         system::config::version version{};
+
+        /// Maximum cumulative number of loadtxfilter entries per channel.
+        uint32_t maximum_filters{ 1'000'000 };
     };
 
     // html_server precludes copy.

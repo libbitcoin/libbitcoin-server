@@ -35,6 +35,27 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// Filter bounds.
+// ----------------------------------------------------------------------------
+// The filter is per channel and grows from client calls (loadtxfilter) and
+// from chain data (match_filtered_transactions auto-tracks the outpoint of a
+// matched output, as btcd). Both are bounded by maximum_filters.
+
+size_t protocol_btcd_rpc::filters() const NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    return pay_key_hashes_.size() + pay_script_hashes_.size() +
+        pay_witness_key_hash_programs_.size() +
+        pay_witness_script_hash_programs_.size() +
+        pay_witness_taproot_programs_.size() + filter_outpoints_.size();
+}
+
+bool protocol_btcd_rpc::filtered() const NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    return filters() >= options_.maximum_filters;
+}
+
 // Filter parsing (loadtxfilter).
 // ----------------------------------------------------------------------------
 
@@ -57,6 +78,9 @@ code protocol_btcd_rpc::parse_filter_addresses(bool reload,
 
     for (const auto& item: std::get<array_t>(addresses.value()))
     {
+        if (filtered())
+            return error::oversubscribed;
+
         if (!std::holds_alternative<string_t>(item.value()))
             return error::invalid_argument;
 

@@ -140,6 +140,10 @@ protected:
         btcd_interface::rescan_blocks,
         const network::rpc::value_t& blockhashes) NOEXCEPT;
 
+    /// Cumulative number of filter entries, bounded by maximum_filters.
+    size_t filters() const NOEXCEPT;
+    bool filtered() const NOEXCEPT;
+
     /// Filter parsing (loadtxfilter). Merges into the existing filter unless
     /// reload clears it first.
     code parse_filter_addresses(bool reload,
