@@ -124,7 +124,7 @@ pytest test_bitcoind_rpc.py \
   --bitcoind-rpc-port=8332
 ```
 
-**With authentication (for Bitcoin Core):**
+**With authentication (for bitcoind):**
 
 ```bash
 pytest test_bitcoind_rpc.py \
@@ -241,7 +241,7 @@ pytest test_native.py -k "not address"
 
 ### test_bitcoind_rpc.py — bitcoind RPC Compatibility
 
-Tests JSON-RPC 2.0 interface compatible with Bitcoin Core RPC.
+Tests JSON-RPC 2.0 interface compatible with the bitcoind RPC interface.
 
 **Coverage:**
 - ✅ Blockchain methods (17 methods)
@@ -271,7 +271,7 @@ pytest test_bitcoind_rpc.py -k "getblock"
 
 Tests the btcd-compatible endpoint: JSON-RPC 1.0 over a persistent websocket
 connection (session/notification/filter/admin extension methods) plus plain
-http post (chain methods inherited from `protocol_bitcoind_rpc`, same shape
+http post (bitcoind interface methods inherited from `protocol_bitcoind_rpc`, same shape
 as `bitcoind`).
 
 Unlike the other endpoint suites, this one is explicitly split into two
@@ -291,7 +291,7 @@ kinds of test:
 - ✅ Block subscription — `notifyblocks`/`stopnotifyblocks` (ack), a real
   `blockconnected` push-notification test (positional `[hash, height, time]`,
   verified against upstream btcd's actual wire format)
-- ✅ Chain methods, both over http post and over the persistent ws
+- ✅ bitcoind interface methods, both over http post and over the persistent ws
   connection (`getbestblockhash`, `getblockcount`, `getblockhash`,
   `getblockheader`, `gettxout`, `getrawtransaction`)
 - ✅ `loadtxfilter`/`rescanblocks` (address/outpoint watch-list, filtered
@@ -591,7 +591,7 @@ SKIP: No response (possibly unsupported method)
 ```
 Some public servers (electrs in particular) do not implement all Electrum methods and simply do not respond. The test skips cleanly. This is not a test failure.
 
-**6. Authentication errors (Bitcoin Core)**
+**6. Authentication errors (bitcoind)**
 ```
 RuntimeError: RPC connection error: 401 Unauthorized
 ```
@@ -724,7 +724,7 @@ When adding new tests:
 
 - [pytest Documentation](https://docs.pytest.org/)
 - [libbitcoin-server Documentation](../../docs/)
-- [Bitcoin Core RPC Documentation](https://developer.bitcoin.org/reference/rpc/)
+- [bitcoind RPC documentation](https://developer.bitcoin.org/reference/rpc/)
 - [Electrum Protocol Documentation](https://electrumx.readthedocs.io/en/latest/protocol.html)
 - [Electrum Protocol Changelog](https://electrumx.readthedocs.io/en/latest/protocol-changes.html)
 - [libbitcoin-server GitHub](https://github.com/libbitcoin/libbitcoin-server)

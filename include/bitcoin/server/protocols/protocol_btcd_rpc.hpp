@@ -31,7 +31,7 @@
 namespace libbitcoin {
 namespace server {
 
-/// btcd-compatible json-rpc-v1 over http/ws. Inherits the standard chain
+/// btcd-compatible json-rpc-v1 over http/ws. Inherits the bitcoind interface
 /// handlers (getblockcount etc.) from protocol_bitcoind_rpc and adds the
 /// btcd-only extension methods via a second dispatcher. Both dispatchers are
 /// bridged in both directions, so all methods are reachable over both
@@ -67,7 +67,7 @@ public:
 
 protected:
     /// Dispatch btcd ws frames: tries the btcd-only dispatcher first, then
-    /// falls back to the inherited chain dispatcher (dispatch_rpc).
+    /// falls back to the inherited bitcoind dispatcher (dispatch_rpc).
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
 

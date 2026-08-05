@@ -179,7 +179,7 @@ code protocol_bitcoind_rpc::dispatch_extension(const request_t&) NOEXCEPT
     return network::error::unexpected_method;
 }
 
-// Dispatch a chain-rpc message with no post-http context (websocket) -- the
+// Dispatch an rpc message with no post-http context (websocket) -- the
 // post-specific host/origin/body checks are meaningless for a ws frame.
 code protocol_bitcoind_rpc::dispatch_rpc(const request_t& message) NOEXCEPT
 {

@@ -61,7 +61,7 @@ protected:
     void handle_receive_post(const code& ec,
         const post::cptr& post) NOEXCEPT override;
 
-    /// Dispatch a chain-rpc message with no post-http context (websocket).
+    /// Dispatch an rpc message with no post-http context (websocket).
     /// Returns error::unexpected_method on a method-name lookup miss.
     code dispatch_rpc(const network::rpc::request_t& message) NOEXCEPT;
 

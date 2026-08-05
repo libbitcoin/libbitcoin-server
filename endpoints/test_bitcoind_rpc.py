@@ -1,7 +1,7 @@
 """
 Tests for libbitcoin-server bitcoind RPC compatibility interface.
 
-Tests the JSON-RPC 2.0 interface that provides Bitcoin Core compatible
+Tests the JSON-RPC 2.0 interface that provides bitcoind compatible
 RPC methods for blockchain queries.
 
 Run with:

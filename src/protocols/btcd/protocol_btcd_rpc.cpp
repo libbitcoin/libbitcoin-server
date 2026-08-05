@@ -82,7 +82,7 @@ void protocol_btcd_rpc::start() NOEXCEPT
     SUBSCRIBE_BTCD(handle_stop_notify_spent, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_rescan, _1, _2, _3, _4, _5, _6);
 
-    // Base registers all standard chain rpc handlers and starts the listener.
+    // Base registers all bitcoind interface handlers and starts the listener.
     protocol_bitcoind_rpc::start();
 }
 
@@ -145,7 +145,7 @@ void protocol_btcd_rpc::dispatch_websocket(
         return;
     }
 
-    // Fall back to the inherited chain dispatcher on a method-name lookup
+    // Fall back to the inherited bitcoind dispatcher on a method-name lookup
     // miss (notify never returns unexpected_method for an argument mismatch,
     // so the fallback cannot mask a real handler error).
     auto code = btcd_dispatcher_.notify(message);

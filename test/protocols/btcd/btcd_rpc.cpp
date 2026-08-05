@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__subscribed__null_result)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-// Standard chain methods (bridged into the ws dispatcher)
+// bitcoind interface methods (bridged into the ws dispatcher)
 // ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)

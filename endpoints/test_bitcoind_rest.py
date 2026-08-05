@@ -1,7 +1,7 @@
 """
 Tests for libbitcoin-server bitcoind REST compatibility interface.
 
-Covers the Bitcoin Core REST endpoints served under /rest/: chaininfo, block,
+Covers the bitcoind REST endpoints served under /rest/: chaininfo, block,
 block/notxdetails, block/spent (libbitcoin extension), blockhashbyheight,
 headers, blockpart (libbitcoin extension), and the basic (neutrino) filters.
 
