@@ -142,10 +142,6 @@ protected:
     bool handle_chase(const code& ec, node::chase event_,
         node::event_value value) NOEXCEPT;
 
-    /// Address to output script.
-    code parse_output_script(const std::string& text,
-        system::chain::script& out) NOEXCEPT;
-
     /// Sender (server push, no id).
     void send_notification(const std::string& method,
         network::rpc::array_t&& params, size_t size_hint) NOEXCEPT;
@@ -170,11 +166,6 @@ protected:
 
     /// Completion handlers (for long-running or other async queries).
     /// -----------------------------------------------------------------------
-
-    code parse_filter_keys(system::hashes& out,
-        const network::rpc::value_t& addresses) NOEXCEPT;
-    code parse_filter_points(system::chain::points& out,
-        const network::rpc::value_t& outpoints) NOEXCEPT;
 
     void do_load_tx_filter(bool reload, const system::hashes& keys,
         const system::chain::points& points) NOEXCEPT;

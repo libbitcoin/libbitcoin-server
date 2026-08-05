@@ -22,6 +22,7 @@
 #include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
+#include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -222,7 +223,8 @@ bool protocol_btcd::handle_create_raw_transaction(const code& ec,
         }
 
         chain::script script{};
-        if (const auto fault = parse_output_script(pair.first, script))
+        if (const auto fault = btcd::output_script(script, pair.first, p2kh_,
+            p2sh_, witness_))
         {
             send_error(fault);
             return true;
@@ -391,30 +393,6 @@ bool protocol_btcd::handle_validate_address(const code& ec,
 
     send_result(object_t{ { "isvalid", false } }, 32);
     return true;
-}
-
-// Utilities.
-// ----------------------------------------------------------------------------
-
-code protocol_btcd::parse_output_script(const std::string& text,
-    chain::script& out) NOEXCEPT
-{
-    const wallet::payment_address base58(text);
-    if (base58)
-    {
-        out = base58.output_script(p2kh_, p2sh_);
-        return error::success;
-    }
-
-    // The parse accepts any prefix, so the configured one is a check.
-    const wallet::witness_address segwit(text);
-    if (segwit && segwit.prefix() == witness_)
-    {
-        out = segwit.script();
-        return error::success;
-    }
-
-    return error::invalid_argument;
 }
 
 BC_POP_WARNING()

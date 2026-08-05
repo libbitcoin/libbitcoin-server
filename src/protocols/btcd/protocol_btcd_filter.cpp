@@ -21,6 +21,7 @@
 #include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
+#include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -40,66 +41,6 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Filter parsing (loadtxfilter).
-// ----------------------------------------------------------------------------
-
-code protocol_btcd::parse_filter_keys(hashes& out,
-    const value_t& addresses) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (!std::holds_alternative<array_t>(addresses.value()))
-        return error::invalid_argument;
-
-    for (const auto& item: std::get<array_t>(addresses.value()))
-    {
-        if (!std::holds_alternative<string_t>(item.value()))
-            return error::invalid_argument;
-
-        chain::script script{};
-        if (const auto ec = parse_output_script(
-            std::get<string_t>(item.value()), script))
-            return ec;
-
-        out.push_back(script.hash());
-    }
-
-    return error::success;
-}
-
-code protocol_btcd::parse_filter_points(chain::points& out,
-    const value_t& outpoints) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (!std::holds_alternative<array_t>(outpoints.value()))
-        return error::invalid_argument;
-
-    for (const auto& item: std::get<array_t>(outpoints.value()))
-    {
-        if (!std::holds_alternative<object_t>(item.value()))
-            return error::invalid_argument;
-
-        const auto& fields = std::get<object_t>(item.value());
-        const auto hash_it = fields.find("hash");
-        const auto index_it = fields.find("index");
-        if (hash_it == fields.end() || index_it == fields.end() ||
-            !std::holds_alternative<string_t>(hash_it->second.value()) ||
-            !std::holds_alternative<number_t>(index_it->second.value()))
-            return error::invalid_argument;
-
-        uint32_t index{};
-        hash_digest hash{};
-        if (!decode_hash(hash, std::get<string_t>(hash_it->second.value())) ||
-            !to_integer(index, std::get<number_t>(index_it->second.value())))
-            return error::invalid_argument;
-
-        out.emplace_back(hash, index);
-    }
-
-    return error::success;
-}
-
 // Handlers (filters).
 // ----------------------------------------------------------------------------
 
@@ -111,14 +52,15 @@ bool protocol_btcd::handle_load_tx_filter(const code& ec,
         return false;
 
     hashes keys{};
-    if (const auto fault = parse_filter_keys(keys, addresses))
+    if (const auto fault = btcd::filter_keys(keys, addresses, p2kh_, p2sh_,
+        witness_))
     {
         send_error(fault);
         return true;
     }
 
     chain::points points{};
-    if (const auto fault = parse_filter_points(points, outpoints))
+    if (const auto fault = btcd::filter_points(points, outpoints))
     {
         send_error(fault);
         return true;
