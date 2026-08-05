@@ -1121,6 +1121,16 @@ options_metadata parser::load_settings() THROWS
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
     )
     (
+        "bitcoind.version",
+        value<version>(&configured.server.bitcoind.version),
+        "The version identity (getnetworkinfo), defaults to '0.0'."
+    )
+    (
+        "bitcoind.subversion",
+        value<std::string>(&configured.server.bitcoind.subversion),
+        "The subversion identity (getnetworkinfo), defaults to '/libbitcoin:server/'."
+    )
+    (
         "bitcoind.host",
         value<network::config::endpoints>(&configured.server.bitcoind.hosts),
         "The host name (http verification), multiple allowed, defaults to empty (disabled)."

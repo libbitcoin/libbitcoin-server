@@ -184,7 +184,7 @@ void protocol_bitcoind_rpc::dispatch_websocket(
         return;
     }
 
-    // Websocket frames are parsed as json-rpc requests (websocket_rpc).
+    // Websocket frames are parsed as json-rpc requests (channel body type).
     if (!request.body().contains<rpc::request>())
     {
         stop(error::invalid_argument);
@@ -317,6 +317,26 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         std::min(1.0, static_cast<double>(blocks) /
             static_cast<double>(headers));
 
+    // Softfork activation is configured, not assumable. Taproot is reported
+    // when configured active, with its configured activation height -- lnd's
+    // backendSupportsTaproot requires the key's presence (not its field
+    // values) before treating any btcd/bitcoind backend as usable.
+    const auto& settings = system_settings();
+    object_t soft_forks{};
+    if (settings.forks.bip341 && settings.forks.bip342)
+    {
+        soft_forks.emplace("taproot", object_t
+        {
+            { "status", std::string{ "active" } },
+            { "bit", 2 },
+            { "startTime", -1 },
+            { "timeout", -1 },
+            { "since", possible_sign_cast<int64_t>(
+                settings.bip9_bit2_active_checkpoint.height()) },
+            { "min_activation_height", 0 }
+        });
+    }
+
     // TODO: blocks/headers is a misnomer (off-by-one), intended?
     using namespace chain;
     send_result(object_t
@@ -334,25 +354,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "initialblockdownload", !is_current_chain(true) },
         { "pruned", network_settings().pruned_node() },
         { "warnings", std::string{} },
-
-        // Taproot is a permanent consensus rule (no live signaling to
-        // track), so this is reported unconditionally rather than computed.
-        // lnd's backendSupportsTaproot requires the key's presence (not its
-        // field values) before treating any btcd/bitcoind backend as usable.
-        { "bip9_softforks", object_t
-            {
-                { "taproot", object_t
-                    {
-                        { "status", std::string{ "active" } },
-                        { "bit", 2 },
-                        { "startTime", -1 },
-                        { "timeout", -1 },
-                        { "since", 709632 },
-                        { "min_activation_height", 0 }
-                    }
-                }
-            }
-        }
+        { "bip9_softforks", std::move(soft_forks) }
     }, 512);
     return true;
 }
@@ -609,22 +611,25 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: get most of these values from either config or network/node props.
+    // bitcoind's numeric version encoding (10'000 major, 100 minor, patch).
+    const auto& settings = server_settings().bitcoind;
+    const auto& segments = settings.version.segments();
+    const auto version = 10'000 * segments[0] + 100 * segments[1] + segments[2];
 
     // libbitcoin-server is a node, not a wallet/peer-introspection service;
     // peer-dependent fields (connections, addresses) are reported as empty.
     send_result(object_t
     {
-        { "version", 0 },
-        { "subversion", std::string{ "/libbitcoin:server/" } },
-        { "protocolversion", 70016 },
+        { "version", version },
+        { "subversion", settings.subversion },
+        { "protocolversion", network_settings().protocol_maximum },
         { "localrelay", true },
         { "timeoffset", 0 },
         { "connections", 0 },
         { "networkactive", true },
         { "networks", array_t{} },
-        { "relayfee", 0.00001 },
-        { "incrementalfee", 0.00001 },
+        { "relayfee", node_settings().minimum_fee_rate },
+        { "incrementalfee", node_settings().minimum_bump_rate },
         { "localaddresses", array_t{} },
         { "warnings", std::string{} }
     }, 256);

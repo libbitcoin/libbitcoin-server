@@ -152,6 +152,17 @@ public:
         virtual bool enabled() const NOEXCEPT;
     };
 
+    struct bitcoind_server
+      : public network::settings::http_server
+    {
+        using base = network::settings::http_server;
+        using base::base;
+
+        /// Arbitrary version identity returned by getnetworkinfo.
+        system::config::version version{};
+        std::string subversion{ "/libbitcoin:server/" };
+    };
+
     // html_server precludes copy.
     DELETE_COPY(settings);
 
@@ -165,7 +176,7 @@ public:
     server::settings::html_server native;
 
     /// bitcoind compat interface (http/s, stateless json-rpc-v2)
-    network::settings::http_server bitcoind{ "bitcoind" };
+    bitcoind_server bitcoind{ "bitcoind" };
 
     /// btcd compat interface (http/s + websocket, json-rpc-v1)
     network::settings::http_server btcd{ "btcd" };
