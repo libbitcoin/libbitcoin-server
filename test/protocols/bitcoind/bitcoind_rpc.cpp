@@ -304,6 +304,66 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+// websocket transport
+// ----------------------------------------------------------------------------
+// The same interface dispatched over ws (dispatch_websocket): each frame is
+// a json-rpc text message.
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__websocket__nine)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getbestblockhash__websocket__block9)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getbestblockhash");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__websocket__block5)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockhash", "[5]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block5);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__websocket__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockchaininfo");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chain")), "main");
+    BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__unknown_method__websocket__error_keeps_connection)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto unknown = ws_rpc("nosuchmethod");
+    REQUIRE_NO_THROW_TRUE(unknown.at("error").is_object());
+
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // segwit (witness store: genesis + two blocks carrying witness transactions)
