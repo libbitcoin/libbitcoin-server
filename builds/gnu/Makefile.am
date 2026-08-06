@@ -210,6 +210,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/main.cpp \
     ${srcdir}/../../test/settings.cpp \
     ${srcdir}/../../test/test.cpp \
+    ${srcdir}/../../test/interfaces/btcd.cpp \
     ${srcdir}/../../test/mocks/blocks.cpp \
     ${srcdir}/../../test/parsers/admin_query.cpp \
     ${srcdir}/../../test/parsers/admin_target.cpp \
