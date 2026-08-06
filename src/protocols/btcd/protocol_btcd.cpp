@@ -239,12 +239,8 @@ bool protocol_btcd::handle_help(const code& ec, btcd_interface::help,
         return false;
 
     // Lists method names only, no per-command argument usage text.
-    send_result(std::string{
-        "authenticate help session stop getbestblock getcurrentnet "
-        "getdifficulty getinfo getnettotals getnetworkhashps "
-        "createrawtransaction decoderawtransaction decodescript "
-        "validateaddress notifyblocks stopnotifyblocks loadtxfilter "
-        "rescanblocks" }, 256);
+    send_result(std::string{ btcd_interface::names },
+        two * btcd_interface::names.size());
     return true;
 }
 

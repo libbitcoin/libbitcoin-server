@@ -31,11 +31,11 @@ struct btcd_methods
     /// BTCD protocol (unversioned, json-rpc v1.0 over http/ws).
     static constexpr std::tuple methods
     {
-        /// Administrative (stop not implemented).
+        /// Administrative.
         method<"authenticate", string_t, string_t>{ "username", "password" },
         method<"help", optional<""_t>>{ "command" },
         method<"session">{},
-        method<"stop">{},
+        method<"stop">{ unimplemented },
 
         /// Getters.
         method<"getbestblock">{},
@@ -54,20 +54,25 @@ struct btcd_methods
         /// Subscription.
         method<"notifyblocks">{},
         method<"stopnotifyblocks">{},
-        method<"notifynewtransactions", optional<false>>{ "verbose" },
-        method<"stopnotifynewtransactions">{},
+        method<"notifynewtransactions", optional<false>>{ unimplemented, "verbose" },
+        method<"stopnotifynewtransactions">{ unimplemented },
 
         /// Filters.
         method<"loadtxfilter", boolean_t, value_t, value_t>{ "reload", "addresses", "outpoints" },
         method<"rescanblocks", value_t>{ "blockhashes" },
 
         /// Deprecated.
-        method<"notifyreceived", value_t>{ "addresses" },
-        method<"stopnotifyreceived", value_t>{ "addresses" },
-        method<"notifyspent", value_t>{ "outpoints" },
-        method<"stopnotifyspent", value_t>{ "outpoints" },
+        method<"notifyreceived", value_t>{ unimplemented, "addresses" },
+        method<"stopnotifyreceived", value_t>{ unimplemented, "addresses" },
+        method<"notifyspent", value_t>{ unimplemented, "outpoints" },
+        method<"stopnotifyspent", value_t>{ unimplemented, "outpoints" },
         method<"rescan", string_t, value_t, value_t, optional<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
     };
+
+    /// Method names as reported by help.
+    static constexpr auto name_data = method_names<methods>();
+    static constexpr std::string_view names{ name_data.data(),
+        name_data.size() };
 
     template <typename... Args>
     using subscriber = network::subscriber<Args...>;

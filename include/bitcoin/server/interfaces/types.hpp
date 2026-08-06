@@ -31,6 +31,11 @@ template <text_t Text, typename ...Args>
 using method = network::rpc::method<Text, Args...>;
 template <auto& Methods, size_t Index>
 using method_at = network::rpc::method_at<Methods, Index>;
+template <auto& Methods>
+constexpr auto method_names() NOEXCEPT
+{
+    return network::rpc::method_names<Methods>();
+}
 template <typename Methods, network::rpc::grouping Mode =
     network::rpc::grouping::either>
 using publish = network::rpc::publish<Methods, Mode>;
@@ -51,6 +56,8 @@ using code_t = network::rpc::code_t;
 namespace empty { constexpr auto array = network::rpc::empty::array; };
 namespace empty { constexpr auto object = network::rpc::empty::object; };
 namespace empty { constexpr auto value = network::rpc::empty::value; };
+
+constexpr auto unimplemented = network::rpc::unimplemented;
 
 } // namespace interface
 } // namespace server
