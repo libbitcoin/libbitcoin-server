@@ -614,8 +614,6 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     const auto& segments = settings.version.segments();
     const auto version = 10'000 * segments[0] + 100 * segments[1] + segments[2];
 
-    // libbitcoin-server is a node, not a wallet/peer-introspection service;
-    // peer-dependent fields (connections, addresses) are reported as empty.
     send_result(object_t
     {
         { "version", version },
@@ -815,8 +813,6 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model, size_t size_hint,
     using namespace http;
     static const auto json = from_media_type(media_type::application_json);
 
-    // Websocket frames carry no cached post request and no per-message
-    // headers to echo -- send a minimal response.
     if (websocket())
     {
         id_.reset();
