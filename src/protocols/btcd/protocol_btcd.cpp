@@ -224,10 +224,9 @@ bool protocol_btcd::handle_authenticate(const code& ec,
         return true;
     }
 
+    // Failed authentication ends session once error has reached caller.
     const code unauthorized{ network::error::unauthorized };
     const auto size = two * unauthorized.message().size();
-
-    // Failed authentication ends session once error has reached caller.
     send_error(unauthorized, size, unauthorized);
     return true;
 }
@@ -239,8 +238,8 @@ bool protocol_btcd::handle_help(const code& ec, btcd_interface::help,
         return false;
 
     // Lists method names only, no per-command argument usage text.
-    send_result(std::string{ btcd_interface::names },
-        two * btcd_interface::names.size());
+    const auto size = two * btcd_interface::names.size();
+    send_result(std::string{ btcd_interface::names }, size);
     return true;
 }
 
@@ -343,6 +342,8 @@ bool protocol_btcd::handle_stop_notify_spent(const code& ec,
     return true;
 }
 
+// Implemented only for the empty addresses/outpoints case (as btcd).
+// This is the call btcwallet makes to bootstrap its sync starting point.
 bool protocol_btcd::handle_rescan(const code& ec,
     btcd_interface::rescan, const std::string& beginblock,
     const value_t& addresses, const value_t& outpoints,
@@ -350,8 +351,6 @@ bool protocol_btcd::handle_rescan(const code& ec,
 {
     if (stopped(ec)) return false;
 
-    // Implemented only for the empty addresses/outpoints case (as btcd).
-    // This is the call btcwallet makes to bootstrap its sync starting point.
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
@@ -378,7 +377,8 @@ bool protocol_btcd::handle_rescan(const code& ec,
     }
 
     const auto top = query.get_top_confirmed();
-    const auto header = query.get_header(query.to_confirmed(top));
+    const auto confirmed = query.to_confirmed(top);
+    const auto header = query.get_header(confirmed);
     if (!header)
     {
         send_error(error::not_found);
@@ -388,7 +388,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
     send_result({}, 4);
     send_notification("rescanfinished", array_t
     {
-        encode_hash(query.get_top_confirmed_hash()),
+        encode_hash(header->hash()),
         top,
         header->timestamp()
     }, 256);
@@ -441,10 +441,9 @@ void protocol_btcd::send_notification(const std::string& method,
     array_t&& params, size_t size_hint) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     using namespace network::http;
     static const auto json = from_media_type(media_type::application_json);
-
-    // Server-push notification: json-rpc-v1 request shape, no id.
     rpc::request notification{ { .size_hint = size_hint } };
     notification.message.jsonrpc = version::v1;
     notification.message.method = method;
@@ -455,7 +454,7 @@ void protocol_btcd::send_notification(const std::string& method,
     message.body() = std::move(notification);
     message.prepare_payload();
 
-    // The notification strand poster shadows notify, qualify (as POST_BTCD).
+    // The notification strand poster shadows notify.
     this->network::protocol_http::template notify<CLASS>(std::move(message),
         &CLASS::handle_complete, _1, error::success);
 }

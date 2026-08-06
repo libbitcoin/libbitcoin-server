@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -38,32 +39,61 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// Utilities.
+// ----------------------------------------------------------------------------
+
+static std::string to_script_type(chain::script_pattern pattern) NOEXCEPT
+{
+    using namespace chain;
+    switch (pattern)
+    {
+        case script_pattern::pay_key_hash:
+            return "pubkeyhash";
+        case script_pattern::pay_script_hash:
+            return "scripthash";
+        case script_pattern::pay_multisig:
+            return "multisig";
+        case script_pattern::pay_public_key:
+            return "pubkey";
+        case script_pattern::pay_null_data:
+            return "nulldata";
+        case script_pattern::pay_witness_key_hash:
+            return "witness_v0_keyhash";
+        case script_pattern::pay_witness_script_hash:
+            return "witness_v0_scripthash";
+        case script_pattern::pay_witness_v1_taproot:
+            return "witness_v1_taproot";
+        default:
+            return "nonstandard";
+    }
+}
+
 // Handlers (getters).
 // ----------------------------------------------------------------------------
 
+// Required by btcwallet during wallet chain-sync bootstrap.
 bool protocol_btcd::handle_get_best_block(const code& ec,
     btcd_interface::get_best_block) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    // Required by btcwallet during wallet chain-sync bootstrap.
     const auto& query = archive();
-    object_t result{};
-    result.emplace("hash", encode_hash(query.get_top_confirmed_hash()));
-    result.emplace("height", query.get_top_confirmed());
-    send_result(std::move(result), 96);
+    send_result(object_t
+    {
+        { "hash", encode_hash(query.get_top_confirmed_hash()) },
+        { "height", query.get_top_confirmed() }
+    }, 96);
     return true;
 }
 
+// p2p magic (checked once by btcwallet/lnd to confirm network).
 bool protocol_btcd::handle_get_current_net(const code& ec,
     btcd_interface::get_current_net) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    // The p2p handshake magic, the same value btcd returns (checked once by
-    // btcwallet/lnd at connect to confirm the expected network).
     send_result(network_settings().identifier, 20);
     return true;
 }
@@ -75,8 +105,8 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
         return false;
 
     const auto& query = archive();
-    const auto header = query.get_header(query.to_confirmed(
-        query.get_top_confirmed()));
+    const auto top = query.get_top_confirmed();
+    const auto header = query.get_header(query.to_confirmed(top));
     if (!header)
     {
         send_error(database::error::integrity);
@@ -102,14 +132,11 @@ bool protocol_btcd::handle_get_info(const code& ec,
         return true;
     }
 
-    // btcd's numeric version encoding (1'000'000 major, 10'000 minor, 100
-    // patch).
+    // btcd's numeric version encoding (1'000'000 major, 10'000 minor, 100 patch).
     const auto& segments = server_settings().btcd.version.segments();
     const auto version = 1'000'000 * segments[0] + 10'000 * segments[1] +
         100 * segments[2];
 
-    // Untracked peer-dependent fields are reported as empty/zero, matching
-    // the inherited getnetworkinfo handler's convention.
     send_result(object_t
     {
         { "version", version },
@@ -132,7 +159,6 @@ bool protocol_btcd::handle_get_net_totals(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Untracked byte counters are reported as zero; timemillis is real.
     send_result(object_t
     {
         { "totalbytesrecv", 0 },
@@ -148,12 +174,10 @@ bool protocol_btcd::handle_get_network_hash_ps(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Approximated from the requested height's difficulty and the configured
-    // target spacing, not a windowed average over 'blocks'.
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     const auto target = is_negative(height) ? top :
-        std::min(possible_sign_cast<size_t>(height), top);
+        std::min(sign_cast<size_t>(height), top);
 
     const auto header = query.get_header(query.to_confirmed(target));
     if (!header)
@@ -162,9 +186,9 @@ bool protocol_btcd::handle_get_network_hash_ps(const code& ec,
         return true;
     }
 
-    constexpr auto two_to_the_32 = 4294967296.0;
-    const auto spacing = system_settings().block_spacing_seconds;
-    send_result(header->difficulty() * two_to_the_32 / spacing, 20);
+    const auto period = system_settings().block_spacing_seconds;
+    const auto span = to_floating(power2<uint64_t>(32u));
+    send_result(header->difficulty() * span / period, 20);
     return true;
 }
 
@@ -178,8 +202,15 @@ bool protocol_btcd::handle_create_raw_transaction(const code& ec,
     if (stopped(ec))
         return false;
 
-    chain::inputs ins{};
-    ins.reserve(inputs.size());
+    using namespace chain;
+    uint32_t vout{};
+    hash_digest hash{};
+
+    // The transaction owns shared inputs/outputs, so these are populated
+    // directly, avoiding the intermediate vectors that to_shareds() copies.
+    const auto ins = std::make_shared<input_cptrs>();
+    ins->reserve(inputs.size());
+
     for (const auto& item: inputs)
     {
         if (!std::holds_alternative<object_t>(item.value()))
@@ -199,8 +230,6 @@ bool protocol_btcd::handle_create_raw_transaction(const code& ec,
             return true;
         }
 
-        hash_digest hash{};
-        uint32_t vout{};
         if (!decode_hash(hash, std::get<string_t>(txid_it->second.value())) ||
             !to_integer(vout, std::get<number_t>(vout_it->second.value())))
         {
@@ -208,12 +237,14 @@ bool protocol_btcd::handle_create_raw_transaction(const code& ec,
             return true;
         }
 
-        ins.emplace_back(chain::point{ hash, vout }, chain::script{},
-            0xffffffff_u32);
+        ins->push_back(to_shared<input>(point{ hash, vout }, script{},
+            max_input_sequence));
     }
 
-    chain::outputs outs{};
-    outs.reserve(outputs.size());
+    script script{};
+    uint64_t satoshi{};
+    const auto outs = std::make_shared<output_cptrs>();
+    outs->reserve(outputs.size());
     for (const auto& pair: outputs)
     {
         if (!std::holds_alternative<number_t>(pair.second.value()))
@@ -222,7 +253,6 @@ bool protocol_btcd::handle_create_raw_transaction(const code& ec,
             return true;
         }
 
-        chain::script script{};
         if (const auto fault = btcd::output_script(script, pair.first, p2kh_,
             p2sh_, witness_))
         {
@@ -230,24 +260,18 @@ bool protocol_btcd::handle_create_raw_transaction(const code& ec,
             return true;
         }
 
-        // Scale to satoshis and validate the domain (not whole, as scaling
-        // carries floating point representation error).
-        uint64_t satoshi{};
         const auto btc = std::get<number_t>(pair.second.value());
-        if (!to_integer(satoshi, btc * chain::satoshi_per_bitcoin, false))
+        if (!to_integer(satoshi, btc * satoshi_per_bitcoin, false))
         {
             send_error(error::invalid_argument);
             return true;
         }
 
-        outs.emplace_back(satoshi, std::move(script));
+        outs->push_back(to_shared<output>(satoshi, std::move(script)));
     }
 
-    const chain::transaction tx{ 1, std::move(ins), std::move(outs),
-        locktime };
-
-    // Unsigned, so no witness data yet -- plain (non-witness) serialization.
     constexpr auto witness = false;
+    const transaction tx{ 1, ins, outs, locktime };
     send_result(to_text(tx, tx.serialized_size(witness), witness), 400);
     return true;
 }
@@ -274,10 +298,7 @@ bool protocol_btcd::handle_decode_raw_transaction(const code& ec,
         return true;
     }
 
-    // bitcoind(tx) alone (no inject_tx_context) is the bare
-    // decoderawtransaction shape -- a standalone tx has no block context.
-    send_result(value_from(bitcoind(tx)),
-        two * tx.serialized_size(witness));
+    send_result(value_from(bitcoind(tx)), two * tx.serialized_size(witness));
     return true;
 }
 
@@ -294,63 +315,33 @@ bool protocol_btcd::handle_decode_script(const code& ec,
         return true;
     }
 
-    // false: raw script bytes, no serialized length prefix.
-    const chain::script script{ data, false };
+    using namespace chain;
+    constexpr auto prefix = false;
+    const script script{ data, prefix };
     if (!script.is_valid())
     {
         send_error(error::invalid_argument);
         return true;
     }
 
-    using namespace chain;
+    using namespace wallet;
+    const auto pattern = script.output_pattern();
+
     object_t result{};
     result.emplace("asm", script.to_string(flags::all_rules, true));
+    result.emplace("type", to_script_type(pattern));
 
-    std::string kind{ "nonstandard" };
-    switch (script.output_pattern())
+    if (pattern == script_pattern::pay_key_hash ||
+        pattern == script_pattern::pay_script_hash)
     {
-        case script_pattern::pay_key_hash:
-            kind = "pubkeyhash";
-            break;
-        case script_pattern::pay_script_hash:
-            kind = "scripthash";
-            break;
-        case script_pattern::pay_multisig:
-            kind = "multisig";
-            break;
-        case script_pattern::pay_public_key:
-            kind = "pubkey";
-            break;
-        case script_pattern::pay_null_data:
-            kind = "nulldata";
-            break;
-        case script_pattern::pay_witness_key_hash:
-            kind = "witness_v0_keyhash";
-            break;
-        case script_pattern::pay_witness_script_hash:
-            kind = "witness_v0_scripthash";
-            break;
-        case script_pattern::pay_witness_v1_taproot:
-            kind = "witness_v1_taproot";
-            break;
-        default:
-            break;
-    }
-    result.emplace("type", kind);
-
-    if (script.output_pattern() == script_pattern::pay_key_hash ||
-        script.output_pattern() == script_pattern::pay_script_hash)
-    {
-        const auto address = wallet::payment_address::extract_output(script,
-            p2kh_, p2sh_);
-        if (address)
-            result.emplace("address", address.encoded());
+        const auto pay = payment_address::extract_output(script, p2kh_, p2sh_);
+        if (pay)
+            result.emplace("address", pay.encoded());
     }
 
-    // The p2sh-wrapping address of this exact script (btcd's "p2sh" field).
-    const wallet::payment_address wrapped{ script, p2sh_ };
-    if (wrapped)
-        result.emplace("p2sh", wrapped.encoded());
+    const payment_address pay{ script, p2sh_ };
+    if (pay)
+        result.emplace("p2sh", pay.encoded());
 
     send_result(std::move(result), 256);
     return true;
@@ -362,7 +353,8 @@ bool protocol_btcd::handle_validate_address(const code& ec,
     if (stopped(ec))
         return false;
 
-    const wallet::payment_address base58(address);
+    using namespace wallet;
+    const payment_address base58(address);
     if (base58)
     {
         send_result(object_t
@@ -375,15 +367,17 @@ bool protocol_btcd::handle_validate_address(const code& ec,
         return true;
     }
 
-    const wallet::witness_address witness(address);
+    const witness_address witness(address);
     if (witness && witness.prefix() == witness_)
     {
+        const auto version0_p2sh = (witness.identifier() ==
+            witness_address::program_type::version0_p2sh);
+
         send_result(object_t
         {
             { "isvalid", true },
             { "address", witness.encoded() },
-            { "isscript", witness.identifier() ==
-                wallet::witness_address::program_type::version0_p2sh },
+            { "isscript", version0_p2sh },
             { "iswitness", true },
             { "witness_version", witness.version() },
             { "witness_program", encode_base16(witness.program()) }

@@ -149,6 +149,9 @@ protected:
 protected:
     using point = system::chain::point;
     using hash_digest = system::hash_digest;
+    using header_cptr = system::chain::header::cptr;
+    using hashes_ptr = std::shared_ptr<system::hashes>;
+    using array_ptr = std::shared_ptr<network::rpc::array_t>;
     using history = database::history;
     using histories = database::histories;
     using cursor_t = database::height_link;
@@ -171,22 +174,21 @@ protected:
         const system::chain::points& points) NOEXCEPT;
     void complete_load_tx_filter(const code& ec) NOEXCEPT;
 
-    void do_rescan_blocks(const system::hashes& hashes) NOEXCEPT;
-    void do_rescan_watches(const system::hashes& hashes,
+    void do_rescan_blocks(const hashes_ptr& hashes) NOEXCEPT;
+    void do_rescan_watches(const hashes_ptr& hashes,
         const system::hashes& keys, system::chain::points& points) NOEXCEPT;
     void complete_rescan_blocks(const code& ec,
-        const network::rpc::array_t& discovered) NOEXCEPT;
+        const array_ptr& discovered) NOEXCEPT;
 
     /// Notification event handlers.
     /// -----------------------------------------------------------------------
 
     void do_connected(node::header_t link) NOEXCEPT;
     void do_disconnected(node::header_t link) NOEXCEPT;
-    void notify_connected(const std::string& hash, size_t height,
-        uint32_t time, const std::string& header,
-        const network::rpc::array_t& txs) NOEXCEPT;
-    void notify_disconnected(const std::string& hash, size_t height,
-        uint32_t time, const std::string& header) NOEXCEPT;
+    void notify_connected(const header_cptr& header, size_t height,
+        const array_ptr& txs) NOEXCEPT;
+    void notify_disconnected(const header_cptr& header,
+        size_t height) NOEXCEPT;
 
     /// Utilities.
     /// -----------------------------------------------------------------------
