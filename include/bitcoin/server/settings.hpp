@@ -152,11 +152,54 @@ public:
         virtual bool enabled() const NOEXCEPT;
     };
 
+    /// Address encoding, implied by coin and network (not by forks).
+    struct wallet_settings
+    {
+        DEFAULT_COPY_MOVE_DESTRUCT(wallet_settings);
+
+        wallet_settings() NOEXCEPT;
+        wallet_settings(system::chain::selection context) NOEXCEPT;
+
+        system::config::byte p2kh_prefix;
+        system::config::byte p2sh_prefix;
+        std::string witness_prefix;
+    };
+
+    struct bitcoind_server
+      : public network::settings::http_server
+    {
+        using base = network::settings::http_server;
+        using base::base;
+
+        /// Arbitrary version identity returned by getnetworkinfo.
+        system::config::version version{};
+        std::string subversion{ "/libbitcoin:server/" };
+    };
+
+    struct btcd_server
+      : public network::settings::http_server
+    {
+        using base = network::settings::http_server;
+        using base::base;
+
+        /// Arbitrary version identity returned by getinfo.
+        system::config::version version{};
+
+        /// Maximum cumulative number of loadtxfilter watches per channel.
+        uint32_t maximum_filters{ 1'000'000 };
+
+        /// Maximum number of address history entries upon one index walk.
+        uint32_t maximum_history{ 1'000'000 };
+    };
+
     // html_server precludes copy.
     DELETE_COPY(settings);
 
     settings(system::chain::selection context, const embedded_pages& native,
         const embedded_pages& admin) NOEXCEPT;
+
+    /// address encoding (coin/network identity)
+    wallet_settings wallet;
 
     /// admin web interface, isolated (http/s, stateless html)
     server::settings::html_server admin;
@@ -165,10 +208,10 @@ public:
     server::settings::html_server native;
 
     /// bitcoind compat interface (http/s, stateless json-rpc-v2)
-    network::settings::http_server bitcoind{ "bitcoind" };
+    bitcoind_server bitcoind{ "bitcoind" };
 
     /// btcd compat interface (http/s + websocket, json-rpc-v1)
-    network::settings::http_server btcd{ "btcd" };
+    btcd_server btcd{ "btcd" };
 
     /// electrum compat interface (tcp/s, json-rpc-v2)
     electrum_server electrum{ "electrum" };

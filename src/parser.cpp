@@ -860,6 +860,23 @@ options_metadata parser::load_settings() THROWS
         "The socks5 proxy endpoint (port required)."
     )
 
+    /* [wallet] */
+    (
+        "wallet.p2kh_prefix",
+        value<config::byte>(&configured.server.wallet.p2kh_prefix),
+        "The pay-to-public-key-hash address prefix, defaults to '0' (use '111' for testnet)."
+    )
+    (
+        "wallet.p2sh_prefix",
+        value<config::byte>(&configured.server.wallet.p2sh_prefix),
+        "The pay-to-script-hash address prefix, defaults to '5' (use '196' for testnet)."
+    )
+    (
+        "wallet.witness_prefix",
+        value<std::string>(&configured.server.wallet.witness_prefix),
+        "The witness address prefix, defaults to 'bc' (use 'tb' for testnet)."
+    )
+
     /* [admin] */
     (
         "admin.bind",
@@ -1121,6 +1138,16 @@ options_metadata parser::load_settings() THROWS
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
     )
     (
+        "bitcoind.version",
+        value<version>(&configured.server.bitcoind.version),
+        "The version identity (getnetworkinfo), defaults to '0.0'."
+    )
+    (
+        "bitcoind.subversion",
+        value<std::string>(&configured.server.bitcoind.subversion),
+        "The subversion identity (getnetworkinfo), defaults to '/libbitcoin:server/'."
+    )
+    (
         "bitcoind.host",
         value<network::config::endpoints>(&configured.server.bitcoind.hosts),
         "The host name (http verification), multiple allowed, defaults to empty (disabled)."
@@ -1201,6 +1228,21 @@ options_metadata parser::load_settings() THROWS
         "btcd.server",
         value<std::string>(&configured.server.btcd.server),
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+    )
+    (
+        "btcd.version",
+        value<version>(&configured.server.btcd.version),
+        "The version identity (getinfo), defaults to '0.0'."
+    )
+    (
+        "btcd.maximum_filters",
+        value<uint32_t>(&configured.server.btcd.maximum_filters),
+        "The maximum number of loadtxfilter watches, defaults to '1000000'."
+    )
+    (
+        "btcd.maximum_history",
+        value<uint32_t>(&configured.server.btcd.maximum_history),
+        "The maximum number of address history entries, defaults to '1000000'."
     )
     (
         "btcd.host",

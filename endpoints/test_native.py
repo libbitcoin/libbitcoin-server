@@ -82,13 +82,13 @@ def test_configuration(native_config):
 
 
 def test_top(native_config):
-    """Test /v1/top endpoint - chain tip information."""
+    """Test /v1/top endpoint - chain top information."""
     data = get_json(native_config["base_url"], "top")
     if isinstance(data, int):
         assert data >= 100_000, "Chain height should be at least 100k"
     else:
         assert isinstance(data, dict)
-        height = data.get("height") or data.get("chain_height") or data.get("tip_height")
+        height = data.get("height")
         assert isinstance(height, int)
         assert height >= 100_000, "Chain height should be at least 100k"
 

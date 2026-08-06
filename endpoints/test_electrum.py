@@ -560,7 +560,7 @@ def test_blockchain_block_headers_height_900000_with_cp():
         assert isinstance(h, str) and len(h) == 64
 
 
-def test_blockchain_block_headers_20000_at_tip_with_cp():
+def test_blockchain_block_headers_20000_at_top_with_cp():
     """
     Request 20,000 headers at a well-confirmed range with a checkpoint proof.
 
@@ -570,7 +570,7 @@ def test_blockchain_block_headers_20000_at_tip_with_cp():
     the response is valid and internally consistent, not a specific count.
     """
     start, count = 900000, 20000
-    cp = start + count - 1  # = 919999, well below current tip
+    cp = start + count - 1  # = 919999, well below current top
     result = send_rpc("blockchain.block.headers", [start, count, cp])
 
     assert isinstance(result, dict)
@@ -589,9 +589,9 @@ def test_blockchain_block_headers_20000_at_tip_with_cp():
         assert isinstance(h, str) and len(h) == 64
 
 
-def test_blockchain_block_headers_max_at_tip_with_cp():
+def test_blockchain_block_headers_max_at_top_with_cp():
     """
-    Request as many headers as possible ending at the current chain tip.
+    Request as many headers as possible ending at the current chain top.
 
     Uses count=20160 (max in the Electrum spec). The server will cap the
     actual returned count at its own configured maximum. The test verifies
@@ -600,17 +600,17 @@ def test_blockchain_block_headers_max_at_tip_with_cp():
     """
     count = 20160
 
-    tip = send_rpc("blockchain.headers.subscribe")
+    top = send_rpc("blockchain.headers.subscribe")
     # height key differs by version: 'height' (v1.3+) or 'block_height' (v1.0-v1.2)
-    tip_height = (
-        tip.get("height") or tip.get("block_height")
-        if isinstance(tip, dict) else None
+    top_height = (
+        top.get("height") or top.get("block_height")
+        if isinstance(top, dict) else None
     )
-    if tip_height is None:
+    if top_height is None:
         pytest.skip("blockchain.headers.subscribe did not return height")
 
-    start = tip_height - count + 1
-    cp = tip_height
+    start = top_height - count + 1
+    cp = top_height
 
     result = send_rpc("blockchain.block.headers", [start, count, cp])
 

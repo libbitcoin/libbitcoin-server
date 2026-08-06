@@ -2,10 +2,9 @@
 Tests for libbitcoin-server btcd JSON-RPC/websocket compatibility interface.
 
 btcd speaks JSON-RPC 1.0 over a persistent websocket connection (preferred,
-required for the session/notification extension methods) or plain HTTP POST
-(same request/response shape as the bitcoind endpoint, for the chain methods
-inherited from protocol_bitcoind_rpc). See docs/btcd-endpoint.md for the full
-design and phased scope.
+required for the session/notification methods) or plain HTTP POST
+(same request/response shape as the bitcoind endpoint, for the bitcoind
+interface methods inherited from protocol_bitcoind_rpc).
 
 This suite is split into what's real today and what's a development target:
 
@@ -259,7 +258,7 @@ class BtcdConnection:
 def http_rpc(config: dict, method: str, params: Optional[list] = None) -> dict:
     """Plain http post json-rpc call to the same btcd endpoint (no ws upgrade).
 
-    The chain methods inherited from protocol_bitcoind_rpc are reachable this
+    The bitcoind interface methods inherited from protocol_bitcoind_rpc are reachable this
     way today even though they aren't yet bridged into the ws dispatcher.
     """
     payload = {
@@ -290,7 +289,7 @@ def conn(btcd_config: dict) -> BtcdConnection:
     the server has credentials configured.
 
     Every method other than 'authenticate' itself is rejected over ws until
-    the connection has authenticated (see protocol_btcd_rpc::dispatch_
+    the connection has authenticated (see protocol_btcd::dispatch_
     websocket) -- a real client always does this handshake first, so this
     fixture does it here rather than in every single test.
 
@@ -501,7 +500,7 @@ def test_rescan_no_addrs_no_outpoints_finishes_immediately(conn):
     bootstrap its initial sync starting point (found via a real lnd
     integration test), distinct from rescanblocks/loadtxfilter's actual
     address-watching path. The finished notification always carries the
-    current chain tip, not the requested beginblock.
+    current chain top, not the requested beginblock.
     """
     response = conn.send_rpc("rescan", [ReferenceData.GENESIS_HASH, [], [], ""])
     assert response.get("error") is None
@@ -569,18 +568,18 @@ def test_filteredblockconnected_notification(conn, btcd_config):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STANDARD CHAIN METHODS (bridged into the ws dispatcher)
+# BITCOIND INTERFACE METHODS (bridged into the ws dispatcher)
 # ═══════════════════════════════════════════════════════════════════════════════
 # Inherited from protocol_bitcoind_rpc. Reachable both over plain http post
 # (unchanged from bitcoind) and over the same ws connection used
-# for session/notifyblocks/etc: protocol_btcd_rpc::dispatch_websocket falls
+# for session/notifyblocks/etc: protocol_btcd::dispatch_websocket falls
 # back to protocol_bitcoind_rpc::dispatch_rpc when the btcd-only dispatcher
 # reports "unexpected method". This is what a real lnd/btcwallet client
 # needs -- it can't open a second plain-http connection once it has upgraded
 # to ws, so authenticate/session/notifyblocks and getblockcount etc. must all
 # work on the one connection.
 
-CHAIN_METHODS = [
+BITCOIND_METHODS = [
     ("getbestblockhash", []),
     ("getblockcount", []),
     ("getblockhash", [ReferenceData.GENESIS_HEIGHT]),
@@ -590,7 +589,7 @@ CHAIN_METHODS = [
 ]
 
 
-@pytest.mark.parametrize("method,params", CHAIN_METHODS)
+@pytest.mark.parametrize("method,params", BITCOIND_METHODS)
 def test_chain_method_over_http_post(btcd_config, method, params):
     """Positive control: the chain logic itself works, reachable over plain
     http post to the same endpoint (unchanged from bitcoind)."""
@@ -600,19 +599,19 @@ def test_chain_method_over_http_post(btcd_config, method, params):
     assert "result" in data
 
 
-@pytest.mark.parametrize("method,params", CHAIN_METHODS)
+@pytest.mark.parametrize("method,params", BITCOIND_METHODS)
 def test_chain_method_over_websocket(conn, method, params):
-    """Standard chain methods now also work over the same ws connection used
-    for session/notifyblocks/etc (see protocol_btcd_rpc::dispatch_websocket /
+    """bitcoind interface methods also work over the same ws connection used
+    for session/notifyblocks/etc (see protocol_btcd::dispatch_websocket /
     protocol_bitcoind_rpc::dispatch_rpc)."""
     response = conn.send_rpc(method, params)
     assert "result" in response
 
 
-def test_btcd_and_chain_method_share_one_websocket_connection(conn):
+def test_btcd_and_bitcoind_method_share_one_websocket_connection(conn):
     """The actual point of the ws bridge: a single persistent ws connection -- the kind
     a real lnd/btcwallet client opens once and keeps -- can reach both a
-    btcd-only extension method (session) and a standard chain method
+    btcd interface method (session) and a bitcoind interface method
     (getblockcount) without reconnecting or falling back to plain http post.
     """
     session = conn.send_rpc("session")
@@ -627,7 +626,7 @@ def test_btcd_and_chain_method_share_one_websocket_connection(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# WIRED BUT NOT YET IMPLEMENTED (blocked on a v5 mempool, see docs/btcd-endpoint.md)
+# WIRED BUT NOT YET IMPLEMENTED (blocked on a v5 mempool)
 # ═══════════════════════════════════════════════════════════════════════════════
 # These methods are present in interfaces/btcd.hpp's method table today, but
 # every handler unconditionally returns not_implemented. Each xfail here is a
@@ -675,11 +674,10 @@ def test_stop_always_not_implemented(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# PHASE C: generic btcd-tooling compatibility (implemented, no lnd consumer)
+# Generic btcd-tooling compatibility (implemented)
 # ═══════════════════════════════════════════════════════════════════════════════
-# See docs/btcd-endpoint.md for scope/fidelity notes (getnetworkhashps is an
-# approximation, getnettotals's byte counters are untracked zeros, help lists
-# method names only).
+# getnetworkhashps is an approximation, getnettotals's byte counters are
+# untracked zeros, help lists method names only.
 
 def test_getdifficulty_returns_number(conn):
     response = conn.send_rpc("getdifficulty")
@@ -694,19 +692,10 @@ def test_getinfo_returns_object(conn):
 
 
 def test_btcd_only_method_reachable_over_http_post(btcd_config):
-    """A real lnd integration test found that btcwallet's chain.RPCClient
-    issues capability-check calls (getblockchaininfo, then getinfo) over
-    plain http post immediately on connect, before any subscription traffic
-    that requires ws. getblockchaininfo (inherited from protocol_bitcoind_rpc)
-    already worked over post; getinfo (a btcd-only method, previously only
-    reachable via the ws dispatcher) did not -- protocol_bitcoind_rpc::
-    handle_receive_post had no fallback to a derived class's own dispatcher,
-    and unconditionally dropped the connection on any unrecognized method,
-    so lnd's client retried forever without ever succeeding. Fixed via
-    protocol_bitcoind_rpc::dispatch_extension (an override point,
-    protocol_btcd_rpc's implementation tries btcd_dispatcher_) -- this is
-    the post-side mirror of dispatch_websocket's existing ws-side fallback
-    to the inherited chain dispatcher."""
+    """Real clients (btcwallet's chain.RPCClient) issue capability-check
+    calls (getblockchaininfo, then getinfo) over plain http post immediately
+    on connect, before any subscription traffic that requires ws. getinfo is
+    btcd-only, so this exercises the btcd post transport."""
     data = http_rpc(btcd_config, "getinfo")
     assert data.get("error") is None
     assert isinstance(data.get("result"), dict)

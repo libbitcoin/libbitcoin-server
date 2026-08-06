@@ -20,388 +20,148 @@
 #include "btcd_setup_fixture.hpp"
 
 using namespace system;
+static const code not_found{ server::error::not_found };
+static const code not_implemented{ server::error::not_implemented };
+static const code invalid_argument{ server::error::invalid_argument };
+static const code subscription_limit{ server::error::subscription_limit };
+static const code unauthorized{ network::error::unauthorized };
+static const code unexpected_method{ network::error::unexpected_method };
+
+// mock_block10 chains onto block9 and pays found_address from its second
+// transaction only (its other outputs pay distinct key/script hashes), so a
+// filter watching found_address matches exactly one of its transactions.
+static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
+static const std::string other_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
+static const std::string bogus_address{ "not-an-address" };
 
 namespace {
 
-bool has_error(const boost::json::value& response) NOEXCEPT
-{
-    return response.is_object() && response.as_object().contains("error") &&
-        !response.at("error").is_null();
-}
-
-bool has_result(const boost::json::value& response) NOEXCEPT
-{
-    return response.is_object() && response.as_object().contains("result") &&
-        !response.at("result").is_null();
-}
+const auto block9 = encode_hash(test::block9_hash);
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
 {
     return { value.as_string().c_str() };
 }
 
-const auto block9 = encode_hash(test::block9_hash);
+std::string coinbase_txid(const chain::block& block) NOEXCEPT
+{
+    return encode_hash(block.transactions_ptr()->front()->hash(false));
+}
 
 } // namespace
 
-BOOST_FIXTURE_TEST_SUITE(btcd_rpc_tests, btcd_ten_block_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(btcd_tests, btcd_ten_block_setup_fixture)
 
-// session management
+// administrative
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__no_auth_configured__null_result)
+BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__no_credential_configured__unauthorized)
 {
-    // Without basic auth configured, authenticate is a no-op success.
-    const auto response = rpc("authenticate", R"(["user","pass"])");
-    BOOST_REQUIRE(!has_error(response));
+    // Without a credential configured the connection is authorized from the
+    // start, and authenticate is invalid once authorization is established.
+    const auto result = rpc_error("authenticate", R"(["user","pass"])");
+    BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__session__returns_id)
+BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__unexpected_method)
+{
+    // authenticate is websocket-only (as btcd): not part of the post surface.
+    const auto response = http_rpc("authenticate", R"(["user","pass"])");
+    REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), unexpected_method.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__help__default__method_list)
+{
+    const auto response = rpc("help");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_NE(as_text(response.at("result")).find("getcurrentnet"), std::string::npos);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__session__default__returns_id)
 {
     const auto response = rpc("session");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE(response.at("result").is_object());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BOOST_REQUIRE(response.at("result").as_object().contains("id"));
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet_magic)
+BOOST_AUTO_TEST_CASE(btcd_rpc__stop__default__not_implemented)
 {
-    // btcd_setup_fixture configures system::chain::selection::mainnet, whose
-    // network_settings().identifier (p2p handshake magic) is 3652501241
-    // (0xd9b4bef9) -- the same value real btcd returns from getcurrentnet.
-    const auto response = rpc("getcurrentnet");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 3652501241);
+    BOOST_REQUIRE_EQUAL(rpc_error("stop"), not_implemented.value());
 }
+
+// getters
+// ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
 {
-    // btcd extension distinct from getbestblockhash: {hash, height} together.
-    // Required by btcwallet's own rpcclient connection (separate from lnd's
-    // own chain.RPCClient) during wallet chain-sync bootstrap.
     const auto response = rpc("getbestblock");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__btcd_only_method__reachable_over_http_post)
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet__magic)
 {
-    // A real lnd integration test found that btcwallet's chain.RPCClient
-    // issues capability-check calls (getblockchaininfo, then getinfo) over
-    // plain http post immediately on connect, before any subscription
-    // traffic that requires ws. getinfo is btcd-only (not in the inherited
-    // rpc_dispatcher_), so this exercises protocol_bitcoind_rpc::
-    // dispatch_extension (protocol_btcd_rpc's override tries
-    // btcd_dispatcher_) -- the post-side mirror of dispatch_websocket's
-    // existing ws-side fallback to the inherited chain dispatcher.
-    const auto response = http_rpc("getinfo");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE(response.at("result").as_object().contains("blocks"));
+    // The fixture configures mainnet, magic 3652501241 (0xd9b4bef9).
+    const auto response = rpc("getcurrentnet");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 3652501241);
 }
 
-// block subscription
-// ----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__notifyblocks__returns_null_result)
-{
-    const auto response = rpc("notifyblocks");
-    BOOST_REQUIRE(!has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__returns_null_result)
-{
-    // Subscribe first so stop is meaningful.
-    rpc("notifyblocks");
-    const auto response = rpc("stopnotifyblocks");
-    BOOST_REQUIRE(!has_error(response));
-}
-
-// Standard chain methods (bridged into the ws dispatcher)
-// ----------------------------------------------------------------------------
-// Inherited from protocol_bitcoind_rpc, reachable both via plain http post on
-// the same endpoint (see test/protocols/bitcoind) and, bridged, over this ws
-// connection (dispatch_websocket falls back to dispatch_rpc on
-// unexpected_method from the btcd-only dispatcher).
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
-{
-    // btcd_ten_block_setup_fixture populates a ten-block confirmed store
-    // (genesis + 9), so top confirmed height is 9 (matches the equivalent
-    // bitcoind_rpc__getblockcount__ten_block_store__nine test).
-    const auto response = rpc("getblockcount");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
-}
-
-// Address/outpoint filtering (loadtxfilter, filteredblockconnected/
-// disconnected, rescanblocks).
-// ----------------------------------------------------------------------------
-// blocks 1-9 (btcd_ten_block_setup_fixture) are real early mainnet blocks,
-// each a single p2pk coinbase with no inter-block spends (first real tx in
-// mainnet history isn't until block 170), so none of them can exercise
-// loadtxfilter's actual address matching -- block10() below (a controlled
-// p2kh output chained after block9) is built for that purpose.
-
-namespace {
-
-const short_hash& filter_test_hash() NOEXCEPT
-{
-    static const short_hash hash{ base16_array(
-        "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a") };
-    return hash;
-}
-
-const wallet::payment_address& filter_test_address() NOEXCEPT
-{
-    static const wallet::payment_address address{ filter_test_hash() };
-    return address;
-}
-
-const std::string& filter_test_address_text() NOEXCEPT
-{
-    static const std::string text{ filter_test_address().encoded() };
-    return text;
-}
-
-const chain::block& block10() NOEXCEPT
-{
-    static const chain::block instance
-    {
-        [&]() NOEXCEPT
-        {
-            using namespace wallet;
-            const chain::transaction coinbase
-            {
-                1,
-                chain::inputs{ chain::input
-                {
-                    chain::point{}, chain::script{}, 0xffffffff
-                } },
-                chain::outputs{ chain::output
-                {
-                    50'0000'0000, filter_test_address().output_script(
-                        payment_address::mainnet_p2kh,
-                        payment_address::mainnet_p2sh)
-                } },
-                0
-            };
-
-            // query.set()/push_confirmed() are raw persistence calls (no
-            // organize-time consensus validation), so an internally-
-            // consistent merkle root is not required for this fixture --
-            // chain::block::generate_merkle_root() is private besides.
-            return chain::block
-            {
-                chain::header
-                {
-                    1, test::block9_hash, null_hash,
-                    test::block9.header().timestamp() + 600,
-                    test::block9.header().bits(), 0
-                },
-                chain::transactions{ coinbase }
-            };
-        }()
-    };
-
-    return instance;
-}
-
-} // namespace
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_address__acknowledges)
-{
-    const auto response = rpc("loadtxfilter",
-        "[true,[\"" + filter_test_address_text() + "\"],[]]");
-    BOOST_REQUIRE(!has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__invalid_address__invalid_argument)
-{
-    const auto response = rpc("loadtxfilter",
-        R"([true,["not-an-address"],[]])");
-    BOOST_REQUIRE(has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_outpoint__acknowledges)
-{
-    const auto txid = encode_hash(
-        test::block1.transactions_ptr()->front()->hash(false));
-    const auto response = rpc("loadtxfilter", "[true,[],[{\"hash\":\"" +
-        txid + "\",\"index\":0}]]");
-    BOOST_REQUIRE(!has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__malformed_outpoint__invalid_argument)
-{
-    const auto response = rpc("loadtxfilter", R"([true,[],[{"hash":"00"}]])");
-    BOOST_REQUIRE(has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
-{
-    // 'blockhashes' is one positional arg that is itself an array, so the
-    // wire params need double-wrapping: [[...]], not [...].
-    const auto response = rpc("rescanblocks", "[[\"" + encode_hash(null_hash) +
-        "\"]]");
-    BOOST_REQUIRE(has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__no_filter_match__empty_result)
-{
-    rpc("loadtxfilter", "[true,[\"" + filter_test_address_text() + "\"],[]]");
-
-    const auto response = rpc("rescanblocks",
-        "[[\"" + encode_hash(test::block1_hash) + "\"]]");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE(response.at("result").as_array().empty());
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__address_match__returns_matched_tx)
-{
-    BOOST_REQUIRE(query_.set(block10(), database::context{ 0, 10, 0 }, false,
-        false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10().hash()),
-        true));
-
-    rpc("loadtxfilter", "[true,[\"" + filter_test_address_text() + "\"],[]]");
-
-    const auto response = rpc("rescanblocks",
-        "[[\"" + encode_hash(block10().hash()) + "\"]]");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-
-    const auto& result = response.at("result").as_array();
-    BOOST_REQUIRE_EQUAL(result.size(), 1u);
-    BOOST_REQUIRE_EQUAL(result.front().at("hash").as_string(),
-        encode_hash(block10().hash()));
-    BOOST_REQUIRE_EQUAL(result.front().at("transactions").as_array().size(),
-        1u);
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
-{
-    rpc("notifyblocks");
-    rpc("loadtxfilter", "[true,[\"" + filter_test_address_text() + "\"],[]]");
-
-    BOOST_REQUIRE(query_.set(block10(), database::context{ 0, 10, 0 }, false,
-        false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10().hash()),
-        true));
-
-    notify(node::chase::organized, { 10_u32 });
-
-    const auto blockconnected = receive_notification();
-    BOOST_REQUIRE_EQUAL(blockconnected.at("method").as_string(),
-        "blockconnected");
-
-    const auto filtered = receive_notification();
-    BOOST_REQUIRE_EQUAL(filtered.at("method").as_string(),
-        "filteredblockconnected");
-
-    const auto& params = filtered.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.size(), 3u);
-    BOOST_REQUIRE_EQUAL(params[0].as_int64(), 10);
-    BOOST_REQUIRE_EQUAL(params[2].as_array().size(), 1u);
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
-{
-    const auto response = rpc("rescan",
-        "[\"" + encode_hash(null_hash) + "\",[],[],\"\"]");
-    BOOST_REQUIRE(has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addrs_no_outpoints__finishes_immediately)
-{
-    // Minimal implementation of this deprecated method: matches real btcd's
-    // own "skip scanning, report immediate completion" branch for an empty
-    // addr/outpoint list -- the exact call btcwallet's own rpcclient makes
-    // to bootstrap its initial sync starting point (found via a real lnd
-    // integration test), distinct from rescanblocks/loadtxfilter's actual
-    // address-watching path.
-    const auto response = rpc("rescan", "[\"" + block9 + "\",[],[],\"\"]");
-    BOOST_REQUIRE(!has_error(response));
-
-    const auto finished = receive_notification();
-    BOOST_REQUIRE_EQUAL(finished.at("method").as_string(), "rescanfinished");
-
-    const auto& params = finished.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.size(), 3u);
-    BOOST_REQUIRE_EQUAL(params[0].as_string(), block9);
-    BOOST_REQUIRE_EQUAL(params[1].as_int64(), 9);
-}
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
-{
-    // A real historical address/outpoint scan (recvtx/redeemingtx
-    // notifications, chunked progress, reorg recovery) is deliberately not
-    // implemented -- no observed real caller needs it.
-    const auto response = rpc("rescan",
-        "[\"" + block9 + "\",[\"" + filter_test_address_text() + "\"],[],\"\"]");
-    BOOST_REQUIRE(has_error(response));
-}
-
-// Generic btcd-tooling compatibility (no lnd consumer)
-// ----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__returns_number)
+BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__ten_block_store__number)
 {
     const auto response = rpc("getdifficulty");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE(response.at("result").is_double());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__ten_block_store__nine)
 {
     const auto response = rpc("getinfo");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
     const auto& result = response.at("result").as_object();
     BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(result.at("testnet").as_bool(), false);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__getnettotals__returns_object)
+BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__http_post__dispatched)
+{
+    // getinfo is btcd-only, so this exercises the btcd post transport (real
+    // clients issue post-based capability checks before any ws traffic).
+    const auto response = http_rpc("getinfo");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_object().contains("blocks"));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getnettotals__untracked_counters__zero)
 {
     const auto response = rpc("getnettotals");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
     const auto& result = response.at("result").as_object();
-    BOOST_REQUIRE(result.contains("totalbytesrecv"));
-    BOOST_REQUIRE(result.contains("totalbytessent"));
+    BOOST_REQUIRE_EQUAL(result.at("totalbytesrecv").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("totalbytessent").as_int64(), 0);
     BOOST_REQUIRE(result.at("timemillis").as_int64() > 0);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__getnetworkhashps__returns_number)
+BOOST_AUTO_TEST_CASE(btcd_rpc__getnetworkhashps__ten_block_store__number)
 {
     const auto response = rpc("getnetworkhashps");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE(response.at("result").is_double());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__well_formed_hex)
+// tools
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__one_input_one_output__decodes)
 {
-    const auto txid = encode_hash(
-        test::block1.transactions_ptr()->front()->hash(false));
-    const auto response = rpc("createrawtransaction",
-        "[[{\"txid\":\"" + txid + "\",\"vout\":0}],{\"" +
-        filter_test_address_text() + "\":0.01}]");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
+    const auto request = R"([[{"txid":"%1%","vout":0}],{"%2%":0.01}])";
+    const auto response = rpc("createrawtransaction", (boost_format(request) % coinbase_txid(test::block1) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
     data_chunk data{};
-    BOOST_REQUIRE(decode_base16(data, response.at("result").as_string()));
+    BOOST_REQUIRE(decode_base16(data, as_text(response.at("result"))));
 
     const chain::transaction tx{ data, false };
     BOOST_REQUIRE(tx.is_valid());
@@ -409,101 +169,232 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__well_formed_hex)
     BOOST_REQUIRE_EQUAL(tx.outputs_ptr()->size(), 1u);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase)
+BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase__expected_txid)
 {
     const auto& coinbase = *test::block1.transactions_ptr()->front();
-    const auto hex = encode_base16(coinbase.to_data(false));
-
-    const auto response = rpc("decoderawtransaction", "[\"" + hex + "\"]");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-
-    const auto& result = response.at("result").as_object();
-    BOOST_REQUIRE_EQUAL(result.at("txid").as_string(),
-        encode_hash(coinbase.hash(false)));
+    const auto request = R"(["%1%"])";
+    const auto response = rpc("decoderawtransaction", (boost_format(request) % encode_base16(coinbase.to_data(false))).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("txid")), encode_hash(coinbase.hash(false)));
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__invalid_argument)
 {
-    const auto response = rpc("decoderawtransaction", R"(["not-hex"])");
-    BOOST_REQUIRE(has_error(response));
+    const auto result = rpc_error("decoderawtransaction", R"(["not-hex"])");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__decodescript__pubkey_script__typed_correctly)
+BOOST_AUTO_TEST_CASE(btcd_rpc__decodescript__pay_public_key__pubkey)
 {
     // block1's coinbase output is a p2pk script (early mainnet convention).
-    const auto& script =
-        test::block1.transactions_ptr()->front()->outputs_ptr()->front()->
-            script();
-    const auto hex = encode_base16(script.to_data(false));
-
-    const auto response = rpc("decodescript", "[\"" + hex + "\"]");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
+    const auto& script = test::block1.transactions_ptr()->front()->outputs_ptr()->front()->script();
+    const auto request = R"(["%1%"])";
+    const auto response = rpc("decodescript", (boost_format(request) % encode_base16(script.to_data(false))).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
-    BOOST_REQUIRE_EQUAL(result.at("type").as_string(), "pubkey");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("type")), "pubkey");
     BOOST_REQUIRE(result.contains("asm"));
     BOOST_REQUIRE(result.contains("p2sh"));
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
 {
-    const auto response = rpc("validateaddress",
-        "[\"" + filter_test_address_text() + "\"]");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
+    const auto request = R"(["%1%"])";
+    const auto response = rpc("validateaddress", (boost_format(request) % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
     BOOST_REQUIRE_EQUAL(result.at("isvalid").as_bool(), true);
-    BOOST_REQUIRE_EQUAL(result.at("address").as_string(),
-        filter_test_address_text());
+    BOOST_REQUIRE_EQUAL(as_text(result.at("address")), found_address);
     BOOST_REQUIRE_EQUAL(result.at("iswitness").as_bool(), false);
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__validateaddress__invalid_address__isvalid_false)
 {
-    const auto response = rpc("validateaddress", R"(["not-an-address"])");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE_EQUAL(
-        response.at("result").as_object().at("isvalid").as_bool(), false);
+    const auto request = R"(["%1%"])";
+    const auto response = rpc("validateaddress", (boost_format(request) % bogus_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("result").at("isvalid").as_bool(), false);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__help__returns_method_list)
-{
-    const auto response = rpc("help");
-    BOOST_REQUIRE(!has_error(response));
-    BOOST_REQUIRE(has_result(response));
-    BOOST_REQUIRE(response.at("result").as_string().find("getcurrentnet") !=
-        std::string::npos);
-}
-
-// not implemented stubs
+// subscription
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__not_implemented__error)
+BOOST_AUTO_TEST_CASE(btcd_rpc__notifyblocks__default__null_result)
 {
-    const std::vector<std::pair<std::string, std::string>> methods
-    {
-        { "stop",                      "[]" },
-        { "notifynewtransactions",     "[false]" },
-        { "stopnotifynewtransactions", "[]" },
-        { "notifyreceived",            "[[]]" },
-        { "stopnotifyreceived",        "[[]]" },
-        { "notifyspent",               "[[]]" },
-        { "stopnotifyspent",           "[[]]" }
-    };
+    const auto response = rpc("notifyblocks");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
 
-    for (const auto& method: methods)
-        BOOST_REQUIRE_MESSAGE(has_error(rpc(method.first, method.second)),
-            method.first);
+BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__subscribed__null_result)
+{
+    // Subscribe first so stop is meaningful.
+    const auto subscribed = rpc("notifyblocks");
+    REQUIRE_NO_THROW_TRUE(subscribed.at("result").is_null());
+
+    const auto response = rpc("stopnotifyblocks");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__notifynewtransactions__default__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("notifynewtransactions", "[false]"), not_implemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifynewtransactions__default__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifynewtransactions"), not_implemented.value());
+}
+
+// filters
+// ----------------------------------------------------------------------------
+// blocks 1-9 are p2pk coinbases with no inter-block spends, so they cannot
+// exercise address matching -- mock_block10 is added where a match is required.
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_address__null_result)
+{
+    const auto response = rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__invalid_address__invalid_argument)
+{
+    const auto result = rpc_error("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % bogus_address).str());
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_outpoint__null_result)
+{
+    const auto request = R"([true,[],[{"hash":"%1%","index":0}]])";
+    const auto response = rpc("loadtxfilter", (boost_format(request) % coinbase_txid(test::block1)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__malformed_outpoint__invalid_argument)
+{
+    const auto result = rpc_error("loadtxfilter", R"([true,[],[{"hash":"00"}]])");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
+{
+    // 'blockhashes' is one positional arg that is itself an array, so the
+    // wire params need double-wrapping: [[...]], not [...].
+    const auto result = rpc_error("rescanblocks", (boost_format(R"([["%1%"]])") % encode_hash(null_hash)).str());
+    BOOST_REQUIRE_EQUAL(result, not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__no_filter_match__empty_result)
+{
+    rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+
+    const auto response = rpc("rescanblocks", (boost_format(R"([["%1%"]])") % encode_hash(test::block1_hash)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__address_match__matched_transaction)
+{
+    const auto block10 = encode_hash(test::mock_block10.hash());
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+
+    const auto response = rpc("rescanblocks", (boost_format(R"([["%1%"]])") % block10).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.front().at("hash")), block10);
+    BOOST_REQUIRE_EQUAL(result.front().at("transactions").as_array().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
+{
+    rpc("notifyblocks");
+    rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    notify(node::chase::organized, { 10_u32 });
+
+    const auto blockconnected = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(blockconnected.at("method")), "blockconnected");
+
+    const auto filtered = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(filtered.at("method")), "filteredblockconnected");
+
+    const auto& params = filtered.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 3u);
+    BOOST_REQUIRE_EQUAL(params[0].as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(params[2].as_array().size(), 1u);
+}
+
+// deprecated
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__notifyreceived__default__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("notifyreceived", "[[]]"), not_implemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyreceived__default__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifyreceived", "[[]]"), not_implemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__notifyspent__default__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("notifyspent", "[[]]"), not_implemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyspent__default__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifyspent", "[[]]"), not_implemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
+{
+    const auto result = rpc_error("rescan", (boost_format(R"(["%1%",[],[],""])") % encode_hash(null_hash)).str());
+    BOOST_REQUIRE_EQUAL(result, not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finished)
+{
+    const auto response = rpc("rescan", (boost_format(R"(["%1%",[],[],""])") % block9).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+
+    const auto finished = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+
+    const auto& params = finished.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 3u);
+    BOOST_REQUIRE_EQUAL(as_text(params[0]), block9);
+    BOOST_REQUIRE_EQUAL(params[1].as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
+{
+    const auto request = R"(["%1%",["%2%"],[],""])";
+    const auto result = rpc_error("rescan", (boost_format(request) % block9 % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+}
+
+// bitcoind interface methods (bridged into the ws dispatcher)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
+{
+    const auto response = rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
 // response envelope
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__response__id_matches_request)
+BOOST_AUTO_TEST_CASE(btcd_rpc__response__sequential_requests__id_matches_request)
 {
     // request_id_ increments each call: first call uses id=0, second id=1.
     const auto r0 = rpc("session");
@@ -512,87 +403,135 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__response__id_matches_request)
     BOOST_REQUIRE_EQUAL(r1.at("id").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__error_keeps_connection_alive)
+BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__unexpected_method)
 {
-    // Unrecognized method returns a json-rpc error rather than dropping the
-    // ws connection (matches real btcd, verified by the follow-up call).
-    const auto unknown = rpc("nosuchmethod");
-    BOOST_REQUIRE(has_error(unknown));
+    BOOST_REQUIRE_EQUAL(rpc_error("nosuchmethod"), unexpected_method.value());
 
+    // The connection survives an unknown method (as btcd).
     const auto follow_up = rpc("session");
-    BOOST_REQUIRE(!has_error(follow_up));
+    REQUIRE_NO_THROW_TRUE(follow_up.at("result").is_object());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// Method-scoped credentials (channel_btcd::permitted()): a credential's
-// optional 'user:pass:method,...' suffix restricts which methods it may
-// call, enforced over ws by protocol_btcd_rpc::dispatch_websocket.
+// Filter limit (btcd.maximum_filters): loadtxfilter watches are bounded per
+// channel (DoS guard).
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(btcd_scoped_credential_tests,
-    btcd_scoped_credential_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(btcd_limited_filter_tests, btcd_limited_filter_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(btcd_scoped_credential__listed_method__permitted)
+BOOST_AUTO_TEST_CASE(btcd_limited_filter__loadtxfilter__over_limit__subscription_limit)
 {
-    const auto auth = rpc("authenticate",
-        R"([")" BTCD_TEST_USERNAME R"(", ")" BTCD_TEST_PASSWORD R"("])");
-    BOOST_REQUIRE(!has_error(auth));
-
-    // BTCD_TEST_SCOPED_METHOD ("session") is the credential's only permitted
-    // method.
-    const auto session = rpc("session");
-    BOOST_REQUIRE(!has_error(session));
-}
-
-BOOST_AUTO_TEST_CASE(btcd_scoped_credential__unlisted_method__rejected)
-{
-    const auto auth = rpc("authenticate",
-        R"([")" BTCD_TEST_USERNAME R"(", ")" BTCD_TEST_PASSWORD R"("])");
-    BOOST_REQUIRE(!has_error(auth));
-
-    // notifyblocks is a real, implemented handler, not scoped by this
-    // credential -- confirms rejection is permitted()'s doing, not the
-    // method being unimplemented.
-    const auto response = rpc("notifyblocks");
-    BOOST_REQUIRE(has_error(response));
+    // The fixture allows one watch; the second address exceeds it.
+    const auto request = R"([true,["%1%","%2%"],[]])";
+    const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address % other_address).str());
+    BOOST_REQUIRE_EQUAL(result, subscription_limit.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// authenticate (protocol_btcd_rpc::handle_authenticate): exercises the
-// credential-configured branch, not covered by btcd_rpc_tests above (whose
+// Address index requirement: address watching and rescan are index queries,
+// not_implemented when the index is disabled.
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(btcd_no_index_tests, btcd_no_index_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__address__not_implemented)
+{
+    const auto request = R"([true,["%1%"],[]])";
+    const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__outpoint_only__null_result)
+{
+    // Outpoint watching is spender lookup, not an address index query.
+    const auto request = R"([true,[],[{"hash":"%1%","index":0}]])";
+    const auto response = rpc("loadtxfilter", (boost_format(request) % coinbase_txid(test::block1)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__rescanblocks__any__not_implemented)
+{
+    const auto request = R"([["%1%"]])";
+    const auto result = rpc_error("rescanblocks", (boost_format(request) % encode_hash(test::block1_hash)).str());
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// Method-scoped credentials (channel_http::permitted()): a credential's
+// optional 'user:pass:method,...' suffix restricts which methods it may
+// call, enforced over ws by protocol_btcd::dispatch_websocket.
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(btcd_scoped_credential_tests, btcd_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_scoped_credential__session__listed_method__permitted)
+{
+    BOOST_REQUIRE(authenticate());
+
+    // BTCD_TEST_SCOPED_METHOD ("session") is the credential's only method.
+    const auto session = rpc("session");
+    REQUIRE_NO_THROW_TRUE(session.at("result").is_object());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__unauthorized)
+{
+    BOOST_REQUIRE(authenticate());
+
+    // notifyblocks is implemented, so rejection is permitted()'s doing.
+    BOOST_REQUIRE_EQUAL(rpc_error("notifyblocks"), unauthorized.value());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// authenticate (protocol_btcd::handle_authenticate): exercises the
+// credential-configured branch, not covered by btcd_tests above (whose
 // fixture leaves btcd.credential unset, so every one of those connections
 // takes the no-op path).
 // ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(btcd_auth_tests, btcd_credentialed_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(btcd_auth__correct_credentials__succeeds_then_session_works)
+BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__correct_credentials__null_result)
 {
-    const auto auth = rpc("authenticate",
-        R"([")" BTCD_TEST_USERNAME R"(", ")" BTCD_TEST_PASSWORD R"("])");
-    BOOST_REQUIRE(!has_error(auth));
+    const auto request = R"(["%1%","%2%"])";
+    const auto response = rpc("authenticate", (boost_format(request) % BTCD_TEST_USERNAME % BTCD_TEST_PASSWORD).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
 
-    // Connection survives a successful handshake; other methods now work.
+BOOST_AUTO_TEST_CASE(btcd_auth__session__authenticated__permitted)
+{
+    BOOST_REQUIRE(authenticate());
+
+    // Connection survives, and other methods now work.
     const auto session = rpc("session");
-    BOOST_REQUIRE(!has_error(session));
+    REQUIRE_NO_THROW_TRUE(session.at("result").is_object());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_auth__wrong_password__rejected)
+BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__wrong_password__unauthorized)
 {
-    const auto response = rpc("authenticate",
-        R"([")" BTCD_TEST_USERNAME R"(", "definitely-wrong"])");
-    BOOST_REQUIRE(has_error(response));
+    const auto request = R"(["%1%","definitely-wrong"])";
+    const auto result = rpc_error("authenticate", (boost_format(request) % BTCD_TEST_USERNAME).str());
+    BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_auth__other_method_before_authenticating__rejected)
+BOOST_AUTO_TEST_CASE(btcd_auth__session__not_authenticated__unauthorized)
 {
-    // 'session' instead of 'authenticate' as the first message: the
-    // handshake requires authenticate specifically when a credential is
-    // configured.
-    const auto response = rpc("session");
-    BOOST_REQUIRE(has_error(response));
+    // 'session' as the first message, with a credential configured: any
+    // method but authenticate is invalid until authorization is established.
+    BOOST_REQUIRE_EQUAL(rpc_error("session"), unauthorized.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__already_authenticated__unauthorized)
+{
+    BOOST_REQUIRE(authenticate());
+
+    // authenticate is invalid once authorization is established (as btcd).
+    const auto request = R"(["%1%","%2%"])";
+    const auto result = rpc_error("authenticate", (boost_format(request) % BTCD_TEST_USERNAME % BTCD_TEST_PASSWORD).str());
+    BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

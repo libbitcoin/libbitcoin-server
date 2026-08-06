@@ -81,12 +81,57 @@ std::filesystem::path settings::events_file() const NOEXCEPT
 
 namespace server {
 
+using namespace system::wallet;
+
+// witness_address defines mainnet/testnet prefixes only (bip173).
+constexpr auto regtest_witness_prefix = "bcrt";
+
 // settings::settings
-settings::settings(system::chain::selection, const embedded_pages& native,
-    const embedded_pages& admin) NOEXCEPT
-  : native("native", native),
-    admin("admin", admin)    
+settings::settings(system::chain::selection context,
+    const embedded_pages& native, const embedded_pages& admin) NOEXCEPT
+  : wallet(context),
+    native("native", native),
+    admin("admin", admin)
 {
+}
+
+// settings::wallet_settings
+settings::wallet_settings::wallet_settings() NOEXCEPT
+  : wallet_settings(system::chain::selection::mainnet)
+{
+}
+
+settings::wallet_settings::wallet_settings(
+    system::chain::selection context) NOEXCEPT
+  : p2kh_prefix(payment_address::mainnet_p2kh),
+    p2sh_prefix(payment_address::mainnet_p2sh),
+    witness_prefix(witness_address::mainnet)
+{
+    // Testnet and regtest share base58 versions, regtest differs in bech32.
+    switch (context)
+    {
+        case system::chain::selection::testnet3:
+        case system::chain::selection::testnet4:
+        {
+            p2kh_prefix = payment_address::testnet_p2kh;
+            p2sh_prefix = payment_address::testnet_p2sh;
+            witness_prefix = witness_address::testnet;
+            break;
+        }
+        case system::chain::selection::regtest:
+        {
+            p2kh_prefix = payment_address::testnet_p2kh;
+            p2sh_prefix = payment_address::testnet_p2sh;
+            witness_prefix = regtest_witness_prefix;
+            break;
+        }
+        case system::chain::selection::mainnet:
+        case system::chain::selection::none:
+        default:
+        {
+            break;
+        }
+    }
 }
 
 // settings::embedded_pages

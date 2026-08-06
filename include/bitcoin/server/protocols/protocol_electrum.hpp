@@ -44,12 +44,8 @@ public:
       : protocol_rpc<channel_electrum>(session, channel, options),
         options_(options),
         turbo_(session->database_settings().turbo),
-        p2kh_(session->system_settings().forks.difficult ?
-            system::wallet::payment_address::mainnet_p2kh :
-            system::wallet::payment_address::testnet_p2kh),
-        p2sh_(session->system_settings().forks.difficult ?
-            system::wallet::payment_address::mainnet_p2sh :
-            system::wallet::payment_address::testnet_p2sh),
+        p2kh_(session->server_settings().wallet.p2kh_prefix),
+        p2sh_(session->server_settings().wallet.p2sh_prefix),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         notification_strand_(channel_->service().get_executor()),
         network::tracker<protocol_electrum>(session->log)

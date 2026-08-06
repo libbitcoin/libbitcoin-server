@@ -87,6 +87,9 @@
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -108,13 +111,13 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc_json.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_rpc.cpp">
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_rpc_filter.cpp">
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_filter.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_rpc_utility.cpp">
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_utility.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum.cpp">
@@ -200,9 +203,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_btcd.hpp">
-      <Filter>include\bitcoin\server\channels</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
@@ -269,6 +269,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
@@ -293,7 +296,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rpc.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_rpc.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp">

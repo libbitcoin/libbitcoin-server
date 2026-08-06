@@ -151,6 +151,14 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
+    // ws frames carry no headers, so ws authorization is enforced here, not
+    // by the channel (established by basic auth on the upgrade request).
+    if (!authorized())
+    {
+        stop(network::error::unauthorized);
+        return;
+    }
+
     // Native websocket interface supports only string requests.
     if (!request.body().contains<http::string_value>())
     {

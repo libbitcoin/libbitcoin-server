@@ -41,6 +41,13 @@ struct bitcoind_setup_fixture
     // the parsed json response, or {"dropped":true} if the channel dropped.
     boost::json::value rpc_body(std::string_view body);
 
+    // Upgrade the connection to websocket (no further http requests).
+    network::boost_code ws_upgrade();
+
+    // As rpc(), over the upgraded websocket connection.
+    boost::json::value ws_rpc(std::string_view method,
+        std::string_view params="[]");
+
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);
     boost::json::value rest_json(std::string_view target);
@@ -59,10 +66,14 @@ private:
     static string_request create_post(std::string_view target,
         std::string_view body);
 
+    using tcp_stream = boost::beast::tcp_stream;
+    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
+
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
-    boost::beast::tcp_stream socket_{ io.get_executor() };
+    tcp_stream socket_{ io.get_executor() };
+    std::optional<websocket_stream> websocket_{};
 };
 
 struct bitcoind_ten_block_setup_fixture

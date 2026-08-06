@@ -157,45 +157,62 @@ void protocol_bitcoind_rpc::handle_receive_post(const code& ec,
         return;
     }
 
-    // Dispatch the request to subscribers, falling back to a derived
-    // class's own extension dispatcher (e.g. protocol_btcd_rpc's btcd-only
-    // methods) if this dispatcher doesn't recognize the method -- the post-
-    // side mirror of dispatch_websocket's ws-side fallback to dispatch_rpc.
-    auto code = rpc_dispatcher_.notify(message);
-    if (code == network::error::unexpected_method)
-        code = dispatch_extension(message);
-
+    // Dispatch the request to the interface dispatcher.
+    const auto code = rpc_dispatcher_.notify(message);
     if (!code)
         return;
 
-    // Unknown to every dispatcher tried: reply with a json-rpc error and
-    // keep the connection alive for a subsequent request on the same
-    // keep-alive connection (matches dispatch_websocket's handling of the
-    // same case, and ordinary http semantics -- an error response body is
-    // not itself a reason to drop the TCP connection).
+    // Unknown method: reply with an error and keep the connection alive.
     if (code == network::error::unexpected_method)
         send_error(code);
     else
         stop(code);
 }
 
-// Default: no extension dispatcher (see protocol_btcd_rpc for an override).
-code protocol_bitcoind_rpc::dispatch_extension(const request_t&) NOEXCEPT
-{
-    return network::error::unexpected_method;
-}
-
-// Dispatch a chain-rpc message with no post-http context (websocket). Mirrors
-// handle_receive_post's id/version caching (set_rpc_request) and dispatcher
-// notify, without the post-specific host/origin/body checks -- those are
-// meaningless for a ws frame (channel_btcd::permitted() and the ws upgrade
-// itself already gate access) and are handled by the caller.
-code protocol_bitcoind_rpc::dispatch_rpc(const request_t& message) NOEXCEPT
+// The websocket transport of the interface: parse the ws text frame as a
+// json-rpc request and dispatch as an http post would.
+void protocol_bitcoind_rpc::dispatch_websocket(
+    const network::http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    id_ = message.id;
-    version_ = message.jsonrpc;
-    return rpc_dispatcher_.notify(message);
+
+    // ws frames carry no headers, so ws authorization is enforced here, not
+    // by the channel (established by basic auth on the upgrade request).
+    if (!authorized())
+    {
+        stop(network::error::unauthorized);
+        return;
+    }
+
+    // Websocket frames are parsed as json-rpc requests (channel body type).
+    if (!request.body().contains<rpc::request>())
+    {
+        stop(error::invalid_argument);
+        return;
+    }
+
+    const auto& message = request.body().get<rpc::request>().message;
+
+    // Cache request context for response building (version + id).
+    set_rpc_request(message);
+
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(message.method))
+    {
+        send_error(error::unauthorized);
+        return;
+    }
+
+    // Dispatch the request to the interface dispatcher.
+    const auto code = rpc_dispatcher_.notify(message);
+    if (!code)
+        return;
+
+    // Unknown method: reply with an error and keep the connection alive.
+    if (code == network::error::unexpected_method)
+        send_error(code);
+    else
+        stop(code);
 }
 
 // Handlers.
@@ -295,18 +312,36 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
 
     // TODO: make utility method and move explanation there.
     // verificationprogress is approximated as confirmed/candidate height, the
-    // best available estimate of the chain tip during sync (1.0 once current).
+    // best available estimate of the chain top during sync (1.0 once current).
     const auto progress = is_zero(headers) ? 1.0 :
-        std::min(1.0, static_cast<double>(blocks) /
-            static_cast<double>(headers));
+        std::min(1.0, to_floating(blocks) / to_floating(headers));
+
+    // Softfork activation is configured, not assumable. Taproot is reported
+    // when configured active, with its configured activation height -- lnd's
+    // backendSupportsTaproot requires the key's presence (not its field
+    // values) before treating any btcd/bitcoind backend as usable.
+    const auto& settings = system_settings();
+    object_t soft_forks{};
+    if (settings.forks.bip341 && settings.forks.bip342)
+    {
+        soft_forks.emplace("taproot", object_t
+        {
+            { "status", std::string{ "active" } },
+            { "bit", 2 },
+            { "startTime", -1 },
+            { "timeout", -1 },
+            { "since", settings.bip9_bit2_active_checkpoint.height() },
+            { "min_activation_height", 0 }
+        });
+    }
 
     // TODO: blocks/headers is a misnomer (off-by-one), intended?
     using namespace chain;
     send_result(object_t
     {
         { "chain", chain_name(query) },
-        { "blocks", possible_wide_cast<uint64_t>(blocks) },
-        { "headers", possible_wide_cast<uint64_t>(headers) },
+        { "blocks", blocks },
+        { "headers", headers },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(header->bits())) },
         { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
@@ -317,33 +352,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
         { "initialblockdownload", !is_current_chain(true) },
         { "pruned", network_settings().pruned_node() },
         { "warnings", std::string{} },
-
-        // Taproot is a permanent, long-since-locked-in consensus rule (no
-        // live BIP9 signaling to track), so this is reported unconditionally
-        // rather than computed -- present specifically because real
-        // clients check for it: lnd's chainreg.backendSupportsTaproot
-        // (chainreg/taproot_check.go) requires a "taproot" entry here
-        // (mainnet activation height 709632, BIP9 bit 2) before it will
-        // treat *any* btcd/bitcoind backend as usable, checking only for
-        // this key's presence, not its field values. Confirmed via lnd's
-        // own source that "bitcoind versions before 0.19 and also btcd use
-        // the SoftForks fields" -- this is the real btcd-compatible path,
-        // not a workaround; getdeploymentinfo (lnd's fallback if this is
-        // absent) has no equivalent in real btcd at all.
-        { "bip9_softforks", object_t
-            {
-                { "taproot", object_t
-                    {
-                        { "status", std::string{ "active" } },
-                        { "bit", 2 },
-                        { "startTime", -1 },
-                        { "timeout", -1 },
-                        { "since", 709632 },
-                        { "min_activation_height", 0 }
-                    }
-                }
-            }
-        }
+        { "bip9_softforks", std::move(soft_forks) }
     }, 512);
     return true;
 }
@@ -355,7 +364,7 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
         return false;
 
     const auto top = archive().get_top_confirmed();
-    send_result(possible_wide_cast<uint64_t>(top), 20);
+    send_result(top, 20);
     return true;
 }
 
@@ -530,7 +539,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
 
     size_t height{};
     const auto strong = query.get_tx_height(height, tx_link);
-    const auto depth = strong ? add1(floored_subtract(top, height)) : 0_size;
+    const auto depth = strong ? add1(floored_subtract(top, height)) : zero;
     const auto coins = to_floating(output->value()) /
         chain::satoshi_per_bitcoin;
 
@@ -600,22 +609,23 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    // TODO: get most of these values from either config or network/node props.
+    // bitcoind's numeric version encoding (10'000 major, 100 minor, patch).
+    const auto& settings = server_settings().bitcoind;
+    const auto& segments = settings.version.segments();
+    const auto version = 10'000 * segments[0] + 100 * segments[1] + segments[2];
 
-    // libbitcoin-server is a node, not a wallet/peer-introspection service;
-    // peer-dependent fields (connections, addresses) are reported as empty.
     send_result(object_t
     {
-        { "version", 0 },
-        { "subversion", std::string{ "/libbitcoin:server/" } },
-        { "protocolversion", 70016 },
+        { "version", version },
+        { "subversion", settings.subversion },
+        { "protocolversion", network_settings().protocol_maximum },
         { "localrelay", true },
         { "timeoffset", 0 },
         { "connections", 0 },
         { "networkactive", true },
         { "networks", array_t{} },
-        { "relayfee", 0.00001 },
-        { "incrementalfee", 0.00001 },
+        { "relayfee", node_settings().minimum_fee_rate },
+        { "incrementalfee", node_settings().minimum_bump_rate },
         { "localaddresses", array_t{} },
         { "warnings", std::string{} }
     }, 256);
@@ -738,6 +748,22 @@ void protocol_bitcoind_rpc::send_error(const code& ec,
     send_error(ec, {}, size_hint);
 }
 
+void protocol_bitcoind_rpc::send_error(const code& ec, size_t size_hint,
+    const code& close_reason) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    send_rpc(
+    {
+        .jsonrpc = version_,
+        .id = id_,
+        .error = result_t
+        {
+            .code = ec.value(),
+            .message = ec.message()
+        }
+    }, size_hint, close_reason);
+}
+
 void protocol_bitcoind_rpc::send_error(const code& ec,
     value_option&& error, size_t size_hint) NOEXCEPT
 {
@@ -777,15 +803,16 @@ void protocol_bitcoind_rpc::send_result(value_option&& result,
 void protocol_bitcoind_rpc::send_rpc(response_t&& model,
     size_t size_hint) NOEXCEPT
 {
+    send_rpc(std::move(model), size_hint, error::success);
+}
+
+void protocol_bitcoind_rpc::send_rpc(response_t&& model, size_t size_hint,
+    const code& close_reason) NOEXCEPT
+{
     BC_ASSERT(stranded());
     using namespace http;
     static const auto json = from_media_type(media_type::application_json);
 
-    // Websocket frames carry no cached post request (dispatch_rpc does not
-    // set one, unlike handle_receive_post) and have no per-message headers
-    // to echo (add_common_headers/add_access_control_headers is a post-only
-    // concept) -- send a minimal response, matching protocol_btcd_rpc's own
-    // ws senders.
     if (websocket())
     {
         id_.reset();
@@ -797,7 +824,7 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model,
             { .size_hint = size_hint }, std::move(model),
         };
         message.prepare_payload();
-        SEND(std::move(message), handle_complete, _1, error::success);
+        SEND(std::move(message), handle_complete, _1, close_reason);
         return;
     }
 
@@ -811,10 +838,10 @@ void protocol_bitcoind_rpc::send_rpc(response_t&& model,
         { .size_hint = size_hint }, std::move(model),
     };
     message.prepare_payload();
-    SEND(std::move(message), handle_complete, _1, error::success);
+    SEND(std::move(message), handle_complete, _1, close_reason);
 }
 
-// private
+// protected
 void protocol_bitcoind_rpc::set_rpc_request(version version,
     const id_option& id, const http::request_cptr& request) NOEXCEPT
 {
@@ -822,6 +849,14 @@ void protocol_bitcoind_rpc::set_rpc_request(version version,
     id_ = id;
     version_ = version;
     set_request(request);
+}
+
+// protected
+void protocol_bitcoind_rpc::set_rpc_request(const request_t& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    id_ = message.id;
+    version_ = message.jsonrpc;
 }
 
 // private

@@ -126,17 +126,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__present)
 {
-    // lnd's chainreg.backendSupportsTaproot (chainreg/taproot_check.go)
-    // requires this exact key to treat any btcd/bitcoind backend as usable
-    // -- it checks only for the "taproot" key's presence, not its field
-    // values (verified against lnd's own source, real lnd integration
-    // test, 2026-07-30). Real btcd's own getblockchaininfo response
-    // includes this too (per lnd's own source comment), so this is shared,
-    // correct behavior for both endpoints, not a btcd-only workaround.
+    // lnd's backendSupportsTaproot requires this key's presence to treat
+    // any btcd/bitcoind backend as usable. The activation height is the
+    // configured (mainnet) bip9 bit2 checkpoint.
     const auto response = rpc("getblockchaininfo");
     const auto& result = response.at("result");
     BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
     BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
+    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unspent_coinbase__output)
@@ -202,7 +199,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BOOST_REQUIRE(result.at("networks").is_array());
 }
 
-// not implemented (structured not_implemented error)
+// not implemented
 // ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
@@ -309,9 +306,67 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+// websocket
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__websocket__nine)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getbestblockhash__websocket__block9)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getbestblockhash");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__websocket__block5)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockhash", "[5]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block5);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__websocket__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockchaininfo");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chain")), "main");
+    BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__unknown_method__websocket__error_keeps_connection)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto unknown = ws_rpc("nosuchmethod");
+    REQUIRE_NO_THROW_TRUE(unknown.at("error").is_object());
+
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
-// segwit (witness store: genesis + two blocks carrying witness transactions)
+// witness
 // ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_witness_tests, bitcoind_witness_setup_fixture)

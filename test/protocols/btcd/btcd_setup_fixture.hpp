@@ -23,33 +23,38 @@
 #include "../../mocks/blocks.hpp"
 
 #define BTCD_ENDPOINT "127.0.0.1:65004"
+#define BTCD_TEST_USERNAME "user"
+#define BTCD_TEST_PASSWORD "pass"
+#define BTCD_TEST_SCOPED_METHOD "session"
 
 struct btcd_setup_fixture
 {
     using initializer = std::function<bool(test::query_t&)>;
+    using configurator = std::function<void(configuration&)>;
 
     DELETE_COPY_MOVE(btcd_setup_fixture);
 
-    // username/password configure a single btcd.credential entry (no auth
-    // required if username is empty), matching the one-tier credential model.
-    // methods, if non-empty, scopes that credential to a comma-separated
-    // method list (config::credential's own "user:pass:method,..." syntax);
-    // empty (the default) leaves the credential unscoped (all methods).
     explicit btcd_setup_fixture(const initializer& setup,
-        std::string_view username={}, std::string_view password={},
-        std::string_view methods={});
+        bool address_index=true, const configurator& configure={});
     ~btcd_setup_fixture();
 
     // JSON-RPC 1.0 over websocket. params must be a json array (json-rpc-v1
-    // does not support 'null' or omitted params; use "[]" for no arguments).
+    // does not support 'null' or omitted params, use "[]" for no arguments).
     // Returns the parsed json-rpc response object (result/error).
     boost::json::value rpc(std::string_view method,
         std::string_view params = "[]");
 
+    // As rpc(), returning the response's error code (-1 if not an error).
+    int64_t rpc_error(std::string_view method,
+        std::string_view params = "[]");
+
+    // Authorize the connection (btcd's in-band credential method), for tests
+    // that require it as a precondition -- mirrors electrum's handshake().
+    bool authenticate(const std::string& username=BTCD_TEST_USERNAME,
+        const std::string& password=BTCD_TEST_PASSWORD);
+
     // JSON-RPC 2.0 over plain HTTP POST to "/" (a separate connection from
-    // the ws one rpc() uses) -- same transport the inherited chain methods
-    // use, and the one a real btcd/lnd client's capability-check calls
-    // (e.g. getinfo) go over before any ws-only subscription traffic.
+    // the ws one rpc() uses).
     boost::json::value http_rpc(std::string_view method,
         std::string_view params = "[]");
 
@@ -77,8 +82,8 @@ private:
     tcp_stream socket_{ io_.get_executor() };
     websocket_stream websocket_{ socket_ };
     tcp_stream http_socket_{ io_.get_executor() };
-    int request_id_{};
     int http_request_id_{};
+    int request_id_{};
 };
 
 struct btcd_ten_block_setup_fixture
@@ -93,12 +98,9 @@ struct btcd_ten_block_setup_fixture
     }
 };
 
-#define BTCD_TEST_USERNAME "user"
-#define BTCD_TEST_PASSWORD "pass"
-
-// Configured with a credential but does not authenticate -- for tests that
-// exercise the in-band 'authenticate' call itself (success, wrong-password
-// rejection, calling another method before authenticating).
+// Configured with an unscoped credential -- for tests that exercise the
+// in-band 'authenticate' call itself (success, wrong-password rejection,
+// calling another method before authenticating).
 struct btcd_credentialed_setup_fixture
   : btcd_setup_fixture
 {
@@ -106,15 +108,19 @@ struct btcd_credentialed_setup_fixture
       : btcd_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
-        }, BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD)
+        }, true, [](configuration& config)
+        {
+            config.server.btcd.credentials =
+            {
+                { BTCD_TEST_USERNAME ":" BTCD_TEST_PASSWORD }
+            };
+        })
     {
     }
 };
 
-#define BTCD_TEST_SCOPED_METHOD "session"
-
 // Configured with a credential scoped to a single method -- for tests that
-// verify channel_btcd::permitted() enforces per-method credential scoping
+// verify channel_http::permitted() enforces per-method credential scoping
 // over ws once authenticated.
 struct btcd_scoped_credential_setup_fixture
   : btcd_setup_fixture
@@ -123,7 +129,45 @@ struct btcd_scoped_credential_setup_fixture
       : btcd_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
-        }, BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD, BTCD_TEST_SCOPED_METHOD)
+        }, true, [](configuration& config)
+        {
+            config.server.btcd.credentials =
+            {
+                { BTCD_TEST_USERNAME ":" BTCD_TEST_PASSWORD ":"
+                    BTCD_TEST_SCOPED_METHOD }
+            };
+        })
+    {
+    }
+};
+
+// Configured with a single-watch filter limit -- for tests that verify
+// loadtxfilter enforces maximum_filters.
+struct btcd_limited_filter_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_limited_filter_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.btcd.maximum_filters = 1;
+        })
+    {
+    }
+};
+
+// Configured without the address index -- for tests that verify address
+// watching and rescan report not_implemented.
+struct btcd_no_index_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_no_index_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, false)
     {
     }
 };

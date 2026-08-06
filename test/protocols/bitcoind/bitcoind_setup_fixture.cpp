@@ -78,7 +78,26 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup)
 
 bitcoind_setup_fixture::~bitcoind_setup_fixture()
 {
-    socket_.close();
+    if (websocket_.has_value())
+    {
+        network::boost_code ec{};
+        websocket_.value().close(websocket::close_code::normal, ec);
+
+        // Expected and harmless during fixture teardown:
+        // beast::websocket::error::closed : normal (graceful handshake).
+        // asio::error::operation_aborted  : hard (invalid request test).
+        if (ec &&
+            ec != boost::beast::websocket::error::closed &&
+            ec != boost::asio::error::operation_aborted)
+        {
+            BOOST_WARN_MESSAGE(false, ec.message());
+        }
+    }
+    else
+    {
+        socket_.close();
+    }
+
     server_.close();
     const auto ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
@@ -137,6 +156,35 @@ boost::json::value bitcoind_setup_fixture::rpc_body(std::string_view body)
     http::read(socket_, buffer, response, ec);
     return ec ? boost::json::parse(R"({"dropped":true})") :
         test::parse_json(response.body());
+}
+
+network::boost_code bitcoind_setup_fixture::ws_upgrade()
+{
+    network::boost_code ec{};
+    BOOST_CHECK(!websocket_.has_value());
+
+    websocket_.emplace(socket_);
+    websocket_.value().text(true);
+    websocket_.value().handshake("localhost", "/", ec);
+    return ec;
+}
+
+boost::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
+    std::string_view params)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
+        << R"(","params":)" << params << "}";
+
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+    websocket_.value().write(net::buffer(body.str()), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    flat_buffer buffer{};
+    websocket_.value().read(buffer, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    return test::parse_json(buffers_to_string(buffer.data()));
 }
 
 bitcoind_setup_fixture::status

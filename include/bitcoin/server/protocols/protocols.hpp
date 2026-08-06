@@ -22,7 +22,7 @@
 #include <bitcoin/server/protocols/protocol.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_rest.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
-#include <bitcoin/server/protocols/protocol_btcd_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
 #include <bitcoin/server/protocols/protocol_native.hpp>
@@ -50,7 +50,7 @@ network::protocol
 │   └── [server::protocol_rpc<server::channel_electrum>]
 ├── protocol_http
 │   ├── [server::protocol_bitcoind_rpc]
-│   │   └── [server::protocol_btcd_rpc]
+│   │   └── [server::protocol_btcd]
 │   └── [server::protocol_http]
 └── protocol_peer
     ├── [node::protocol_peer]
@@ -96,6 +96,6 @@ server::protocol → node::protocol
     │   └── protocol_native
     └── protocol_bitcoind_rpc
         ├── protocol_bitcoind_rest
-        └── protocol_btcd_rpc
+        └── protocol_btcd
 
 */
