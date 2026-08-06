@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/parsers/btcd_filter.hpp>
 
+#include <variant>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -25,20 +26,23 @@ namespace server {
 namespace btcd {
 
 using namespace system;
+using namespace system::chain;
 using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-code output_script(chain::script& out, const std::string& text, uint8_t p2kh,
+code output_script(script& out, const std::string& text, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness) NOEXCEPT
 {
-    if (const wallet::payment_address payment{ text }; payment)
+    using namespace wallet;
+
+    if (const payment_address payment{ text }; payment)
     {
         out = payment.output_script(p2kh, p2sh);
         return error::success;
     }
 
-    if (const wallet::witness_address payment{ text };
+    if (const witness_address payment{ text };
         payment && payment.prefix() == witness)
     {
         out = payment.script();
@@ -54,14 +58,14 @@ code filter_keys(hashes& out, const value_t& addresses, uint8_t p2kh,
     if (!std::holds_alternative<array_t>(addresses.value()))
         return error::invalid_argument;
 
+    script script{};
     for (const auto& item: std::get<array_t>(addresses.value()))
     {
         if (!std::holds_alternative<string_t>(item.value()))
             return error::invalid_argument;
 
-        chain::script script{};
-        if (const auto ec = output_script(script,
-            std::get<string_t>(item.value()), p2kh, p2sh, witness))
+        const auto value = std::get<string_t>(item.value());
+        if (const auto ec = output_script(script, value, p2kh, p2sh, witness))
             return ec;
 
         out.push_back(script.hash());
@@ -70,11 +74,13 @@ code filter_keys(hashes& out, const value_t& addresses, uint8_t p2kh,
     return error::success;
 }
 
-code filter_points(chain::points& out, const value_t& outpoints) NOEXCEPT
+code filter_points(points& out, const value_t& outpoints) NOEXCEPT
 {
     if (!std::holds_alternative<array_t>(outpoints.value()))
         return error::invalid_argument;
 
+    uint32_t index{};
+    hash_digest hash{};
     for (const auto& item: std::get<array_t>(outpoints.value()))
     {
         if (!std::holds_alternative<object_t>(item.value()))
@@ -88,8 +94,6 @@ code filter_points(chain::points& out, const value_t& outpoints) NOEXCEPT
             !std::holds_alternative<number_t>(index_it->second.value()))
             return error::invalid_argument;
 
-        uint32_t index{};
-        hash_digest hash{};
         if (!decode_hash(hash, std::get<string_t>(hash_it->second.value())) ||
             !to_integer(index, std::get<number_t>(index_it->second.value())))
             return error::invalid_argument;

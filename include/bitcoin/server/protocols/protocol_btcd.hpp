@@ -101,7 +101,7 @@ protected:
         btcd_interface::validate_address,
         const std::string& address) NOEXCEPT;
 
-    /// Handlers (subscription, mempool pending v5).
+    /// Handlers (subscription).
     bool handle_notify_blocks(const code& ec,
         btcd_interface::notify_blocks) NOEXCEPT;
     bool handle_stop_notify_blocks(const code& ec,
@@ -111,7 +111,7 @@ protected:
     bool handle_stop_notify_new_transactions(const code& ec,
         btcd_interface::stop_notify_new_transactions) NOEXCEPT;
 
-    /// Handlers (filters, address watch requires the address index).
+    /// Handlers (filters).
     bool handle_load_tx_filter(const code& ec,
         btcd_interface::load_tx_filter, bool reload,
         const network::rpc::value_t& addresses,

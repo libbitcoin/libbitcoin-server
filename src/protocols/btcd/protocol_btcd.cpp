@@ -33,6 +33,7 @@ using namespace system;
 using namespace network;
 using namespace network::rpc;
 using namespace std::placeholders;
+constexpr auto relaxed = std::memory_order_relaxed;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -214,20 +215,20 @@ bool protocol_btcd::handle_authenticate(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Reachable only when not authorized (see dispatch_websocket). The
-    // channel latches the digest only if it matches a configured credential.
+    // Reachable only when not authorized (see dispatch_websocket).
     set_authorized(network::config::credential::to_digest(username, password));
+
     if (authorized())
     {
         send_result({}, 4);
         return true;
     }
 
-    // A failed authenticate ends the session (as btcd), once the error has
-    // reached the client.
     const code unauthorized{ network::error::unauthorized };
-    send_error(unauthorized, two * unauthorized.message().size(),
-        unauthorized);
+    const auto size = two * unauthorized.message().size();
+
+    // Failed authentication ends session once error has reached caller.
+    send_error(unauthorized, size, unauthorized);
     return true;
 }
 
@@ -253,8 +254,6 @@ bool protocol_btcd::handle_session(const code& ec,
     if (stopped(ec))
         return false;
 
-    // The channel identifier is unique per connection for the process
-    // lifetime, satisfying btcwallet's reconnect-detection use of session ids.
     object_t result{};
     result.emplace("id", identifier());
     send_result(std::move(result), 32);
@@ -264,21 +263,15 @@ bool protocol_btcd::handle_session(const code& ec,
 bool protocol_btcd::handle_stop(const code& ec,
     btcd_interface::stop) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec))
+        return false;
 
-    // No secure remote-shutdown path exists; always rejected regardless of
-    // configuration or auth state.
+    // The server/node cannot stop itself.
     send_error(error::not_implemented);
     return true;
 }
 
-// Handlers (getters): see protocol_btcd_utility.cpp.
-// ----------------------------------------------------------------------------
-
-// Handlers (tools): see protocol_btcd_utility.cpp.
-// ----------------------------------------------------------------------------
-
-// Handlers (subscription, mempool not_implemented pending v5 mempool).
+// Handlers (subscription).
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd::handle_notify_blocks(const code& ec,
@@ -287,7 +280,7 @@ bool protocol_btcd::handle_notify_blocks(const code& ec,
     if (stopped(ec))
         return false;
 
-    subscribed_blocks_.store(true, std::memory_order_relaxed);
+    subscribed_blocks_.store(true, relaxed);
     send_result({}, 4);
     return true;
 }
@@ -298,7 +291,7 @@ bool protocol_btcd::handle_stop_notify_blocks(const code& ec,
     if (stopped(ec))
         return false;
 
-    subscribed_blocks_.store(false, std::memory_order_relaxed);
+    subscribed_blocks_.store(false, relaxed);
     send_result({}, 4);
     return true;
 }
@@ -319,10 +312,7 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     return true;
 }
 
-// Handlers (filters): see protocol_btcd_filter.cpp.
-// ----------------------------------------------------------------------------
-
-// Handlers (deprecated, permanently not_implemented).
+// Handlers (deprecated, not_implemented).
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd::handle_notify_received(const code& ec,
@@ -364,8 +354,8 @@ bool protocol_btcd::handle_rescan(const code& ec,
 {
     if (stopped(ec)) return false;
 
-    // Implemented only for the empty addrs/outpoints case (as btcd), the
-    // call btcwallet makes to bootstrap its sync starting point.
+    // Implemented only for the empty addresses/outpoints case (as btcd).
+    // This is the call btcwallet makes to bootstrap its sync starting point.
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
@@ -391,8 +381,6 @@ bool protocol_btcd::handle_rescan(const code& ec,
         return true;
     }
 
-    // Nothing to watch: report the current chain top as already-finished,
-    // ignoring beginblock (as btcd).
     const auto top = query.get_top_confirmed();
     const auto header = query.get_header(query.to_confirmed(top));
     if (!header)
@@ -401,9 +389,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
         return true;
     }
 
-    // Reply to the rescan call itself before the unprompted notification.
     send_result({}, 4);
-
     send_notification("rescanfinished", array_t
     {
         encode_hash(query.get_top_confirmed_hash()),
@@ -426,23 +412,27 @@ bool protocol_btcd::handle_chase(const code&, node::chase event_,
     switch (event_)
     {
         case node::chase::organized:
-            if (subscribed_blocks_.load(std::memory_order_relaxed))
+        {
+            if (subscribed_blocks_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST_NOTIFY(do_connected, std::get<node::header_t>(value));
             }
             break;
-
+        }
         case node::chase::reorganized:
-            if (subscribed_blocks_.load(std::memory_order_relaxed))
+        {
+            if (subscribed_blocks_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST_NOTIFY(do_disconnected, std::get<node::header_t>(value));
             }
             break;
-
+        }
         default:
+        {
             break;
+        }
     }
 
     return !stopped();
