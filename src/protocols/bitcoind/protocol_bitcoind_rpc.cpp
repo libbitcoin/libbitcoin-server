@@ -539,7 +539,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
 
     size_t height{};
     const auto strong = query.get_tx_height(height, tx_link);
-    const auto depth = strong ? add1(floored_subtract(top, height)) : 0_size;
+    const auto depth = strong ? add1(floored_subtract(top, height)) : zero;
     const auto coins = to_floating(output->value()) /
         chain::satoshi_per_bitcoin;
 
