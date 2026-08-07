@@ -37,6 +37,9 @@ class BCS_API protocol_btcd
     protected network::tracker<protocol_btcd>
 {
 public:
+    // Replace base class channel_t (authenticate authorizes in-band).
+    using channel_t = channel_http<network::rpc::request, true>;
+
     typedef std::shared_ptr<protocol_btcd> ptr;
     using btcd_interface = interface::btcd;
     using btcd_dispatcher = network::rpc::dispatcher<btcd_interface>;
