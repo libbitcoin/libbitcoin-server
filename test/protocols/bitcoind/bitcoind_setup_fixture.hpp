@@ -23,14 +23,18 @@
 #include "../../mocks/blocks.hpp"
 
 #define BITCOIND_ENDPOINT "127.0.0.1:65003"
+#define BITCOIND_TEST_USERNAME "user"
+#define BITCOIND_TEST_PASSWORD "pass"
 
 struct bitcoind_setup_fixture
 {
     using status = boost::beast::http::status;
     using initializer = std::function<bool(test::query_t&)>;
+    using configurator = std::function<void(configuration&)>;
 
     DELETE_COPY_MOVE(bitcoind_setup_fixture);
-    explicit bitcoind_setup_fixture(const initializer& setup);
+    explicit bitcoind_setup_fixture(const initializer& setup,
+        const configurator& configure={});
     ~bitcoind_setup_fixture();
 
     // JSON-RPC 2.0 over HTTP POST to "/". params is a raw json value (array or
@@ -44,9 +48,16 @@ struct bitcoind_setup_fixture
     // Upgrade the connection to websocket (no further http requests).
     network::boost_code ws_upgrade();
 
+    // As ws_upgrade(), with basic authorization on the upgrade request.
+    network::boost_code ws_upgrade(const std::string& username,
+        const std::string& password);
+
     // As rpc(), over the upgraded websocket connection.
     boost::json::value ws_rpc(std::string_view method,
         std::string_view params="[]");
+
+    // As ws_rpc(), but true if the channel dropped instead of responding.
+    bool ws_dropped(std::string_view method, std::string_view params="[]");
 
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);
@@ -83,6 +94,26 @@ struct bitcoind_ten_block_setup_fixture
       : bitcoind_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
+        })
+    {
+    }
+};
+
+// Configured with a credential -- for tests that verify authorization is
+// established by the upgrade request, as ws frames carry no headers.
+struct bitcoind_credentialed_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_credentialed_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind.credentials =
+            {
+                { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD }
+            };
         })
     {
     }

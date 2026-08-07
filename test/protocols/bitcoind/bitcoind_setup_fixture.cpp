@@ -24,7 +24,8 @@
 
 using namespace boost::beast;
 
-bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup)
+bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
+    const configurator& configure)
   : config_
     {
         system::chain::selection::mainnet,
@@ -57,6 +58,9 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup)
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
+
+    if (configure)
+        configure(config_);
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
@@ -169,6 +173,27 @@ network::boost_code bitcoind_setup_fixture::ws_upgrade()
     return ec;
 }
 
+network::boost_code bitcoind_setup_fixture::ws_upgrade(
+    const std::string& username, const std::string& password)
+{
+    network::boost_code ec{};
+    BOOST_CHECK(!websocket_.has_value());
+
+    const std::string plain{ username + ":" + password };
+    const auto credential = "Basic " + system::encode_base64(plain);
+
+    websocket_.emplace(socket_);
+    websocket_.value().text(true);
+    websocket_.value().set_option(websocket::stream_base::decorator(
+        [credential](websocket::request_type& request) NOEXCEPT
+        {
+            request.set(http::field::authorization, credential);
+        }));
+
+    websocket_.value().handshake("localhost", "/", ec);
+    return ec;
+}
+
 boost::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
     std::string_view params)
 {
@@ -185,6 +210,23 @@ boost::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
     websocket_.value().read(buffer, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     return test::parse_json(buffers_to_string(buffer.data()));
+}
+
+bool bitcoind_setup_fixture::ws_dropped(std::string_view method,
+    std::string_view params)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
+        << R"(","params":)" << params << "}";
+
+    // A dropped channel fails the write, the read, or both.
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+    websocket_.value().write(net::buffer(body.str()), ec);
+
+    flat_buffer buffer{};
+    websocket_.value().read(buffer, ec);
+    return !!ec;
 }
 
 bitcoind_setup_fixture::status

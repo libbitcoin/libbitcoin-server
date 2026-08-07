@@ -366,6 +366,43 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+// websocket authorization
+// ----------------------------------------------------------------------------
+
+// ws frames carry no headers, so authorization is established by basic auth on
+// the upgrade request and latched on the channel for the connection.
+BOOST_FIXTURE_TEST_SUITE(bitcoind_credentialed_tests,
+    bitcoind_credentialed_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__websocket__credentialed_upgrade__dispatches)
+{
+    BOOST_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
+
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+// The upgrade is accepted, the unauthorized frame drops the channel.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__websocket__uncredentialed_upgrade__drops)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(ws_dropped("getblockcount"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__websocket__wrong_password_upgrade__drops)
+{
+    BOOST_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, "wrong"));
+    BOOST_REQUIRE(ws_dropped("getblockcount"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__websocket__wrong_username_upgrade__drops)
+{
+    BOOST_REQUIRE(!ws_upgrade("wrong", BITCOIND_TEST_PASSWORD));
+    BOOST_REQUIRE(ws_dropped("getblockcount"));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 // witness
 // ----------------------------------------------------------------------------
 
