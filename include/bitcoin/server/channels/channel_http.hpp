@@ -28,12 +28,13 @@ namespace libbitcoin {
 namespace server {
 
 /// Channel for http services, websocket frames read as Body (a json-rpc
-/// service instantiates with network::rpc::request).
-template <typename Body = network::http::string_value>
+/// service instantiates with network::rpc::request). An in-band service
+/// (e.g. btcd authenticate) authorizes after upgrade, so its upgrade is open.
+template <typename Body = network::http::string_value, bool InBand = false>
 class BCS_API channel_http
   : public server::channel,
     public network::channel_http,
-    protected network::tracker<channel_http<Body>>
+    protected network::tracker<channel_http<Body, InBand>>
 {
 public:
     typedef std::shared_ptr<channel_http> ptr;
@@ -42,8 +43,9 @@ public:
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
-        network::channel_http(log, socket, identifier, config.network, options),
-        network::tracker<channel_http<Body>>(log)
+        network::channel_http(log, socket, identifier, config.network, options,
+            InBand),
+        network::tracker<channel_http<Body, InBand>>(log)
     {
     }
 

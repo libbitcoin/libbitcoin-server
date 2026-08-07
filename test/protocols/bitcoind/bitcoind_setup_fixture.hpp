@@ -56,8 +56,6 @@ struct bitcoind_setup_fixture
     boost::json::value ws_rpc(std::string_view method,
         std::string_view params="[]");
 
-    // As ws_rpc(), but true if the channel dropped instead of responding.
-    bool ws_dropped(std::string_view method, std::string_view params="[]");
 
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);

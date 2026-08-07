@@ -170,6 +170,11 @@ network::boost_code bitcoind_setup_fixture::ws_upgrade()
     websocket_.emplace(socket_);
     websocket_.value().text(true);
     websocket_.value().handshake("localhost", "/", ec);
+
+    // A refused upgrade leaves the connection in http (teardown as such).
+    if (ec)
+        websocket_.reset();
+
     return ec;
 }
 
@@ -191,6 +196,11 @@ network::boost_code bitcoind_setup_fixture::ws_upgrade(
         }));
 
     websocket_.value().handshake("localhost", "/", ec);
+
+    // A refused upgrade leaves the connection in http (teardown as such).
+    if (ec)
+        websocket_.reset();
+
     return ec;
 }
 
@@ -210,23 +220,6 @@ boost::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
     websocket_.value().read(buffer, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     return test::parse_json(buffers_to_string(buffer.data()));
-}
-
-bool bitcoind_setup_fixture::ws_dropped(std::string_view method,
-    std::string_view params)
-{
-    std::ostringstream body{};
-    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
-        << R"(","params":)" << params << "}";
-
-    // A dropped channel fails the write, the read, or both.
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
-    websocket_.value().write(net::buffer(body.str()), ec);
-
-    flat_buffer buffer{};
-    websocket_.value().read(buffer, ec);
-    return !!ec;
 }
 
 bitcoind_setup_fixture::status
