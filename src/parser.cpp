@@ -1989,7 +1989,7 @@ options_metadata parser::load_settings() THROWS
     (
         "log.symbols",
         value<std::filesystem::path>(&configured.log.symbols),
-        "Path to windows debug build symbols file (.pdb)."
+        "Path to a directory containing windows symbols (.pdb) files."
     )
 #endif
     (
