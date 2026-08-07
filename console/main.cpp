@@ -40,6 +40,10 @@ std::filesystem::path symbols_path{};
 
 int wmain(int argc, wchar_t* argv[])
 {
+    // Process-wide coverage (worker threads, noexcept terminations); the seh
+    // frame below covers only faults on this (main) thread.
+    install_stack_trace();
+
     __try
     {
         return bc::system::call_utf8_main(argc, argv, &bc::system::main);

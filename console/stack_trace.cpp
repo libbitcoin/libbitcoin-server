@@ -24,37 +24,51 @@
 #if defined(HAVE_MSC)
 
 #include <algorithm>
+#include <atomic>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
 #include <exception>
-#include <iterator>
-#include <new>
-#include <sstream>
 
 #include <windows.h>
-#include <psapi.h>
 #include <dbghelp.h>
 
 // This pulls in libs required for APIs used below.
-#pragma comment(lib, "psapi.lib")
 #pragma comment(lib, "dbghelp.lib")
 
 // Must define pdb_path() and handle_stack_trace when using dump_stack_trace.
 extern std::wstring pdb_path();
 extern void handle_stack_trace(const std::string& trace);
 
-constexpr size_t depth_limit{ 10 };
+constexpr size_t depth_limit{ 32 };
 
 using namespace bc;
 using namespace system;
 
-struct module_data
-{
-    std::wstring image;
-    std::wstring module;
-    DWORD dll_size;
-    void* dll_base;
-};
+// The dump runs on a crashed thread, so it must not allocate (the fault may
+// be heap corruption), must not throw (it may run inside an seh filter or a
+// terminate handler), and must serialize (a fault storm crashes many threads
+// at once). All state is static and the first crasher wins.
+static std::atomic_bool dumping{};
+static char tracer[16384];
+static size_t tracer_at{};
 
-inline STACKFRAME64 get_stack_frame(const CONTEXT& context)
+static void trace_append(const char* format, ...) NOEXCEPT
+{
+    if (tracer_at >= sizeof(tracer))
+        return;
+
+    va_list args;
+    va_start(args, format);
+    const auto wrote = std::vsnprintf(&tracer[tracer_at],
+        sizeof(tracer) - tracer_at, format, args);
+    va_end(args);
+
+    if (wrote > 0)
+        tracer_at = std::min(tracer_at + wrote, sizeof(tracer));
+}
+
+inline STACKFRAME64 get_stack_frame(const CONTEXT& context) NOEXCEPT
 {
     STACKFRAME64 frame{};
 
@@ -77,180 +91,133 @@ inline STACKFRAME64 get_stack_frame(const CONTEXT& context)
     return frame;
 }
 
-static std::string get_undecorated(HANDLE process, DWORD64 address)
+// Static symbol buffer (no allocation on the crashed thread). SYMOPT_UNDNAME
+// has dbghelp undecorate in place, so no separate undecorate pass or buffer.
+static const char* get_name(HANDLE process, DWORD64 address) NOEXCEPT
 {
     // Including null terminator.
     constexpr DWORD maximum_characters{ 1024 };
+    static uint8_t symbol_buffer[sizeof(SYMBOL_INFOW) +
+        maximum_characters * sizeof(wchar_t)];
+    static char name[2 * maximum_characters];
 
-    // First character in the name is accounted for in structure size.
-    constexpr size_t struct_size{ sizeof(SYMBOL_INFOW) +
-        sub1(maximum_characters) * sizeof(wchar_t) };
-
-    BC_PUSH_WARNING(NO_NEW_OR_DELETE)
-    const auto symbol = std::unique_ptr<SYMBOL_INFOW>(
-        pointer_cast<SYMBOL_INFOW>(operator new(struct_size)));
-    BC_POP_WARNING()
-
-    if (!symbol)
-        return {};
-
-    symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
-    symbol->TypeIndex = 0;
-    symbol->Reserved[0] = 0;
-    symbol->Reserved[1] = 0;
-    symbol->Index = 0;
-    symbol->Size = 0;
-    symbol->ModBase = 0;
-    symbol->Flags = 0;
-    symbol->Value = 0;
-    symbol->Address = 0;
-    symbol->Register = 0;
-    symbol->Scope = 0;
-    symbol->Tag = 0;
-    symbol->NameLen = 0;
-    symbol->MaxNameLen = maximum_characters;
-    symbol->Name[0] = wchar_t{ '\0' };
+    auto& symbol = *pointer_cast<SYMBOL_INFOW>(&symbol_buffer[0]);
+    symbol = {};
+    symbol.SizeOfStruct = sizeof(SYMBOL_INFOW);
+    symbol.MaxNameLen = maximum_characters;
 
     DWORD64 displace{};
-    if (SymFromAddrW(process, address, &displace, symbol.get()) == FALSE ||
-        is_zero(symbol->MaxNameLen))
-    {
-        return {};
-    }
+    if (SymFromAddrW(process, address, &displace, &symbol) == FALSE ||
+        is_zero(symbol.NameLen))
+        return nullptr;
 
-    std::wstring undecorated{};
-    undecorated.resize(maximum_characters);
-    undecorated.resize(UnDecorateSymbolNameW(symbol->Name,
-        undecorated.data(), maximum_characters, UNDNAME_COMPLETE));
+    if (WideCharToMultiByte(CP_UTF8, 0, symbol.Name, -1, name, sizeof(name),
+        NULL, NULL) == 0)
+        return nullptr;
 
-    return to_utf8(undecorated);
+    return name;
 }
 
-inline DWORD get_machine(HANDLE process) THROWS
-{
-    constexpr size_t module_buffer_size{ 4096 };
-
-    // Get required bytes by passing zero.
-    DWORD bytes{};
-    if (EnumProcessModules(process, NULL, 0u, &bytes) == FALSE)
-        throw(std::logic_error("EnumProcessModules"));
-
-    std_vector<HMODULE> handles{};
-    handles.resize(bytes / sizeof(HMODULE));
-    const auto handles_buffer_size = possible_narrow_cast<DWORD>(
-        handles.size() * sizeof(HMODULE));
-
-    // Get all elements into contiguous byte vector.
-    if (EnumProcessModules(process, &handles.front(), handles_buffer_size,
-        &bytes) == FALSE)
-        throw(std::logic_error("EnumProcessModules"));
-
-    std_vector<module_data> modules{};
-    std::transform(handles.begin(), handles.end(),
-        std::back_inserter(modules), [process](const auto& handle) THROWS
-        {
-            MODULEINFO info{};
-            if (GetModuleInformation(process, handle, &info,
-                sizeof(MODULEINFO)) == FALSE)
-                throw(std::logic_error("GetModuleInformation"));
-
-            module_data data{};
-            data.dll_base = info.lpBaseOfDll;
-            data.dll_size = info.SizeOfImage;
-
-            data.image.resize(module_buffer_size);
-            if (GetModuleFileNameExW(process, handle, data.image.data(),
-                module_buffer_size) == FALSE)
-                throw(std::logic_error("GetModuleFileNameExA"));
-
-            data.module.resize(module_buffer_size);
-            if (GetModuleBaseNameW(process, handle, data.module.data(),
-                module_buffer_size) == FALSE)
-                throw(std::logic_error("GetModuleBaseNameA"));
-
-            SymLoadModuleExW(process, NULL, data.image.data(), data.module.data(),
-                reinterpret_cast<DWORD64>(data.dll_base), data.dll_size, NULL,
-                SLMFLAG_NO_SYMBOLS);
-
-            return data;
-        });
-
-    const auto header = ImageNtHeader(modules.front().dll_base);
-
-    if (is_null(header))
-        throw(std::logic_error("ImageNtHeader"));
-
-    return header->FileHeader.Machine;
-}
-
-DWORD dump_stack_trace(unsigned, EXCEPTION_POINTERS* exception) THROWS
+// Walks and emits every frame it can: a frame without line information (crt,
+// system module, missing pdb) reports symbol or raw address and the walk
+// CONTINUES, as breaking there was the main source of empty dumps.
+DWORD dump_stack_trace(unsigned code, EXCEPTION_POINTERS* exception) NOEXCEPT
 {
     if (is_null(exception) || is_null(exception->ContextRecord))
         return EXCEPTION_EXECUTE_HANDLER;
 
-    // NULL for defaults, otherwise semicolon seperated directories.
-    const auto search = pdb_path().empty() ? NULL : pdb_path().c_str();
+    // First crasher wins; concurrent faulting threads pass through.
+    if (dumping.exchange(true))
+        return EXCEPTION_EXECUTE_HANDLER;
+
     const auto process = GetCurrentProcess();
     const auto thread = GetCurrentThread();
 
-    if (SymInitializeW(process, search, TRUE) == FALSE)
-        throw(std::logic_error("SymInitialize"));
+    // NULL for defaults, otherwise semicolon seperated directories.
+    const auto path = pdb_path();
+    const auto search = path.empty() ? NULL : path.c_str();
 
-    SymSetOptions(SymGetOptions()
-        | SYMOPT_DEFERRED_LOADS
-        | SYMOPT_LOAD_LINES
-        | SYMOPT_UNDNAME);
+    // Failure is not fatal: the walk proceeds with raw addresses.
+    const auto symbolized = (SymInitializeW(process, search, TRUE) != FALSE);
+    if (symbolized)
+        SymSetOptions(SymGetOptions()
+            | SYMOPT_DEFERRED_LOADS
+            | SYMOPT_LOAD_LINES
+            | SYMOPT_UNDNAME);
 
-    DWORD displace{};
-    std::ostringstream tracer{};
-    IMAGEHLP_LINE64 line{ sizeof(IMAGEHLP_LINE64) };
-    const auto machine = get_machine(process);
-    const auto context = exception->ContextRecord;
-    auto it = get_stack_frame(*context);
-    auto iteration = zero;
+#if defined(HAVE_X64)
+    constexpr DWORD machine{ IMAGE_FILE_MACHINE_AMD64 };
+#else
+    constexpr DWORD machine{ IMAGE_FILE_MACHINE_I386 };
+#endif
 
-    do
+    trace_append("exception 0x%08x on thread %lu%s\n", code,
+        GetCurrentThreadId(), symbolized ? "" : " ((sym init failed))");
+
+    // StackWalk64 mutates the context, so walk a local copy.
+    CONTEXT context = *exception->ContextRecord;
+    auto it = get_stack_frame(context);
+
+    for (size_t iteration{}; iteration < depth_limit; ++iteration)
     {
-        // Get undecorated function name.
-        const auto name = get_undecorated(process, it.AddrPC.Offset);
+        const auto address = it.AddrPC.Offset;
+        const auto name = symbolized ? get_name(process, address) : nullptr;
 
-        // When this?
-        if (name == "main")
-        {
-            tracer << "((no symbols))";
+        DWORD displace{};
+        IMAGEHLP_LINE64 line{ sizeof(IMAGEHLP_LINE64) };
+        const auto lined = symbolized && (SymGetLineFromAddr64(process,
+            address, &displace, &line) != FALSE);
+
+        if (!is_null(name) && lined)
+            trace_append("%s -> %s(%lu)\n", name, line.FileName,
+                line.LineNumber);
+        else if (!is_null(name))
+            trace_append("%s @ 0x%016llx\n", name, address);
+        else
+            trace_append("0x%016llx\n", address);
+
+        if (StackWalk64(machine, process, thread, &it, &context, NULL,
+            SymFunctionTableAccess64, SymGetModuleBase64, NULL) == FALSE ||
+            is_zero(it.AddrReturn.Offset))
             break;
-        }
+    }
 
-        // Compiled in release mode.
-        if (name == "RaiseException")
-        {
-            tracer << "[[no symbols]]";
-            break;
-        }
+    handle_stack_trace(tracer);
 
-        // Get line.
-        if (SymGetLineFromAddr64(process, it.AddrPC.Offset, &displace,
-            &line) == FALSE)
-            break;
-        
-        // Write line.
-        tracer
-            << name << " -> " << line.FileName << "(" << line.LineNumber << ")"
-            << std::endl;
-        
-        // Advance iterator.
-        if (StackWalk64(machine, process, thread, &it, context, NULL,
-            SymFunctionTableAccess64, SymGetModuleBase64, NULL) == FALSE)
-            break;
-
-    } while ((iteration++ < depth_limit) && !is_zero(it.AddrReturn.Offset));
-
-    handle_stack_trace(tracer.str());
-
-    if (SymCleanup(process) == FALSE)
-        throw(std::logic_error("SymCleanup"));
+    if (symbolized)
+        SymCleanup(process);
 
     return EXCEPTION_EXECUTE_HANDLER;
+}
+
+// Process-wide coverage: seh frames are per-thread, so the wmain __except
+// never sees a worker thread fault (the dominant cause of missing dumps).
+static LONG WINAPI unhandled_stack_trace(EXCEPTION_POINTERS* exception) NOEXCEPT
+{
+    const auto record = exception->ExceptionRecord;
+    dump_stack_trace(is_null(record) ? 0u : record->ExceptionCode, exception);
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
+// An exception escaping a NOEXCEPT boundary invokes terminate directly (no
+// seh search phase), bypassing both filters. Capture here and walk from the
+// handler: the throwing frames remain below on an unwound-free msvc stack.
+static void terminate_stack_trace() NOEXCEPT
+{
+    CONTEXT context{};
+    context.ContextFlags = CONTEXT_FULL;
+    RtlCaptureContext(&context);
+
+    EXCEPTION_RECORD record{};
+    EXCEPTION_POINTERS exception{ &record, &context };
+    dump_stack_trace(0u, &exception);
+    std::abort();
+}
+
+void install_stack_trace() NOEXCEPT
+{
+    SetUnhandledExceptionFilter(&unhandled_stack_trace);
+    std::set_terminate(&terminate_stack_trace);
 }
 
 #endif
