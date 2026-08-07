@@ -40,6 +40,7 @@
 #include <bitcoin/server/interfaces/types.hpp>
 #include <bitcoin/server/parsers/admin_query.hpp>
 #include <bitcoin/server/parsers/admin_target.hpp>
+#include <bitcoin/server/parsers/bitcoind_script.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/btcd_filter.hpp>
 #include <bitcoin/server/parsers/electrum_version.hpp>

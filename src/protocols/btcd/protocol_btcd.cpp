@@ -53,7 +53,6 @@ void protocol_btcd::start() NOEXCEPT
 
     // Administrative methods.
     SUBSCRIBE_BTCD(handle_authenticate, _1, _2, _3, _4);
-    SUBSCRIBE_BTCD(handle_help, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_session, _1, _2);
     SUBSCRIBE_BTCD(handle_stop, _1, _2);
 
@@ -63,13 +62,6 @@ void protocol_btcd::start() NOEXCEPT
     SUBSCRIBE_BTCD(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BTCD(handle_get_info, _1, _2);
     SUBSCRIBE_BTCD(handle_get_net_totals, _1, _2);
-    SUBSCRIBE_BTCD(handle_get_network_hash_ps, _1, _2, _3, _4);
-
-    // Tool methods.
-    SUBSCRIBE_BTCD(handle_create_raw_transaction, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BTCD(handle_decode_raw_transaction, _1, _2, _3);
-    SUBSCRIBE_BTCD(handle_decode_script, _1, _2, _3);
-    SUBSCRIBE_BTCD(handle_validate_address, _1, _2, _3);
 
     // Subscription methods.
     SUBSCRIBE_BTCD(handle_notify_blocks, _1, _2);
@@ -231,16 +223,11 @@ bool protocol_btcd::handle_authenticate(const code& ec,
     return true;
 }
 
-bool protocol_btcd::handle_help(const code& ec, btcd_interface::help,
-    const std::string&) NOEXCEPT
+// The btcd interface adds its own names to the implemented bitcoind names.
+std::string protocol_btcd::help_names() const NOEXCEPT
 {
-    if (stopped(ec))
-        return false;
-
-    // Lists method names only, no per-command argument usage text.
-    const auto size = two * btcd_interface::names.size();
-    send_result(std::string{ btcd_interface::names }, size);
-    return true;
+    return std::string{ btcd_interface::names } + ' ' +
+        protocol_bitcoind_rpc::help_names();
 }
 
 bool protocol_btcd::handle_session(const code& ec,

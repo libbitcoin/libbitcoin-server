@@ -51,9 +51,6 @@ public:
         network::tracker<protocol_btcd>(session->log),
         options_(options),
         turbo_(session->database_settings().turbo),
-        p2kh_(session->server_settings().wallet.p2kh_prefix),
-        p2sh_(session->server_settings().wallet.p2sh_prefix),
-        witness_(session->server_settings().wallet.witness_prefix),
         notification_strand_(channel->service().get_executor())
     {
     }
@@ -71,8 +68,6 @@ protected:
     /// Handlers (administrative).
     bool handle_authenticate(const code& ec, btcd_interface::authenticate,
         const std::string& username, const std::string& password) NOEXCEPT;
-    bool handle_help(const code& ec, btcd_interface::help,
-        const std::string& command) NOEXCEPT;
     bool handle_session(const code& ec, btcd_interface::session) NOEXCEPT;
     bool handle_stop(const code& ec, btcd_interface::stop) NOEXCEPT;
 
@@ -86,23 +81,6 @@ protected:
     bool handle_get_info(const code& ec, btcd_interface::get_info) NOEXCEPT;
     bool handle_get_net_totals(const code& ec,
         btcd_interface::get_net_totals) NOEXCEPT;
-    bool handle_get_network_hash_ps(const code& ec,
-        btcd_interface::get_network_hash_ps, uint32_t blocks,
-        int32_t height) NOEXCEPT;
-
-    /// Handlers (tools).
-    bool handle_create_raw_transaction(const code& ec,
-        btcd_interface::create_raw_transaction,
-        const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, uint32_t locktime) NOEXCEPT;
-    bool handle_decode_raw_transaction(const code& ec,
-        btcd_interface::decode_raw_transaction,
-        const std::string& hexstring) NOEXCEPT;
-    bool handle_decode_script(const code& ec,
-        btcd_interface::decode_script, const std::string& hex) NOEXCEPT;
-    bool handle_validate_address(const code& ec,
-        btcd_interface::validate_address,
-        const std::string& address) NOEXCEPT;
 
     /// Handlers (subscription).
     bool handle_notify_blocks(const code& ec,
@@ -144,6 +122,9 @@ protected:
     /// Event handlers.
     bool handle_chase(const code& ec, node::chase event_,
         node::event_value value) NOEXCEPT;
+
+    /// The btcd method names, prepended to the base names.
+    std::string help_names() const NOEXCEPT override;
 
     /// Sender (server push, no id).
     void send_notification(const std::string& method,
@@ -223,9 +204,6 @@ private:
     // These are thread safe.
     const options_t& options_;
     const bool turbo_;
-    const uint8_t p2kh_;
-    const uint8_t p2sh_;
-    const std::string witness_;
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_blocks_{};
 

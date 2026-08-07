@@ -44,7 +44,10 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol_http(session, channel, options),
-        network::tracker<protocol_bitcoind_rpc>(session->log)
+        network::tracker<protocol_bitcoind_rpc>(session->log),
+        p2kh_(session->server_settings().wallet.p2kh_prefix),
+        p2sh_(session->server_settings().wallet.p2sh_prefix),
+        witness_(session->server_settings().wallet.witness_prefix)
     {
     }
 
@@ -103,6 +106,11 @@ protected:
         rpc_interface::verify_chain, double, double) NOEXCEPT;
     bool handle_verify_tx_out_set(const code& ec,
         rpc_interface::verify_tx_out_set, const std::string&) NOEXCEPT;
+    bool handle_help(const code& ec, rpc_interface::help,
+        const std::string& command) NOEXCEPT;
+    bool handle_get_network_hash_ps(const code& ec,
+        rpc_interface::get_network_hash_ps, uint32_t nblocks,
+        int32_t height) NOEXCEPT;
     bool handle_get_network_info(const code& ec,
         rpc_interface::get_network_info) NOEXCEPT;
     bool handle_get_raw_transaction(const code& ec,
@@ -111,6 +119,22 @@ protected:
     bool handle_send_raw_transaction(const code& ec,
         rpc_interface::send_raw_transaction, const std::string& hexstring,
         double maxfeerate) NOEXCEPT;
+    bool handle_create_raw_transaction(const code& ec,
+        rpc_interface::create_raw_transaction,
+        const network::rpc::array_t& inputs,
+        const network::rpc::object_t& outputs, uint32_t locktime,
+        bool replaceable) NOEXCEPT;
+    bool handle_decode_raw_transaction(const code& ec,
+        rpc_interface::decode_raw_transaction,
+        const std::string& hexstring) NOEXCEPT;
+    bool handle_decode_script(const code& ec,
+        rpc_interface::decode_script, const std::string& hex) NOEXCEPT;
+    bool handle_validate_address(const code& ec,
+        rpc_interface::validate_address,
+        const std::string& address) NOEXCEPT;
+
+    /// The method names reported by help (btcd prepends its own).
+    virtual std::string help_names() const NOEXCEPT;
 
     /// Serialize an object (chain::header, chain::transaction, ...) to a
     /// base16 string.
@@ -182,6 +206,12 @@ private:
     rpc_dispatcher rpc_dispatcher_{};
     network::rpc::version version_{};
     network::rpc::id_option id_{};
+
+protected:
+    // These are thread safe.
+    const uint8_t p2kh_;
+    const uint8_t p2sh_;
+    const std::string witness_;
 };
 
 } // namespace server

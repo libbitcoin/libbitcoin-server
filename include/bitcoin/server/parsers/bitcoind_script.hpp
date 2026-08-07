@@ -16,16 +16,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCRIPT_HPP
+#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCRIPT_HPP
 
-#include <bitcoin/server/parsers/admin_query.hpp>
-#include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
-#include <bitcoin/server/parsers/bitcoind_target.hpp>
-#include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/electrum_version.hpp>
-#include <bitcoin/server/parsers/native_query.hpp>
-#include <bitcoin/server/parsers/native_target.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+// TODO: move into bitcoind namespace (collides with json wrapper).
+
+/// Parse an address to its output script, prefixes are validated.
+BCS_API code output_script(system::chain::script& out,
+    const std::string& text, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

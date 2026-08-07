@@ -38,21 +38,21 @@ struct bitcoind_rpc_methods
         method<"getblockfilter", string_t, optional<"basic"_t>>{ "blockhash", "filtertype" },
         method<"getblockhash", number_t>{ "height" },
         method<"getblockheader", string_t, optional<true>>{ "blockhash", "verbose" },
-        method<"getblockstats", value_t, optional<empty::array>>{ "hash_or_height", "stats" },
-        method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ "nblocks", "blockhash" },
-        method<"getchainwork">{},
+        method<"getblockstats", value_t, optional<empty::array>>{ unimplemented, "hash_or_height", "stats" },
+        method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ unimplemented, "nblocks", "blockhash" },
+        method<"getchainwork">{ unimplemented },
         method<"gettxout", string_t, number_t, optional<true>>{ "txid", "n", "include_mempool" },
-        method<"gettxoutsetinfo">{},
-        method<"pruneblockchain", number_t>{ "height" },
-        method<"savemempool">{},
-        method<"scantxoutset", string_t, optional<empty::array>>{ "action", "scanobjects" },
-        method<"verifychain", optional<4.0>, optional<288.0>>{ "checklevel", "nblocks" },
-        method<"verifytxoutset", string_t>{ "input_verify_flag" },
+        method<"gettxoutsetinfo">{ unimplemented },
+        method<"pruneblockchain", number_t>{ unimplemented, "height" },
+        method<"savemempool">{ unimplemented },
+        method<"scantxoutset", string_t, optional<empty::array>>{ unimplemented, "action", "scanobjects" },
+        method<"verifychain", optional<4.0>, optional<288.0>>{ unimplemented, "checklevel", "nblocks" },
+        method<"verifytxoutset", string_t>{ unimplemented, "input_verify_flag" },
 
         /////// Control methods.
         ////method<"getmemoryinfo", optional<"stats"_t>>{ "mode" },
         ////method<"getrpcinfo">{},
-        ////method<"help", optional<""_t>>{ "command" },
+        method<"help", optional<""_t>>{ "command" },
         ////method<"logging", optional<"*"_t>>{ "include" },
         ////method<"stop">{},
         ////method<"uptime">{},
@@ -60,7 +60,7 @@ struct bitcoind_rpc_methods
         /////// Mining methods.
         ////method<"getblocktemplate", optional<empty::object>>{ "template_request" },
         ////method<"getmininginfo">{},
-        ////method<"getnetworkhashps", optional<120_u32>, optional<-1_i32>>{ "nblocks", "height" },
+        method<"getnetworkhashps", optional<120_u32>, optional<-1_i32>>{ "nblocks", "height" },
         ////method<"prioritisetransaction", string_t, number_t, number_t>{ "txid", "dummy", "priority_delta" },
         ////method<"submitblock", string_t, optional<""_t>>{ "block", "parameters" },
 
@@ -73,8 +73,14 @@ struct bitcoind_rpc_methods
         method<"getnetworkinfo">{},
 
         /// Rawtransactions methods (implemented).
+        method<"createrawtransaction", array_t, object_t, optional<0_u32>, optional<false>>{ "inputs", "outputs", "locktime", "replaceable" },
+        method<"decoderawtransaction", string_t>{ "hexstring" },
         method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
-        method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" }
+        method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" },
+
+        /// Util methods (implemented).
+        method<"decodescript", string_t>{ "hex" },
+        method<"validateaddress", string_t>{ "address" }
         ////method<"getpeerinfo">{},
         ////method<"listbanned">{},
         ////method<"ping">{},
@@ -83,8 +89,6 @@ struct bitcoind_rpc_methods
 
         /////// Rawtransactions methods.
         ////method<"combinerawtransaction", array_t>{ "txs" },
-        ////method<"createrawtransaction", array_t, object_t, optional<0_u32>, optional<false>>{ "inputs", "outputs", "locktime", "replaceable" },
-        ////method<"decoderawtransaction", string_t>{ "hexstring" },
         ////method<"fundrawtransaction", string_t, optional<empty::object>>{ "rawtx", "options" },
         ////method<"getrawtransaction", string_t, optional<0_u32>, optional<""_t>>{ "txid", "verbose", "blockhash" },
         ////method<"sendrawtransaction", string_t, optional<0_u32>>{ "hexstring", "maxfeerate" },
@@ -95,10 +99,8 @@ struct bitcoind_rpc_methods
         /////// Util methods (node-related).
         ////method<"createmultisig", number_t, array_t>{ "nrequired", "keys" },
         ////method<"decodepsbt", string_t>{ "psbt" },
-        ////method<"decodescript", string_t>{ "hex" },
         ////method<"estimaterawfee", number_t, optional<"unset"_t>>{ "conf_target", "estimate_mode" },
         ////method<"getdescriptorinfo", string_t>{ "descriptor" },
-        ////method<"validateaddress", string_t>{ "address" },
 
         /////// Wallet methods (unsupported).
         ////method<"abandontransaction", string_t>{ "txid" },
@@ -153,6 +155,11 @@ struct bitcoind_rpc_methods
     template <typename... Args>
     using subscriber = network::unsubscriber<Args...>;
 
+    /// Method names as reported by help.
+    static constexpr auto name_data = method_names<methods>();
+    static constexpr std::string_view names{ name_data.data(),
+        name_data.size() };
+
     template <size_t Index>
     using at = method_at<methods, Index>;
 
@@ -177,13 +184,11 @@ struct bitcoind_rpc_methods
 
     ////using get_memory_info = at<17>;
     ////using get_rpc_info = at<18>;
-    ////using help = at<19>;
     ////using logging = at<20>;
     ////using stop = at<21>;
     ////using uptime = at<22>;
     ////using get_block_template = at<23>;
     ////using get_mining_info = at<24>;
-    ////using get_network_hash_ps = at<25>;
     ////using prioritise_transaction = at<26>;
     ////using submit_block = at<27>;
     ////using add_node = at<28>;
@@ -191,17 +196,21 @@ struct bitcoind_rpc_methods
     ////using disconnect_node = at<30>;
     ////using get_added_node_info = at<31>;
     ////using get_connection_count = at<32>;
-    using get_network_info = at<17>;
-    using get_raw_transaction = at<18>;
-    using send_raw_transaction = at<19>;
+    using help = at<17>;
+    using get_network_hash_ps = at<18>;
+    using get_network_info = at<19>;
+    using create_raw_transaction = at<20>;
+    using decode_raw_transaction = at<21>;
+    using get_raw_transaction = at<22>;
+    using send_raw_transaction = at<23>;
+    using decode_script = at<24>;
+    using validate_address = at<25>;
     ////using get_peer_info = at<34>;
     ////using list_banned = at<35>;
     ////using ping = at<36>;
     ////using set_ban = at<37>;
     ////using set_network_active = at<38>;
     ////using combine_raw_transaction = at<39>;
-    ////using create_raw_transaction = at<40>;
-    ////using decode_raw_transaction = at<41>;
     ////using fund_raw_transaction = at<42>;
     ////using get_raw_transaction = at<43>;
     ////using send_raw_transaction = at<44>;
@@ -210,10 +219,8 @@ struct bitcoind_rpc_methods
     ////using test_raw_transaction = at<47>;
     ////using create_multisig = at<48>;
     ////using decode_psbt = at<49>;
-    ////using decode_script = at<50>;
     ////using estimate_raw_fee = at<51>;
     ////using get_descriptor_info = at<52>;
-    ////using validate_address = at<53>;
     ////using abandon_transaction = at<54>;
     ////using add_multisig_address = at<55>;
     ////using backup_wallet = at<56>;

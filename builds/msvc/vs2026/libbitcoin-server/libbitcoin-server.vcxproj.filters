@@ -84,6 +84,9 @@
     <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -264,6 +267,9 @@
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_target.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp">

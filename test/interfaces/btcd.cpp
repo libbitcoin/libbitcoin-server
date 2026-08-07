@@ -71,10 +71,8 @@ static_assert(!btcd_served("getblockcount") && !btcd_unserved("getblockcount"));
 
 // The published list is the served subset, in interface order.
 static_assert(btcd_methods::names ==
-    "authenticate help session "
+    "authenticate session "
     "getbestblock getcurrentnet getdifficulty getinfo getnettotals "
-    "getnetworkhashps "
-    "createrawtransaction decoderawtransaction decodescript validateaddress "
     "notifyblocks stopnotifyblocks "
     "loadtxfilter rescanblocks "
     "rescan");
