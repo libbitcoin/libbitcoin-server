@@ -74,6 +74,24 @@ std::wstring pdb_path()
     return bc::system::extended_path(symbols_path);
 }
 
+#elif defined(HAVE_APPLE)
+#include "stack_trace.hpp"
+
+namespace libbitcoin {
+namespace system {
+    auto& cin = std::cin;
+    auto& cout = std::cout;
+    auto& cerr = std::cerr;
+    int main(int argc, char* argv[]);
+} // namespace system
+} // namespace libbitcoin
+
+int main(int argc, char* argv[])
+{
+    install_stack_trace();
+    return libbitcoin::system::main(argc, argv);
+}
+
 #else
 BC_USE_LIBBITCOIN_MAIN
 #endif
