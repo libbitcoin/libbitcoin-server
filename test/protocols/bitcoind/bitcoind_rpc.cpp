@@ -67,7 +67,6 @@ const std::vector<std::string> wip_methods
     "verifytxoutproof",
     "getblockfrompeer",
     "getchainstates",
-    "getchaintips",
     "getdeploymentinfo",
     "getdescriptoractivity",
     "preciousblock",
@@ -101,7 +100,6 @@ const std::vector<std::string> wip_methods
     "createmultisig",
     "deriveaddresses",
     "getdescriptorinfo",
-    "getindexinfo",
     "getmemoryinfo",
     "getopenrpcinfo",
     "getrpcinfo",
@@ -522,6 +520,22 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__malformed_signature__error)
     const auto params = "[\"" + address.encoded() + "\", \"@@@\", \"m\"]";
     const auto response = rpc("verifymessage", params);
     BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getindexinfo__ten_block_store__txindex_synced)
+{
+    const auto response = rpc("getindexinfo");
+    const auto& txindex = response.at("result").at("txindex");
+    BOOST_REQUIRE(txindex.at("synced").as_bool());
+    BOOST_REQUIRE_EQUAL(txindex.at("best_block_height").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
+{
+    const auto response = rpc("getchaintips");
+    const auto& active = response.at("result").as_array().at(0);
+    BOOST_REQUIRE_EQUAL(active.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)

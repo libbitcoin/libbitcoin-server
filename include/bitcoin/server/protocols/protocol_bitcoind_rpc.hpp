@@ -226,7 +226,7 @@ protected:
         rpc_interface::verify_message, const std::string& address,
         const std::string& signature, const std::string& message) NOEXCEPT;
     bool handle_get_index_info(const code& ec,
-        rpc_interface::get_index_info) NOEXCEPT;
+        rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT;
     bool handle_get_memory_info(const code& ec,
         rpc_interface::get_memory_info) NOEXCEPT;
     bool handle_get_openrpc_info(const code& ec,

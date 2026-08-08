@@ -462,8 +462,56 @@ bool protocol_bitcoind_rpc::handle_get_chain_states(const code& ec,
 bool protocol_bitcoind_rpc::handle_get_chain_tips(const code& ec,
     rpc_interface::get_chain_tips) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    // Two indexes only: confirmed (active) and candidate (strongest headers);
+    // weak/reorged branches live in the organizer tree and are not exposed.
+    const auto& query = archive();
+    const auto confirmed = query.get_top_confirmed();
+    const auto confirmed_link = query.to_confirmed(confirmed);
+
+    array_t tips
+    {
+        object_t
+        {
+            { "height", confirmed },
+            { "hash", encode_hash(query.get_header_key(confirmed_link)) },
+            { "branchlen", 0 },
+            { "status", std::string{ "active" } }
+        }
+    };
+
+    // The candidate is a distinct tip only where it forks above confirmed.
+    const auto candidate = query.get_top_candidate();
+    const auto branchlen = floored_subtract(candidate, query.get_fork());
+    if (!is_zero(branchlen))
+    {
+        // Parent traversal is reorg-stable without the reorg lock. A hole in
+        // the branch makes it headers-only, otherwise valid-headers; candidate
+        // is the strongest valid chain so is never invalid or valid-fork.
+        database::header_links branch{};
+        const auto candidate_link = query.to_candidate(candidate);
+        if (query.get_ancestry(branch, candidate_link, branchlen))
+        {
+            const auto present = std::all_of(branch.begin(), branch.end(),
+                [&query](const auto& link) NOEXCEPT
+                {
+                    return query.is_associated(link);
+                });
+
+            tips.emplace_back(object_t
+            {
+                { "height", candidate },
+                { "hash", encode_hash(query.get_header_key(candidate_link)) },
+                { "branchlen", branchlen },
+                { "status", std::string{ present ? "valid-headers" :
+                    "headers-only" } }
+            });
+        }
+    }
+
+    send_result(std::move(tips), 256);
     return true;
 }
 

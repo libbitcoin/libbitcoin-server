@@ -211,10 +211,29 @@ bool protocol_bitcoind_rpc::handle_verify_message(const code& ec,
 }
 
 bool protocol_bitcoind_rpc::handle_get_index_info(const code& ec,
-    rpc_interface::get_index_info) NOEXCEPT
+    rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    // Indexes track the confirmed chain only (no pool txs until v5 tx pool).
+    // tx lookup is always available (all txs are archived).
+    const auto& query = archive();
+    const object_t status
+    {
+        { "synced", true },
+        { "best_block_height", query.get_top_confirmed() }
+    };
+
+    object_t result{};
+    if (index_name.empty() || index_name == "txindex")
+        result.emplace("txindex", status);
+
+    if (query.filter_enabled() &&
+        (index_name.empty() || index_name == "basic block filter index"))
+        result.emplace("basic block filter index", status);
+
+    send_result(std::move(result), 128);
     return true;
 }
 
