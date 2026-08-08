@@ -101,7 +101,6 @@ const std::vector<std::string> wip_methods
     "createmultisig",
     "deriveaddresses",
     "getdescriptorinfo",
-    "verifymessage",
     "getindexinfo",
     "getmemoryinfo",
     "getopenrpcinfo",
@@ -495,6 +494,34 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdifficulty__ten_block_store__one)
 {
     const auto response = rpc("getdifficulty");
     BOOST_REQUIRE_EQUAL(response.at("result").as_double(), 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__compressed_vector__true)
+{
+    const wallet::payment_address address(base16_array(
+        "002688cc350a5333a87fa622eacec626c3d1c0ebf9f3793de3885fa254d7e393"));
+    const auto signature = encode_base64(base16_chunk(
+        "20c0ae26619db18abd1e8a84d005bafd336512eda7207cf7f4f6c36c9614ed6bc"
+        "f531a954929ddc0a86578f4d28a26e19b676c890a49881d6f25e393befd6d1682"));
+    const auto params = "[\"" + address.encoded() + "\", \"" + signature +
+        "\", \"Compressed\"]";
+    const auto response = rpc("verifymessage", params);
+    BOOST_REQUIRE_EQUAL(response.at("result").as_bool(), true);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__invalid_address__error)
+{
+    const auto response = rpc("verifymessage", "[\"notanaddress\", \"x\", \"m\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__malformed_signature__error)
+{
+    const wallet::payment_address address(base16_array(
+        "002688cc350a5333a87fa622eacec626c3d1c0ebf9f3793de3885fa254d7e393"));
+    const auto params = "[\"" + address.encoded() + "\", \"@@@\", \"m\"]";
+    const auto response = rpc("verifymessage", params);
+    BOOST_REQUIRE(has_error(response));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)

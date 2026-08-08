@@ -223,7 +223,8 @@ protected:
     bool handle_get_descriptor_info(const code& ec,
         rpc_interface::get_descriptor_info) NOEXCEPT;
     bool handle_verify_message(const code& ec,
-        rpc_interface::verify_message) NOEXCEPT;
+        rpc_interface::verify_message, const std::string& address,
+        const std::string& signature, const std::string& message) NOEXCEPT;
     bool handle_get_index_info(const code& ec,
         rpc_interface::get_index_info) NOEXCEPT;
     bool handle_get_memory_info(const code& ec,

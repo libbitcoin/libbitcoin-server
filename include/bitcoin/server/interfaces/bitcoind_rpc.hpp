@@ -110,7 +110,7 @@ struct bitcoind_rpc_methods
         method<"createmultisig">{ unimplemented },
         method<"deriveaddresses">{ unimplemented },
         method<"getdescriptorinfo">{ unimplemented },
-        method<"verifymessage">{ unimplemented },
+        method<"verifymessage", string_t, string_t, string_t>{ "address", "signature", "message" },
         method<"getindexinfo">{ unimplemented },
         method<"getmemoryinfo">{ unimplemented },
         method<"getopenrpcinfo">{ unimplemented },

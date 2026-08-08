@@ -123,7 +123,7 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_create_multisig, _1, _2);
     SUBSCRIBE_BITCOIND(handle_derive_addresses, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_descriptor_info, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_index_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_memory_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_openrpc_info, _1, _2);

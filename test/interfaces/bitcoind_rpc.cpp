@@ -64,6 +64,7 @@ static_assert(bitcoind_served("verifychain"));
 
 // Implemented from the wip backlog.
 static_assert(bitcoind_served("getdifficulty"));
+static_assert(bitcoind_served("verifymessage"));
 
 // Moved from the btcd interface (btcd serves them by derivation).
 static_assert(bitcoind_served("help"));
@@ -87,4 +88,4 @@ static_assert(bitcoind_rpc_methods::names ==
     "verifychain help getnetworkhashps getnetworkinfo "
     "createrawtransaction decoderawtransaction getrawtransaction "
     "sendrawtransaction testmempoolaccept "
-    "decodescript validateaddress getdifficulty");
+    "decodescript validateaddress getdifficulty verifymessage");

@@ -179,10 +179,34 @@ bool protocol_bitcoind_rpc::handle_get_descriptor_info(const code& ec,
 }
 
 bool protocol_bitcoind_rpc::handle_verify_message(const code& ec,
-    rpc_interface::verify_message) NOEXCEPT
+    rpc_interface::verify_message, const std::string& address,
+    const std::string& signature, const std::string& message) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    using namespace wallet;
+    const payment_address payment(address);
+    if (!payment)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    data_chunk decoded{};
+    if (!decode_base64(decoded, signature) ||
+        decoded.size() != message_signature_size)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    message_signature signature_bytes{};
+    std::copy_n(decoded.begin(), signature_bytes.size(),
+        signature_bytes.begin());
+
+    const auto verified = verify_message(message, payment, signature_bytes);
+    send_result(value{ verified }, 8);
     return true;
 }
 
