@@ -55,9 +55,9 @@ int wmain(int argc, wchar_t* argv[])
 }
 
 // This is invoked by dump_stack_trace.
-void handle_stack_trace(const std::string& trace)
+void handle_stack_trace(const char* trace)
 {
-    if (trace.empty())
+    if (bc::is_null(trace))
     {
         bc::system::cout << "<<unhandled exception>>" << std::endl;
         return;

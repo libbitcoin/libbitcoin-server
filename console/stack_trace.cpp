@@ -38,7 +38,7 @@
 
 // Must define pdb_path() and handle_stack_trace when using dump_stack_trace.
 extern std::wstring pdb_path();
-extern void handle_stack_trace(const std::string& trace);
+extern void handle_stack_trace(const char* trace);
 
 constexpr size_t depth_limit{ 32 };
 
@@ -239,8 +239,9 @@ using namespace system;
 static std::atomic_bool dumping{};
 static void* frames[depth_limit]{};
 
-// Async-signal-safe: backtrace/backtrace_symbols_fd are the only walk apple
-// documents for a signal handler, and write is the only safe emitter.
+// Emission is direct and self-contained: the handler runs on a faulted thread
+// that may hold the stream lock, and the only walk apple documents for a
+// signal handler writes to a descriptor (so frames cannot be buffered).
 static void emit(const char* text) NOEXCEPT
 {
     ::write(STDOUT_FILENO, text, std::char_traits<char>::length(text));
