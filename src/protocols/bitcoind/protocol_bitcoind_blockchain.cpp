@@ -427,6 +427,110 @@ bool protocol_bitcoind_rpc::handle_load_tx_out_set(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_get_tx_out_proof(const code& ec,
+    rpc_interface::get_tx_out_proof) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_verify_tx_out_proof(const code& ec,
+    rpc_interface::verify_tx_out_proof) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_block_from_peer(const code& ec,
+    rpc_interface::get_block_from_peer) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_chain_states(const code& ec,
+    rpc_interface::get_chain_states) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_chain_tips(const code& ec,
+    rpc_interface::get_chain_tips) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_deployment_info(const code& ec,
+    rpc_interface::get_deployment_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_descriptor_activity(const code& ec,
+    rpc_interface::get_descriptor_activity) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_difficulty(const code& ec,
+    rpc_interface::get_difficulty) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_precious_block(const code& ec,
+    rpc_interface::precious_block) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_scan_blocks(const code& ec,
+    rpc_interface::scan_blocks) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_wait_for_block(const code& ec,
+    rpc_interface::wait_for_block) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_wait_for_block_height(const code& ec,
+    rpc_interface::wait_for_block_height) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_wait_for_new_block(const code& ec,
+    rpc_interface::wait_for_new_block) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

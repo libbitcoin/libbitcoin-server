@@ -94,6 +94,94 @@ bool protocol_bitcoind_rpc::handle_set_ban(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_add_node(const code& ec,
+    rpc_interface::add_node) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_disconnect_node(const code& ec,
+    rpc_interface::disconnect_node) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_export_asmap(const code& ec,
+    rpc_interface::export_asmap) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_added_node_info(const code& ec,
+    rpc_interface::get_added_node_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_addrman_info(const code& ec,
+    rpc_interface::get_addrman_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_connection_count(const code& ec,
+    rpc_interface::get_connection_count) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_net_totals(const code& ec,
+    rpc_interface::get_net_totals) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_node_addresses(const code& ec,
+    rpc_interface::get_node_addresses) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_peer_info(const code& ec,
+    rpc_interface::get_peer_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_ping(const code& ec,
+    rpc_interface::ping) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_set_network_active(const code& ec,
+    rpc_interface::set_network_active) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

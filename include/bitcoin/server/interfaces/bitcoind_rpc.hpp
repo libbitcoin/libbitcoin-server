@@ -73,6 +73,54 @@ struct bitcoind_rpc_methods
         method<"listbanned">{ unimplemented },
         method<"setban">{ unimplemented },
         method<"stop">{ unimplemented },
+        method<"gettxoutproof">{ unimplemented },
+        method<"verifytxoutproof">{ unimplemented },
+        method<"getblockfrompeer">{ unimplemented },
+        method<"getchainstates">{ unimplemented },
+        method<"getchaintips">{ unimplemented },
+        method<"getdeploymentinfo">{ unimplemented },
+        method<"getdescriptoractivity">{ unimplemented },
+        method<"getdifficulty">{ unimplemented },
+        method<"preciousblock">{ unimplemented },
+        method<"scanblocks">{ unimplemented },
+        method<"waitforblock">{ unimplemented },
+        method<"waitforblockheight">{ unimplemented },
+        method<"waitfornewblock">{ unimplemented },
+        method<"analyzepsbt">{ unimplemented },
+        method<"combinepsbt">{ unimplemented },
+        method<"converttopsbt">{ unimplemented },
+        method<"createpsbt">{ unimplemented },
+        method<"decodepsbt">{ unimplemented },
+        method<"finalizepsbt">{ unimplemented },
+        method<"joinpsbts">{ unimplemented },
+        method<"descriptorprocesspsbt">{ unimplemented },
+        method<"utxoupdatepsbt">{ unimplemented },
+        method<"getmininginfo">{ unimplemented },
+        method<"submitblock">{ unimplemented },
+        method<"submitheader">{ unimplemented },
+        method<"addnode">{ unimplemented },
+        method<"disconnectnode">{ unimplemented },
+        method<"exportasmap">{ unimplemented },
+        method<"getaddednodeinfo">{ unimplemented },
+        method<"getaddrmaninfo">{ unimplemented },
+        method<"getconnectioncount">{ unimplemented },
+        method<"getnettotals">{ unimplemented },
+        method<"getnodeaddresses">{ unimplemented },
+        method<"getpeerinfo">{ unimplemented },
+        method<"ping">{ unimplemented },
+        method<"setnetworkactive">{ unimplemented },
+        method<"createmultisig">{ unimplemented },
+        method<"deriveaddresses">{ unimplemented },
+        method<"getdescriptorinfo">{ unimplemented },
+        method<"verifymessage">{ unimplemented },
+        method<"getindexinfo">{ unimplemented },
+        method<"getmemoryinfo">{ unimplemented },
+        method<"getopenrpcinfo">{ unimplemented },
+        method<"getrpcinfo">{ unimplemented },
+        method<"logging">{ unimplemented },
+        method<"uptime">{ unimplemented },
+        method<"getzmqnotifications">{ unimplemented },
+        method<"enumeratesigners">{ unimplemented },
     };
 
     template <typename... Args>
@@ -119,6 +167,54 @@ struct bitcoind_rpc_methods
     using list_banned = at<28>;
     using set_ban = at<29>;
     using stop = at<30>;
+    using get_tx_out_proof = at<31>;
+    using verify_tx_out_proof = at<32>;
+    using get_block_from_peer = at<33>;
+    using get_chain_states = at<34>;
+    using get_chain_tips = at<35>;
+    using get_deployment_info = at<36>;
+    using get_descriptor_activity = at<37>;
+    using get_difficulty = at<38>;
+    using precious_block = at<39>;
+    using scan_blocks = at<40>;
+    using wait_for_block = at<41>;
+    using wait_for_block_height = at<42>;
+    using wait_for_new_block = at<43>;
+    using analyze_psbt = at<44>;
+    using combine_psbt = at<45>;
+    using convert_to_psbt = at<46>;
+    using create_psbt = at<47>;
+    using decode_psbt = at<48>;
+    using finalize_psbt = at<49>;
+    using join_psbts = at<50>;
+    using descriptor_process_psbt = at<51>;
+    using utxo_update_psbt = at<52>;
+    using get_mining_info = at<53>;
+    using submit_block = at<54>;
+    using submit_header = at<55>;
+    using add_node = at<56>;
+    using disconnect_node = at<57>;
+    using export_asmap = at<58>;
+    using get_added_node_info = at<59>;
+    using get_addrman_info = at<60>;
+    using get_connection_count = at<61>;
+    using get_net_totals = at<62>;
+    using get_node_addresses = at<63>;
+    using get_peer_info = at<64>;
+    using ping = at<65>;
+    using set_network_active = at<66>;
+    using create_multisig = at<67>;
+    using derive_addresses = at<68>;
+    using get_descriptor_info = at<69>;
+    using verify_message = at<70>;
+    using get_index_info = at<71>;
+    using get_memory_info = at<72>;
+    using get_openrpc_info = at<73>;
+    using get_rpc_info = at<74>;
+    using logging = at<75>;
+    using uptime = at<76>;
+    using get_zmq_notifications = at<77>;
+    using enumerate_signers = at<78>;
 };
 
 } // namespace interface

@@ -45,6 +45,74 @@ bool has_error(const boost::json::value& response) NOEXCEPT
         !response.at("error").is_null();
 }
 
+bool is_not_implemented(const boost::json::value& response) NOEXCEPT
+{
+    return has_error(response) &&
+        response.at("error").at("message").as_string() == "not_implemented";
+}
+
+const std::vector<std::string> rejected_methods
+{
+    "dumptxoutset",
+    "loadtxoutset",
+    "clearbanned",
+    "listbanned",
+    "setban",
+    "stop"
+};
+
+const std::vector<std::string> wip_methods
+{
+    "gettxoutproof",
+    "verifytxoutproof",
+    "getblockfrompeer",
+    "getchainstates",
+    "getchaintips",
+    "getdeploymentinfo",
+    "getdescriptoractivity",
+    "getdifficulty",
+    "preciousblock",
+    "scanblocks",
+    "waitforblock",
+    "waitforblockheight",
+    "waitfornewblock",
+    "analyzepsbt",
+    "combinepsbt",
+    "converttopsbt",
+    "createpsbt",
+    "decodepsbt",
+    "finalizepsbt",
+    "joinpsbts",
+    "descriptorprocesspsbt",
+    "utxoupdatepsbt",
+    "getmininginfo",
+    "submitblock",
+    "submitheader",
+    "addnode",
+    "disconnectnode",
+    "exportasmap",
+    "getaddednodeinfo",
+    "getaddrmaninfo",
+    "getconnectioncount",
+    "getnettotals",
+    "getnodeaddresses",
+    "getpeerinfo",
+    "ping",
+    "setnetworkactive",
+    "createmultisig",
+    "deriveaddresses",
+    "getdescriptorinfo",
+    "verifymessage",
+    "getindexinfo",
+    "getmemoryinfo",
+    "getopenrpcinfo",
+    "getrpcinfo",
+    "logging",
+    "uptime",
+    "getzmqnotifications",
+    "enumeratesigners"
+};
+
 std::string as_text(const boost::json::value& value) NOEXCEPT
 {
     return { value.as_string().c_str() };
@@ -289,23 +357,17 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__not_implemented)
 {
-    const std::vector<std::string> methods
+    for (const auto& method: rejected_methods)
     {
-        "dumptxoutset",
-        "loadtxoutset",
-        "clearbanned",
-        "listbanned",
-        "setban",
-        "stop",
-    };
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+    }
+}
 
-    for (const auto& method: methods)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__not_implemented)
+{
+    for (const auto& method: wip_methods)
     {
-        const auto response = rpc(method, "[]");
-        BOOST_REQUIRE_MESSAGE(has_error(response), method);
-        BOOST_REQUIRE_MESSAGE(
-            response.at("error").at("message").as_string() == "not_implemented",
-            method);
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
     }
 }
 

@@ -300,6 +300,78 @@ bool protocol_bitcoind_rpc::handle_decode_raw_transaction(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_analyze_psbt(const code& ec,
+    rpc_interface::analyze_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_combine_psbt(const code& ec,
+    rpc_interface::combine_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_convert_to_psbt(const code& ec,
+    rpc_interface::convert_to_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_create_psbt(const code& ec,
+    rpc_interface::create_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_decode_psbt(const code& ec,
+    rpc_interface::decode_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_finalize_psbt(const code& ec,
+    rpc_interface::finalize_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_join_psbts(const code& ec,
+    rpc_interface::join_psbts) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_descriptor_process_psbt(const code& ec,
+    rpc_interface::descriptor_process_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_utxo_update_psbt(const code& ec,
+    rpc_interface::utxo_update_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

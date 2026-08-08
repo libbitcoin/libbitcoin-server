@@ -144,6 +144,102 @@ protected:
         rpc_interface::set_ban) NOEXCEPT;
     bool handle_stop(const code& ec,
         rpc_interface::stop) NOEXCEPT;
+    bool handle_get_tx_out_proof(const code& ec,
+        rpc_interface::get_tx_out_proof) NOEXCEPT;
+    bool handle_verify_tx_out_proof(const code& ec,
+        rpc_interface::verify_tx_out_proof) NOEXCEPT;
+    bool handle_get_block_from_peer(const code& ec,
+        rpc_interface::get_block_from_peer) NOEXCEPT;
+    bool handle_get_chain_states(const code& ec,
+        rpc_interface::get_chain_states) NOEXCEPT;
+    bool handle_get_chain_tips(const code& ec,
+        rpc_interface::get_chain_tips) NOEXCEPT;
+    bool handle_get_deployment_info(const code& ec,
+        rpc_interface::get_deployment_info) NOEXCEPT;
+    bool handle_get_descriptor_activity(const code& ec,
+        rpc_interface::get_descriptor_activity) NOEXCEPT;
+    bool handle_get_difficulty(const code& ec,
+        rpc_interface::get_difficulty) NOEXCEPT;
+    bool handle_precious_block(const code& ec,
+        rpc_interface::precious_block) NOEXCEPT;
+    bool handle_scan_blocks(const code& ec,
+        rpc_interface::scan_blocks) NOEXCEPT;
+    bool handle_wait_for_block(const code& ec,
+        rpc_interface::wait_for_block) NOEXCEPT;
+    bool handle_wait_for_block_height(const code& ec,
+        rpc_interface::wait_for_block_height) NOEXCEPT;
+    bool handle_wait_for_new_block(const code& ec,
+        rpc_interface::wait_for_new_block) NOEXCEPT;
+    bool handle_analyze_psbt(const code& ec,
+        rpc_interface::analyze_psbt) NOEXCEPT;
+    bool handle_combine_psbt(const code& ec,
+        rpc_interface::combine_psbt) NOEXCEPT;
+    bool handle_convert_to_psbt(const code& ec,
+        rpc_interface::convert_to_psbt) NOEXCEPT;
+    bool handle_create_psbt(const code& ec,
+        rpc_interface::create_psbt) NOEXCEPT;
+    bool handle_decode_psbt(const code& ec,
+        rpc_interface::decode_psbt) NOEXCEPT;
+    bool handle_finalize_psbt(const code& ec,
+        rpc_interface::finalize_psbt) NOEXCEPT;
+    bool handle_join_psbts(const code& ec,
+        rpc_interface::join_psbts) NOEXCEPT;
+    bool handle_descriptor_process_psbt(const code& ec,
+        rpc_interface::descriptor_process_psbt) NOEXCEPT;
+    bool handle_utxo_update_psbt(const code& ec,
+        rpc_interface::utxo_update_psbt) NOEXCEPT;
+    bool handle_get_mining_info(const code& ec,
+        rpc_interface::get_mining_info) NOEXCEPT;
+    bool handle_submit_block(const code& ec,
+        rpc_interface::submit_block) NOEXCEPT;
+    bool handle_submit_header(const code& ec,
+        rpc_interface::submit_header) NOEXCEPT;
+    bool handle_add_node(const code& ec,
+        rpc_interface::add_node) NOEXCEPT;
+    bool handle_disconnect_node(const code& ec,
+        rpc_interface::disconnect_node) NOEXCEPT;
+    bool handle_export_asmap(const code& ec,
+        rpc_interface::export_asmap) NOEXCEPT;
+    bool handle_get_added_node_info(const code& ec,
+        rpc_interface::get_added_node_info) NOEXCEPT;
+    bool handle_get_addrman_info(const code& ec,
+        rpc_interface::get_addrman_info) NOEXCEPT;
+    bool handle_get_connection_count(const code& ec,
+        rpc_interface::get_connection_count) NOEXCEPT;
+    bool handle_get_net_totals(const code& ec,
+        rpc_interface::get_net_totals) NOEXCEPT;
+    bool handle_get_node_addresses(const code& ec,
+        rpc_interface::get_node_addresses) NOEXCEPT;
+    bool handle_get_peer_info(const code& ec,
+        rpc_interface::get_peer_info) NOEXCEPT;
+    bool handle_ping(const code& ec,
+        rpc_interface::ping) NOEXCEPT;
+    bool handle_set_network_active(const code& ec,
+        rpc_interface::set_network_active) NOEXCEPT;
+    bool handle_create_multisig(const code& ec,
+        rpc_interface::create_multisig) NOEXCEPT;
+    bool handle_derive_addresses(const code& ec,
+        rpc_interface::derive_addresses) NOEXCEPT;
+    bool handle_get_descriptor_info(const code& ec,
+        rpc_interface::get_descriptor_info) NOEXCEPT;
+    bool handle_verify_message(const code& ec,
+        rpc_interface::verify_message) NOEXCEPT;
+    bool handle_get_index_info(const code& ec,
+        rpc_interface::get_index_info) NOEXCEPT;
+    bool handle_get_memory_info(const code& ec,
+        rpc_interface::get_memory_info) NOEXCEPT;
+    bool handle_get_openrpc_info(const code& ec,
+        rpc_interface::get_openrpc_info) NOEXCEPT;
+    bool handle_get_rpc_info(const code& ec,
+        rpc_interface::get_rpc_info) NOEXCEPT;
+    bool handle_logging(const code& ec,
+        rpc_interface::logging) NOEXCEPT;
+    bool handle_uptime(const code& ec,
+        rpc_interface::uptime) NOEXCEPT;
+    bool handle_get_zmq_notifications(const code& ec,
+        rpc_interface::get_zmq_notifications) NOEXCEPT;
+    bool handle_enumerate_signers(const code& ec,
+        rpc_interface::enumerate_signers) NOEXCEPT;
     /// The method names reported by help (btcd prepends its own).
     virtual std::string help_names() const NOEXCEPT;
 

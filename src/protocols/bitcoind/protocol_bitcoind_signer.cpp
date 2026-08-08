@@ -38,51 +38,11 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Mining methods.
+// Signer methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_rpc::handle_get_network_hash_ps(const code& ec,
-    rpc_interface::get_network_hash_ps, uint32_t, int32_t height) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto target = is_negative(height) ? top :
-        std::min(sign_cast<size_t>(height), top);
-
-    const auto header = query.get_header(query.to_confirmed(target));
-    if (!header)
-    {
-        send_error(database::error::integrity);
-        return true;
-    }
-
-    const auto period = system_settings().block_spacing_seconds;
-    const auto span = to_floating(power2<uint64_t>(32u));
-    send_result(header->difficulty() * span / period, 20);
-    return true;
-}
-
-bool protocol_bitcoind_rpc::handle_get_mining_info(const code& ec,
-    rpc_interface::get_mining_info) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
-    return true;
-}
-
-bool protocol_bitcoind_rpc::handle_submit_block(const code& ec,
-    rpc_interface::submit_block) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
-    return true;
-}
-
-bool protocol_bitcoind_rpc::handle_submit_header(const code& ec,
-    rpc_interface::submit_header) NOEXCEPT
+bool protocol_bitcoind_rpc::handle_enumerate_signers(const code& ec,
+    rpc_interface::enumerate_signers) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);

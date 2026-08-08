@@ -67,6 +67,46 @@ bool protocol_bitcoind_rpc::handle_stop(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_get_memory_info(const code& ec,
+    rpc_interface::get_memory_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_openrpc_info(const code& ec,
+    rpc_interface::get_openrpc_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_rpc_info(const code& ec,
+    rpc_interface::get_rpc_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_logging(const code& ec,
+    rpc_interface::logging) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_uptime(const code& ec,
+    rpc_interface::uptime) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()
