@@ -64,8 +64,6 @@ struct bitcoind_rpc_methods
         method<"decodescript", string_t>{ "hex" },
         method<"validateaddress", string_t>{ "address" },
 
-
-
         // Unimplemented (dispatchable, refused).
         method<"dumptxoutset">{ unimplemented },
         method<"loadtxoutset">{ unimplemented },
