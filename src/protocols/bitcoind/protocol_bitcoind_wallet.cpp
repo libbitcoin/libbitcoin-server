@@ -369,7 +369,7 @@ bool protocol_bitcoind_rpc::handle_restore_wallet(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_send(const code& ec,
+bool protocol_bitcoind_rpc::handle_wallet_send(const code& ec,
     rpc_interface::send) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -491,6 +491,14 @@ bool protocol_bitcoind_rpc::handle_wallet_passphrase_change(const code& ec,
 
 bool protocol_bitcoind_rpc::handle_wallet_process_psbt(const code& ec,
     rpc_interface::wallet_process_psbt) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_enumerate_signers(const code& ec,
+    rpc_interface::enumerate_signers) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);

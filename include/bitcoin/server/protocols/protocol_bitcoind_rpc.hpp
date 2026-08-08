@@ -361,7 +361,7 @@ protected:
         rpc_interface::rescan_block_chain) NOEXCEPT;
     bool handle_restore_wallet(const code& ec,
         rpc_interface::restore_wallet) NOEXCEPT;
-    bool handle_send(const code& ec,
+    bool handle_wallet_send(const code& ec,
         rpc_interface::send) NOEXCEPT;
     bool handle_send_all(const code& ec,
         rpc_interface::send_all) NOEXCEPT;

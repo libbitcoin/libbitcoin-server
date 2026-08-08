@@ -71,7 +71,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_notifications.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
-    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_signer.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_test.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_transaction.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_utility.cpp \

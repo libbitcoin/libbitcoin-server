@@ -192,7 +192,7 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_remove_pruned_funds, _1, _2);
     SUBSCRIBE_BITCOIND(handle_rescan_block_chain, _1, _2);
     SUBSCRIBE_BITCOIND(handle_restore_wallet, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_send, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_wallet_send, _1, _2);
     SUBSCRIBE_BITCOIND(handle_send_all, _1, _2);
     SUBSCRIBE_BITCOIND(handle_send_many, _1, _2);
     SUBSCRIBE_BITCOIND(handle_send_to_address, _1, _2);

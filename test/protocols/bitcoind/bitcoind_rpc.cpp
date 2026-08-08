@@ -105,8 +105,7 @@ const std::vector<std::string> wip_methods
     "getrpcinfo",
     "logging",
     "uptime",
-    "getzmqnotifications",
-    "enumeratesigners"
+    "getzmqnotifications"
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -191,7 +190,8 @@ const std::vector<std::string> scope_methods
     "walletlock",
     "walletpassphrase",
     "walletpassphrasechange",
-    "walletprocesspsbt"
+    "walletprocesspsbt",
+    "enumeratesigners"
 };
 
 const std::vector<std::string> pending_methods
