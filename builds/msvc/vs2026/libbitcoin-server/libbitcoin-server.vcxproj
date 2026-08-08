@@ -142,8 +142,10 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_signer.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_test.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_transaction.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_utility.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_wallet.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_filter.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_utility.cpp" />

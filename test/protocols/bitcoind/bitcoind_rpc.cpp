@@ -118,6 +118,86 @@ std::string as_text(const boost::json::value& value) NOEXCEPT
     return { value.as_string().c_str() };
 }
 
+const std::vector<std::string> scope_methods
+{
+    "addconnection",
+    "addpeeraddress",
+    "echo",
+    "echoipc",
+    "echojson",
+    "estimaterawfee",
+    "generate",
+    "generateblock",
+    "generatetoaddress",
+    "generatetodescriptor",
+    "getmempoolfeeratediagram",
+    "getorphantxs",
+    "getrawaddrman",
+    "invalidateblock",
+    "mockscheduler",
+    "reconsiderblock",
+    "sendmsgtopeer",
+    "setmocktime",
+    "syncwithvalidationinterfacequeue",
+    "abandontransaction",
+    "abortrescan",
+    "addhdkey",
+    "backupwallet",
+    "bumpfee",
+    "createwallet",
+    "createwalletdescriptor",
+    "encryptwallet",
+    "exportwatchonlywallet",
+    "getaddressesbylabel",
+    "getaddressinfo",
+    "getbalance",
+    "getbalances",
+    "gethdkeys",
+    "getnewaddress",
+    "getrawchangeaddress",
+    "getreceivedbyaddress",
+    "getreceivedbylabel",
+    "gettransaction",
+    "getwalletinfo",
+    "importdescriptors",
+    "importprunedfunds",
+    "keypoolrefill",
+    "listaddressgroupings",
+    "listdescriptors",
+    "listlabels",
+    "listlockunspent",
+    "listreceivedbyaddress",
+    "listreceivedbylabel",
+    "listsinceblock",
+    "listtransactions",
+    "listunspent",
+    "listwalletdir",
+    "listwallets",
+    "loadwallet",
+    "lockunspent",
+    "migratewallet",
+    "psbtbumpfee",
+    "removeprunedfunds",
+    "rescanblockchain",
+    "restorewallet",
+    "send",
+    "sendall",
+    "sendmany",
+    "sendtoaddress",
+    "setlabel",
+    "setwalletflag",
+    "signmessage",
+    "signrawtransactionwithwallet",
+    "simulaterawtransaction",
+    "unloadwallet",
+    "walletcreatefundedpsbt",
+    "walletdisplayaddress",
+    "walletlock",
+    "walletpassphrase",
+    "walletpassphrasechange",
+    "walletprocesspsbt"
+};
+
 } // namespace
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_tests, bitcoind_ten_block_setup_fixture)
@@ -366,6 +446,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__not_implemented)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__not_implemented)
 {
     for (const auto& method: wip_methods)
+    {
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__not_implemented)
+{
+    for (const auto& method: scope_methods)
     {
         BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
     }

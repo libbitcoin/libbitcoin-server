@@ -132,10 +132,16 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_signer.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_test.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_transaction.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_utility.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_wallet.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp">

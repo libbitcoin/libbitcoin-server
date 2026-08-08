@@ -121,6 +121,82 @@ struct bitcoind_rpc_methods
         method<"uptime">{ unimplemented },
         method<"getzmqnotifications">{ unimplemented },
         method<"enumeratesigners">{ unimplemented },
+        method<"addconnection">{ unimplemented },
+        method<"addpeeraddress">{ unimplemented },
+        method<"echo">{ unimplemented },
+        method<"echoipc">{ unimplemented },
+        method<"echojson">{ unimplemented },
+        method<"estimaterawfee">{ unimplemented },
+        method<"generate">{ unimplemented },
+        method<"generateblock">{ unimplemented },
+        method<"generatetoaddress">{ unimplemented },
+        method<"generatetodescriptor">{ unimplemented },
+        method<"getmempoolfeeratediagram">{ unimplemented },
+        method<"getorphantxs">{ unimplemented },
+        method<"getrawaddrman">{ unimplemented },
+        method<"invalidateblock">{ unimplemented },
+        method<"mockscheduler">{ unimplemented },
+        method<"reconsiderblock">{ unimplemented },
+        method<"sendmsgtopeer">{ unimplemented },
+        method<"setmocktime">{ unimplemented },
+        method<"syncwithvalidationinterfacequeue">{ unimplemented },
+        method<"abandontransaction">{ unimplemented },
+        method<"abortrescan">{ unimplemented },
+        method<"addhdkey">{ unimplemented },
+        method<"backupwallet">{ unimplemented },
+        method<"bumpfee">{ unimplemented },
+        method<"createwallet">{ unimplemented },
+        method<"createwalletdescriptor">{ unimplemented },
+        method<"encryptwallet">{ unimplemented },
+        method<"exportwatchonlywallet">{ unimplemented },
+        method<"getaddressesbylabel">{ unimplemented },
+        method<"getaddressinfo">{ unimplemented },
+        method<"getbalance">{ unimplemented },
+        method<"getbalances">{ unimplemented },
+        method<"gethdkeys">{ unimplemented },
+        method<"getnewaddress">{ unimplemented },
+        method<"getrawchangeaddress">{ unimplemented },
+        method<"getreceivedbyaddress">{ unimplemented },
+        method<"getreceivedbylabel">{ unimplemented },
+        method<"gettransaction">{ unimplemented },
+        method<"getwalletinfo">{ unimplemented },
+        method<"importdescriptors">{ unimplemented },
+        method<"importprunedfunds">{ unimplemented },
+        method<"keypoolrefill">{ unimplemented },
+        method<"listaddressgroupings">{ unimplemented },
+        method<"listdescriptors">{ unimplemented },
+        method<"listlabels">{ unimplemented },
+        method<"listlockunspent">{ unimplemented },
+        method<"listreceivedbyaddress">{ unimplemented },
+        method<"listreceivedbylabel">{ unimplemented },
+        method<"listsinceblock">{ unimplemented },
+        method<"listtransactions">{ unimplemented },
+        method<"listunspent">{ unimplemented },
+        method<"listwalletdir">{ unimplemented },
+        method<"listwallets">{ unimplemented },
+        method<"loadwallet">{ unimplemented },
+        method<"lockunspent">{ unimplemented },
+        method<"migratewallet">{ unimplemented },
+        method<"psbtbumpfee">{ unimplemented },
+        method<"removeprunedfunds">{ unimplemented },
+        method<"rescanblockchain">{ unimplemented },
+        method<"restorewallet">{ unimplemented },
+        method<"send">{ unimplemented },
+        method<"sendall">{ unimplemented },
+        method<"sendmany">{ unimplemented },
+        method<"sendtoaddress">{ unimplemented },
+        method<"setlabel">{ unimplemented },
+        method<"setwalletflag">{ unimplemented },
+        method<"signmessage">{ unimplemented },
+        method<"signrawtransactionwithwallet">{ unimplemented },
+        method<"simulaterawtransaction">{ unimplemented },
+        method<"unloadwallet">{ unimplemented },
+        method<"walletcreatefundedpsbt">{ unimplemented },
+        method<"walletdisplayaddress">{ unimplemented },
+        method<"walletlock">{ unimplemented },
+        method<"walletpassphrase">{ unimplemented },
+        method<"walletpassphrasechange">{ unimplemented },
+        method<"walletprocesspsbt">{ unimplemented },
     };
 
     template <typename... Args>
@@ -215,6 +291,82 @@ struct bitcoind_rpc_methods
     using uptime = at<76>;
     using get_zmq_notifications = at<77>;
     using enumerate_signers = at<78>;
+    using add_connection = at<79>;
+    using add_peer_address = at<80>;
+    using echo = at<81>;
+    using echo_ipc = at<82>;
+    using echo_json = at<83>;
+    using estimate_raw_fee = at<84>;
+    using generate = at<85>;
+    using generate_block = at<86>;
+    using generate_to_address = at<87>;
+    using generate_to_descriptor = at<88>;
+    using get_mempool_fee_rate_diagram = at<89>;
+    using get_orphan_txs = at<90>;
+    using get_raw_addrman = at<91>;
+    using invalidate_block = at<92>;
+    using mock_scheduler = at<93>;
+    using reconsider_block = at<94>;
+    using send_msg_to_peer = at<95>;
+    using set_mock_time = at<96>;
+    using sync_with_validation_interface_queue = at<97>;
+    using abandon_transaction = at<98>;
+    using abort_rescan = at<99>;
+    using add_hd_key = at<100>;
+    using backup_wallet = at<101>;
+    using bump_fee = at<102>;
+    using create_wallet = at<103>;
+    using create_wallet_descriptor = at<104>;
+    using encrypt_wallet = at<105>;
+    using export_watchonly_wallet = at<106>;
+    using get_addresses_by_label = at<107>;
+    using get_address_info = at<108>;
+    using get_balance = at<109>;
+    using get_balances = at<110>;
+    using get_hd_keys = at<111>;
+    using get_new_address = at<112>;
+    using get_raw_change_address = at<113>;
+    using get_received_by_address = at<114>;
+    using get_received_by_label = at<115>;
+    using get_transaction = at<116>;
+    using get_wallet_info = at<117>;
+    using import_descriptors = at<118>;
+    using import_pruned_funds = at<119>;
+    using keypool_refill = at<120>;
+    using list_address_groupings = at<121>;
+    using list_descriptors = at<122>;
+    using list_labels = at<123>;
+    using list_lock_unspent = at<124>;
+    using list_received_by_address = at<125>;
+    using list_received_by_label = at<126>;
+    using list_since_block = at<127>;
+    using list_transactions = at<128>;
+    using list_unspent = at<129>;
+    using list_wallet_dir = at<130>;
+    using list_wallets = at<131>;
+    using load_wallet = at<132>;
+    using lock_unspent = at<133>;
+    using migrate_wallet = at<134>;
+    using psbt_bump_fee = at<135>;
+    using remove_pruned_funds = at<136>;
+    using rescan_block_chain = at<137>;
+    using restore_wallet = at<138>;
+    using send = at<139>;
+    using send_all = at<140>;
+    using send_many = at<141>;
+    using send_to_address = at<142>;
+    using set_label = at<143>;
+    using set_wallet_flag = at<144>;
+    using sign_message = at<145>;
+    using sign_raw_transaction_with_wallet = at<146>;
+    using simulate_raw_transaction = at<147>;
+    using unload_wallet = at<148>;
+    using wallet_create_funded_psbt = at<149>;
+    using wallet_display_address = at<150>;
+    using wallet_lock = at<151>;
+    using wallet_passphrase = at<152>;
+    using wallet_passphrase_change = at<153>;
+    using wallet_process_psbt = at<154>;
 };
 
 } // namespace interface
