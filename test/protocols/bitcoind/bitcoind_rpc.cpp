@@ -186,6 +186,58 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__malformed__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+// control, mining, rawtransactions, util (moved from btcd)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__help__default__implemented_method_list)
+{
+    const auto response = rpc("help");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_NE(as_text(response.at("result")).find("getblockcount"), std::string::npos);
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")).find("getblockstats"), std::string::npos);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__default__number)
+{
+    const auto response = rpc("getnetworkhashps");
+    BOOST_REQUIRE(response.at("result").is_double() || response.at("result").is_int64());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__one_in_one_out__hex)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__created__round_trips)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("result").at("locktime").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__pubkeyhash)
+{
+    const auto response = rpc("decodescript", "[\"76a914000000000000000000000000000000000000000088ac\"]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("type")), "pubkeyhash");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__genesis__valid)
+{
+    const auto response = rpc("validateaddress", "[\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\"]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").at("isvalid").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__garbage__invalid)
+{
+    const auto response = rpc("validateaddress", "[\"notanaddress\"]");
+    REQUIRE_NO_THROW_TRUE(!response.at("result").at("isvalid").as_bool());
+}
+
 // network
 // ----------------------------------------------------------------------------
 

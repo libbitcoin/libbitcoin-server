@@ -16,26 +16,41 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BTCD_FILTER_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BTCD_FILTER_HPP
+#include <bitcoin/server/parsers/bitcoind_script.hpp>
 
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
-namespace btcd {
 
-/// Parse loadtxfilter addresses to their output script hashes.
-BCS_API code filter_keys(system::hashes& out,
-    const network::rpc::value_t& addresses, uint8_t p2kh, uint8_t p2sh,
-    const std::string& witness) NOEXCEPT;
+using namespace system;
+using namespace system::chain;
 
-/// Parse loadtxfilter outpoints to their points.
-BCS_API code filter_points(system::chain::points& out,
-    const network::rpc::value_t& outpoints) NOEXCEPT;
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-} // namespace btcd
+code output_script(script& out, const std::string& text, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness) NOEXCEPT
+{
+    using namespace wallet;
+
+    if (const payment_address payment{ text }; payment)
+    {
+        out = payment.output_script(p2kh, p2sh);
+        return error::success;
+    }
+
+    // The parse accepts any prefix, so the configured one is a check.
+    if (const witness_address payment{ text };
+        payment && payment.prefix() == witness)
+    {
+        out = payment.script();
+        return error::success;
+    }
+
+    return error::invalid_argument;
+}
+
+BC_POP_WARNING()
+
 } // namespace server
 } // namespace libbitcoin
-
-#endif

@@ -45,6 +45,9 @@
     <ClCompile Include="..\..\..\..\test\error.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\interfaces\bitcoind_rpc.cpp">
+      <Filter>src\interfaces</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\interfaces\btcd.cpp">
       <Filter>src\interfaces</Filter>
     </ClCompile>

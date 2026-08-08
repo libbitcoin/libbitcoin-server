@@ -33,7 +33,6 @@ struct btcd_methods
     {
         /// Administrative.
         method<"authenticate", string_t, string_t>{ "username", "password" },
-        method<"help", optional<""_t>>{ "command" },
         method<"session">{},
         method<"stop">{ unimplemented },
 
@@ -43,13 +42,6 @@ struct btcd_methods
         method<"getdifficulty">{},
         method<"getinfo">{},
         method<"getnettotals">{},
-        method<"getnetworkhashps", optional<120_u32>, optional<-1_i32>>{ "blocks", "height" },
-
-        /// Tools.
-        method<"createrawtransaction", array_t, object_t, optional<0_u32>>{ "inputs", "outputs", "locktime" },
-        method<"decoderawtransaction", string_t>{ "hexstring" },
-        method<"decodescript", string_t>{ "hex" },
-        method<"validateaddress", string_t>{ "address" },
 
         /// Subscription.
         method<"notifyblocks">{},
@@ -82,35 +74,28 @@ struct btcd_methods
 
     // Derive this from above in c++26 using reflection.
     using authenticate = at<0>;
-    using help = at<1>;
-    using session = at<2>;
-    using stop = at<3>;
+    using session = at<1>;
+    using stop = at<2>;
 
-    using get_best_block = at<4>;
-    using get_current_net = at<5>;
-    using get_difficulty = at<6>;
-    using get_info = at<7>;
-    using get_net_totals = at<8>;
-    using get_network_hash_ps = at<9>;
+    using get_best_block = at<3>;
+    using get_current_net = at<4>;
+    using get_difficulty = at<5>;
+    using get_info = at<6>;
+    using get_net_totals = at<7>;
 
-    using create_raw_transaction = at<10>;
-    using decode_raw_transaction = at<11>;
-    using decode_script = at<12>;
-    using validate_address = at<13>;
+    using notify_blocks = at<8>;
+    using stop_notify_blocks = at<9>;
+    using notify_new_transactions = at<10>;
+    using stop_notify_new_transactions = at<11>;
 
-    using notify_blocks = at<14>;
-    using stop_notify_blocks = at<15>;
-    using notify_new_transactions = at<16>;
-    using stop_notify_new_transactions = at<17>;
+    using load_tx_filter = at<12>;
+    using rescan_blocks = at<13>;
 
-    using load_tx_filter = at<18>;
-    using rescan_blocks = at<19>;
-
-    using notify_received = at<20>;
-    using stop_notify_received = at<21>;
-    using notify_spent = at<22>;
-    using stop_notify_spent = at<23>;
-    using rescan = at<24>;
+    using notify_received = at<14>;
+    using stop_notify_received = at<15>;
+    using notify_spent = at<16>;
+    using stop_notify_spent = at<17>;
+    using rescan = at<18>;
 };
 
 } // namespace interface

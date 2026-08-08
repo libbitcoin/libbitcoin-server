@@ -449,8 +449,10 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
             return true;
         }
         case json:
+        {
             send_json(value_from(bitcoind(spent)), two * size);
             return true;
+        }
     }
 
     send_not_found();

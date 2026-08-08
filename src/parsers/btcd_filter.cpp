@@ -20,6 +20,7 @@
 
 #include <variant>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/parsers/bitcoind_script.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -30,27 +31,6 @@ using namespace system::chain;
 using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-
-code output_script(script& out, const std::string& text, uint8_t p2kh,
-    uint8_t p2sh, const std::string& witness) NOEXCEPT
-{
-    using namespace wallet;
-
-    if (const payment_address payment{ text }; payment)
-    {
-        out = payment.output_script(p2kh, p2sh);
-        return error::success;
-    }
-
-    if (const witness_address payment{ text };
-        payment && payment.prefix() == witness)
-    {
-        out = payment.script();
-        return error::success;
-    }
-
-    return error::invalid_argument;
-}
 
 code filter_keys(hashes& out, const value_t& addresses, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness) NOEXCEPT
