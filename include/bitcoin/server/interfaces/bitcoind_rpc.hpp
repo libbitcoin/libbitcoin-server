@@ -195,6 +195,21 @@ struct bitcoind_rpc_methods
         method<"walletpassphrase">{ unimplemented },
         method<"walletpassphrasechange">{ unimplemented },
         method<"walletprocesspsbt">{ unimplemented },
+        method<"getmempoolancestors">{ unimplemented },
+        method<"getmempoolcluster">{ unimplemented },
+        method<"getmempooldescendants">{ unimplemented },
+        method<"getmempoolentry">{ unimplemented },
+        method<"getmempoolinfo">{ unimplemented },
+        method<"getrawmempool">{ unimplemented },
+        method<"gettxspendingprevout">{ unimplemented },
+        method<"importmempool">{ unimplemented },
+        method<"abortprivatebroadcast">{ unimplemented },
+        method<"getprivatebroadcastinfo">{ unimplemented },
+        method<"submitpackage">{ unimplemented },
+        method<"getblocktemplate">{ unimplemented },
+        method<"getprioritisedtransactions">{ unimplemented },
+        method<"prioritisetransaction">{ unimplemented },
+        method<"estimatesmartfee">{ unimplemented },
     };
 
     template <typename... Args>
@@ -365,6 +380,21 @@ struct bitcoind_rpc_methods
     using wallet_passphrase = at<152>;
     using wallet_passphrase_change = at<153>;
     using wallet_process_psbt = at<154>;
+    using get_mempool_ancestors = at<155>;
+    using get_mempool_cluster = at<156>;
+    using get_mempool_descendants = at<157>;
+    using get_mempool_entry = at<158>;
+    using get_mempool_info = at<159>;
+    using get_raw_mempool = at<160>;
+    using get_tx_spending_prevout = at<161>;
+    using import_mempool = at<162>;
+    using abort_private_broadcast = at<163>;
+    using get_private_broadcast_info = at<164>;
+    using submit_package = at<165>;
+    using get_block_template = at<166>;
+    using get_prioritised_transactions = at<167>;
+    using prioritise_transaction = at<168>;
+    using estimate_smart_fee = at<169>;
 };
 
 } // namespace interface

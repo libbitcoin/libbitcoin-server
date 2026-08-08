@@ -194,6 +194,14 @@ bool protocol_bitcoind_rpc::handle_get_index_info(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_estimate_smart_fee(const code& ec,
+    rpc_interface::estimate_smart_fee) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

@@ -372,6 +372,30 @@ bool protocol_bitcoind_rpc::handle_utxo_update_psbt(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_abort_private_broadcast(const code& ec,
+    rpc_interface::abort_private_broadcast) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_private_broadcast_info(const code& ec,
+    rpc_interface::get_private_broadcast_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_submit_package(const code& ec,
+    rpc_interface::submit_package) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

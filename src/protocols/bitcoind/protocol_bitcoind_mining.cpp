@@ -89,6 +89,30 @@ bool protocol_bitcoind_rpc::handle_submit_header(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_get_block_template(const code& ec,
+    rpc_interface::get_block_template) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_prioritised_transactions(const code& ec,
+    rpc_interface::get_prioritised_transactions) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_prioritise_transaction(const code& ec,
+    rpc_interface::prioritise_transaction) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

@@ -208,6 +208,21 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_wallet_passphrase, _1, _2);
     SUBSCRIBE_BITCOIND(handle_wallet_passphrase_change, _1, _2);
     SUBSCRIBE_BITCOIND(handle_wallet_process_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_entry, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_abort_private_broadcast, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_private_broadcast_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_prioritised_transactions, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_prioritise_transaction, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_estimate_smart_fee, _1, _2);
     network::protocol_http::start();
 }
 

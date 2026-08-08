@@ -198,6 +198,25 @@ const std::vector<std::string> scope_methods
     "walletprocesspsbt"
 };
 
+const std::vector<std::string> pending_methods
+{
+    "getmempoolancestors",
+    "getmempoolcluster",
+    "getmempooldescendants",
+    "getmempoolentry",
+    "getmempoolinfo",
+    "getrawmempool",
+    "gettxspendingprevout",
+    "importmempool",
+    "abortprivatebroadcast",
+    "getprivatebroadcastinfo",
+    "submitpackage",
+    "getblocktemplate",
+    "getprioritisedtransactions",
+    "prioritisetransaction",
+    "estimatesmartfee"
+};
+
 } // namespace
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_tests, bitcoind_ten_block_setup_fixture)
@@ -454,6 +473,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__not_implemented)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__not_implemented)
 {
     for (const auto& method: scope_methods)
+    {
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__not_implemented)
+{
+    for (const auto& method: pending_methods)
     {
         BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
     }

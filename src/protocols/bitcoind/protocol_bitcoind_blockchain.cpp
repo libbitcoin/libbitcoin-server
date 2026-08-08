@@ -531,6 +531,70 @@ bool protocol_bitcoind_rpc::handle_wait_for_new_block(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_get_mempool_ancestors(const code& ec,
+    rpc_interface::get_mempool_ancestors) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_mempool_cluster(const code& ec,
+    rpc_interface::get_mempool_cluster) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_mempool_descendants(const code& ec,
+    rpc_interface::get_mempool_descendants) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_mempool_entry(const code& ec,
+    rpc_interface::get_mempool_entry) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_mempool_info(const code& ec,
+    rpc_interface::get_mempool_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_raw_mempool(const code& ec,
+    rpc_interface::get_raw_mempool) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_get_tx_spending_prevout(const code& ec,
+    rpc_interface::get_tx_spending_prevout) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_import_mempool(const code& ec,
+    rpc_interface::import_mempool) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

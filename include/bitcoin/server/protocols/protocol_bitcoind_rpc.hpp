@@ -392,6 +392,36 @@ protected:
         rpc_interface::wallet_passphrase_change) NOEXCEPT;
     bool handle_wallet_process_psbt(const code& ec,
         rpc_interface::wallet_process_psbt) NOEXCEPT;
+    bool handle_get_mempool_ancestors(const code& ec,
+        rpc_interface::get_mempool_ancestors) NOEXCEPT;
+    bool handle_get_mempool_cluster(const code& ec,
+        rpc_interface::get_mempool_cluster) NOEXCEPT;
+    bool handle_get_mempool_descendants(const code& ec,
+        rpc_interface::get_mempool_descendants) NOEXCEPT;
+    bool handle_get_mempool_entry(const code& ec,
+        rpc_interface::get_mempool_entry) NOEXCEPT;
+    bool handle_get_mempool_info(const code& ec,
+        rpc_interface::get_mempool_info) NOEXCEPT;
+    bool handle_get_raw_mempool(const code& ec,
+        rpc_interface::get_raw_mempool) NOEXCEPT;
+    bool handle_get_tx_spending_prevout(const code& ec,
+        rpc_interface::get_tx_spending_prevout) NOEXCEPT;
+    bool handle_import_mempool(const code& ec,
+        rpc_interface::import_mempool) NOEXCEPT;
+    bool handle_abort_private_broadcast(const code& ec,
+        rpc_interface::abort_private_broadcast) NOEXCEPT;
+    bool handle_get_private_broadcast_info(const code& ec,
+        rpc_interface::get_private_broadcast_info) NOEXCEPT;
+    bool handle_submit_package(const code& ec,
+        rpc_interface::submit_package) NOEXCEPT;
+    bool handle_get_block_template(const code& ec,
+        rpc_interface::get_block_template) NOEXCEPT;
+    bool handle_get_prioritised_transactions(const code& ec,
+        rpc_interface::get_prioritised_transactions) NOEXCEPT;
+    bool handle_prioritise_transaction(const code& ec,
+        rpc_interface::prioritise_transaction) NOEXCEPT;
+    bool handle_estimate_smart_fee(const code& ec,
+        rpc_interface::estimate_smart_fee) NOEXCEPT;
     /// The method names reported by help (btcd prepends its own).
     virtual std::string help_names() const NOEXCEPT;
 
