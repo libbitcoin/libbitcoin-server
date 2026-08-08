@@ -62,6 +62,9 @@ static_assert(bitcoind_unserved("scantxoutset"));
 // no-op that returns true (store is reliable, see protocol).
 static_assert(bitcoind_served("verifychain"));
 
+// Implemented from the wip backlog.
+static_assert(bitcoind_served("getdifficulty"));
+
 // Moved from the btcd interface (btcd serves them by derivation).
 static_assert(bitcoind_served("help"));
 static_assert(bitcoind_served("getnetworkhashps"));
@@ -84,4 +87,4 @@ static_assert(bitcoind_rpc_methods::names ==
     "verifychain help getnetworkhashps getnetworkinfo "
     "createrawtransaction decoderawtransaction getrawtransaction "
     "sendrawtransaction testmempoolaccept "
-    "decodescript validateaddress");
+    "decodescript validateaddress getdifficulty");

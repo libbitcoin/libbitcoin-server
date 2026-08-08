@@ -70,7 +70,6 @@ const std::vector<std::string> wip_methods
     "getchaintips",
     "getdeploymentinfo",
     "getdescriptoractivity",
-    "getdifficulty",
     "preciousblock",
     "scanblocks",
     "waitforblock",
@@ -490,6 +489,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__noop__true)
 {
     const auto response = rpc("verifychain", "[]");
     REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdifficulty__ten_block_store__one)
+{
+    const auto response = rpc("getdifficulty");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), 1.0);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)

@@ -78,7 +78,7 @@ struct bitcoind_rpc_methods
         method<"getchaintips">{ unimplemented },
         method<"getdeploymentinfo">{ unimplemented },
         method<"getdescriptoractivity">{ unimplemented },
-        method<"getdifficulty">{ unimplemented },
+        method<"getdifficulty">{},
         method<"preciousblock">{ unimplemented },
         method<"scanblocks">{ unimplemented },
         method<"waitforblock">{ unimplemented },

@@ -486,8 +486,19 @@ bool protocol_bitcoind_rpc::handle_get_descriptor_activity(const code& ec,
 bool protocol_bitcoind_rpc::handle_get_difficulty(const code& ec,
     rpc_interface::get_difficulty) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto top = query.get_top_confirmed();
+    const auto header = query.get_header(query.to_confirmed(top));
+    if (!header)
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    send_result(header->difficulty(), 20);
     return true;
 }
 
