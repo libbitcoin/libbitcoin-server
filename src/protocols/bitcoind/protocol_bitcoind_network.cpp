@@ -70,6 +70,30 @@ bool protocol_bitcoind_rpc::handle_get_network_info(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_clear_banned(const code& ec,
+    rpc_interface::clear_banned) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_list_banned(const code& ec,
+    rpc_interface::list_banned) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_set_ban(const code& ec,
+    rpc_interface::set_ban) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

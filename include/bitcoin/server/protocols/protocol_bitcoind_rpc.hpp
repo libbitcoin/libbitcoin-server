@@ -132,6 +132,18 @@ protected:
         rpc_interface::validate_address,
         const std::string& address) NOEXCEPT;
 
+    bool handle_dump_tx_out_set(const code& ec,
+        rpc_interface::dump_tx_out_set) NOEXCEPT;
+    bool handle_load_tx_out_set(const code& ec,
+        rpc_interface::load_tx_out_set) NOEXCEPT;
+    bool handle_clear_banned(const code& ec,
+        rpc_interface::clear_banned) NOEXCEPT;
+    bool handle_list_banned(const code& ec,
+        rpc_interface::list_banned) NOEXCEPT;
+    bool handle_set_ban(const code& ec,
+        rpc_interface::set_ban) NOEXCEPT;
+    bool handle_stop(const code& ec,
+        rpc_interface::stop) NOEXCEPT;
     /// The method names reported by help (btcd prepends its own).
     virtual std::string help_names() const NOEXCEPT;
 

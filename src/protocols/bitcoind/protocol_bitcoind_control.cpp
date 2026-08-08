@@ -59,6 +59,14 @@ bool protocol_bitcoind_rpc::handle_help(const code& ec, rpc_interface::help,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_stop(const code& ec,
+    rpc_interface::stop) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

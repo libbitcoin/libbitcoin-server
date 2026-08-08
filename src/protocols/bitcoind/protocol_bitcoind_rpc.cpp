@@ -78,6 +78,12 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_test_mempool_accept, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_decode_script, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_validate_address, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_dump_tx_out_set, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_load_tx_out_set, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_clear_banned, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_list_banned, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_set_ban, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_stop, _1, _2);
     network::protocol_http::start();
 }
 

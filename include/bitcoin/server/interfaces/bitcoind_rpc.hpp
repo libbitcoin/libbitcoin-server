@@ -47,27 +47,10 @@ struct bitcoind_rpc_methods
         method<"scantxoutset", string_t, optional<empty::array>>{ unimplemented, "action", "scanobjects" },
         method<"verifychain", optional<4.0>, optional<288.0>>{ "checklevel", "nblocks" },
 
-        /////// Control methods.
-        ////method<"getmemoryinfo", optional<"stats"_t>>{ "mode" },
-        ////method<"getrpcinfo">{},
         method<"help", optional<""_t>>{ "command" },
-        ////method<"logging", optional<"*"_t>>{ "include" },
-        ////method<"stop">{},
-        ////method<"uptime">{},
 
-        /////// Mining methods.
-        ////method<"getblocktemplate", optional<empty::object>>{ "template_request" },
-        ////method<"getmininginfo">{},
         method<"getnetworkhashps", optional<120_u32>, optional<-1_i32>>{ "nblocks", "height" },
-        ////method<"prioritisetransaction", string_t, number_t, number_t>{ "txid", "dummy", "priority_delta" },
-        ////method<"submitblock", string_t, optional<""_t>>{ "block", "parameters" },
 
-        /////// Network methods.
-        ////method<"addnode", string_t, string_t>{ "node", "command" },
-        ////method<"clearbanned">{},
-        ////method<"disconnectnode", string_t, optional<-1_i32>>{ "address", "nodeid" },
-        ////method<"getaddednodeinfo", optional<false>, optional<true>, optional<""_t>>{ "include_chain_info", "dns", "addnode" },
-        ////method<"getconnectioncount">{},
         method<"getnetworkinfo">{},
 
         /// Rawtransactions methods (implemented).
@@ -79,74 +62,17 @@ struct bitcoind_rpc_methods
 
         /// Util methods (implemented).
         method<"decodescript", string_t>{ "hex" },
-        method<"validateaddress", string_t>{ "address" }
-        ////method<"getpeerinfo">{},
-        ////method<"listbanned">{},
-        ////method<"ping">{},
-        ////method<"setban", string_t, string_t, optional<86400_u32>, optional<false>, optional<""_t>>{ "addr", "command", "bantime", "absolute", "reason" },
-        ////method<"setnetworkactive", boolean_t>{ "state" },
+        method<"validateaddress", string_t>{ "address" },
 
-        /////// Rawtransactions methods.
-        ////method<"combinerawtransaction", array_t>{ "txs" },
-        ////method<"fundrawtransaction", string_t, optional<empty::object>>{ "rawtx", "options" },
-        ////method<"getrawtransaction", string_t, optional<0_u32>, optional<""_t>>{ "txid", "verbose", "blockhash" },
-        ////method<"sendrawtransaction", string_t, optional<0_u32>>{ "hexstring", "maxfeerate" },
-        ////method<"signrawtransactionwithkey", string_t, optional<empty::array>, optional<empty::array>, optional<"ALL|FORKID"_t>>{ "hexstring", "privkeys", "prevtxs", "sighashtype" },
 
-        /////// Util methods (node-related).
-        ////method<"createmultisig", number_t, array_t>{ "nrequired", "keys" },
-        ////method<"decodepsbt", string_t>{ "psbt" },
-        ////method<"estimaterawfee", number_t, optional<"unset"_t>>{ "conf_target", "estimate_mode" },
-        ////method<"getdescriptorinfo", string_t>{ "descriptor" },
 
-        /////// Wallet methods (unsupported).
-        ////method<"abandontransaction", string_t>{ "txid" },
-        ////method<"addmultisigaddress", number_t, array_t, optional<""_t>, optional<"legacy"_t>>{ "nrequired", "keys", "label", "address_type" },
-        ////method<"backupwallet", string_t>{ "destination" },
-        ////method<"bumpfee", string_t, optional<empty::object>>{ "txid", "options" },
-        ////method<"createwallet", string_t, optional<false>, optional<false>, optional<false>, optional<""_t>, optional<false>, optional<false>, optional<false>, optional<"set"_t>>{ "wallet_name", "disable_private_keys", "blank", "passphrase", "avoid_reuse", "descriptors", "load_on_startup", "external_signer", "change_type" },
-        ////method<"dumpprivkey", string_t>{ "address" },
-        ////method<"dumpwallet", string_t>{ "filename" },
-        ////method<"encryptwallet", string_t>{ "passphrase" },
-        ////method<"getaddressinfo", string_t>{ "address" },
-        ////method<"getbalances">{},
-        ////method<"getnewaddress", optional<""_t>, optional<"legacy"_t>>{ "label", "address_type" },
-        ////method<"getreceivedbyaddress", string_t, optional<0>>{ "address", "minconf" },
-        ////method<"getreceivedbylabel", string_t, optional<0>>{ "label", "minconf" },
-        ////method<"gettransaction", string_t, optional<false>, optional<false>>{ "txid", "include_watchonly", "verbose" },
-        ////method<"getunconfirmedbalance">{},
-        ////method<"getwalletinfo">{},
-        ////method<"importaddress", string_t, optional<""_t>, optional<false>, optional<true>>{ "address", "label", "rescan", "p2sh" },
-        ////method<"importmulti", array_t, optional<empty::object>>{ "requests", "options" },
-        ////method<"importprivkey", string_t, optional<""_t>, optional<false>>{ "privkey", "label", "rescan" },
-        ////method<"importprunedfunds", string_t, string_t>{ "rawtransaction", "txoutproof" },
-        ////method<"importpubkey", string_t, optional<""_t>, optional<false>>{ "pubkey", "label", "rescan" },
-        ////method<"importwallet", string_t>{ "filename" },
-        ////method<"keypoolrefill", optional<100>>{ "newsize" },
-        ////method<"listaddressgroupings", optional<1>, optional<false>>{ "minconf", "include_watchonly" },
-        ////method<"listlabels", optional<"receive"_t>>{ "purpose" },
-        ////method<"listlockunspent">{},
-        ////method<"listreceivedbyaddress", optional<1>, optional<false>, optional<false>, optional<""_t>>{ "minconf", "include_empty", "include_watchonly", "address_filter" },
-        ////method<"listreceivedbylabel", optional<1>, optional<false>, optional<false>>{ "minconf", "include_empty", "include_watchonly" },
-        ////method<"listtransactions", optional<""_t>, optional<10>, optional<0>, optional<false>>{ "label", "count", "skip", "include_watchonly" },
-        ////method<"list_unspent", optional<1>, optional<empty::array>, optional<true>, optional<false>>{ "minconf", "addresses", "include_unsafe", "query_options" },
-        ////method<"loadwallet", string_t, optional<false>>{ "filename", "load_on_startup" },
-        ////method<"lockunspent", boolean_t, optional<empty::array>>{ "unlock", "transactions" },
-        ////method<"removeprunedfunds", string_t>{ "txid" },
-        ////method<"rescanblockchain", optional<0>>{ "start_height" },
-        ////method<"send", object_t, optional<empty::object>>{ "outputs", "options" },
-        ////method<"sendmany", string_t, object_t, optional<1>, optional<""_t>, optional<""_t>, optional<false>, optional<false>, optional<25>, optional<"unset"_t>, optional<false>, optional<0>>{ "dummy", "outputs", "minconf", "comment", "comment_to", "subtractfeefrom", "replaceable", "conf_target", "estimate_mode", "avoid_reuse", "fee_rate" },
-        ////method<"sendtoaddress", string_t, number_t, optional<""_t>, optional<""_t>, optional<false>, optional<25>, optional<"unset"_t>, optional<false>, optional<0>, optional<false>>{ "address", "amount", "comment", "comment_to", "subtractfeefromamount", "conf_target", "estimate_mode", "avoid_reuse", "fee_rate", "verbose" },
-        ////method<"setlabel", string_t, string_t>{ "address", "label" },
-        ////method<"settxfee", number_t>{ "amount" },
-        ////method<"signmessage", string_t, string_t>{ "address", "message" },
-        ////method<"signmessagewithprivkey", string_t, string_t>{ "privkey", "message" },
-        ////method<"syncwithvalidationinterfacequeue">{},
-        ////method<"unloadwallet", optional<""_t>, optional<false>>{ "wallet_name", "load_on_startup" },
-        ////method<"walletcreatefundedpsbt", optional<empty::array>, optional<empty::object>, optional<0>, optional<empty::object>>{ "inputs", "outputs", "locktime", "options" },
-        ////method<"walletlock">{},
-        ////method<"walletpassphrase", string_t, number_t>{ "passphrase", "timeout" },
-        ////method<"walletprocesspsbt", string_t, optional<false>, optional<false>, optional<false>>{ "psbt", "sign", "bip32derivs", "complete" }
+        // Unimplemented (dispatchable, refused).
+        method<"dumptxoutset">{ unimplemented },
+        method<"loadtxoutset">{ unimplemented },
+        method<"clearbanned">{ unimplemented },
+        method<"listbanned">{ unimplemented },
+        method<"setban">{ unimplemented },
+        method<"stop">{ unimplemented },
     };
 
     template <typename... Args>
@@ -177,20 +103,6 @@ struct bitcoind_rpc_methods
     using scan_tx_out_set = at<13>;
     using verify_chain = at<14>;
 
-    ////using get_memory_info = at<17>;
-    ////using get_rpc_info = at<18>;
-    ////using logging = at<20>;
-    ////using stop = at<21>;
-    ////using uptime = at<22>;
-    ////using get_block_template = at<23>;
-    ////using get_mining_info = at<24>;
-    ////using prioritise_transaction = at<26>;
-    ////using submit_block = at<27>;
-    ////using add_node = at<28>;
-    ////using clear_banned = at<29>;
-    ////using disconnect_node = at<30>;
-    ////using get_added_node_info = at<31>;
-    ////using get_connection_count = at<32>;
     using help = at<15>;
     using get_network_hash_ps = at<16>;
     using get_network_info = at<17>;
@@ -201,67 +113,12 @@ struct bitcoind_rpc_methods
     using test_mempool_accept = at<22>;
     using decode_script = at<23>;
     using validate_address = at<24>;
-    ////using get_peer_info = at<34>;
-    ////using list_banned = at<35>;
-    ////using ping = at<36>;
-    ////using set_ban = at<37>;
-    ////using set_network_active = at<38>;
-    ////using combine_raw_transaction = at<39>;
-    ////using fund_raw_transaction = at<42>;
-    ////using get_raw_transaction = at<43>;
-    ////using send_raw_transaction = at<44>;
-    ////using sign_raw_transaction_with_key = at<45>;
-    ////using create_multisig = at<48>;
-    ////using decode_psbt = at<49>;
-    ////using estimate_raw_fee = at<51>;
-    ////using get_descriptor_info = at<52>;
-    ////using abandon_transaction = at<54>;
-    ////using add_multisig_address = at<55>;
-    ////using backup_wallet = at<56>;
-    ////using bump_fee = at<57>;
-    ////using create_wallet = at<58>;
-    ////using dump_priv_key = at<59>;
-    ////using dump_wallet = at<60>;
-    ////using encrypt_wallet = at<61>;
-    ////using get_address_info = at<62>;
-    ////using get_balances = at<63>;
-    ////using get_new_address = at<64>;
-    ////using get_received_by_address = at<65>;
-    ////using get_received_by_label = at<66>;
-    ////using get_transaction = at<67>;
-    ////using get_unconfirmed_balance = at<68>;
-    ////using get_wallet_info = at<69>;
-    ////using import_address = at<70>;
-    ////using import_multi = at<71>;
-    ////using import_priv_key = at<72>;
-    ////using import_pruned_funds = at<73>;
-    ////using import_pub_key = at<74>;
-    ////using import_wallet = at<75>;
-    ////using key_pool_refill = at<76>;
-    ////using list_address_groupings = at<77>;
-    ////using list_labels = at<78>;
-    ////using list_lock_unspent = at<79>;
-    ////using list_received_by_address = at<80>;
-    ////using list_received_by_label = at<81>;
-    ////using list_transactions = at<82>;
-    ////using list_unspent = at<83>;
-    ////using load_wallet = at<84>;
-    ////using lock_unspent = at<85>;
-    ////using remove_pruned_funds = at<86>;
-    ////using rescan_block_chain = at<87>;
-    ////using send = at<88>;
-    ////using send_many = at<89>;
-    ////using send_to_address = at<90>;
-    ////using set_label = at<91>;
-    ////using set_tx_fee = at<92>;
-    ////using sign_message = at<93>;
-    ////using sign_message_with_priv_key = at<94>;
-    ////using sync_with_validation_interface_queue = at<95>;
-    ////using unload_wallet = at<96>;
-    ////using wallet_create_funded_psbt = at<97>;
-    ////using wallet_lock = at<98>;
-    ////using wallet_passphrase = at<99>;
-    ////using wallet_process_psbt = at<100>;
+    using dump_tx_out_set = at<25>;
+    using load_tx_out_set = at<26>;
+    using clear_banned = at<27>;
+    using list_banned = at<28>;
+    using set_ban = at<29>;
+    using stop = at<30>;
 };
 
 } // namespace interface

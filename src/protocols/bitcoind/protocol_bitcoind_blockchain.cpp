@@ -411,6 +411,22 @@ bool protocol_bitcoind_rpc::handle_verify_chain(const code& ec,
     return true;
 }
 
+bool protocol_bitcoind_rpc::handle_dump_tx_out_set(const code& ec,
+    rpc_interface::dump_tx_out_set) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
+bool protocol_bitcoind_rpc::handle_load_tx_out_set(const code& ec,
+    rpc_interface::load_tx_out_set) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::not_implemented);
+    return true;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

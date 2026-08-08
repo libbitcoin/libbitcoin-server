@@ -287,6 +287,28 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
         BOOST_REQUIRE_MESSAGE(has_error(rpc(method, params)), method);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__not_implemented)
+{
+    const std::vector<std::string> methods
+    {
+        "dumptxoutset",
+        "loadtxoutset",
+        "clearbanned",
+        "listbanned",
+        "setban",
+        "stop",
+    };
+
+    for (const auto& method: methods)
+    {
+        const auto response = rpc(method, "[]");
+        BOOST_REQUIRE_MESSAGE(has_error(response), method);
+        BOOST_REQUIRE_MESSAGE(
+            response.at("error").at("message").as_string() == "not_implemented",
+            method);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__noop__true)
 {
     const auto response = rpc("verifychain", "[]");
