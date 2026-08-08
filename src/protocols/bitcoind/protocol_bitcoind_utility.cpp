@@ -218,10 +218,12 @@ bool protocol_bitcoind_rpc::handle_get_index_info(const code& ec,
 
     // Indexes track the confirmed chain only (no pool txs until v5 tx pool).
     // tx lookup is always available (all txs are archived).
+    // synced: current chain (not a stale checkpoint) and confirmation has
+    // coalesced with the candidate top (no stronger blocks pending).
     const auto& query = archive();
     const object_t status
     {
-        { "synced", true },
+        { "synced", is_current_chain(true) && query.is_coalesced() },
         { "best_block_height", query.get_top_confirmed() }
     };
 
