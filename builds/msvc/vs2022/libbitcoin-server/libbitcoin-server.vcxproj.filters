@@ -105,13 +105,13 @@
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp">
       <Filter>src\protocols\admin</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_json.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp">
-      <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc_json.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp">

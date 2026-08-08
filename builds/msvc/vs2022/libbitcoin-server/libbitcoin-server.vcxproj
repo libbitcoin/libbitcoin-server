@@ -133,9 +133,9 @@
     <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc_json.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_filter.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_utility.cpp" />

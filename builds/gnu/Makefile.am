@@ -63,9 +63,9 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
     ${srcdir}/../../src/protocols/protocol_http.cpp \
     ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_json.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
-    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc_json.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_filter.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_utility.cpp \
