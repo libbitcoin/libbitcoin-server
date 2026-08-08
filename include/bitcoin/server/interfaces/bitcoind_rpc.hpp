@@ -40,14 +40,12 @@ struct bitcoind_rpc_methods
         method<"getblockheader", string_t, optional<true>>{ "blockhash", "verbose" },
         method<"getblockstats", value_t, optional<empty::array>>{ unimplemented, "hash_or_height", "stats" },
         method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ unimplemented, "nblocks", "blockhash" },
-        method<"getchainwork">{ unimplemented },
         method<"gettxout", string_t, number_t, optional<true>>{ "txid", "n", "include_mempool" },
         method<"gettxoutsetinfo">{ unimplemented },
         method<"pruneblockchain", number_t>{ unimplemented, "height" },
         method<"savemempool">{ unimplemented },
         method<"scantxoutset", string_t, optional<empty::array>>{ unimplemented, "action", "scanobjects" },
         method<"verifychain", optional<4.0>, optional<288.0>>{ unimplemented, "checklevel", "nblocks" },
-        method<"verifytxoutset", string_t>{ unimplemented, "input_verify_flag" },
 
         /////// Control methods.
         ////method<"getmemoryinfo", optional<"stats"_t>>{ "mode" },
@@ -78,7 +76,6 @@ struct bitcoind_rpc_methods
         method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
         method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" },
         method<"testmempoolaccept", array_t, optional<0_u32>>{ "rawtxs", "maxfeerate" },
-        method<"testrawtransaction", string_t>{ "rawtx" },
 
         /// Util methods (implemented).
         method<"decodescript", string_t>{ "hex" },
@@ -173,14 +170,12 @@ struct bitcoind_rpc_methods
     using get_block_header = at<6>;
     using get_block_stats = at<7>;
     using get_chain_tx_stats = at<8>;
-    using get_chain_work = at<9>;
-    using get_tx_out = at<10>;
-    using get_tx_out_set_info = at<11>;
-    using prune_block_chain = at<12>;
-    using save_mempool = at<13>;
-    using scan_tx_out_set = at<14>;
-    using verify_chain = at<15>;
-    using verify_tx_out_set = at<16>;
+    using get_tx_out = at<9>;
+    using get_tx_out_set_info = at<10>;
+    using prune_block_chain = at<11>;
+    using save_mempool = at<12>;
+    using scan_tx_out_set = at<13>;
+    using verify_chain = at<14>;
 
     ////using get_memory_info = at<17>;
     ////using get_rpc_info = at<18>;
@@ -196,17 +191,16 @@ struct bitcoind_rpc_methods
     ////using disconnect_node = at<30>;
     ////using get_added_node_info = at<31>;
     ////using get_connection_count = at<32>;
-    using help = at<17>;
-    using get_network_hash_ps = at<18>;
-    using get_network_info = at<19>;
-    using create_raw_transaction = at<20>;
-    using decode_raw_transaction = at<21>;
-    using get_raw_transaction = at<22>;
-    using send_raw_transaction = at<23>;
-    using test_mempool_accept = at<24>;
-    using test_raw_transaction = at<25>;
-    using decode_script = at<26>;
-    using validate_address = at<27>;
+    using help = at<15>;
+    using get_network_hash_ps = at<16>;
+    using get_network_info = at<17>;
+    using create_raw_transaction = at<18>;
+    using decode_raw_transaction = at<19>;
+    using get_raw_transaction = at<20>;
+    using send_raw_transaction = at<21>;
+    using test_mempool_accept = at<22>;
+    using decode_script = at<23>;
+    using validate_address = at<24>;
     ////using get_peer_info = at<34>;
     ////using list_banned = at<35>;
     ////using ping = at<36>;

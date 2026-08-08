@@ -54,13 +54,11 @@ constexpr bool bitcoind_unserved(const std::string_view& name) NOEXCEPT
 // These are dispatchable but answer not_implemented (see protocol).
 static_assert(bitcoind_unserved("getblockstats"));
 static_assert(bitcoind_unserved("getchaintxstats"));
-static_assert(bitcoind_unserved("getchainwork"));
 static_assert(bitcoind_unserved("gettxoutsetinfo"));
 static_assert(bitcoind_unserved("pruneblockchain"));
 static_assert(bitcoind_unserved("savemempool"));
 static_assert(bitcoind_unserved("scantxoutset"));
 static_assert(bitcoind_unserved("verifychain"));
-static_assert(bitcoind_unserved("verifytxoutset"));
 
 // Moved from the btcd interface (btcd serves them by derivation).
 static_assert(bitcoind_served("help"));
@@ -69,7 +67,6 @@ static_assert(bitcoind_served("createrawtransaction"));
 static_assert(bitcoind_served("decoderawtransaction"));
 static_assert(bitcoind_served("decodescript"));
 static_assert(bitcoind_served("testmempoolaccept"));
-static_assert(bitcoind_served("testrawtransaction"));
 static_assert(bitcoind_served("validateaddress"));
 
 // A name absent from the interface satisfies neither.
@@ -84,5 +81,5 @@ static_assert(bitcoind_rpc_methods::names ==
     "getblockfilter getblockhash getblockheader gettxout "
     "help getnetworkhashps getnetworkinfo "
     "createrawtransaction decoderawtransaction getrawtransaction "
-    "sendrawtransaction testmempoolaccept testrawtransaction "
+    "sendrawtransaction testmempoolaccept "
     "decodescript validateaddress");

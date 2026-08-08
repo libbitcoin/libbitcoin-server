@@ -255,20 +255,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__empty__error)
     BOOST_REQUIRE(has_error(response));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__testrawtransaction__unsigned__error)
-{
-    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
-    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
-    const auto response = rpc("testrawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
-    BOOST_REQUIRE(has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__testrawtransaction__not_hex__error)
-{
-    const auto response = rpc("testrawtransaction", "[\"nothex\"]");
-    BOOST_REQUIRE(has_error(response));
-}
-
 // network
 // ----------------------------------------------------------------------------
 
@@ -291,11 +277,9 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
     {
         { "getblockstats", "[0]" },
         { "getchaintxstats", "[]" },
-        { "getchainwork", "[]" },
         { "gettxoutsetinfo", "[]" },
         { "scantxoutset", "[\"start\", []]" },
         { "verifychain", "[]" },
-        { "verifytxoutset", "[\"test\"]" },
         { "pruneblockchain", "[1]" },
         { "savemempool", "[]" }
     };

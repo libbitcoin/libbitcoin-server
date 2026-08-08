@@ -89,8 +89,6 @@ protected:
     bool handle_get_chain_tx_stats(const code& ec,
         rpc_interface::get_chain_tx_stats, double,
         const std::string&) NOEXCEPT;
-    bool handle_get_chain_work(const code& ec,
-        rpc_interface::get_chain_work) NOEXCEPT;
     bool handle_get_tx_out(const code& ec,
         rpc_interface::get_tx_out, const std::string&, double, bool) NOEXCEPT;
     bool handle_get_tx_out_set_info(const code& ec,
@@ -104,8 +102,6 @@ protected:
         const network::rpc::array_t&) NOEXCEPT;
     bool handle_verify_chain(const code& ec,
         rpc_interface::verify_chain, double, double) NOEXCEPT;
-    bool handle_verify_tx_out_set(const code& ec,
-        rpc_interface::verify_tx_out_set, const std::string&) NOEXCEPT;
     bool handle_help(const code& ec, rpc_interface::help,
         const std::string& command) NOEXCEPT;
     bool handle_get_network_hash_ps(const code& ec,
@@ -130,9 +126,6 @@ protected:
     bool handle_test_mempool_accept(const code& ec,
         rpc_interface::test_mempool_accept,
         const network::rpc::array_t& rawtxs, uint32_t maxfeerate) NOEXCEPT;
-    bool handle_test_raw_transaction(const code& ec,
-        rpc_interface::test_raw_transaction,
-        const std::string& rawtx) NOEXCEPT;
     bool handle_decode_script(const code& ec,
         rpc_interface::decode_script, const std::string& hex) NOEXCEPT;
     bool handle_validate_address(const code& ec,
