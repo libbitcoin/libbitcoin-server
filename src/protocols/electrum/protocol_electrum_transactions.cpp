@@ -49,15 +49,9 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
         return;
     }
 
-    data_chunk tx_data{};
-    if (!decode_base16(tx_data, raw_tx))
-    {
-        send_code(error::invalid_argument);
-        return;
-    }
-
-    const auto tx = to_shared<chain::transaction>(tx_data, true);
-    if (!tx->is_valid())
+    read::base16::copy hexer{ raw_tx };
+    const auto tx = to_shared<chain::transaction>(hexer, true);
+    if (!tx->is_valid() || !hexer.is_exhausted())
     {
         send_code(error::invalid_argument);
         return;
@@ -127,15 +121,9 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
             return;
         }
 
-        data_chunk tx_data{};
-        if (!decode_base16(tx_data, std::get<string_t>(tx_hex.value())))
-        {
-            send_code(error::invalid_argument);
-            return;
-        }
-
-        const auto tx = to_shared<chain::transaction>(tx_data, true);
-        if (!tx->is_valid())
+        read::base16::copy hexer{ std::get<string_t>(tx_hex.value()) };
+        const auto tx = to_shared<chain::transaction>(hexer, true);
+        if (!tx->is_valid() || !hexer.is_exhausted())
         {
             send_code(error::invalid_argument);
             return;

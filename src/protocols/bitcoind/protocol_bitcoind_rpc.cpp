@@ -65,7 +65,7 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_tx_out, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_tx_out_set_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_prune_block_chain, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_save_mem_pool, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_save_mempool, _1, _2);
     SUBSCRIBE_BITCOIND(handle_scan_tx_out_set, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_verify_chain, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_verify_tx_out_set, _1, _2, _3);
@@ -77,6 +77,8 @@ void protocol_bitcoind_rpc::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_decode_raw_transaction, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_test_mempool_accept, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_test_raw_transaction, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_decode_script, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_validate_address, _1, _2, _3);
     network::protocol_http::start();
@@ -577,8 +579,8 @@ bool protocol_bitcoind_rpc::handle_prune_block_chain(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_save_mem_pool(const code& ec,
-    rpc_interface::save_mem_pool) NOEXCEPT
+bool protocol_bitcoind_rpc::handle_save_mempool(const code& ec,
+    rpc_interface::save_mempool) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);
@@ -738,6 +740,80 @@ bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
     }
 
     send_result(encode_hash(tx->hash(false)), two * system::hash_size);
+    return true;
+}
+
+// Validation runs against the confirmed chain (no tx pool until v5).
+bool protocol_bitcoind_rpc::handle_test_mempool_accept(const code& ec,
+    rpc_interface::test_mempool_accept, const array_t& rawtxs,
+    uint32_t) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (rawtxs.empty())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    array_t results{};
+    results.reserve(rawtxs.size());
+    for (const auto& item: rawtxs)
+    {
+        if (!std::holds_alternative<string_t>(item.value()))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        read::base16::copy hexer{ std::get<string_t>(item.value()) };
+        const chain::transaction tx{ hexer, true };
+        if (!tx.is_valid() || !hexer.is_exhausted())
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        object_t result{};
+        result.emplace("txid", encode_hash(tx.hash(false)));
+        result.emplace("wtxid", encode_hash(tx.hash(true)));
+
+        const auto fault = validate_tx(tx);
+        result.emplace("allowed", !fault);
+        if (fault)
+            result.emplace("reject-reason", fault.message());
+
+        results.emplace_back(std::move(result));
+    }
+
+    const auto size = 128 * results.size();
+    send_result(std::move(results), size);
+    return true;
+}
+
+// As sendrawtransaction, but validate only (no relay).
+bool protocol_bitcoind_rpc::handle_test_raw_transaction(const code& ec,
+    rpc_interface::test_raw_transaction, const std::string& rawtx) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    read::base16::copy hexer{ rawtx };
+    const chain::transaction tx{ hexer, true };
+    if (!tx.is_valid() || !hexer.is_exhausted())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (const auto fault = validate_tx(tx))
+    {
+        send_error(fault);
+        return true;
+    }
+
+    send_result(encode_hash(tx.hash(false)), two * system::hash_size);
     return true;
 }
 

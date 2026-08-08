@@ -97,8 +97,8 @@ protected:
         rpc_interface::get_tx_out_set_info) NOEXCEPT;
     bool handle_prune_block_chain(const code& ec,
         rpc_interface::prune_block_chain, double) NOEXCEPT;
-    bool handle_save_mem_pool(const code& ec,
-        rpc_interface::save_mem_pool) NOEXCEPT;
+    bool handle_save_mempool(const code& ec,
+        rpc_interface::save_mempool) NOEXCEPT;
     bool handle_scan_tx_out_set(const code& ec,
         rpc_interface::scan_tx_out_set, const std::string&,
         const network::rpc::array_t&) NOEXCEPT;
@@ -127,6 +127,12 @@ protected:
     bool handle_decode_raw_transaction(const code& ec,
         rpc_interface::decode_raw_transaction,
         const std::string& hexstring) NOEXCEPT;
+    bool handle_test_mempool_accept(const code& ec,
+        rpc_interface::test_mempool_accept,
+        const network::rpc::array_t& rawtxs, uint32_t maxfeerate) NOEXCEPT;
+    bool handle_test_raw_transaction(const code& ec,
+        rpc_interface::test_raw_transaction,
+        const std::string& rawtx) NOEXCEPT;
     bool handle_decode_script(const code& ec,
         rpc_interface::decode_script, const std::string& hex) NOEXCEPT;
     bool handle_validate_address(const code& ec,

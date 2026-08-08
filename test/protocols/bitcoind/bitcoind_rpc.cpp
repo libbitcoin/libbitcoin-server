@@ -235,7 +235,38 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__genesis__valid)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__garbage__invalid)
 {
     const auto response = rpc("validateaddress", "[\"notanaddress\"]");
-    REQUIRE_NO_THROW_TRUE(!response.at("result").at("isvalid").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE(!response.at("result").at("isvalid").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("testmempoolaccept", "[[\"" + as_text(created.at("result")) + "\"]]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
+    BOOST_REQUIRE(response.at("result").at(0).as_object().contains("reject-reason"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__empty__error)
+{
+    const auto response = rpc("testmempoolaccept", "[[]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testrawtransaction__unsigned__error)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("testrawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testrawtransaction__not_hex__error)
+{
+    const auto response = rpc("testrawtransaction", "[\"nothex\"]");
+    BOOST_REQUIRE(has_error(response));
 }
 
 // network

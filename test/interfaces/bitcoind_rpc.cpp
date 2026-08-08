@@ -68,6 +68,8 @@ static_assert(bitcoind_served("getnetworkhashps"));
 static_assert(bitcoind_served("createrawtransaction"));
 static_assert(bitcoind_served("decoderawtransaction"));
 static_assert(bitcoind_served("decodescript"));
+static_assert(bitcoind_served("testmempoolaccept"));
+static_assert(bitcoind_served("testrawtransaction"));
 static_assert(bitcoind_served("validateaddress"));
 
 // A name absent from the interface satisfies neither.
@@ -82,5 +84,5 @@ static_assert(bitcoind_rpc_methods::names ==
     "getblockfilter getblockhash getblockheader gettxout "
     "help getnetworkhashps getnetworkinfo "
     "createrawtransaction decoderawtransaction getrawtransaction "
-    "sendrawtransaction "
+    "sendrawtransaction testmempoolaccept testrawtransaction "
     "decodescript validateaddress");

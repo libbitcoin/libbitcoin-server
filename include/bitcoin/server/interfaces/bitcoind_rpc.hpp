@@ -77,6 +77,8 @@ struct bitcoind_rpc_methods
         method<"decoderawtransaction", string_t>{ "hexstring" },
         method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
         method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" },
+        method<"testmempoolaccept", array_t, optional<0_u32>>{ "rawtxs", "maxfeerate" },
+        method<"testrawtransaction", string_t>{ "rawtx" },
 
         /// Util methods (implemented).
         method<"decodescript", string_t>{ "hex" },
@@ -93,8 +95,6 @@ struct bitcoind_rpc_methods
         ////method<"getrawtransaction", string_t, optional<0_u32>, optional<""_t>>{ "txid", "verbose", "blockhash" },
         ////method<"sendrawtransaction", string_t, optional<0_u32>>{ "hexstring", "maxfeerate" },
         ////method<"signrawtransactionwithkey", string_t, optional<empty::array>, optional<empty::array>, optional<"ALL|FORKID"_t>>{ "hexstring", "privkeys", "prevtxs", "sighashtype" },
-        ////method<"testmempoolaccept", array_t, optional<0_u32>>{ "rawtxs", "maxfeerate" },
-        ////method<"testrawtransaction", string_t>{ "rawtx" },
 
         /////// Util methods (node-related).
         ////method<"createmultisig", number_t, array_t>{ "nrequired", "keys" },
@@ -177,7 +177,7 @@ struct bitcoind_rpc_methods
     using get_tx_out = at<10>;
     using get_tx_out_set_info = at<11>;
     using prune_block_chain = at<12>;
-    using save_mem_pool = at<13>;
+    using save_mempool = at<13>;
     using scan_tx_out_set = at<14>;
     using verify_chain = at<15>;
     using verify_tx_out_set = at<16>;
@@ -203,8 +203,10 @@ struct bitcoind_rpc_methods
     using decode_raw_transaction = at<21>;
     using get_raw_transaction = at<22>;
     using send_raw_transaction = at<23>;
-    using decode_script = at<24>;
-    using validate_address = at<25>;
+    using test_mempool_accept = at<24>;
+    using test_raw_transaction = at<25>;
+    using decode_script = at<26>;
+    using validate_address = at<27>;
     ////using get_peer_info = at<34>;
     ////using list_banned = at<35>;
     ////using ping = at<36>;
@@ -215,8 +217,6 @@ struct bitcoind_rpc_methods
     ////using get_raw_transaction = at<43>;
     ////using send_raw_transaction = at<44>;
     ////using sign_raw_transaction_with_key = at<45>;
-    ////using test_mem_pool_accept = at<46>;
-    ////using test_raw_transaction = at<47>;
     ////using create_multisig = at<48>;
     ////using decode_psbt = at<49>;
     ////using estimate_raw_fee = at<51>;
