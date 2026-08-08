@@ -279,13 +279,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
         { "getchaintxstats", "[]" },
         { "gettxoutsetinfo", "[]" },
         { "scantxoutset", "[\"start\", []]" },
-        { "verifychain", "[]" },
         { "pruneblockchain", "[1]" },
         { "savemempool", "[]" }
     };
 
     for (const auto& [method, params]: methods)
         BOOST_REQUIRE_MESSAGE(has_error(rpc(method, params)), method);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__noop__true)
+{
+    const auto response = rpc("verifychain", "[]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)

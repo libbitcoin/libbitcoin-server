@@ -58,7 +58,9 @@ static_assert(bitcoind_unserved("gettxoutsetinfo"));
 static_assert(bitcoind_unserved("pruneblockchain"));
 static_assert(bitcoind_unserved("savemempool"));
 static_assert(bitcoind_unserved("scantxoutset"));
-static_assert(bitcoind_unserved("verifychain"));
+
+// no-op that returns true (store is reliable, see protocol).
+static_assert(bitcoind_served("verifychain"));
 
 // Moved from the btcd interface (btcd serves them by derivation).
 static_assert(bitcoind_served("help"));
@@ -79,7 +81,7 @@ static_assert(!bitcoind_served("getcurrentnet") && !bitcoind_unserved("getcurren
 static_assert(bitcoind_rpc_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader gettxout "
-    "help getnetworkhashps getnetworkinfo "
+    "verifychain help getnetworkhashps getnetworkinfo "
     "createrawtransaction decoderawtransaction getrawtransaction "
     "sendrawtransaction testmempoolaccept "
     "decodescript validateaddress");

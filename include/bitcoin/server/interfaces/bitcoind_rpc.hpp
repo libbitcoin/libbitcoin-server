@@ -45,7 +45,7 @@ struct bitcoind_rpc_methods
         method<"pruneblockchain", number_t>{ unimplemented, "height" },
         method<"savemempool">{ unimplemented },
         method<"scantxoutset", string_t, optional<empty::array>>{ unimplemented, "action", "scanobjects" },
-        method<"verifychain", optional<4.0>, optional<288.0>>{ unimplemented, "checklevel", "nblocks" },
+        method<"verifychain", optional<4.0>, optional<288.0>>{ "checklevel", "nblocks" },
 
         /////// Control methods.
         ////method<"getmemoryinfo", optional<"stats"_t>>{ "mode" },

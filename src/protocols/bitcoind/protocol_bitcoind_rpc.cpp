@@ -588,8 +588,11 @@ bool protocol_bitcoind_rpc::handle_scan_tx_out_set(const code& ec,
 bool protocol_bitcoind_rpc::handle_verify_chain(const code& ec,
     rpc_interface::verify_chain, double, double) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    // no-op, store is reliable (integrity is guarded by the flush lock).
+    send_result(value{ true }, 8);
     return true;
 }
 
