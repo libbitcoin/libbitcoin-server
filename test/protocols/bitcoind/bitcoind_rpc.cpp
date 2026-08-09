@@ -358,7 +358,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__help__default__implemented_method_list)
     const auto response = rpc("help");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_NE(as_text(response.at("result")).find("getblockcount"), std::string::npos);
-    BOOST_REQUIRE_EQUAL(as_text(response.at("result")).find("getblockstats"), std::string::npos);
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")).find("gettxoutsetinfo"), std::string::npos);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__default__number)
@@ -505,7 +505,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
 {
     const std::vector<std::pair<std::string, std::string>> methods
     {
-        { "getblockstats", "[0]" },
         { "gettxoutsetinfo", "[]" },
         { "scantxoutset", "[\"start\", []]" },
         { "pruneblockchain", "[1]" },
@@ -607,6 +606,37 @@ BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getindexinfo__current_coalesced__txindex_s
     BOOST_REQUIRE_EQUAL(txindex.at("best_block_height").as_int64(), 9);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__block1_by_height__coinbase_only)
+{
+    const auto response = rpc("getblockstats", "[1]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("blockhash")), block1);
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("txs").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("ins").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("outs").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("totalfee").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("subsidy").as_int64(), 5000000000);
+    BOOST_REQUIRE_EQUAL(result.at("utxo_increase").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("feerate_percentiles").as_array().size(), 5u);
+}
+
+// The stats selection returns only the named subset.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__by_hash_selected__subset)
+{
+    const auto response = rpc("getblockstats", "[\"" + block1 + "\", [\"height\", \"subsidy\"]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_object().size(), 2u);
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("subsidy").as_int64(), 5000000000);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__unknown_stat__error)
+{
+    const auto response = rpc("getblockstats", "[1, [\"nonsense\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
 {
     const auto response = rpc("getchaintips");
@@ -615,7 +645,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
     BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
 }
 
-// A single fully-validated chainstate (snapshot loading is not supported).
+// A single fully-validated chainstate (assumeutxo is rejected).
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchainstates__ten_block_store__single_validated)
 {
     const auto response = rpc("getchainstates");

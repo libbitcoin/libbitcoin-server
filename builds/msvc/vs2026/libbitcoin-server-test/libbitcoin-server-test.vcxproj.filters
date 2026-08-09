@@ -66,6 +66,9 @@
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\block_stats.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\descriptor.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>

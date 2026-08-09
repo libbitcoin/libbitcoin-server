@@ -128,6 +128,7 @@
     <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\block_stats.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\descriptor.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp" />
@@ -210,6 +211,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\block_stats.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\descriptor.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp" />
