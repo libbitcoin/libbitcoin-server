@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 #include <bitcoin/server/define.hpp>
 
@@ -25,14 +25,14 @@ namespace server {
 
 using namespace system;
 
-uint32_t protocol_bitcoind_rpc::median_time_past(const node::query& query,
+uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     const database::header_link& link) NOEXCEPT
 {
     chain::context ctx{};
     return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
 }
 
-void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
+void protocol_bitcoind::inject_block_context(boost::json::object& out,
     const node::query& query, const database::header_link& link,
     const chain::header& header) NOEXCEPT
 {
@@ -54,7 +54,7 @@ void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
             query.get_header_key(query.to_confirmed(add1(height))));
 }
 
-void protocol_bitcoind_rpc::inject_tx_context(boost::json::object& out,
+void protocol_bitcoind::inject_tx_context(boost::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT
 {
     size_t height{};
@@ -77,7 +77,7 @@ void protocol_bitcoind_rpc::inject_tx_context(boost::json::object& out,
     }
 }
 
-boost::json::object protocol_bitcoind_rpc::header_to_bitcoind(
+boost::json::object protocol_bitcoind::header_to_bitcoind(
     const chain::header& header) NOEXCEPT
 {
     return boost::json::object
@@ -93,7 +93,7 @@ boost::json::object protocol_bitcoind_rpc::header_to_bitcoind(
     };
 }
 
-std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
+std::string protocol_bitcoind::chain_name(const node::query& query) NOEXCEPT
 {
     const auto genesis = query.get_header_key(query.to_confirmed(zero));
 

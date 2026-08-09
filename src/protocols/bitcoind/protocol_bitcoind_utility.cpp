@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_utility.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -25,7 +25,18 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
+
+// Isolate the subgroup dispatch metaprogramming to this translation unit.
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_utility>;
+
 namespace server {
+
+template class protocol_bitcoind_dispatch<interface::bitcoind_utility>;
+
+#define CLASS protocol_bitcoind_utility
+#define SUBSCRIBE_BITCOIND(method, ...) \
+    subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network;
@@ -37,6 +48,27 @@ using namespace boost::json;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
+
+// Start.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_utility::start() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (started())
+        return;
+
+    SUBSCRIBE_BITCOIND(handle_decode_script, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_validate_address, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_create_multisig, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_derive_addresses, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_descriptor_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_index_info, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_estimate_smart_fee, _1, _2);
+    protocol_bitcoind_dispatch<rpc_interface>::start();
+}
 
 // Utility methods.
 // ----------------------------------------------------------------------------
@@ -67,7 +99,7 @@ static std::string to_script_type(chain::script_pattern pattern) NOEXCEPT
     }
 }
 
-bool protocol_bitcoind_rpc::handle_decode_script(const code& ec,
+bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     rpc_interface::decode_script, const std::string& hex) NOEXCEPT
 {
     if (stopped(ec))
@@ -112,7 +144,7 @@ bool protocol_bitcoind_rpc::handle_decode_script(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_validate_address(const code& ec,
+bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     rpc_interface::validate_address, const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
@@ -154,7 +186,7 @@ bool protocol_bitcoind_rpc::handle_validate_address(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_create_multisig(const code& ec,
+bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     rpc_interface::create_multisig) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -162,7 +194,7 @@ bool protocol_bitcoind_rpc::handle_create_multisig(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_derive_addresses(const code& ec,
+bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
     rpc_interface::derive_addresses) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -170,7 +202,7 @@ bool protocol_bitcoind_rpc::handle_derive_addresses(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_descriptor_info(const code& ec,
+bool protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
     rpc_interface::get_descriptor_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -178,7 +210,7 @@ bool protocol_bitcoind_rpc::handle_get_descriptor_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_verify_message(const code& ec,
+bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
     rpc_interface::verify_message, const std::string& address,
     const std::string& signature, const std::string& message) NOEXCEPT
 {
@@ -210,7 +242,7 @@ bool protocol_bitcoind_rpc::handle_verify_message(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_index_info(const code& ec,
+bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
     rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT
 {
     if (stopped(ec))
@@ -239,7 +271,7 @@ bool protocol_bitcoind_rpc::handle_get_index_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_estimate_smart_fee(const code& ec,
+bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
     rpc_interface::estimate_smart_fee) NOEXCEPT
 {
     if (stopped(ec)) return false;

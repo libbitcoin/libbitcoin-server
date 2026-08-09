@@ -18,7 +18,7 @@
  */
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 using namespace system;
 
@@ -29,13 +29,13 @@ static std::string as_text(const boost::json::value& value) NOEXCEPT
 
 // Exposes the protected static json helpers for direct testing.
 struct json
-  : server::protocol_bitcoind_rpc
+  : server::protocol_bitcoind
 {
-    using protocol_bitcoind_rpc::median_time_past;
-    using protocol_bitcoind_rpc::inject_block_context;
-    using protocol_bitcoind_rpc::inject_tx_context;
-    using protocol_bitcoind_rpc::header_to_bitcoind;
-    using protocol_bitcoind_rpc::chain_name;
+    using protocol_bitcoind::median_time_past;
+    using protocol_bitcoind::inject_block_context;
+    using protocol_bitcoind::inject_tx_context;
+    using protocol_bitcoind::header_to_bitcoind;
+    using protocol_bitcoind::chain_name;
 };
 
 // header_to_bitcoind

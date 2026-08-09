@@ -29,10 +29,22 @@ namespace libbitcoin {
 namespace server {
 
 /// Alias server sessions, all derived from node::session.
+/// The first protocol supplies channel_t/options_t, protocol_bitcoind is the
+/// terminal default responder and must be attached (subscribed) last.
 using session_admin = session_server<protocol_admin>;
 using session_native = session_server<protocol_native>;
-using session_bitcoind = session_server<protocol_bitcoind_rest>;
-using session_btcd = session_server<protocol_btcd>;
+using session_bitcoind = session_server<protocol_bitcoind_rest,
+    protocol_bitcoind_blockchain, protocol_bitcoind_control,
+    protocol_bitcoind_mining, protocol_bitcoind_network,
+    protocol_bitcoind_notifications, protocol_bitcoind_test,
+    protocol_bitcoind_transaction, protocol_bitcoind_utility,
+    protocol_bitcoind_wallet, protocol_bitcoind>;
+using session_btcd = session_server<protocol_btcd,
+    protocol_bitcoind_blockchain, protocol_bitcoind_control,
+    protocol_bitcoind_mining, protocol_bitcoind_network,
+    protocol_bitcoind_notifications, protocol_bitcoind_test,
+    protocol_bitcoind_transaction, protocol_bitcoind_utility,
+    protocol_bitcoind_wallet, protocol_bitcoind>;
 using session_stratum_v1 = session_server<protocol_stratum_v1>;
 using session_stratum_v2 = session_server<protocol_stratum_v2>;
 using session_electrum = session_handshake<protocol_electrum_version,
@@ -74,12 +86,21 @@ server::session → node::session
 └── server::session_server<...Protocols> → network::session_server
     ╞══ session_admin      = server::session_server<protocol_admin>
     ╞══ session_native     = server::session_server<protocol_native>
-    ╞══ session_bitcoind   = server::session_server<protocol_bitcoind_rest>
-    ╞══ session_btcd       = server::session_server<protocol_btcd>
+    ╞══ session_bitcoind   = server::session_server<protocol_bitcoind_rest,
+            protocol_bitcoind_<subgroup>..., protocol_bitcoind>
+    ╞══ session_btcd       = server::session_server<protocol_btcd,
+            protocol_bitcoind_<subgroup>..., protocol_bitcoind>
     ╞══ session_stratum_v1 = server::session_server<protocol_stratum_v1>
     ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
     └── server::session_handshake<...Protocols>
         ╘══ session_electrum = server::session_handshake<
                 protocol_electrum_version, protocol_electrum>
+
+The bitcoind interface subgroups (blockchain, control, mining, network,
+notifications, test, transaction, utility, wallet) are independent protocols,
+each with its own interface dispatcher, attached to the same channel. A
+subgroup claims each request defined by its interface (via the channel latch);
+protocol_bitcoind is the terminal default responder, attached last, replying
+only to unclaimed requests. The first protocol supplies channel_t/options_t.
 
 */

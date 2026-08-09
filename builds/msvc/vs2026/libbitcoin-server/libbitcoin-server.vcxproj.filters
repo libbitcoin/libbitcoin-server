@@ -105,6 +105,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp">
       <Filter>src\protocols\admin</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_blockchain.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
@@ -124,9 +127,6 @@
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rest.cpp">
-      <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_rpc.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_test.cpp">
@@ -260,10 +260,34 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\admin.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_blockchain.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_control.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_mining.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_network.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_notifications.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rest.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_rpc.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_test.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_transaction.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_utility.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_wallet.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp">
@@ -323,10 +347,40 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_admin.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_blockchain.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_control.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_dispatch.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_mining.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_network.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_notifications.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rest.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_rpc.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_test.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_transaction.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_utility.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_wallet.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp">

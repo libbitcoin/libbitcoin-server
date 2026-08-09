@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -25,7 +25,18 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
+
+// Isolate the subgroup dispatch metaprogramming to this translation unit.
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_blockchain>;
+
 namespace server {
+
+template class protocol_bitcoind_dispatch<interface::bitcoind_blockchain>;
+
+#define CLASS protocol_bitcoind_blockchain
+#define SUBSCRIBE_BITCOIND(method, ...) \
+    subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network;
@@ -38,10 +49,61 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// Start.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_blockchain::start() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (started())
+        return;
+
+    SUBSCRIBE_BITCOIND(handle_get_best_block_hash, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_block, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_block_chain_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_block_count, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_block_filter, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_block_hash, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_get_block_header, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_block_stats, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_chain_tx_stats, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_tx_out, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_tx_out_set_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_prune_block_chain, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_save_mempool, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_scan_tx_out_set, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_verify_chain, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_dump_tx_out_set, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_load_tx_out_set, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_tx_out_proof, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_verify_tx_out_proof, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_block_from_peer, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_chain_states, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_chain_tips, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_entry, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
+    protocol_bitcoind_dispatch<rpc_interface>::start();
+}
+
 // Blockchain methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_rpc::handle_get_best_block_hash(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_best_block_hash(const code& ec,
     rpc_interface::get_best_block_hash) NOEXCEPT
 {
     if (stopped(ec))
@@ -52,7 +114,7 @@ bool protocol_bitcoind_rpc::handle_get_best_block_hash(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     rpc_interface::get_block, const std::string& blockhash,
     double verbosity) NOEXCEPT
 {
@@ -114,7 +176,7 @@ bool protocol_bitcoind_rpc::handle_get_block(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block_chain_info(const code& ec,
     rpc_interface::get_block_chain_info) NOEXCEPT
 {
     if (stopped(ec))
@@ -178,7 +240,7 @@ bool protocol_bitcoind_rpc::handle_get_block_chain_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block_count(const code& ec,
     rpc_interface::get_block_count) NOEXCEPT
 {
     if (stopped(ec))
@@ -189,7 +251,7 @@ bool protocol_bitcoind_rpc::handle_get_block_count(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_filter(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block_filter(const code& ec,
     rpc_interface::get_block_filter, const std::string& blockhash,
     const std::string&) NOEXCEPT
 {
@@ -228,7 +290,7 @@ bool protocol_bitcoind_rpc::handle_get_block_filter(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_hash(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block_hash(const code& ec,
     rpc_interface::get_block_hash, double height) NOEXCEPT
 {
     if (stopped(ec))
@@ -253,7 +315,7 @@ bool protocol_bitcoind_rpc::handle_get_block_hash(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
     rpc_interface::get_block_header, const std::string& blockhash,
     bool verbose) NOEXCEPT
 {
@@ -289,7 +351,7 @@ bool protocol_bitcoind_rpc::handle_get_block_header(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_stats(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     rpc_interface::get_block_stats, const value_t&, const array_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -297,7 +359,7 @@ bool protocol_bitcoind_rpc::handle_get_block_stats(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_chain_tx_stats(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
     rpc_interface::get_chain_tx_stats, double, const std::string&) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -305,7 +367,7 @@ bool protocol_bitcoind_rpc::handle_get_chain_tx_stats(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     rpc_interface::get_tx_out, const std::string& txid, double n,
     bool) NOEXCEPT
 {
@@ -367,7 +429,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_out(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_tx_out_set_info(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
     rpc_interface::get_tx_out_set_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -375,7 +437,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_out_set_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_prune_block_chain(const code& ec,
+bool protocol_bitcoind_blockchain::handle_prune_block_chain(const code& ec,
     rpc_interface::prune_block_chain, double) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -383,7 +445,7 @@ bool protocol_bitcoind_rpc::handle_prune_block_chain(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_save_mempool(const code& ec,
+bool protocol_bitcoind_blockchain::handle_save_mempool(const code& ec,
     rpc_interface::save_mempool) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -391,7 +453,7 @@ bool protocol_bitcoind_rpc::handle_save_mempool(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_scan_tx_out_set(const code& ec,
+bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
     rpc_interface::scan_tx_out_set, const std::string&,
     const array_t&) NOEXCEPT
 {
@@ -400,7 +462,7 @@ bool protocol_bitcoind_rpc::handle_scan_tx_out_set(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_verify_chain(const code& ec,
+bool protocol_bitcoind_blockchain::handle_verify_chain(const code& ec,
     rpc_interface::verify_chain, double, double) NOEXCEPT
 {
     if (stopped(ec))
@@ -411,7 +473,7 @@ bool protocol_bitcoind_rpc::handle_verify_chain(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_dump_tx_out_set(const code& ec,
+bool protocol_bitcoind_blockchain::handle_dump_tx_out_set(const code& ec,
     rpc_interface::dump_tx_out_set) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -419,7 +481,7 @@ bool protocol_bitcoind_rpc::handle_dump_tx_out_set(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_load_tx_out_set(const code& ec,
+bool protocol_bitcoind_blockchain::handle_load_tx_out_set(const code& ec,
     rpc_interface::load_tx_out_set) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -427,7 +489,7 @@ bool protocol_bitcoind_rpc::handle_load_tx_out_set(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_tx_out_proof(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
     rpc_interface::get_tx_out_proof) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -435,7 +497,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_out_proof(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_verify_tx_out_proof(const code& ec,
+bool protocol_bitcoind_blockchain::handle_verify_tx_out_proof(const code& ec,
     rpc_interface::verify_tx_out_proof) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -443,7 +505,7 @@ bool protocol_bitcoind_rpc::handle_verify_tx_out_proof(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_from_peer(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_block_from_peer(const code& ec,
     rpc_interface::get_block_from_peer) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -451,7 +513,7 @@ bool protocol_bitcoind_rpc::handle_get_block_from_peer(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_chain_states(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
     rpc_interface::get_chain_states) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -459,7 +521,7 @@ bool protocol_bitcoind_rpc::handle_get_chain_states(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_chain_tips(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
     rpc_interface::get_chain_tips) NOEXCEPT
 {
     if (stopped(ec))
@@ -515,7 +577,7 @@ bool protocol_bitcoind_rpc::handle_get_chain_tips(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_deployment_info(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     rpc_interface::get_deployment_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -523,7 +585,7 @@ bool protocol_bitcoind_rpc::handle_get_deployment_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_descriptor_activity(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(const code& ec,
     rpc_interface::get_descriptor_activity) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -531,7 +593,7 @@ bool protocol_bitcoind_rpc::handle_get_descriptor_activity(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_difficulty(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_difficulty(const code& ec,
     rpc_interface::get_difficulty) NOEXCEPT
 {
     if (stopped(ec))
@@ -550,7 +612,7 @@ bool protocol_bitcoind_rpc::handle_get_difficulty(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_precious_block(const code& ec,
+bool protocol_bitcoind_blockchain::handle_precious_block(const code& ec,
     rpc_interface::precious_block) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -558,7 +620,7 @@ bool protocol_bitcoind_rpc::handle_precious_block(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_scan_blocks(const code& ec,
+bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
     rpc_interface::scan_blocks) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -566,7 +628,7 @@ bool protocol_bitcoind_rpc::handle_scan_blocks(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_wait_for_block(const code& ec,
+bool protocol_bitcoind_blockchain::handle_wait_for_block(const code& ec,
     rpc_interface::wait_for_block) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -574,7 +636,7 @@ bool protocol_bitcoind_rpc::handle_wait_for_block(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_wait_for_block_height(const code& ec,
+bool protocol_bitcoind_blockchain::handle_wait_for_block_height(const code& ec,
     rpc_interface::wait_for_block_height) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -582,7 +644,7 @@ bool protocol_bitcoind_rpc::handle_wait_for_block_height(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_wait_for_new_block(const code& ec,
+bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
     rpc_interface::wait_for_new_block) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -590,7 +652,7 @@ bool protocol_bitcoind_rpc::handle_wait_for_new_block(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_mempool_ancestors(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_mempool_ancestors(const code& ec,
     rpc_interface::get_mempool_ancestors) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -598,7 +660,7 @@ bool protocol_bitcoind_rpc::handle_get_mempool_ancestors(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_mempool_cluster(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_mempool_cluster(const code& ec,
     rpc_interface::get_mempool_cluster) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -606,7 +668,7 @@ bool protocol_bitcoind_rpc::handle_get_mempool_cluster(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_mempool_descendants(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_mempool_descendants(const code& ec,
     rpc_interface::get_mempool_descendants) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -614,7 +676,7 @@ bool protocol_bitcoind_rpc::handle_get_mempool_descendants(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_mempool_entry(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
     rpc_interface::get_mempool_entry) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -622,7 +684,7 @@ bool protocol_bitcoind_rpc::handle_get_mempool_entry(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_mempool_info(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     rpc_interface::get_mempool_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -630,7 +692,7 @@ bool protocol_bitcoind_rpc::handle_get_mempool_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_raw_mempool(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
     rpc_interface::get_raw_mempool) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -638,7 +700,7 @@ bool protocol_bitcoind_rpc::handle_get_raw_mempool(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_tx_spending_prevout(const code& ec,
+bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(const code& ec,
     rpc_interface::get_tx_spending_prevout) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -646,7 +708,7 @@ bool protocol_bitcoind_rpc::handle_get_tx_spending_prevout(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_import_mempool(const code& ec,
+bool protocol_bitcoind_blockchain::handle_import_mempool(const code& ec,
     rpc_interface::import_mempool) NOEXCEPT
 {
     if (stopped(ec)) return false;

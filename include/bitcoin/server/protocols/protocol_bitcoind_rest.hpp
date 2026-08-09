@@ -23,13 +23,13 @@
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class BCS_API protocol_bitcoind_rest
-  : public protocol_bitcoind_rpc,
+  : public protocol_bitcoind,
     protected network::tracker<protocol_bitcoind_rest>
 {
 public:
@@ -40,7 +40,7 @@ public:
     inline protocol_bitcoind_rest(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_bitcoind_rpc(session, channel, options),
+      : protocol_bitcoind(session, channel, options),
         network::tracker<protocol_bitcoind_rest>(session->log)
     {
     }

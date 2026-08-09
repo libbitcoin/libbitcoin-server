@@ -522,7 +522,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__malformed_signature__error)
     BOOST_REQUIRE(has_error(response));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getindexinfo__ten_block_store__txindex_synced)
+// The historical test store is not current, so synced is false.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getindexinfo__ten_block_store__txindex_not_synced)
+{
+    const auto response = rpc("getindexinfo");
+    const auto& txindex = response.at("result").at("txindex");
+    BOOST_REQUIRE(!txindex.at("synced").as_bool());
+    BOOST_REQUIRE_EQUAL(txindex.at("best_block_height").as_int64(), 9);
+}
+
+// No currency window, coalesced (confirmed top is candidate top), so synced.
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getindexinfo__current_coalesced__txindex_synced,
+    bitcoind_current_setup_fixture)
 {
     const auto response = rpc("getindexinfo");
     const auto& txindex = response.at("result").at("txindex");

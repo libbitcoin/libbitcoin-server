@@ -1,0 +1,67 @@
+/**
+ * Copyright (c) 2011-2026 libbitcoin developers
+ *
+ * This file is part of libbitcoin.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef LIBBITCOIN_SERVER_INTERFACES_BITCOIND_MINING_HPP
+#define LIBBITCOIN_SERVER_INTERFACES_BITCOIND_MINING_HPP
+
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/types.hpp>
+
+namespace libbitcoin {
+namespace server {
+namespace interface {
+
+struct bitcoind_mining_methods
+{
+    static constexpr std::tuple methods
+    {
+        method<"getnetworkhashps", optional<120_u32>, optional<-1_i32>>{ "nblocks", "height" },
+        method<"getmininginfo">{ unimplemented },
+        method<"submitblock">{ unimplemented },
+        method<"submitheader">{ unimplemented },
+        method<"getblocktemplate">{ unimplemented },
+        method<"getprioritisedtransactions">{ unimplemented },
+        method<"prioritisetransaction">{ unimplemented }
+    };
+
+    template <typename... Args>
+    using subscriber = network::unsubscriber<Args...>;
+
+    /// Method names as reported by help.
+    static constexpr auto name_data = method_names<methods>();
+    static constexpr std::string_view names{ name_data.data(),
+        name_data.size() };
+
+    template <size_t Index>
+    using at = method_at<methods, Index>;
+
+    // Derive this from above in c++26 using reflection.
+    using get_network_hash_ps = at<0>;
+    using get_mining_info = at<1>;
+    using submit_block = at<2>;
+    using submit_header = at<3>;
+    using get_block_template = at<4>;
+    using get_prioritised_transactions = at<5>;
+    using prioritise_transaction = at<6>;
+};
+
+} // namespace interface
+} // namespace server
+} // namespace libbitcoin
+
+#endif

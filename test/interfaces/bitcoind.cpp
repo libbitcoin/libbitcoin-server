@@ -25,7 +25,8 @@ using namespace interface;
 
 // Keyed by name, so that assertions are independent of interface order. A
 // misspelled name matches neither, failing both served and unserved.
-constexpr bool bitcoind_declared(const std::string_view& name,
+template <typename Methods>
+constexpr bool declared(const std::string_view& name,
     bool implemented) NOEXCEPT
 {
     auto result = false;
@@ -33,9 +34,25 @@ constexpr bool bitcoind_declared(const std::string_view& name,
     {
         ((result = result || (items.name == name &&
             items.implemented() == implemented)), ...);
-    }, bitcoind_rpc_methods::methods);
+    }, Methods::methods);
 
     return result;
+}
+
+// The bitcoind interface is the union of the subgroup interfaces.
+constexpr bool bitcoind_declared(const std::string_view& name,
+    bool implemented) NOEXCEPT
+{
+    return
+        declared<bitcoind_blockchain_methods>(name, implemented) ||
+        declared<bitcoind_control_methods>(name, implemented) ||
+        declared<bitcoind_mining_methods>(name, implemented) ||
+        declared<bitcoind_network_methods>(name, implemented) ||
+        declared<bitcoind_notifications_methods>(name, implemented) ||
+        declared<bitcoind_test_methods>(name, implemented) ||
+        declared<bitcoind_transaction_methods>(name, implemented) ||
+        declared<bitcoind_utility_methods>(name, implemented) ||
+        declared<bitcoind_wallet_methods>(name, implemented);
 }
 
 constexpr bool bitcoind_served(const std::string_view& name) NOEXCEPT
@@ -48,7 +65,7 @@ constexpr bool bitcoind_unserved(const std::string_view& name) NOEXCEPT
     return bitcoind_declared(name, false);
 }
 
-// bitcoind_rpc_methods::implemented
+// implemented
 // -----------------------------------------------------------------------------
 
 // These are dispatchable but answer not_implemented (see protocol).
@@ -68,7 +85,7 @@ static_assert(bitcoind_served("getdifficulty"));
 static_assert(bitcoind_served("verifymessage"));
 static_assert(bitcoind_served("getindexinfo"));
 
-// Moved from the btcd interface (btcd serves them by derivation).
+// Moved from the btcd interface (btcd serves them by session attachment).
 static_assert(bitcoind_served("help"));
 static_assert(bitcoind_served("getnetworkhashps"));
 static_assert(bitcoind_served("createrawtransaction"));
@@ -80,15 +97,29 @@ static_assert(bitcoind_served("validateaddress"));
 // A name absent from the interface satisfies neither.
 static_assert(!bitcoind_served("getcurrentnet") && !bitcoind_unserved("getcurrentnet"));
 
-// bitcoind_rpc_methods::names
+// A name is declared by exactly one subgroup interface.
+static_assert(declared<bitcoind_blockchain_methods>("getblockcount", true));
+static_assert(!declared<bitcoind_utility_methods>("getblockcount", true));
+static_assert(declared<bitcoind_utility_methods>("getindexinfo", true));
+static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
+
+// names
 // -----------------------------------------------------------------------------
 
-// The published list is the served subset, in interface order.
-static_assert(bitcoind_rpc_methods::names ==
+// The published lists are the served subsets, in interface order. Subgroups
+// with only unimplemented methods publish no names.
+static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader gettxout "
-    "verifychain help getnetworkhashps getnetworkinfo "
+    "verifychain getchaintips getdifficulty");
+static_assert(bitcoind_control_methods::names == "help");
+static_assert(bitcoind_mining_methods::names == "getnetworkhashps");
+static_assert(bitcoind_network_methods::names == "getnetworkinfo");
+static_assert(bitcoind_notifications_methods::names == "");
+static_assert(bitcoind_test_methods::names == "");
+static_assert(bitcoind_transaction_methods::names ==
     "createrawtransaction decoderawtransaction getrawtransaction "
-    "sendrawtransaction testmempoolaccept "
-    "decodescript validateaddress getchaintips getdifficulty verifymessage "
-    "getindexinfo");
+    "sendrawtransaction testmempoolaccept");
+static_assert(bitcoind_utility_methods::names ==
+    "decodescript validateaddress verifymessage getindexinfo");
+static_assert(bitcoind_wallet_methods::names == "");

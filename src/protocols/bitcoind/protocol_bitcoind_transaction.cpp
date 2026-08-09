@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_transaction.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -25,7 +25,18 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
+
+// Isolate the subgroup dispatch metaprogramming to this translation unit.
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_transaction>;
+
 namespace server {
+
+template class protocol_bitcoind_dispatch<interface::bitcoind_transaction>;
+
+#define CLASS protocol_bitcoind_transaction
+#define SUBSCRIBE_BITCOIND(method, ...) \
+    subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network;
@@ -38,10 +49,40 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// Start.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_transaction::start() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (started())
+        return;
+
+    SUBSCRIBE_BITCOIND(handle_create_raw_transaction, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_decode_raw_transaction, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_test_mempool_accept, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_analyze_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_combine_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_decode_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_finalize_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_join_psbts, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_descriptor_process_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_utxo_update_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_abort_private_broadcast, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_private_broadcast_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2);
+    protocol_bitcoind_dispatch<rpc_interface>::start();
+}
+
 // Raw transaction methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
+bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     rpc_interface::get_raw_transaction, const std::string& txid,
     double verbose, const std::string&) NOEXCEPT
 {
@@ -82,7 +123,7 @@ bool protocol_bitcoind_rpc::handle_get_raw_transaction(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
+bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     rpc_interface::send_raw_transaction, const std::string& hexstring,
     double) NOEXCEPT
 {
@@ -141,7 +182,7 @@ bool protocol_bitcoind_rpc::handle_send_raw_transaction(const code& ec,
 }
 
 // Validation runs against the confirmed chain (no tx pool until v5).
-bool protocol_bitcoind_rpc::handle_test_mempool_accept(const code& ec,
+bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     rpc_interface::test_mempool_accept, const array_t& rawtxs,
     uint32_t) NOEXCEPT
 {
@@ -189,7 +230,7 @@ bool protocol_bitcoind_rpc::handle_test_mempool_accept(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_create_raw_transaction(const code& ec,
+bool protocol_bitcoind_transaction::handle_create_raw_transaction(const code& ec,
     rpc_interface::create_raw_transaction, const array_t& inputs,
     const object_t& outputs, uint32_t locktime, bool replaceable) NOEXCEPT
 {
@@ -274,7 +315,7 @@ bool protocol_bitcoind_rpc::handle_create_raw_transaction(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_decode_raw_transaction(const code& ec,
+bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec,
     rpc_interface::decode_raw_transaction,
     const std::string& hexstring) NOEXCEPT
 {
@@ -300,7 +341,7 @@ bool protocol_bitcoind_rpc::handle_decode_raw_transaction(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_analyze_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
     rpc_interface::analyze_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -308,7 +349,7 @@ bool protocol_bitcoind_rpc::handle_analyze_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_combine_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
     rpc_interface::combine_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -316,7 +357,7 @@ bool protocol_bitcoind_rpc::handle_combine_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_convert_to_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     rpc_interface::convert_to_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -324,7 +365,7 @@ bool protocol_bitcoind_rpc::handle_convert_to_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_create_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
     rpc_interface::create_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -332,7 +373,7 @@ bool protocol_bitcoind_rpc::handle_create_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_decode_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
     rpc_interface::decode_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -340,7 +381,7 @@ bool protocol_bitcoind_rpc::handle_decode_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_finalize_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_finalize_psbt(const code& ec,
     rpc_interface::finalize_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -348,7 +389,7 @@ bool protocol_bitcoind_rpc::handle_finalize_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_join_psbts(const code& ec,
+bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
     rpc_interface::join_psbts) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -356,7 +397,7 @@ bool protocol_bitcoind_rpc::handle_join_psbts(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_descriptor_process_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_descriptor_process_psbt(const code& ec,
     rpc_interface::descriptor_process_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -364,7 +405,7 @@ bool protocol_bitcoind_rpc::handle_descriptor_process_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_utxo_update_psbt(const code& ec,
+bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     rpc_interface::utxo_update_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -372,7 +413,7 @@ bool protocol_bitcoind_rpc::handle_utxo_update_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_abort_private_broadcast(const code& ec,
+bool protocol_bitcoind_transaction::handle_abort_private_broadcast(const code& ec,
     rpc_interface::abort_private_broadcast) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -380,7 +421,7 @@ bool protocol_bitcoind_rpc::handle_abort_private_broadcast(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_private_broadcast_info(const code& ec,
+bool protocol_bitcoind_transaction::handle_get_private_broadcast_info(const code& ec,
     rpc_interface::get_private_broadcast_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -388,7 +429,7 @@ bool protocol_bitcoind_rpc::handle_get_private_broadcast_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_submit_package(const code& ec,
+bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
     rpc_interface::submit_package) NOEXCEPT
 {
     if (stopped(ec)) return false;

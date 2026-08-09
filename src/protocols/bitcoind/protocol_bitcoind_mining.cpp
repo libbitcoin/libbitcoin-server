@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_mining.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -25,7 +25,18 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
+
+// Isolate the subgroup dispatch metaprogramming to this translation unit.
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_mining>;
+
 namespace server {
+
+template class protocol_bitcoind_dispatch<interface::bitcoind_mining>;
+
+#define CLASS protocol_bitcoind_mining
+#define SUBSCRIBE_BITCOIND(method, ...) \
+    subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network;
@@ -38,10 +49,30 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// Start.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_mining::start() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (started())
+        return;
+
+    SUBSCRIBE_BITCOIND(handle_get_network_hash_ps, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_mining_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_submit_block, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_submit_header, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_prioritised_transactions, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_prioritise_transaction, _1, _2);
+    protocol_bitcoind_dispatch<rpc_interface>::start();
+}
+
 // Mining methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_rpc::handle_get_network_hash_ps(const code& ec,
+bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     rpc_interface::get_network_hash_ps, uint32_t, int32_t height) NOEXCEPT
 {
     if (stopped(ec))
@@ -65,7 +96,7 @@ bool protocol_bitcoind_rpc::handle_get_network_hash_ps(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_mining_info(const code& ec,
+bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     rpc_interface::get_mining_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -73,7 +104,7 @@ bool protocol_bitcoind_rpc::handle_get_mining_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_submit_block(const code& ec,
+bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     rpc_interface::submit_block) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -81,7 +112,7 @@ bool protocol_bitcoind_rpc::handle_submit_block(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_submit_header(const code& ec,
+bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
     rpc_interface::submit_header) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -89,7 +120,7 @@ bool protocol_bitcoind_rpc::handle_submit_header(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_block_template(const code& ec,
+bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     rpc_interface::get_block_template) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -97,7 +128,7 @@ bool protocol_bitcoind_rpc::handle_get_block_template(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_get_prioritised_transactions(const code& ec,
+bool protocol_bitcoind_mining::handle_get_prioritised_transactions(const code& ec,
     rpc_interface::get_prioritised_transactions) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -105,7 +136,7 @@ bool protocol_bitcoind_rpc::handle_get_prioritised_transactions(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_rpc::handle_prioritise_transaction(const code& ec,
+bool protocol_bitcoind_mining::handle_prioritise_transaction(const code& ec,
     rpc_interface::prioritise_transaction) NOEXCEPT
 {
     if (stopped(ec)) return false;

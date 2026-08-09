@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_notifications.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -25,7 +25,18 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
+
+// Isolate the subgroup dispatch metaprogramming to this translation unit.
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_notifications>;
+
 namespace server {
+
+template class protocol_bitcoind_dispatch<interface::bitcoind_notifications>;
+
+#define CLASS protocol_bitcoind_notifications
+#define SUBSCRIBE_BITCOIND(method, ...) \
+    subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace system;
 using namespace network;
@@ -38,10 +49,24 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// Start.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_notifications::start() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (started())
+        return;
+
+    SUBSCRIBE_BITCOIND(handle_get_zmq_notifications, _1, _2);
+    protocol_bitcoind_dispatch<rpc_interface>::start();
+}
+
 // Notifications methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_rpc::handle_get_zmq_notifications(const code& ec,
+bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& ec,
     rpc_interface::get_zmq_notifications) NOEXCEPT
 {
     if (stopped(ec)) return false;

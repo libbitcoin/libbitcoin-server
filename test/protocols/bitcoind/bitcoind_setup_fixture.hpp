@@ -117,6 +117,23 @@ struct bitcoind_credentialed_setup_fixture
     }
 };
 
+// Configured with no currency window -- for tests of state that requires the
+// confirmed top to be current (the test store is historical).
+struct bitcoind_current_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_current_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.node.currency_window_minutes = 0;
+        })
+    {
+    }
+};
+
 struct bitcoind_witness_setup_fixture
     : bitcoind_setup_fixture
 {

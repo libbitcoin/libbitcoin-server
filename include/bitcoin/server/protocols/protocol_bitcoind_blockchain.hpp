@@ -1,0 +1,145 @@
+/**
+ * Copyright (c) 2011-2026 libbitcoin developers
+ *
+ * This file is part of libbitcoin.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_BLOCKCHAIN_HPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_BLOCKCHAIN_HPP
+
+#include <memory>
+#include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp>
+
+namespace libbitcoin {
+
+// The dispatch metaprogramming is isolated to the subgroup translation unit.
+extern template class network::rpc::dispatcher<
+    server::interface::bitcoind_blockchain>;
+
+namespace server {
+
+extern template class protocol_bitcoind_dispatch<
+    interface::bitcoind_blockchain>;
+
+class BCS_API protocol_bitcoind_blockchain
+  : public protocol_bitcoind_dispatch<interface::bitcoind_blockchain>,
+    protected network::tracker<protocol_bitcoind_blockchain>
+{
+public:
+    typedef std::shared_ptr<protocol_bitcoind_blockchain> ptr;
+    using rpc_interface = interface::bitcoind_blockchain;
+
+    inline protocol_bitcoind_blockchain(const auto& session,
+        const network::channel::ptr& channel,
+        const options_t& options) NOEXCEPT
+      : protocol_bitcoind_dispatch<interface::bitcoind_blockchain>(session,
+            channel, options),
+        network::tracker<protocol_bitcoind_blockchain>(session->log)
+    {
+    }
+
+    void start() NOEXCEPT override;
+
+protected:
+    /// Handlers.
+    bool handle_get_best_block_hash(const code& ec,
+        rpc_interface::get_best_block_hash) NOEXCEPT;
+    bool handle_get_block(const code& ec,
+        rpc_interface::get_block, const std::string&,
+        double verbosity) NOEXCEPT;
+    bool handle_get_block_chain_info(const code& ec,
+        rpc_interface::get_block_chain_info) NOEXCEPT;
+    bool handle_get_block_count(const code& ec,
+        rpc_interface::get_block_count) NOEXCEPT;
+    bool handle_get_block_filter(const code& ec,
+        rpc_interface::get_block_filter, const std::string&,
+        const std::string&) NOEXCEPT;
+    bool handle_get_block_hash(const code& ec,
+        rpc_interface::get_block_hash, double) NOEXCEPT;
+    bool handle_get_block_header(const code& ec,
+        rpc_interface::get_block_header, const std::string&, bool) NOEXCEPT;
+    bool handle_get_block_stats(const code& ec,
+        rpc_interface::get_block_stats, const network::rpc::value_t&,
+        const network::rpc::array_t&) NOEXCEPT;
+    bool handle_get_chain_tx_stats(const code& ec,
+        rpc_interface::get_chain_tx_stats, double,
+        const std::string&) NOEXCEPT;
+    bool handle_get_tx_out(const code& ec,
+        rpc_interface::get_tx_out, const std::string&, double, bool) NOEXCEPT;
+    bool handle_get_tx_out_set_info(const code& ec,
+        rpc_interface::get_tx_out_set_info) NOEXCEPT;
+    bool handle_prune_block_chain(const code& ec,
+        rpc_interface::prune_block_chain, double) NOEXCEPT;
+    bool handle_save_mempool(const code& ec,
+        rpc_interface::save_mempool) NOEXCEPT;
+    bool handle_scan_tx_out_set(const code& ec,
+        rpc_interface::scan_tx_out_set, const std::string&,
+        const network::rpc::array_t&) NOEXCEPT;
+    bool handle_verify_chain(const code& ec,
+        rpc_interface::verify_chain, double, double) NOEXCEPT;
+    bool handle_dump_tx_out_set(const code& ec,
+        rpc_interface::dump_tx_out_set) NOEXCEPT;
+    bool handle_load_tx_out_set(const code& ec,
+        rpc_interface::load_tx_out_set) NOEXCEPT;
+    bool handle_get_tx_out_proof(const code& ec,
+        rpc_interface::get_tx_out_proof) NOEXCEPT;
+    bool handle_verify_tx_out_proof(const code& ec,
+        rpc_interface::verify_tx_out_proof) NOEXCEPT;
+    bool handle_get_block_from_peer(const code& ec,
+        rpc_interface::get_block_from_peer) NOEXCEPT;
+    bool handle_get_chain_states(const code& ec,
+        rpc_interface::get_chain_states) NOEXCEPT;
+    bool handle_get_chain_tips(const code& ec,
+        rpc_interface::get_chain_tips) NOEXCEPT;
+    bool handle_get_deployment_info(const code& ec,
+        rpc_interface::get_deployment_info) NOEXCEPT;
+    bool handle_get_descriptor_activity(const code& ec,
+        rpc_interface::get_descriptor_activity) NOEXCEPT;
+    bool handle_get_difficulty(const code& ec,
+        rpc_interface::get_difficulty) NOEXCEPT;
+    bool handle_precious_block(const code& ec,
+        rpc_interface::precious_block) NOEXCEPT;
+    bool handle_scan_blocks(const code& ec,
+        rpc_interface::scan_blocks) NOEXCEPT;
+    bool handle_wait_for_block(const code& ec,
+        rpc_interface::wait_for_block) NOEXCEPT;
+    bool handle_wait_for_block_height(const code& ec,
+        rpc_interface::wait_for_block_height) NOEXCEPT;
+    bool handle_wait_for_new_block(const code& ec,
+        rpc_interface::wait_for_new_block) NOEXCEPT;
+    bool handle_get_mempool_ancestors(const code& ec,
+        rpc_interface::get_mempool_ancestors) NOEXCEPT;
+    bool handle_get_mempool_cluster(const code& ec,
+        rpc_interface::get_mempool_cluster) NOEXCEPT;
+    bool handle_get_mempool_descendants(const code& ec,
+        rpc_interface::get_mempool_descendants) NOEXCEPT;
+    bool handle_get_mempool_entry(const code& ec,
+        rpc_interface::get_mempool_entry) NOEXCEPT;
+    bool handle_get_mempool_info(const code& ec,
+        rpc_interface::get_mempool_info) NOEXCEPT;
+    bool handle_get_raw_mempool(const code& ec,
+        rpc_interface::get_raw_mempool) NOEXCEPT;
+    bool handle_get_tx_spending_prevout(const code& ec,
+        rpc_interface::get_tx_spending_prevout) NOEXCEPT;
+    bool handle_import_mempool(const code& ec,
+        rpc_interface::import_mempool) NOEXCEPT;
+};
+
+} // namespace server
+} // namespace libbitcoin
+
+#endif
