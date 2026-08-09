@@ -32,7 +32,7 @@ struct bitcoind_utility_methods
     {
         method<"decodescript", string_t>{ "hex" },
         method<"validateaddress", string_t>{ "address" },
-        method<"createmultisig">{ unimplemented },
+        method<"createmultisig", number_t, array_t, optional<"legacy"_t>>{ "nrequired", "keys", "address_type" },
         method<"deriveaddresses">{ unimplemented },
         method<"getdescriptorinfo">{ unimplemented },
         method<"verifymessage", string_t, string_t, string_t>{ "address", "signature", "message" },

@@ -90,7 +90,6 @@ const std::vector<std::string> wip_methods
     "getpeerinfo",
     "ping",
     "setnetworkactive",
-    "createmultisig",
     "deriveaddresses",
     "getdescriptorinfo",
     "getopenrpcinfo"
@@ -417,6 +416,57 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__garbage__invalid)
     const auto response = rpc("validateaddress", "[\"notanaddress\"]");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BOOST_REQUIRE(!response.at("result").at("isvalid").as_bool());
+}
+
+// The redeem script is deterministic: 2 <key1> <key2> 2 checkmultisig.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__two_of_two__redeem_script_and_p2sh)
+{
+    const std::string key1 = "03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd";
+    const std::string key2 = "03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626";
+    const auto response = rpc("createmultisig", "[2, [\"" + key1 + "\", \"" + key2 + "\"]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("redeemScript")), "5221" + key1 + "21" + key2 + "52ae");
+    BOOST_REQUIRE(as_text(result.at("descriptor")).starts_with("sh(multi(2," + key1));
+    BOOST_REQUIRE(!result.as_object().contains("warnings"));
+
+    const auto validated = rpc("validateaddress", "[\"" + as_text(result.at("address")) + "\"]");
+    BOOST_REQUIRE(validated.at("result").at("isvalid").as_bool());
+    BOOST_REQUIRE(validated.at("result").at("isscript").as_bool());
+    BOOST_REQUIRE(!validated.at("result").at("iswitness").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__bech32__witness_address)
+{
+    const std::string key1 = "03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd";
+    const std::string key2 = "03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626";
+    const auto response = rpc("createmultisig", "[2, [\"" + key1 + "\", \"" + key2 + "\"], \"bech32\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(as_text(result.at("descriptor")).starts_with("wsh(multi(2,"));
+
+    const auto validated = rpc("validateaddress", "[\"" + as_text(result.at("address")) + "\"]");
+    BOOST_REQUIRE(validated.at("result").at("isvalid").as_bool());
+    BOOST_REQUIRE(validated.at("result").at("iswitness").as_bool());
+}
+
+// An uncompressed key downgrades the segwit address type to legacy (warning).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__uncompressed_bech32__legacy_with_warning)
+{
+    const std::string key = "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f";
+    const auto response = rpc("createmultisig", "[1, [\"" + key + "\"], \"bech32\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(as_text(result.at("descriptor")).starts_with("sh(multi(1,"));
+    BOOST_REQUIRE_EQUAL(result.at("warnings").as_array().size(), 1u);
+
+    const auto validated = rpc("validateaddress", "[\"" + as_text(result.at("address")) + "\"]");
+    BOOST_REQUIRE(validated.at("result").at("isvalid").as_bool());
+    BOOST_REQUIRE(!validated.at("result").at("iswitness").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__excess_required__error)
+{
+    const std::string key = "03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd";
+    const auto response = rpc("createmultisig", "[2, [\"" + key + "\"]]");
+    BOOST_REQUIRE(has_error(response));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)

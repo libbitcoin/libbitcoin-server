@@ -93,6 +93,9 @@
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\descriptor.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -330,6 +333,9 @@
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\descriptor.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp">

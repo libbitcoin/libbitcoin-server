@@ -83,6 +83,7 @@ static_assert(bitcoind_served("verifychain"));
 static_assert(bitcoind_served("getchainstates"));
 static_assert(bitcoind_served("getzmqnotifications"));
 static_assert(bitcoind_served("getmininginfo"));
+static_assert(bitcoind_served("createmultisig"));
 static_assert(bitcoind_served("getdeploymentinfo"));
 static_assert(bitcoind_served("getchaintips"));
 static_assert(bitcoind_served("getdifficulty"));
@@ -129,5 +130,5 @@ static_assert(bitcoind_transaction_methods::names ==
     "createrawtransaction decoderawtransaction getrawtransaction "
     "sendrawtransaction testmempoolaccept");
 static_assert(bitcoind_utility_methods::names ==
-    "decodescript validateaddress verifymessage getindexinfo");
+    "decodescript validateaddress createmultisig verifymessage getindexinfo");
 static_assert(bitcoind_wallet_methods::names == "");
