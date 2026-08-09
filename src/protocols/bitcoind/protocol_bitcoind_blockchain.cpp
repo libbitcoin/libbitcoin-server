@@ -595,14 +595,17 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
     }
 
     // All targets must be in the block (matched in block order).
+    // Not ranges algorithms, as the vector<bool> proxy iterator does not
+    // satisfy indirectly_writable under libc++.
     std::vector<bool> match(keys.size());
-    std::ranges::transform(keys, match.begin(),
+    std::transform(keys.begin(), keys.end(), match.begin(),
         [&targets](const auto& key) NOEXCEPT
         {
             return targets.contains(key);
         });
 
-    if (to_unsigned(std::ranges::count(match, true)) != targets.size())
+    if (to_unsigned(std::count(match.begin(), match.end(), true)) !=
+        targets.size())
     {
         send_error(error::not_found);
         return true;
