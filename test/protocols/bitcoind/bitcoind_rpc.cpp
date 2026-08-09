@@ -657,7 +657,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__logging__include__error)
     BOOST_REQUIRE(has_error(response));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_buried)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_frozen)
 {
     const auto response = rpc("getdeploymentinfo");
     const auto& result = response.at("result");

@@ -619,9 +619,10 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
     return true;
 }
 
-// bitcoind reports a buried deployment as active from one block below its
-// activation height (the rules are enforced for the block that follows).
-static void push_buried(object_t& out, const std::string& name, bool enabled,
+// A frozen activation (bitcoind's "buried" type, which assumes depth).
+// bitcoind reports it as active from one block below the activation height
+// (the rules are enforced for the block that follows).
+static void push_frozen(object_t& out, const std::string& name, bool enabled,
     size_t activation, size_t height) NOEXCEPT
 {
     if (!enabled)
@@ -636,7 +637,7 @@ static void push_buried(object_t& out, const std::string& name, bool enabled,
 }
 
 // Deployments are configured, so this reads settings and needs no chain state.
-// Taproot is excluded, as bitcoind buried it and no longer reports it here
+// Taproot is excluded, as bitcoind froze it and no longer reports it here
 // (btcd reports it under getblockchaininfo's bip9_softforks, which lnd reads).
 bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     rpc_interface::get_deployment_info, const std::string& blockhash) NOEXCEPT
@@ -670,15 +671,15 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     const auto& settings = system_settings();
     const auto& forks = settings.forks;
     object_t deployments{};
-    push_buried(deployments, "bip34", forks.bip34,
+    push_frozen(deployments, "bip34", forks.bip34,
         settings.bip90_bip34_height, height);
-    push_buried(deployments, "bip66", forks.bip66,
+    push_frozen(deployments, "bip66", forks.bip66,
         settings.bip90_bip66_height, height);
-    push_buried(deployments, "bip65", forks.bip65,
+    push_frozen(deployments, "bip65", forks.bip65,
         settings.bip90_bip65_height, height);
-    push_buried(deployments, "csv", forks.bip68 && forks.bip112 &&
+    push_frozen(deployments, "csv", forks.bip68 && forks.bip112 &&
         forks.bip113, settings.bip9_bit0_active_checkpoint.height(), height);
-    push_buried(deployments, "segwit", forks.bip141 && forks.bip143 &&
+    push_frozen(deployments, "segwit", forks.bip141 && forks.bip143 &&
         forks.bip147, settings.bip9_bit1_active_checkpoint.height(), height);
 
     send_result(object_t
