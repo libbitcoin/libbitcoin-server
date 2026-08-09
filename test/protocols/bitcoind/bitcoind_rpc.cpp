@@ -746,8 +746,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__unknown_hash__error)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)
 {
-    const auto response = rpc("getblockfilter",
-        hash_param(test::block9_hash, "\"basic\""));
+    const auto response = rpc("getblockfilter", hash_param(test::block9_hash, "\"basic\""));
     BOOST_REQUIRE(has_error(response));
 }
 
