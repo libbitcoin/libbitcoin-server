@@ -70,7 +70,7 @@ constexpr bool bitcoind_unserved(const std::string_view& name) NOEXCEPT
 
 // These are dispatchable but answer not_implemented (see protocol).
 static_assert(bitcoind_unserved("getblockstats"));
-static_assert(bitcoind_unserved("getchaintxstats"));
+static_assert(bitcoind_served("getchaintxstats"));
 static_assert(bitcoind_unserved("gettxoutsetinfo"));
 static_assert(bitcoind_unserved("pruneblockchain"));
 static_assert(bitcoind_unserved("savemempool"));
@@ -111,7 +111,7 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 // with only unimplemented methods publish no names.
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
-    "getblockfilter getblockhash getblockheader gettxout "
+    "getblockfilter getblockhash getblockheader getchaintxstats gettxout "
     "verifychain getchaintips getdeploymentinfo getdifficulty");
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getrpcinfo logging");

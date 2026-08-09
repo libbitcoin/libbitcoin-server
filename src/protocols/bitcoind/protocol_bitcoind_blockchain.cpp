@@ -320,11 +320,91 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     return true;
 }
 
+// bitcoind derives the window tx count from cumulative counts, which the store
+// does not keep, so it is summed over the window. Cost is linear in the window
+// requested by the caller. txcount (cumulative to the block) is optional in
+// bitcoind and is omitted for the same reason.
 bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
-    rpc_interface::get_chain_tx_stats, double, const std::string&) NOEXCEPT
+    rpc_interface::get_chain_tx_stats, double nblocks,
+    const std::string& blockhash) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    auto link = query.to_confirmed(query.get_top_confirmed());
+
+    // The block defaults to the confirmed top, and must be on the chain.
+    if (!blockhash.empty())
+    {
+        hash_digest hash{};
+        if (!decode_hash(hash, blockhash))
+        {
+            send_error(error::not_found, blockhash, blockhash.size());
+            return true;
+        }
+
+        link = query.to_header(hash);
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link) || query.to_confirmed(height) != link)
+    {
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
+
+    // The default window is one month of blocks, bounded by the block height.
+    constexpr auto month_seconds = 30_size * 24 * 60 * 60;
+    const auto month = month_seconds / system_settings().block_spacing_seconds;
+    size_t window{};
+    if (nblocks < 0)
+    {
+        window = std::min(month, floored_subtract(height, one));
+    }
+    else
+    {
+        if (!to_integer(window, nblocks) ||
+            (is_nonzero(window) && window >= height))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+    }
+
+    const auto header = query.get_header(link);
+    if (!header)
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    object_t result{};
+    result.emplace("time", header->timestamp());
+    result.emplace("window_final_block_hash",
+        encode_hash(query.get_header_key(link)));
+    result.emplace("window_final_block_height", height);
+    result.emplace("window_block_count", window);
+
+    if (is_nonzero(window))
+    {
+        const auto first = floored_subtract(height, window);
+        const auto past = query.to_confirmed(first);
+        const auto interval = floored_subtract(median_time_past(query, link),
+            median_time_past(query, past));
+
+        size_t txs{};
+        for (auto index = add1(first); index <= height; ++index)
+            txs += query.get_tx_count(query.to_confirmed(index));
+
+        result.emplace("window_interval", interval);
+        result.emplace("window_tx_count", txs);
+
+        if (is_nonzero(interval))
+            result.emplace("txrate", to_floating(txs) / interval);
+    }
+
+    send_result(std::move(result), 256);
     return true;
 }
 

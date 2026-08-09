@@ -432,7 +432,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
     const std::vector<std::pair<std::string, std::string>> methods
     {
         { "getblockstats", "[0]" },
-        { "getchaintxstats", "[]" },
         { "gettxoutsetinfo", "[]" },
         { "scantxoutset", "[\"start\", []]" },
         { "pruneblockchain", "[1]" },
@@ -540,6 +539,55 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
     const auto& active = response.at("result").as_array().at(0);
     BOOST_REQUIRE_EQUAL(active.at("height").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
+}
+
+// Ten block store, so the default window is bounded to height - 1.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__default__window_to_top)
+{
+    const auto response = rpc("getchaintxstats");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_final_block_height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("window_final_block_hash")), block9);
+    BOOST_REQUIRE_EQUAL(result.at("window_block_count").as_int64(), 8);
+    BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 8);
+}
+
+// Cumulative counts are not stored, so txcount is omitted (optional).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__default__no_txcount)
+{
+    const auto response = rpc("getchaintxstats");
+    BOOST_REQUIRE(!response.at("result").as_object().contains("txcount"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__zero_window__no_interval)
+{
+    const auto response = rpc("getchaintxstats", "[0]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_block_count").as_int64(), 0);
+    BOOST_REQUIRE(!result.as_object().contains("window_interval"));
+    BOOST_REQUIRE(!result.as_object().contains("txrate"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__window_five__five_txs)
+{
+    const auto response = rpc("getchaintxstats", "[5]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_block_count").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 5);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__window_exceeds_height__error)
+{
+    const auto response = rpc("getchaintxstats", "[10]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__block_hash__that_block)
+{
+    const auto response = rpc("getchaintxstats", "[2, \"" + block5 + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_final_block_height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 2);
 }
 
 // Byte counters are untracked, and no upload target is configured.

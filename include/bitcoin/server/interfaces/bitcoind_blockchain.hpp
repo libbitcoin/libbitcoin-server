@@ -38,7 +38,7 @@ struct bitcoind_blockchain_methods
         method<"getblockhash", number_t>{ "height" },
         method<"getblockheader", string_t, optional<true>>{ "blockhash", "verbose" },
         method<"getblockstats", value_t, optional<empty::array>>{ unimplemented, "hash_or_height", "stats" },
-        method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ unimplemented, "nblocks", "blockhash" },
+        method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ "nblocks", "blockhash" },
         method<"gettxout", string_t, number_t, optional<true>>{ "txid", "n", "include_mempool" },
         method<"gettxoutsetinfo">{ unimplemented },
         method<"pruneblockchain", number_t>{ unimplemented, "height" },
