@@ -46,14 +46,21 @@ using namespace std::placeholders;
 using namespace boost::json;
 
 // bitcoind getblock verbosity levels (doc/JSON-RPC-interface.md).
-namespace {
-enum class block_verbosity : size_t
+// Unscoped for implicit conversion to the parsed level.
+enum block_verbosity : size_t
 {
-    hex = 0,      // serialized block, hex-encoded
-    hashed = 1,   // block object listing txids
-    verbose = 2   // block object embedding full tx objects
+    /// Serialized block, hex-encoded.
+    hex = 0,
+
+    /// Block object listing txids.
+    hashed = 1,
+
+    /// Block object embedding full tx objects.
+    verbose = 2
 };
-} // namespace
+
+// bitcoind defines only the "basic" (neutrino) block filter type.
+constexpr auto basic_filter = "basic";
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -139,8 +146,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     }
 
     size_t level{};
-    if (!to_integer(level, verbosity) ||
-        level > static_cast<size_t>(block_verbosity::verbose))
+    if (!to_integer(level, verbosity) || level > block_verbosity::verbose)
     {
         send_error(error::invalid_argument);
         return true;
@@ -156,15 +162,13 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         return true;
     }
 
-    const auto detail = static_cast<block_verbosity>(level);
-    if (detail == block_verbosity::hex)
+    if (level == block_verbosity::hex)
     {
         send_text(to_text(*block, block->serialized_size(witness), witness));
         return true;
     }
 
-    // hashed lists txids; verbose embeds full tx objects.
-    auto model = detail == block_verbosity::hashed ?
+    auto model = level == block_verbosity::hashed ?
         value_from(bitcoind_hashed(*block)) :
         value_from(bitcoind_verbose(*block));
 
@@ -209,8 +213,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_filter(const code& ec,
     if (stopped(ec))
         return false;
 
-    // bitcoind defines only the "basic" (neutrino) filter type.
-    if (filtertype != "basic")
+    if (filtertype != basic_filter)
     {
         send_error(error::invalid_argument);
         return true;
