@@ -320,10 +320,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     return true;
 }
 
-// bitcoind derives the window tx count from cumulative counts, which the store
-// does not keep, so it is summed over the window. Cost is linear in the window
-// requested by the caller. txcount (cumulative to the block) is optional in
-// bitcoind and is omitted for the same reason.
+// The window tx count is summed over the window (cost is linear in the window
+// requested by the caller); txcount is cumulative from genesis (chain walk).
 bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
     rpc_interface::get_chain_tx_stats, double nblocks,
     const std::string& blockhash) NOEXCEPT
@@ -379,12 +377,14 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
         return true;
     }
 
-    object_t result{};
-    result.emplace("time", header->timestamp());
-    result.emplace("window_final_block_hash",
-        encode_hash(query.get_header_key(link)));
-    result.emplace("window_final_block_height", height);
-    result.emplace("window_block_count", window);
+    object_t result
+    {
+        { "time", header->timestamp() },
+        { "txcount", query.get_branch_tx_count(link) },
+        { "window_final_block_hash", encode_hash(query.get_header_key(link)) },
+        { "window_final_block_height", height },
+        { "window_block_count", window }
+    };
 
     if (is_nonzero(window))
     {

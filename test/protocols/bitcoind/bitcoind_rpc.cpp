@@ -280,6 +280,22 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     BOOST_REQUIRE(result.as_object().contains("target"));
     BOOST_REQUIRE(result.at("warnings").is_string());
     BOOST_REQUIRE(result.at("initialblockdownload").is_bool());
+    BOOST_REQUIRE(result.at("chainwork").is_string());
+}
+
+// Ten blocks at minimum difficulty: cumulative work is 10 * 0x0100010001.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__chainwork)
+{
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9__chainwork)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "1"));
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
 }
 
 // bip9_softforks is a btcd-endpoint field (see btcd_rpc tests), removed from
@@ -552,11 +568,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__default__window_to_top)
     BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 8);
 }
 
-// Cumulative counts are not stored, so txcount is omitted (optional).
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__default__no_txcount)
+// Ten blocks of one tx each, genesis included.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__default__txcount_ten)
 {
     const auto response = rpc("getchaintxstats");
-    BOOST_REQUIRE(!response.at("result").as_object().contains("txcount"));
+    BOOST_REQUIRE_EQUAL(response.at("result").at("txcount").as_int64(), 10);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__zero_window__no_interval)

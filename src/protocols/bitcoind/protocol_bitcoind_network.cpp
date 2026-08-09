@@ -189,12 +189,7 @@ bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     if (stopped(ec))
         return false;
 
-    object_t result{};
-    result.emplace("totalbytesrecv", zero);
-    result.emplace("totalbytessent", zero);
-    result.emplace("timemillis",
-        possible_wide_cast<int64_t>(zulu_time()) * 1'000);
-    result.emplace("uploadtarget", object_t
+    object_t target
     {
         { "timeframe", zero },
         { "target", zero },
@@ -202,9 +197,15 @@ bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
         { "serve_historical_blocks", true },
         { "bytes_left_in_cycle", zero },
         { "time_left_in_cycle", zero }
-    });
+    };
 
-    send_result(std::move(result), 256);
+    send_result(object_t
+    {
+        { "totalbytesrecv", zero },
+        { "totalbytessent", zero },
+        { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 },
+        { "uploadtarget", std::move(target) }
+    }, 256);
     return true;
 }
 

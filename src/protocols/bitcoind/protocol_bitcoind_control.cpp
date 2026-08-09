@@ -107,8 +107,7 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
         return true;
     }
 
-    object_t result{};
-    result.emplace("locked", object_t
+    object_t locked
     {
         { "used", zero },
         { "free", zero },
@@ -116,9 +115,12 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
         { "locked", zero },
         { "chunks_used", zero },
         { "chunks_free", zero }
-    });
+    };
 
-    send_result(std::move(result), 192);
+    send_result(object_t
+    {
+        { "locked", std::move(locked) }
+    }, 192);
     return true;
 }
 
