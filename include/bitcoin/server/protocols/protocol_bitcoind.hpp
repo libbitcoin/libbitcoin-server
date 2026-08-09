@@ -122,8 +122,7 @@ protected:
         const network::http::request_cptr& request) NOEXCEPT;
     void set_rpc_request(const network::rpc::request_t& message) NOEXCEPT;
 
-    /// Validate a transaction given next block context.
-    bool get_pool_context(system::chain::context& pool) const NOEXCEPT;
+    /// Validate a transaction given next block context (node utility).
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
     code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 
