@@ -114,9 +114,10 @@ static_assert(bitcoind_blockchain_methods::names ==
     "getblockfilter getblockhash getblockheader getchaintxstats gettxout "
     "verifychain getchaintips getdeploymentinfo getdifficulty");
 static_assert(bitcoind_control_methods::names ==
-    "help getmemoryinfo getrpcinfo logging");
+    "help getmemoryinfo getrpcinfo logging uptime");
 static_assert(bitcoind_mining_methods::names == "getnetworkhashps");
-static_assert(bitcoind_network_methods::names == "getnetworkinfo getnettotals");
+static_assert(bitcoind_network_methods::names ==
+    "getnetworkinfo getconnectioncount getnettotals");
 static_assert(bitcoind_notifications_methods::names == "");
 static_assert(bitcoind_test_methods::names == "");
 static_assert(bitcoind_transaction_methods::names ==

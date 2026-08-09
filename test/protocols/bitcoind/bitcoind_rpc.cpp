@@ -90,7 +90,6 @@ const std::vector<std::string> wip_methods
     "exportasmap",
     "getaddednodeinfo",
     "getaddrmaninfo",
-    "getconnectioncount",
     "getnodeaddresses",
     "getpeerinfo",
     "ping",
@@ -99,7 +98,6 @@ const std::vector<std::string> wip_methods
     "deriveaddresses",
     "getdescriptorinfo",
     "getopenrpcinfo",
-    "uptime",
     "getzmqnotifications"
 };
 
@@ -604,6 +602,20 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__block_hash__that_block)
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(result.at("window_final_block_height").as_int64(), 5);
     BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__uptime__running__seconds)
+{
+    const auto response = rpc("uptime");
+    BOOST_REQUIRE(response.at("result").is_int64());
+    BOOST_REQUIRE(response.at("result").as_int64() >= 0);
+}
+
+// The test fixture makes no peer connections.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getconnectioncount__no_peers__zero)
+{
+    const auto response = rpc("getconnectioncount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 0);
 }
 
 // Byte counters are untracked, and no upload target is configured.

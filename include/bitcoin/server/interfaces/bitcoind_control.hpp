@@ -36,7 +36,7 @@ struct bitcoind_control_methods
         method<"getopenrpcinfo">{ unimplemented },
         method<"getrpcinfo">{},
         method<"logging", optional<empty::array>, optional<empty::array>>{ "include", "exclude" },
-        method<"uptime">{ unimplemented }
+        method<"uptime">{}
     };
 
     template <typename... Args>

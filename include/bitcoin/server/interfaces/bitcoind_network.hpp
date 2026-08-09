@@ -39,7 +39,7 @@ struct bitcoind_network_methods
         method<"exportasmap">{ unimplemented },
         method<"getaddednodeinfo">{ unimplemented },
         method<"getaddrmaninfo">{ unimplemented },
-        method<"getconnectioncount">{ unimplemented },
+        method<"getconnectioncount">{},
         method<"getnettotals">{},
         method<"getnodeaddresses">{ unimplemented },
         method<"getpeerinfo">{ unimplemented },

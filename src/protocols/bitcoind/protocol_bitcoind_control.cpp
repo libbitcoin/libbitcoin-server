@@ -185,8 +185,11 @@ bool protocol_bitcoind_control::handle_logging(const code& ec,
 bool protocol_bitcoind_control::handle_uptime(const code& ec,
     rpc_interface::uptime) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    send_result(floored_subtract(to_unsigned(zulu_time()),
+        to_unsigned(start_time())), 20);
     return true;
 }
 

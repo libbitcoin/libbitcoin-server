@@ -98,7 +98,7 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
         { "protocolversion", network_settings().protocol_maximum },
         { "localrelay", network_settings().enable_relay },
         { "timeoffset", 0 },
-        { "connections", 0 },
+        { "connections", channel_count() },
         { "networkactive", true },
         { "networks", array_t{} },
         { "relayfee", node_settings().minimum_fee_rate },
@@ -173,11 +173,14 @@ bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
     return true;
 }
 
+// Peer channels only (client channels are not connections).
 bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     rpc_interface::get_connection_count) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    send_result(channel_count(), 20);
     return true;
 }
 
