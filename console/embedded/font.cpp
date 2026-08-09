@@ -21,8 +21,8 @@
 namespace libbitcoin {
 namespace server {
 
-// Bogus default font for embedded page.
-DEFINE_EMBEDDED_PAGE(native_pages, uint8_t, font,
+// Bogus default font shared by the embedded sites.
+DEFINE_EMBEDDED_PAGE(shared_pages, uint8_t, font,
 {
     0x00
 })

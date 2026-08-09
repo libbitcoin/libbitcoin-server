@@ -320,14 +320,12 @@ console_bs_SOURCES = \
     ${srcdir}/../../console/stack_trace.cpp \
     ${srcdir}/../../console/embedded/admin_css.cpp \
     ${srcdir}/../../console/embedded/admin_ecma.cpp \
-    ${srcdir}/../../console/embedded/admin_font.cpp \
     ${srcdir}/../../console/embedded/admin_html.cpp \
-    ${srcdir}/../../console/embedded/admin_icon.cpp \
+    ${srcdir}/../../console/embedded/font.cpp \
+    ${srcdir}/../../console/embedded/icon.cpp \
     ${srcdir}/../../console/embedded/native_css.cpp \
     ${srcdir}/../../console/embedded/native_ecma.cpp \
-    ${srcdir}/../../console/embedded/native_font.cpp \
-    ${srcdir}/../../console/embedded/native_html.cpp \
-    ${srcdir}/../../console/embedded/native_icon.cpp
+    ${srcdir}/../../console/embedded/native_html.cpp
 
 target_console = console/bs
 

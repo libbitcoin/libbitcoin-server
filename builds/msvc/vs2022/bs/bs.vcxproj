@@ -120,14 +120,12 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\admin_ecma.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\font.cpp" />
+    <ClCompile Include="..\..\..\..\console\embedded\icon.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp" />
     <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp" />
-    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp" />
     <ClCompile Include="..\..\..\..\console\executor.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_commands.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_daemon.cpp" />

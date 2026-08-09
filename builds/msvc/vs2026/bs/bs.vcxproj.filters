@@ -24,13 +24,13 @@
     <ClCompile Include="..\..\..\..\console\embedded\admin_ecma.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_font.cpp">
-      <Filter>src\embedded</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\console\embedded\admin_html.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\admin_icon.cpp">
+    <ClCompile Include="..\..\..\..\console\embedded\font.cpp">
+      <Filter>src\embedded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\embedded\icon.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\embedded\native_css.cpp">
@@ -39,13 +39,7 @@
     <ClCompile Include="..\..\..\..\console\embedded\native_ecma.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_font.cpp">
-      <Filter>src\embedded</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\console\embedded\native_html.cpp">
-      <Filter>src\embedded</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\console\embedded\native_icon.cpp">
       <Filter>src\embedded</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor.cpp">
