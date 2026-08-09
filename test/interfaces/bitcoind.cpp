@@ -80,6 +80,7 @@ static_assert(bitcoind_unserved("scantxoutset"));
 static_assert(bitcoind_served("verifychain"));
 
 // Implemented from the wip backlog.
+static_assert(bitcoind_served("getdeploymentinfo"));
 static_assert(bitcoind_served("getchaintips"));
 static_assert(bitcoind_served("getdifficulty"));
 static_assert(bitcoind_served("verifymessage"));
@@ -111,7 +112,7 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader gettxout "
-    "verifychain getchaintips getdifficulty");
+    "verifychain getchaintips getdeploymentinfo getdifficulty");
 static_assert(bitcoind_control_methods::names == "help");
 static_assert(bitcoind_mining_methods::names == "getnetworkhashps");
 static_assert(bitcoind_network_methods::names == "getnetworkinfo");

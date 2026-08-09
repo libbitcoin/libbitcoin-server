@@ -98,7 +98,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_from_peer, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_chain_states, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_chain_tips, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
@@ -539,11 +539,74 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
-    rpc_interface::get_deployment_info) NOEXCEPT
+// bitcoind reports a buried deployment as active from one block below its
+// activation height (the rules are enforced for the block that follows).
+static void push_buried(object_t& out, const std::string& name, bool enabled,
+    size_t activation, size_t height) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (!enabled)
+        return;
+
+    out.emplace(name, object_t
+    {
+        { "type", std::string{ "buried" } },
+        { "active", add1(height) >= activation },
+        { "height", activation }
+    });
+}
+
+// Deployments are configured, so this reads settings and needs no chain state.
+// Taproot is excluded, as bitcoind buried it and no longer reports it here
+// (btcd reports it under getblockchaininfo's bip9_softforks, which lnd reads).
+bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
+    rpc_interface::get_deployment_info, const std::string& blockhash) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    auto link = query.to_confirmed(query.get_top_confirmed());
+
+    // The block defaults to the confirmed top.
+    if (!blockhash.empty())
+    {
+        hash_digest hash{};
+        if (!decode_hash(hash, blockhash))
+        {
+            send_error(error::not_found, blockhash, blockhash.size());
+            return true;
+        }
+
+        link = query.to_header(hash);
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link))
+    {
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
+
+    const auto& settings = system_settings();
+    const auto& forks = settings.forks;
+    object_t deployments{};
+    push_buried(deployments, "bip34", forks.bip34,
+        settings.bip90_bip34_height, height);
+    push_buried(deployments, "bip66", forks.bip66,
+        settings.bip90_bip66_height, height);
+    push_buried(deployments, "bip65", forks.bip65,
+        settings.bip90_bip65_height, height);
+    push_buried(deployments, "csv", forks.bip68 && forks.bip112 &&
+        forks.bip113, settings.bip9_bit0_active_checkpoint.height(), height);
+    push_buried(deployments, "segwit", forks.bip141 && forks.bip143 &&
+        forks.bip147, settings.bip9_bit1_active_checkpoint.height(), height);
+
+    send_result(object_t
+    {
+        { "hash", encode_hash(query.get_header_key(link)) },
+        { "height", height },
+        { "deployments", std::move(deployments) }
+    }, 512);
     return true;
 }
 

@@ -106,7 +106,8 @@ protected:
     bool handle_get_chain_tips(const code& ec,
         rpc_interface::get_chain_tips) NOEXCEPT;
     bool handle_get_deployment_info(const code& ec,
-        rpc_interface::get_deployment_info) NOEXCEPT;
+        rpc_interface::get_deployment_info,
+        const std::string& blockhash) NOEXCEPT;
     bool handle_get_descriptor_activity(const code& ec,
         rpc_interface::get_descriptor_activity) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,

@@ -67,7 +67,6 @@ const std::vector<std::string> wip_methods
     "verifytxoutproof",
     "getblockfrompeer",
     "getchainstates",
-    "getdeploymentinfo",
     "getdescriptoractivity",
     "preciousblock",
     "scanblocks",
@@ -545,6 +544,50 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
     const auto& active = response.at("result").as_array().at(0);
     BOOST_REQUIRE_EQUAL(active.at("height").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_buried)
+{
+    const auto response = rpc("getdeploymentinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("deployments").at("bip34").at("type")), "buried");
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("bip34").at("height").as_int64(), 227931);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("bip66").at("height").as_int64(), 363725);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("bip65").at("height").as_int64(), 388381);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("csv").at("height").as_int64(), 419328);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("segwit").at("height").as_int64(), 481824);
+}
+
+// bitcoind buried taproot and no longer reports it as a deployment.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__taproot__absent)
+{
+    const auto response = rpc("getdeploymentinfo");
+    BOOST_REQUIRE(!response.at("result").at("deployments").as_object().contains("taproot"));
+}
+
+// Mainnet activations are all above the ten block store, so none are active.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__below_activation__inactive)
+{
+    const auto response = rpc("getdeploymentinfo");
+    const auto& deployments = response.at("result").at("deployments");
+    BOOST_REQUIRE(!deployments.at("bip34").at("active").as_bool());
+    BOOST_REQUIRE(!deployments.at("segwit").at("active").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__block_hash__that_block)
+{
+    const auto response = rpc("getdeploymentinfo", hash_param(test::block5_hash));
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block5);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__unknown_hash__error)
+{
+    const auto response = rpc("getdeploymentinfo", hash_param(system::one_hash));
+    BOOST_REQUIRE(has_error(response));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)

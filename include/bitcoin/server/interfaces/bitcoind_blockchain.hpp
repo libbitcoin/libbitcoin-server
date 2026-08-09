@@ -52,7 +52,7 @@ struct bitcoind_blockchain_methods
         method<"getblockfrompeer">{ unimplemented },
         method<"getchainstates">{ unimplemented },
         method<"getchaintips">{},
-        method<"getdeploymentinfo">{ unimplemented },
+        method<"getdeploymentinfo", optional<""_t>>{ "blockhash" },
         method<"getdescriptoractivity">{ unimplemented },
         method<"getdifficulty">{},
         method<"preciousblock">{ unimplemented },
