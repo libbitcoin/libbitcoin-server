@@ -74,6 +74,8 @@ protected:
     /// Handlers (getters).
     bool handle_get_best_block(const code& ec,
         btcd_interface::get_best_block) NOEXCEPT;
+    bool handle_get_block_chain_info(const code& ec,
+        btcd_interface::get_block_chain_info) NOEXCEPT;
     bool handle_get_current_net(const code& ec,
         btcd_interface::get_current_net) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,

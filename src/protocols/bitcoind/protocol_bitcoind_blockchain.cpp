@@ -182,61 +182,15 @@ bool protocol_bitcoind_blockchain::handle_get_block_chain_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    const auto& query = archive();
-    const auto blocks = query.get_top_confirmed();
-    const auto headers = query.get_top_candidate();
-    const auto link = query.to_confirmed(blocks);
-    const auto header = query.get_header(link);
-    if (!header)
+    object_t out{};
+    if (!chain_info(out, archive(), network_settings().pruned_node(),
+        is_current_chain(true)))
     {
         send_error(database::error::integrity);
         return true;
     }
 
-    // TODO: make utility method and move explanation there.
-    // verificationprogress is approximated as confirmed/candidate height, the
-    // best available estimate of the chain top during sync (1.0 once current).
-    const auto progress = is_zero(headers) ? 1.0 :
-        std::min(1.0, to_floating(blocks) / to_floating(headers));
-
-    // Softfork activation is configured, not assumable. Taproot is reported
-    // when configured active, with its configured activation height -- lnd's
-    // backendSupportsTaproot requires the key's presence (not its field
-    // values) before treating any btcd/bitcoind backend as usable.
-    const auto& settings = system_settings();
-    object_t soft_forks{};
-    if (settings.forks.bip341 && settings.forks.bip342)
-    {
-        soft_forks.emplace("taproot", object_t
-        {
-            { "status", std::string{ "active" } },
-            { "bit", 2 },
-            { "startTime", -1 },
-            { "timeout", -1 },
-            { "since", settings.bip9_bit2_active_checkpoint.height() },
-            { "min_activation_height", 0 }
-        });
-    }
-
-    // TODO: blocks/headers is a misnomer (off-by-one), intended?
-    using namespace chain;
-    send_result(object_t
-    {
-        { "chain", chain_name(query) },
-        { "blocks", blocks },
-        { "headers", headers },
-        { "bestblockhash", encode_hash(query.get_header_key(link)) },
-        { "bits", encode_base16(to_big_endian(header->bits())) },
-        { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
-        { "difficulty", header->difficulty() },
-        { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, link) },
-        { "verificationprogress", progress },
-        { "initialblockdownload", !is_current_chain(true) },
-        { "pruned", network_settings().pruned_node() },
-        { "warnings", std::string{} },
-        { "bip9_softforks", std::move(soft_forks) }
-    }, 512);
+    send_result(std::move(out), 512);
     return true;
 }
 

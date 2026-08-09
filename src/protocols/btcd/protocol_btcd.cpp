@@ -58,6 +58,7 @@ void protocol_btcd::start() NOEXCEPT
 
     // Getter methods.
     SUBSCRIBE_BTCD(handle_get_best_block, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_block_chain_info, _1, _2);
     SUBSCRIBE_BTCD(handle_get_current_net, _1, _2);
     SUBSCRIBE_BTCD(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BTCD(handle_get_info, _1, _2);

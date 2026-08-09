@@ -84,6 +84,10 @@ protected:
         if (stopped(ec))
             return;
 
+        // A protocol attached earlier owns the method (overrides this one).
+        if (claimed())
+            return;
+
         // Silently defer invalidated requests to the terminal responder.
         if (!is_allowed_host(*post, post->version()) ||
             !is_allowed_origin(*post, post->version()) ||
@@ -123,6 +127,10 @@ protected:
         const network::http::request& request) NOEXCEPT override
     {
         BC_ASSERT(stranded());
+
+        // A protocol attached earlier owns the method (overrides this one).
+        if (claimed())
+            return;
 
         // ws frames carry no headers, so ws authorization is enforced here,
         // not by the channel. Unauthorized and non-rpc frames are silently

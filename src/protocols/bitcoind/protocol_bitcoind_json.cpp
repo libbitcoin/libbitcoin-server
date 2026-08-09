@@ -116,5 +116,45 @@ std::string protocol_bitcoind::chain_name(const node::query& query) NOEXCEPT
     return "unknown";
 }
 
+// Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
+// augments the result with bip9_softforks (required by lnd).
+bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
+    const node::query& query, bool pruned, bool current) NOEXCEPT
+{
+    const auto blocks = query.get_top_confirmed();
+    const auto headers = query.get_top_candidate();
+    const auto link = query.to_confirmed(blocks);
+    const auto header = query.get_header(link);
+    if (!header)
+        return false;
+
+    // TODO: make utility method and move explanation there.
+    // verificationprogress is approximated as confirmed/candidate height, the
+    // best available estimate of the chain top during sync (1.0 once current).
+    const auto progress = is_zero(headers) ? 1.0 :
+        std::min(1.0, to_floating(blocks) / to_floating(headers));
+
+    // TODO: blocks/headers is a misnomer (off-by-one), intended?
+    using namespace chain;
+    out = network::rpc::object_t
+    {
+        { "chain", chain_name(query) },
+        { "blocks", blocks },
+        { "headers", headers },
+        { "bestblockhash", encode_hash(query.get_header_key(link)) },
+        { "bits", encode_base16(to_big_endian(header->bits())) },
+        { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
+        { "difficulty", header->difficulty() },
+        { "time", header->timestamp() },
+        { "mediantime", median_time_past(query, link) },
+        { "verificationprogress", progress },
+        { "initialblockdownload", !current },
+        { "pruned", pruned },
+        { "warnings", std::string{} }
+    };
+
+    return true;
+}
+
 } // namespace server
 } // namespace libbitcoin

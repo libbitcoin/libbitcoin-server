@@ -53,6 +53,45 @@ bool protocol_btcd::handle_get_best_block(const code& ec,
     return true;
 }
 
+// Overrides the bitcoind method (btcd is attached first, so it claims the
+// request). Softfork activation is configured, not assumable. Taproot is
+// reported when configured active, with its configured activation height --
+// lnd's backendSupportsTaproot requires the key's presence (not its field
+// values) before treating any btcd backend as usable.
+bool protocol_btcd::handle_get_block_chain_info(const code& ec,
+    btcd_interface::get_block_chain_info) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    object_t out{};
+    if (!chain_info(out, archive(), network_settings().pruned_node(),
+        is_current_chain(true)))
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    const auto& settings = system_settings();
+    object_t soft_forks{};
+    if (settings.forks.bip341 && settings.forks.bip342)
+    {
+        soft_forks.emplace("taproot", object_t
+        {
+            { "status", std::string{ "active" } },
+            { "bit", 2 },
+            { "startTime", -1 },
+            { "timeout", -1 },
+            { "since", settings.bip9_bit2_active_checkpoint.height() },
+            { "min_activation_height", 0 }
+        });
+    }
+
+    out.emplace("bip9_softforks", std::move(soft_forks));
+    send_result(std::move(out), 512);
+    return true;
+}
+
 // p2p magic (checked once by btcwallet/lnd to confirm network).
 bool protocol_btcd::handle_get_current_net(const code& ec,
     btcd_interface::get_current_net) NOEXCEPT

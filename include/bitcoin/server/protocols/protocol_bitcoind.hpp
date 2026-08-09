@@ -97,6 +97,11 @@ protected:
         const system::chain::header& header) NOEXCEPT;
     static std::string chain_name(const node::query& query) NOEXCEPT;
 
+    /// The getblockchaininfo result, Core field set (btcd augments it).
+    /// False if the store is inconsistent, the caller sends the error.
+    static bool chain_info(network::rpc::object_t& out,
+        const node::query& query, bool pruned, bool current) NOEXCEPT;
+
     /// Senders. close_reason (if truthy) stops the channel only once the
     /// write has completed, so the error reaches the client first.
     void send_error(const code& ec) NOEXCEPT;

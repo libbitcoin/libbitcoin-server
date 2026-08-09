@@ -287,16 +287,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     BOOST_REQUIRE(result.at("initialblockdownload").is_bool());
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__present)
+// bip9_softforks is a btcd-endpoint field (see btcd_rpc tests), removed from
+// bitcoind's getblockchaininfo in Core 0.19 and absent from the fork.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__softforks__absent)
 {
-    // lnd's backendSupportsTaproot requires this key's presence to treat
-    // any btcd/bitcoind backend as usable. The activation height is the
-    // configured (mainnet) bip9 bit2 checkpoint.
     const auto response = rpc("getblockchaininfo");
     const auto& result = response.at("result");
-    BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
-    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
-    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+    BOOST_REQUIRE(!result.as_object().contains("bip9_softforks"));
+    BOOST_REQUIRE(!result.as_object().contains("softforks"));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unspent_coinbase__output)

@@ -412,6 +412,44 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__unexpected_method)
     REQUIRE_NO_THROW_TRUE(follow_up.at("result").is_object());
 }
 
+// btcd overrides the bitcoind method (attached first, so it claims the
+// request). lnd's backendSupportsTaproot requires this key's presence to
+// treat any btcd backend as usable. The activation height is the configured
+// (mainnet) bip9 bit2 checkpoint.
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__present)
+{
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
+    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
+    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+}
+
+// The override serves the base fields, and answers exactly once -- the
+// blockchain subgroup also defines the method, so without the claim guard
+// both would respond and the follow-up would read the stray response.
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__override__serves_core_fields_once)
+{
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
+    BOOST_REQUIRE(result.as_object().contains("bestblockhash"));
+    BOOST_REQUIRE(result.as_object().contains("mediantime"));
+
+    const auto follow_up = rpc("getcurrentnet");
+    REQUIRE_NO_THROW_TRUE(follow_up.at("result").is_number());
+}
+
+// The overridden name is published once (btcd and blockchain both define it).
+BOOST_AUTO_TEST_CASE(btcd_rpc__help__overridden_method__listed_once)
+{
+    const auto response = rpc("help");
+    const auto names = as_text(response.at("result"));
+    const auto first = names.find("getblockchaininfo");
+    BOOST_REQUIRE_NE(first, std::string::npos);
+    BOOST_REQUIRE_EQUAL(names.find("getblockchaininfo", add1(first)), std::string::npos);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Filter limit (btcd.maximum_filters): loadtxfilter watches are bounded per
