@@ -91,7 +91,6 @@ const std::vector<std::string> wip_methods
     "getaddednodeinfo",
     "getaddrmaninfo",
     "getconnectioncount",
-    "getnettotals",
     "getnodeaddresses",
     "getpeerinfo",
     "ping",
@@ -541,6 +540,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
     const auto& active = response.at("result").as_array().at(0);
     BOOST_REQUIRE_EQUAL(active.at("height").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
+}
+
+// Byte counters are untracked, and no upload target is configured.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnettotals__untracked_counters__zero)
+{
+    const auto response = rpc("getnettotals");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("totalbytesrecv").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("totalbytessent").as_int64(), 0);
+    BOOST_REQUIRE(result.at("timemillis").as_int64() > 0);
+    BOOST_REQUIRE_EQUAL(result.at("uploadtarget").at("target").as_int64(), 0);
+    BOOST_REQUIRE(!result.at("uploadtarget").at("target_reached").as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrpcinfo__default__logpath_and_no_active)

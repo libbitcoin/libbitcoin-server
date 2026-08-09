@@ -181,11 +181,30 @@ bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     return true;
 }
 
+// Byte counters are not tracked (as the btcd endpoint reports). There is no
+// upload target, which is the shape bitcoind reports for a disabled target.
 bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     rpc_interface::get_net_totals) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    object_t result{};
+    result.emplace("totalbytesrecv", zero);
+    result.emplace("totalbytessent", zero);
+    result.emplace("timemillis",
+        possible_wide_cast<int64_t>(zulu_time()) * 1'000);
+    result.emplace("uploadtarget", object_t
+    {
+        { "timeframe", zero },
+        { "target", zero },
+        { "target_reached", false },
+        { "serve_historical_blocks", true },
+        { "bytes_left_in_cycle", zero },
+        { "time_left_in_cycle", zero }
+    });
+
+    send_result(std::move(result), 256);
     return true;
 }
 

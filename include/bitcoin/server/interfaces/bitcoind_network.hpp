@@ -40,7 +40,7 @@ struct bitcoind_network_methods
         method<"getaddednodeinfo">{ unimplemented },
         method<"getaddrmaninfo">{ unimplemented },
         method<"getconnectioncount">{ unimplemented },
-        method<"getnettotals">{ unimplemented },
+        method<"getnettotals">{},
         method<"getnodeaddresses">{ unimplemented },
         method<"getpeerinfo">{ unimplemented },
         method<"ping">{ unimplemented },

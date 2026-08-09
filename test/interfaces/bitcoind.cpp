@@ -116,7 +116,7 @@ static_assert(bitcoind_blockchain_methods::names ==
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getrpcinfo logging");
 static_assert(bitcoind_mining_methods::names == "getnetworkhashps");
-static_assert(bitcoind_network_methods::names == "getnetworkinfo");
+static_assert(bitcoind_network_methods::names == "getnetworkinfo getnettotals");
 static_assert(bitcoind_notifications_methods::names == "");
 static_assert(bitcoind_test_methods::names == "");
 static_assert(bitcoind_transaction_methods::names ==
