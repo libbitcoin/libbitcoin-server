@@ -75,6 +75,9 @@
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\partial_merkle.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_diagnostics.cpp">
       <Filter>src\protocols\admin</Filter>
     </ClCompile>

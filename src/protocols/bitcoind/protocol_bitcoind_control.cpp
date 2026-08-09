@@ -61,10 +61,10 @@ void protocol_bitcoind_control::start() NOEXCEPT
 
     SUBSCRIBE_BITCOIND(handle_help, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_stop, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_memory_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_memory_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_openrpc_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_rpc_info, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_logging, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_logging, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_uptime, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
@@ -92,11 +92,35 @@ bool protocol_bitcoind_control::handle_stop(const code& ec,
     return true;
 }
 
+// libbitcoin has no locked memory manager (bitcoind locks pages holding key
+// material), so nothing is locked and the arena is empty, not unknown.
 bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
-    rpc_interface::get_memory_info) NOEXCEPT
+    rpc_interface::get_memory_info, const std::string& mode) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    // mallocinfo is a glibc-specific malloc dump.
+    if (mode != "stats")
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    object_t locked
+    {
+        { "used", zero },
+        { "free", zero },
+        { "total", zero },
+        { "locked", zero },
+        { "chunks_used", zero },
+        { "chunks_free", zero }
+    };
+
+    send_result(object_t
+    {
+        { "locked", std::move(locked) }
+    }, 192);
     return true;
 }
 
@@ -108,27 +132,64 @@ bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
     return true;
 }
 
+// Dispatch is synchronous on the channel strand, so there is no set of
+// in-flight commands to report (bitcoind lists its own call here).
 bool protocol_bitcoind_control::handle_get_rpc_info(const code& ec,
     rpc_interface::get_rpc_info) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    send_result(object_t
+    {
+        { "active_commands", array_t{} },
+        { "logpath", server_config().log.log_file1().string() }
+    }, 128);
     return true;
 }
 
+// libbitcoin logs by level, where bitcoind logs by category. A level is
+// reported active when compiled in and enabled by configuration. Levels are
+// configured, so the set cannot be changed at run time.
 bool protocol_bitcoind_control::handle_logging(const code& ec,
-    rpc_interface::logging) NOEXCEPT
+    rpc_interface::logging, const array_t& include,
+    const array_t& exclude) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (!include.empty() || !exclude.empty())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    using namespace network::levels;
+    const auto& log = server_config().log;
+    send_result(object_t
+    {
+        { "application", application_defined && log.application },
+        { "news", news_defined && log.news },
+        { "session", session_defined && log.session },
+        { "protocol", protocol_defined && log.protocol },
+        { "proxy", proxy_defined && log.proxy },
+        { "remote", remote_defined && log.remote },
+        { "fault", fault_defined && log.fault },
+        { "quitting", quitting_defined && log.quitting },
+        { "objects", objects_defined && log.objects },
+        { "verbose", verbose_defined && log.verbose }
+    }, 256);
     return true;
 }
 
 bool protocol_bitcoind_control::handle_uptime(const code& ec,
     rpc_interface::uptime) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    send_result(floored_subtract(to_unsigned(zulu_time()),
+        to_unsigned(start_time())), 20);
     return true;
 }
 

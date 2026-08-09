@@ -132,6 +132,7 @@
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\partial_merkle.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_blockchain.cpp" />
@@ -213,6 +214,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\partial_merkle.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind.hpp" />

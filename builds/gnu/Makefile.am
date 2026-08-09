@@ -60,6 +60,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parsers/electrum_version.cpp \
     ${srcdir}/../../src/parsers/native_query.cpp \
     ${srcdir}/../../src/parsers/native_target.cpp \
+    ${srcdir}/../../src/parsers/partial_merkle.cpp \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
     ${srcdir}/../../src/protocols/protocol_http.cpp \
     ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \
@@ -169,7 +170,8 @@ include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_target.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/parsers.hpp
+    ${srcdir}/../../include/bitcoin/server/parsers/parsers.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/partial_merkle.hpp
 
 include_bitcoin_server_protocolsdir = \
     ${includedir}/bitcoin/server/protocols
@@ -248,6 +250,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/parsers/electrum_version.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \
+    ${srcdir}/../../test/parsers/partial_merkle.cpp \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
     ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_json.cpp \

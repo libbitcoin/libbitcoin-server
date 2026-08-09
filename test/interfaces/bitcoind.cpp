@@ -70,7 +70,7 @@ constexpr bool bitcoind_unserved(const std::string_view& name) NOEXCEPT
 
 // These are dispatchable but answer not_implemented (see protocol).
 static_assert(bitcoind_unserved("getblockstats"));
-static_assert(bitcoind_unserved("getchaintxstats"));
+static_assert(bitcoind_served("getchaintxstats"));
 static_assert(bitcoind_unserved("gettxoutsetinfo"));
 static_assert(bitcoind_unserved("pruneblockchain"));
 static_assert(bitcoind_unserved("savemempool"));
@@ -80,6 +80,7 @@ static_assert(bitcoind_unserved("scantxoutset"));
 static_assert(bitcoind_served("verifychain"));
 
 // Implemented from the wip backlog.
+static_assert(bitcoind_served("getdeploymentinfo"));
 static_assert(bitcoind_served("getchaintips"));
 static_assert(bitcoind_served("getdifficulty"));
 static_assert(bitcoind_served("verifymessage"));
@@ -110,11 +111,14 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 // with only unimplemented methods publish no names.
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
-    "getblockfilter getblockhash getblockheader gettxout "
-    "verifychain getchaintips getdifficulty");
-static_assert(bitcoind_control_methods::names == "help");
+    "getblockfilter getblockhash getblockheader getchaintxstats gettxout "
+    "verifychain gettxoutproof verifytxoutproof getchaintips "
+    "getdeploymentinfo getdifficulty");
+static_assert(bitcoind_control_methods::names ==
+    "help getmemoryinfo getrpcinfo logging uptime");
 static_assert(bitcoind_mining_methods::names == "getnetworkhashps");
-static_assert(bitcoind_network_methods::names == "getnetworkinfo");
+static_assert(bitcoind_network_methods::names ==
+    "getnetworkinfo getconnectioncount getnettotals");
 static_assert(bitcoind_notifications_methods::names == "");
 static_assert(bitcoind_test_methods::names == "");
 static_assert(bitcoind_transaction_methods::names ==

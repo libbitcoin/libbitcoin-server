@@ -39,7 +39,7 @@ double protocol_bitcoind::verification_progress(size_t blocks,
     size_t headers) NOEXCEPT
 {
     return is_zero(headers) ? 1.0 :
-        std::min(1.0, to_floating(blocks) / to_floating(headers));
+        std::min(1.0, to_floating(blocks) / headers);
 }
 
 void protocol_bitcoind::inject_block_context(boost::json::object& out,
@@ -59,10 +59,10 @@ void protocol_bitcoind::inject_block_context(boost::json::object& out,
         to_signed(add1(floored_subtract(top, height))) : -1;
     out["mediantime"] = median_time_past(query, link);
 
-    // TODO: chainwork (bitcoind reports work cumulative to the block).
-    // query::get_work is the proof of one header; the cumulative value is
-    // obtained only by walking to genesis (chain_state::cumulative_work),
-    // which is not affordable here. Requires stored cumulative work.
+    // Cumulative work to this block, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    if (query.get_branch_work(work, link))
+        out["chainwork"] = encode_hash(from_uintx(work));
 
     if (header.previous_block_hash() != null_hash)
         out["previousblockhash"] = encode_hash(header.previous_block_hash());
@@ -154,7 +154,10 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
     // the confirmed top height, headers the candidate (best-header) height.
     using namespace chain;
 
-    // TODO: chainwork, see inject_block_context.
+    // Cumulative work to the top, big-endian per bitcoind chainwork.
+    uint256_t work{};
+    if (!query.get_branch_work(work, link))
+        return false;
 
     out = network::rpc::object_t
     {
@@ -169,6 +172,7 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
         { "mediantime", median_time_past(query, link) },
         { "verificationprogress", progress },
         { "initialblockdownload", !current },
+        { "chainwork", encode_hash(from_uintx(work)) },
         { "pruned", pruned },
         { "warnings", std::string{} }
     };

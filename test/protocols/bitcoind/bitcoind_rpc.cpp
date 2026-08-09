@@ -63,11 +63,8 @@ const std::vector<std::string> rejected_methods
 
 const std::vector<std::string> wip_methods
 {
-    "gettxoutproof",
-    "verifytxoutproof",
     "getblockfrompeer",
     "getchainstates",
-    "getdeploymentinfo",
     "getdescriptoractivity",
     "preciousblock",
     "scanblocks",
@@ -91,8 +88,6 @@ const std::vector<std::string> wip_methods
     "exportasmap",
     "getaddednodeinfo",
     "getaddrmaninfo",
-    "getconnectioncount",
-    "getnettotals",
     "getnodeaddresses",
     "getpeerinfo",
     "ping",
@@ -100,11 +95,7 @@ const std::vector<std::string> wip_methods
     "createmultisig",
     "deriveaddresses",
     "getdescriptorinfo",
-    "getmemoryinfo",
     "getopenrpcinfo",
-    "getrpcinfo",
-    "logging",
-    "uptime",
     "getzmqnotifications"
 };
 
@@ -285,6 +276,22 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     BOOST_REQUIRE(result.as_object().contains("target"));
     BOOST_REQUIRE(result.at("warnings").is_string());
     BOOST_REQUIRE(result.at("initialblockdownload").is_bool());
+    BOOST_REQUIRE(result.at("chainwork").is_string());
+}
+
+// Ten blocks at minimum difficulty: cumulative work is 10 * 0x0100010001.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__chainwork)
+{
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9__chainwork)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "1"));
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
 }
 
 // bip9_softforks is a btcd-endpoint field (see btcd_rpc tests), removed from
@@ -437,7 +444,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
     const std::vector<std::pair<std::string, std::string>> methods
     {
         { "getblockstats", "[0]" },
-        { "getchaintxstats", "[]" },
         { "gettxoutsetinfo", "[]" },
         { "scantxoutset", "[\"start\", []]" },
         { "pruneblockchain", "[1]" },
@@ -547,10 +553,200 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
     BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
 }
 
+// Ten block store, so the default window is bounded to height - 1.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__default__window_to_top)
+{
+    const auto response = rpc("getchaintxstats");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_final_block_height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("window_final_block_hash")), block9);
+    BOOST_REQUIRE_EQUAL(result.at("window_block_count").as_int64(), 8);
+    BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 8);
+}
+
+// Ten blocks of one tx each, genesis included.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__default__txcount_ten)
+{
+    const auto response = rpc("getchaintxstats");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("txcount").as_int64(), 10);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__zero_window__no_interval)
+{
+    const auto response = rpc("getchaintxstats", "[0]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_block_count").as_int64(), 0);
+    BOOST_REQUIRE(!result.as_object().contains("window_interval"));
+    BOOST_REQUIRE(!result.as_object().contains("txrate"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__window_five__five_txs)
+{
+    const auto response = rpc("getchaintxstats", "[5]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_block_count").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 5);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__window_exceeds_height__error)
+{
+    const auto response = rpc("getchaintxstats", "[10]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__block_hash__that_block)
+{
+    const auto response = rpc("getchaintxstats", "[2, \"" + block5 + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("window_final_block_height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("window_tx_count").as_int64(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__uptime__running__seconds)
+{
+    const auto response = rpc("uptime");
+    BOOST_REQUIRE(response.at("result").is_int64());
+    BOOST_REQUIRE(response.at("result").as_int64() >= 0);
+}
+
+// The test fixture makes no peer connections.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getconnectioncount__no_peers__zero)
+{
+    const auto response = rpc("getconnectioncount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 0);
+}
+
+// Byte counters are untracked, and no upload target is configured.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnettotals__untracked_counters__zero)
+{
+    const auto response = rpc("getnettotals");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("totalbytesrecv").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("totalbytessent").as_int64(), 0);
+    BOOST_REQUIRE(result.at("timemillis").as_int64() > 0);
+    BOOST_REQUIRE_EQUAL(result.at("uploadtarget").at("target").as_int64(), 0);
+    BOOST_REQUIRE(!result.at("uploadtarget").at("target_reached").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrpcinfo__default__logpath_and_no_active)
+{
+    const auto response = rpc("getrpcinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("active_commands").as_array().empty());
+    BOOST_REQUIRE(!as_text(result.at("logpath")).empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmemoryinfo__default__zero_locked)
+{
+    const auto response = rpc("getmemoryinfo");
+    const auto& locked = response.at("result").at("locked");
+    BOOST_REQUIRE_EQUAL(locked.at("total").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(locked.at("locked").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(locked.at("chunks_used").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmemoryinfo__mallocinfo__error)
+{
+    const auto response = rpc("getmemoryinfo", "[\"mallocinfo\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__logging__default__levels)
+{
+    const auto response = rpc("logging");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.as_object().contains("application"));
+    BOOST_REQUIRE(result.as_object().contains("verbose"));
+    BOOST_REQUIRE(result.at("fault").is_bool());
+}
+
+// Levels are compiled in or out, so they cannot be changed at run time.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__logging__include__error)
+{
+    const auto response = rpc("logging", "[[\"news\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+// A proof produced by gettxoutproof verifies to the proven txid (round trip
+// over the merkle block wire form).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__txoutproof__round_trip__proven_txid)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto proof = rpc("gettxoutproof", "[[\"" + txid + "\"], \"" + block1 + "\"]");
+    REQUIRE_NO_THROW_TRUE(proof.at("result").is_string());
+
+    const auto verified = rpc("verifytxoutproof", "[\"" + as_text(proof.at("result")) + "\"]");
+    const auto& result = verified.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at(0)), txid);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__empty_txids__error)
+{
+    const auto response = rpc("gettxoutproof", "[[]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__unknown_txid__error)
+{
+    const auto response = rpc("gettxoutproof", "[[\"" + encode_hash(system::one_hash) + "\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+// A structurally valid proof for a block not in the store proves nothing.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__garbage__error)
+{
+    const auto response = rpc("verifytxoutproof", "[\"00\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_frozen)
+{
+    const auto response = rpc("getdeploymentinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("deployments").at("bip34").at("type")), "buried");
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("bip34").at("height").as_int64(), 227931);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("bip66").at("height").as_int64(), 363725);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("bip65").at("height").as_int64(), 388381);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("csv").at("height").as_int64(), 419328);
+    BOOST_REQUIRE_EQUAL(result.at("deployments").at("segwit").at("height").as_int64(), 481824);
+}
+
+// bitcoind buried taproot and no longer reports it as a deployment.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__taproot__absent)
+{
+    const auto response = rpc("getdeploymentinfo");
+    BOOST_REQUIRE(!response.at("result").at("deployments").as_object().contains("taproot"));
+}
+
+// Mainnet activations are all above the ten block store, so none are active.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__below_activation__inactive)
+{
+    const auto response = rpc("getdeploymentinfo");
+    const auto& deployments = response.at("result").at("deployments");
+    BOOST_REQUIRE(!deployments.at("bip34").at("active").as_bool());
+    BOOST_REQUIRE(!deployments.at("segwit").at("active").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__block_hash__that_block)
+{
+    const auto response = rpc("getdeploymentinfo", hash_param(test::block5_hash));
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block5);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__unknown_hash__error)
+{
+    const auto response = rpc("getdeploymentinfo", hash_param(system::one_hash));
+    BOOST_REQUIRE(has_error(response));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)
 {
-    const auto response = rpc("getblockfilter",
-        hash_param(test::block9_hash, "\"basic\""));
+    const auto response = rpc("getblockfilter", hash_param(test::block9_hash, "\"basic\""));
     BOOST_REQUIRE(has_error(response));
 }
 
