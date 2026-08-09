@@ -86,6 +86,7 @@ protected:
     }
 
     /// Json context helpers (shared with rest, defined in *_json.cpp).
+    static double verification_progress(size_t blocks, size_t headers) NOEXCEPT;
     static uint32_t median_time_past(const node::query& query,
         const database::header_link& link) NOEXCEPT;
     static void inject_block_context(boost::json::object& out,
@@ -121,8 +122,7 @@ protected:
         const network::http::request_cptr& request) NOEXCEPT;
     void set_rpc_request(const network::rpc::request_t& message) NOEXCEPT;
 
-    /// Validate a transaction given next block context.
-    bool get_pool_context(system::chain::context& pool) const NOEXCEPT;
+    /// Validate a transaction given next block context (node utility).
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
     code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 

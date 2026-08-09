@@ -107,8 +107,16 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    // TODO: can verbose be validated, to_integer()?
-    if (verbose == 0.0)
+    // bitcoind parses verbose as an integer (ParseVerbosity): level zero yields
+    // hex, nonzero yields the json object (verbosity 2 fee/prevout not yet done).
+    size_t level{};
+    if (!to_integer(level, verbose))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (level == zero)
     {
         send_text(to_text(*tx, tx->serialized_size(witness), witness));
         return true;
@@ -143,33 +151,6 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         send_error(error::invalid_argument);
         return true;
     }
-
-    // Tx archive not allowed in in v4, must move through node::tx_chaser (v5).
-    ////auto& query = archive();
-    ////const auto hash = tx->hash(false);
-    ////
-    ////// Archive (so the out-relay can serve getdata) only if not already known.
-    ////// TODO: contextual validation (populate_with_metadata + connect) for policy.
-    ////if (query.to_tx(hash).is_terminal())
-    ////{
-    ////    if (tx->check())
-    ////    {
-    ////        send_error(error::invalid_argument);
-    ////        return true;
-    ////    }
-    ////
-    ////    if (query.set_code(*tx))
-    ////    {
-    ////        send_error(database::error::integrity);
-    ////        return true;
-    ////    }
-    ////}
-
-    // Full validation (TODO above) handled in broadcast_tx() below.
-    ////// Announce to peers; protocol_transaction_out_106 serves the tx on getdata.
-    ////broadcast<messages::peer::transaction>(
-    ////    std::make_shared<const messages::peer::transaction>(
-    ////        messages::peer::transaction{ tx }));
 
     if (const auto fault = broadcast_tx(tx); fault)
     {

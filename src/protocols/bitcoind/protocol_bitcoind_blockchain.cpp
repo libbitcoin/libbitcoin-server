@@ -45,6 +45,23 @@ using namespace network::messages;
 using namespace std::placeholders;
 using namespace boost::json;
 
+// bitcoind getblock verbosity levels (doc/JSON-RPC-interface.md).
+// Unscoped for implicit conversion to the parsed level.
+enum block_verbosity : size_t
+{
+    /// Serialized block, hex-encoded.
+    hex = 0,
+
+    /// Block object listing txids.
+    hashed = 1,
+
+    /// Block object embedding full tx objects.
+    verbose = 2
+};
+
+// bitcoind defines only the "basic" (neutrino) block filter type.
+constexpr auto basic_filter = "basic";
+
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
@@ -129,7 +146,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     }
 
     size_t level{};
-    if (!to_integer(level, verbosity))
+    if (!to_integer(level, verbosity) || level > block_verbosity::verbose)
     {
         send_error(error::invalid_argument);
         return true;
@@ -138,41 +155,25 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
-
-    if (level == zero)
+    const auto block = query.get_block(link, witness);
+    if (!block)
     {
-        const auto block = query.get_block(link, witness);
-        if (!block)
-        {
-            send_error(error::not_found, blockhash, blockhash.size());
-            return true;
-        }
+        send_error(error::not_found, blockhash, blockhash.size());
+        return true;
+    }
 
+    if (level == block_verbosity::hex)
+    {
         send_text(to_text(*block, block->serialized_size(witness), witness));
         return true;
     }
 
-    if (level == one || level == two)
-    {
-        const auto block = query.get_block(link, witness);
-        if (!block)
-        {
-            send_error(error::not_found, blockhash, blockhash.size());
-            return true;
-        }
+    auto model = level == block_verbosity::hashed ?
+        value_from(bitcoind_hashed(*block)) :
+        value_from(bitcoind_verbose(*block));
 
-        // TODO: map "level/verbosity" to enumeration and remove comments.
-        // verbosity 1 lists txids; verbosity 2 embeds full tx objects.
-        auto model = is_one(level) ?
-            value_from(bitcoind_hashed(*block)) :
-            value_from(bitcoind_verbose(*block));
-
-        inject_block_context(model.as_object(), query, link, block->header());
-        send_result(std::move(model), two * block->serialized_size(witness));
-        return true;
-    }
-
-    send_error(error::invalid_argument);
+    inject_block_context(model.as_object(), query, link, block->header());
+    send_result(std::move(model), two * block->serialized_size(witness));
     return true;
 }
 
@@ -207,10 +208,16 @@ bool protocol_bitcoind_blockchain::handle_get_block_count(const code& ec,
 
 bool protocol_bitcoind_blockchain::handle_get_block_filter(const code& ec,
     rpc_interface::get_block_filter, const std::string& blockhash,
-    const std::string&) NOEXCEPT
+    const std::string& filtertype) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    if (filtertype != basic_filter)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
 
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
@@ -339,9 +346,10 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
 
-    // TODO: is this meant to be query.is_confirmed_spent(output_link)?
-    // bitcoind returns json null for missing or spent output (mempool ignored).
-    if (output_link.is_terminal() || query.is_spent(output_link))
+    // bitcoind returns json null for a missing or confirmed-spent output; with
+    // mempool ignored this matches gettxout's include_mempool=false semantics
+    // (is_spent would also count unconfirmed/conflicting/invalid-block spenders).
+    if (output_link.is_terminal() || query.is_confirmed_spent(output_link))
     {
         send_result({}, 42);
         return true;

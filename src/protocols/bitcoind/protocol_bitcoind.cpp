@@ -328,44 +328,23 @@ http::request_cptr protocol_bitcoind::reset_rpc_request() NOEXCEPT
 
 // utility (redundant with protocol_electrum)
 // ----------------------------------------------------------------------------
-// TODO: move this to node utility and pass through.
-
-bool protocol_bitcoind::get_pool_context(chain::context& pool) const NOEXCEPT
-{
-    const auto& query = archive();
-    const auto& settings = system_settings();
-    const auto top = query.get_top_confirmed();
-    const auto link = query.to_confirmed(top);
-    const auto hash = query.get_header_key(link);
-    const auto state = query.get_chain_state(settings, hash);
-    if (!state) return false;
-    pool = chain::chain_state(*state, settings).context();
-    return true;
-}
 
 code protocol_bitcoind::validate_tx(
     const chain::transaction& tx) const NOEXCEPT
 {
-    chain::context ctx{};
-    if (!get_pool_context(ctx))
-        return error::server_error;
+    const auto& query = archive();
+    const auto& settings = system_settings();
+    const auto link = query.to_confirmed(query.get_top_confirmed());
+    const auto state = query.get_chain_state(settings,
+        query.get_header_key(link));
 
-    code ec{};
+    // The store always has chain state for the confirmed top.
+    if (!state)
+        return database::error::integrity;
 
-    // Ensure tx does not violate tx consensus rules.
-    if (!ec) ec = tx.check();
-    if (!ec) ec = tx.check(ctx);
-    if (!ec) archive().populate_with_metadata(tx, true);
-    if (!ec) ec = tx.accept(ctx);
-    if (!ec) ec = tx.confirm(ctx);
-    if (!ec) ec = tx.connect(ctx);
-
-    // Ensure tx does not violate presumed block consensus rules.
-    // This is a DoS guard when validating a tx outside of a block.
-    if (!ec) ec = tx.check_guard();
-    if (!ec) ec = tx.check_guard(ctx);
-    if (!ec) ec = tx.accept_guard(ctx);
-    return ec;
+    // The context of the next block, in which a pool tx would confirm.
+    const auto pool = chain::chain_state{ *state, settings }.context();
+    return node::validate_transaction(tx, query, pool);
 }
 
 code protocol_bitcoind::broadcast_tx(
