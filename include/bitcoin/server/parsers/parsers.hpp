@@ -27,5 +27,6 @@
 #include <bitcoin/server/parsers/electrum_version.hpp>
 #include <bitcoin/server/parsers/native_query.hpp>
 #include <bitcoin/server/parsers/native_target.hpp>
+#include <bitcoin/server/parsers/partial_merkle.hpp>
 
 #endif

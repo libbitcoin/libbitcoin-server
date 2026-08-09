@@ -102,6 +102,9 @@
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\partial_merkle.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp">
       <Filter>src\protocols\admin</Filter>
     </ClCompile>
@@ -339,6 +342,9 @@
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\partial_merkle.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp">

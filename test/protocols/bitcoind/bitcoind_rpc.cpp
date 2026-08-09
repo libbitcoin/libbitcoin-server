@@ -63,8 +63,6 @@ const std::vector<std::string> rejected_methods
 
 const std::vector<std::string> wip_methods
 {
-    "gettxoutproof",
-    "verifytxoutproof",
     "getblockfrompeer",
     "getchainstates",
     "getdescriptoractivity",
@@ -666,6 +664,39 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__logging__default__levels)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__logging__include__error)
 {
     const auto response = rpc("logging", "[[\"news\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+// A proof produced by gettxoutproof verifies to the proven txid (round trip
+// over the merkle block wire form).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__txoutproof__round_trip__proven_txid)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto proof = rpc("gettxoutproof", "[[\"" + txid + "\"], \"" + block1 + "\"]");
+    REQUIRE_NO_THROW_TRUE(proof.at("result").is_string());
+
+    const auto verified = rpc("verifytxoutproof", "[\"" + as_text(proof.at("result")) + "\"]");
+    const auto& result = verified.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at(0)), txid);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__empty_txids__error)
+{
+    const auto response = rpc("gettxoutproof", "[[]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__unknown_txid__error)
+{
+    const auto response = rpc("gettxoutproof", "[[\"" + encode_hash(system::one_hash) + "\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+// A structurally valid proof for a block not in the store proves nothing.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__garbage__error)
+{
+    const auto response = rpc("verifytxoutproof", "[\"00\"]");
     BOOST_REQUIRE(has_error(response));
 }
 

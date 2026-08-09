@@ -55,6 +55,7 @@
 #include <bitcoin/server/parsers/native_query.hpp>
 #include <bitcoin/server/parsers/native_target.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
+#include <bitcoin/server/parsers/partial_merkle.hpp>
 #include <bitcoin/server/protocols/protocol.hpp>
 #include <bitcoin/server/protocols/protocol_admin.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>

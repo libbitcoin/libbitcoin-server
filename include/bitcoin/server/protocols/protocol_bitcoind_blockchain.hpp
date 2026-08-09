@@ -96,9 +96,10 @@ protected:
     bool handle_load_tx_out_set(const code& ec,
         rpc_interface::load_tx_out_set) NOEXCEPT;
     bool handle_get_tx_out_proof(const code& ec,
-        rpc_interface::get_tx_out_proof) NOEXCEPT;
+        rpc_interface::get_tx_out_proof, const network::rpc::array_t& txids,
+        const std::string& blockhash) NOEXCEPT;
     bool handle_verify_tx_out_proof(const code& ec,
-        rpc_interface::verify_tx_out_proof) NOEXCEPT;
+        rpc_interface::verify_tx_out_proof, const std::string& proof) NOEXCEPT;
     bool handle_get_block_from_peer(const code& ec,
         rpc_interface::get_block_from_peer) NOEXCEPT;
     bool handle_get_chain_states(const code& ec,

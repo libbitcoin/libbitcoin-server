@@ -19,6 +19,8 @@
 #include <bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp>
 
 #include <algorithm>
+#include <ranges>
+#include <unordered_set>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -93,8 +95,8 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_verify_chain, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_dump_tx_out_set, _1, _2);
     SUBSCRIBE_BITCOIND(handle_load_tx_out_set, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_tx_out_proof, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_verify_tx_out_proof, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_tx_out_proof, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_verify_tx_out_proof, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_block_from_peer, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_chain_states, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_chain_tips, _1, _2);
@@ -531,19 +533,153 @@ bool protocol_bitcoind_blockchain::handle_load_tx_out_set(const code& ec,
     return true;
 }
 
+// The proof is a serialized merkle block (as the p2p merkleblock message and
+// bitcoind's gettxoutproof). The block defaults to that confirming the first
+// txid; libbitcoin archives all txs, so no txindex catch-up is needed.
 bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
-    rpc_interface::get_tx_out_proof) NOEXCEPT
+    rpc_interface::get_tx_out_proof, const array_t& txids,
+    const std::string& blockhash) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    using namespace messages::peer;
+
+    if (stopped(ec))
+        return false;
+
+    if (txids.empty())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    std::unordered_set<hash_digest> targets{};
+    for (const auto& item: txids)
+    {
+        hash_digest hash{};
+        if (!std::holds_alternative<string_t>(item.value()) ||
+            !decode_hash(hash, std::get<string_t>(item.value())) ||
+            !targets.insert(hash).second)
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+    }
+
+    const auto& query = archive();
+    auto link = query.find_confirmed_block(*targets.begin());
+
+    // The block may be specified, otherwise the first txid determines it.
+    if (!blockhash.empty())
+    {
+        hash_digest hash{};
+        if (!decode_hash(hash, blockhash))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        link = query.to_header(hash);
+    }
+
+    if (!query.is_associated(link))
+    {
+        send_error(error::not_found);
+        return true;
+    }
+
+    // Empty implies fault (the link resolves to an associated block).
+    const auto keys = query.get_tx_keys(link);
+    if (keys.empty())
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    // All targets must be in the block (matched in block order).
+    std::vector<bool> match(keys.size());
+    std::ranges::transform(keys, match.begin(),
+        [&targets](const auto& key) NOEXCEPT
+        {
+            return targets.contains(key);
+        });
+
+    if (to_unsigned(std::ranges::count(match, true)) != targets.size())
+    {
+        send_error(error::not_found);
+        return true;
+    }
+
+    const auto header = query.get_header(link);
+    if (!header)
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    const auto size = possible_narrow_cast<uint32_t>(keys.size());
+    merkle_block merkle{ header, size, {}, {} };
+    build_partial_merkle(merkle.flags, merkle.hashes, keys, match);
+
+    const auto version = merkle_block::version_maximum;
+    data_chunk out(merkle.size(version));
+    merkle.serialize(version, out);
+    send_text(encode_base16(out));
     return true;
 }
 
+// Verifies a serialized merkle block, returning the array of proven txids, or
+// an empty array if the proof is invalid (as bitcoind).
 bool protocol_bitcoind_blockchain::handle_verify_tx_out_proof(const code& ec,
-    rpc_interface::verify_tx_out_proof) NOEXCEPT
+    rpc_interface::verify_tx_out_proof, const std::string& proof) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    using namespace messages::peer;
+
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, proof))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto version = merkle_block::version_maximum;
+    const auto merkle = merkle_block::deserialize(version, data);
+    if (!merkle)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    hash_digest root{};
+    hashes matched{};
+    std::vector<size_t> positions{};
+    const auto ok = extract_partial_merkle(root, matched, positions,
+        merkle->transactions, merkle->flags, merkle->hashes);
+
+    // An invalid proof, or one not matching the block's merkle root, proves
+    // nothing (empty result, as bitcoind).
+    if (!ok || root != merkle->header->merkle_root())
+    {
+        send_result(array_t{}, 2);
+        return true;
+    }
+
+    // The block must be on the confirmed chain with the proven tx count.
+    const auto& query = archive();
+    const auto link = query.to_header(merkle->header->hash());
+    if (!query.is_confirmed_block(link) ||
+        query.get_tx_count(link) != merkle->transactions)
+    {
+        send_error(error::not_found);
+        return true;
+    }
+
+    array_t result(matched.size());
+    std::ranges::transform(matched, result.begin(),
+        [](const auto& hash) NOEXCEPT { return encode_hash(hash); });
+
+    send_result(std::move(result), 32 * add1(matched.size()));
     return true;
 }
 

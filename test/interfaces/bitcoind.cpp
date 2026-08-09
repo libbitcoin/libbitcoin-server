@@ -112,7 +112,8 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader getchaintxstats gettxout "
-    "verifychain getchaintips getdeploymentinfo getdifficulty");
+    "verifychain gettxoutproof verifytxoutproof getchaintips "
+    "getdeploymentinfo getdifficulty");
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getrpcinfo logging uptime");
 static_assert(bitcoind_mining_methods::names == "getnetworkhashps");
