@@ -697,8 +697,48 @@ bool protocol_bitcoind_blockchain::handle_get_block_from_peer(const code& ec,
 bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
     rpc_interface::get_chain_states) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    using namespace chain;
+
+    if (stopped(ec))
+        return false;
+
+    // blocks/headers are wire names for the confirmed/candidate top HEIGHTS.
+    const auto& query = archive();
+    const auto confirmed = query.get_top_confirmed();
+    const auto candidate = query.get_top_candidate();
+    const auto link = query.to_confirmed(confirmed);
+    const auto header = query.get_header(link);
+    if (!header)
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    // One fully-validated chainstate, as snapshot loading is not supported.
+    // Store cache sizing is not partitioned by coins, so the caches are zero.
+    const auto bits = header->bits();
+    array_t states
+    {
+        object_t
+        {
+            { "blocks", confirmed },
+            { "bestblockhash", encode_hash(query.get_header_key(link)) },
+            { "bits", encode_base16(to_big_endian(bits)) },
+            { "target", encode_hash(from_uintx(compact::expand(bits))) },
+            { "difficulty", header->difficulty() },
+            { "verificationprogress",
+                verification_progress(confirmed, candidate) },
+            { "coins_db_cache_bytes", zero },
+            { "coins_tip_cache_bytes", zero },
+            { "validated", true }
+        }
+    };
+
+    send_result(object_t
+    {
+        { "headers", candidate },
+        { "chainstates", states }
+    }, 512);
     return true;
 }
 

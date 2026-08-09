@@ -50,7 +50,7 @@ struct bitcoind_blockchain_methods
         method<"gettxoutproof", array_t, optional<""_t>>{ "txids", "blockhash" },
         method<"verifytxoutproof", string_t>{ "proof" },
         method<"getblockfrompeer">{ unimplemented },
-        method<"getchainstates">{ unimplemented },
+        method<"getchainstates">{},
         method<"getchaintips">{},
         method<"getdeploymentinfo", optional<""_t>>{ "blockhash" },
         method<"getdescriptoractivity">{ unimplemented },

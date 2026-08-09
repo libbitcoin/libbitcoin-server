@@ -64,7 +64,6 @@ const std::vector<std::string> rejected_methods
 const std::vector<std::string> wip_methods
 {
     "getblockfrompeer",
-    "getchainstates",
     "getdescriptoractivity",
     "preciousblock",
     "scanblocks",
@@ -80,7 +79,6 @@ const std::vector<std::string> wip_methods
     "joinpsbts",
     "descriptorprocesspsbt",
     "utxoupdatepsbt",
-    "getmininginfo",
     "submitblock",
     "submitheader",
     "addnode",
@@ -95,8 +93,7 @@ const std::vector<std::string> wip_methods
     "createmultisig",
     "deriveaddresses",
     "getdescriptorinfo",
-    "getopenrpcinfo",
-    "getzmqnotifications"
+    "getopenrpcinfo"
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -371,6 +368,21 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__default__number)
     BOOST_REQUIRE(response.at("result").is_double() || response.at("result").is_int64());
 }
 
+// currentblockweight/currentblocktx omitted (no block ever assembled).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__ten_block_store__expected)
+{
+    const auto response = rpc("getmininginfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("difficulty").as_double(), 1.0);
+    BOOST_REQUIRE_EQUAL(result.at("pooledtx").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chain")), "main");
+    BOOST_REQUIRE(!result.as_object().contains("currentblockweight"));
+    BOOST_REQUIRE_EQUAL(result.at("next").at("height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(result.at("next").at("difficulty").as_double(), 1.0);
+    BOOST_REQUIRE(result.at("warnings").as_array().empty());
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__one_in_one_out__hex)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
@@ -551,6 +563,30 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
     const auto& active = response.at("result").as_array().at(0);
     BOOST_REQUIRE_EQUAL(active.at("height").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
+}
+
+// A single fully-validated chainstate (snapshot loading is not supported).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchainstates__ten_block_store__single_validated)
+{
+    const auto response = rpc("getchainstates");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("headers").is_int64());
+
+    const auto& states = result.at("chainstates").as_array();
+    BOOST_REQUIRE_EQUAL(states.size(), 1u);
+    BOOST_REQUIRE_EQUAL(states.at(0).at("blocks").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(states.at(0).at("bestblockhash")), block9);
+    BOOST_REQUIRE_EQUAL(states.at(0).at("verificationprogress").as_double(), 1.0);
+    BOOST_REQUIRE(states.at(0).at("validated").as_bool());
+}
+
+// Empty until the zeromq service is introduced and configured (as bitcoind
+// with no publishers configured).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getzmqnotifications__no_publishers__empty)
+{
+    const auto response = rpc("getzmqnotifications");
+    BOOST_REQUIRE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
 }
 
 // Ten block store, so the default window is bounded to height - 1.

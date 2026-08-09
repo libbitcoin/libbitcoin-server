@@ -96,11 +96,61 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     return true;
 }
 
+// currentblockweight/currentblocktx are omitted (bitcoind omits them until a
+// block is assembled, and there is no assembler). The tx pool is empty and no
+// packages are selected, so pooledtx and blockmintxfee are zero.
 bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     rpc_interface::get_mining_info) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    using namespace chain;
+
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto top = query.get_top_confirmed();
+    const auto link = query.to_confirmed(top);
+    const auto tip = query.get_header(link);
+    if (!tip)
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    // The pool state over the top block carries the next work required.
+    const auto state = query.get_chain_state(system_settings(),
+        query.get_header_key(link));
+    if (!state)
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    const chain_state pool{ *state, system_settings() };
+    const header next{ 0, {}, {}, 0, pool.work_required(), 0 };
+    const auto period = system_settings().block_spacing_seconds;
+    const auto span = to_floating(power2<uint64_t>(32u));
+
+    send_result(object_t
+    {
+        { "blocks", top },
+        { "bits", encode_base16(to_big_endian(tip->bits())) },
+        { "difficulty", tip->difficulty() },
+        { "target", encode_hash(from_uintx(compact::expand(tip->bits()))) },
+        { "networkhashps", tip->difficulty() * span / period },
+        { "pooledtx", zero },
+        { "blockmintxfee", 0.0 },
+        { "chain", chain_name(query) },
+        { "next", object_t
+            {
+                { "height", add1(top) },
+                { "bits", encode_base16(to_big_endian(next.bits())) },
+                { "difficulty", next.difficulty() },
+                { "target",
+                    encode_hash(from_uintx(compact::expand(next.bits()))) }
+            } },
+        { "warnings", array_t{} }
+    }, 512);
     return true;
 }
 

@@ -30,7 +30,7 @@ struct bitcoind_notifications_methods
 {
     static constexpr std::tuple methods
     {
-        method<"getzmqnotifications">{ unimplemented }
+        method<"getzmqnotifications">{}
     };
 
     template <typename... Args>
