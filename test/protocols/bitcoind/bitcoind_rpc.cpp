@@ -99,10 +99,7 @@ const std::vector<std::string> wip_methods
     "createmultisig",
     "deriveaddresses",
     "getdescriptorinfo",
-    "getmemoryinfo",
     "getopenrpcinfo",
-    "getrpcinfo",
-    "logging",
     "uptime",
     "getzmqnotifications"
 };
@@ -544,6 +541,45 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
     const auto& active = response.at("result").as_array().at(0);
     BOOST_REQUIRE_EQUAL(active.at("height").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrpcinfo__default__logpath_and_no_active)
+{
+    const auto response = rpc("getrpcinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("active_commands").as_array().empty());
+    BOOST_REQUIRE(!as_text(result.at("logpath")).empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmemoryinfo__default__zero_locked)
+{
+    const auto response = rpc("getmemoryinfo");
+    const auto& locked = response.at("result").at("locked");
+    BOOST_REQUIRE_EQUAL(locked.at("total").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(locked.at("locked").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(locked.at("chunks_used").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmemoryinfo__mallocinfo__error)
+{
+    const auto response = rpc("getmemoryinfo", "[\"mallocinfo\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__logging__default__levels)
+{
+    const auto response = rpc("logging");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.as_object().contains("application"));
+    BOOST_REQUIRE(result.as_object().contains("verbose"));
+    BOOST_REQUIRE(result.at("fault").is_bool());
+}
+
+// Levels are compiled in or out, so they cannot be changed at run time.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__logging__include__error)
+{
+    const auto response = rpc("logging", "[[\"news\"]]");
+    BOOST_REQUIRE(has_error(response));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_buried)
