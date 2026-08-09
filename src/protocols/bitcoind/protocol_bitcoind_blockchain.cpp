@@ -141,7 +141,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
     {
-        send_error(error::not_found, blockhash, blockhash.size());
+        send_error(error::invalid_argument);
         return true;
     }
 
@@ -222,7 +222,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_filter(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
     {
-        send_error(error::not_found, blockhash, blockhash.size());
+        send_error(error::invalid_argument);
         return true;
     }
 
@@ -286,7 +286,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
     {
-        send_error(error::not_found, blockhash, blockhash.size());
+        send_error(error::invalid_argument);
         return true;
     }
 
@@ -340,7 +340,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
         hash_digest hash{};
         if (!decode_hash(hash, blockhash))
         {
-            send_error(error::not_found, blockhash, blockhash.size());
+            send_error(error::invalid_argument);
             return true;
         }
 
@@ -653,7 +653,7 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
         hash_digest hash{};
         if (!decode_hash(hash, blockhash))
         {
-            send_error(error::not_found, blockhash, blockhash.size());
+            send_error(error::invalid_argument);
             return true;
         }
 

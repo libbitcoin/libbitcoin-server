@@ -93,7 +93,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, txid))
     {
-        send_error(error::not_found, txid, txid.size());
+        send_error(error::invalid_argument);
         return true;
     }
 
