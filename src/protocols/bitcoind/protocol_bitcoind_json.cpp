@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 #include <bitcoin/server/define.hpp>
 
@@ -25,14 +25,14 @@ namespace server {
 
 using namespace system;
 
-uint32_t protocol_bitcoind_rpc::median_time_past(const node::query& query,
+uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     const database::header_link& link) NOEXCEPT
 {
     chain::context ctx{};
     return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
 }
 
-void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
+void protocol_bitcoind::inject_block_context(boost::json::object& out,
     const node::query& query, const database::header_link& link,
     const chain::header& header) NOEXCEPT
 {
@@ -54,7 +54,7 @@ void protocol_bitcoind_rpc::inject_block_context(boost::json::object& out,
             query.get_header_key(query.to_confirmed(add1(height))));
 }
 
-void protocol_bitcoind_rpc::inject_tx_context(boost::json::object& out,
+void protocol_bitcoind::inject_tx_context(boost::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT
 {
     size_t height{};
@@ -77,7 +77,7 @@ void protocol_bitcoind_rpc::inject_tx_context(boost::json::object& out,
     }
 }
 
-boost::json::object protocol_bitcoind_rpc::header_to_bitcoind(
+boost::json::object protocol_bitcoind::header_to_bitcoind(
     const chain::header& header) NOEXCEPT
 {
     return boost::json::object
@@ -93,7 +93,7 @@ boost::json::object protocol_bitcoind_rpc::header_to_bitcoind(
     };
 }
 
-std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
+std::string protocol_bitcoind::chain_name(const node::query& query) NOEXCEPT
 {
     const auto genesis = query.get_header_key(query.to_confirmed(zero));
 
@@ -114,6 +114,46 @@ std::string protocol_bitcoind_rpc::chain_name(const node::query& query) NOEXCEPT
             return name;
 
     return "unknown";
+}
+
+// Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
+// augments the result with bip9_softforks (required by lnd).
+bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
+    const node::query& query, bool pruned, bool current) NOEXCEPT
+{
+    const auto blocks = query.get_top_confirmed();
+    const auto headers = query.get_top_candidate();
+    const auto link = query.to_confirmed(blocks);
+    const auto header = query.get_header(link);
+    if (!header)
+        return false;
+
+    // TODO: make utility method and move explanation there.
+    // verificationprogress is approximated as confirmed/candidate height, the
+    // best available estimate of the chain top during sync (1.0 once current).
+    const auto progress = is_zero(headers) ? 1.0 :
+        std::min(1.0, to_floating(blocks) / to_floating(headers));
+
+    // TODO: blocks/headers is a misnomer (off-by-one), intended?
+    using namespace chain;
+    out = network::rpc::object_t
+    {
+        { "chain", chain_name(query) },
+        { "blocks", blocks },
+        { "headers", headers },
+        { "bestblockhash", encode_hash(query.get_header_key(link)) },
+        { "bits", encode_base16(to_big_endian(header->bits())) },
+        { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
+        { "difficulty", header->difficulty() },
+        { "time", header->timestamp() },
+        { "mediantime", median_time_past(query, link) },
+        { "verificationprogress", progress },
+        { "initialblockdownload", !current },
+        { "pruned", pruned },
+        { "warnings", std::string{} }
+    };
+
+    return true;
 }
 
 } // namespace server

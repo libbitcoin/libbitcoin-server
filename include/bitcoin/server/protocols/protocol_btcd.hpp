@@ -26,14 +26,14 @@
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 /// btcd interface, added to the inherited bitcoind interface.
 class BCS_API protocol_btcd
-  : public server::protocol_bitcoind_rpc,
+  : public server::protocol_bitcoind,
     protected network::tracker<protocol_btcd>
 {
 public:
@@ -47,7 +47,7 @@ public:
     inline protocol_btcd(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : server::protocol_bitcoind_rpc(session, channel, options),
+      : server::protocol_bitcoind(session, channel, options),
         network::tracker<protocol_btcd>(session->log),
         options_(options),
         turbo_(session->database_settings().turbo),
@@ -74,6 +74,8 @@ protected:
     /// Handlers (getters).
     bool handle_get_best_block(const code& ec,
         btcd_interface::get_best_block) NOEXCEPT;
+    bool handle_get_block_chain_info(const code& ec,
+        btcd_interface::get_block_chain_info) NOEXCEPT;
     bool handle_get_current_net(const code& ec,
         btcd_interface::get_current_net) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,
@@ -122,9 +124,6 @@ protected:
     /// Event handlers.
     bool handle_chase(const code& ec, node::chase event_,
         node::event_value value) NOEXCEPT;
-
-    /// The btcd method names, prepended to the base names.
-    std::string help_names() const NOEXCEPT override;
 
     /// Sender (server push, no id).
     void send_notification(const std::string& method,

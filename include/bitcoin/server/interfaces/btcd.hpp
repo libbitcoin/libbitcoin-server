@@ -38,6 +38,11 @@ struct btcd_methods
 
         /// Getters.
         method<"getbestblock">{},
+
+        /// Overrides the bitcoind method, adding bip9_softforks (real btcd
+        /// reports it, and lnd requires the taproot key to accept a backend).
+        method<"getblockchaininfo">{},
+
         method<"getcurrentnet">{},
         method<"getdifficulty">{},
         method<"getinfo">{},
@@ -78,24 +83,25 @@ struct btcd_methods
     using stop = at<2>;
 
     using get_best_block = at<3>;
-    using get_current_net = at<4>;
-    using get_difficulty = at<5>;
-    using get_info = at<6>;
-    using get_net_totals = at<7>;
+    using get_block_chain_info = at<4>;
+    using get_current_net = at<5>;
+    using get_difficulty = at<6>;
+    using get_info = at<7>;
+    using get_net_totals = at<8>;
 
-    using notify_blocks = at<8>;
-    using stop_notify_blocks = at<9>;
-    using notify_new_transactions = at<10>;
-    using stop_notify_new_transactions = at<11>;
+    using notify_blocks = at<9>;
+    using stop_notify_blocks = at<10>;
+    using notify_new_transactions = at<11>;
+    using stop_notify_new_transactions = at<12>;
 
-    using load_tx_filter = at<12>;
-    using rescan_blocks = at<13>;
+    using load_tx_filter = at<13>;
+    using rescan_blocks = at<14>;
 
-    using notify_received = at<14>;
-    using stop_notify_received = at<15>;
-    using notify_spent = at<16>;
-    using stop_notify_spent = at<17>;
-    using rescan = at<18>;
+    using notify_received = at<15>;
+    using stop_notify_received = at<16>;
+    using notify_spent = at<17>;
+    using stop_notify_spent = at<18>;
+    using rescan = at<19>;
 };
 
 } // namespace interface

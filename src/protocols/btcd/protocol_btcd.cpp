@@ -58,6 +58,7 @@ void protocol_btcd::start() NOEXCEPT
 
     // Getter methods.
     SUBSCRIBE_BTCD(handle_get_best_block, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_block_chain_info, _1, _2);
     SUBSCRIBE_BTCD(handle_get_current_net, _1, _2);
     SUBSCRIBE_BTCD(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BTCD(handle_get_info, _1, _2);
@@ -80,8 +81,14 @@ void protocol_btcd::start() NOEXCEPT
     SUBSCRIBE_BTCD(handle_stop_notify_spent, _1, _2, _3);
     SUBSCRIBE_BTCD(handle_rescan, _1, _2, _3, _4, _5, _6);
 
-    // Base registers the bitcoind interface handlers and starts the listener.
-    protocol_bitcoind_rpc::start();
+    // Publish served method names (e.g. for control subgroup help).
+    register_methods(btcd_interface::names);
+
+    // The bitcoind interface subgroups are independently attached.
+    SUBSCRIBE_CHANNEL(post, handle_receive_post, _1, _2);
+    SUBSCRIBE_CHANNEL(network::http::method::unknown, handle_receive_unknown,
+        _1, _2);
+    network::protocol::start();
 }
 
 // Events unsubscription is asynchronous, race is ok.
@@ -91,7 +98,7 @@ void protocol_btcd::stopping(const code& ec) NOEXCEPT
     stopping_.store(true);
     btcd_dispatcher_.stop(ec);
     unsubscribe_chase();
-    protocol_bitcoind_rpc::stopping(ec);
+    network::protocol_http::stopping(ec);
 }
 
 // Dispatch.
@@ -105,28 +112,25 @@ void protocol_btcd::handle_receive_post(const code& ec,
     if (stopped(ec))
         return;
 
-    // Enforce http host header (if any hosts are configured).
-    if (!is_allowed_host(*post, post->version()))
-    {
-        send_bad_host(*post);
+    // Silently defer invalidated requests to the terminal responder.
+    if (!is_allowed_host(*post, post->version()) ||
+        !is_allowed_origin(*post, post->version()) ||
+        !post->body().contains<request>())
         return;
-    }
-
-    // Enforce http origin policy (if any origins are configured).
-    if (!is_allowed_origin(*post, post->version()))
-    {
-        send_forbidden(*post);
-        return;
-    }
-
-    // Endpoint accepts only json-rpc posts.
-    if (!post->body().contains<request>())
-    {
-        send_bad_request(*post);
-        return;
-    }
 
     const auto& message = post->body().get<request>().message;
+
+    // authenticate is websocket-only (as btcd): excluded from the post
+    // surface, silently deferring to the terminal miss (method not found).
+    if (message.method == btcd_interface::authenticate::name)
+        return;
+
+    // Silently defer methods not defined by the btcd interface.
+    if (!btcd_dispatcher::contains(message.method))
+        return;
+
+    // Claim the request (informs the terminal responder).
+    set_claimed();
     set_rpc_request(message.jsonrpc, message.id, post);
 
     // The credential may be restricted to a subset of interface methods.
@@ -136,19 +140,8 @@ void protocol_btcd::handle_receive_post(const code& ec,
         return;
     }
 
-    // authenticate is websocket-only (as btcd): excluded from the post
-    // surface, deferring to the base miss (method not found).
-    const auto code = (message.method == btcd_interface::authenticate::name) ?
-        network::error::unexpected_method : btcd_dispatcher_.notify(message);
-
-    // Defer to the base post transport on a method name miss.
-    if (code == network::error::unexpected_method)
-    {
-        protocol_bitcoind_rpc::handle_receive_post(ec, post);
-        return;
-    }
-
-    if (code)
+    // Dispatch the request to the interface dispatcher.
+    if (const auto code = btcd_dispatcher_.notify(message))
         stop(code);
 }
 
@@ -157,43 +150,42 @@ void protocol_btcd::dispatch_websocket(
 {
     BC_ASSERT(stranded());
 
-    // Websocket frames are parsed as json-rpc requests (websocket_rpc).
+    // Silently defer non-rpc frames to the terminal responder (which stops).
     if (!request.body().contains<rpc::request>())
-    {
-        stop(error::invalid_argument);
         return;
-    }
 
     const auto& message = request.body().get<rpc::request>().message;
-
-    // Cache request context for response building (version + id).
-    set_rpc_request(message);
-
     const auto authenticate =
         (message.method == btcd_interface::authenticate::name);
 
+    // In-band authorization: until authorized, every method (of any attached
+    // interface) is unauthorized except authenticate, which is thereafter.
+    // Claimed here so the connection stays open for the authentication flow.
     if (authenticate == authorized())
     {
+        set_claimed();
+        set_rpc_request(message);
         send_error(network::error::unauthorized);
         return;
     }
 
+    // Silently defer methods not defined by the btcd interface.
+    if (!btcd_dispatcher::contains(message.method))
+        return;
+
+    // Claim the request (informs the terminal responder).
+    set_claimed();
+    set_rpc_request(message);
+
+    // The credential may be restricted to a subset of interface methods.
     if (!authenticate && !permitted(message.method))
     {
         send_error(network::error::unauthorized);
         return;
     }
 
-    const auto code = btcd_dispatcher_.notify(message);
-
-    // Defer to the base websocket transport on a method name miss.
-    if (code == network::error::unexpected_method)
-    {
-        protocol_bitcoind_rpc::dispatch_websocket(request);
-        return;
-    }
-
-    if (code)
+    // Dispatch the request to the interface dispatcher.
+    if (const auto code = btcd_dispatcher_.notify(message))
         stop(code);
 }
 
@@ -221,13 +213,6 @@ bool protocol_btcd::handle_authenticate(const code& ec,
     const auto size = two * unauthorized.message().size();
     send_error(unauthorized, size, unauthorized);
     return true;
-}
-
-// The btcd interface adds its own names to the implemented bitcoind names.
-std::string protocol_btcd::help_names() const NOEXCEPT
-{
-    return std::string{ btcd_interface::names } + ' ' +
-        protocol_bitcoind_rpc::help_names();
 }
 
 bool protocol_btcd::handle_session(const code& ec,

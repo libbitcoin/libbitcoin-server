@@ -29,7 +29,7 @@ namespace server {
 
 #define CLASS protocol_btcd
 
-// protocol_bitcoind_rpc declares 'using post = network::http::method::post',
+// protocol_bitcoind declares 'using post = network::http::method::post',
 // which shadows network::protocol::post<Derived>. Qualify explicitly.
 #define POST_BTCD(method, ...) \
     this->network::protocol::template post<CLASS>(&CLASS::method, __VA_ARGS__)

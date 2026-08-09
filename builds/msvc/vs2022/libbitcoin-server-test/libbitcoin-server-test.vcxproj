@@ -120,9 +120,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\configuration.cpp" />
     <ClCompile Include="..\..\..\..\test\error.cpp" />
-    <ClCompile Include="..\..\..\..\test\interfaces\bitcoind_rpc.cpp">
-      <ObjectFileName>$(IntDir)test_interfaces_bitcoind_rpc.obj</ObjectFileName>
-    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\interfaces\bitcoind.cpp" />
     <ClCompile Include="..\..\..\..\test\interfaces\btcd.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp" />
@@ -138,9 +136,7 @@
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp">
-      <ObjectFileName>$(IntDir)test_protocols_bitcoind_bitcoind_rpc.obj</ObjectFileName>
-    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_rpc.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.cpp" />

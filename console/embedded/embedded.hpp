@@ -28,13 +28,11 @@
 span_value page() const NOEXCEPT override
 
 #define DECLARE_EMBEDDED_PAGES(container) \
-struct container : public server::settings::embedded_pages \
+struct container : public shared_pages \
 { \
     DECLARE_EMBEDDED_PAGE(css); \
     DECLARE_EMBEDDED_PAGE(html); \
     DECLARE_EMBEDDED_PAGE(ecma); \
-    DECLARE_EMBEDDED_PAGE(font); \
-    DECLARE_EMBEDDED_PAGE(icon); \
 }
 
 #define DEFINE_EMBEDDED_PAGE(container, type, name, ...) \
@@ -51,6 +49,15 @@ span_value container::name() const NOEXCEPT \
 
 namespace libbitcoin {
 namespace server {
+
+// Assets common to the embedded sites, embedded once. A site overrides one by
+// redeclaring it in its own container, making this the default.
+struct shared_pages
+  : public server::settings::embedded_pages
+{
+    DECLARE_EMBEDDED_PAGE(font);
+    DECLARE_EMBEDDED_PAGE(icon);
+};
 
 DECLARE_EMBEDDED_PAGES(admin_pages);
 DECLARE_EMBEDDED_PAGES(native_pages);

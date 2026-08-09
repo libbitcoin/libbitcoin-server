@@ -38,7 +38,7 @@
 
 // Must define pdb_path() and handle_stack_trace when using dump_stack_trace.
 extern std::wstring pdb_path();
-extern void handle_stack_trace(const std::string& trace);
+extern void handle_stack_trace(const char* trace);
 
 constexpr size_t depth_limit{ 32 };
 
@@ -217,6 +217,66 @@ static void terminate_stack_trace() NOEXCEPT
 void install_stack_trace() NOEXCEPT
 {
     SetUnhandledExceptionFilter(&unhandled_stack_trace);
+    std::set_terminate(&terminate_stack_trace);
+}
+
+#elif defined(HAVE_APPLE)
+
+#include <atomic>
+#include <csignal>
+#include <cstdlib>
+#include <cstring>
+#include <exception>
+
+#include <execinfo.h>
+#include <unistd.h>
+
+constexpr size_t depth_limit{ 64 };
+
+using namespace bc;
+using namespace system;
+
+static std::atomic_bool dumping{};
+static void* frames[depth_limit]{};
+
+// Emission is direct and self-contained: the handler runs on a faulted thread
+// that may hold the stream lock, and the only walk apple documents for a
+// signal handler writes to a descriptor (so frames cannot be buffered).
+static void emit(const char* text) NOEXCEPT
+{
+    ::write(STDOUT_FILENO, text, std::char_traits<char>::length(text));
+}
+
+static void dump_stack_trace(int signal) NOEXCEPT
+{
+    auto expected = false;
+    if (!dumping.compare_exchange_strong(expected, true))
+        return;
+
+    emit("<<fault - start trace>>\n");
+    emit(::strsignal(signal));
+    emit("\n");
+    ::backtrace_symbols_fd(frames, ::backtrace(frames, depth_limit),
+        STDOUT_FILENO);
+    emit("<<fault - end trace>>\n");
+
+    // Restore the default and re-raise, so the wait status reports the signal.
+    ::signal(signal, SIG_DFL);
+    ::raise(signal);
+}
+
+static void terminate_stack_trace() NOEXCEPT
+{
+    dump_stack_trace(SIGABRT);
+    std::abort();
+}
+
+void install_stack_trace() NOEXCEPT
+{
+    ::signal(SIGBUS, &dump_stack_trace);
+    ::signal(SIGSEGV, &dump_stack_trace);
+    ::signal(SIGILL, &dump_stack_trace);
+    ::signal(SIGFPE, &dump_stack_trace);
     std::set_terminate(&terminate_stack_trace);
 }
 

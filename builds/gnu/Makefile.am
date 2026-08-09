@@ -63,9 +63,18 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
     ${srcdir}/../../src/protocols/protocol_http.cpp \
     ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_blockchain.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_control.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_json.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_mining.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_network.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_notifications.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rest.cpp \
-    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc.cpp \
-    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_rpc_json.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_test.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_transaction.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_utility.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_wallet.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_filter.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_utility.cpp \
@@ -130,8 +139,16 @@ include_bitcoin_server_interfacesdir = \
 
 include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/admin.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_blockchain.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_control.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_mining.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_network.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_notifications.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rest.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_rpc.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_test.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_transaction.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_utility.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_wallet.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/interfaces.hpp \
@@ -160,8 +177,18 @@ include_bitcoin_server_protocolsdir = \
 include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_admin.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_control.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_mining.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_network.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_notifications.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_rest.hpp \
-    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_rpc.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_test.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_transaction.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_utility.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_wallet.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum_version.hpp \
@@ -212,7 +239,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/main.cpp \
     ${srcdir}/../../test/settings.cpp \
     ${srcdir}/../../test/test.cpp \
-    ${srcdir}/../../test/interfaces/bitcoind_rpc.cpp \
+    ${srcdir}/../../test/interfaces/bitcoind.cpp \
     ${srcdir}/../../test/interfaces/btcd.cpp \
     ${srcdir}/../../test/mocks/blocks.cpp \
     ${srcdir}/../../test/parsers/admin_query.cpp \
@@ -293,14 +320,12 @@ console_bs_SOURCES = \
     ${srcdir}/../../console/stack_trace.cpp \
     ${srcdir}/../../console/embedded/admin_css.cpp \
     ${srcdir}/../../console/embedded/admin_ecma.cpp \
-    ${srcdir}/../../console/embedded/admin_font.cpp \
     ${srcdir}/../../console/embedded/admin_html.cpp \
-    ${srcdir}/../../console/embedded/admin_icon.cpp \
+    ${srcdir}/../../console/embedded/font.cpp \
+    ${srcdir}/../../console/embedded/icon.cpp \
     ${srcdir}/../../console/embedded/native_css.cpp \
     ${srcdir}/../../console/embedded/native_ecma.cpp \
-    ${srcdir}/../../console/embedded/native_font.cpp \
-    ${srcdir}/../../console/embedded/native_html.cpp \
-    ${srcdir}/../../console/embedded/native_icon.cpp
+    ${srcdir}/../../console/embedded/native_html.cpp
 
 target_console = console/bs
 

@@ -20,8 +20,18 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOLS_HPP
 
 #include <bitcoin/server/protocols/protocol.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_control.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_mining.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_network.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_notifications.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_rest.hpp>
-#include <bitcoin/server/protocols/protocol_bitcoind_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_test.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_transaction.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_utility.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_wallet.hpp>
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
@@ -49,8 +59,6 @@ network::protocol
 │   └── [server::protocol_rpc<server::channel_stratum_v1>]
 │   └── [server::protocol_rpc<server::channel_electrum>]
 ├── protocol_http
-│   ├── [server::protocol_bitcoind_rpc]
-│   │   └── [server::protocol_btcd]
 │   └── [server::protocol_http]
 └── protocol_peer
     ├── [node::protocol_peer]
@@ -94,8 +102,33 @@ server::protocol → node::protocol
     ├── protocol_html
     │   ├── protocol_admin
     │   └── protocol_native
-    └── protocol_bitcoind_rpc
+    └── protocol_bitcoind (common base and terminal default responder)
+        ├── protocol_bitcoind_dispatch<Interface>
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_blockchain>
+        │   │   └── protocol_bitcoind_blockchain
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_control>
+        │   │   └── protocol_bitcoind_control
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_mining>
+        │   │   └── protocol_bitcoind_mining
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_network>
+        │   │   └── protocol_bitcoind_network
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_notifications>
+        │   │   └── protocol_bitcoind_notifications
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_test>
+        │   │   └── protocol_bitcoind_test
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_transaction>
+        │   │   └── protocol_bitcoind_transaction
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_utility>
+        │   │   └── protocol_bitcoind_utility
+        │   ╘══ protocol_bitcoind_dispatch<bitcoind_wallet>
+        │       └── protocol_bitcoind_wallet
         ├── protocol_bitcoind_rest
         └── protocol_btcd
+
+The bitcoind interface subgroups are independent protocols attached to the
+same channel (see sessions.hpp), each carrying its own interface dispatcher.
+A subgroup claims each request its interface defines; protocol_bitcoind is
+concrete and attached last, sending default responses (e.g. unknown method)
+only when no subgroup has claimed the request.
 
 */

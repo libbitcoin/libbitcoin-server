@@ -45,10 +45,173 @@ bool has_error(const boost::json::value& response) NOEXCEPT
         !response.at("error").is_null();
 }
 
+bool is_not_implemented(const boost::json::value& response) NOEXCEPT
+{
+    return has_error(response) &&
+        response.at("error").at("message").as_string() == "not_implemented";
+}
+
+const std::vector<std::string> rejected_methods
+{
+    "dumptxoutset",
+    "loadtxoutset",
+    "clearbanned",
+    "listbanned",
+    "setban",
+    "stop"
+};
+
+const std::vector<std::string> wip_methods
+{
+    "gettxoutproof",
+    "verifytxoutproof",
+    "getblockfrompeer",
+    "getchainstates",
+    "getdeploymentinfo",
+    "getdescriptoractivity",
+    "preciousblock",
+    "scanblocks",
+    "waitforblock",
+    "waitforblockheight",
+    "waitfornewblock",
+    "analyzepsbt",
+    "combinepsbt",
+    "converttopsbt",
+    "createpsbt",
+    "decodepsbt",
+    "finalizepsbt",
+    "joinpsbts",
+    "descriptorprocesspsbt",
+    "utxoupdatepsbt",
+    "getmininginfo",
+    "submitblock",
+    "submitheader",
+    "addnode",
+    "disconnectnode",
+    "exportasmap",
+    "getaddednodeinfo",
+    "getaddrmaninfo",
+    "getconnectioncount",
+    "getnettotals",
+    "getnodeaddresses",
+    "getpeerinfo",
+    "ping",
+    "setnetworkactive",
+    "createmultisig",
+    "deriveaddresses",
+    "getdescriptorinfo",
+    "getmemoryinfo",
+    "getopenrpcinfo",
+    "getrpcinfo",
+    "logging",
+    "uptime",
+    "getzmqnotifications"
+};
+
 std::string as_text(const boost::json::value& value) NOEXCEPT
 {
     return { value.as_string().c_str() };
 }
+
+const std::vector<std::string> scope_methods
+{
+    "addconnection",
+    "addpeeraddress",
+    "echo",
+    "echoipc",
+    "echojson",
+    "estimaterawfee",
+    "generate",
+    "generateblock",
+    "generatetoaddress",
+    "generatetodescriptor",
+    "getmempoolfeeratediagram",
+    "getorphantxs",
+    "getrawaddrman",
+    "invalidateblock",
+    "mockscheduler",
+    "reconsiderblock",
+    "sendmsgtopeer",
+    "setmocktime",
+    "syncwithvalidationinterfacequeue",
+    "abandontransaction",
+    "abortrescan",
+    "addhdkey",
+    "backupwallet",
+    "bumpfee",
+    "createwallet",
+    "createwalletdescriptor",
+    "encryptwallet",
+    "exportwatchonlywallet",
+    "getaddressesbylabel",
+    "getaddressinfo",
+    "getbalance",
+    "getbalances",
+    "gethdkeys",
+    "getnewaddress",
+    "getrawchangeaddress",
+    "getreceivedbyaddress",
+    "getreceivedbylabel",
+    "gettransaction",
+    "getwalletinfo",
+    "importdescriptors",
+    "importprunedfunds",
+    "keypoolrefill",
+    "listaddressgroupings",
+    "listdescriptors",
+    "listlabels",
+    "listlockunspent",
+    "listreceivedbyaddress",
+    "listreceivedbylabel",
+    "listsinceblock",
+    "listtransactions",
+    "listunspent",
+    "listwalletdir",
+    "listwallets",
+    "loadwallet",
+    "lockunspent",
+    "migratewallet",
+    "psbtbumpfee",
+    "removeprunedfunds",
+    "rescanblockchain",
+    "restorewallet",
+    "send",
+    "sendall",
+    "sendmany",
+    "sendtoaddress",
+    "setlabel",
+    "setwalletflag",
+    "signmessage",
+    "signrawtransactionwithwallet",
+    "simulaterawtransaction",
+    "unloadwallet",
+    "walletcreatefundedpsbt",
+    "walletdisplayaddress",
+    "walletlock",
+    "walletpassphrase",
+    "walletpassphrasechange",
+    "walletprocesspsbt",
+    "enumeratesigners"
+};
+
+const std::vector<std::string> pending_methods
+{
+    "getmempoolancestors",
+    "getmempoolcluster",
+    "getmempooldescendants",
+    "getmempoolentry",
+    "getmempoolinfo",
+    "getrawmempool",
+    "gettxspendingprevout",
+    "importmempool",
+    "abortprivatebroadcast",
+    "getprivatebroadcastinfo",
+    "submitpackage",
+    "getblocktemplate",
+    "getprioritisedtransactions",
+    "prioritisetransaction",
+    "estimatesmartfee"
+};
 
 } // namespace
 
@@ -124,16 +287,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     BOOST_REQUIRE(result.at("initialblockdownload").is_bool());
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__present)
+// bip9_softforks is a btcd-endpoint field (see btcd_rpc tests), removed from
+// bitcoind's getblockchaininfo in Core 0.19 and absent from the fork.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__softforks__absent)
 {
-    // lnd's backendSupportsTaproot requires this key's presence to treat
-    // any btcd/bitcoind backend as usable. The activation height is the
-    // configured (mainnet) bip9 bit2 checkpoint.
     const auto response = rpc("getblockchaininfo");
     const auto& result = response.at("result");
-    BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
-    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
-    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+    BOOST_REQUIRE(!result.as_object().contains("bip9_softforks"));
+    BOOST_REQUIRE(!result.as_object().contains("softforks"));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unspent_coinbase__output)
@@ -235,7 +396,24 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__genesis__valid)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__garbage__invalid)
 {
     const auto response = rpc("validateaddress", "[\"notanaddress\"]");
-    REQUIRE_NO_THROW_TRUE(!response.at("result").at("isvalid").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE(!response.at("result").at("isvalid").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("testmempoolaccept", "[[\"" + as_text(created.at("result")) + "\"]]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
+    BOOST_REQUIRE(response.at("result").at(0).as_object().contains("reject-reason"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__empty__error)
+{
+    const auto response = rpc("testmempoolaccept", "[[]]");
+    BOOST_REQUIRE(has_error(response));
 }
 
 // network
@@ -260,17 +438,113 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
     {
         { "getblockstats", "[0]" },
         { "getchaintxstats", "[]" },
-        { "getchainwork", "[]" },
         { "gettxoutsetinfo", "[]" },
         { "scantxoutset", "[\"start\", []]" },
-        { "verifychain", "[]" },
-        { "verifytxoutset", "[\"test\"]" },
         { "pruneblockchain", "[1]" },
         { "savemempool", "[]" }
     };
 
     for (const auto& [method, params]: methods)
         BOOST_REQUIRE_MESSAGE(has_error(rpc(method, params)), method);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__not_implemented)
+{
+    for (const auto& method: rejected_methods)
+    {
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__not_implemented)
+{
+    for (const auto& method: wip_methods)
+    {
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__not_implemented)
+{
+    for (const auto& method: scope_methods)
+    {
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__not_implemented)
+{
+    for (const auto& method: pending_methods)
+    {
+        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__noop__true)
+{
+    const auto response = rpc("verifychain", "[]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdifficulty__ten_block_store__one)
+{
+    const auto response = rpc("getdifficulty");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__compressed_vector__true)
+{
+    const wallet::payment_address address(base16_array(
+        "002688cc350a5333a87fa622eacec626c3d1c0ebf9f3793de3885fa254d7e393"));
+    const auto signature = encode_base64(base16_chunk(
+        "20c0ae26619db18abd1e8a84d005bafd336512eda7207cf7f4f6c36c9614ed6bc"
+        "f531a954929ddc0a86578f4d28a26e19b676c890a49881d6f25e393befd6d1682"));
+    const auto params = "[\"" + address.encoded() + "\", \"" + signature +
+        "\", \"Compressed\"]";
+    const auto response = rpc("verifymessage", params);
+    BOOST_REQUIRE_EQUAL(response.at("result").as_bool(), true);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__invalid_address__error)
+{
+    const auto response = rpc("verifymessage", "[\"notanaddress\", \"x\", \"m\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifymessage__malformed_signature__error)
+{
+    const wallet::payment_address address(base16_array(
+        "002688cc350a5333a87fa622eacec626c3d1c0ebf9f3793de3885fa254d7e393"));
+    const auto params = "[\"" + address.encoded() + "\", \"@@@\", \"m\"]";
+    const auto response = rpc("verifymessage", params);
+    BOOST_REQUIRE(has_error(response));
+}
+
+// The historical test store is not current, so synced is false.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getindexinfo__ten_block_store__txindex_not_synced)
+{
+    const auto response = rpc("getindexinfo");
+    const auto& txindex = response.at("result").at("txindex");
+    BOOST_REQUIRE(!txindex.at("synced").as_bool());
+    BOOST_REQUIRE_EQUAL(txindex.at("best_block_height").as_int64(), 9);
+}
+
+// No currency window, coalesced (confirmed top is candidate top), so synced.
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getindexinfo__current_coalesced__txindex_synced,
+    bitcoind_current_setup_fixture)
+{
+    const auto response = rpc("getindexinfo");
+    const auto& txindex = response.at("result").at("txindex");
+    BOOST_REQUIRE(txindex.at("synced").as_bool());
+    BOOST_REQUIRE_EQUAL(txindex.at("best_block_height").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__ten_block_store__active)
+{
+    const auto response = rpc("getchaintips");
+    const auto& active = response.at("result").as_array().at(0);
+    BOOST_REQUIRE_EQUAL(active.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(active.at("status")), "active");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)

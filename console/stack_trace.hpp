@@ -35,5 +35,11 @@ DWORD dump_stack_trace(unsigned code, EXCEPTION_POINTERS* exception) NOEXCEPT;
 /// handler (throws escaping NOEXCEPT bypass seh entirely).
 void install_stack_trace() NOEXCEPT;
 
+#elif defined(HAVE_APPLE)
+
+/// Install fault signal handlers, as apple ReportCrash does not fire for the
+/// process and its cores are unwritable at this map size.
+void install_stack_trace() NOEXCEPT;
+
 #endif
 #endif

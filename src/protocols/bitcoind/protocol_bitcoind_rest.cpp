@@ -60,20 +60,21 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_filter, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
-    protocol_bitcoind_rpc::start();
+    SUBSCRIBE_CHANNEL(get, handle_receive_get, _1, _2);
+    network::protocol::start();
 }
 
 void protocol_bitcoind_rest::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     rest_dispatcher_.stop(ec);
-    protocol_bitcoind_rpc::stopping(ec);
+    network::protocol_http::stopping(ec);
 }
 
 // Dispatch.
 // ----------------------------------------------------------------------------
 
-// Base rpc protocol handles options and post, this derived handles get.
+// The terminal responder handles options and post, this protocol claims get.
 void protocol_bitcoind_rest::handle_receive_get(const code& ec,
     const get::cptr& get) NOEXCEPT
 {
@@ -81,6 +82,9 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
 
     if (stopped(ec))
         return;
+
+    // Claim the request (informs the terminal responder).
+    set_claimed();
 
     // Enforce http host header (if any hosts are configured).
     if (!is_allowed_host(*get, get->version()))

@@ -20,8 +20,16 @@
 #define LIBBITCOIN_SERVER_INTERFACES_HPP
 
 #include <bitcoin/server/interfaces/admin.hpp>
+#include <bitcoin/server/interfaces/bitcoind_blockchain.hpp>
+#include <bitcoin/server/interfaces/bitcoind_control.hpp>
+#include <bitcoin/server/interfaces/bitcoind_mining.hpp>
+#include <bitcoin/server/interfaces/bitcoind_network.hpp>
+#include <bitcoin/server/interfaces/bitcoind_notifications.hpp>
 #include <bitcoin/server/interfaces/bitcoind_rest.hpp>
-#include <bitcoin/server/interfaces/bitcoind_rpc.hpp>
+#include <bitcoin/server/interfaces/bitcoind_test.hpp>
+#include <bitcoin/server/interfaces/bitcoind_transaction.hpp>
+#include <bitcoin/server/interfaces/bitcoind_utility.hpp>
+#include <bitcoin/server/interfaces/bitcoind_wallet.hpp>
 #include <bitcoin/server/interfaces/btcd.hpp>
 #include <bitcoin/server/interfaces/electrum.hpp>
 #include <bitcoin/server/interfaces/native.hpp>
@@ -33,14 +41,22 @@ namespace libbitcoin {
 namespace server {
 namespace interface {
     
-using admin         = publish<admin_methods>;
-using bitcoind_rest = publish<bitcoind_rest_methods>;
-using bitcoind_rpc  = publish<bitcoind_rpc_methods>;
-using btcd          = publish<btcd_methods>;
-using electrum      = publish<electrum_methods>;
-using native        = publish<native_methods>;
-using stratum_v1    = publish<stratum_v1_methods>;
-using stratum_v2    = publish<stratum_v2_methods>;
+using admin                  = publish<admin_methods>;
+using bitcoind_blockchain    = publish<bitcoind_blockchain_methods>;
+using bitcoind_control       = publish<bitcoind_control_methods>;
+using bitcoind_mining        = publish<bitcoind_mining_methods>;
+using bitcoind_network       = publish<bitcoind_network_methods>;
+using bitcoind_notifications = publish<bitcoind_notifications_methods>;
+using bitcoind_rest          = publish<bitcoind_rest_methods>;
+using bitcoind_test          = publish<bitcoind_test_methods>;
+using bitcoind_transaction   = publish<bitcoind_transaction_methods>;
+using bitcoind_utility       = publish<bitcoind_utility_methods>;
+using bitcoind_wallet        = publish<bitcoind_wallet_methods>;
+using btcd                   = publish<btcd_methods>;
+using electrum               = publish<electrum_methods>;
+using native                 = publish<native_methods>;
+using stratum_v1             = publish<stratum_v1_methods>;
+using stratum_v2             = publish<stratum_v2_methods>;
 
 } // namespace interface
 } // namespace server
