@@ -39,7 +39,7 @@ double protocol_bitcoind::verification_progress(size_t blocks,
     size_t headers) NOEXCEPT
 {
     return is_zero(headers) ? 1.0 :
-        std::min(1.0, to_floating(blocks) / to_floating(headers));
+        std::min(1.0, to_floating(blocks) / headers);
 }
 
 void protocol_bitcoind::inject_block_context(boost::json::object& out,
