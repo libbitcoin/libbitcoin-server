@@ -20,19 +20,14 @@
 
 #include <algorithm>
 #include <utility>
+#include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_transaction>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_transaction>;
 
 #define CLASS protocol_bitcoind_transaction
 #define SUBSCRIBE_BITCOIND(method, ...) \
@@ -82,6 +77,7 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
 // Raw transaction methods.
 // ----------------------------------------------------------------------------
 
+// The hint is unused (not required).
 bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     rpc_interface::get_raw_transaction, const std::string& txid,
     double verbose, const std::string&) NOEXCEPT
@@ -89,7 +85,6 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     if (stopped(ec))
         return false;
 
-    // The blockhash hint is unused: libbitcoin archives all tx (global index).
     hash_digest hash{};
     if (!decode_hash(hash, txid))
     {
@@ -107,26 +102,57 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    // bitcoind parses verbose as an integer (ParseVerbosity): level zero yields
-    // hex, nonzero yields the json object (verbosity 2 fee/prevout not yet done).
+    enum verbosity : size_t
+    {
+        hexadecimal = 0,
+        json_object = 1,
+        json_verbose = 2
+    };
+
     size_t level{};
-    if (!to_integer(level, verbose))
+    if (!to_integer(level, verbose) || level > verbosity::json_verbose)
     {
         send_error(error::invalid_argument);
         return true;
     }
 
-    if (level == zero)
+    if (level == verbosity::hexadecimal)
     {
         send_text(to_text(*tx, tx->serialized_size(witness), witness));
         return true;
     }
 
-    // bitcoind() (not bitcoind_verbose) yields bitcoind's tx fields: txid/hash/
-    // size/vsize/weight/vin/vout/hex (bitcoind_verbose on a standalone tx
-    // falls back to libbitcoin's plain inputs/outputs form).
     auto model = value_from(bitcoind(*tx));
     inject_tx_context(model.as_object(), query, link);
+    if (level == verbosity::json_verbose && !tx->is_coinbase() &&
+        query.populate_without_metadata(*tx))
+    {
+        size_t height{};
+        auto entry = model.as_object().at("vin").as_array().begin();
+        std::ranges::for_each(*tx->inputs_ptr(), [&](const auto& in) NOEXCEPT
+        {
+            const auto spent = query.to_tx(in->point().hash());
+            if (query.get_tx_height(height, spent))
+            {
+                auto out = value_from(bitcoind(*in->prevout)).as_object();
+                boost::json::object prevout
+                {
+                    { "generated", query.is_coinbase(spent) },
+                    { "height", height },
+                    { "value", out.at("value") },
+                    { "scriptPubKey", std::move(out.at("scriptPubKey")) }
+                };
+
+                entry->as_object()["prevout"] = std::move(prevout);
+            }
+
+            ++entry;
+        });
+
+        model.as_object()["fee"] =
+            tx->fee() / to_floating(chain::satoshi_per_bitcoin);
+    }
+
     send_result(std::move(model), two * tx->serialized_size(witness));
     return true;
 }
@@ -145,7 +171,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    const auto tx = to_shared<const chain::transaction>(data, true);
+    const auto tx = to_shared<chain::transaction>(data, true);
     if (!tx->is_valid())
     {
         send_error(error::invalid_argument);
@@ -162,10 +188,9 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     return true;
 }
 
-// Validation runs against the confirmed chain (no tx pool until v5).
 bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     rpc_interface::test_mempool_accept, const array_t& rawtxs,
-    uint32_t) NOEXCEPT
+    double) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -194,12 +219,14 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
             return true;
         }
 
-        object_t result{};
-        result.emplace("txid", encode_hash(tx.hash(false)));
-        result.emplace("wtxid", encode_hash(tx.hash(true)));
-
         const auto fault = validate_tx(tx);
-        result.emplace("allowed", !fault);
+        object_t result
+        {
+            { "txid", encode_hash(tx.hash(false)) },
+            { "wtxid", encode_hash(tx.hash(true)) },
+            { "allowed", !fault }
+        };
+
         if (fault)
             result.emplace("reject-reason", fault.message());
 
@@ -211,25 +238,29 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_transaction::handle_create_raw_transaction(const code& ec,
-    rpc_interface::create_raw_transaction, const array_t& inputs,
-    const object_t& outputs, uint32_t locktime, bool replaceable) NOEXCEPT
+bool protocol_bitcoind_transaction::handle_create_raw_transaction(
+    const code& ec, rpc_interface::create_raw_transaction,
+    const array_t& inputs, const object_t& outputs, double locktime,
+    bool replaceable) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
+    uint32_t lock_time{};
+    if (!to_integer(lock_time, locktime))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
     using namespace chain;
-    uint32_t vout{};
-    hash_digest hash{};
+    const auto sequence = replaceable ? messages::peer::bip125_sequence :
+        (is_zero(lock_time) ? max_input_sequence : sub1(max_input_sequence));
 
-    // bip125 signals replace-by-fee via a sequence below 0xfffffffe.
-    constexpr auto bip125_sequence = 0xfffffffd_u32;
-    const auto sequence = replaceable ? bip125_sequence : max_input_sequence;
-
-    // The transaction owns shared inputs/outputs, so these are populated
-    // directly, avoiding the intermediate vectors that to_shareds() copies.
-    const auto ins = std::make_shared<input_cptrs>();
+    const auto ins = to_shared<input_cptrs>();
     ins->reserve(inputs.size());
+    hash_digest hash{};
+    uint32_t vout{};
 
     for (const auto& item: inputs)
     {
@@ -257,8 +288,7 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(const code& ec
             return true;
         }
 
-        ins->push_back(to_shared<input>(point{ hash, vout }, script{},
-            sequence));
+        ins->push_back(to_shared<input>(point{ hash, vout }, script{}, sequence));
     }
 
     script script{};
@@ -273,8 +303,8 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(const code& ec
             return true;
         }
 
-        if (const auto fault = output_script(script, pair.first, p2kh_,
-            p2sh_, witness_))
+        if (const auto fault = output_script(script, pair.first, p2kh_, p2sh_,
+            witness_))
         {
             send_error(fault);
             return true;
@@ -291,7 +321,7 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(const code& ec
     }
 
     constexpr auto witness = false;
-    const transaction tx{ 1, ins, outs, locktime };
+    const transaction tx{ 1, ins, outs, lock_time };
     send_result(to_text(tx, tx.serialized_size(witness), witness), 400);
     return true;
 }

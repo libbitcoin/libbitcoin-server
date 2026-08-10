@@ -26,13 +26,7 @@
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_network>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_network>;
 
 #define CLASS protocol_bitcoind_network
 #define SUBSCRIBE_BITCOIND(method, ...) \

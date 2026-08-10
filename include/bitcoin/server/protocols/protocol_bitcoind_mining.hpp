@@ -46,8 +46,7 @@ public:
     inline protocol_bitcoind_mining(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_bitcoind_dispatch<interface::bitcoind_mining>(session,
-            channel, options),
+      : protocol_bitcoind_dispatch<rpc_interface>(session, channel, options),
         network::tracker<protocol_bitcoind_mining>(session->log)
     {
     }
@@ -57,8 +56,8 @@ public:
 protected:
     /// Handlers.
     bool handle_get_network_hash_ps(const code& ec,
-        rpc_interface::get_network_hash_ps, uint32_t nblocks,
-        int32_t height) NOEXCEPT;
+        rpc_interface::get_network_hash_ps, double nblocks,
+        double height) NOEXCEPT;
     bool handle_get_mining_info(const code& ec,
         rpc_interface::get_mining_info) NOEXCEPT;
     bool handle_submit_block(const code& ec,

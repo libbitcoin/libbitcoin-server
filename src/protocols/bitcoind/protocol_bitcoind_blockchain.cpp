@@ -28,13 +28,7 @@
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_blockchain>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_blockchain>;
 
 #define CLASS protocol_bitcoind_blockchain
 #define SUBSCRIBE_BITCOIND(method, ...) \
@@ -785,45 +779,40 @@ bool protocol_bitcoind_blockchain::handle_get_block_from_peer(const code& ec,
 bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
     rpc_interface::get_chain_states) NOEXCEPT
 {
-    using namespace chain;
-
     if (stopped(ec))
         return false;
 
-    // blocks/headers are wire names for the confirmed/candidate top HEIGHTS.
     const auto& query = archive();
     const auto confirmed = query.get_top_confirmed();
     const auto candidate = query.get_top_candidate();
-    const auto link = query.to_confirmed(confirmed);
-    const auto header = query.get_header(link);
-    if (!header)
+    const auto validated = progress(confirmed, candidate);
+
+    auto link = query.to_confirmed(confirmed);
+    auto entry = chain_states_entry(query, link, validated, true);
+    if (entry.empty())
     {
         send_error(database::error::integrity);
         return true;
     }
 
-    // One fully-validated chainstate, as assumeutxo is rejected.
-    // Store cache sizing is not partitioned by coins, so the caches are zero.
-    const auto bits = header->bits();
-    array_t states
+    array_t states{ std::move(entry) };
+
+    if (!query.is_coalesced())
     {
-        object_t
+        link = query.to_candidate(candidate);
+        entry = chain_states_entry(query, link, 1.0, false);
+        if (entry.empty())
         {
-            { "blocks", confirmed },
-            { "bestblockhash", encode_hash(query.get_header_key(link)) },
-            { "bits", encode_base16(to_big_endian(bits)) },
-            { "target", encode_hash(from_uintx(compact::expand(bits))) },
-            { "difficulty", header->difficulty() },
-            { "verificationprogress",
-                verification_progress(confirmed, candidate) },
-            { "coins_db_cache_bytes", zero },
-            { "coins_tip_cache_bytes", zero },
-            { "validated", true }
+            send_error(database::error::integrity);
+            return true;
         }
-    };
+
+        states.push_back(std::move(entry));
+    }
 
     send_result(object_t
     {
+        // bitcoind OB1 error ("headers" wants height).
         { "headers", candidate },
         { "chainstates", states }
     }, 512);

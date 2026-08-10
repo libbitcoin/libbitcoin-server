@@ -46,8 +46,7 @@ public:
     inline protocol_bitcoind_test(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_bitcoind_dispatch<interface::bitcoind_test>(session,
-            channel, options),
+      : protocol_bitcoind_dispatch<rpc_interface>(session, channel, options),
         network::tracker<protocol_bitcoind_test>(session->log)
     {
     }

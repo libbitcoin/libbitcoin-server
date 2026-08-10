@@ -46,8 +46,7 @@ public:
     inline protocol_bitcoind_transaction(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_bitcoind_dispatch<interface::bitcoind_transaction>(session,
-            channel, options),
+      : protocol_bitcoind_dispatch<rpc_interface>(session, channel, options),
         network::tracker<protocol_bitcoind_transaction>(session->log)
     {
     }
@@ -59,7 +58,7 @@ protected:
     bool handle_create_raw_transaction(const code& ec,
         rpc_interface::create_raw_transaction,
         const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, uint32_t locktime,
+        const network::rpc::object_t& outputs, double locktime,
         bool replaceable) NOEXCEPT;
     bool handle_decode_raw_transaction(const code& ec,
         rpc_interface::decode_raw_transaction,
@@ -72,7 +71,7 @@ protected:
         double maxfeerate) NOEXCEPT;
     bool handle_test_mempool_accept(const code& ec,
         rpc_interface::test_mempool_accept,
-        const network::rpc::array_t& rawtxs, uint32_t maxfeerate) NOEXCEPT;
+        const network::rpc::array_t& rawtxs, double maxfeerate) NOEXCEPT;
     bool handle_analyze_psbt(const code& ec,
         rpc_interface::analyze_psbt) NOEXCEPT;
     bool handle_combine_psbt(const code& ec,

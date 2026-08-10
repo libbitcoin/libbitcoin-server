@@ -26,13 +26,7 @@
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_mining>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_mining>;
 
 #define CLASS protocol_bitcoind_mining
 #define SUBSCRIBE_BITCOIND(method, ...) \
@@ -73,15 +67,29 @@ void protocol_bitcoind_mining::start() NOEXCEPT
 // ----------------------------------------------------------------------------
 
 bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
-    rpc_interface::get_network_hash_ps, uint32_t, int32_t height) NOEXCEPT
+    rpc_interface::get_network_hash_ps, double, double height) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
-    const auto target = is_negative(height) ? top :
-        std::min(sign_cast<size_t>(height), top);
+
+    // A negative height selects the confirmed top (as bitcoind).
+    size_t target{};
+    if (height < 0)
+    {
+        target = top;
+    }
+    else if (!to_integer(target, height))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+    else
+    {
+        target = std::min(target, top);
+    }
 
     const auto header = query.get_header(query.to_confirmed(target));
     if (!header)
@@ -108,47 +116,52 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
         return false;
 
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto link = query.to_confirmed(top);
-    const auto tip = query.get_header(link);
-    if (!tip)
+    const auto height = query.get_top_confirmed();
+    const auto link = query.to_confirmed(height);
+    const auto top = query.get_header(link);
+    if (!top)
     {
         send_error(database::error::integrity);
         return true;
     }
 
     // The pool state over the top block carries the next work required.
-    const auto state = query.get_chain_state(system_settings(),
-        query.get_header_key(link));
+    const auto& bitcoin = system_settings();
+    const auto key = query.get_header_key(link);
+    const auto state = query.get_chain_state(bitcoin, key);
     if (!state)
     {
         send_error(database::error::integrity);
         return true;
     }
 
-    const chain_state pool{ *state, system_settings() };
-    const header next{ 0, {}, {}, 0, pool.work_required(), 0 };
-    const auto period = system_settings().block_spacing_seconds;
-    const auto span = to_floating(power2<uint64_t>(32u));
+    const chain_state pool{ *state, bitcoin };
+    const header header{ 0, {}, {}, 0, pool.work_required(), 0 };
+    object_t next_block
+    {
+        { "height", add1(height) },
+        { "bits", encode_base16(to_big_endian(header.bits())) },
+        { "difficulty", header.difficulty() },
+        { "target", encode_hash(from_uintx(compact::expand(header.bits()))) }
+    };
 
+    // TODO: change to min inclusion fee when mining enabled.
+    const auto max_money = to_floating(bitcoin.max_money());
+    const auto span = to_floating(power2<uint64_t>(32u));
+    const auto period = bitcoin.block_spacing_seconds;
+
+    // bitcoind OB1 error ("blocks" wants height).
     send_result(object_t
     {
-        { "blocks", top },
-        { "bits", encode_base16(to_big_endian(tip->bits())) },
-        { "difficulty", tip->difficulty() },
-        { "target", encode_hash(from_uintx(compact::expand(tip->bits()))) },
-        { "networkhashps", tip->difficulty() * span / period },
+        { "blocks", height },
+        { "bits", encode_base16(to_big_endian(top->bits())) },
+        { "difficulty", top->difficulty() },
+        { "target", encode_hash(from_uintx(compact::expand(top->bits()))) },
+        { "networkhashps", top->difficulty() * span / period },
         { "pooledtx", zero },
-        { "blockmintxfee", 0.0 },
+        { "blockmintxfee", max_money / satoshi_per_bitcoin },
         { "chain", chain_name(query) },
-        { "next", object_t
-            {
-                { "height", add1(top) },
-                { "bits", encode_base16(to_big_endian(next.bits())) },
-                { "difficulty", next.difficulty() },
-                { "target",
-                    encode_hash(from_uintx(compact::expand(next.bits()))) }
-            } },
+        { "next", std::move(next_block) },
         { "warnings", array_t{} }
     }, 512);
     return true;

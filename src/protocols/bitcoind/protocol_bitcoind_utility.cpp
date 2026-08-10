@@ -26,13 +26,7 @@
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_utility>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_utility>;
 
 #define CLASS protocol_bitcoind_utility
 #define SUBSCRIBE_BITCOIND(method, ...) \
@@ -123,10 +117,11 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
 
     using namespace wallet;
     const auto pattern = script.output_pattern();
-
-    object_t result{};
-    result.emplace("asm", script.to_string(flags::all_rules, true));
-    result.emplace("type", to_script_type(pattern));
+    object_t result
+    {
+        { "asm", script.to_string(flags::all_rules, true) },
+        { "type", to_script_type(pattern) }
+    };
 
     if (pattern == script_pattern::pay_key_hash ||
         pattern == script_pattern::pay_script_hash)
@@ -164,7 +159,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
         return true;
     }
 
-    const witness_address witness(address);
+    const witness_address witness{ address };
     if (witness && witness.prefix() == witness_)
     {
         const auto version0_p2sh = (witness.identifier() ==
@@ -186,15 +181,11 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     return true;
 }
 
-// bech32m multisig is rejected and an uncompressed key downgrades a segwit
-// address type to legacy with a warning (as bitcoind).
+// bech32m multisig is rejected (as bitcoind).
 bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     rpc_interface::create_multisig, double nrequired, const array_t& keys,
     const std::string& address_type) NOEXCEPT
 {
-    using namespace chain;
-    using namespace wallet;
-
     if (stopped(ec))
         return false;
 
@@ -206,75 +197,20 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
         return true;
     }
 
-    if (address_type != "legacy" && address_type != "p2sh-segwit" &&
+    if (address_type != "legacy" && 
+        address_type != "p2sh-segwit" &&
         address_type != "bech32")
     {
         send_error(error::invalid_argument);
         return true;
     }
 
-    auto compressed = true;
-    data_stack points{};
-    std::string list{};
-    points.reserve(keys.size());
-    for (const auto& key: keys)
-    {
-        data_chunk point{};
-        if (!std::holds_alternative<string_t>(key.value()) ||
-            !decode_base16(point, std::get<string_t>(key.value())) ||
-            !is_public_key(point))
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
-
-        compressed &= is_compressed_key(point);
-        list += "," + encode_base16(point);
-        points.push_back(std::move(point));
-    }
-
-    const auto type = compressed ? address_type : "legacy";
-    const script multisig{ script::to_pay_multisig_pattern(required, points) };
-    const auto embedded = multisig.to_data(false);
-
-    // A p2sh embedded script is limited to one push element.
-    if (type != "bech32" && embedded.size() > max_push_data_size)
+    auto result = create_multisig(required, keys, address_type);
+    if (result.empty())
     {
         send_error(error::invalid_argument);
         return true;
     }
-
-    std::string address{};
-    auto body = "multi(" + std::to_string(required) + list + ")";
-    if (type == "legacy")
-    {
-        address = payment_address{ multisig, p2sh_ }.encoded();
-        body = "sh(" + body + ")";
-    }
-    else if (type == "bech32")
-    {
-        address = witness_address{ multisig, witness_ }.encoded();
-        body = "wsh(" + body + ")";
-    }
-    else
-    {
-        const script wsh{ script::to_pay_witness_pattern(0,
-            sha256_hash(embedded)) };
-        address = payment_address{ wsh, p2sh_ }.encoded();
-        body = "sh(wsh(" + body + "))";
-    }
-
-    object_t result
-    {
-        { "address", address },
-        { "redeemScript", encode_base16(embedded) },
-        { "descriptor", body + "#" + descriptor_checksum(body) }
-    };
-
-    if (type != address_type)
-        result.emplace("warnings", array_t{ std::string{ "Unable to make "
-            "chosen address type, please ensure no uncompressed public keys "
-            "are present." } });
 
     send_result(std::move(result), 256);
     return true;

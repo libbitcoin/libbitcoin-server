@@ -69,6 +69,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_blockchain.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_control.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_dispatch.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_json.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_mining.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_network.cpp \
