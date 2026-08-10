@@ -69,7 +69,7 @@ enum error_t : uint8_t
     maximum_depth,
     wrong_version,
     server_error,
-    unauthorized
+    method_unauthorized
 };
 
 // No current need for error_code equivalence mapping.

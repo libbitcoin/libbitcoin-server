@@ -113,7 +113,7 @@ protected:
         // The credential may be restricted to a subset of interface methods.
         if (!permitted(message.method))
         {
-            send_error(error::unauthorized);
+            send_error(error::method_unauthorized);
             return;
         }
 
@@ -155,7 +155,7 @@ protected:
         // The credential may be restricted to a subset of interface methods.
         if (!permitted(message.method))
         {
-            send_error(error::unauthorized);
+            send_error(error::method_unauthorized);
             return;
         }
 
