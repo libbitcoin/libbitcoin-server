@@ -154,18 +154,8 @@ BC_POP_WARNING()
 #undef CLASS
 #undef TEMPLATE
 
-// Explicit instantiation of the subgroup dispatchers and dispatch protocols,
-// isolating the dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<interface::bitcoind_blockchain>;
-template class network::rpc::dispatcher<interface::bitcoind_control>;
-template class network::rpc::dispatcher<interface::bitcoind_mining>;
-template class network::rpc::dispatcher<interface::bitcoind_network>;
-template class network::rpc::dispatcher<interface::bitcoind_notifications>;
-template class network::rpc::dispatcher<interface::bitcoind_test>;
-template class network::rpc::dispatcher<interface::bitcoind_transaction>;
-template class network::rpc::dispatcher<interface::bitcoind_utility>;
-template class network::rpc::dispatcher<interface::bitcoind_wallet>;
-
+// Explicit instantiation of the subgroup dispatch protocols, isolating the
+// dispatch metaprogramming to this translation unit.
 template class protocol_bitcoind_dispatch<interface::bitcoind_blockchain>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_control>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_mining>;
@@ -177,4 +167,26 @@ template class protocol_bitcoind_dispatch<interface::bitcoind_utility>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_wallet>;
 
 } // namespace server
+
+// Explicit instantiation of the subgroup dispatchers, from a namespace
+// enclosing network::rpc (as required and declared in the subgroup headers).
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_blockchain>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_control>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_mining>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_network>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_notifications>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_test>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_transaction>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_utility>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_wallet>;
+
 } // namespace libbitcoin
