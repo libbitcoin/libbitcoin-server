@@ -56,7 +56,9 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parsers/admin_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_script.cpp \
     ${srcdir}/../../src/parsers/bitcoind_target.cpp \
+    ${srcdir}/../../src/parsers/block_stats.cpp \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
+    ${srcdir}/../../src/parsers/descriptor.cpp \
     ${srcdir}/../../src/parsers/electrum_version.cpp \
     ${srcdir}/../../src/parsers/native_query.cpp \
     ${srcdir}/../../src/parsers/native_target.cpp \
@@ -67,6 +69,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_blockchain.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_control.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_dispatch.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_json.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_mining.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_network.cpp \
@@ -166,7 +169,9 @@ include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/admin_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_script.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_target.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/block_stats.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/btcd_filter.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/descriptor.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_target.hpp \
@@ -247,6 +252,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/parsers/admin_query.cpp \
     ${srcdir}/../../test/parsers/admin_target.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
+    ${srcdir}/../../test/parsers/block_stats.cpp \
+    ${srcdir}/../../test/parsers/descriptor.cpp \
     ${srcdir}/../../test/parsers/electrum_version.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \

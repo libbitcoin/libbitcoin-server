@@ -132,7 +132,7 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_error(error::unauthorized);
+        send_error(error::method_unauthorized);
         return;
     }
 
@@ -174,7 +174,7 @@ void protocol_bitcoind::dispatch_websocket(
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_error(error::unauthorized);
+        send_error(error::method_unauthorized);
         return;
     }
 
@@ -185,8 +185,7 @@ void protocol_bitcoind::dispatch_websocket(
 // Help.
 // ----------------------------------------------------------------------------
 
-// Lists method names only, no per-command argument usage text. The attached
-// protocols register their served names with the channel upon start.
+// Protocols register their served names with the channel upon start.
 std::string protocol_bitcoind::help_names() const NOEXCEPT
 {
     return methods();
@@ -335,8 +334,8 @@ code protocol_bitcoind::validate_tx(
     const auto& query = archive();
     const auto& settings = system_settings();
     const auto link = query.to_confirmed(query.get_top_confirmed());
-    const auto state = query.get_chain_state(settings,
-        query.get_header_key(link));
+    const auto key = query.get_header_key(link);
+    const auto state = query.get_chain_state(settings, key);
 
     // The store always has chain state for the confirmed top.
     if (!state)
@@ -354,7 +353,7 @@ code protocol_bitcoind::broadcast_tx(
         return ec;
 
     BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
-    return {};
+    return error::success;
 }
 
 BC_POP_WARNING()

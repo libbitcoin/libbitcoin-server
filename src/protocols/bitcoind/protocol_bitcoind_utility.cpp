@@ -26,13 +26,7 @@
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_utility>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_utility>;
 
 #define CLASS protocol_bitcoind_utility
 #define SUBSCRIBE_BITCOIND(method, ...) \
@@ -61,7 +55,7 @@ void protocol_bitcoind_utility::start() NOEXCEPT
 
     SUBSCRIBE_BITCOIND(handle_decode_script, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_validate_address, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_create_multisig, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_create_multisig, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_derive_addresses, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_descriptor_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2, _3, _4, _5);
@@ -123,10 +117,11 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
 
     using namespace wallet;
     const auto pattern = script.output_pattern();
-
-    object_t result{};
-    result.emplace("asm", script.to_string(flags::all_rules, true));
-    result.emplace("type", to_script_type(pattern));
+    object_t result
+    {
+        { "asm", script.to_string(flags::all_rules, true) },
+        { "type", to_script_type(pattern) }
+    };
 
     if (pattern == script_pattern::pay_key_hash ||
         pattern == script_pattern::pay_script_hash)
@@ -164,7 +159,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
         return true;
     }
 
-    const witness_address witness(address);
+    const witness_address witness{ address };
     if (witness && witness.prefix() == witness_)
     {
         const auto version0_p2sh = (witness.identifier() ==
@@ -186,11 +181,38 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     return true;
 }
 
+// bech32m multisig is rejected (as bitcoind).
 bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
-    rpc_interface::create_multisig) NOEXCEPT
+    rpc_interface::create_multisig, double nrequired, const array_t& keys,
+    const std::string& address_type) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    uint8_t required{};
+    if (!to_integer(required, nrequired) || is_zero(required) ||
+        required > keys.size())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (address_type != "legacy" && 
+        address_type != "p2sh-segwit" &&
+        address_type != "bech32")
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    auto result = create_multisig(required, keys, address_type);
+    if (result.empty())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    send_result(std::move(result), 256);
     return true;
 }
 

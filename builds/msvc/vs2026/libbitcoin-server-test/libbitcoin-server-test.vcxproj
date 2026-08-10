@@ -127,6 +127,8 @@
     <ClCompile Include="..\..\..\..\test\parsers\admin_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\block_stats.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\descriptor.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_parsers_electrum_version.obj</ObjectFileName>
     </ClCompile>

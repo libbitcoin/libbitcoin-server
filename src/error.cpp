@@ -59,7 +59,7 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
     { maximum_depth, "maximum_depth" },
     { wrong_version, "wrong_version" },
     { server_error, "server_error" },
-    { unauthorized, "unauthorized" }
+    { method_unauthorized, "method_unauthorized" }
 };
 
 DEFINE_ERROR_T_CATEGORY(error, "server", "server code")

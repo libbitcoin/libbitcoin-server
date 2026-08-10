@@ -29,8 +29,8 @@ namespace server {
 /// Interface subgroup dispatch, the common shape of the bitcoind subgroup
 /// protocols. Carries the subgroup interface dispatcher and claims each
 /// request defined by the interface, silently deferring all others to the
-/// terminal responder (protocol_bitcoind, attached last). Each subgroup
-/// explicitly instantiates this template (and its dispatcher) in its own
+/// terminal responder (protocol_bitcoind, attached last). All subgroups are
+/// explicitly instantiated (with their dispatchers) in the implementation
 /// translation unit, isolating the dispatch metaprogramming there.
 template <typename Interface>
 class protocol_bitcoind_dispatch
@@ -40,32 +40,9 @@ public:
     using rpc_dispatcher = network::rpc::dispatcher<Interface>;
 
     /// Subscribe to the post and websocket transports of the interface.
-    void start() NOEXCEPT override
-    {
-        BC_ASSERT(stranded());
+    void start() NOEXCEPT override;
 
-        if (started())
-            return;
-
-        // Publish served method names (e.g. for control subgroup help).
-        register_methods(Interface::names);
-
-        using unknown = network::http::method::unknown;
-        subscribe_channel<protocol_bitcoind_dispatch<Interface>, post>(
-            &protocol_bitcoind_dispatch<Interface>::handle_receive_post,
-            std::placeholders::_1, std::placeholders::_2);
-        subscribe_channel<protocol_bitcoind_dispatch<Interface>, unknown>(
-            &protocol_bitcoind_dispatch<Interface>::handle_receive_unknown,
-            std::placeholders::_1, std::placeholders::_2);
-        network::protocol::start();
-    }
-
-    void stopping(const code& ec) NOEXCEPT override
-    {
-        BC_ASSERT(stranded());
-        rpc_dispatcher_.stop(ec);
-        network::protocol_http::stopping(ec);
-    }
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     inline protocol_bitcoind_dispatch(const auto& session,
@@ -77,92 +54,11 @@ protected:
 
     /// The post transport of the interface subgroup.
     void handle_receive_post(const code& ec,
-        const post::cptr& post) NOEXCEPT override
-    {
-        BC_ASSERT(stranded());
-
-        if (stopped(ec))
-            return;
-
-        // A protocol attached earlier owns the method (overrides this one).
-        if (claimed())
-            return;
-
-        // Silently defer invalidated requests to the terminal responder.
-        if (!is_allowed_host(*post, post->version()) ||
-            !is_allowed_origin(*post, post->version()) ||
-            !post->body().template contains<network::rpc::request>())
-            return;
-
-        // Get the parsed json-rpc request object.
-        const auto& message =
-            post->body().template get<network::rpc::request>().message;
-
-        // Silently defer methods not defined by the interface subgroup.
-        if (!rpc_dispatcher::contains(message.method))
-            return;
-
-        // Claim the request (informs the terminal responder).
-        set_claimed();
-
-        // The post is saved off during asynchonous handling and used in
-        // send_json to formulate response headers, isolating handlers from
-        // http semantics.
-        set_rpc_request(message.jsonrpc, message.id, post);
-
-        // The credential may be restricted to a subset of interface methods.
-        if (!permitted(message.method))
-        {
-            send_error(error::unauthorized);
-            return;
-        }
-
-        // Dispatch the request to the interface dispatcher.
-        if (const auto code = rpc_dispatcher_.notify(message))
-            stop(code);
-    }
+        const post::cptr& post) NOEXCEPT override;
 
     /// The websocket transport of the interface subgroup.
     void dispatch_websocket(
-        const network::http::request& request) NOEXCEPT override
-    {
-        BC_ASSERT(stranded());
-
-        // A protocol attached earlier owns the method (overrides this one).
-        if (claimed())
-            return;
-
-        // ws frames carry no headers, so ws authorization is enforced here,
-        // not by the channel. Unauthorized and non-rpc frames are silently
-        // deferred to the terminal responder (which stops the channel).
-        if (!authorized() ||
-            !request.body().template contains<network::rpc::request>())
-            return;
-
-        const auto& message =
-            request.body().template get<network::rpc::request>().message;
-
-        // Silently defer methods not defined by the interface subgroup.
-        if (!rpc_dispatcher::contains(message.method))
-            return;
-
-        // Claim the request (informs the terminal responder).
-        set_claimed();
-
-        // Cache request context for response building (version + id).
-        set_rpc_request(message);
-
-        // The credential may be restricted to a subset of interface methods.
-        if (!permitted(message.method))
-        {
-            send_error(error::unauthorized);
-            return;
-        }
-
-        // Dispatch the request to the interface dispatcher.
-        if (const auto code = rpc_dispatcher_.notify(message))
-            stop(code);
-    }
+        const network::http::request& request) NOEXCEPT override;
 
     /// Subgroup handler wiring (dispatcher subscription).
     template <class Derived, typename Method, typename... Args>

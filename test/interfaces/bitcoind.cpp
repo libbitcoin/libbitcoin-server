@@ -69,7 +69,6 @@ constexpr bool bitcoind_unserved(const std::string_view& name) NOEXCEPT
 // -----------------------------------------------------------------------------
 
 // These are dispatchable but answer not_implemented (see protocol).
-static_assert(bitcoind_unserved("getblockstats"));
 static_assert(bitcoind_served("getchaintxstats"));
 static_assert(bitcoind_unserved("gettxoutsetinfo"));
 static_assert(bitcoind_unserved("pruneblockchain"));
@@ -80,6 +79,11 @@ static_assert(bitcoind_unserved("scantxoutset"));
 static_assert(bitcoind_served("verifychain"));
 
 // Implemented from the wip backlog.
+static_assert(bitcoind_served("getblockstats"));
+static_assert(bitcoind_served("getchainstates"));
+static_assert(bitcoind_served("getzmqnotifications"));
+static_assert(bitcoind_served("getmininginfo"));
+static_assert(bitcoind_served("createmultisig"));
 static_assert(bitcoind_served("getdeploymentinfo"));
 static_assert(bitcoind_served("getchaintips"));
 static_assert(bitcoind_served("getdifficulty"));
@@ -111,19 +115,20 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 // with only unimplemented methods publish no names.
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
-    "getblockfilter getblockhash getblockheader getchaintxstats gettxout "
-    "verifychain gettxoutproof verifytxoutproof getchaintips "
-    "getdeploymentinfo getdifficulty");
+    "getblockfilter getblockhash getblockheader getblockstats "
+    "getchaintxstats gettxout verifychain gettxoutproof verifytxoutproof "
+    "getchainstates getchaintips getdeploymentinfo getdifficulty");
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getrpcinfo logging uptime");
-static_assert(bitcoind_mining_methods::names == "getnetworkhashps");
+static_assert(bitcoind_mining_methods::names ==
+    "getnetworkhashps getmininginfo");
 static_assert(bitcoind_network_methods::names ==
     "getnetworkinfo getconnectioncount getnettotals");
-static_assert(bitcoind_notifications_methods::names == "");
+static_assert(bitcoind_notifications_methods::names == "getzmqnotifications");
 static_assert(bitcoind_test_methods::names == "");
 static_assert(bitcoind_transaction_methods::names ==
     "createrawtransaction decoderawtransaction getrawtransaction "
     "sendrawtransaction testmempoolaccept");
 static_assert(bitcoind_utility_methods::names ==
-    "decodescript validateaddress verifymessage getindexinfo");
+    "decodescript validateaddress createmultisig verifymessage getindexinfo");
 static_assert(bitcoind_wallet_methods::names == "");

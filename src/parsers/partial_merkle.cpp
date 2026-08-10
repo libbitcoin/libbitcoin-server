@@ -54,8 +54,7 @@ static hash_digest calc_hash(size_t height, size_t pos,
     return node_hash(left, right);
 }
 
-// Depth-first build of the flag bits and branch hashes (bip37/Core
-// TraverseAndBuild): a set flag descends, a clear flag stores a subtree hash.
+// Depth-first build of the flag bits and branch hashes (bip37).
 static void traverse_build(size_t height, size_t pos, const hashes& txids,
     const std::vector<bool>& match, std::vector<bool>& bits,
     hashes& branch) NOEXCEPT
@@ -83,8 +82,7 @@ static void traverse_build(size_t height, size_t pos, const hashes& txids,
             branch);
 }
 
-// Depth-first extract of the root and matched leaves (bip37/Core
-// TraverseAndExtract). Sets bad on structural failure.
+// Depth-first extract of the root and matched leaves (bip37).
 static hash_digest traverse_extract(size_t height, size_t pos, size_t txs,
     const std::vector<bool>& bits, const hashes& branch, size_t& bit,
     size_t& used, hashes& matched, std::vector<size_t>& positions,

@@ -26,13 +26,7 @@
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_notifications>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_notifications>;
 
 #define CLASS protocol_bitcoind_notifications
 #define SUBSCRIBE_BITCOIND(method, ...) \
@@ -66,11 +60,15 @@ void protocol_bitcoind_notifications::start() NOEXCEPT
 // Notifications methods.
 // ----------------------------------------------------------------------------
 
+// The result is the set of configured publisher endpoints (as bitcoind), so
+// it is empty until the zeromq service is introduced and configured.
 bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& ec,
     rpc_interface::get_zmq_notifications) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    send_result(array_t{}, 2);
     return true;
 }
 

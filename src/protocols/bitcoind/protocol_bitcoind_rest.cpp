@@ -116,12 +116,8 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         send_not_found();
 }
 
-// Handlers.
+// Serializers.
 // ----------------------------------------------------------------------------
-
-constexpr auto data = to_value(http::media_type::application_octet_stream);
-constexpr auto json = to_value(http::media_type::application_json);
-constexpr auto text = to_value(http::media_type::text_plain);
 
 template <typename Object, typename ...Args>
 data_chunk to_data(const Object& object, size_t size, Args&&... args) NOEXCEPT
@@ -142,6 +138,13 @@ std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
     object.to_data(writer, std::forward<Args>(args)...);
     return out;
 }
+
+constexpr auto data = to_value(http::media_type::application_octet_stream);
+constexpr auto json = to_value(http::media_type::application_json);
+constexpr auto text = to_value(http::media_type::text_plain);
+
+// Handlers.
+// ----------------------------------------------------------------------------
 
 bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     rest_interface::block, uint8_t media, const hash_cptr& hash) NOEXCEPT
@@ -236,7 +239,6 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
         return true;
     }
 
-    // notxdetails: raw block for bin/hex, txid list (bitcoind_hashed) for json.
     const auto size = block->serialized_size(witness);
     switch (media)
     {

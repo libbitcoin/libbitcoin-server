@@ -46,8 +46,7 @@ public:
     inline protocol_bitcoind_utility(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_bitcoind_dispatch<interface::bitcoind_utility>(session,
-            channel, options),
+      : protocol_bitcoind_dispatch<rpc_interface>(session, channel, options),
         network::tracker<protocol_bitcoind_utility>(session->log)
     {
     }
@@ -62,7 +61,9 @@ protected:
         rpc_interface::validate_address,
         const std::string& address) NOEXCEPT;
     bool handle_create_multisig(const code& ec,
-        rpc_interface::create_multisig) NOEXCEPT;
+        rpc_interface::create_multisig, double nrequired,
+        const network::rpc::array_t& keys,
+        const std::string& address_type) NOEXCEPT;
     bool handle_derive_addresses(const code& ec,
         rpc_interface::derive_addresses) NOEXCEPT;
     bool handle_get_descriptor_info(const code& ec,

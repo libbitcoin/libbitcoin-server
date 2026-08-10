@@ -28,13 +28,7 @@
 
 namespace libbitcoin {
 
-// Isolate the subgroup dispatch metaprogramming to this translation unit.
-template class network::rpc::dispatcher<
-    server::interface::bitcoind_blockchain>;
-
 namespace server {
-
-template class protocol_bitcoind_dispatch<interface::bitcoind_blockchain>;
 
 #define CLASS protocol_bitcoind_blockchain
 #define SUBSCRIBE_BITCOIND(method, ...) \
@@ -315,10 +309,98 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
 }
 
 bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
-    rpc_interface::get_block_stats, const value_t&, const array_t&) NOEXCEPT
+    rpc_interface::get_block_stats, const value_t& hash_or_height,
+    const array_t& stats) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    database::header_link link{};
+    if (std::holds_alternative<string_t>(hash_or_height.value()))
+    {
+        hash_digest hash{};
+        if (!decode_hash(hash, std::get<string_t>(hash_or_height.value())))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        link = query.to_header(hash);
+    }
+    else if (std::holds_alternative<number_t>(hash_or_height.value()))
+    {
+        size_t height{};
+        if (!to_integer(height, std::get<number_t>(hash_or_height.value())))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        link = query.to_confirmed(height);
+    }
+    else
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link) || query.to_confirmed(height) != link)
+    {
+        send_error(error::not_found);
+        return true;
+    }
+
+    // Fees require prevout values, populated from the store.
+    const auto block = query.get_block(link, true);
+    if (!block || !query.populate_without_metadata(*block))
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    const auto& settings = system_settings();
+    const auto subsidy = chain::block::subsidy(height,
+        settings.subsidy_interval_blocks, settings.initial_subsidy(),
+        settings.forks.bip42);
+
+    // The duplicated-coinbase blocks (bip30 exceptions) do not add to the
+    // utxo set.
+    const auto repeat = chain::chain_state::is_bip30_exception(block->hash(),
+        height);
+
+    auto result = block_stats(*block, height, median_time_past(query, link),
+        subsidy, repeat);
+
+    // An empty selection returns all statistics, otherwise the named subset.
+    if (stats.empty())
+    {
+        send_result(std::move(result), 1024);
+        return true;
+    }
+
+    object_t selected{};
+    for (const auto& stat: stats)
+    {
+        if (!std::holds_alternative<string_t>(stat.value()))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        const auto& name = std::get<string_t>(stat.value());
+        const auto it = result.find(name);
+        if (it == result.end())
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        selected.emplace(name, it->second);
+    }
+
+    send_result(std::move(selected), 1024);
     return true;
 }
 
@@ -697,8 +779,50 @@ bool protocol_bitcoind_blockchain::handle_get_block_from_peer(const code& ec,
 bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
     rpc_interface::get_chain_states) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto candidate = query.get_top_candidate();
+
+    auto link = query.to_confirmed(query.get_top_confirmed());
+    auto entry = chain_states_entry(query, link, 1.0, true);
+    if (entry.empty())
+    {
+        send_error(database::error::integrity);
+        return true;
+    }
+
+    array_t states{ std::move(entry) };
+
+    if (!query.is_coalesced())
+    {
+        // The candidate chain is validated to the fork point (confirmed) plus
+        // the contiguously validated span above it. This does not imply
+        // confirmability, which is not determined until blocks are
+        // reorganized into the confirmed chain.
+        size_t fork{};
+        const auto span = query.get_validated_fork(fork,
+            system_settings().top_checkpoint().height());
+        const auto validated = progress(fork + span.size(), candidate);
+
+        link = query.to_candidate(candidate);
+        entry = chain_states_entry(query, link, validated, false);
+        if (entry.empty())
+        {
+            send_error(database::error::integrity);
+            return true;
+        }
+
+        states.push_back(std::move(entry));
+    }
+
+    send_result(object_t
+    {
+        // bitcoind OB1 error ("headers" wants height).
+        { "headers", candidate },
+        { "chainstates", states }
+    }, 512);
     return true;
 }
 
