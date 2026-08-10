@@ -90,8 +90,6 @@ object_t block_stats(const chain::block& block, size_t height,
 
     for (const auto& tx: txs)
     {
-        outputs += tx->outputs_ptr()->size();
-
         uint64_t tx_total_output{};
         for (const auto& out: *tx->outputs_ptr())
         {
@@ -106,16 +104,17 @@ object_t block_stats(const chain::block& block, size_t height,
             ++utxos;
         }
 
+        outputs += tx->outputs_ptr()->size();
         if (tx->is_coinbase())
             continue;
 
         inputs += tx->inputs_ptr()->size();
         total_output += tx_total_output;
 
-        const auto tx_size = tx->serialized_size(true);
+        const uint64_t tx_size = tx->serialized_size(true);
+        max_tx_size = std::max(max_tx_size, tx_size);
+        min_tx_size = std::min(min_tx_size, tx_size);
         sizes.push_back(tx_size);
-        max_tx_size = std::max(max_tx_size, to_unsigned(tx_size));
-        min_tx_size = std::min(min_tx_size, to_unsigned(tx_size));
         total_size += tx_size;
 
         const auto weight = tx->weight();
