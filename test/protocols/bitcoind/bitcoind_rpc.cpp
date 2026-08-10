@@ -290,8 +290,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9__chainwork)
     BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
 }
 
-// bip9_softforks is a btcd-endpoint field (see btcd_rpc tests), removed from
-// bitcoind's getblockchaininfo in Core 0.19 and absent from the fork.
+// bip9_softforks is a btcd-endpoint field (see btcd_rpc tests).
+// Removed from bitcoind's getblockchaininfo in 0.19 and absent from the fork.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__softforks__absent)
 {
     const auto response = rpc("getblockchaininfo");
@@ -330,6 +330,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__coinbase_verbose__context)
     BOOST_REQUIRE(result.at("vout").is_array());
     BOOST_REQUIRE_EQUAL(as_text(result.at("blockhash")), block1);
     BOOST_REQUIRE_EQUAL(result.at("confirmations").as_int64(), 9);
+}
+
+// A coinbase has no prevouts, so fee and prevout context are omitted.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__coinbase_verbosity_two__no_fee)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("getrawtransaction", hash_param(txid, "2"));
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("txid")), encode_hash(txid));
+    BOOST_REQUIRE(!result.as_object().contains("fee"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__excess_verbosity__error)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("getrawtransaction", hash_param(txid, "3"));
+    BOOST_REQUIRE(has_error(response));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__unknown_txid__error)
@@ -396,6 +413,33 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__created__round_trips)
     const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BOOST_REQUIRE_EQUAL(response.at("result").at("locktime").as_int64(), 0);
+}
+
+// The input sequence encodes locktime enforceability and replaceability: a
+// final sequence disables locktime and near-final does not signal bip125.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__default__final_sequence)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vin").at(0).at("sequence").as_int64(), 4294967295);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__locktime__near_final_sequence)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}, 500]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("locktime").as_int64(), 500);
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vin").at(0).at("sequence").as_int64(), 4294967294);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__replaceable__bip125_sequence)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}, 0, true]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vin").at(0).at("sequence").as_int64(), 4294967293);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__pubkeyhash)

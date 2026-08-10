@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -33,13 +34,40 @@ uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
 }
 
-// verificationprogress is approximated as confirmed/candidate height, the best
-// available estimate of the chain top during sync (1.0 once current).
-double protocol_bitcoind::verification_progress(size_t blocks,
-    size_t headers) NOEXCEPT
+// Approximated as confirmed/candidate ratio.
+double protocol_bitcoind::progress(size_t blocks, size_t headers) NOEXCEPT
 {
     return is_zero(headers) ? 1.0 :
         std::min(1.0, to_floating(blocks) / headers);
+}
+
+// A getchainstates entry for candidate or confirmed at the link (top).
+network::rpc::object_t protocol_bitcoind::chain_states_entry(
+    const node::query& query, const database::header_link& link,
+    double progress, bool validated) NOEXCEPT
+{
+    using namespace chain;
+    using namespace network::rpc;
+
+    size_t height{};
+    const auto header = query.get_header(link);
+    if (!header || !query.get_height(height, link))
+        return {};
+
+    const auto bits = header->bits();
+    return object_t
+    {
+        // bitcoind OB1 error ("blocks" wants height).
+        { "blocks", height },
+        { "bestblockhash", encode_hash(query.get_header_key(link)) },
+        { "bits", encode_base16(to_big_endian(bits)) },
+        { "target", encode_hash(from_uintx(compact::expand(bits))) },
+        { "difficulty", header->difficulty() },
+        { "verificationprogress", progress },
+        { "coins_db_cache_bytes", zero },
+        { "coins_tip_cache_bytes", zero },
+        { "validated", validated }
+    };
 }
 
 void protocol_bitcoind::inject_block_context(boost::json::object& out,
@@ -78,16 +106,16 @@ void protocol_bitcoind::inject_tx_context(boost::json::object& out,
     size_t height{};
     if (!query.get_tx_height(height, link))
     {
-        out["confirmations"] = 0;
+        out["confirmations"] = zero;
         return;
     }
 
     const auto block = query.to_confirmed(height);
     const auto top = query.get_top_confirmed();
     const auto header = query.get_header(block);
-    out["in_active_chain"] = true;
     out["blockhash"] = encode_hash(query.get_header_key(block));
     out["confirmations"] = add1(floored_subtract(top, height));
+    out["in_active_chain"] = true;
     if (header)
     {
         out["blocktime"] = header->timestamp();
@@ -136,6 +164,80 @@ std::string protocol_bitcoind::chain_name(const node::query& query) NOEXCEPT
     return "unknown";
 }
 
+// The createmultisig result, empty if a key is invalid or the p2sh embedded
+// script exceeds one push element. An uncompressed key downgrades a segwit
+// address type to legacy with a warning (as bitcoind).
+network::rpc::object_t protocol_bitcoind::create_multisig(uint8_t required,
+    const network::rpc::array_t& keys,
+    const std::string& address_type) const NOEXCEPT
+{
+    using namespace chain;
+    using namespace wallet;
+    using namespace network::rpc;
+
+    std::string list{};
+    data_stack points{};
+    auto compressed = true;
+    points.reserve(keys.size());
+    for (const auto& key: keys)
+    {
+        data_chunk point{};
+        if (!std::holds_alternative<string_t>(key.value()) ||
+            !decode_base16(point, std::get<string_t>(key.value())) ||
+            !is_public_key(point))
+            return {};
+
+        compressed &= is_compressed_key(point);
+
+        // Preceded by required in the descriptor list: multi(N,key,...).
+        list += "," + encode_base16(point);
+        points.push_back(std::move(point));
+    }
+
+    const script multisig{ script::to_pay_multisig_pattern(required, points) };
+    const auto embedded = multisig.to_data(false);
+    const auto type = compressed ? address_type : "legacy";
+    if (type != "bech32" && embedded.size() > max_push_data_size)
+        return {};
+
+    std::string address{};
+    auto body = "multi(" + std::to_string(required) + list + ")";
+    if (type == "legacy")
+    {
+        address = payment_address{ multisig, p2sh_ }.encoded();
+        body = "sh(" + body + ")";
+    }
+    else if (type == "bech32")
+    {
+        address = witness_address{ multisig, witness_ }.encoded();
+        body = "wsh(" + body + ")";
+    }
+    else
+    {
+        const auto hash = sha256_hash(embedded);
+        const script wsh{ script::to_pay_witness_pattern(0, hash) };
+        address = payment_address{ wsh, p2sh_ }.encoded();
+        body = "sh(wsh(" + body + "))";
+    }
+
+    object_t result
+    {
+        { "address", address },
+        { "redeemScript", encode_base16(embedded) },
+        { "descriptor", body + "#" + descriptor_checksum(body) }
+    };
+
+    if (type != address_type)
+    {
+        // This is ridiculous.
+        result.emplace("warnings", array_t{ std::string{ "Unable to make "
+            "chosen address type, please ensure no uncompressed public keys "
+            "are present." } });
+    }
+
+    return result;
+}
+
 // Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
 // augments the result with bip9_softforks (required by lnd).
 bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
@@ -145,32 +247,25 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
     const auto headers = query.get_top_candidate();
     const auto link = query.to_confirmed(blocks);
     const auto header = query.get_header(link);
-    if (!header)
-        return false;
 
-    const auto progress = verification_progress(blocks, headers);
-
-    // blocks/headers are heights (not counts) per bitcoind convention: blocks is
-    // the confirmed top height, headers the candidate (best-header) height.
-    using namespace chain;
-
-    // Cumulative work to the top, big-endian per bitcoind chainwork.
     uint256_t work{};
-    if (!query.get_branch_work(work, link))
+    if (!header || !query.get_branch_work(work, link))
         return false;
 
+    const auto bits = header->bits();
     out = network::rpc::object_t
     {
+        // bitcoind OB1 error ("blocks" wants height).
         { "chain", chain_name(query) },
         { "blocks", blocks },
         { "headers", headers },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
-        { "bits", encode_base16(to_big_endian(header->bits())) },
-        { "target", encode_hash(from_uintx(compact::expand(header->bits()))) },
+        { "bits", encode_base16(to_big_endian(bits)) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
         { "mediantime", median_time_past(query, link) },
-        { "verificationprogress", progress },
+        { "verificationprogress", progress(blocks, headers) },
         { "initialblockdownload", !current },
         { "chainwork", encode_hash(from_uintx(work)) },
         { "pruned", pruned },

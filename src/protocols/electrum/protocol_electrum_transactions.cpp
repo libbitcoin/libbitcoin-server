@@ -382,8 +382,8 @@ code protocol_electrum::validate_tx(
     const auto& query = archive();
     const auto& settings = system_settings();
     const auto link = query.to_confirmed(query.get_top_confirmed());
-    const auto state = query.get_chain_state(settings,
-        query.get_header_key(link));
+    const auto key = query.get_header_key(link);
+    const auto state = query.get_chain_state(settings, key);
 
     // The store always has chain state for the confirmed top.
     if (!state)
@@ -397,11 +397,11 @@ code protocol_electrum::validate_tx(
 code protocol_electrum::broadcast_tx(
     const chain::transaction::cptr& tx) NOEXCEPT
 {
-    if (const auto ec = validate_tx(*tx))
+    const auto ec = validate_tx(*tx);
         return ec;
 
     BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
-    return {};
+    return error::success;
 }
 
 BC_POP_WARNING()
