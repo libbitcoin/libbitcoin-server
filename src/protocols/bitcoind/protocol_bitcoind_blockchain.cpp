@@ -783,12 +783,10 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
         return false;
 
     const auto& query = archive();
-    const auto confirmed = query.get_top_confirmed();
     const auto candidate = query.get_top_candidate();
-    const auto validated = progress(confirmed, candidate);
 
-    auto link = query.to_confirmed(confirmed);
-    auto entry = chain_states_entry(query, link, validated, true);
+    auto link = query.to_confirmed(query.get_top_confirmed());
+    auto entry = chain_states_entry(query, link, 1.0, true);
     if (entry.empty())
     {
         send_error(database::error::integrity);
@@ -799,8 +797,17 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
 
     if (!query.is_coalesced())
     {
+        // The candidate chain is validated to the fork point (confirmed) plus
+        // the contiguously validated span above it. This does not imply
+        // confirmability, which is not determined until blocks are
+        // reorganized into the confirmed chain.
+        size_t fork{};
+        const auto span = query.get_validated_fork(fork,
+            system_settings().top_checkpoint().height());
+        const auto validated = progress(fork + span.size(), candidate);
+
         link = query.to_candidate(candidate);
-        entry = chain_states_entry(query, link, 1.0, false);
+        entry = chain_states_entry(query, link, validated, false);
         if (entry.empty())
         {
             send_error(database::error::integrity);

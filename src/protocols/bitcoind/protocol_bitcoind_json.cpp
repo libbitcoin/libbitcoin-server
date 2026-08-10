@@ -34,7 +34,7 @@ uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
 }
 
-// Approximated as confirmed/candidate ratio.
+// Clamped ratio of validated blocks to chain height.
 double protocol_bitcoind::progress(size_t blocks, size_t headers) NOEXCEPT
 {
     return is_zero(headers) ? 1.0 :
