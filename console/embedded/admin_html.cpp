@@ -33,7 +33,7 @@ R"DELIM(<!doctype html>
       content="An embedded administration dashboard for Libbitcoin Server."
     />
     <meta name="theme-color" content="#272822" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <title>Libbitcoin Server Admin</title>
     <script type="module" crossorigin src="/script.js"></script>
     <link rel="stylesheet" crossorigin href="/style.css">
