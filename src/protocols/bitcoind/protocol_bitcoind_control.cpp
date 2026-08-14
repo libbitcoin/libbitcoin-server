@@ -159,19 +159,19 @@ bool protocol_bitcoind_control::handle_logging(const code& ec,
     }
 
     using namespace network::levels;
-    const auto& log = server_config().log;
+    const auto& out = server_config().log;
     send_result(object_t
     {
-        { "application", application_defined && log.application },
-        { "news", news_defined && log.news },
-        { "session", session_defined && log.session },
-        { "protocol", protocol_defined && log.protocol },
-        { "proxy", proxy_defined && log.proxy },
-        { "remote", remote_defined && log.remote },
-        { "fault", fault_defined && log.fault },
-        { "quitting", quitting_defined && log.quitting },
-        { "objects", objects_defined && log.objects },
-        { "verbose", verbose_defined && log.verbose }
+        { "application", application_defined && out.application },
+        { "news", news_defined && out.news },
+        { "session", session_defined && out.session },
+        { "protocol", protocol_defined && out.protocol },
+        { "proxy", proxy_defined && out.proxy },
+        { "remote", remote_defined && out.remote },
+        { "fault", fault_defined && out.fault },
+        { "quitting", quitting_defined && out.quitting },
+        { "objects", objects_defined && out.objects },
+        { "verbose", verbose_defined && out.verbose }
     }, 256);
     return true;
 }
