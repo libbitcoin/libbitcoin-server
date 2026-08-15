@@ -624,11 +624,17 @@ void protocol_bitcoind_rest::send_json(value&& model,
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
     message.set(field::content_type, json);
-    message.body() = json_value
+
+    // bitcoind frames every response with a content_length, so the body is
+    // serialized here and its length is the length of the buffer written.
+    std::string text{};
+    if (!materialize(text, model, size_hint))
     {
-        .model = std::move(model),
-        .size_hint = size_hint
-    };
+        send_internal_server_error(network::error::bad_alloc);
+        return;
+    }
+
+    message.body() = std::move(text);
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, error::success);
 }

@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_http.hpp>
 
+#include <array>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -31,6 +32,51 @@ using namespace std::placeholders;
 // Shared pointers required in handler parameters so closures control lifetime.
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
+
+// Serialization.
+// ----------------------------------------------------------------------------
+
+// The measure of an unmaterialized json body is a second serialization, as
+// beast requires the length before the body is written. Serializing once into
+// the buffer that is written obtains the same length from the bytes that carry
+// it, and releases the model before the write.
+bool protocol_http::materialize(std::string& text,
+    const boost::json::value& model, size_t size_hint) NOEXCEPT
+{
+    // The hint reserves the buffer, so a sufficient hint does not reallocate.
+    // The scratch is a serialization window, not a bound on the body.
+    constexpr size_t window = 4096;
+    std::string out{};
+
+    try
+    {
+        // Reserved within the guard, as a hint that exceeds max_size or
+        // cannot be allocated throws, which must not escape.
+        out.reserve(size_hint);
+
+        std::array<char, window> scratch{};
+        boost::json::serializer serializer{ model.storage() };
+        serializer.reset(&model);
+
+        while (!serializer.done())
+        {
+            const auto view = serializer.read(scratch.data(), scratch.size());
+
+            // No progress (edge case), as guarded by the json body writer.
+            if (view.empty())
+                return false;
+
+            out.append(view.data(), view.size());
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    text = std::move(out);
+    return true;
+}
 
 // Websocket dispatch.
 // ----------------------------------------------------------------------------

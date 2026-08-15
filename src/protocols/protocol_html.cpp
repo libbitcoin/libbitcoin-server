@@ -189,7 +189,16 @@ void protocol_html::send_json(boost::json::value&& model, size_t size_hint,
         .model = std::move(model),
         .size_hint = size_hint
     };
-    response.prepare_payload();
+
+    // http::body defines size(), so preparing the payload would declare a
+    // content_length. These clients read chunked and do not require one, and
+    // measuring a json body for it is a second serialization, so the framing
+    // is set here instead. A 1.0 response cannot chunk, so it is measured.
+    if (response.version() == version_1_1)
+        response.chunked(true);
+    else
+        response.prepare_payload();
+
     SEND(std::move(response), handle_complete, _1, error::success);
 }
 

@@ -57,6 +57,16 @@ protected:
     /// Obtain cached request and clear cache (requires strand).
     network::http::request_cptr reset_request() NOEXCEPT;
 
+    /// Serialize the model into text, reserved from size_hint. The text is
+    /// the body and its length is the content_length, so the model is
+    /// serialized once and released before the write. A sufficient hint
+    /// serializes without reallocation, an insufficient one is correct but
+    /// grows, so the hint sizes the response rather than a reused buffer.
+    /// False where the model cannot be serialized, in which case text is not
+    /// assigned.
+    static bool materialize(std::string& text,
+        const boost::json::value& model, size_t size_hint) NOEXCEPT;
+
 private:
     // This is protected by strand.
     network::http::request_cptr request_{};
