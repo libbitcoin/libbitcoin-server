@@ -580,11 +580,6 @@ options_metadata parser::load_settings() THROWS
         "The minimum network protocol version, defaults to '31800'."
     )
     (
-        "peer.privacy",
-        value<bool>(&configured.network.privacy),
-        "Enable opportunistic connection encryption, defaults to false."
-    )
-    (
         "peer.invalid_services",
         value<uint64_t>(&configured.network.invalid_services),
         "The advertised services that cause a peer to be dropped, defaults to '176'."
@@ -623,6 +618,11 @@ options_metadata parser::load_settings() THROWS
         "peer.enable_relay",
         value<bool>(&configured.network.enable_relay),
         "Enable transaction relay, defaults to 'true'."
+    )
+    (
+        "peer.enable_privacy",
+        value<bool>(&configured.network.enable_privacy),
+        "Enable opportunistic connection encryption, defaults to 'false'."
     )
     (
         "peer.validate_checksum",
