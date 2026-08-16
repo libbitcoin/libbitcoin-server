@@ -63,9 +63,9 @@ parser::parser(system::chain::selection context,
     configured.network.protocol_minimum = level::headers_protocol;
     configured.network.protocol_maximum = level::bip130;
 
-    // services_minimum must be node_witness to be a witness node.
-    configured.network.services_minimum = service::node_network | service::node_witness;
-    configured.network.services_maximum = service::node_network | service::node_witness;
+    // services_provided must include node_witness to be a witness node.
+    configured.network.services_required = service::node_network | service::node_witness;
+    configured.network.services_provided = service::node_network | service::node_witness;
 
     // TODO: from bitcoind, revert to defaults when seeds are up.
     configured.network.outbound.seeds.clear();
@@ -584,14 +584,14 @@ options_metadata parser::load_settings() THROWS
         "The minimum network protocol version, defaults to '31800'."
     )
     (
-        "peer.services_maximum",
-        value<uint64_t>(&configured.network.services_maximum),
-        "The maximum services exposed by network connections, defaults to '9' (full node, witness)."
+        "peer.services_provided",
+        value<uint64_t>(&configured.network.services_provided),
+        "The services provided to network connections, defaults to '9' (full node, witness)."
     )
     (
-        "peer.services_minimum",
-        value<uint64_t>(&configured.network.services_minimum),
-        "The minimum services exposed by network connections, defaults to '9' (full node, witness)."
+        "peer.services_required",
+        value<uint64_t>(&configured.network.services_required),
+        "The services required of outbound network connections, defaults to '9' (full node, witness)."
     )
     (
         "peer.invalid_services",
