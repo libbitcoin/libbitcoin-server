@@ -65,7 +65,7 @@ bool protocol_btcd::handle_get_block_chain_info(const code& ec,
         return false;
 
     object_t out{};
-    if (!chain_info(out, archive(), network_settings().pruned_node(),
+    if (!chain_info(out, archive(), node_settings().limited_blocks,
         is_current_chain(true)))
     {
         send_error(database::error::integrity);

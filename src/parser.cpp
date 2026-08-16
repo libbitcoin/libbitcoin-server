@@ -63,10 +63,6 @@ parser::parser(system::chain::selection context,
     configured.network.protocol_minimum = level::headers_protocol;
     configured.network.protocol_maximum = level::bip130;
 
-    // services_provided must include node_witness to be a witness node.
-    configured.network.services_required = service::node_network | service::node_witness;
-    configured.network.services_provided = service::node_network | service::node_witness;
-
     // TODO: from bitcoind, revert to defaults when seeds are up.
     configured.network.outbound.seeds.clear();
     configured.network.outbound.seeds.emplace_back("seed.bitcoin.sipa.be", 8333_u16);
@@ -582,16 +578,6 @@ options_metadata parser::load_settings() THROWS
         "peer.protocol_minimum",
         value<uint32_t>(&configured.network.protocol_minimum),
         "The minimum network protocol version, defaults to '31800'."
-    )
-    (
-        "peer.services_provided",
-        value<uint64_t>(&configured.network.services_provided),
-        "The services provided to network connections, defaults to '9' (full node, witness)."
-    )
-    (
-        "peer.services_required",
-        value<uint64_t>(&configured.network.services_required),
-        "The services required of outbound network connections, defaults to '9' (full node, witness)."
     )
     (
         "peer.privacy",
