@@ -491,6 +491,7 @@ main()
     secp256k1_OPTIONS=(
         "--disable-tests"
         "--enable-experimental"
+        "--enable-module-ellswift"
         "--enable-module-recovery"
         "--enable-module-schnorrsig")
 
