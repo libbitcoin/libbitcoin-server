@@ -48,7 +48,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         { "address", archive().address_enabled() },
         { "filter", archive().filter_enabled() },
         { "turbo", database_settings().turbo },
-        { "witness", network_settings().witness_node() },
+        { "witness", node_settings().require_witness },
         { "retarget", system_settings().forks.retarget },
         { "difficult", system_settings().forks.difficult },
         { "pruned", get_pruned_height() },
@@ -61,7 +61,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
 
 size_t protocol_native::get_pruned_height() NOEXCEPT
 {
-    if (!network_settings().pruned_node())
+    if (!node_settings().limited_blocks)
         return {};
 
     const auto& system_ = system_settings();

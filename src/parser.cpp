@@ -63,10 +63,6 @@ parser::parser(system::chain::selection context,
     configured.network.protocol_minimum = level::headers_protocol;
     configured.network.protocol_maximum = level::bip130;
 
-    // services_minimum must be node_witness to be a witness node.
-    configured.network.services_minimum = service::node_network | service::node_witness;
-    configured.network.services_maximum = service::node_network | service::node_witness;
-
     // TODO: from bitcoind, revert to defaults when seeds are up.
     configured.network.outbound.seeds.clear();
     configured.network.outbound.seeds.emplace_back("seed.bitcoin.sipa.be", 8333_u16);
@@ -584,16 +580,6 @@ options_metadata parser::load_settings() THROWS
         "The minimum network protocol version, defaults to '31800'."
     )
     (
-        "peer.services_maximum",
-        value<uint64_t>(&configured.network.services_maximum),
-        "The maximum services exposed by network connections, defaults to '9' (full node, witness)."
-    )
-    (
-        "peer.services_minimum",
-        value<uint64_t>(&configured.network.services_minimum),
-        "The minimum services exposed by network connections, defaults to '9' (full node, witness)."
-    )
-    (
         "peer.invalid_services",
         value<uint64_t>(&configured.network.invalid_services),
         "The advertised services that cause a peer to be dropped, defaults to '176'."
@@ -632,6 +618,11 @@ options_metadata parser::load_settings() THROWS
         "peer.enable_relay",
         value<bool>(&configured.network.enable_relay),
         "Enable transaction relay, defaults to 'true'."
+    )
+    (
+        "peer.enable_privacy",
+        value<bool>(&configured.network.enable_privacy),
+        "Enable opportunistic connection encryption, defaults to 'false'."
     )
     (
         "peer.validate_checksum",
@@ -1486,6 +1477,36 @@ options_metadata parser::load_settings() THROWS
         "node.delay_inbound",
         value<bool>(&configured.node.delay_inbound),
         "Delay accepting inbound connections until node is current, defaults to 'true'."
+    )
+    (
+        "node.provide_blocks",
+        value<bool>(&configured.node.provide_blocks),
+        "Serve blocks to network connections, defaults to 'true'."
+    )
+    (
+        "node.limited_blocks",
+        value<bool>(&configured.node.limited_blocks),
+        "Limit block service to recent blocks, defaults to 'false'."
+    )
+    (
+        "node.require_blocks",
+        value<bool>(&configured.node.require_blocks),
+        "Require block service of outbound connections, defaults to 'true'."
+    )
+    (
+        "node.provide_witness",
+        value<bool>(&configured.node.provide_witness),
+        "Serve witness data to network connections, defaults to 'true'."
+    )
+    (
+        "node.require_witness",
+        value<bool>(&configured.node.require_witness),
+        "Require witness service of outbound connections, defaults to 'true'."
+    )
+    (
+        "node.provide_filters",
+        value<bool>(&configured.node.provide_filters),
+        "Serve client filters to network connections, defaults to 'false'."
     )
     (
         "node.batch_signatures",

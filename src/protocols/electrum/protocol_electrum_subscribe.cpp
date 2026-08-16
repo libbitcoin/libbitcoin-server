@@ -95,9 +95,15 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
 
         // Initial subscription is limited by configured maximum history.
         const auto limit = at.second ? options().maximum_history : max_size_t;
-        ec = get_scripthash_history(at.first->second, at.first->first, limit);
-        status = at.first->second.status;
-        subscribed_address_.store(true, relaxed);
+        if ((ec = get_scripthash_history(at.first->second, at.first->first, limit)))
+        {
+            if (at.second) address_subscriptions_.erase(at.first);
+        }
+        else
+        {
+            status = at.first->second.status;
+            subscribed_address_.store(true, relaxed);
+        }
     }
 
     POST(complete_scripthash_subscribe, ec, std::move(status));
