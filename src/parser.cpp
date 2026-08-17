@@ -140,7 +140,7 @@ parser::parser(system::chain::selection context,
     configured.database.validated_bk.size = 1'700'000;
 
     // Unused in v4
-    configured.database.validated_tx.buckets = 1;
+    configured.database.validated_tx.buckets = 0;
     configured.database.validated_tx.size = 1;
 
     // database (optional tables)
@@ -1681,7 +1681,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.buckets",
         value<uint32_t>(&configured.database.outs.buckets),
-        "The number of buckets in the archive_outs table head, defaults to '1' (1 disables address index)."
+        "The number of buckets in the archive_outs table head, defaults to '1496771635' (0 disables address index)."
     )
     (
         "table.outs.size",
@@ -1872,7 +1872,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_tx.buckets",
         value<uint32_t>(&configured.database.validated_tx.buckets),
-        "The number of buckets in the validated_tx table head, defaults to '1'."
+        "The number of buckets in the validated_tx table head, defaults to '0' (0 disables)."
     )
     (
         "table.validated_tx.size",
