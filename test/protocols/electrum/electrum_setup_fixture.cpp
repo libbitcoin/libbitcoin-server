@@ -36,7 +36,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
         [&]() NOEXCEPT -> const database::settings&
         {
             if (!address_index)
-                config_.database.address.buckets = 0;
+                config_.database.outs.buckets = 0;
 
             config_.database.path = TEST_DIRECTORY;
             return config_.database;

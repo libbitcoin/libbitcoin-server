@@ -104,10 +104,13 @@ parser::parser(system::chain::selection context,
     configured.database.tx.buckets = 469'222'525;
     configured.database.tx.size = 17'000'000'000;
 
-    // ins table set to 2.2LF @ ~900k.
+    // ins index (required) set to 2.2LF @ ~900k.
     configured.database.ins.buckets = 1'365'977'136;
     configured.database.ins.size = 34'250'000'000;
-    configured.database.outs.size = 3'700'000'000;
+
+    // outs index (optional) set to 2.5LF @ ~950k.
+    configured.database.outs.buckets = 1'496'771'635;
+    configured.database.outs.size = 6'750'000'000;
 
     configured.database.input.size = 92'500'000'000;
     configured.database.output.size = 25'300'000'000;
@@ -136,13 +139,11 @@ parser::parser(system::chain::selection context,
     configured.database.validated_bk.buckets = 950'001;
     configured.database.validated_bk.size = 1'700'000;
 
+    // Unused in v4
     configured.database.validated_tx.buckets = 1;
     configured.database.validated_tx.size = 1;
 
-    // database (optionals)
-
-    configured.database.address.buckets = 1;
-    configured.database.address.size = 1;
+    // database (optional tables)
 
     // also disabled by filter_tx
     configured.database.filter_bk.buckets = 0;
@@ -1678,14 +1679,19 @@ options_metadata parser::load_settings() THROWS
 
     /* table.outs */
     (
+        "table.outs.buckets",
+        value<uint32_t>(&configured.database.outs.buckets),
+        "The number of buckets in the archive_outs table head, defaults to '1' (1 disables address index)."
+    )
+    (
         "table.outs.size",
         value<uint64_t>(&configured.database.outs.size),
-        "The minimum allocation of the archive_puts table body, defaults to '3700000000'."
+        "The minimum allocation of the archive_outs table body, defaults to '3700000000'."
     )
     (
         "table.outs.rate",
         value<uint16_t>(&configured.database.outs.rate),
-        "The percentage expansion of the archive_puts table body, defaults to '5'."
+        "The percentage expansion of the archive_outs table body, defaults to '5'."
     )
 
     /* table.tx */
@@ -1877,23 +1883,6 @@ options_metadata parser::load_settings() THROWS
         "table.validated_tx.rate",
         value<uint16_t>(&configured.database.validated_tx.rate),
         "The percentage expansion of the validated_tx table body, defaults to '5'."
-    )
-
-    /* table.address */
-    (
-        "table.address.buckets",
-        value<uint32_t>(&configured.database.address.buckets),
-        "The number of buckets in the option_address table head, defaults to '1' (0|1 disables)."
-    )
-    (
-        "table.address.size",
-        value<uint64_t>(&configured.database.address.size),
-        "The minimum allocation of the option_address table body, defaults to '1'."
-    )
-    (
-        "table.address.rate",
-        value<uint16_t>(&configured.database.address.rate),
-        "The percentage expansion of the option_address table body, defaults to '5'."
     )
 
     /* table.filter_bk */

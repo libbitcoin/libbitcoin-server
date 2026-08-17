@@ -110,8 +110,7 @@ void executor::dump_body_sizes() const
         query_.validated_bk_body_size() %
         query_.validated_tx_body_size() %
         query_.filter_bk_body_size() %
-        query_.filter_tx_body_size() %
-        query_.address_body_size());
+        query_.filter_tx_body_size());
 }
 
 void executor::dump_records() const
@@ -129,8 +128,7 @@ void executor::dump_records() const
         query_.prevalid_records() %
         query_.duplicate_records() %
         query_.strong_tx_records() %
-        query_.filter_bk_records() %
-        query_.address_records());
+        query_.filter_bk_records());
 }
 
 void executor::dump_buckets() const
@@ -140,14 +138,14 @@ void executor::dump_buckets() const
         query_.txs_buckets() %
         query_.tx_buckets() %
         query_.ins_buckets() %
+        query_.outs_buckets() %
         query_.prevout_buckets() %
         query_.duplicate_buckets() %
         query_.strong_tx_buckets() %
         query_.validated_bk_buckets() %
         query_.validated_tx_buckets() %
         query_.filter_bk_buckets() %
-        query_.filter_tx_buckets() %
-        query_.address_buckets());
+        query_.filter_tx_buckets());
 }
 
 void executor::dump_collisions() const
@@ -158,8 +156,8 @@ void executor::dump_collisions() const
         (to_double(query_.ins_records()) / query_.ins_buckets()) %
         (to_double(query_.strong_tx_records()) / query_.strong_tx_buckets()) %
         (to_double(query_.tx_records()) / query_.validated_tx_buckets()) %
-        (query_.address_enabled() ? (to_double(query_.address_records()) / 
-            query_.address_buckets()) : zero));
+        (query_.address_enabled() ? (to_double(query_.outs_records()) /
+            query_.outs_buckets()) : zero));
 }
 
 void executor::dump_progress() const
