@@ -138,6 +138,12 @@ bool executor::do_run()
             return false;
         }
     }
+    else if (!prompt_milestone())
+    {
+        logger(BS_MILESTONE_HALTED);
+        stopper(BS_NODE_STOPPED);
+        return false;
+    }
     else if (!check_store_path(true) || !create_store(true))
     {
         stopper(BS_NODE_STOPPED);

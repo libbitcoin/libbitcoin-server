@@ -23,32 +23,6 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
 
-// Not localizable.
-#define BS_HELP_VARIABLE "help"
-#define BS_HARDWARE_VARIABLE "hardware"
-#define BS_SETTINGS_VARIABLE "settings"
-#define BS_VERSION_VARIABLE "version"
-#define BS_NEWSTORE_VARIABLE "newstore"
-#define BS_BACKUP_VARIABLE "backup"
-#define BS_RESTORE_VARIABLE "restore"
-#define BS_DAEMON_VARIABLE "daemon"
-#define BS_USER_VARIABLE "user"
-
-#define BS_FLAGS_VARIABLE "flags"
-#define BS_SLABS_VARIABLE "slabs"
-#define BS_BUCKETS_VARIABLE "buckets"
-#define BS_COLLISIONS_VARIABLE "collisions"
-#define BS_INFORMATION_VARIABLE "information"
-
-#define BS_GET_VARIABLE "get"
-#define BS_PUT_VARIABLE "put"
-
-// This must be lower case but the env var part can be any case.
-#define BS_CONFIG_VARIABLE "config"
-
-// This must match the case of the env var.
-#define BS_ENVIRONMENT_VARIABLE_PREFIX "BS_"
-
 namespace libbitcoin {
 namespace server {
 
@@ -58,6 +32,28 @@ class BCS_API parser
   : public system::config::parser
 {
 public:
+    /// Environment variable prefix, case must match the env var.
+    static constexpr auto environment_prefix = "BS_";
+
+    /// Command line and environment variable names.
+    static constexpr auto help_variable = "help";
+    static constexpr auto hardware_variable = "hardware";
+    static constexpr auto settings_variable = "settings";
+    static constexpr auto version_variable = "version";
+    static constexpr auto newstore_variable = "newstore";
+    static constexpr auto backup_variable = "backup";
+    static constexpr auto restore_variable = "restore";
+    static constexpr auto daemon_variable = "daemon";
+    static constexpr auto user_variable = "user";
+    static constexpr auto flags_variable = "flags";
+    static constexpr auto slabs_variable = "slabs";
+    static constexpr auto buckets_variable = "buckets";
+    static constexpr auto collisions_variable = "collisions";
+    static constexpr auto information_variable = "information";
+    static constexpr auto get_variable = "get";
+    static constexpr auto put_variable = "put";
+    static constexpr auto config_variable = "config";
+
     parser(system::chain::selection context,
         const server::settings::embedded_pages& native,
         const server::settings::embedded_pages& admin) NOEXCEPT;

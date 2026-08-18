@@ -68,6 +68,9 @@ using span_value = network::http::span_body::value_type;
 class BCS_API settings
 {
 public:
+    /// Names of settings queried for explicit configuration.
+    static constexpr auto milestone = "bitcoin.milestone";
+
     /// References to process embeded resources for html_server.
     struct embedded_pages
     {

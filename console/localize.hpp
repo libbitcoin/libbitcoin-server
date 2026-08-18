@@ -59,6 +59,16 @@
     "Storing genesis block."
 #define BS_INITCHAIN_DATABASE_INITIALIZE_FAILURE \
     "Failure storing genesis block."
+#define BS_MILESTONE_CONFIGURED \
+    "The configured milestone %1% will bypass validation up to that block."
+#define BS_MILESTONE_PROMPT \
+    "This is a new store, the default milestone %1% will bypass " \
+    "validation up to that block."
+#define BS_MILESTONE_CHOICE \
+    "Press <enter> to continue with the default milestone, or 'c' to close."
+#define BS_MILESTONE_HALTED \
+    "Startup halted, set or clear bitcoin.milestone in the configuration " \
+    "and restart."
 
 // --restore
 #define BS_SNAPSHOT_INVALID \

@@ -84,6 +84,7 @@ private:
     bool restore_store(bool details=false);
     bool hot_backup_store(bool details=false);
     bool cold_backup_store(bool details=false);
+    bool prompt_milestone() const;
 
     // Long-running queries (scans).
     void scan_flags() const;

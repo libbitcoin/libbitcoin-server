@@ -62,6 +62,40 @@ bool executor::check_store_path(bool create) const
     return true;
 }
 
+bool executor::prompt_milestone() const
+{
+    const auto& milestone = metadata_.configured.bitcoin.milestone;
+    if (metadata_.is_configured(settings::milestone))
+    {
+        logger(format(BS_MILESTONE_CONFIGURED) % milestone);
+        return true;
+    }
+
+    if (service_ || is_zero(milestone.height()))
+        return true;
+
+    logger(format(BS_MILESTONE_PROMPT) % milestone);
+    logger(BS_MILESTONE_CHOICE);
+
+    for (std::string line{}; std::getline(input_, line);)
+    {
+        if (canceled())
+            return false;
+
+        system::trim(line);
+        if (line.empty())
+            return true;
+
+        if (line == "c")
+            return false;
+
+        logger(BS_MILESTONE_CHOICE);
+    }
+
+    // Halt on <ctrl-c> invalidation, continue when console is unavailable.
+    return !canceled();
+}
+
 bool executor::create_store(bool details)
 {
     logger(BS_INITCHAIN_CREATING);
