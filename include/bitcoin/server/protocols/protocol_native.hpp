@@ -43,6 +43,7 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_html(session, channel, options),
+        turbo_(session->database_settings().turbo),
         notification_strand_(channel->service().get_executor()),
         network::tracker<protocol_native>(session->log)
     {
@@ -250,8 +251,9 @@ private:
     database::header_link to_header(const std::optional<uint32_t>& height,
         const std::optional<system::hash_cptr>& hash) NOEXCEPT;
 
-    // This is thread safe, uses network threadpool.
+    // These are thread safe, strand uses network threadpool.
     network::asio::strand notification_strand_;
+    const bool turbo_;
 
     // These are thread safe.
     std::atomic_bool stopping_{};

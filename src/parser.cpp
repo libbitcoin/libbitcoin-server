@@ -89,6 +89,9 @@ parser::parser(system::chain::selection context,
     ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
 
     // database
+
+    configured.database.turbo = true;
+
     // load factors are set to 2.5 @ 950K (except duplicate).
     // sizes are set to 1% of measured pruned body @ 950K (tiny tables 100%).
 
@@ -1627,7 +1630,7 @@ options_metadata parser::load_settings() THROWS
     (
         "database.turbo",
         value<bool>(&configured.database.turbo),
-        "Allow indiviudal non-validation queries to use all CPUs, defaults to false."
+        "Allow indiviudal non-validation queries to use all CPUs, defaults to true."
     )
     (
         "database.mark_unconfirmable",
