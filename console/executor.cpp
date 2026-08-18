@@ -45,8 +45,15 @@ executor& executor::factory(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
 {
     // TODO: expose fork_flags() mapping from system static chain_state method.
-    ////metadata.configured.database.fork_flags = 
+    ////metadata.configured.database.fork_flags =
     ////    metadata.configured.bitcoin.fork_flags();
+
+    // Suppress configured batch cache sizing when batching cannot run.
+    if (!system::batched::accelerated())
+    {
+        metadata.configured.database.ecdsa.size = 0;
+        metadata.configured.database.schnorr.size = 0;
+    }
 
     static executor instance(metadata, input, output, error);
     return instance;
