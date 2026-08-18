@@ -1630,7 +1630,7 @@ options_metadata parser::load_settings() THROWS
     (
         "database.turbo",
         value<bool>(&configured.database.turbo),
-        "Allow indiviudal non-validation queries to use all CPUs, defaults to true."
+        "Allow individual non-validation queries to use all CPUs, defaults to true."
     )
     (
         "database.mark_unconfirmable",
