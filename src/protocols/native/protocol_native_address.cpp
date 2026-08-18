@@ -51,7 +51,7 @@ bool protocol_native::handle_get_address(const code& ec, interface::address,
     // Monitor socket for close.
     monitor(true);
 
-    PARALLEL(do_get_address, media, turbo, hash);
+    PARALLEL(do_get_address, media, turbo && turbo_, hash);
     return true;
 }
 
@@ -129,7 +129,7 @@ bool protocol_native::handle_get_address_confirmed(const code& ec,
     // Monitor socket for close.
     monitor(true);
 
-    PARALLEL(do_get_address_confirmed, media, turbo, hash);
+    PARALLEL(do_get_address_confirmed, media, turbo && turbo_, hash);
     return true;
 }
 
@@ -185,7 +185,7 @@ bool protocol_native::handle_get_address_balance(const code& ec,
     // Monitor socket for close.
     monitor(true);
 
-    PARALLEL(do_get_address_balance, media, turbo, hash);
+    PARALLEL(do_get_address_balance, media, turbo && turbo_, hash);
     return true;
 }
 
