@@ -89,7 +89,8 @@ parser::parser(system::chain::selection context,
     ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
 
     // database
-    // load factors are set to 2.5 @ 950K.
+    // load factors are set to 2.5 @ 950K (except duplicate).
+    // sizes are set to 1% of measured pruned body @ 950K (tiny tables 100%).
 
     // Only used for electrum queries (255 is optimal otherwise).
     configured.database.interval_depth = 11;
@@ -97,33 +98,33 @@ parser::parser(system::chain::selection context,
     // archive
 
     configured.database.header.buckets = 385'181;
-    configured.database.header.size = 21'000'000;
+    configured.database.header.size = 93'406'247;
 
     configured.database.txs.buckets = 950'001;
-    configured.database.txs.size = 1'050'000'000;
+    configured.database.txs.size = 54'471'017;
 
     configured.database.tx.buckets = 543'948'678;
-    configured.database.tx.size = 17'000'000'000;
+    configured.database.tx.size = 870'317'885;
 
     // ins (required)
     configured.database.ins.buckets = 1'345'386'901;
-    configured.database.ins.size = 34'250'000'000;
+    configured.database.ins.size = 1'749'002'971;
 
     // outs (optional)
     ////configured.database.outs.buckets = 1'496'771'635;
     configured.database.outs.buckets = 0;
-    configured.database.outs.size = 6'750'000'000;
+    configured.database.outs.size = 336'773'618;
 
-    configured.database.input.size = 92'500'000'000;
-    configured.database.output.size = 25'300'000'000;
+    configured.database.input.size = 67'269'346;
+    configured.database.output.size = 1'278'023'220;
 
     // indexes
 
-    configured.database.candidate.size = 2'575'500;
-    configured.database.confirmed.size = 2'575'500;
+    configured.database.candidate.size = 2'888'853;
+    configured.database.confirmed.size = 2'850'003;
 
     configured.database.strong_tx.buckets = 543'948'678;
-    configured.database.strong_tx.size = 2'900'000'000;
+    configured.database.strong_tx.size = 149'585'887;
 
     // caches
 
@@ -136,10 +137,10 @@ parser::parser(system::chain::selection context,
     configured.database.prevout.size = 1;
 
     configured.database.duplicate.buckets = 1024;
-    configured.database.duplicate.size = 44;
+    configured.database.duplicate.size = 1;
 
     configured.database.validated_bk.buckets = 950'001;
-    configured.database.validated_bk.size = 1'700'000;
+    configured.database.validated_bk.size = 1;
 
     // unused in v4
     configured.database.validated_tx.buckets = 0;
@@ -1630,36 +1631,36 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.size",
         value<uint64_t>(&configured.database.header.size),
-        "The minimum allocation of the archive_header table body, defaults to '21000000'."
+        "The minimum allocation of the archive_header table body, defaults to '93406247'."
     )
     (
         "table.header.rate",
         value<uint16_t>(&configured.database.header.rate),
-        "The percentage expansion of the archive_header table body, defaults to '5'."
+        "The percentage expansion of the archive_header table body, defaults to '1'."
     )
 
     /* table.input */
     (
         "table.input.size",
         value<uint64_t>(&configured.database.input.size),
-        "The minimum allocation of the archive_input table body, defaults to '92500000000'."
+        "The minimum allocation of the archive_input table body, defaults to '67269346'."
     )
     (
         "table.input.rate",
         value<uint16_t>(&configured.database.input.rate),
-        "The percentage expansion of the archive_input table body, defaults to '5'."
+        "The percentage expansion of the archive_input table body, defaults to '1'."
     )
 
     /* table.output */
     (
         "table.output.size",
         value<uint64_t>(&configured.database.output.size),
-        "The minimum allocation of the archive_output table body, defaults to '25300000000'."
+        "The minimum allocation of the archive_output table body, defaults to '1278023220'."
     )
     (
         "table.output.rate",
         value<uint16_t>(&configured.database.output.rate),
-        "The percentage expansion of the archive_output table body, defaults to '5'."
+        "The percentage expansion of the archive_output table body, defaults to '1'."
     )
 
     /* table.ins */
@@ -1671,12 +1672,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ins.size",
         value<uint64_t>(&configured.database.ins.size),
-        "The minimum allocation of the archive_ins table body, defaults to '34250000000'."
+        "The minimum allocation of the archive_ins table body, defaults to '1749002971'."
     )
     (
         "table.ins.rate",
         value<uint16_t>(&configured.database.ins.rate),
-        "The percentage expansion of the archive_ins table body, defaults to '5'."
+        "The percentage expansion of the archive_ins table body, defaults to '1'."
     )
 
     /* table.outs */
@@ -1688,12 +1689,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.size",
         value<uint64_t>(&configured.database.outs.size),
-        "The minimum allocation of the archive_outs table body, defaults to '3700000000'."
+        "The minimum allocation of the archive_outs table body, defaults to '336773618'."
     )
     (
         "table.outs.rate",
         value<uint16_t>(&configured.database.outs.rate),
-        "The percentage expansion of the archive_outs table body, defaults to '5'."
+        "The percentage expansion of the archive_outs table body, defaults to '1'."
     )
 
     /* table.tx */
@@ -1705,12 +1706,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.tx.size",
         value<uint64_t>(&configured.database.tx.size),
-        "The minimum allocation of the archive_tx table body, defaults to '17000000000'."
+        "The minimum allocation of the archive_tx table body, defaults to '870317885'."
     )
     (
         "table.tx.rate",
         value<uint16_t>(&configured.database.tx.rate),
-        "The percentage expansion of the archive_tx table body, defaults to '5'."
+        "The percentage expansion of the archive_tx table body, defaults to '1'."
     )
 
     /* table.txs */
@@ -1722,36 +1723,36 @@ options_metadata parser::load_settings() THROWS
     (
         "table.txs.size",
         value<uint64_t>(&configured.database.txs.size),
-        "The minimum allocation of the archive_txs table body, defaults to '1050000000'."
+        "The minimum allocation of the archive_txs table body, defaults to '54471017'."
     )
     (
         "table.txs.rate",
         value<uint16_t>(&configured.database.txs.rate),
-        "The percentage expansion of the archive_txs table body, defaults to '5'."
+        "The percentage expansion of the archive_txs table body, defaults to '1'."
     )
 
     /* table.candidate */
     (
         "table.candidate.size",
         value<uint64_t>(&configured.database.candidate.size),
-        "The minimum allocation of the index_candidate table body, defaults to '2575500'."
+        "The minimum allocation of the index_candidate table body, defaults to '2888853'."
     )
     (
         "table.candidate.rate",
         value<uint16_t>(&configured.database.candidate.rate),
-        "The percentage expansion of the index_candidate table body, defaults to '5'."
+        "The percentage expansion of the index_candidate table body, defaults to '1'."
     )
 
     /* table.confirmed */
     (
         "table.confirmed.size",
         value<uint64_t>(&configured.database.confirmed.size),
-        "The minimum allocation of the index_confirmed table body, defaults to '2575500'."
+        "The minimum allocation of the index_confirmed table body, defaults to '2850003'."
     )
     (
         "table.confirmed.rate",
         value<uint16_t>(&configured.database.confirmed.rate),
-        "The percentage expansion of the index_confirmed table body, defaults to '5'."
+        "The percentage expansion of the index_confirmed table body, defaults to '1'."
     )
 
     /* table.strong */
@@ -1763,12 +1764,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.strong.size",
         value<uint64_t>(&configured.database.strong_tx.size),
-        "The minimum allocation of the index_strong table body, defaults to '2900000000'."
+        "The minimum allocation of the index_strong table body, defaults to '149585887'."
     )
     (
         "table.strong.rate",
         value<uint16_t>(&configured.database.strong_tx.rate),
-        "The percentage expansion of the index_strong table body, defaults to '5'."
+        "The percentage expansion of the index_strong table body, defaults to '1'."
     )
 
     /* table.ecdsa */
@@ -1780,7 +1781,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ecdsa.rate",
         value<uint16_t>(&configured.database.ecdsa.rate),
-        "The percentage expansion of the batch_ecdsa table body, defaults to '5'."
+        "The percentage expansion of the batch_ecdsa table body, defaults to '1'."
     )
 
     /* table.schnorr */
@@ -1792,7 +1793,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.schnorr.rate",
         value<uint16_t>(&configured.database.schnorr.rate),
-        "The percentage expansion of the batch_schnorr table body, defaults to '5'."
+        "The percentage expansion of the batch_schnorr table body, defaults to '1'."
     )
 
     /* table.silent */
@@ -1804,7 +1805,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.silent.rate",
         value<uint16_t>(&configured.database.silent.rate),
-        "The percentage expansion of the batch_silent table body, defaults to '5'."
+        "The percentage expansion of the batch_silent table body, defaults to '1'."
     )
 
     /* table.prevalid */
@@ -1816,7 +1817,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.prevalid.rate",
         value<uint16_t>(&configured.database.prevalid.rate),
-        "The percentage expansion of the batch_prevalid table, defaults to '5'."
+        "The percentage expansion of the batch_prevalid table, defaults to '1'."
     )
 
     /* table.prevout */
@@ -1833,7 +1834,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.prevout.rate",
         value<uint16_t>(&configured.database.prevout.rate),
-        "The percentage expansion of the cache_prevout table, defaults to '5'."
+        "The percentage expansion of the cache_prevout table, defaults to '1'."
     )
 
     /* table.duplicate */
@@ -1845,12 +1846,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.duplicate.size",
         value<uint64_t>(&configured.database.duplicate.size),
-        "The minimum allocation of the cache_duplicate table body, defaults to '44'."
+        "The minimum allocation of the cache_duplicate table body, defaults to '1'."
     )
     (
         "table.duplicate.rate",
         value<uint16_t>(&configured.database.duplicate.rate),
-        "The percentage expansion of the cache_duplicate table, defaults to '5'."
+        "The percentage expansion of the cache_duplicate table, defaults to '1'."
     )
 
     /* table.validated_bk */
@@ -1862,12 +1863,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_bk.size",
         value<uint64_t>(&configured.database.validated_bk.size),
-        "The minimum allocation of the validated_bk table body, defaults to '1700000'."
+        "The minimum allocation of the validated_bk table body, defaults to '1'."
     )
     (
         "table.validated_bk.rate",
         value<uint16_t>(&configured.database.validated_bk.rate),
-        "The percentage expansion of the validated_bk table body, defaults to '5'."
+        "The percentage expansion of the validated_bk table body, defaults to '1'."
     )
 
     /* table.validated_tx */
@@ -1884,7 +1885,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_tx.rate",
         value<uint16_t>(&configured.database.validated_tx.rate),
-        "The percentage expansion of the validated_tx table body, defaults to '5'."
+        "The percentage expansion of the validated_tx table body, defaults to '1'."
     )
 
     /* table.filter_bk */
@@ -1901,7 +1902,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.filter_bk.rate",
         value<uint16_t>(&configured.database.filter_bk.rate),
-        "The percentage expansion of the option_filter_bk table body, defaults to '5'."
+        "The percentage expansion of the option_filter_bk table body, defaults to '1'."
     )
 
     /* table.filter_tx */
@@ -1918,7 +1919,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.filter_tx.rate",
         value<uint16_t>(&configured.database.filter_tx.rate),
-        "The percentage expansion of the option_filter_tx table body, defaults to '5'."
+        "The percentage expansion of the option_filter_tx table body, defaults to '1'."
     )
 
     /* [log] */
