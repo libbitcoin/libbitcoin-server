@@ -110,7 +110,8 @@ parser::parser(system::chain::selection context,
     configured.database.ins.size = 34'250'000'000;
 
     // outs (optional)
-    configured.database.outs.buckets = 1'496'771'635;
+    ////configured.database.outs.buckets = 1'496'771'635;
+    configured.database.outs.buckets = 0;
     configured.database.outs.size = 6'750'000'000;
 
     configured.database.input.size = 92'500'000'000;
@@ -1682,7 +1683,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.buckets",
         value<uint32_t>(&configured.database.outs.buckets),
-        "The number of buckets in the archive_outs table head, defaults to '1496771635' (0 disables address index)."
+        "The number of buckets in the archive_outs table head, defaults to '0' (0 disables address index)."
     )
     (
         "table.outs.size",
