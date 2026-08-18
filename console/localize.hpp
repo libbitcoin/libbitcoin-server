@@ -123,8 +123,7 @@
     "   valid_bk  :%17%\n" \
     "   valid_tx  :%18%\n" \
     "   filter_bk :%19%\n" \
-    "   filter_tx :%20%\n" \
-    "   address   :%21%"
+    "   filter_tx :%20%"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
     "   header    :%1%\n" \
@@ -139,8 +138,7 @@
     "   prevalid  :%10%\n" \
     "   duplicate :%11%\n" \
     "   strong_tx :%12%\n" \
-    "   filter_bk :%13%\n" \
-    "   address   :%14%"
+    "   filter_bk :%13%"
 #define BS_INFORMATION_SLABS \
     "Table slabs..."
 #define BS_INFORMATION_SLABS_ROW \
@@ -155,14 +153,14 @@
     "   txs       :%2%\n" \
     "   tx        :%3%\n" \
     "   ins       :%4%\n" \
-    "   prevout   :%5%\n" \
-    "   duplicate :%6%\n" \
-    "   strong_tx :%7%\n" \
-    "   valid_bk  :%8%\n" \
-    "   valid_tx  :%9%\n" \
-    "   filter_bk :%10%\n" \
-    "   filter_tx :%11%\n" \
-    "   address   :%12%"
+    "   outs      :%5%\n" \
+    "   prevout   :%6%\n" \
+    "   duplicate :%7%\n" \
+    "   strong_tx :%8%\n" \
+    "   valid_bk  :%9%\n" \
+    "   valid_tx  :%10%\n" \
+    "   filter_bk :%11%\n" \
+    "   filter_tx :%12%"
 #define BS_INFORMATION_COLLISION_RATES \
     "Collision rates...\n" \
     "   header    :%1%\n" \
@@ -170,7 +168,7 @@
     "   ins       :%3%\n" \
     "   strong_tx :%4%\n" \
     "   valid_tx  :%5%\n" \
-    "   address   :%6%"
+    "   outs      :%6%"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
 #define BS_INFORMATION_PROGRESS \

@@ -88,39 +88,43 @@ parser::parser(system::chain::selection context,
     ////configured.server.stratum_v1.safes.emplace_back(asio::address{}, 8443_u16);
     ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
 
-    // SCALE: LF2.2 @ 850K.
+    // database
+    // load factors are set to 2.5 @ 950K.
 
     // Only used for electrum queries (255 is optimal otherwise).
     configured.database.interval_depth = 11;
 
-    // database (archive)
+    // archive
 
-    configured.database.header.buckets = 386'364;
+    configured.database.header.buckets = 385'181;
     configured.database.header.size = 21'000'000;
 
     configured.database.txs.buckets = 950'001;
     configured.database.txs.size = 1'050'000'000;
 
-    configured.database.tx.buckets = 469'222'525;
+    configured.database.tx.buckets = 543'948'678;
     configured.database.tx.size = 17'000'000'000;
 
-    // ins table set to 2.2LF @ ~900k.
-    configured.database.ins.buckets = 1'365'977'136;
+    // ins (required)
+    configured.database.ins.buckets = 1'345'386'901;
     configured.database.ins.size = 34'250'000'000;
-    configured.database.outs.size = 3'700'000'000;
+
+    // outs (optional)
+    configured.database.outs.buckets = 1'496'771'635;
+    configured.database.outs.size = 6'750'000'000;
 
     configured.database.input.size = 92'500'000'000;
     configured.database.output.size = 25'300'000'000;
 
-    // database (indexes)
+    // indexes
 
     configured.database.candidate.size = 2'575'500;
     configured.database.confirmed.size = 2'575'500;
 
-    configured.database.strong_tx.buckets = 469'222'525;
+    configured.database.strong_tx.buckets = 543'948'678;
     configured.database.strong_tx.size = 2'900'000'000;
 
-    // database (caches)
+    // caches
 
     configured.database.ecdsa.size = 1;
     configured.database.schnorr.size = 1;
@@ -136,13 +140,11 @@ parser::parser(system::chain::selection context,
     configured.database.validated_bk.buckets = 950'001;
     configured.database.validated_bk.size = 1'700'000;
 
-    configured.database.validated_tx.buckets = 1;
+    // unused in v4
+    configured.database.validated_tx.buckets = 0;
     configured.database.validated_tx.size = 1;
 
-    // database (optionals)
-
-    configured.database.address.buckets = 1;
-    configured.database.address.size = 1;
+    // optional
 
     // also disabled by filter_tx
     configured.database.filter_bk.buckets = 0;
@@ -1622,7 +1624,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.buckets",
         value<uint32_t>(&configured.database.header.buckets),
-        "The number of buckets in the archive_header table head, defaults to '386364'."
+        "The number of buckets in the archive_header table head, defaults to '385181'."
     )
     (
         "table.header.size",
@@ -1663,7 +1665,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ins.buckets",
         value<uint32_t>(&configured.database.ins.buckets),
-        "The number of buckets in the archive_ins table head, defaults to '1365977136'."
+        "The number of buckets in the archive_ins table head, defaults to '1345386901'."
     )
     (
         "table.ins.size",
@@ -1678,21 +1680,26 @@ options_metadata parser::load_settings() THROWS
 
     /* table.outs */
     (
+        "table.outs.buckets",
+        value<uint32_t>(&configured.database.outs.buckets),
+        "The number of buckets in the archive_outs table head, defaults to '1496771635' (0 disables address index)."
+    )
+    (
         "table.outs.size",
         value<uint64_t>(&configured.database.outs.size),
-        "The minimum allocation of the archive_puts table body, defaults to '3700000000'."
+        "The minimum allocation of the archive_outs table body, defaults to '3700000000'."
     )
     (
         "table.outs.rate",
         value<uint16_t>(&configured.database.outs.rate),
-        "The percentage expansion of the archive_puts table body, defaults to '5'."
+        "The percentage expansion of the archive_outs table body, defaults to '5'."
     )
 
     /* table.tx */
     (
         "table.tx.buckets",
         value<uint32_t>(&configured.database.tx.buckets),
-        "The number of buckets in the archive_tx table head, defaults to '469222525'."
+        "The number of buckets in the archive_tx table head, defaults to '543948678'."
     )
     (
         "table.tx.size",
@@ -1709,7 +1716,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.txs.buckets",
         value<uint32_t>(&configured.database.txs.buckets),
-        "The number of buckets in the archive_txs table head, defaults to '900001'."
+        "The number of buckets in the archive_txs table head, defaults to '950001'."
     )
     (
         "table.txs.size",
@@ -1750,7 +1757,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.strong.buckets",
         value<uint32_t>(&configured.database.strong_tx.buckets),
-        "The number of buckets in the index_strong table head, defaults to '469222525'."
+        "The number of buckets in the index_strong table head, defaults to '543948678'."
     )
     (
         "table.strong.size",
@@ -1849,7 +1856,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_bk.buckets",
         value<uint32_t>(&configured.database.validated_bk.buckets),
-        "The number of buckets in the validated_bk table head, defaults to '900001'."
+        "The number of buckets in the validated_bk table head, defaults to '950001'."
     )
     (
         "table.validated_bk.size",
@@ -1866,7 +1873,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_tx.buckets",
         value<uint32_t>(&configured.database.validated_tx.buckets),
-        "The number of buckets in the validated_tx table head, defaults to '1'."
+        "The number of buckets in the validated_tx table head, defaults to '0' (0 disables)."
     )
     (
         "table.validated_tx.size",
@@ -1877,23 +1884,6 @@ options_metadata parser::load_settings() THROWS
         "table.validated_tx.rate",
         value<uint16_t>(&configured.database.validated_tx.rate),
         "The percentage expansion of the validated_tx table body, defaults to '5'."
-    )
-
-    /* table.address */
-    (
-        "table.address.buckets",
-        value<uint32_t>(&configured.database.address.buckets),
-        "The number of buckets in the option_address table head, defaults to '1' (0|1 disables)."
-    )
-    (
-        "table.address.size",
-        value<uint64_t>(&configured.database.address.size),
-        "The minimum allocation of the option_address table body, defaults to '1'."
-    )
-    (
-        "table.address.rate",
-        value<uint16_t>(&configured.database.address.rate),
-        "The percentage expansion of the option_address table body, defaults to '5'."
     )
 
     /* table.filter_bk */

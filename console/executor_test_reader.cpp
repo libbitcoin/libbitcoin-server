@@ -70,9 +70,9 @@ void executor::read_test(const hash_digest&) const
 
 void executor::read_test(const hash_digest&) const
 {
-    logger(format("Point table body searches: %1% / (%2% + %1%)") %
-        store_.point.positive_search_count() %
-        store_.point.negative_search_count());
+    logger(format("Ins table body searches: %1% / (%2% + %1%)") %
+        store_.ins.positive_search_count() %
+        store_.ins.negative_search_count());
 }
 
 void executor::read_test(const hash_digest&) const
@@ -142,7 +142,7 @@ void executor::read_test(const hash_digest&) const
             return;
 
         ////size_t found{};
-        auto address_it = store_.address.it(key);
+        auto address_it = store_.outs.it({ key });
         if (address_it.get().is_terminal())
         {
             // fault, missing address.
@@ -154,14 +154,26 @@ void executor::read_test(const hash_digest&) const
             if (canceled())
                 break;
 
-            table::address::record address{};
-            if (!store_.address.get(address_it.get(), address))
+            // Outs is read unguarded, under the iterator's aggregate guard.
+            table::outs::get_output put{};
+            if (!store_.outs.puts.get_raw(address_it.get(), put))
             {
-                // fault, missing address.
+                // fault, missing outs.
                 return;
             }
 
-            const auto out_fk = address.output_fk;
+            // The table search is loose, so candidates are verified here.
+            const auto out_fk = put.out_fk;
+            table::output::match_script_hash script{ {}, key };
+            if (!store_.output.raw(store_.output.get_memory(), out_fk, script))
+            {
+                // fault, missing output.
+                return;
+            }
+
+            if (!script.match)
+                continue;
+
             table::output::get_parent output{};
             if (!store_.output.get(out_fk, output))
             {
@@ -204,8 +216,8 @@ void executor::read_test(const hash_digest&) const
             if (!points.empty())
             {
                 pt_fk = points.front();
-                table::ins::record ins{};
-                if (!store_.ins.get(pt_fk, ins))
+                table::ins_sequence::record ins{};
+                if (!store_.ins.sequence.get(pt_fk, ins))
                 {
                     // fault, missing ins.
                     return;
