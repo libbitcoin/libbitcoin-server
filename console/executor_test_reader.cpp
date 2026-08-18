@@ -26,6 +26,43 @@ using namespace network;
 using namespace system;
 using format = boost_format;
 
+// address index conflict walk (const).
+
+void executor::read_test(const hash_digest& key) const
+{
+    if (!query_.address_enabled())
+    {
+        logger("Address index is disabled.");
+        return;
+    }
+
+    logger("Address conflict walk.");
+    const auto start = fine_clock::now();
+
+    // Candidates are all rows on the key's chain, matches are verified.
+    size_t candidates{};
+    for (auto it = store_.outs.it({ key }); it; ++it)
+        ++candidates;
+
+    const auto walk = duration_cast<milliseconds>(fine_clock::now() - start);
+
+    database::output_links out{};
+    if (const auto ec = query_.to_address_outputs(out, key))
+    {
+        logger(format("Address (%1%) failed with (%2%).") %
+            encode_hash(key) % ec.message());
+        return;
+    }
+
+    const auto span = duration_cast<milliseconds>(fine_clock::now() - start);
+    logger(format("Address (%1%) candidates (%2%) matches (%3%) conflicts "
+        "(%4%) walk (%5%) ms total (%6%) ms.") % encode_hash(key) %
+        candidates % out.size() % (candidates - out.size()) %
+        walk.count() % span.count());
+}
+
+#if defined(UNDEFINED)
+
 // arbitrary testing (const).
 
 void executor::read_test(const hash_digest&) const
@@ -65,8 +102,6 @@ void executor::read_test(const hash_digest&) const
     logger(format("Wire size (%1%) at (%2%) in (%3%) ms.") %
         size % top % span.count());
 }
-
-#if defined(UNDEFINED)
 
 void executor::read_test(const hash_digest&) const
 {
