@@ -99,62 +99,82 @@ parser::parser(system::chain::selection context,
 
     configured.database.header.buckets = 385'181;
     configured.database.header.size = 93'406'247;
+    configured.database.header.rate = 1;
 
     configured.database.txs.buckets = 950'001;
     configured.database.txs.size = 54'471'017;
+    configured.database.txs.rate = 1;
 
     configured.database.tx.buckets = 543'948'678;
     configured.database.tx.size = 870'317'885;
+    configured.database.tx.rate = 1;
 
     // ins (required)
     configured.database.ins.buckets = 1'345'386'901;
     configured.database.ins.size = 1'749'002'971;
+    configured.database.ins.rate = 1;
 
     // outs (optional)
     ////configured.database.outs.buckets = 1'496'771'635;
     configured.database.outs.buckets = 0;
     configured.database.outs.size = 336'773'618;
+    configured.database.outs.rate = 1;
 
     configured.database.input.size = 67'269'346;
+    configured.database.input.rate = 1;
     configured.database.output.size = 1'278'023'220;
+    configured.database.output.rate = 1;
 
     // indexes
 
     configured.database.candidate.size = 2'888'853;
+    configured.database.candidate.rate = 1;
     configured.database.confirmed.size = 2'850'003;
+    configured.database.confirmed.rate = 1;
 
     configured.database.strong_tx.buckets = 543'948'678;
     configured.database.strong_tx.size = 149'585'887;
+    configured.database.strong_tx.rate = 1;
 
     // caches
 
-    configured.database.ecdsa.size = 1;
-    configured.database.schnorr.size = 1;
-    configured.database.silent.size = 1;
-    configured.database.prevalid.size = 1;
+    configured.database.ecdsa.size = 0;
+    configured.database.ecdsa.rate = 1;
+    configured.database.schnorr.size = 0;
+    configured.database.schnorr.rate = 1;
+    configured.database.silent.size = 0;
+    configured.database.silent.rate = 1;
+    configured.database.prevalid.size = 0;
+    configured.database.prevalid.rate = 1;
 
     configured.database.prevout.buckets = 0;
-    configured.database.prevout.size = 1;
+    configured.database.prevout.size = 0;
+    configured.database.prevout.rate = 1;
 
     configured.database.duplicate.buckets = 1024;
-    configured.database.duplicate.size = 1;
+    configured.database.duplicate.size = 0;
+    configured.database.duplicate.rate = 1;
 
     configured.database.validated_bk.buckets = 950'001;
-    configured.database.validated_bk.size = 1;
+    configured.database.validated_bk.size = 0;
+    configured.database.validated_bk.rate = 1;
 
     // unused in v4
     configured.database.validated_tx.buckets = 0;
-    configured.database.validated_tx.size = 1;
+    configured.database.validated_tx.size = 0;
+    configured.database.validated_tx.rate = 1;
 
     // optional
 
     // also disabled by filter_tx
     configured.database.filter_bk.buckets = 0;
-    configured.database.filter_bk.size = 1;
+    configured.database.filter_bk.size = 0;
+    configured.database.filter_bk.rate = 1;
 
     // also disabled by filter_bk
     configured.database.filter_tx.buckets = 0;
-    configured.database.filter_tx.size = 1;
+    configured.database.filter_tx.size = 0;
+    configured.database.filter_tx.rate = 1;
 }
 
 options_metadata parser::load_options() THROWS
@@ -1776,7 +1796,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ecdsa.size",
         value<uint64_t>(&configured.database.ecdsa.size),
-        "The minimum allocation of the batch_ecdsa table body, defaults to '1'."
+        "The minimum allocation of the batch_ecdsa table body, defaults to '0'."
     )
     (
         "table.ecdsa.rate",
@@ -1788,7 +1808,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.schnorr.size",
         value<uint64_t>(&configured.database.schnorr.size),
-        "The minimum allocation of the batch_schnorr table body, defaults to '1'."
+        "The minimum allocation of the batch_schnorr table body, defaults to '0'."
     )
     (
         "table.schnorr.rate",
@@ -1800,7 +1820,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.silent.size",
         value<uint64_t>(&configured.database.silent.size),
-        "The minimum allocation of the batch_silent table body, defaults to '1'."
+        "The minimum allocation of the batch_silent table body, defaults to '0'."
     )
     (
         "table.silent.rate",
@@ -1812,7 +1832,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.prevalid.size",
         value<uint64_t>(&configured.database.prevalid.size),
-        "The minimum allocation of the batch_prevalid table body, defaults to '1'."
+        "The minimum allocation of the batch_prevalid table body, defaults to '0'."
     )
     (
         "table.prevalid.rate",
@@ -1829,7 +1849,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.prevout.size",
         value<uint64_t>(&configured.database.prevout.size),
-        "The minimum allocation of the cache_prevout table body, defaults to '1'."
+        "The minimum allocation of the cache_prevout table body, defaults to '0'."
     )
     (
         "table.prevout.rate",
@@ -1846,7 +1866,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.duplicate.size",
         value<uint64_t>(&configured.database.duplicate.size),
-        "The minimum allocation of the cache_duplicate table body, defaults to '1'."
+        "The minimum allocation of the cache_duplicate table body, defaults to '0'."
     )
     (
         "table.duplicate.rate",
@@ -1863,7 +1883,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_bk.size",
         value<uint64_t>(&configured.database.validated_bk.size),
-        "The minimum allocation of the validated_bk table body, defaults to '1'."
+        "The minimum allocation of the validated_bk table body, defaults to '0'."
     )
     (
         "table.validated_bk.rate",
@@ -1880,7 +1900,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_tx.size",
         value<uint64_t>(&configured.database.validated_tx.size),
-        "The minimum allocation of the validated_tx table body, defaults to '1'."
+        "The minimum allocation of the validated_tx table body, defaults to '0'."
     )
     (
         "table.validated_tx.rate",
@@ -1897,7 +1917,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.filter_bk.size",
         value<uint64_t>(&configured.database.filter_bk.size),
-        "The minimum allocation of the option_filter_bk table body, defaults to '1'."
+        "The minimum allocation of the option_filter_bk table body, defaults to '0'."
     )
     (
         "table.filter_bk.rate",
@@ -1914,7 +1934,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.filter_tx.size",
         value<uint64_t>(&configured.database.filter_tx.size),
-        "The minimum allocation of the option_filter_tx table body, defaults to '1'."
+        "The minimum allocation of the option_filter_tx table body, defaults to '0'."
     )
     (
         "table.filter_tx.rate",
