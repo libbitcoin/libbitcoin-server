@@ -180,68 +180,74 @@ parser::parser(system::chain::selection context,
     configured.database.filter_tx.rate = 1;
 }
 
+// Composes a variable name with its command line shortcut.
+static std::string alias(const std::string& variable, char shortcut)
+{
+    return variable + ',' + shortcut;
+}
+
 options_metadata parser::load_options() THROWS
 {
     options_metadata description("options");
     description.add_options()
     (
-        BS_CONFIG_VARIABLE ",c",
+        alias(config_variable, 'c').c_str(),
         value<std::filesystem::path>(&configured.file),
         "Specify path to a configuration settings file."
     )
     // Information.
     (
-        BS_HELP_VARIABLE ",h",
+        alias(help_variable, 'h').c_str(),
         value<bool>(&configured.help)->
             default_value(false)->zero_tokens(),
         "Display command line options."
     )
     (
-        BS_HARDWARE_VARIABLE ",w",
+        alias(hardware_variable, 'w').c_str(),
         value<bool>(&configured.hardware)->
             default_value(false)->zero_tokens(),
         "Display hardware compatibility."
     )
     (
-        BS_SETTINGS_VARIABLE ",s",
+        alias(settings_variable, 's').c_str(),
         value<bool>(&configured.settings)->
             default_value(false)->zero_tokens(),
         "Display all configuration settings."
     )
     (
-        BS_VERSION_VARIABLE ",v",
+        alias(version_variable, 'v').c_str(),
         value<bool>(&configured.version)->
             default_value(false)->zero_tokens(),
         "Display version information."
     )
     // Actions.
     (
-        BS_NEWSTORE_VARIABLE ",n",
+        alias(newstore_variable, 'n').c_str(),
         value<bool>(&configured.newstore)->
             default_value(false)->zero_tokens(),
         "Create new store in configured directory."
     )
     (
-        BS_BACKUP_VARIABLE ",b",
+        alias(backup_variable, 'b').c_str(),
         value<bool>(&configured.backup)->
             default_value(false)->zero_tokens(),
         "Backup to a snapshot (can also do live)."
     )
     (
-        BS_RESTORE_VARIABLE ",r",
+        alias(restore_variable, 'r').c_str(),
         value<bool>(&configured.restore)->
             default_value(false)->zero_tokens(),
         "Restore from most recent snapshot."
     )
     // Service.
     (
-        BS_DAEMON_VARIABLE ",d",
+        alias(daemon_variable, 'd').c_str(),
         value<bool>()->implicit_value(true)->
             notifier([&](bool value) { configured.daemon = value; }),
         "Install ('true') or uninstall ('false') as a system service."
     )
     (
-        BS_USER_VARIABLE ",u",
+        alias(user_variable, 'u').c_str(),
         value<network::config::credential>()->
             notifier([&](const network::config::credential& value)
                 { configured.user = value; }),
@@ -249,44 +255,44 @@ options_metadata parser::load_options() THROWS
     )
     // Chain scans.
     (
-        BS_FLAGS_VARIABLE ",f",
+        alias(flags_variable, 'f').c_str(),
         value<bool>(&configured.flags)->
             default_value(false)->zero_tokens(),
         "Scan and display all flag transitions."
     )
     (
-        BS_SLABS_VARIABLE ",a",
+        alias(slabs_variable, 'a').c_str(),
         value<bool>(&configured.slabs)->
             default_value(false)->zero_tokens(),
         "Scan and display store slab measures."
     )
     (
-        BS_BUCKETS_VARIABLE ",k",
+        alias(buckets_variable, 'k').c_str(),
         value<bool>(&configured.buckets)->
             default_value(false)->zero_tokens(),
         "Scan and display all bucket densities."
     )
     (
-        BS_COLLISIONS_VARIABLE ",l",
+        alias(collisions_variable, 'l').c_str(),
         value<bool>(&configured.collisions)->
             default_value(false)->zero_tokens(),
         "Scan and display hashmap collision stats (may exceed RAM and result in SIGKILL)."
     )
     (
-        BS_INFORMATION_VARIABLE ",i",
+        alias(information_variable, 'i').c_str(),
         value<bool>(&configured.information)->
             default_value(false)->zero_tokens(),
         "Scan and display store information."
     )
     // Ad-hoc Testing.
     (
-        BS_GET_VARIABLE ",g",
+        alias(get_variable, 'g').c_str(),
         value<config::hash256>(&configured.get)->
             default_value(system::null_hash),
         "Run built-in read test and display."
     )
     (
-        BS_PUT_VARIABLE ",p",
+        alias(put_variable, 'p').c_str(),
         value<config::hash256>(&configured.put)->
             default_value(system::null_hash),
         "Run built-in write test and display."
@@ -309,7 +315,7 @@ options_metadata parser::load_environment() THROWS
         // For some reason po requires this to be a lower case name.
         // The case must match the other declarations for it to compose.
         // This composes with the cmdline options and inits to default path.
-        BS_CONFIG_VARIABLE,
+        config_variable,
         value<std::filesystem::path>(&configured.file)->composing()
             /*->default_value(config_default_path())*/,
         "The path to the configuration settings file."
@@ -543,7 +549,7 @@ options_metadata parser::load_settings() THROWS
         "The hash:height checkpoint for bip9 bit2 activation, defaults to '0000000000000000000687bca986194dc2c1f949318629b44bb54ec0a94d8244:709632'."
     )
     (
-        "bitcoin.milestone",
+        settings::milestone,
         value<chain::checkpoint>(&configured.bitcoin.milestone),
         "A block presumed to be valid but not required to be present, defaults to '000000000000000000010b93c9ea1c29fea277383f0f7d1f26de8b5802e885ff:950000'."
     )
@@ -2044,21 +2050,20 @@ BC_POP_WARNING()
     try
     {
         auto file = false;
-        variables_map variables;
-        load_command_variables(variables, argc, argv);
-        load_environment_variables(variables, BS_ENVIRONMENT_VARIABLE_PREFIX);
+        load_command_variables(argc, argv);
+        load_environment_variables(environment_prefix);
 
         // Don't load config file if any of these options are specified.
-        if (!get_option(variables, BS_VERSION_VARIABLE) &&
-            !get_option(variables, BS_SETTINGS_VARIABLE) &&
-            !get_option(variables, BS_HELP_VARIABLE))
+        if (!get_option(version_variable) &&
+            !get_option(settings_variable) &&
+            !get_option(help_variable))
         {
             // Returns true if the settings were loaded from a file.
-            file = load_configuration_variables(variables, BS_CONFIG_VARIABLE);
+            file = load_configuration_variables(config_variable);
         }
 
         // Update bound variables in metadata.settings.
-        notify(variables);
+        notify(variables_);
 
         // Clear the config file path if it wasn't used.
         if (!file)

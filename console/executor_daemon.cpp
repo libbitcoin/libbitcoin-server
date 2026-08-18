@@ -503,7 +503,8 @@ std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
     };
 
     return config.empty() ? element(from_path(module)) :
-        element(from_path(module)) + element("--" BS_CONFIG_VARIABLE) +
+        element(from_path(module)) +
+            element("--" + std::string{ parser::config_variable }) +
             element(from_path(qualified_path(config)));
 }
 
@@ -519,7 +520,7 @@ std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
     return config.empty() ?
         (format(R"("%1%")") % from_path(module)).str() :
         (format(R"("%1%" --%2% "%3%")") % from_path(module) %
-            BS_CONFIG_VARIABLE % from_path(qualified_path(config))).str();
+            parser::config_variable % from_path(qualified_path(config))).str();
 }
 
 #endif // HAVE_APPLE
