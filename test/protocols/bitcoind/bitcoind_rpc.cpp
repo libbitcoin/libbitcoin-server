@@ -401,6 +401,19 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__default__number)
     BOOST_REQUIRE(response.at("result").is_double() || response.at("result").is_int64());
 }
 
+// Work over the window divided by its timestamp span (early 2009 blocks).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__nine_block_window__positive)
+{
+    const auto response = rpc("getnetworkhashps", "[9, 9]");
+    BOOST_REQUIRE(response.at("result").as_double() > 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__genesis_height__zero_window)
+{
+    const auto response = rpc("getnetworkhashps", "[120, 0]");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 0);
+}
+
 // currentblockweight/currentblocktx omitted (no block ever assembled).
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__ten_block_store__expected)
 {
