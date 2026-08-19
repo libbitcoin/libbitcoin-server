@@ -130,9 +130,9 @@ parser::parser(system::chain::selection context,
 
     // indexes
 
-    configured.database.candidate.size = 2'888'853;
+    configured.database.candidate.buckets = 950'001;
     configured.database.candidate.rate = 1;
-    configured.database.confirmed.size = 2'850'003;
+    configured.database.confirmed.buckets = 950'001;
     configured.database.confirmed.rate = 1;
 
     configured.database.strong_tx.buckets = 543'948'678;
@@ -1762,26 +1762,26 @@ options_metadata parser::load_settings() THROWS
 
     /* table.candidate */
     (
-        "table.candidate.size",
-        value<uint64_t>(&configured.database.candidate.size),
-        "The minimum allocation of the index_candidate table body, defaults to '2888853'."
+        "table.candidate.buckets",
+        value<uint32_t>(&configured.database.candidate.buckets),
+        "The number of buckets provisioned in the index_candidate table head, defaults to '950001'."
     )
     (
         "table.candidate.rate",
         value<uint16_t>(&configured.database.candidate.rate),
-        "The percentage expansion of the index_candidate table body, defaults to '1'."
+        "The percentage expansion of the index_candidate table head, defaults to '1'."
     )
 
     /* table.confirmed */
     (
-        "table.confirmed.size",
-        value<uint64_t>(&configured.database.confirmed.size),
-        "The minimum allocation of the index_confirmed table body, defaults to '2850003'."
+        "table.confirmed.buckets",
+        value<uint32_t>(&configured.database.confirmed.buckets),
+        "The number of buckets provisioned in the index_confirmed table head, defaults to '950001'."
     )
     (
         "table.confirmed.rate",
         value<uint16_t>(&configured.database.confirmed.rate),
-        "The percentage expansion of the index_confirmed table body, defaults to '1'."
+        "The percentage expansion of the index_confirmed table head, defaults to '1'."
     )
 
     /* table.strong */
