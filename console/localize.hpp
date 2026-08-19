@@ -36,6 +36,26 @@
 #define BS_OPERATION_CANCELED \
     "CTRL-C detected, canceling operation..."
 
+// bitcoin.milestone
+#define BS_MILESTONE_SETOFF \
+    "--------------------------------------------------------------------------"
+#define BS_MILESTONE_PROMPT1 \
+    "If you have previously validated you may want to utilize a milestone."
+#define BS_MILESTONE_PROMPT2 \
+    "A milestone bypasses full validation of all previous blocks and itself."
+#define BS_MILESTONE_PROMPT3 \
+    "The default milestone in this build is the following block hash:height"
+#define BS_BITCOIN_MILESTONE \
+    "bitcoin.milestone = %1%"
+#define BS_MILESTONE_CHOICE1 \
+    "Press <enter> to continue with this default as a block you have validated."
+#define BS_MILESTONE_CHOICE2 \
+    "Enter 'c' to stop so you can set a different milestone in configuration."
+#define BS_MILESTONE_HALTED1 \
+    "Set a previously-validated milestone in your configuration file."
+#define BS_MILESTONE_HALTED2 \
+    "Set to genesis-hash:0 if you have not validated previously."
+
 // --settings
 #define BS_SETTINGS_MESSAGE \
     "These are the configuration settings that can be set."
@@ -59,16 +79,6 @@
     "Storing genesis block."
 #define BS_INITCHAIN_DATABASE_INITIALIZE_FAILURE \
     "Failure storing genesis block."
-#define BS_MILESTONE_CONFIGURED \
-    "The configured milestone %1% will bypass validation up to that block."
-#define BS_MILESTONE_PROMPT \
-    "This is a new store, the default milestone %1% will bypass " \
-    "validation up to that block."
-#define BS_MILESTONE_CHOICE \
-    "Press <enter> to continue with the default milestone, or 'c' to close."
-#define BS_MILESTONE_HALTED \
-    "Startup halted, set or clear bitcoin.milestone in the configuration " \
-    "and restart."
 
 // --restore
 #define BS_SNAPSHOT_INVALID \

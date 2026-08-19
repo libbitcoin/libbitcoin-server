@@ -62,40 +62,6 @@ bool executor::check_store_path(bool create) const
     return true;
 }
 
-bool executor::prompt_milestone() const
-{
-    const auto& milestone = metadata_.configured.bitcoin.milestone;
-    if (metadata_.is_configured(settings::milestone))
-    {
-        logger(format(BS_MILESTONE_CONFIGURED) % milestone);
-        return true;
-    }
-
-    if (service_ || is_zero(milestone.height()))
-        return true;
-
-    logger(format(BS_MILESTONE_PROMPT) % milestone);
-    logger(BS_MILESTONE_CHOICE);
-
-    for (std::string line{}; std::getline(input_, line);)
-    {
-        if (canceled())
-            return false;
-
-        system::trim(line);
-        if (line.empty())
-            return true;
-
-        if (line == "c")
-            return false;
-
-        logger(BS_MILESTONE_CHOICE);
-    }
-
-    // Halt on <ctrl-c> invalidation, continue when console is unavailable.
-    return !canceled();
-}
-
 bool executor::create_store(bool details)
 {
     logger(BS_INITCHAIN_CREATING);
@@ -294,6 +260,49 @@ bool executor::cold_backup_store(bool details)
     const auto span = duration_cast<seconds>(logger::now() - start);
     logger(format(BS_NODE_BACKUP_COMPLETE) % span.count());
     return true;
+}
+
+bool executor::prompt_milestone_store() const
+{
+    const auto& milestone = metadata_.configured.bitcoin.milestone;
+    if (metadata_.is_configured(settings::milestone))
+    {
+        logger(format(BS_BITCOIN_MILESTONE) % milestone);
+        return true;
+    }
+
+    const auto genesis_default = is_zero(milestone.height());
+    if (genesis_default || service_ || store_.is_dirty())
+        return true;
+
+    logger(BS_MILESTONE_SETOFF);
+    logger(format(BS_MILESTONE_PROMPT1));
+    logger(format(BS_MILESTONE_PROMPT2));
+    logger(format(BS_MILESTONE_PROMPT3));
+    logger(format(BS_BITCOIN_MILESTONE) % milestone);
+    logger(BS_MILESTONE_CHOICE1);
+    logger(BS_MILESTONE_CHOICE2);
+    logger(BS_MILESTONE_SETOFF);
+
+    std::string line{};
+    while (std::getline(input_, line) && !canceled())
+    {
+        system::trim(line);
+        if (line.empty())
+            return true;
+
+        if (line == "c")
+        {
+            logger(BS_MILESTONE_HALTED1);
+            logger(BS_MILESTONE_HALTED2);
+            return false;
+        }
+
+        logger(BS_MILESTONE_CHOICE1);
+        logger(BS_MILESTONE_CHOICE2);
+    }
+
+    return false;
 }
 
 } // namespace server
