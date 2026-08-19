@@ -138,14 +138,15 @@ bool executor::do_run()
             return false;
         }
     }
-    else if (!prompt_milestone())
+    else if (!check_store_path(true) || !create_store(true))
     {
-        logger(BS_MILESTONE_HALTED);
         stopper(BS_NODE_STOPPED);
         return false;
     }
-    else if (!check_store_path(true) || !create_store(true))
+
+    if (!prompt_milestone_store())
     {
+        close_store();
         stopper(BS_NODE_STOPPED);
         return false;
     }
@@ -192,15 +193,12 @@ bool executor::do_run()
     ////logger(BS_INFORMATION_PROGRESS_START);
     ////dump_progress();
 
-    if (!close_store(true))
-    {
-        stopper(BS_NODE_STOPPED);
-        return false;
-    }
+    // Store close logs its own results.
+    const auto result = close_store(true);
 
     // Stop console capture and issue terminating log message.
     stopper(BS_NODE_STOPPED);
-    return true; 
+    return result;
 }
 
 } // namespace server
