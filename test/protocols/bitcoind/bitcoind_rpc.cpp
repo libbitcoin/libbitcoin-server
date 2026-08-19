@@ -407,6 +407,15 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__one_in_one_out__hex)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__iswitness_false__round_trips)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\", false]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vin").as_array().size(), 1u);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__created__round_trips)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));

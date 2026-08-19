@@ -55,7 +55,7 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
         return;
 
     SUBSCRIBE_BITCOIND(handle_create_raw_transaction, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_BITCOIND(handle_decode_raw_transaction, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_decode_raw_transaction, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_test_mempool_accept, _1, _2, _3, _4);
@@ -336,8 +336,8 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
 }
 
 bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec,
-    rpc_interface::decode_raw_transaction,
-    const std::string& hexstring) NOEXCEPT
+    rpc_interface::decode_raw_transaction, const std::string& hexstring,
+    const std::optional<bool>& iswitness) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -349,15 +349,19 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
         return true;
     }
 
-    constexpr auto witness = true;
-    const chain::transaction tx{ data, witness };
+    // Absent the hint, witness deserialization is tried first (as bitcoind).
+    const auto witness = iswitness.value_or(true);
+    auto tx = chain::transaction{ data, witness };
+    if (!iswitness.has_value() && !tx.is_valid())
+        tx = chain::transaction{ data, false };
+
     if (!tx.is_valid())
     {
         send_error(error::invalid_argument);
         return true;
     }
 
-    send_result(value_from(bitcoind(tx)), two * tx.serialized_size(witness));
+    send_result(value_from(bitcoind(tx)), two * tx.serialized_size(true));
     return true;
 }
 

@@ -61,8 +61,8 @@ protected:
         const network::rpc::object_t& outputs, double locktime,
         bool replaceable) NOEXCEPT;
     bool handle_decode_raw_transaction(const code& ec,
-        rpc_interface::decode_raw_transaction,
-        const std::string& hexstring) NOEXCEPT;
+        rpc_interface::decode_raw_transaction, const std::string& hexstring,
+        const std::optional<bool>& iswitness) NOEXCEPT;
     bool handle_get_raw_transaction(const code& ec,
         rpc_interface::get_raw_transaction, const std::string& txid,
         double verbose, const std::string& blockhash) NOEXCEPT;
