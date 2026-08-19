@@ -238,20 +238,14 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_transaction::handle_create_raw_transaction(
-    const code& ec, rpc_interface::create_raw_transaction,
+// Shared by createrawtransaction and createpsbt.
+code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
     const array_t& inputs, const object_t& outputs, double locktime,
-    bool replaceable) NOEXCEPT
+    bool replaceable) const NOEXCEPT
 {
-    if (stopped(ec))
-        return false;
-
     uint32_t lock_time{};
     if (!to_integer(lock_time, locktime))
-    {
-        send_error(error::invalid_argument);
-        return true;
-    }
+        return error::invalid_argument;
 
     using namespace chain;
     const auto sequence = replaceable ? messages::peer::bip125_sequence :
@@ -265,10 +259,7 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
     for (const auto& item: inputs)
     {
         if (!std::holds_alternative<object_t>(item.value()))
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
+            return error::invalid_argument;
 
         const auto& fields = std::get<object_t>(item.value());
         const auto txid_it = fields.find("txid");
@@ -276,17 +267,11 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
         if (txid_it == fields.end() || vout_it == fields.end() ||
             !std::holds_alternative<string_t>(txid_it->second.value()) ||
             !std::holds_alternative<number_t>(vout_it->second.value()))
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
+            return error::invalid_argument;
 
         if (!decode_hash(hash, std::get<string_t>(txid_it->second.value())) ||
             !to_integer(vout, std::get<number_t>(vout_it->second.value())))
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
+            return error::invalid_argument;
 
         ins->push_back(to_shared<input>(point{ hash, vout }, script{}, sequence));
     }
@@ -297,31 +282,55 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
     outs->reserve(outputs.size());
     for (const auto& pair: outputs)
     {
-        if (!std::holds_alternative<number_t>(pair.second.value()))
+        // A data output carries a null data script and no value.
+        if (pair.first == "data")
         {
-            send_error(error::invalid_argument);
-            return true;
+            data_chunk data{};
+            if (!std::holds_alternative<string_t>(pair.second.value()) ||
+                !decode_base16(data, std::get<string_t>(pair.second.value())) ||
+                data.size() > max_null_data_size)
+                return error::invalid_argument;
+
+            outs->push_back(to_shared<output>(zero,
+                chain::script{ script::to_pay_null_data_pattern(data) }));
+            continue;
         }
+
+        if (!std::holds_alternative<number_t>(pair.second.value()))
+            return error::invalid_argument;
 
         if (const auto fault = output_script(script, pair.first, p2kh_, p2sh_,
             witness_))
-        {
-            send_error(fault);
-            return true;
-        }
+            return fault;
 
         const auto btc = std::get<number_t>(pair.second.value());
         if (!to_integer(satoshi, btc * satoshi_per_bitcoin, false))
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
+            return error::invalid_argument;
 
         outs->push_back(to_shared<output>(satoshi, std::move(script)));
     }
 
+    out = { 1, ins, outs, lock_time };
+    return error::success;
+}
+
+bool protocol_bitcoind_transaction::handle_create_raw_transaction(
+    const code& ec, rpc_interface::create_raw_transaction,
+    const array_t& inputs, const object_t& outputs, double locktime,
+    bool replaceable) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    chain::transaction tx{};
+    if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
+        replaceable))
+    {
+        send_error(fault);
+        return true;
+    }
+
     constexpr auto witness = false;
-    const transaction tx{ 1, ins, outs, lock_time };
     send_result(to_text(tx, tx.serialized_size(witness), witness), 400);
     return true;
 }

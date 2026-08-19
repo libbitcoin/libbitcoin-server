@@ -1046,6 +1046,17 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
 }
 
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__data_output__op_return)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"data\": \"deadbeef\"}]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto& out = response.at("result").at("vout").at(0);
+    BOOST_REQUIRE_EQUAL(out.at("value").as_double(), 0.0);
+    BOOST_REQUIRE_EQUAL(as_text(out.at("scriptPubKey").at("hex")), "6a04deadbeef");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // websocket authorization

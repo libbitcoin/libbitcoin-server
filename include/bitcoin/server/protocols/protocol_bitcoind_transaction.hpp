@@ -96,6 +96,12 @@ protected:
         rpc_interface::get_private_broadcast_info) NOEXCEPT;
     bool handle_submit_package(const code& ec,
         rpc_interface::submit_package) NOEXCEPT;
+
+    /// Shared transaction construction (createrawtransaction, createpsbt).
+    code build_transaction(system::chain::transaction& out,
+        const network::rpc::array_t& inputs,
+        const network::rpc::object_t& outputs, double locktime,
+        bool replaceable) const NOEXCEPT;
 };
 
 } // namespace server
