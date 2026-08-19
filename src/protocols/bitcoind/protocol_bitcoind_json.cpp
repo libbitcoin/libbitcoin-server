@@ -268,6 +268,7 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
         { "verificationprogress", progress(blocks, headers) },
         { "initialblockdownload", !current },
         { "chainwork", encode_hash(from_uintx(work)) },
+        { "size_on_disk", query.store_size() },
         { "pruned", pruned },
         { "warnings", std::string{} }
     };
