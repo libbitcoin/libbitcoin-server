@@ -610,7 +610,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BOOST_REQUIRE(result.as_object().contains("version"));
     BOOST_REQUIRE(result.at("subversion").is_string());
     BOOST_REQUIRE(result.as_object().contains("protocolversion"));
-    BOOST_REQUIRE(result.at("networks").is_array());
+    BOOST_REQUIRE_EQUAL(as_text(result.at("networks").at(0).at("name")), "ipv4");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("localservices")).size(), 16u);
+    BOOST_REQUIRE(result.at("localservicesnames").is_array());
+    BOOST_REQUIRE(result.at("connections_in").is_int64());
+    BOOST_REQUIRE(result.at("connections_out").is_int64());
 }
 
 // not implemented

@@ -74,6 +74,28 @@ void protocol_bitcoind_network::start() NOEXCEPT
 // Network methods.
 // ----------------------------------------------------------------------------
 
+// bitcoind's service name for each advertised service bit.
+static array_t to_service_names(uint64_t services) NOEXCEPT
+{
+    using service = messages::peer::service;
+    static const std::vector<std::pair<uint64_t, std::string>> names
+    {
+        { service::node_network, "NETWORK" },
+        { service::node_bloom, "BLOOM" },
+        { service::node_witness, "WITNESS" },
+        { service::node_client_filters, "COMPACT_FILTERS" },
+        { service::node_network_limited, "NETWORK_LIMITED" },
+        { service::node_encrypted_transport, "P2P_V2" }
+    };
+
+    array_t out{};
+    for (const auto& [bit, name]: names)
+        if (to_bool(services & bit))
+            out.emplace_back(name);
+
+    return out;
+}
+
 bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
     rpc_interface::get_network_info) NOEXCEPT
 {
@@ -85,21 +107,51 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
     const auto& segments = settings.version.segments();
     const auto version = 10'000 * segments[0] + 100 * segments[1] + segments[2];
 
+    // Proxied networks are not configurable (onion/i2p/cjdns unreachable).
+    const auto network = [](const std::string& name) NOEXCEPT
+    {
+        return object_t
+        {
+            { "name", name },
+            { "limited", false },
+            { "reachable", true },
+            { "proxy", std::string{} },
+            { "proxy_randomize_credentials", false }
+        };
+    };
+
+    array_t locals{};
+    for (const auto& self: network_settings().inbound.selfs)
+        locals.emplace_back(object_t
+        {
+            { "address", self.to_host() },
+            { "port", self.port() },
+            { "score", 1 }
+        });
+
+    const auto services = node_settings().services_provided();
+    const auto connections = channel_count();
+    const auto inbound = inbound_channel_count();
+
     send_result(object_t
     {
         { "version", version },
         { "subversion", settings.subversion },
         { "protocolversion", network_settings().protocol_maximum },
+        { "localservices", encode_base16(to_big_endian(services)) },
+        { "localservicesnames", to_service_names(services) },
         { "localrelay", network_settings().enable_relay },
         { "timeoffset", 0 },
-        { "connections", channel_count() },
+        { "connections", connections },
+        { "connections_in", inbound },
+        { "connections_out", floored_subtract(connections, inbound) },
         { "networkactive", true },
-        { "networks", array_t{} },
+        { "networks", array_t{ network("ipv4"), network("ipv6") } },
         { "relayfee", node_settings().minimum_fee_rate },
         { "incrementalfee", node_settings().minimum_bump_rate },
-        { "localaddresses", array_t{} },
+        { "localaddresses", std::move(locals) },
         { "warnings", std::string{} }
-    }, 256);
+    }, 512);
     return true;
 }
 
