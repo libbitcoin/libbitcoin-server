@@ -153,6 +153,8 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
         {
             { "isvalid", true },
             { "address", base58.encoded() },
+            { "scriptPubKey", encode_base16(base58.output_script(p2kh_,
+                p2sh_).to_data(false)) },
             { "isscript", base58.prefix() == p2sh_ },
             { "iswitness", false }
         }, 128);
@@ -169,6 +171,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
         {
             { "isvalid", true },
             { "address", witness.encoded() },
+            { "scriptPubKey", encode_base16(witness.script().to_data(false)) },
             { "isscript", version0_p2sh },
             { "iswitness", true },
             { "witness_version", witness.version() },
