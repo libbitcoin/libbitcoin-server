@@ -100,6 +100,33 @@ void protocol_bitcoind::inject_block_context(boost::json::object& out,
             query.get_header_key(query.to_confirmed(add1(height))));
 }
 
+// The tx must be populated (populate_without_metadata).
+void protocol_bitcoind::inject_tx_prevouts(boost::json::object& out,
+    const node::query& query, const chain::transaction& tx) NOEXCEPT
+{
+    size_t height{};
+    auto entry = out.at("vin").as_array().begin();
+    std::ranges::for_each(*tx.inputs_ptr(), [&](const auto& in) NOEXCEPT
+    {
+        const auto spent = query.to_tx(in->point().hash());
+        if (query.get_tx_height(height, spent))
+        {
+            auto put = value_from(bitcoind(*in->prevout)).as_object();
+            boost::json::object prevout
+            {
+                { "generated", query.is_coinbase(spent) },
+                { "height", height },
+                { "value", put.at("value") },
+                { "scriptPubKey", std::move(put.at("scriptPubKey")) }
+            };
+
+            entry->as_object()["prevout"] = std::move(prevout);
+        }
+
+        ++entry;
+    });
+}
+
 void protocol_bitcoind::inject_tx_context(boost::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT
 {

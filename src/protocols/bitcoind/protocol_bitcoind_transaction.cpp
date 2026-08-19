@@ -127,28 +127,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     if (level == verbosity::json_verbose && !tx->is_coinbase() &&
         query.populate_without_metadata(*tx))
     {
-        size_t height{};
-        auto entry = model.as_object().at("vin").as_array().begin();
-        std::ranges::for_each(*tx->inputs_ptr(), [&](const auto& in) NOEXCEPT
-        {
-            const auto spent = query.to_tx(in->point().hash());
-            if (query.get_tx_height(height, spent))
-            {
-                auto out = value_from(bitcoind(*in->prevout)).as_object();
-                boost::json::object prevout
-                {
-                    { "generated", query.is_coinbase(spent) },
-                    { "height", height },
-                    { "value", out.at("value") },
-                    { "scriptPubKey", std::move(out.at("scriptPubKey")) }
-                };
-
-                entry->as_object()["prevout"] = std::move(prevout);
-            }
-
-            ++entry;
-        });
-
+        inject_tx_prevouts(model.as_object(), query, *tx);
         model.as_object()["fee"] =
             tx->fee() / to_floating(chain::satoshi_per_bitcoin);
     }

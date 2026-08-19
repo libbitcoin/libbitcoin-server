@@ -52,7 +52,10 @@ enum block_verbosity : size_t
     hashed = 1,
 
     /// Block object embedding full tx objects.
-    verbose = 2
+    verbose = 2,
+
+    /// Adds per-input prevout context and per-tx fee.
+    prevouts = 3
 };
 
 // bitcoind defines only the "basic" (neutrino) block filter type.
@@ -142,7 +145,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     }
 
     size_t level{};
-    if (!to_integer(level, verbosity) || level > block_verbosity::verbose)
+    if (!to_integer(level, verbosity) || level > block_verbosity::prevouts)
     {
         send_error(error::invalid_argument);
         return true;
@@ -169,6 +172,25 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         value_from(bitcoind_verbose(*block));
 
     inject_block_context(model.as_object(), query, link, block->header());
+
+    if (level == block_verbosity::prevouts &&
+        query.populate_without_metadata(*block))
+    {
+        auto entry = model.as_object().at("tx").as_array().begin();
+        std::ranges::for_each(*block->transactions_ptr(),
+            [&](const auto& tx) NOEXCEPT
+        {
+            if (!tx->is_coinbase())
+            {
+                inject_tx_prevouts(entry->as_object(), query, *tx);
+                entry->as_object()["fee"] =
+                    tx->fee() / to_floating(chain::satoshi_per_bitcoin);
+            }
+
+            ++entry;
+        });
+    }
+
     send_result(std::move(model), two * block->serialized_size(witness));
     return true;
 }

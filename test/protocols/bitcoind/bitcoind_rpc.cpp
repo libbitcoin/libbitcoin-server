@@ -261,6 +261,22 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity2__tx_objects)
     BOOST_REQUIRE(tx.at(0).as_object().contains("txid"));
 }
 
+// Coinbase-only blocks carry no prevout context (no fee, no prevouts).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity3__tx_objects)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "3"));
+    const auto& tx = response.at("result").at("tx");
+    BOOST_REQUIRE(tx.is_array());
+    BOOST_REQUIRE(tx.at(0).as_object().contains("txid"));
+    BOOST_REQUIRE(!tx.at(0).as_object().contains("fee"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__invalid)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "4"));
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
 {
     const auto response = rpc("getblockchaininfo");

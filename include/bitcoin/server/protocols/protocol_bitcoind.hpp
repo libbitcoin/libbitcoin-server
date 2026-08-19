@@ -97,6 +97,9 @@ protected:
         const system::chain::header& header) NOEXCEPT;
     static void inject_tx_context(boost::json::object& out,
         const node::query& query, const database::tx_link& link) NOEXCEPT;
+    static void inject_tx_prevouts(boost::json::object& out,
+        const node::query& query,
+        const system::chain::transaction& tx) NOEXCEPT;
     static boost::json::object header_to_bitcoind(
         const system::chain::header& header) NOEXCEPT;
     static std::string chain_name(const node::query& query) NOEXCEPT;
