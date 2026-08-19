@@ -73,35 +73,42 @@ protected:
         rpc_interface::test_mempool_accept,
         const network::rpc::array_t& rawtxs, double maxfeerate) NOEXCEPT;
     bool handle_analyze_psbt(const code& ec,
-        rpc_interface::analyze_psbt) NOEXCEPT;
+        rpc_interface::analyze_psbt, const std::string& psbt) NOEXCEPT;
     bool handle_combine_psbt(const code& ec,
-        rpc_interface::combine_psbt) NOEXCEPT;
+        rpc_interface::combine_psbt,
+        const network::rpc::array_t& txs) NOEXCEPT;
     bool handle_convert_to_psbt(const code& ec,
-        rpc_interface::convert_to_psbt) NOEXCEPT;
+        rpc_interface::convert_to_psbt, const std::string& hexstring,
+        bool permitsigdata, const std::optional<bool>& iswitness) NOEXCEPT;
     bool handle_create_psbt(const code& ec,
-        rpc_interface::create_psbt) NOEXCEPT;
+        rpc_interface::create_psbt, const network::rpc::array_t& inputs,
+        const network::rpc::object_t& outputs, double locktime,
+        bool replaceable) NOEXCEPT;
     bool handle_decode_psbt(const code& ec,
-        rpc_interface::decode_psbt) NOEXCEPT;
+        rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT;
     bool handle_finalize_psbt(const code& ec,
-        rpc_interface::finalize_psbt) NOEXCEPT;
+        rpc_interface::finalize_psbt, const std::string& psbt,
+        bool extract) NOEXCEPT;
     bool handle_join_psbts(const code& ec,
-        rpc_interface::join_psbts) NOEXCEPT;
+        rpc_interface::join_psbts,
+        const network::rpc::array_t& txs) NOEXCEPT;
     bool handle_descriptor_process_psbt(const code& ec,
         rpc_interface::descriptor_process_psbt) NOEXCEPT;
     bool handle_utxo_update_psbt(const code& ec,
-        rpc_interface::utxo_update_psbt) NOEXCEPT;
-    bool handle_abort_private_broadcast(const code& ec,
-        rpc_interface::abort_private_broadcast) NOEXCEPT;
-    bool handle_get_private_broadcast_info(const code& ec,
-        rpc_interface::get_private_broadcast_info) NOEXCEPT;
-    bool handle_submit_package(const code& ec,
-        rpc_interface::submit_package) NOEXCEPT;
+        rpc_interface::utxo_update_psbt, const std::string& psbt,
+        const network::rpc::array_t& descriptors) NOEXCEPT;
 
     /// Shared transaction construction (createrawtransaction, createpsbt).
     code build_transaction(system::chain::transaction& out,
         const network::rpc::array_t& inputs,
         const network::rpc::object_t& outputs, double locktime,
         bool replaceable) const NOEXCEPT;
+    bool handle_abort_private_broadcast(const code& ec,
+        rpc_interface::abort_private_broadcast) NOEXCEPT;
+    bool handle_get_private_broadcast_info(const code& ec,
+        rpc_interface::get_private_broadcast_info) NOEXCEPT;
+    bool handle_submit_package(const code& ec,
+        rpc_interface::submit_package) NOEXCEPT;
 };
 
 } // namespace server

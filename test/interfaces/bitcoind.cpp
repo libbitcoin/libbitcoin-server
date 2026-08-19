@@ -128,7 +128,9 @@ static_assert(bitcoind_notifications_methods::names == "getzmqnotifications");
 static_assert(bitcoind_test_methods::names == "");
 static_assert(bitcoind_transaction_methods::names ==
     "createrawtransaction decoderawtransaction getrawtransaction "
-    "sendrawtransaction testmempoolaccept");
+    "sendrawtransaction testmempoolaccept analyzepsbt combinepsbt "
+    "converttopsbt createpsbt decodepsbt finalizepsbt joinpsbts "
+    "utxoupdatepsbt");
 static_assert(bitcoind_utility_methods::names ==
     "decodescript validateaddress createmultisig verifymessage getindexinfo");
 static_assert(bitcoind_wallet_methods::names == "");

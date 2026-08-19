@@ -59,15 +59,15 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_test_mempool_accept, _1, _2, _3, _4);
-    SUBSCRIBE_BITCOIND(handle_analyze_psbt, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_combine_psbt, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_decode_psbt, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_finalize_psbt, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_join_psbts, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_analyze_psbt, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_combine_psbt, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_decode_psbt, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_finalize_psbt, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_join_psbts, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_descriptor_process_psbt, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_utxo_update_psbt, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_utxo_update_psbt, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_abort_private_broadcast, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_private_broadcast_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2);
@@ -361,59 +361,515 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
     return true;
 }
 
-bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
-    rpc_interface::analyze_psbt) NOEXCEPT
+// PSBT methods.
+// ----------------------------------------------------------------------------
+
+using psbt_tx = wallet::psbt::transaction;
+
+static std::string sighash_name(uint32_t type) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    std::string name{};
+    switch (type & 0x03_u32)
+    {
+        case 0: name = "DEFAULT"; break;
+        case 1: name = "ALL"; break;
+        case 2: name = "NONE"; break;
+        default: name = "SINGLE";
+    }
+
+    if (to_bool(type & 0x80_u32))
+        name += "|ANYONECANPAY";
+
+    return name;
+}
+
+static std::string to_key_path(const std_vector<uint32_t>& path) NOEXCEPT
+{
+    constexpr auto hardened = 0x80000000_u32;
+    std::string out{ "m" };
+    for (const auto& index: path)
+    {
+        out += "/" + std::to_string(index & ~hardened);
+        if (to_bool(index & hardened))
+            out += "'";
+    }
+
+    return out;
+}
+
+static object_t to_unknown(const wallet::psbt::entry::list& entries) NOEXCEPT
+{
+    object_t out{};
+    for (const auto& entry: entries)
+        out.emplace(encode_base16(entry.key), encode_base16(entry.value));
+
+    return out;
+}
+
+static array_t to_derivations(
+    const wallet::psbt::derivation::list& derivations) NOEXCEPT
+{
+    array_t out{};
+    for (const auto& derived: derivations)
+    {
+        out.emplace_back(object_t
+        {
+            { "pubkey", encode_base16(derived.point) },
+            { "master_fingerprint", encode_base16(to_little_endian(
+                derived.origin.fingerprint)) },
+            { "path", to_key_path(derived.origin.path) }
+        });
+    }
+
+    return out;
+}
+
+static object_t decode_psbt_input(const wallet::psbt::input& in) NOEXCEPT
+{
+    using namespace chain;
+    object_t entry{};
+
+    if (in.non_witness_utxo)
+        entry.emplace("non_witness_utxo",
+            value_from(bitcoind(*in.non_witness_utxo)));
+
+    if (in.witness_utxo)
+    {
+        entry.emplace("witness_utxo", object_t
+        {
+            { "amount", in.witness_utxo->value() /
+                to_floating(satoshi_per_bitcoin) },
+            { "scriptPubKey", value_from(bitcoind(in.witness_utxo->script())) }
+        });
+    }
+
+    if (!in.partial_signatures.empty())
+    {
+        object_t signatures{};
+        for (const auto& signature: in.partial_signatures)
+            signatures.emplace(encode_base16(signature.keydata()),
+                encode_base16(signature.value));
+
+        entry.emplace("partial_signatures", std::move(signatures));
+    }
+
+    if (in.sighash_type.has_value())
+        entry.emplace("sighash", sighash_name(in.sighash_type.value()));
+
+    if (in.redeem_script)
+        entry.emplace("redeem_script", value_from(bitcoind(*in.redeem_script)));
+
+    if (in.witness_script)
+        entry.emplace("witness_script",
+            value_from(bitcoind(*in.witness_script)));
+
+    if (!in.derivations.empty())
+        entry.emplace("bip32_derivs", to_derivations(in.derivations));
+
+    if (in.final_script_sig)
+        entry.emplace("final_scriptSig",
+            value_from(bitcoind(*in.final_script_sig)));
+
+    if (in.final_script_witness)
+    {
+        array_t stack{};
+        for (const auto& item: in.final_script_witness->stack())
+            stack.emplace_back(encode_base16(*item));
+
+        entry.emplace("final_scriptwitness", std::move(stack));
+    }
+
+    if (in.previous_txid.has_value())
+        entry.emplace("previous_txid", encode_hash(in.previous_txid.value()));
+
+    if (in.output_index.has_value())
+        entry.emplace("output_index", in.output_index.value());
+
+    if (in.sequence.has_value())
+        entry.emplace("sequence", in.sequence.value());
+
+    if (in.required_time_locktime.has_value())
+        entry.emplace("time_locktime", in.required_time_locktime.value());
+
+    if (in.required_height_locktime.has_value())
+        entry.emplace("height_locktime", in.required_height_locktime.value());
+
+    if (!in.others.empty())
+        entry.emplace("unknown", to_unknown(in.others));
+
+    return entry;
+}
+
+static object_t decode_psbt_output(const wallet::psbt::output& out) NOEXCEPT
+{
+    using namespace chain;
+    object_t entry{};
+
+    if (out.redeem_script)
+        entry.emplace("redeem_script",
+            value_from(bitcoind(*out.redeem_script)));
+
+    if (out.witness_script)
+        entry.emplace("witness_script",
+            value_from(bitcoind(*out.witness_script)));
+
+    if (!out.derivations.empty())
+        entry.emplace("bip32_derivs", to_derivations(out.derivations));
+
+    if (out.amount.has_value())
+        entry.emplace("amount", out.amount.value() /
+            to_floating(satoshi_per_bitcoin));
+
+    if (out.script)
+        entry.emplace("script", value_from(bitcoind(*out.script)));
+
+    if (!out.others.empty())
+        entry.emplace("unknown", to_unknown(out.others));
+
+    return entry;
+}
+
+bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
+    rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const psbt_tx doc(psbt);
+    if (!doc)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    object_t result{};
+    const auto version0 = (doc.version() == psbt_tx::version_0);
+    if (version0)
+        result.emplace("tx", value_from(bitcoind(doc.unsigned_tx())));
+
+    if (!doc.xpubs().empty())
+    {
+        array_t xpubs{};
+        for (const auto& key: doc.xpubs())
+        {
+            auto checked = key.key;
+            append_checksum(checked);
+            xpubs.emplace_back(object_t
+            {
+                { "xpub", encode_base58(checked) },
+                { "master_fingerprint", encode_base16(to_little_endian(
+                    key.origin.fingerprint)) },
+                { "path", to_key_path(key.origin.path) }
+            });
+        }
+
+        result.emplace("global_xpubs", std::move(xpubs));
+    }
+
+    result.emplace("psbt_version", doc.version());
+
+    if (!version0)
+    {
+        result.emplace("tx_version", doc.tx_version());
+        if (doc.fallback_locktime().has_value())
+            result.emplace("fallback_locktime",
+                doc.fallback_locktime().value());
+
+        if (doc.tx_modifiable().has_value())
+            result.emplace("tx_modifiable", doc.tx_modifiable().value());
+    }
+
+    if (!doc.others().empty())
+        result.emplace("unknown", to_unknown(doc.others()));
+
+    array_t ins{};
+    for (const auto& in: doc.inputs())
+        ins.emplace_back(decode_psbt_input(in));
+
+    array_t outs{};
+    for (const auto& out: doc.outputs())
+        outs.emplace_back(decode_psbt_output(out));
+
+    result.emplace("inputs", std::move(ins));
+    result.emplace("outputs", std::move(outs));
+
+    if (const auto fee = doc.fee(); fee.has_value())
+        result.emplace("fee", fee.value() /
+            to_floating(chain::satoshi_per_bitcoin));
+
+    send_result(std::move(result), 2048);
+    return true;
+}
+
+bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
+    rpc_interface::analyze_psbt, const std::string& psbt) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const psbt_tx doc(psbt);
+    if (!doc)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    auto missing_utxo = false;
+    array_t ins{};
+    for (size_t index = 0; index < doc.inputs().size(); ++index)
+    {
+        const auto& in = doc.inputs().at(index);
+        const auto utxo = !!doc.prevout(index);
+        missing_utxo |= !utxo;
+
+        object_t entry
+        {
+            { "has_utxo", utxo },
+            { "is_final", in.is_final() }
+        };
+
+        if (!in.is_final())
+        {
+            array_t unsigned_keys{};
+            for (const auto& derived: in.derivations)
+            {
+                const auto match = [&](const auto& signature) NOEXCEPT
+                {
+                    return signature.keydata() == derived.point;
+                };
+
+                if (std::none_of(in.partial_signatures.begin(),
+                    in.partial_signatures.end(), match))
+                    unsigned_keys.emplace_back(encode_base16(derived.point));
+            }
+
+            if (!unsigned_keys.empty())
+                entry.emplace("missing", object_t
+                {
+                    { "signatures", std::move(unsigned_keys) }
+                });
+
+            entry.emplace("next", std::string{ utxo ? "signer" : "updater" });
+        }
+
+        ins.emplace_back(std::move(entry));
+    }
+
+    object_t result{ { "inputs", std::move(ins) } };
+
+    if (const auto fee = doc.fee(); fee.has_value())
+        result.emplace("fee", fee.value() /
+            to_floating(chain::satoshi_per_bitcoin));
+
+    if (doc.is_final())
+    {
+        const auto tx = doc.extract();
+        const auto vsize = ceilinged_divide(tx.weight(),
+            chain::light_weight_factor);
+        result.emplace("estimated_vsize", vsize);
+
+        if (const auto fee = doc.fee(); fee.has_value() && !is_zero(vsize))
+            result.emplace("estimated_feerate", (fee.value() * 1000u) /
+                to_floating(chain::satoshi_per_bitcoin) / vsize);
+
+        result.emplace("next", std::string{ "extractor" });
+    }
+    else
+    {
+        result.emplace("next", std::string{ missing_utxo ? "updater" : "signer" });
+    }
+
+    send_result(std::move(result), 1024);
     return true;
 }
 
 bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
-    rpc_interface::combine_psbt) NOEXCEPT
+    rpc_interface::combine_psbt, const array_t& txs) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    psbt_tx combined{};
+    for (const auto& item: txs)
+    {
+        if (!std::holds_alternative<string_t>(item.value()))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        psbt_tx doc(std::get<string_t>(item.value()));
+        if (!doc || (combined && !combined.combine(doc)))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        if (!combined)
+            combined = std::move(doc);
+    }
+
+    if (!combined)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    send_result(combined.encoded(), 1024);
     return true;
 }
 
 bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
-    rpc_interface::convert_to_psbt) NOEXCEPT
+    rpc_interface::convert_to_psbt, const std::string& hexstring,
+    bool permitsigdata, const std::optional<bool>& iswitness) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexstring))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    // Absent the hint, witness deserialization is tried first (as bitcoind).
+    auto tx = chain::transaction{ data, iswitness.value_or(true) };
+    if (!iswitness.has_value() && !tx.is_valid())
+        tx = chain::transaction{ data, false };
+
+    if (!tx.is_valid())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto is_signed = [](const auto& in) NOEXCEPT
+    {
+        return !in->script().ops().empty() || !in->witness().stack().empty();
+    };
+
+    const auto& ins = *tx.inputs_ptr();
+    if (std::any_of(ins.begin(), ins.end(), is_signed))
+    {
+        if (!permitsigdata)
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        // Strip signature data for the unsigned psbt transaction.
+        const auto stripped = to_shared<chain::input_cptrs>();
+        stripped->reserve(ins.size());
+        for (const auto& in: ins)
+            stripped->push_back(to_shared<chain::input>(in->point(),
+                chain::script{}, chain::witness{}, in->sequence()));
+
+        tx = { tx.version(), stripped, tx.outputs_ptr(), tx.locktime() };
+    }
+
+    const psbt_tx doc(tx);
+    if (!doc)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    send_result(doc.encoded(), 1024);
     return true;
 }
 
 bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
-    rpc_interface::create_psbt) NOEXCEPT
+    rpc_interface::create_psbt, const array_t& inputs,
+    const object_t& outputs, double locktime, bool replaceable) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
-    return true;
-}
+    if (stopped(ec))
+        return false;
 
-bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
-    rpc_interface::decode_psbt) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    chain::transaction tx{};
+    if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
+        replaceable))
+    {
+        send_error(fault);
+        return true;
+    }
+
+    const psbt_tx doc(tx);
+    if (!doc)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    send_result(doc.encoded(), 1024);
     return true;
 }
 
 bool protocol_bitcoind_transaction::handle_finalize_psbt(const code& ec,
-    rpc_interface::finalize_psbt) NOEXCEPT
+    rpc_interface::finalize_psbt, const std::string& psbt,
+    bool extract) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    psbt_tx doc(psbt);
+    if (!doc)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto complete = doc.finalize();
+    object_t result{};
+    if (complete && extract)
+    {
+        constexpr auto witness = true;
+        const auto tx = doc.extract();
+        result.emplace("hex", encode_base16(tx.to_data(witness)));
+    }
+    else
+    {
+        result.emplace("psbt", doc.encoded());
+    }
+
+    result.emplace("complete", complete);
+    send_result(std::move(result), 1024);
     return true;
 }
 
 bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
-    rpc_interface::join_psbts) NOEXCEPT
+    rpc_interface::join_psbts, const array_t& txs) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (txs.size() < 2u)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    psbt_tx joined{};
+    for (const auto& item: txs)
+    {
+        if (!std::holds_alternative<string_t>(item.value()))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        psbt_tx doc(std::get<string_t>(item.value()));
+        if (!doc || (joined && !joined.join(doc)))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        if (!joined)
+            joined = std::move(doc);
+    }
+
+    send_result(joined.encoded(), 1024);
     return true;
 }
 
@@ -426,10 +882,51 @@ bool protocol_bitcoind_transaction::handle_descriptor_process_psbt(const code& e
 }
 
 bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
-    rpc_interface::utxo_update_psbt) NOEXCEPT
+    rpc_interface::utxo_update_psbt, const std::string& psbt,
+    const array_t& descriptors) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    // Descriptor expansion requires the descriptor engine (pending).
+    if (!descriptors.empty())
+    {
+        send_error(error::not_implemented);
+        return true;
+    }
+
+    psbt_tx doc(psbt);
+    if (!doc)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto& query = archive();
+    const auto version0 = (doc.version() == psbt_tx::version_0);
+    for (size_t index = 0; index < doc.inputs().size(); ++index)
+    {
+        if (doc.prevout(index))
+            continue;
+
+        auto& in = doc.inputs().at(index);
+        const auto& hash = version0 ?
+            doc.unsigned_tx().inputs_ptr()->at(index)->point().hash() :
+            in.previous_txid.value_or(system::null_hash);
+        const auto vout = version0 ?
+            doc.unsigned_tx().inputs_ptr()->at(index)->point().index() :
+            in.output_index.value_or(0);
+
+        const auto out = query.get_output(query.to_tx(hash), vout);
+        if (!out)
+            continue;
+
+        // Only witness utxos are populated (as bitcoind).
+        if (chain::script::is_pay_witness_pattern(out->script().ops()))
+            in.witness_utxo = out;
+    }
+
+    send_result(doc.encoded(), 1024);
     return true;
 }
 
