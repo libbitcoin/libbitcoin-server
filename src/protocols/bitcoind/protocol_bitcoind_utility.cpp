@@ -115,11 +115,19 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         return true;
     }
 
+    // Inference is pending the descriptor engine; raw is always correct.
+    const auto raw_descriptor = [](const chain::script& target) NOEXCEPT
+    {
+        const auto body = "raw(" + encode_base16(target.to_data(false)) + ")";
+        return body + "#" + descriptor_checksum(body);
+    };
+
     using namespace wallet;
     const auto pattern = script.output_pattern();
     object_t result
     {
         { "asm", script.to_string(flags::all_rules, true) },
+        { "desc", raw_descriptor(script) },
         { "type", to_script_type(pattern) }
     };
 
@@ -135,7 +143,25 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     if (pay)
         result.emplace("p2sh", pay.encoded());
 
-    send_result(std::move(result), 256);
+    // Witness-embeddable scripts carry the version 0 program forms.
+    if (!chain::script::is_pay_witness_pattern(script.ops()) &&
+        !chain::script::is_pay_null_data_pattern(script.ops()))
+    {
+        const chain::script wsh{ chain::script::to_pay_witness_pattern(0,
+            sha256_hash(script.to_data(false))) };
+
+        result.emplace("segwit", object_t
+        {
+            { "asm", wsh.to_string(flags::all_rules, true) },
+            { "hex", encode_base16(wsh.to_data(false)) },
+            { "type", to_script_type(script_pattern::pay_witness_script_hash) },
+            { "address", witness_address{ script, witness_ }.encoded() },
+            { "desc", raw_descriptor(wsh) },
+            { "p2sh-segwit", payment_address{ wsh, p2sh_ }.encoded() }
+        });
+    }
+
+    send_result(std::move(result), 512);
     return true;
 }
 

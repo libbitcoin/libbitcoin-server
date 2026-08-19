@@ -459,6 +459,25 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__pubkeyhash)
     BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("type")), "pubkeyhash");
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__descriptor_and_segwit)
+{
+    const auto response = rpc("decodescript", "[\"76a914000000000000000000000000000000000000000088ac\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("desc")), "raw(76a914000000000000000000000000000000000000000088ac)#" + descriptor_checksum("raw(76a914000000000000000000000000000000000000000088ac)"));
+    const auto& segwit = result.at("segwit");
+    BOOST_REQUIRE_EQUAL(as_text(segwit.at("type")), "witness_v0_scripthash");
+    BOOST_REQUIRE(as_text(segwit.at("address")).starts_with("bc1q"));
+    BOOST_REQUIRE(segwit.as_object().contains("p2sh-segwit"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__witness_program__no_segwit)
+{
+    const auto response = rpc("decodescript", "[\"0014751e76e8199196d454941c45d1b3a323f1433bd6\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("type")), "witness_v0_keyhash");
+    BOOST_REQUIRE(!result.as_object().contains("segwit"));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__genesis__valid)
 {
     const auto response = rpc("validateaddress", "[\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\"]");
