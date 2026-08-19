@@ -312,15 +312,19 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             }
         }
 
-        if (prove)
+        if (prove && !is_zero(links.size()))
         {
             // A very slim chance of inconsistency given an intervening reorg
             // because of get_merkle_root_and_proof() and height-based calcs.
             // This is acceptable as must be verified by caller in any case.
             hashes proof{};
             hash_digest root{};
+
+            // The branch proves the last returned header, which is not the
+            // last requested header when the request exceeds maximum_headers.
+            const auto proof_height = starting + sub1(links.size());
             if (const auto code = query.get_merkle_root_and_proof(root, proof,
-                target, waypoint))
+                proof_height, waypoint))
             {
                 using namespace error::electrum;
                 send_code(translate(code, daemon_error));
