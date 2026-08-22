@@ -34,6 +34,7 @@ struct native_methods
 
         method<"top", uint8_t, uint8_t>{ "version", "media" },
         method<"top_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
+        method<"status", uint8_t, uint8_t>{ "version", "media" },
 
         method<"block", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>>{ "version", "media", "hash", "height", "witness" },
         method<"block_header", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>>{ "version", "media", "hash", "height" },
@@ -82,40 +83,41 @@ struct native_methods
 
     using top = at<1>;
     using top_subscribe = at<2>;
+    using status = at<3>;
 
-    using block = at<3>;
-    using block_header = at<4>;
-    using block_header_context = at<5>;
-    using block_details = at<6>;
-    using block_txs = at<7>;
-    using block_filter = at<8>;
-    using block_filter_hash = at<9>;
-    using block_filter_header = at<10>;
-    using block_tx = at<11>;
-    using block_subscribe = at<12>;
+    using block = at<4>;
+    using block_header = at<5>;
+    using block_header_context = at<6>;
+    using block_details = at<7>;
+    using block_txs = at<8>;
+    using block_filter = at<9>;
+    using block_filter_hash = at<10>;
+    using block_filter_header = at<11>;
+    using block_tx = at<12>;
+    using block_subscribe = at<13>;
 
-    using tx = at<13>;
-    using tx_header = at<14>;
-    using tx_details = at<15>;
-    using tx_subscribe = at<16>;
+    using tx = at<14>;
+    using tx_header = at<15>;
+    using tx_details = at<16>;
+    using tx_subscribe = at<17>;
 
-    using inputs = at<17>;
-    using input = at<18>;
-    using input_script = at<19>;
-    using input_witness = at<20>;
+    using inputs = at<18>;
+    using input = at<19>;
+    using input_script = at<20>;
+    using input_witness = at<21>;
 
-    using outputs = at<21>;
-    using output = at<22>;
-    using output_script = at<23>;
-    using output_spender = at<24>;
-    using output_spenders = at<25>;
-    using output_subscribe = at<26>;
+    using outputs = at<22>;
+    using output = at<23>;
+    using output_script = at<24>;
+    using output_spender = at<25>;
+    using output_spenders = at<26>;
+    using output_subscribe = at<27>;
 
-    using address = at<27>;
-    using address_confirmed = at<28>;
-    using address_unconfirmed = at<29>;
-    using address_balance = at<30>;
-    using address_subscribe = at<31>;
+    using address = at<28>;
+    using address_confirmed = at<29>;
+    using address_unconfirmed = at<30>;
+    using address_balance = at<31>;
+    using address_subscribe = at<32>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -124,6 +126,7 @@ struct native_methods
 /// /v1/configuration {1}
 
 /// /v1/top {1}
+/// /v1/status {1}
 
 /// /v1/block/hash/[bkhash] {1}
 /// /v1/block/height/[height] {1}

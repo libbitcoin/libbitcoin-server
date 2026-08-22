@@ -140,6 +140,34 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__top_subscribe_extra_segment__extra_
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
+// status
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__status_valid__expected)
+{
+    const std::string path = "/v42/status";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "status");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__status_extra_segment__extra_segment)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, "/v3/status/extra"),
+        server::error::extra_segment);
+}
+
 // block/height
 
 BOOST_AUTO_TEST_CASE(parsers__native_target__block_height_valid__expected)

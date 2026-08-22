@@ -93,6 +93,19 @@ def test_top(native_config):
         assert height >= 100_000, "Chain height should be at least 100k"
 
 
+def test_status(native_config):
+    """Test /v1/status endpoint - local chain synchronization state."""
+    data = get_json(native_config["base_url"], "status")
+    assert isinstance(data, dict)
+    assert set(data) == {"confirmed", "candidate", "current", "coalesced"}
+    assert isinstance(data["confirmed"], int)
+    assert isinstance(data["candidate"], int)
+    assert isinstance(data["current"], bool)
+    assert isinstance(data["coalesced"], bool)
+    assert data["confirmed"] >= 0
+    assert data["candidate"] >= 0
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # BLOCK ENDPOINTS
 # ═══════════════════════════════════════════════════════════════════════════════

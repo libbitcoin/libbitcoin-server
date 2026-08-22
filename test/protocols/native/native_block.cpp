@@ -24,6 +24,67 @@ using namespace boost::beast;
 
 BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
+// status (http)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(native__status__json__expected)
+{
+    for (size_t height = 1; height <= 9; ++height)
+        BOOST_REQUIRE(query_.push_candidate(query_.to_confirmed(height)));
+
+    const auto response = get_json("/v1/status?format=json");
+    BOOST_REQUIRE(response.is_object());
+
+    const auto& status = response.as_object();
+    BOOST_REQUIRE_EQUAL(status.at("confirmed").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(status.at("candidate").as_int64(), 9);
+    BOOST_REQUIRE(!status.at("current").as_bool());
+    BOOST_REQUIRE(status.at("coalesced").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(native__status__candidate_ahead__expected)
+{
+    for (size_t height = 1; height <= 9; ++height)
+        BOOST_REQUIRE(query_.push_candidate(query_.to_confirmed(height)));
+
+    BOOST_REQUIRE(query_.set(test::mock_block10,
+        database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_candidate(
+        query_.to_header(test::mock_block10.hash())));
+
+    const auto status = get_json("/v1/status?format=json").as_object();
+    BOOST_REQUIRE_EQUAL(status.at("confirmed").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(status.at("candidate").as_int64(), 10);
+    BOOST_REQUIRE(!status.at("current").as_bool());
+    BOOST_REQUIRE(!status.at("coalesced").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(native__status__text__not_acceptable)
+{
+    const auto status = get_status("/v1/status?format=text");
+    BOOST_REQUIRE_EQUAL(status, http::status::not_acceptable);
+}
+
+// status (websockets)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(native__ws_status__json__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    for (size_t height = 1; height <= 9; ++height)
+        BOOST_REQUIRE(query_.push_candidate(query_.to_confirmed(height)));
+
+    const auto response = ws_get_json("/v1/status?format=json");
+    BOOST_REQUIRE(response.is_object());
+
+    const auto& status = response.as_object();
+    BOOST_REQUIRE_EQUAL(status.at("confirmed").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(status.at("candidate").as_int64(), 9);
+    BOOST_REQUIRE(!status.at("current").as_bool());
+    BOOST_REQUIRE(status.at("coalesced").as_bool());
+}
+
 // top (http)
 // ----------------------------------------------------------------------------
 

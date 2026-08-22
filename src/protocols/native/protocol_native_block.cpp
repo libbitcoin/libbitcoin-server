@@ -34,6 +34,29 @@ using namespace network::messages::peer;
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+bool protocol_native::handle_get_status(const code& ec, interface::status,
+    uint8_t, uint8_t media) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (media != json)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    const auto& query = archive();
+    send_json(boost::json::object
+    {
+        { "confirmed", query.get_top_confirmed() },
+        { "candidate", query.get_top_candidate() },
+        { "current", is_current_chain(true) },
+        { "coalesced", query.is_coalesced() }
+    }, 80);
+    return true;
+}
+
 bool protocol_native::handle_get_top(const code& ec, interface::top,
     uint8_t, uint8_t media) NOEXCEPT
 {

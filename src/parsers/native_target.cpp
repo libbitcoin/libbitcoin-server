@@ -101,6 +101,10 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                 return error::invalid_subcomponent;
         }
     }
+    else if (target == "status")
+    {
+        method = "status";
+    }
     else if (target == "address")
     {
         if (segment == segments.size())
