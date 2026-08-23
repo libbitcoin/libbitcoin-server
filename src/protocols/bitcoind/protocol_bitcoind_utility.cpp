@@ -56,8 +56,8 @@ void protocol_bitcoind_utility::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_decode_script, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_validate_address, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_create_multisig, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_derive_addresses, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_descriptor_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_derive_addresses, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_descriptor_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_index_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_estimate_smart_fee, _1, _2);
@@ -245,19 +245,129 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
-    rpc_interface::derive_addresses) NOEXCEPT
+// The address of a singular output script (empty if unaddressable).
+std::string protocol_bitcoind_utility::to_address(
+    const chain::script& script) const NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    using namespace chain;
+    using namespace wallet;
+
+    const auto& ops = script.ops();
+    if (chain::script::is_pay_witness_pattern(ops))
+    {
+        const auto code = ops.front().code();
+        const auto version = (code == opcode::push_size_0) ? 0_u8 :
+            operation::opcode_to_positive(code);
+
+        return witness_address{ ops.at(1).data(), version,
+            witness_ }.encoded();
+    }
+
+    const auto pay = payment_address::extract_output(script, p2kh_, p2sh_);
+    return pay ? pay.encoded() : std::string{};
+}
+
+bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
+    rpc_interface::derive_addresses, const std::string& expression,
+    const std::optional<value_t>& range) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const wallet::descriptor parsed{ expression };
+    if (!parsed || parsed.ranged() != range.has_value())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    // The range is an end index or a [begin, end] pair (as bitcoind).
+    uint32_t begin{};
+    uint32_t end{};
+    if (range.has_value())
+    {
+        const auto& value = range.value().value();
+        if (std::holds_alternative<number_t>(value))
+        {
+            if (!to_integer(end, std::get<number_t>(value)))
+            {
+                send_error(error::invalid_argument);
+                return true;
+            }
+        }
+        else if (std::holds_alternative<array_t>(value))
+        {
+            const auto& pair = std::get<array_t>(value);
+            if (pair.size() != 2u ||
+                !std::holds_alternative<number_t>(pair.front().value()) ||
+                !std::holds_alternative<number_t>(pair.back().value()) ||
+                !to_integer(begin, std::get<number_t>(pair.front().value())) ||
+                !to_integer(end, std::get<number_t>(pair.back().value())) ||
+                end < begin)
+            {
+                send_error(error::invalid_argument);
+                return true;
+            }
+        }
+        else
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+    }
+
+    // bitcoind's derivation range limit.
+    constexpr uint32_t maximum_range = 10'000;
+    if (floored_subtract(end, begin) >= maximum_range)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    array_t out{};
+    for (auto index = begin; index <= end; ++index)
+    {
+        const auto scripts = parsed.scripts(index);
+        std::string address{};
+        if (is_one(scripts.size()))
+            address = to_address(scripts.front());
+
+        if (address.empty())
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        out.emplace_back(std::move(address));
+    }
+
+    const auto size = 64 * out.size();
+    send_result(std::move(out), size);
     return true;
 }
 
 bool protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
-    rpc_interface::get_descriptor_info) NOEXCEPT
+    rpc_interface::get_descriptor_info,
+    const std::string& expression) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    const wallet::descriptor parsed{ expression };
+    if (!parsed)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    send_result(object_t
+    {
+        { "descriptor", parsed.encoded() },
+        { "checksum", parsed.checksum() },
+        { "isrange", parsed.ranged() },
+        { "issolvable", parsed.solvable() },
+        { "hasprivatekeys", parsed.has_private_keys() }
+    }, 256);
     return true;
 }
 

@@ -71,8 +71,6 @@ const std::vector<std::string> wip_methods
     "disconnectnode",
     "exportasmap",
     "getaddednodeinfo",
-    "deriveaddresses",
-    "getdescriptorinfo",
     "getopenrpcinfo"
 };
 
@@ -1102,6 +1100,44 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
 }
 
+
+// descriptors
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptorinfo__wpkh__expected)
+{
+    const auto response = rpc("getdescriptorinfo", "[\"wpkh([d34db33f/84h/0h/0h]xpub6DJ2dNUysrn5Vt36jH2KLBT2i1auw1tTSSomg8PhqNiUtx8QX2SvC9nrHu81fT41fvDUnhMjEzQgXnQjKEu3oaqMSzhSrHMxyyoEAmUHQbY/0/*)\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("checksum")), "cjjspncu");
+    BOOST_REQUIRE(result.at("isrange").as_bool());
+    BOOST_REQUIRE(result.at("issolvable").as_bool());
+    BOOST_REQUIRE(!result.at("hasprivatekeys").as_bool());
+}
+
+// The derived address round-trips to the bip386 vector script.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__tr_bip386__expected)
+{
+    const auto response = rpc("deriveaddresses", "[\"tr(a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd)\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 1u);
+    const auto address = as_text(result.at(0));
+    BOOST_REQUIRE(address.starts_with("bc1p"));
+    const auto validated = rpc("validateaddress", "[\"" + address + "\"]");
+    BOOST_REQUIRE_EQUAL(as_text(validated.at("result").at("scriptPubKey")), "512077aab6e066f8a7419c5ab714c12c67d25007ed55a43cadcacb4d7a970a093f11");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__ranged_without_range__invalid)
+{
+    const auto response = rpc("deriveaddresses", "[\"pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/*)\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__range_pair__two_addresses)
+{
+    const auto response = rpc("deriveaddresses", "[\"pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/*)\", [3, 4]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 2u);
+    BOOST_REQUIRE(as_text(result.at(0)).starts_with("1"));
+}
 
 // network group
 

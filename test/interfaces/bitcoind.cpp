@@ -134,5 +134,6 @@ static_assert(bitcoind_transaction_methods::names ==
     "converttopsbt createpsbt decodepsbt finalizepsbt joinpsbts "
     "utxoupdatepsbt");
 static_assert(bitcoind_utility_methods::names ==
-    "decodescript validateaddress createmultisig verifymessage getindexinfo");
+    "decodescript validateaddress createmultisig deriveaddresses "
+    "getdescriptorinfo verifymessage getindexinfo");
 static_assert(bitcoind_wallet_methods::names == "");

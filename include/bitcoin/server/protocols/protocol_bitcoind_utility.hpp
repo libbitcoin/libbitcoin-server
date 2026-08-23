@@ -65,9 +65,11 @@ protected:
         const network::rpc::array_t& keys,
         const std::string& address_type) NOEXCEPT;
     bool handle_derive_addresses(const code& ec,
-        rpc_interface::derive_addresses) NOEXCEPT;
+        rpc_interface::derive_addresses, const std::string& expression,
+        const std::optional<network::rpc::value_t>& range) NOEXCEPT;
     bool handle_get_descriptor_info(const code& ec,
-        rpc_interface::get_descriptor_info) NOEXCEPT;
+        rpc_interface::get_descriptor_info,
+        const std::string& expression) NOEXCEPT;
     bool handle_verify_message(const code& ec,
         rpc_interface::verify_message, const std::string& address,
         const std::string& signature, const std::string& message) NOEXCEPT;
@@ -75,6 +77,10 @@ protected:
         rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT;
     bool handle_estimate_smart_fee(const code& ec,
         rpc_interface::estimate_smart_fee) NOEXCEPT;
+
+    /// The address of a singular output script (empty if unaddressable).
+    std::string to_address(
+        const system::chain::script& script) const NOEXCEPT;
 };
 
 } // namespace server
