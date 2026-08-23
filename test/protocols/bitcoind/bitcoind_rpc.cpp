@@ -68,8 +68,6 @@ const std::vector<std::string> wip_methods
     "preciousblock",
     "scanblocks",
     "descriptorprocesspsbt",
-    "submitblock",
-    "submitheader",
     "addnode",
     "disconnectnode",
     "exportasmap",
@@ -1110,6 +1108,28 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
 }
 
+
+// submit
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
+{
+    const auto block = encode_base16(test::block9.to_data(true));
+    const auto response = rpc("submitblock", "[\"" + block + "\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "duplicate");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__garbage__invalid)
+{
+    const auto response = rpc("submitblock", "[\"deadbeef\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__existing_header__null)
+{
+    const auto header = encode_base16(test::block9.header().to_data());
+    const auto response = rpc("submitheader", "[\"" + header + "\"]");
+    BOOST_REQUIRE(response.at("result").is_null());
+}
 
 // waitfor (all conditions immediately met or timing out on the fixture)
 

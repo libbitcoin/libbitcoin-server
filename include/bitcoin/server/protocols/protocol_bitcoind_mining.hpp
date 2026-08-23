@@ -61,15 +61,23 @@ protected:
     bool handle_get_mining_info(const code& ec,
         rpc_interface::get_mining_info) NOEXCEPT;
     bool handle_submit_block(const code& ec,
-        rpc_interface::submit_block) NOEXCEPT;
+        rpc_interface::submit_block, const std::string& hexdata,
+        const std::string& dummy) NOEXCEPT;
     bool handle_submit_header(const code& ec,
-        rpc_interface::submit_header) NOEXCEPT;
+        rpc_interface::submit_header, const std::string& hexdata) NOEXCEPT;
     bool handle_get_block_template(const code& ec,
         rpc_interface::get_block_template) NOEXCEPT;
     bool handle_get_prioritised_transactions(const code& ec,
         rpc_interface::get_prioritised_transactions) NOEXCEPT;
     bool handle_prioritise_transaction(const code& ec,
         rpc_interface::prioritise_transaction) NOEXCEPT;
+
+private:
+    /// Organize completions (bounced to the channel strand).
+    void handle_organize_block(const code& ec, size_t height) NOEXCEPT;
+    void handle_organize_header(const code& ec, size_t height) NOEXCEPT;
+    void do_submit_block(const code& ec) NOEXCEPT;
+    void do_submit_header(const code& ec) NOEXCEPT;
 };
 
 } // namespace server

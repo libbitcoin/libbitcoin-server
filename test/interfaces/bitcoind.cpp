@@ -122,7 +122,7 @@ static_assert(bitcoind_blockchain_methods::names ==
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getrpcinfo logging uptime");
 static_assert(bitcoind_mining_methods::names ==
-    "getnetworkhashps getmininginfo");
+    "getnetworkhashps getmininginfo submitblock submitheader");
 static_assert(bitcoind_network_methods::names ==
     "getnetworkinfo getconnectioncount getnettotals");
 static_assert(bitcoind_notifications_methods::names == "getzmqnotifications");

@@ -55,8 +55,8 @@ void protocol_bitcoind_mining::start() NOEXCEPT
 
     SUBSCRIBE_BITCOIND(handle_get_network_hash_ps, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_mining_info, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_submit_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_submit_header, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_submit_block, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_submit_header, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_prioritised_transactions, _1, _2);
     SUBSCRIBE_BITCOIND(handle_prioritise_transaction, _1, _2);
@@ -212,20 +212,105 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     return true;
 }
 
+// The response defers to organize completion (see dispatch).
 bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
-    rpc_interface::submit_block) NOEXCEPT
+    rpc_interface::submit_block, const std::string& hexdata,
+    const std::string&) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexdata))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto block = to_shared<chain::block>(data, witness);
+    if (!block->is_valid())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    // bitcoind reports an already-stored block as a duplicate result.
+    if (!archive().to_header(block->hash()).is_terminal())
+    {
+        send_result(std::string{ "duplicate" }, 32);
+        return true;
+    }
+
+    organize(block, BIND(handle_organize_block, _1, _2));
     return true;
 }
 
 bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
-    rpc_interface::submit_header) NOEXCEPT
+    rpc_interface::submit_header, const std::string& hexdata) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexdata))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto header = to_shared<chain::header>(data);
+    if (!header->is_valid())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (!archive().to_header(header->hash()).is_terminal())
+    {
+        send_result(null_t{}, 8);
+        return true;
+    }
+
+    organize(header, BIND(handle_organize_header, _1, _2));
     return true;
+}
+
+void protocol_bitcoind_mining::handle_organize_block(const code& ec,
+    size_t) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    network::protocol::post<CLASS>(&CLASS::do_submit_block, ec);
+}
+
+void protocol_bitcoind_mining::handle_organize_header(const code& ec,
+    size_t) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    network::protocol::post<CLASS>(&CLASS::do_submit_header, ec);
+}
+
+// bitcoind returns null on acceptance and a reason string on rejection.
+void protocol_bitcoind_mining::do_submit_block(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (ec)
+        send_result(ec.message(), 64);
+    else
+        send_result(null_t{}, 8);
+}
+
+void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (ec)
+        send_error(ec);
+    else
+        send_result(null_t{}, 8);
 }
 
 bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
