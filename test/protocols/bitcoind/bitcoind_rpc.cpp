@@ -68,7 +68,6 @@ const std::vector<std::string> wip_methods
     "preciousblock",
     "scanblocks",
     "descriptorprocesspsbt",
-    "addnode",
     "disconnectnode",
     "exportasmap",
     "getaddednodeinfo",
@@ -1105,6 +1104,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
 
 
 // network group
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__remove__not_implemented)
+{
+    const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"remove\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__bad_command__invalid)
+{
+    const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"nonsense\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__ping__always__null)
 {

@@ -124,7 +124,7 @@ static_assert(bitcoind_control_methods::names ==
 static_assert(bitcoind_mining_methods::names ==
     "getnetworkhashps getmininginfo submitblock submitheader");
 static_assert(bitcoind_network_methods::names ==
-    "getnetworkinfo getaddrmaninfo getconnectioncount getnettotals "
+    "getnetworkinfo addnode getaddrmaninfo getconnectioncount getnettotals "
     "getnodeaddresses ping setnetworkactive");
 static_assert(bitcoind_notifications_methods::names == "getzmqnotifications");
 static_assert(bitcoind_test_methods::names == "");

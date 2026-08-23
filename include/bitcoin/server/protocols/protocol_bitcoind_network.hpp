@@ -64,7 +64,8 @@ protected:
     bool handle_set_ban(const code& ec,
         rpc_interface::set_ban) NOEXCEPT;
     bool handle_add_node(const code& ec,
-        rpc_interface::add_node) NOEXCEPT;
+        rpc_interface::add_node, const std::string& node,
+        const std::string& command, bool v2transport) NOEXCEPT;
     bool handle_disconnect_node(const code& ec,
         rpc_interface::disconnect_node) NOEXCEPT;
     bool handle_export_asmap(const code& ec,

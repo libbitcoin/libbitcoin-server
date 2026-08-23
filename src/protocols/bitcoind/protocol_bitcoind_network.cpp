@@ -57,7 +57,7 @@ void protocol_bitcoind_network::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_clear_banned, _1, _2);
     SUBSCRIBE_BITCOIND(handle_list_banned, _1, _2);
     SUBSCRIBE_BITCOIND(handle_set_ban, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_add_node, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_add_node, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_disconnect_node, _1, _2);
     SUBSCRIBE_BITCOIND(handle_export_asmap, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_added_node_info, _1, _2);
@@ -330,11 +330,34 @@ bool protocol_bitcoind_network::handle_set_ban(const code& ec,
     return true;
 }
 
+// Removal requires manual session deregistration (not supported), and the
+// transport is determined by the outbound privacy configuration.
 bool protocol_bitcoind_network::handle_add_node(const code& ec,
-    rpc_interface::add_node) NOEXCEPT
+    rpc_interface::add_node, const std::string& node,
+    const std::string& command, bool) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (command != "add" && command != "onetry")
+    {
+        send_error(command == "remove" ? error::not_implemented :
+            error::invalid_argument);
+        return true;
+    }
+
+    // The endpoint parse throws on malformed input.
+    try
+    {
+        connect(network::config::endpoint{ node });
+    }
+    catch (const std::exception&)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    send_result(null_t{}, 8);
     return true;
 }
 
