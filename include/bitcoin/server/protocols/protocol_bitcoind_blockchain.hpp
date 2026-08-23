@@ -118,7 +118,9 @@ protected:
     bool handle_precious_block(const code& ec,
         rpc_interface::precious_block) NOEXCEPT;
     bool handle_scan_blocks(const code& ec,
-        rpc_interface::scan_blocks) NOEXCEPT;
+        rpc_interface::scan_blocks, const std::string& action,
+        const network::rpc::array_t& scanobjects, double start_height,
+        double stop_height, const std::string& filtertype) NOEXCEPT;
     bool handle_wait_for_block(const code& ec,
         rpc_interface::wait_for_block, const std::string& blockhash,
         double timeout) NOEXCEPT;

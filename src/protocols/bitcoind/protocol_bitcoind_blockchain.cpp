@@ -101,7 +101,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3);
@@ -1020,11 +1020,157 @@ bool protocol_bitcoind_blockchain::handle_precious_block(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
-    rpc_interface::scan_blocks) NOEXCEPT
+// A scan object is a descriptor string or { "desc", "range" } object.
+static bool expand_scan_object(chain::scripts& out,
+    const value_t& item) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    std::string expression{};
+    uint32_t begin{};
+    uint32_t end{};
+
+    // bitcoind's default range for ranged descriptors.
+    constexpr uint32_t default_range = 1'000;
+    constexpr uint32_t maximum_range = 10'000;
+
+    if (std::holds_alternative<string_t>(item.value()))
+    {
+        expression = std::get<string_t>(item.value());
+        end = default_range;
+    }
+    else if (std::holds_alternative<object_t>(item.value()))
+    {
+        const auto& fields = std::get<object_t>(item.value());
+        const auto desc = fields.find("desc");
+        if (desc == fields.end() ||
+            !std::holds_alternative<string_t>(desc->second.value()))
+            return false;
+
+        expression = std::get<string_t>(desc->second.value());
+        end = default_range;
+        const auto range = fields.find("range");
+        if (range != fields.end())
+        {
+            const auto& value = range->second.value();
+            if (std::holds_alternative<number_t>(value))
+            {
+                if (!to_integer(end, std::get<number_t>(value)))
+                    return false;
+            }
+            else if (std::holds_alternative<array_t>(value))
+            {
+                const auto& pair = std::get<array_t>(value);
+                if (pair.size() != 2u ||
+                    !std::holds_alternative<number_t>(pair.front().value()) ||
+                    !std::holds_alternative<number_t>(pair.back().value()) ||
+                    !to_integer(begin,
+                        std::get<number_t>(pair.front().value())) ||
+                    !to_integer(end,
+                        std::get<number_t>(pair.back().value())) ||
+                    end < begin)
+                    return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    const wallet::descriptor parsed{ expression };
+    if (!parsed || floored_subtract(end, begin) >= maximum_range)
+        return false;
+
+    if (!parsed.ranged())
+        end = begin;
+
+    for (auto index = begin; index <= end; ++index)
+    {
+        const auto derived = parsed.scripts(index);
+        if (derived.empty())
+            return false;
+
+        out.insert(out.end(), derived.begin(), derived.end());
+    }
+
+    return true;
+}
+
+bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
+    rpc_interface::scan_blocks, const std::string& action,
+    const array_t& scanobjects, double start_height, double stop_height,
+    const std::string& filtertype) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (action != "start" || filtertype != basic_filter ||
+        scanobjects.empty())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto& query = archive();
+    if (!query.filter_enabled())
+    {
+        send_error(error::not_implemented);
+        return true;
+    }
+
+    const auto top = query.get_top_confirmed();
+    size_t from{};
+    auto to = top;
+    if (!to_integer(from, start_height) ||
+        (stop_height >= 0 && !to_integer(to, stop_height)))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    to = std::min(to, top);
+    if (from > to)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    chain::scripts scripts{};
+    for (const auto& item: scanobjects)
+    {
+        if (!expand_scan_object(scripts, item))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+    }
+
+    array_t relevant{};
+    for (auto height = from; height <= to; ++height)
+    {
+        const auto link = query.to_confirmed(height);
+        const auto hash = query.get_header_key(link);
+        neutrino::block_filter filter{ hash, {} };
+        if (!query.get_filter_body(filter.filter, link))
+        {
+            send_error(database::error::integrity);
+            return true;
+        }
+
+        if (neutrino::match_filter(filter, scripts))
+            relevant.emplace_back(encode_hash(hash));
+    }
+
+    send_result(object_t
+    {
+        { "from_height", from },
+        { "to_height", to },
+        { "relevant_blocks", std::move(relevant) },
+        { "completed", true }
+    }, 1024);
     return true;
 }
 

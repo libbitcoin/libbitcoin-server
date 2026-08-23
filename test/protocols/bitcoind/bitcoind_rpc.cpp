@@ -66,7 +66,6 @@ const std::vector<std::string> wip_methods
     "getblockfrompeer",
     "getdescriptoractivity",
     "preciousblock",
-    "scanblocks",
     "descriptorprocesspsbt",
     "disconnectnode",
     "exportasmap",
@@ -1100,6 +1099,21 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
 }
 
+
+// scanblocks
+
+// The fixture runs with block filters disabled (as getblockfilter).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__filters_disabled__error)
+{
+    const auto response = rpc("scanblocks", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
+{
+    const auto response = rpc("scanblocks", "[\"status\", []]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
 
 // help
 
