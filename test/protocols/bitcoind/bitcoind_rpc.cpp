@@ -64,7 +64,6 @@ const std::vector<std::string> rejected_methods
 const std::vector<std::string> wip_methods
 {
     "getblockfrompeer",
-    "getdescriptoractivity",
     "preciousblock",
     "descriptorprocesspsbt",
     "disconnectnode",
@@ -1099,6 +1098,27 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
 }
 
+
+// descriptor activity
+
+// Block one's coinbase output is watched via its raw script descriptor.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__block1_coinbase__one_receive)
+{
+    const auto hash = encode_hash(test::block1.hash());
+    const auto script = encode_base16(test::block1.transactions_ptr()->front()->outputs_ptr()->front()->script().to_data(false));
+    const auto response = rpc("getdescriptoractivity", "[[\"" + hash + "\"], [\"raw(" + script + ")\"]]");
+    const auto& activity = response.at("result").at("activity");
+    BOOST_REQUIRE_EQUAL(activity.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(activity.at(0).at("type")), "receive");
+    BOOST_REQUIRE_EQUAL(activity.at(0).at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(activity.at(0).at("amount").as_double(), 50.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__unknown_block__not_found)
+{
+    const auto response = rpc("getdescriptoractivity", "[[\"0000000000000000000000000000000000000000000000000000000000000001\"], []]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
 
 // scanblocks
 

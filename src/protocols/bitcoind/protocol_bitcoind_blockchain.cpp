@@ -61,6 +61,9 @@ enum block_verbosity : size_t
 // bitcoind defines only the "basic" (neutrino) block filter type.
 constexpr auto basic_filter = "basic";
 
+static bool expand_scan_object(chain::scripts& out,
+    const value_t& item) NOEXCEPT;
+
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
@@ -98,7 +101,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_chain_states, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_chain_tips, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
     SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7);
@@ -985,11 +988,114 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(const code& ec,
-    rpc_interface::get_descriptor_activity) NOEXCEPT
+bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
+    const code& ec, rpc_interface::get_descriptor_activity,
+    const array_t& blockhashes, const array_t& scanobjects,
+    bool include_spent) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    chain::scripts derived{};
+    for (const auto& item: scanobjects)
+    {
+        if (!expand_scan_object(derived, item))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+    }
+
+    std::unordered_set<std::string> watch{};
+    for (const auto& script: derived)
+        watch.insert(encode_base16(script.to_data(false)));
+
+    const auto& query = archive();
+    array_t activity{};
+    for (const auto& item: blockhashes)
+    {
+        hash_digest hash{};
+        if (!std::holds_alternative<string_t>(item.value()) ||
+            !decode_hash(hash, std::get<string_t>(item.value())))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        constexpr auto witness = true;
+        const auto link = query.to_header(hash);
+        const auto block = query.get_block(link, witness);
+        size_t height{};
+        if (!block || !query.get_height(height, link))
+        {
+            send_error(error::not_found);
+            return true;
+        }
+
+        const auto encoded = encode_hash(hash);
+        const auto populated = include_spent &&
+            query.populate_without_metadata(*block);
+
+        for (const auto& tx: *block->transactions_ptr())
+        {
+            const auto txid = encode_hash(tx->hash(false));
+            uint32_t index{};
+            for (const auto& out: *tx->outputs_ptr())
+            {
+                const auto script = encode_base16(
+                    out->script().to_data(false));
+                if (watch.contains(script))
+                {
+                    activity.emplace_back(object_t
+                    {
+                        { "type", std::string{ "receive" } },
+                        { "amount", out->value() /
+                            to_floating(chain::satoshi_per_bitcoin) },
+                        { "blockhash", encoded },
+                        { "height", height },
+                        { "txid", txid },
+                        { "vout", index },
+                        { "output_spk", value_from(bitcoind(out->script())) }
+                    });
+                }
+
+                ++index;
+            }
+
+            if (!populated || tx->is_coinbase())
+                continue;
+
+            uint32_t spend{};
+            for (const auto& in: *tx->inputs_ptr())
+            {
+                const auto& prevout = *in->prevout;
+                const auto script = encode_base16(
+                    prevout.script().to_data(false));
+                if (watch.contains(script))
+                {
+                    activity.emplace_back(object_t
+                    {
+                        { "type", std::string{ "spend" } },
+                        { "amount", prevout.value() /
+                            to_floating(chain::satoshi_per_bitcoin) },
+                        { "blockhash", encoded },
+                        { "height", height },
+                        { "spend_txid", txid },
+                        { "spend_vout", spend },
+                        { "prevout_txid", encode_hash(in->point().hash()) },
+                        { "prevout_vout", in->point().index() },
+                        { "prevout_spk", value_from(bitcoind(
+                            prevout.script())) }
+                    });
+                }
+
+                ++spend;
+            }
+        }
+    }
+
+    const auto size = 256 * activity.size();
+    send_result(object_t{ { "activity", std::move(activity) } }, size);
     return true;
 }
 

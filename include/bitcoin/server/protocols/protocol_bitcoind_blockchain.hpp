@@ -112,7 +112,10 @@ protected:
         rpc_interface::get_deployment_info,
         const std::string& blockhash) NOEXCEPT;
     bool handle_get_descriptor_activity(const code& ec,
-        rpc_interface::get_descriptor_activity) NOEXCEPT;
+        rpc_interface::get_descriptor_activity,
+        const network::rpc::array_t& blockhashes,
+        const network::rpc::array_t& scanobjects,
+        bool include_spent) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,
         rpc_interface::get_difficulty) NOEXCEPT;
     bool handle_precious_block(const code& ec,

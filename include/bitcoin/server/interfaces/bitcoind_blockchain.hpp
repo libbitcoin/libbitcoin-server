@@ -53,7 +53,7 @@ struct bitcoind_blockchain_methods
         method<"getchainstates">{},
         method<"getchaintips">{},
         method<"getdeploymentinfo", optional<""_t>>{ "blockhash" },
-        method<"getdescriptoractivity">{ unimplemented },
+        method<"getdescriptoractivity", optional<empty::array>, optional<empty::array>, optional<false>>{ "blockhashes", "scanobjects", "include_spent" },
         method<"getdifficulty">{},
         method<"preciousblock">{ unimplemented },
         method<"scanblocks", string_t, optional<empty::array>, optional<0.0>, optional<-1.0>, optional<"basic"_t>>{ "action", "scanobjects", "start_height", "stop_height", "filtertype" },
