@@ -115,10 +115,33 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         return true;
     }
 
-    // Inference is pending the descriptor engine; raw is always correct.
-    const auto raw_descriptor = [](const chain::script& target) NOEXCEPT
+    // Inferred where a pattern is expressible, otherwise raw.
+    const auto infer_descriptor = [&](const chain::script& target) NOEXCEPT
     {
-        const auto body = "raw(" + encode_base16(target.to_data(false)) + ")";
+        std::string body{};
+        const auto& ops = target.ops();
+        if (chain::script::is_pay_public_key_pattern(ops))
+        {
+            body = "pk(" + encode_base16(ops.front().data()) + ")";
+        }
+        else if (chain::script::is_pay_multisig_pattern(ops))
+        {
+            body = "multi(" + std::to_string(
+                chain::operation::opcode_to_positive(ops.front().code()));
+            for (auto op = std::next(ops.begin());
+                op != std::prev(ops.end(), 2); ++op)
+                body += "," + encode_base16(op->data());
+
+            body += ")";
+        }
+        else
+        {
+            const auto address = to_address(target);
+            body = address.empty() ?
+                "raw(" + encode_base16(target.to_data(false)) + ")" :
+                "addr(" + address + ")";
+        }
+
         return body + "#" + descriptor_checksum(body);
     };
 
@@ -127,7 +150,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     object_t result
     {
         { "asm", script.to_string(flags::all_rules, true) },
-        { "desc", raw_descriptor(script) },
+        { "desc", infer_descriptor(script) },
         { "type", to_script_type(pattern) }
     };
 
@@ -156,7 +179,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
             { "hex", encode_base16(wsh.to_data(false)) },
             { "type", to_script_type(script_pattern::pay_witness_script_hash) },
             { "address", witness_address{ script, witness_ }.encoded() },
-            { "desc", raw_descriptor(wsh) },
+            { "desc", infer_descriptor(wsh) },
             { "p2sh-segwit", payment_address{ wsh, p2sh_ }.encoded() }
         });
     }

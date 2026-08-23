@@ -468,7 +468,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__descriptor_and_segwit)
 {
     const auto response = rpc("decodescript", "[\"76a914000000000000000000000000000000000000000088ac\"]");
     const auto& result = response.at("result");
-    BOOST_REQUIRE_EQUAL(as_text(result.at("desc")), "raw(76a914000000000000000000000000000000000000000088ac)#" + descriptor_checksum("raw(76a914000000000000000000000000000000000000000088ac)"));
+    const auto address = as_text(result.at("address"));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("desc")), "addr(" + address + ")#" + descriptor_checksum("addr(" + address + ")"));
     const auto& segwit = result.at("segwit");
     BOOST_REQUIRE_EQUAL(as_text(segwit.at("type")), "witness_v0_scripthash");
     BOOST_REQUIRE(as_text(segwit.at("address")).starts_with("bc1q"));
