@@ -38,13 +38,13 @@ struct bitcoind_network_methods
         method<"disconnectnode">{ unimplemented },
         method<"exportasmap">{ unimplemented },
         method<"getaddednodeinfo">{ unimplemented },
-        method<"getaddrmaninfo">{ unimplemented },
+        method<"getaddrmaninfo">{},
         method<"getconnectioncount">{},
         method<"getnettotals">{},
-        method<"getnodeaddresses">{ unimplemented },
+        method<"getnodeaddresses", optional<1.0>, optional<""_t>>{ "count", "network" },
         method<"getpeerinfo">{ unimplemented },
-        method<"ping">{ unimplemented },
-        method<"setnetworkactive">{ unimplemented }
+        method<"ping">{},
+        method<"setnetworkactive", boolean_t>{ "state" }
     };
 
     template <typename... Args>

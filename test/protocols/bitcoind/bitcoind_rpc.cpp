@@ -72,11 +72,6 @@ const std::vector<std::string> wip_methods
     "disconnectnode",
     "exportasmap",
     "getaddednodeinfo",
-    "getaddrmaninfo",
-    "getnodeaddresses",
-    "getpeerinfo",
-    "ping",
-    "setnetworkactive",
     "deriveaddresses",
     "getdescriptorinfo",
     "getopenrpcinfo"
@@ -1108,6 +1103,43 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
 }
 
+
+// network group
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__ping__always__null)
+{
+    const auto response = rpc("ping");
+    BOOST_REQUIRE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnodeaddresses__empty_pool__empty)
+{
+    const auto response = rpc("getnodeaddresses");
+    BOOST_REQUIRE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnodeaddresses__bad_network__invalid)
+{
+    const auto response = rpc("getnodeaddresses", "[0, \"onion\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getaddrmaninfo__empty_pool__zero_buckets)
+{
+    const auto response = rpc("getaddrmaninfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("all_networks").at("total").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("ipv4").at("tried").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__setnetworkactive__toggle__round_trips)
+{
+    const auto off = rpc("setnetworkactive", "[false]");
+    BOOST_REQUIRE(!off.at("result").as_bool());
+    const auto on = rpc("setnetworkactive", "[true]");
+    BOOST_REQUIRE(on.at("result").as_bool());
+}
 
 // submit
 

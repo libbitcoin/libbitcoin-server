@@ -64,10 +64,10 @@ void protocol_bitcoind_network::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_addrman_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_connection_count, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_net_totals, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_node_addresses, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_node_addresses, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_peer_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_ping, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_set_network_active, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_set_network_active, _1, _2, _3);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
@@ -155,6 +155,157 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
     return true;
 }
 
+// The pool has no tried table, so all addresses are reported as new.
+static object_t address_bucket(size_t count) NOEXCEPT
+{
+    return object_t
+    {
+        { "new", count },
+        { "tried", zero },
+        { "total", count }
+    };
+}
+
+bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
+    rpc_interface::get_addrman_info) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    fetch_addresses(BIND(handle_fetch_info, _1, _2));
+    return true;
+}
+
+void protocol_bitcoind_network::handle_fetch_info(const code& ec,
+    const network::address_cptr& message) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    network::protocol::post<CLASS>(&CLASS::do_send_info, ec, message);
+}
+
+// An empty or unavailable pool is reported as empty (as bitcoind).
+void protocol_bitcoind_network::do_send_info(const code& ec,
+    const network::address_cptr& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    const auto empty = (ec || !message);
+
+    size_t v4{};
+    if (!empty)
+        for (const auto& item: message->addresses)
+            if (network::config::address{ item }.is_v4())
+                ++v4;
+
+    const auto total = empty ? zero : message->addresses.size();
+    send_result(object_t
+    {
+        { "ipv4", address_bucket(v4) },
+        { "ipv6", address_bucket(total - v4) },
+        { "onion", address_bucket(zero) },
+        { "i2p", address_bucket(zero) },
+        { "cjdns", address_bucket(zero) },
+        { "all_networks", address_bucket(total) }
+    }, 512);
+}
+
+bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
+    rpc_interface::get_node_addresses, double count,
+    const std::string& network) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!to_integer(node_count_, count) ||
+        (!network.empty() && network != "ipv4" && network != "ipv6"))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    node_network_ = network;
+    fetch_addresses(BIND(handle_fetch_nodes, _1, _2));
+    return true;
+}
+
+void protocol_bitcoind_network::handle_fetch_nodes(const code& ec,
+    const network::address_cptr& message) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    network::protocol::post<CLASS>(&CLASS::do_send_nodes, ec, message);
+}
+
+void protocol_bitcoind_network::do_send_nodes(const code& ec,
+    const network::address_cptr& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    // An empty or unavailable pool is reported as empty (as bitcoind).
+    if (ec || !message)
+    {
+        send_result(array_t{}, 16);
+        return;
+    }
+
+    // A zero count returns all addresses (as bitcoind).
+    array_t out{};
+    for (const auto& item: message->addresses)
+    {
+        if (!is_zero(node_count_) && out.size() >= node_count_)
+            break;
+
+        const network::config::address address{ item };
+        const auto name = address.is_v4() ? "ipv4" : "ipv6";
+        if (!node_network_.empty() && node_network_ != name)
+            continue;
+
+        out.emplace_back(object_t
+        {
+            { "time", item.timestamp },
+            { "services", item.services },
+            { "address", address.to_host() },
+            { "port", item.port },
+            { "network", std::string{ name } }
+        });
+    }
+
+    const auto size = 128 * out.size();
+    send_result(std::move(out), size);
+}
+
+// The nonce is discarded (pong correlation is a channel concern).
+bool protocol_bitcoind_network::handle_ping(const code& ec,
+    rpc_interface::ping) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    data_array<sizeof(uint64_t)> entropy{};
+    pseudo_random::fill(entropy);
+    const auto nonce = from_little_endian<uint64_t>(entropy);
+    BROADCAST(peer::ping, to_shared<peer::ping>(nonce));
+    send_result(null_t{}, 8);
+    return true;
+}
+
+bool protocol_bitcoind_network::handle_set_network_active(const code& ec,
+    rpc_interface::set_network_active, bool state) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (state)
+        node::protocol::resume();
+    else
+        node::protocol::suspend(network::error::service_suspended);
+
+    send_result(state, 8);
+    return true;
+}
+
 bool protocol_bitcoind_network::handle_clear_banned(const code& ec,
     rpc_interface::clear_banned) NOEXCEPT
 {
@@ -211,14 +362,6 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
-    rpc_interface::get_addrman_info) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
-    return true;
-}
-
 // Peer channels only (client channels are not connections).
 bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     rpc_interface::get_connection_count) NOEXCEPT
@@ -258,32 +401,8 @@ bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
-    rpc_interface::get_node_addresses) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
-    return true;
-}
-
 bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     rpc_interface::get_peer_info) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_ping(const code& ec,
-    rpc_interface::ping) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_set_network_active(const code& ec,
-    rpc_interface::set_network_active) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::not_implemented);
