@@ -66,15 +66,66 @@ void protocol_bitcoind_control::start() NOEXCEPT
 // Control methods.
 // ----------------------------------------------------------------------------
 
+// One usage line synthesized from the interface metadata (not bitcoind's
+// narrative help text). Optional parameters are parenthesized.
+template <typename Method>
+static void append_usage(std::string& out, const Method& entry,
+    const std::string& command) NOEXCEPT
+{
+    if (!entry.implemented() || entry.name != command)
+        return;
+
+    out = command;
+    const auto& names = entry.parameter_names();
+    [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
+    {
+        ((out += is_optional<std::tuple_element_t<Index,
+            typename Method::args_native>> ?
+                " ( " + std::string{ names.at(Index) } + " )" :
+                " " + std::string{ names.at(Index) }), ...);
+    }(std::make_index_sequence<Method::size>{});
+}
+
+template <typename Methods>
+static void find_usage(std::string& out, const std::string& command) NOEXCEPT
+{
+    std::apply([&](const auto&... entries) NOEXCEPT
+    {
+        (append_usage(out, entries, command), ...);
+    }, Methods::methods);
+}
+
 bool protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
-    const std::string&) NOEXCEPT
+    const std::string& command) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    auto names = help_names();
-    const auto size = two * names.size();
-    send_result(std::move(names), size);
+    if (command.empty())
+    {
+        auto names = help_names();
+        const auto size = two * names.size();
+        send_result(std::move(names), size);
+        return true;
+    }
+
+    using namespace interface;
+    std::string usage{};
+    find_usage<bitcoind_blockchain_methods>(usage, command);
+    find_usage<bitcoind_control_methods>(usage, command);
+    find_usage<bitcoind_mining_methods>(usage, command);
+    find_usage<bitcoind_network_methods>(usage, command);
+    find_usage<bitcoind_notifications_methods>(usage, command);
+    find_usage<bitcoind_test_methods>(usage, command);
+    find_usage<bitcoind_transaction_methods>(usage, command);
+    find_usage<bitcoind_utility_methods>(usage, command);
+    find_usage<bitcoind_wallet_methods>(usage, command);
+
+    // bitcoind reports an unknown command in the result text.
+    if (usage.empty())
+        usage = "help: unknown command: " + command;
+
+    send_result(std::move(usage), 128);
     return true;
 }
 

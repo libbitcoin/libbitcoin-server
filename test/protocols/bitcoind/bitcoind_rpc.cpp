@@ -1101,6 +1101,20 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
 }
 
 
+// help
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__help__getblock__usage_line)
+{
+    const auto response = rpc("help", "[\"getblock\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "getblock blockhash ( verbosity )");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__help__unknown__reported)
+{
+    const auto response = rpc("help", "[\"nonsense\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "help: unknown command: nonsense");
+}
+
 // descriptors
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptorinfo__wpkh__expected)
