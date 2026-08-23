@@ -67,9 +67,6 @@ const std::vector<std::string> wip_methods
     "getdescriptoractivity",
     "preciousblock",
     "scanblocks",
-    "waitforblock",
-    "waitforblockheight",
-    "waitfornewblock",
     "descriptorprocesspsbt",
     "submitblock",
     "submitheader",
@@ -1113,6 +1110,31 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
 }
 
+
+// waitfor (all conditions immediately met or timing out on the fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__at_top__immediate_tip)
+{
+    const auto response = rpc("waitforblockheight", "[9]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblock__confirmed_hash__immediate_tip)
+{
+    const auto response = rpc("waitforblock", "[\"" + std::string{ block9 } + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitfornewblock__short_timeout__times_out_with_tip)
+{
+    const auto response = rpc("waitfornewblock", "[1]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+}
 
 // psbt (vectors from bip174)
 

@@ -102,9 +102,9 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
     SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
@@ -113,7 +113,16 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
     SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
+    subscribe_chase(BIND(handle_chase, _1, _2, _3));
     protocol_bitcoind_dispatch<rpc_interface>::start();
+}
+
+void protocol_bitcoind_blockchain::stopping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    unsubscribe_chase();
+    wait_timer_->stop();
+    protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
 }
 
 // Blockchain methods.
@@ -1019,27 +1028,155 @@ bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
     return true;
 }
 
+// The response defers to the chase event or the timeout (long poll). The
+// saved request context carries the deferred send (see dispatch).
 bool protocol_bitcoind_blockchain::handle_wait_for_block(const code& ec,
-    rpc_interface::wait_for_block) NOEXCEPT
+    rpc_interface::wait_for_block, const std::string& blockhash,
+    double timeout) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (!decode_hash(wait_hash_, blockhash))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    wait_ = wait::block;
+    arm_wait(timeout);
     return true;
 }
 
 bool protocol_bitcoind_blockchain::handle_wait_for_block_height(const code& ec,
-    rpc_interface::wait_for_block_height) NOEXCEPT
+    rpc_interface::wait_for_block_height, const double height,
+    double timeout) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (!to_integer(wait_height_, height))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    wait_ = wait::height;
+    arm_wait(timeout);
     return true;
 }
 
 bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
-    rpc_interface::wait_for_new_block) NOEXCEPT
+    rpc_interface::wait_for_new_block, double timeout) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    wait_ = wait::new_block;
+    wait_height_ = add1(archive().get_top_confirmed());
+    arm_wait(timeout);
+    return true;
+}
+
+// Wait machinery (strand).
+// ----------------------------------------------------------------------------
+
+bool protocol_bitcoind_blockchain::wait_done() const NOEXCEPT
+{
+    const auto& query = archive();
+    switch (wait_)
+    {
+        case wait::new_block:
+        case wait::height:
+            return query.get_top_confirmed() >= wait_height_;
+        case wait::block:
+        {
+            const auto link = query.to_header(wait_hash_);
+            return !link.is_terminal() && query.is_confirmed_block(link);
+        }
+        default:
+            return false;
+    }
+}
+
+void protocol_bitcoind_blockchain::send_tip() NOEXCEPT
+{
+    const auto& query = archive();
+    const auto top = query.get_top_confirmed();
+    send_result(object_t
+    {
+        { "hash", encode_hash(query.get_header_key(query.to_confirmed(top))) },
+        { "height", top }
+    }, 128);
+}
+
+void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
+{
+    if (wait_done())
+    {
+        wait_ = wait::none;
+        send_tip();
+        return;
+    }
+
+    // A zero timeout waits indefinitely (as bitcoind).
+    uint64_t span{};
+    if (!to_integer(span, timeout))
+    {
+        wait_ = wait::none;
+        send_error(error::invalid_argument);
+        return;
+    }
+
+    if (!is_zero(span))
+        wait_timer_->start(BIND(handle_wait_timeout, _1),
+            network::milliseconds(span));
+}
+
+void protocol_bitcoind_blockchain::do_wait_event() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (wait_ == wait::none || !wait_done())
+        return;
+
+    wait_ = wait::none;
+    wait_timer_->stop();
+    send_tip();
+}
+
+void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped() || ec == network::error::operation_canceled ||
+        wait_ == wait::none)
+        return;
+
+    wait_ = wait::none;
+    send_tip();
+}
+
+// Chase events.
+// ----------------------------------------------------------------------------
+
+bool protocol_bitcoind_blockchain::handle_chase(const code&,
+    node::chase event_, node::event_value) NOEXCEPT
+{
+    // Do not pass ec to stopped, it is not a call status.
+    if (stopped())
+        return false;
+
+    switch (event_)
+    {
+        case node::chase::organized:
+        case node::chase::reorganized:
+        {
+            network::protocol::post<CLASS>(&CLASS::do_wait_event);
+            break;
+        }
+        default:
+            break;
+    }
+
     return true;
 }
 
