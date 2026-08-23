@@ -121,7 +121,7 @@ static_assert(bitcoind_blockchain_methods::names ==
     "getdifficulty scanblocks waitforblock waitforblockheight "
     "waitfornewblock");
 static_assert(bitcoind_control_methods::names ==
-    "help getmemoryinfo getrpcinfo logging uptime");
+    "help getmemoryinfo getopenrpcinfo getrpcinfo logging uptime");
 static_assert(bitcoind_mining_methods::names ==
     "getnetworkhashps getmininginfo submitblock submitheader");
 static_assert(bitcoind_network_methods::names ==

@@ -69,7 +69,6 @@ const std::vector<std::string> wip_methods
     "disconnectnode",
     "exportasmap",
     "getaddednodeinfo",
-    "getopenrpcinfo"
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -1133,6 +1132,17 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 {
     const auto response = rpc("scanblocks", "[\"status\", []]");
     REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+// openrpc
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getopenrpcinfo__always__document)
+{
+    const auto response = rpc("getopenrpcinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("openrpc")), "1.2.6");
+    BOOST_REQUIRE(result.at("methods").is_array());
+    BOOST_REQUIRE(!result.at("methods").as_array().empty());
 }
 
 // help

@@ -169,11 +169,70 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
     return true;
 }
 
+template <typename Method>
+static void append_method(array_t& out, const Method& entry) NOEXCEPT
+{
+    if (!entry.implemented())
+        return;
+
+    array_t parameters{};
+    const auto& names = entry.parameter_names();
+    [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
+    {
+        (parameters.emplace_back(object_t
+        {
+            { "name", std::string{ names.at(Index) } },
+            { "required", !is_optional<std::tuple_element_t<Index,
+                typename Method::args_native>> }
+        }), ...);
+    }(std::make_index_sequence<Method::size>{});
+
+    out.emplace_back(object_t
+    {
+        { "name", std::string{ entry.name } },
+        { "params", std::move(parameters) }
+    });
+}
+
+template <typename Methods>
+static void append_methods(array_t& out) NOEXCEPT
+{
+    std::apply([&](const auto&... entries) NOEXCEPT
+    {
+        (append_method(out, entries), ...);
+    }, Methods::methods);
+}
+
 bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
     rpc_interface::get_openrpc_info) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    using namespace interface;
+    array_t methods{};
+    append_methods<bitcoind_blockchain_methods>(methods);
+    append_methods<bitcoind_control_methods>(methods);
+    append_methods<bitcoind_mining_methods>(methods);
+    append_methods<bitcoind_network_methods>(methods);
+    append_methods<bitcoind_notifications_methods>(methods);
+    append_methods<bitcoind_test_methods>(methods);
+    append_methods<bitcoind_transaction_methods>(methods);
+    append_methods<bitcoind_utility_methods>(methods);
+    append_methods<bitcoind_wallet_methods>(methods);
+
+    const auto& settings = server_settings().bitcoind;
+    const auto size = 64 * methods.size();
+    send_result(object_t
+    {
+        { "openrpc", std::string{ "1.2.6" } },
+        { "info", object_t
+        {
+            { "title", settings.subversion },
+            { "version", settings.version.to_string() }
+        } },
+        { "methods", std::move(methods) }
+    }, size);
     return true;
 }
 
