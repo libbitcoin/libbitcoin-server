@@ -439,8 +439,9 @@ static object_t decode_psbt_input(const wallet::psbt::input& in) NOEXCEPT
     if (in.sighash_type.has_value())
         entry.emplace("sighash", sighash_name(in.sighash_type.value()));
 
-    if (in.redeem_script)
-        entry.emplace("redeem_script", value_from(bitcoind(*in.redeem_script)));
+    if (in.embedded_script)
+        entry.emplace("redeem_script",
+            value_from(bitcoind(*in.embedded_script)));
 
     if (in.witness_script)
         entry.emplace("witness_script",
@@ -488,9 +489,9 @@ static object_t decode_psbt_output(const wallet::psbt::output& out) NOEXCEPT
     using namespace chain;
     object_t entry{};
 
-    if (out.redeem_script)
+    if (out.embedded_script)
         entry.emplace("redeem_script",
-            value_from(bitcoind(*out.redeem_script)));
+            value_from(bitcoind(*out.embedded_script)));
 
     if (out.witness_script)
         entry.emplace("witness_script",
