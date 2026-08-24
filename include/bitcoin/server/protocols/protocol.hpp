@@ -64,4 +64,12 @@ private:
 // For use with secondary (e.g. notification) strands.
 #define POST_NOTIFY(method, ...) notify<CLASS>(&CLASS::method, __VA_ARGS__)
 
+// Qualified, as http protocols alias post as the request type.
+#undef POST
+#undef PARALLEL
+#define POST(method, ...) \
+    network::protocol::post<CLASS>(&CLASS::method __VA_OPT__(,) __VA_ARGS__)
+#define PARALLEL(method, ...) \
+    network::protocol::parallel<CLASS>(&CLASS::method __VA_OPT__(,) __VA_ARGS__)
+
 #endif

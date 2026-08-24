@@ -601,7 +601,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
     }
 
     monitor(true);
-    network::protocol::parallel<CLASS>(&CLASS::do_get_tx_out_set_info);
+    PARALLEL(do_get_tx_out_set_info);
     return true;
 }
 
@@ -612,14 +612,14 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
     object_t result{};
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
-    const auto tip = query.to_confirmed(top);
+    const auto link = query.to_confirmed(top);
 
     // The pinned ancestry excludes genesis, absent from the set (as bitcoind).
     database::header_links branch{};
-    if (!query.get_ancestry(branch, tip, top))
+    if (!query.get_ancestry(branch, link, top))
     {
-        network::protocol::post<CLASS>(&CLASS::complete_scan,
-            database::error::integrity, std::move(result), zero);
+        POST(complete_scan, database::error::integrity, std::move(result),
+            zero);
         return;
     }
 
@@ -628,23 +628,22 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
         database_settings().turbo);
     if (ec)
     {
-        network::protocol::post<CLASS>(&CLASS::complete_scan, ec,
+        POST(complete_scan, ec,
             std::move(result), zero);
         return;
     }
 
-    // A reorganization across the pinned tip voids the scan.
-    if (!query.is_confirmed_block(tip))
+    // A reorganization across the pinned top voids the scan.
+    if (!query.is_confirmed_block(link))
     {
-        network::protocol::post<CLASS>(&CLASS::complete_scan,
-            error::server_error, std::move(result), zero);
+        POST(complete_scan, error::server_error, std::move(result), zero);
         return;
     }
 
     result = object_t
     {
         { "height", top },
-        { "bestblock", encode_hash(query.get_header_key(tip)) },
+        { "bestblock", encode_hash(query.get_header_key(link)) },
         { "transactions", stats.transactions },
         { "txouts", stats.outputs },
 
@@ -654,7 +653,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
             chain::satoshi_per_bitcoin }
     };
 
-    network::protocol::post<CLASS>(&CLASS::complete_scan, code{},
+    POST(complete_scan, code{},
         std::move(result), 512);
 }
 
@@ -718,7 +717,7 @@ bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
     }
 
     monitor(true);
-    network::protocol::parallel<CLASS>(&CLASS::do_scan_tx_out_set, scripts);
+    PARALLEL(do_scan_tx_out_set, scripts);
     return true;
 }
 
@@ -741,7 +740,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
             sha256_hash(data));
         if (ec)
         {
-            network::protocol::post<CLASS>(&CLASS::complete_scan, ec,
+            POST(complete_scan, ec,
                 std::move(result), zero);
             return;
         }
@@ -781,7 +780,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         { "total_amount", to_floating(amount) / chain::satoshi_per_bitcoin }
     };
 
-    network::protocol::post<CLASS>(&CLASS::complete_scan, code{},
+    POST(complete_scan, code{},
         std::move(result), size);
 }
 
@@ -1599,7 +1598,7 @@ bool protocol_bitcoind_blockchain::handle_chase(const code&,
         case node::chase::organized:
         case node::chase::reorganized:
         {
-            network::protocol::post<CLASS>(&CLASS::do_wait_event);
+            POST(do_wait_event);
             break;
         }
         default:

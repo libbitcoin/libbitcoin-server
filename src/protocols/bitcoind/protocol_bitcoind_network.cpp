@@ -182,7 +182,7 @@ void protocol_bitcoind_network::handle_fetch_info(const code& ec,
     if (stopped())
         return;
 
-    network::protocol::post<CLASS>(&CLASS::do_send_info, ec, message);
+    POST(do_send_info, ec, message);
 }
 
 // An empty or unavailable pool is reported as empty (as bitcoind).
@@ -235,7 +235,7 @@ void protocol_bitcoind_network::handle_fetch_nodes(const code& ec,
     if (stopped())
         return;
 
-    network::protocol::post<CLASS>(&CLASS::do_send_nodes, ec, message);
+    POST(do_send_nodes, ec, message);
 }
 
 void protocol_bitcoind_network::do_send_nodes(const code& ec,
