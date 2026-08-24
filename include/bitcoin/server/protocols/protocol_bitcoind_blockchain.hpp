@@ -83,7 +83,7 @@ protected:
     bool handle_get_tx_out(const code& ec,
         rpc_interface::get_tx_out, const std::string&, double, bool) NOEXCEPT;
     bool handle_get_tx_out_set_info(const code& ec,
-        rpc_interface::get_tx_out_set_info) NOEXCEPT;
+        rpc_interface::get_tx_out_set_info, const std::string&) NOEXCEPT;
     bool handle_prune_block_chain(const code& ec,
         rpc_interface::prune_block_chain, double) NOEXCEPT;
     bool handle_save_mempool(const code& ec,
@@ -161,6 +161,15 @@ private:
     void handle_wait_timeout(const code& ec) NOEXCEPT;
     bool wait_done() const NOEXCEPT;
     void send_tip() NOEXCEPT;
+
+    void do_get_tx_out_set_info() NOEXCEPT;
+    void do_scan_tx_out_set(
+        const std::shared_ptr<system::chain::scripts>& scripts) NOEXCEPT;
+    void complete_scan(const code& ec, network::rpc::object_t& result,
+        size_t size) NOEXCEPT;
+
+    // This is thread safe.
+    std::atomic_bool stopping_{};
 
     // These are protected by strand.
     wait wait_{ wait::none };
