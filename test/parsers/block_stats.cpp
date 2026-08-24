@@ -49,7 +49,7 @@ static block make_block(transactions&& txs) NOEXCEPT
 BOOST_AUTO_TEST_CASE(block_stats__coinbase_only__no_fees)
 {
     const auto block = make_block({ make_coinbase() });
-    const auto stats = server::block_stats(block, 1, 40, test_subsidy, false);
+    const auto stats = server::block_stats(block, 1, 40, test_subsidy);
 
     BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("txs").value()), 1u);
     BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("ins").value()), 0u);
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(block_stats__two_paying__fee_statistics)
 {
     const auto block = make_block({ make_coinbase(),
         make_paying(100'000, 90'000), make_paying(50'000, 48'000) });
-    const auto stats = server::block_stats(block, 2, 40, test_subsidy, false);
+    const auto stats = server::block_stats(block, 2, 40, test_subsidy);
 
     BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("txs").value()), 3u);
     BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("ins").value()), 2u);
@@ -95,17 +95,7 @@ BOOST_AUTO_TEST_CASE(block_stats__unspendable_output__excluded_from_actual)
 {
     const script unspendable{ operations{ operation{ opcode::op_return } } };
     const auto block = make_block({ make_coinbase(unspendable) });
-    const auto stats = server::block_stats(block, 1, 40, test_subsidy, false);
-
-    BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
-    BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 0);
-}
-
-// A bip30 repeat coinbase does not add to the actual utxo statistics.
-BOOST_AUTO_TEST_CASE(block_stats__repeat__coinbase_excluded_from_actual)
-{
-    const auto block = make_block({ make_coinbase() });
-    const auto stats = server::block_stats(block, 1, 40, test_subsidy, true);
+    const auto stats = server::block_stats(block, 1, 40, test_subsidy);
 
     BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
     BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 0);

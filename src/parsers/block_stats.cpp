@@ -75,7 +75,7 @@ static std::array<uint64_t, 5> fee_rate_percentiles(
 }
 
 object_t block_stats(const chain::block& block, size_t height,
-    uint32_t median_time_past, uint64_t subsidy, bool repeat) NOEXCEPT
+    uint32_t median_time_past, uint64_t subsidy) NOEXCEPT
 {
     const auto& txs = *block.transactions_ptr();
 
@@ -95,10 +95,9 @@ object_t block_stats(const chain::block& block, size_t height,
         {
             tx_total_output += out->value();
 
-            // Genesis and repeated coinbases do not add to the utxo set,
-            // and unspendable outputs are not included in it.
-            if (is_zero(height) || (repeat && tx->is_coinbase()) ||
-                out->script().is_unspendable())
+            // The genesis coinbase does not add to the utxo set, and
+            // unspendable outputs are not included in it.
+            if (is_zero(height) || out->script().is_unspendable())
                 continue;
 
             ++utxos;

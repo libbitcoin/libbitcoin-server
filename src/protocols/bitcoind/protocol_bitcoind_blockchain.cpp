@@ -400,13 +400,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
         settings.subsidy_interval_blocks, settings.initial_subsidy(),
         settings.forks.bip42);
 
-    // The duplicated-coinbase blocks (bip30 exceptions) do not add to the
-    // utxo set.
-    const auto repeat = chain::chain_state::is_bip30_exception(block->hash(),
-        height);
-
     auto result = block_stats(*block, height, median_time_past(query, link),
-        subsidy, repeat);
+        subsidy);
 
     // An empty selection returns all statistics, otherwise the named subset.
     if (stats.empty())
@@ -630,7 +625,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
 
     database::unspent_stats stats{};
     const auto ec = query.get_unspent_stats(stopping_, stats, branch,
-        system_settings().bip30_exceptions, database_settings().turbo);
+        database_settings().turbo);
     if (ec)
     {
         network::protocol::post<CLASS>(&CLASS::complete_scan, ec,
