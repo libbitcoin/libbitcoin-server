@@ -54,23 +54,22 @@ bool protocol_btcd::handle_load_tx_filter(const code& ec,
         return false;
 
     hashes keys{};
-    if (const auto fault = btcd::filter_keys(keys, addresses, p2kh_, p2sh_,
-        witness_))
+    if (btcd::filter_keys(keys, addresses, p2kh_, p2sh_, witness_))
     {
-        send_error(fault);
+        send_error(error::btcd::invalid_parameter);
         return true;
     }
 
     chain::points points{};
-    if (const auto fault = btcd::filter_points(points, outpoints))
+    if (btcd::filter_points(points, outpoints))
     {
-        send_error(fault);
+        send_error(error::btcd::invalid_parameter);
         return true;
     }
 
     if (!keys.empty() && !archive().address_enabled())
     {
-        send_error(error::not_implemented);
+        send_error(error::btcd::unimplemented);
         return true;
     }
 
@@ -104,7 +103,7 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
         if (ceilinged_add(address_watches_.size(), outpoint_watches_.size()) >=
             maximum)
         {
-            ec = error::subscription_limit;
+            ec = error::btcd::misc_error;
             break;
         }
 
@@ -130,7 +129,7 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
         if (ceilinged_add(address_watches_.size(), outpoint_watches_.size()) >=
             maximum)
         {
-            ec = error::subscription_limit;
+            ec = error::btcd::misc_error;
             break;
         }
 
@@ -157,7 +156,8 @@ void protocol_btcd::complete_load_tx_filter(const code& ec) NOEXCEPT
 
     if (ec)
     {
-        send_error(ec);
+        using namespace error::btcd;
+        send_error(translate(ec, internal_error));
         return;
     }
 
@@ -172,7 +172,7 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
 
     if (!std::holds_alternative<array_t>(blockhashes.value()))
     {
-        send_error(error::invalid_argument);
+        send_error(error::btcd::invalid_params);
         return true;
     }
 
@@ -180,10 +180,11 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
     hashes block_hashes{};
     for (const auto& item: std::get<array_t>(blockhashes.value()))
     {
+        // btcd wraps the hash parse failure as an internal error.
         if (!std::holds_alternative<string_t>(item.value()) ||
             !decode_hash(hash, std::get<string_t>(item.value())))
         {
-            send_error(error::invalid_argument);
+            send_error(error::btcd::internal_error);
             return true;
         }
 
@@ -192,7 +193,7 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
 
     if (!archive().address_enabled())
     {
-        send_error(error::not_implemented);
+        send_error(error::btcd::unimplemented);
         return true;
     }
 
@@ -239,7 +240,7 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
         size_t height{};
         if (!query.get_height(height, query.to_header(hash)))
         {
-            POST_BTCD(complete_rescan_blocks, error::not_found,
+            POST_BTCD(complete_rescan_blocks, error::btcd::invalid_address_or_key,
                 to_shared<array_t>());
             return;
         }
@@ -302,7 +303,8 @@ void protocol_btcd::complete_rescan_blocks(const code& ec,
 
     if (ec)
     {
-        send_error(ec);
+        using namespace error::btcd;
+        send_error(translate(ec, internal_error));
         return;
     }
 

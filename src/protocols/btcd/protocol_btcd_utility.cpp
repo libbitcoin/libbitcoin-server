@@ -68,7 +68,7 @@ bool protocol_btcd::handle_get_block_chain_info(const code& ec,
     if (!chain_info(out, archive(), node_settings().limited_blocks,
         is_current_chain(true)))
     {
-        send_error(database::error::integrity);
+        send_error(error::btcd::internal_error);
         return true;
     }
 
@@ -114,7 +114,7 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
     const auto header = query.get_header(query.to_confirmed(top));
     if (!header)
     {
-        send_error(database::error::integrity);
+        send_error(error::btcd::internal_error);
         return true;
     }
 
@@ -133,7 +133,7 @@ bool protocol_btcd::handle_get_info(const code& ec,
     const auto header = query.get_header(query.to_confirmed(top));
     if (!header)
     {
-        send_error(database::error::integrity);
+        send_error(error::btcd::internal_error);
         return true;
     }
 

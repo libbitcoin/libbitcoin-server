@@ -130,6 +130,9 @@ code translate(const code& ec, error_t failure) NOEXCEPT
     if (!ec)
         return success;
 
+    if (error_category::contains(ec))
+        return ec;
+
     if (database::error::error_category::contains(ec))
         return internal_error;
 
@@ -137,6 +140,72 @@ code translate(const code& ec, error_t failure) NOEXCEPT
 }
 
 } // namespace bitcoind
+
+namespace btcd {
+
+DEFINE_ERROR_T_MESSAGE_MAP(error)
+{
+    // general
+    { success, "success" },
+
+    // json-rpc
+    { invalid_request, "invalid_request" },
+    { method_not_found, "method_not_found" },
+    { invalid_params, "invalid_params" },
+    { internal_error, "internal_error" },
+    { parse_error, "parse_error" },
+
+    // application
+    { misc_error, "misc_error" },
+    { forbidden_by_safe_mode, "forbidden_by_safe_mode" },
+    { type_error, "type_error" },
+    { wallet_error, "wallet_error" },
+    { invalid_address_or_key, "invalid_address_or_key" },
+    { wallet_insufficient_funds, "wallet_insufficient_funds" },
+    { out_of_memory, "out_of_memory" },
+    { invalid_parameter, "invalid_parameter" },
+    { client_not_connected, "client_not_connected" },
+    { client_in_initial_download, "client_in_initial_download" },
+    { wallet_invalid_account_name, "wallet_invalid_account_name" },
+    { wallet_keypool_ran_out, "wallet_keypool_ran_out" },
+    { wallet_unlock_needed, "wallet_unlock_needed" },
+    { wallet_passphrase_incorrect, "wallet_passphrase_incorrect" },
+    { wallet_wrong_enc_state, "wallet_wrong_enc_state" },
+    { wallet_encryption_failed, "wallet_encryption_failed" },
+    { wallet_already_unlocked, "wallet_already_unlocked" },
+    { wallet_not_found, "wallet_not_found" },
+    { wallet_not_specified, "wallet_not_specified" },
+    { database_error, "database_error" },
+    { deserialization_error, "deserialization_error" },
+    { client_node_already_added, "client_node_already_added" },
+    { client_node_not_added, "client_node_not_added" },
+    { verify_error, "verify_error" },
+    { verify_rejected, "verify_rejected" },
+    { verify_already_in_chain, "verify_already_in_chain" },
+    { in_warmup, "in_warmup" },
+    { client_node_not_connected, "client_node_not_connected" },
+    { client_invalid_ip_or_subnet, "client_invalid_ip_or_subnet" },
+    { method_deprecated, "method_deprecated" },
+    { client_mempool_disabled, "client_mempool_disabled" }
+};
+
+DEFINE_ERROR_T_CATEGORY(error, "btcd", "btcd code")
+
+code translate(const code& ec, error_t failure) NOEXCEPT
+{
+    if (!ec)
+        return success;
+
+    if (error_category::contains(ec))
+        return ec;
+
+    if (database::error::error_category::contains(ec))
+        return internal_error;
+
+    return failure;
+}
+
+} // namespace btcd
 } // namespace error
 } // namespace server
 } // namespace libbitcoin

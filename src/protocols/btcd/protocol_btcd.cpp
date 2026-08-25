@@ -136,7 +136,7 @@ void protocol_btcd::handle_receive_post(const code& ec,
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_error(error::method_unauthorized);
+        send_error(error::btcd::invalid_params);
         return;
     }
 
@@ -234,7 +234,7 @@ bool protocol_btcd::handle_stop(const code& ec,
         return false;
 
     // The server/node cannot stop itself.
-    send_error(error::not_implemented);
+    send_error(error::btcd::unimplemented);
     return true;
 }
 
@@ -267,7 +267,7 @@ bool protocol_btcd::handle_notify_new_transactions(const code& ec,
     btcd_interface::notify_new_transactions, bool) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::btcd::unimplemented);
     return true;
 }
 
@@ -275,7 +275,7 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     btcd_interface::stop_notify_new_transactions) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::btcd::unimplemented);
     return true;
 }
 
@@ -286,7 +286,7 @@ bool protocol_btcd::handle_notify_received(const code& ec,
     btcd_interface::notify_received, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::btcd::unimplemented);
     return true;
 }
 
@@ -294,7 +294,7 @@ bool protocol_btcd::handle_stop_notify_received(const code& ec,
     btcd_interface::stop_notify_received, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::btcd::unimplemented);
     return true;
 }
 
@@ -302,7 +302,7 @@ bool protocol_btcd::handle_notify_spent(const code& ec,
     btcd_interface::notify_spent, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::btcd::unimplemented);
     return true;
 }
 
@@ -310,7 +310,7 @@ bool protocol_btcd::handle_stop_notify_spent(const code& ec,
     btcd_interface::stop_notify_spent, const value_t&) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::btcd::unimplemented);
     return true;
 }
 
@@ -326,14 +326,14 @@ bool protocol_btcd::handle_rescan(const code& ec,
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
-        send_error(error::not_found, two * beginblock.size());
+        send_error(error::btcd::invalid_address_or_key, two * beginblock.size());
         return true;
     }
 
     const auto& query = archive();
     if (query.to_header(begin_hash).is_terminal())
     {
-        send_error(error::not_found, two * beginblock.size());
+        send_error(error::btcd::invalid_address_or_key, two * beginblock.size());
         return true;
     }
 
@@ -344,7 +344,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
 
     if (has_addresses || has_outpoints)
     {
-        send_error(error::not_implemented);
+        send_error(error::btcd::unimplemented);
         return true;
     }
 
@@ -353,7 +353,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
     const auto header = query.get_header(confirmed);
     if (!header)
     {
-        send_error(error::not_found);
+        send_error(error::btcd::internal_error);
         return true;
     }
 
