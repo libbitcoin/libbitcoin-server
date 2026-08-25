@@ -1136,6 +1136,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 // gettxoutsetinfo
 
 // The genesis output is excluded from the utxo set (as bitcoind).
+// TODO: pin the hash_serialized_3/muhash digests against bitcoind vectors.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
 {
     const auto response = rpc("gettxoutsetinfo");
@@ -1146,13 +1147,75 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
     BOOST_REQUIRE_EQUAL(result.at("transactions").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(result.at("txouts").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(result.at("bogosize").as_int64(), 9 * (50 + 67));
+    BOOST_REQUIRE_EQUAL(result.at("disk_size").as_int64(), 9 * (48 + 1 + 67));
     BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 450.0);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash_serialized_3")).size(), 64u);
+    BOOST_REQUIRE(!result.as_object().contains("muhash"));
 }
 
-// Utxo set commitments have no consumer here (no assumeutxo).
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__hash_type__invalid)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__muhash__expected)
 {
     const auto response = rpc("gettxoutsetinfo", "[\"muhash\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE_EQUAL(result.at("txouts").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 450.0);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("muhash")).size(), 64u);
+    BOOST_REQUIRE(!result.as_object().contains("hash_serialized_3"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__none__expected)
+{
+    const auto response = rpc("gettxoutsetinfo", "[\"none\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE_EQUAL(result.at("transactions").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("txouts").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("disk_size").as_int64(), 9 * (48 + 1 + 67));
+    BOOST_REQUIRE(!result.as_object().contains("hash_serialized_3"));
+    BOOST_REQUIRE(!result.as_object().contains("muhash"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__bad_hash_type__invalid)
+{
+    const auto response = rpc("gettxoutsetinfo", "[\"sha256\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__height__expected)
+{
+    const auto response = rpc("gettxoutsetinfo", "[\"none\", 5]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bestblock")), block5);
+    BOOST_REQUIRE_EQUAL(result.at("transactions").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("txouts").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 250.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__hash__expected)
+{
+    const auto params = "[\"muhash\", \"" + block5 + "\"]";
+    const auto response = rpc("gettxoutsetinfo", params);
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bestblock")), block5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("muhash")).size(), 64u);
+}
+
+// bitcoind restricts specific block queries (coinstatsindex bounds).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__serialized_at_height__invalid)
+{
+    const auto response = rpc("gettxoutsetinfo", "[\"hash_serialized_3\", 5]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+// bitcoind restricts specific block queries (coinstatsindex bounds).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__no_index_at_height__invalid)
+{
+    const auto response = rpc("gettxoutsetinfo", "[\"muhash\", 5, false]");
     BOOST_REQUIRE(has_error(response));
 }
 
@@ -1170,15 +1233,36 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__abort__false)
     REQUIRE_NO_THROW_FALSE(response.at("result").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__empty_scanobjects__invalid)
+// bitcoind scans the full set when given nothing to match (success, empty).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__empty_scanobjects__empty)
 {
     const auto response = rpc("scantxoutset", "[\"start\", []]");
-    BOOST_REQUIRE(has_error(response));
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE(result.at("success").as_bool());
+    BOOST_REQUIRE(result.at("unspents").as_array().empty());
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 0.0);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__genesis_pk__expected)
+// The genesis output is excluded from the utxo set (as bitcoind).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__genesis_pk__excluded)
 {
     const auto response = rpc("scantxoutset", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE(result.at("success").as_bool());
+    BOOST_REQUIRE(result.at("unspents").as_array().empty());
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__block1_script__expected)
+{
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto txid = encode_hash(coinbase.hash(false));
+    const auto script = coinbase.outputs_ptr()->front()->script().to_data(false);
+    const auto params = "[\"start\", [\"raw(" + encode_base16(script) + ")\"]]";
+
+    const auto response = rpc("scantxoutset", params);
     const auto& result = response.at("result");
     BOOST_REQUIRE(result.is_object());
     BOOST_REQUIRE(result.at("success").as_bool());
@@ -1189,15 +1273,52 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__genesis_pk__expected)
     const auto& unspents = result.at("unspents").as_array();
     BOOST_REQUIRE_EQUAL(unspents.size(), 1u);
     const auto& unspent = unspents.front();
-    BOOST_REQUIRE_EQUAL(as_text(unspent.at("txid")), "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("txid")), txid);
     BOOST_REQUIRE_EQUAL(unspent.at("vout").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(as_text(unspent.at("scriptPubKey")), "4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac");
-    BOOST_REQUIRE_EQUAL(as_text(unspent.at("desc")).find("pk(04678afd"), 0u);
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("scriptPubKey")),
+        encode_base16(script));
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("desc")).find("pk(04"), 0u);
     BOOST_REQUIRE_EQUAL(unspent.at("amount").as_double(), 50.0);
     BOOST_REQUIRE(unspent.at("coinbase").as_bool());
-    BOOST_REQUIRE_EQUAL(unspent.at("height").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(as_text(unspent.at("blockhash")), block0);
-    BOOST_REQUIRE_EQUAL(unspent.at("confirmations").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(unspent.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("blockhash")), block1);
+    BOOST_REQUIRE_EQUAL(unspent.at("confirmations").as_int64(), 9);
+}
+
+// bitcoind's maximum descriptor range (ParseDescriptorRange).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__range_too_large__invalid)
+{
+    const auto response = rpc("scantxoutset", "[\"start\", [{\"desc\": "
+        "\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61de"
+        "b649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\","
+        " \"range\": [0, 1000000]}]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+// The scan path serves without the address index (recovery-grade).
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__scantxoutset__no_address_index__scans,
+    bitcoind_no_address_setup_fixture)
+{
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto txid = encode_hash(coinbase.hash(false));
+    const auto script = coinbase.outputs_ptr()->front()->script().to_data(false);
+    const auto params = "[\"start\", [\"raw(" + encode_base16(script) + ")\"]]";
+
+    const auto response = rpc("scantxoutset", params);
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE(result.at("success").as_bool());
+
+    // The scanned coin count is the full set (blocks 1-9 coinbases).
+    BOOST_REQUIRE_EQUAL(result.at("txouts").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 50.0);
+
+    const auto& unspents = result.at("unspents").as_array();
+    BOOST_REQUIRE_EQUAL(unspents.size(), 1u);
+    const auto& unspent = unspents.front();
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("txid")), txid);
+    BOOST_REQUIRE_EQUAL(unspent.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(unspent.at("confirmations").as_int64(), 9);
 }
 
 // openrpc

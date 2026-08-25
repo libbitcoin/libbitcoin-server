@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <ranges>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -88,7 +89,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_stats, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_chain_tx_stats, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_tx_out, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_get_tx_out_set_info, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_get_tx_out_set_info, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_prune_block_chain, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_save_mempool, _1, _2);
     SUBSCRIBE_BITCOIND(handle_scan_tx_out_set, _1, _2, _3, _4);
@@ -585,47 +586,158 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     return true;
 }
 
+// bitcoind's utxo set coin serialization (outpoint, height code, value,
+// script), the element of both set commitment forms.
+static void to_coin_data(data_chunk& out,
+    const database::unspent_coin& coin) NOEXCEPT
+{
+    constexpr auto overhead = hash_size + sizeof(uint32_t) + sizeof(uint32_t) +
+        sizeof(uint64_t);
+
+    out.resize(overhead + variable_size(coin.script.size()) +
+        coin.script.size());
+    stream::out::fast ostream(out);
+    write::bytes::fast sink(ostream);
+    sink.write_bytes(coin.txid);
+    sink.write_4_bytes_little_endian(coin.index);
+    sink.write_4_bytes_little_endian(bit_or(shift_left(
+        possible_narrow_cast<uint32_t>(coin.height), 1),
+        to_int<uint32_t>(coin.coinbase)));
+    sink.write_8_bytes_little_endian(coin.value);
+    sink.write_variable(coin.script.size());
+    sink.write_bytes(coin.script);
+}
+
 // The response defers to completion of the store scan (see dispatch). This is
 // an administrative query, expected to run long, performed off the strand.
 bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
-    rpc_interface::get_tx_out_set_info, const std::string& hash_type) NOEXCEPT
+    rpc_interface::get_tx_out_set_info, const std::string& hash_type,
+    const value_t& hash_or_height, bool use_index) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    // Utxo set commitments have no consumer here (no assumeutxo).
-    if (hash_type != "none")
+    set_hash type{};
+    if (hash_type == "hash_serialized_3")
+        type = set_hash::serialized;
+    else if (hash_type == "muhash")
+        type = set_hash::muhash;
+    else if (hash_type == "none")
+        type = set_hash::none;
+    else
     {
         send_error(error::invalid_argument);
         return true;
     }
 
+    const auto& query = archive();
+    auto height = query.get_top_confirmed();
+    if (!std::holds_alternative<null_t>(hash_or_height.value()))
+    {
+        // bitcoind restricts specific block queries (coinstatsindex bounds).
+        if ((type == set_hash::serialized) || !use_index)
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        database::header_link link{};
+        if (std::holds_alternative<string_t>(hash_or_height.value()))
+        {
+            hash_digest hash{};
+            if (!decode_hash(hash, std::get<string_t>(hash_or_height.value())))
+            {
+                send_error(error::invalid_argument);
+                return true;
+            }
+
+            link = query.to_header(hash);
+        }
+        else if (std::holds_alternative<number_t>(hash_or_height.value()))
+        {
+            if (!to_integer(height,
+                std::get<number_t>(hash_or_height.value())))
+            {
+                send_error(error::invalid_argument);
+                return true;
+            }
+
+            link = query.to_confirmed(height);
+        }
+        else
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        if (!query.get_height(height, link) ||
+            query.to_confirmed(height) != link)
+        {
+            send_error(error::not_found);
+            return true;
+        }
+    }
+
     monitor(true);
-    PARALLEL(do_get_tx_out_set_info);
+    PARALLEL(do_get_tx_out_set_info, type, height);
     return true;
 }
 
-void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
+void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
+    size_t height) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     object_t result{};
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto link = query.to_confirmed(top);
+    const auto link = query.to_confirmed(height);
 
     // The pinned ancestry excludes genesis, absent from the set (as bitcoind).
     database::header_links branch{};
-    if (!query.get_ancestry(branch, link, top))
+    if (!query.get_ancestry(branch, link, height))
     {
         POST(complete_scan, database::error::integrity, std::move(result),
             zero);
         return;
     }
 
+    code ec{};
+    hash_digest digest{};
     database::unspent_totals totals{};
-    const auto ec = query.get_unspent_totals(stopping_, totals, branch,
-        database_settings().turbo);
+    if (type == set_hash::none)
+    {
+        ec = query.get_unspent_totals(stopping_, totals, branch,
+            database_settings().turbo);
+    }
+    else
+    {
+        // The commitment accumulates each visited coin, and the totals with
+        // it, so the totals scan is not repeated for hashed queries.
+        muhash3072 muhash{};
+        accumulator<sha256> serial{};
+        data_chunk element{};
+        const auto visit = [&](const database::unspent_coin& coin) NOEXCEPT
+        {
+            if (coin.first)
+                ++totals.transactions;
+
+            to_coin_data(element, coin);
+            ++totals.outputs;
+            totals.value += coin.value;
+            totals.script_bytes += coin.script.size();
+            totals.coin_bytes += element.size();
+            if (type == set_hash::muhash)
+                muhash.insert(element);
+            else
+                serial.write(element);
+        };
+
+        ec = query.get_unspent_coins(stopping_, visit, branch,
+            type == set_hash::serialized, database_settings().turbo);
+        digest = (type == set_hash::muhash) ? muhash.flush() :
+            serial.double_flush();
+    }
+
     if (ec)
     {
         POST(complete_scan, ec,
@@ -642,16 +754,25 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
 
     result = object_t
     {
-        { "height", top },
+        { "height", height },
         { "bestblock", encode_hash(query.get_header_key(link)) },
         { "transactions", totals.transactions },
         { "txouts", totals.outputs },
 
         // bitcoind's per-utxo accounting fiction (50 byte overhead).
         { "bogosize", 50u * totals.outputs + totals.script_bytes },
+
+        // The coin-serialized set size (bitcoind estimates leveldb size).
+        { "disk_size", totals.coin_bytes },
         { "total_amount", to_floating(totals.value) /
             chain::satoshi_per_bitcoin }
     };
+
+    if (type == set_hash::serialized)
+        result.emplace("hash_serialized_3", encode_hash(digest));
+
+    if (type == set_hash::muhash)
+        result.emplace("muhash", encode_hash(digest));
 
     POST(complete_scan, code{},
         std::move(result), 512);
@@ -673,7 +794,9 @@ bool protocol_bitcoind_blockchain::handle_save_mempool(const code& ec,
     return true;
 }
 
-// The response defers to completion of the indexed scan (see dispatch).
+// The response defers to completion of the utxo scan (see dispatch). The
+// expansion may require a million derivations and without the address index
+// the scan walks the full utxo set (recovery-grade), both off the strand.
 bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
     rpc_interface::scan_tx_out_set, const std::string& action,
     const array_t& scanobjects) NOEXCEPT
@@ -694,88 +817,173 @@ bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
         return true;
     }
 
-    if (action != "start" || scanobjects.empty())
+    if (action != "start")
     {
         send_error(error::invalid_argument);
         return true;
     }
 
-    if (!archive().address_enabled())
-    {
-        send_error(error::not_implemented);
-        return true;
-    }
-
-    const auto scripts = std::make_shared<chain::scripts>();
-    for (const auto& item: scanobjects)
-    {
-        if (!expand_scan_object(*scripts, item))
-        {
-            send_error(error::invalid_argument);
-            return true;
-        }
-    }
-
     monitor(true);
-    PARALLEL(do_scan_tx_out_set, scripts);
+    PARALLEL(do_scan_tx_out_set, std::make_shared<array_t>(scanobjects));
     return true;
 }
 
 void protocol_bitcoind_blockchain::do_scan_tx_out_set(
-    const std::shared_ptr<chain::scripts>& scripts) NOEXCEPT
+    const std::shared_ptr<array_t>& objects) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    uint64_t amount{};
-    array_t unspents{};
     object_t result{};
-    const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-
-    for (const auto& script: *scripts)
+    chain::scripts scripts{};
+    for (const auto& item: *objects)
     {
-        database::unspents outs{};
-        const auto data = script.to_data(false);
-        auto ec = query.get_confirmed_unspent(stopping_, outs,
-            sha256_hash(data));
-        if (ec)
+        if (!expand_scan_object(scripts, item))
         {
-            POST(complete_scan, ec,
-                std::move(result), zero);
+            POST(complete_scan, error::invalid_argument, std::move(result),
+                zero);
             return;
         }
+    }
 
-        const auto hex = encode_base16(data);
-        const auto desc = infer_descriptor(script);
-        for (const auto& utxo: outs)
+    // Needle identity is the script hash (the address index key). The set
+    // excludes unspendable outputs, so those needles are dropped (as
+    // bitcoind), and needles deduplicate repeated expressions.
+    struct needle { std::string hex; std::string desc; };
+    std::unordered_map<hash_digest, needle> needles{};
+    for (const auto& script: scripts)
+    {
+        if (script.is_unspendable())
+            continue;
+
+        const auto data = script.to_data(false);
+        needles.emplace(sha256_hash(data),
+            needle{ encode_base16(data), infer_descriptor(script) });
+    }
+
+    struct match
+    {
+        hash_digest txid;
+        uint32_t index;
+        uint64_t value;
+        size_t height;
+        bool coinbase;
+        const needle* found;
+    };
+
+    code ec{};
+    uint64_t txouts{};
+    std_vector<match> matches{};
+    const auto& query = archive();
+    const auto top = query.get_top_confirmed();
+    const auto link = query.to_confirmed(top);
+    const auto bip30 = query.envelope().forks.bip30;
+
+    if (query.address_enabled())
+    {
+        // Indexed candidates avoid the full scan, so the scanned coin count
+        // reflects only examined candidates (bitcoind scans the whole set).
+        for (const auto& [key, item]: needles)
         {
-            const auto& target = utxo.out.point();
-            unspents.emplace_back(object_t
-            {
-                { "txid", encode_hash(target.hash()) },
-                { "vout", target.index() },
-                { "scriptPubKey", hex },
-                { "desc", desc },
-                { "amount", to_floating(utxo.out.value()) /
-                    chain::satoshi_per_bitcoin },
-                { "coinbase", query.is_coinbase(query.to_tx(target.hash())) },
-                { "height", utxo.height },
-                { "blockhash", encode_hash(query.get_header_key(
-                    query.to_confirmed(utxo.height))) },
-                { "confirmations", add1(floored_subtract(top, utxo.height)) }
-            });
+            database::unspents outs{};
+            ec = query.get_confirmed_unspent(stopping_, outs, key,
+                database_settings().turbo);
+            if (ec)
+                break;
 
-            amount += utxo.out.value();
+            for (const auto& utxo: outs)
+            {
+                // The genesis output is excluded from the set (as bitcoind).
+                if (is_zero(utxo.height) && is_zero(utxo.position))
+                    continue;
+
+                ++txouts;
+                matches.emplace_back(utxo.out.point().hash(),
+                    utxo.out.point().index(), utxo.out.value(), utxo.height,
+                    is_zero(utxo.position), &item);
+            }
         }
+    }
+    else
+    {
+        // The pinned ancestry excludes genesis, absent from the set.
+        database::header_links branch{};
+        if (!query.get_ancestry(branch, link, top))
+        {
+            ec = database::error::integrity;
+        }
+        else
+        {
+            const auto visit = [&](const database::unspent_coin& coin) NOEXCEPT
+            {
+                ++txouts;
+                const auto it = needles.find(accumulator<sha256>::hash(
+                    coin.script));
+                if (it != needles.end())
+                    matches.emplace_back(coin.txid, coin.index, coin.value,
+                        coin.height, coin.coinbase, &it->second);
+            };
+
+            ec = query.get_unspent_coins(stopping_, visit, branch, false,
+                database_settings().turbo);
+        }
+    }
+
+    if (ec)
+    {
+        POST(complete_scan, ec,
+            std::move(result), zero);
+        return;
+    }
+
+    // A reorganization across the pinned top voids the scan.
+    if (!query.is_confirmed_block(link))
+    {
+        POST(complete_scan, error::server_error, std::move(result), zero);
+        return;
+    }
+
+    // Report in canonical (txid, index) order (as bitcoind).
+    std::sort(matches.begin(), matches.end(),
+        [](const auto& left, const auto& right) NOEXCEPT
+        {
+            return (left.txid == right.txid) ? (left.index < right.index) :
+                (left.txid < right.txid);
+        });
+
+    uint64_t amount{};
+    array_t unspents{};
+    for (auto& item: matches)
+    {
+        // bitcoind retains duplicated coinbases at the overwriting heights.
+        if (bip30 && item.coinbase)
+            item.height = (item.height == 91812) ? 91842 :
+                (item.height == 91722) ? 91880 : item.height;
+
+        unspents.emplace_back(object_t
+        {
+            { "txid", encode_hash(item.txid) },
+            { "vout", item.index },
+            { "scriptPubKey", item.found->hex },
+            { "desc", item.found->desc },
+            { "amount", to_floating(item.value) /
+                chain::satoshi_per_bitcoin },
+            { "coinbase", item.coinbase },
+            { "height", item.height },
+            { "blockhash", encode_hash(query.get_header_key(
+                query.to_confirmed(item.height))) },
+            { "confirmations", add1(floored_subtract(top, item.height)) }
+        });
+
+        amount += item.value;
     }
 
     const auto size = add1(unspents.size()) * 384u;
     result = object_t
     {
         { "success", true },
+        { "txouts", txouts },
         { "height", top },
-        { "bestblock", encode_hash(query.get_header_key(
-            query.to_confirmed(top))) },
+        { "bestblock", encode_hash(query.get_header_key(link)) },
         { "unspents", std::move(unspents) },
         { "total_amount", to_floating(amount) / chain::satoshi_per_bitcoin }
     };
@@ -1310,9 +1518,9 @@ static bool expand_scan_object(chain::scripts& out,
     uint32_t begin{};
     uint32_t end{};
 
-    // bitcoind's default range for ranged descriptors.
+    // bitcoind's default and maximum ranges for ranged descriptors.
     constexpr uint32_t default_range = 1'000;
-    constexpr uint32_t maximum_range = 10'000;
+    constexpr uint32_t maximum_range = 1'000'000;
 
     if (std::holds_alternative<string_t>(item.value()))
     {
@@ -1363,7 +1571,8 @@ static bool expand_scan_object(chain::scripts& out,
     }
 
     const wallet::descriptor parsed{ expression };
-    if (!parsed || floored_subtract(end, begin) >= maximum_range)
+    if (!parsed || to_bool(shift_right(end, 31u)) ||
+        floored_subtract(end, begin) >= maximum_range)
         return false;
 
     if (!parsed.ranged())

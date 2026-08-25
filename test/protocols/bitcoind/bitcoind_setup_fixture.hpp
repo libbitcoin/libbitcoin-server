@@ -134,6 +134,22 @@ struct bitcoind_current_setup_fixture
     }
 };
 
+// Configured with no address index -- for tests of the utxo set scan path.
+struct bitcoind_no_address_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_no_address_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.database.outs.buckets = 0;
+        })
+    {
+    }
+};
+
 struct bitcoind_witness_setup_fixture
     : bitcoind_setup_fixture
 {

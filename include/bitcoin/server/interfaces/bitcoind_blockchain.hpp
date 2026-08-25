@@ -40,7 +40,7 @@ struct bitcoind_blockchain_methods
         method<"getblockstats", value_t, optional<empty::array>>{ "hash_or_height", "stats" },
         method<"getchaintxstats", optional<-1.0>, optional<""_t>>{ "nblocks", "blockhash" },
         method<"gettxout", string_t, number_t, optional<true>>{ "txid", "n", "include_mempool" },
-        method<"gettxoutsetinfo", optional<"none"_t>>{ "hash_type" },
+        method<"gettxoutsetinfo", optional<"hash_serialized_3"_t>, optional<empty::value>, optional<true>>{ "hash_type", "hash_or_height", "use_index" },
         method<"pruneblockchain", number_t>{ unimplemented, "height" },
         method<"savemempool">{ unimplemented },
         method<"scantxoutset", string_t, optional<empty::array>>{ "action", "scanobjects" },
