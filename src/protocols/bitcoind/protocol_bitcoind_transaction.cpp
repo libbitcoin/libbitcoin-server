@@ -88,7 +88,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, txid))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -98,7 +98,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     const auto tx = query.get_transaction(link, witness);
     if (!tx)
     {
-        send_error(error::not_found, txid, txid.size());
+        send_error(error::bitcoind::invalid_address_or_key, txid, txid.size());
         return true;
     }
 
@@ -112,7 +112,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     size_t level{};
     if (!to_integer(level, verbose) || level > verbosity::json_verbose)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -146,14 +146,14 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
     const auto tx = to_shared<chain::transaction>(data, true);
     if (!tx->is_valid())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -176,7 +176,7 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
 
     if (rawtxs.empty())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -186,7 +186,7 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     {
         if (!std::holds_alternative<string_t>(item.value()))
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::type_error);
             return true;
         }
 
@@ -194,7 +194,7 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
         const chain::transaction tx{ hexer, true };
         if (!tx.is_valid() || !hexer.is_exhausted())
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::deserialization_error);
             return true;
         }
 
@@ -324,7 +324,7 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -336,7 +336,7 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
 
     if (!tx.is_valid())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -522,7 +522,7 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
     const psbt_tx doc(psbt);
     if (!doc)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -594,7 +594,7 @@ bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
     const psbt_tx doc(psbt);
     if (!doc)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -678,14 +678,20 @@ bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
     {
         if (!std::holds_alternative<string_t>(item.value()))
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::type_error);
             return true;
         }
 
         psbt_tx doc(std::get<string_t>(item.value()));
-        if (!doc || (combined && !combined.combine(doc)))
+        if (!doc)
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::deserialization_error);
+            return true;
+        }
+
+        if (combined && !combined.combine(doc))
+        {
+            send_error(error::bitcoind::invalid_parameter);
             return true;
         }
 
@@ -695,7 +701,7 @@ bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
 
     if (!combined)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -713,7 +719,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -724,7 +730,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
 
     if (!tx.is_valid())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -738,7 +744,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     {
         if (!permitsigdata)
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::deserialization_error);
             return true;
         }
 
@@ -755,7 +761,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     const psbt_tx doc(tx);
     if (!doc)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -781,7 +787,7 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
     const psbt_tx doc(tx);
     if (!doc)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -799,7 +805,7 @@ bool protocol_bitcoind_transaction::handle_finalize_psbt(const code& ec,
     psbt_tx doc(psbt);
     if (!doc)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -829,7 +835,7 @@ bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
 
     if (txs.size() < 2u)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -838,14 +844,20 @@ bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
     {
         if (!std::holds_alternative<string_t>(item.value()))
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::type_error);
             return true;
         }
 
         psbt_tx doc(std::get<string_t>(item.value()));
-        if (!doc || (joined && !joined.join(doc)))
+        if (!doc)
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::deserialization_error);
+            return true;
+        }
+
+        if (joined && !joined.join(doc))
+        {
+            send_error(error::bitcoind::invalid_parameter);
             return true;
         }
 
@@ -861,7 +873,7 @@ bool protocol_bitcoind_transaction::handle_descriptor_process_psbt(const code& e
     rpc_interface::descriptor_process_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 
@@ -875,14 +887,14 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     // Descriptor expansion requires the descriptor engine (pending).
     if (!descriptors.empty())
     {
-        send_error(error::not_implemented);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
     psbt_tx doc(psbt);
     if (!doc)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -918,7 +930,7 @@ bool protocol_bitcoind_transaction::handle_abort_private_broadcast(const code& e
     rpc_interface::abort_private_broadcast) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 
@@ -926,7 +938,7 @@ bool protocol_bitcoind_transaction::handle_get_private_broadcast_info(const code
     rpc_interface::get_private_broadcast_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 
@@ -934,7 +946,7 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
     rpc_interface::submit_package) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::client_mempool_disabled);
     return true;
 }
 

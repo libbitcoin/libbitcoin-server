@@ -137,7 +137,7 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
     }
 
     // No subgroup interface defines the method.
-    send_error(network::error::unexpected_method);
+    send_error(error::bitcoind::method_not_found);
 }
 
 // The websocket transport of the interface: subgroup protocols handle claimed
@@ -179,7 +179,7 @@ void protocol_bitcoind::dispatch_websocket(
     }
 
     // No subgroup interface defines the method.
-    send_error(network::error::unexpected_method);
+    send_error(error::bitcoind::method_not_found);
 }
 
 // Help.

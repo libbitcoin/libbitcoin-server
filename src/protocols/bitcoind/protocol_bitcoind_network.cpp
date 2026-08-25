@@ -220,7 +220,7 @@ bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
     if (!to_integer(node_count_, count) ||
         (!network.empty() && network != "ipv4" && network != "ipv6"))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -310,7 +310,7 @@ bool protocol_bitcoind_network::handle_clear_banned(const code& ec,
     rpc_interface::clear_banned) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::database_error);
     return true;
 }
 
@@ -318,7 +318,7 @@ bool protocol_bitcoind_network::handle_list_banned(const code& ec,
     rpc_interface::list_banned) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::database_error);
     return true;
 }
 
@@ -326,7 +326,7 @@ bool protocol_bitcoind_network::handle_set_ban(const code& ec,
     rpc_interface::set_ban) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::database_error);
     return true;
 }
 
@@ -341,8 +341,8 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
 
     if (command != "add" && command != "onetry")
     {
-        send_error(command == "remove" ? error::not_implemented :
-            error::invalid_argument);
+        send_error(command == "remove" ? error::bitcoind::client_node_not_added :
+            error::bitcoind::misc_error);
         return true;
     }
 
@@ -353,7 +353,7 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
     }
     catch (const std::exception&)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -365,7 +365,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     rpc_interface::disconnect_node) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 
@@ -373,7 +373,7 @@ bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
     rpc_interface::export_asmap) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 
@@ -381,7 +381,7 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
     rpc_interface::get_added_node_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::client_node_not_added);
     return true;
 }
 
@@ -428,7 +428,7 @@ bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     rpc_interface::get_peer_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 
