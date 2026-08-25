@@ -36,7 +36,12 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            // The store snapshots database settings at construction.
             config_.database.path = TEST_DIRECTORY;
+            config_.database.interval_depth = 2;
+            if (configure)
+                configure(config_);
+
             return config_.database;
         }()
     },
@@ -45,7 +50,6 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
 {
     test::clear(test::directory);
 
-    auto& database_settings = config_.database;
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
     auto& server_settings = config_.server;
@@ -53,14 +57,10 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
 
     bitcoind.binds = { { BITCOIND_ENDPOINT } };
     bitcoind.connections = 1;
-    database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
-
-    if (configure)
-        configure(config_);
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
