@@ -43,7 +43,7 @@ void protocol_electrum::handle_blockchain_number_of_blocks_subscribe(
 
     if (at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -60,14 +60,14 @@ void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
 
     if (at_least(electrum::version::v1_4))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     size_t position{};
     if (!to_integer(position, index))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -88,7 +88,7 @@ void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
     {
         if (!query.get_wire_header(writer, link))
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
     }
@@ -104,14 +104,14 @@ void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
 
     if (at_least(electrum::version::v1_4))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     size_t target{};
     if (!to_integer(target, height))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -130,7 +130,7 @@ void protocol_electrum::handle_blockchain_block_get_header(const code& ec,
     write::base16::fast writer{ sink };
     if (!query.get_wire_header(writer, link))
     {
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -147,7 +147,7 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
 
     if (!at_least(electrum::version::v1_3))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -156,7 +156,7 @@ void protocol_electrum::handle_blockchain_block_header(const code& ec,
     if (!to_integer(starting, height) ||
         !to_integer(waypoint, cp_height))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -173,7 +173,7 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
 
     if (!at_least(electrum::version::v1_2))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -184,13 +184,13 @@ void protocol_electrum::handle_blockchain_block_headers(const code& ec,
         !to_integer(waypoint, cp_height) ||
         !to_integer(starting, start_height))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     if (!is_zero(cp_height) && !at_least(electrum::version::v1_4))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -211,17 +211,17 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     // ambiguous at count = 0 so guard must be applied to both args and prover.
     if (is_add_overflow(starting, quantity))
     {
-        send_code(error::argument_overflow);
+        send_code(error::electrum::bad_request);
         return;
     }
     else if ((starting > top) || (prove && waypoint > top))
     {
-        send_code(error::not_found);
+        send_code(error::electrum::bad_request);
         return;
     }
     else if (prove && target > waypoint)
     {
-        send_code(error::target_overflow);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -237,7 +237,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
     if (single && !is_one(links.size()))
     {
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -248,7 +248,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         const auto header = query.get_wire_header(links.front());
         if (header.empty())
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
 
@@ -268,7 +268,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
                 const auto header = query.get_wire_header(link);
                 if (header.empty())
                 {
-                    send_code(error::server_error);
+                    send_code(error::electrum::daemon_error);
                     return;
                 }
 
@@ -296,7 +296,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             {
                 if (!query.get_wire_header(writer, link))
                 {
-                    send_code(error::server_error);
+                    send_code(error::electrum::daemon_error);
                     return;
                 }
             }
@@ -323,7 +323,8 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             if (const auto code = query.get_merkle_root_and_proof(root, proof,
                 target, waypoint))
             {
-                send_code(code);
+                using namespace error::electrum;
+                send_code(translate(code, daemon_error));
                 return;
             }
 
@@ -364,7 +365,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         (!at_least(electrum::version::v1_2) && raw_defined) ||
         ( at_least(electrum::version::v1_4) && raw_defined))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -375,7 +376,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
     // This is unlikely but possible due to a race condition during reorg.
     if (link.is_terminal())
     {
-        send_code(error::not_found);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -386,7 +387,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         const auto header = query.get_wire_header(link);
         if (header.empty())
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
 
@@ -402,7 +403,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         const auto header = query.get_header(link);
         if (!header)
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
 
@@ -410,7 +411,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         value = value_from(electrumx(*header));
         if (!value.is_object())
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
 

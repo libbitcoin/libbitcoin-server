@@ -205,6 +205,45 @@ DECLARE_ERROR_T_CODE_CATEGORY(error);
 BC_API code translate(const code& ec, error_t failure) NOEXCEPT;
 
 } // namespace btcd
+
+namespace electrum {
+
+/// Values are electrumx/aiorpcx wire codes, published as the json-rpc error
+/// code. The electrum client disconnects on method_not_found, internal_error,
+/// excessive_resource_usage and server_busy.
+enum error_t : int32_t
+{
+    /// general
+    success = 0,
+
+    /// application (electrumx)
+    bad_request = 1,
+    daemon_error = 2,
+    excessive_history = 10'001,
+
+    /// json-rpc (aiorpcx)
+    invalid_request = -32600,
+    method_not_found = -32601,
+    invalid_args = -32602,
+    internal_error = -32603,
+    parse_error = -32700,
+
+    /// resource (aiorpcx)
+    unavailable = -100,
+    excessive_resource_usage = -101,
+    server_busy = -102
+};
+
+// No current need for error_code equivalence mapping.
+DECLARE_ERROR_T_CODE_CATEGORY(error);
+
+/// Map a foreign category code to the electrum code space, where a depth
+/// limit is excessive history, any other store fault is a daemon error, and
+/// any other failure is reported as the given code. A code of this category
+/// passes through unchanged.
+BC_API code translate(const code& ec, error_t failure) NOEXCEPT;
+
+} // namespace electrum
 } // namespace error
 } // namespace server
 } // namespace libbitcoin
@@ -212,5 +251,6 @@ BC_API code translate(const code& ec, error_t failure) NOEXCEPT;
 DECLARE_STD_ERROR_REGISTRATION(bc::server::error::error)
 DECLARE_STD_ERROR_REGISTRATION(bc::server::error::bitcoind::error)
 DECLARE_STD_ERROR_REGISTRATION(bc::server::error::btcd::error)
+DECLARE_STD_ERROR_REGISTRATION(bc::server::error::electrum::error)
 
 #endif

@@ -48,7 +48,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
 
     if (at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -56,7 +56,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     hash_digest hash{};
     if (!to_integer(offset, index) || !decode_hash(hash, tx_hash))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -73,7 +73,7 @@ void protocol_electrum::handle_blockchain_utxo_get_address(const code& ec,
     const auto script = query.get_output_script(output);
     if (!script)
     {
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -98,7 +98,7 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -107,7 +107,7 @@ void protocol_electrum::handle_blockchain_outpoint_get_status(const code& ec,
     if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash) ||
         !is_valid_hint(spk_hint))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -132,7 +132,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -141,7 +141,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
     if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash) ||
         !is_valid_hint(spk_hint))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -155,7 +155,7 @@ void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     outpoint_subscription sub{};
-    code ec{ error::subscription_limit };
+    code ec{ error::electrum::excessive_resource_usage };
     if (outpoint_subscriptions_.size() < options().maximum_subscriptions)
     {
         ec = error::success;
@@ -179,7 +179,8 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
 
     if (ec)
     {
-        send_code(ec);
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
         return;
     }
 
@@ -213,7 +214,7 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -221,7 +222,7 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
     hash_digest hash{};
     if (!to_integer(index, txout_idx) || !decode_hash(hash, tx_hash))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 

@@ -24,12 +24,13 @@ BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 // blockchain.transaction.broadcast
 
 using namespace system;
-static const code not_found{ server::error::not_found };
-static const code wrong_version{ server::error::wrong_version };
-static const code not_implemented{ server::error::not_implemented };
-static const code invalid_argument{ server::error::invalid_argument };
-static const code unsupported_argument{ server::error::unsupported_argument };
-static const code unconfirmable_transaction{ server::error::unconfirmable_transaction };
+static const code not_found{ server::error::electrum::bad_request };
+static const code daemon_error{ server::error::electrum::daemon_error };
+static const code wrong_version{ server::error::electrum::bad_request };
+static const code not_implemented{ server::error::electrum::method_not_found };
+static const code invalid_argument{ server::error::electrum::bad_request };
+static const code unsupported_argument{ server::error::electrum::bad_request };
+static const code unconfirmable_transaction{ server::error::electrum::daemon_error };
 static const code coinbase_transaction{ system::error::coinbase_transaction };
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__empty__invalid_argument)
@@ -78,7 +79,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__v1_6_genesis_co
     constexpr auto request = R"({"id":74,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % tx0_text).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), coinbase_transaction.value());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), daemon_error.value());
 }
 
 // blockchain.transaction.broadcast_package
@@ -209,7 +210,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__nonexistent_tx__not_f
     const auto request = R"({"id":79,"method":"blockchain.transaction.get","params":["%1%",false]})" "\n";
     const auto response = get((boost_format(request) % bogus).str());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), daemon_error.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__missing_verbose__defaults_false)

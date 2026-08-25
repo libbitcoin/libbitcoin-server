@@ -45,7 +45,7 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -60,13 +60,13 @@ void protocol_electrum::get_balance(const hash_digest& hash) NOEXCEPT
     BC_ASSERT(stranded());
     if (hash == null_hash)
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     if (!archive().address_enabled())
     {
-        send_code(error::not_implemented);
+        send_code(error::electrum::method_not_found);
         return;
     }
 
@@ -93,7 +93,8 @@ void protocol_electrum::complete_get_balance(const code& ec,
 
     if (ec)
     {
-        send_code(ec);
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
         return;
     }
 
@@ -118,7 +119,7 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -133,13 +134,13 @@ void protocol_electrum::get_history(const system::hash_digest& hash) NOEXCEPT
     BC_ASSERT(stranded());
     if (hash == null_hash)
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     if (!archive().address_enabled())
     {
-        send_code(error::not_implemented);
+        send_code(error::electrum::method_not_found);
         return;
     }
 
@@ -169,7 +170,8 @@ void protocol_electrum::complete_get_history(const code& ec,
 
     if (ec)
     {
-        send_code(ec);
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
         return;
     }
 
@@ -191,7 +193,7 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -206,13 +208,13 @@ void protocol_electrum::get_mempool(const system::hash_digest& hash) NOEXCEPT
     BC_ASSERT(stranded());
     if (hash == null_hash)
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     if (!archive().address_enabled())
     {
-        send_code(error::not_implemented);
+        send_code(error::electrum::method_not_found);
         return;
     }
 
@@ -241,7 +243,8 @@ void protocol_electrum::complete_get_mempool(const code& ec,
 
     if (ec)
     {
-        send_code(ec);
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
         return;
     }
 
@@ -262,7 +265,7 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -277,13 +280,13 @@ void protocol_electrum::list_unspent(const system::hash_digest& hash) NOEXCEPT
     BC_ASSERT(stranded());
     if (hash == null_hash)
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     if (!archive().address_enabled())
     {
-        send_code(error::not_implemented);
+        send_code(error::electrum::method_not_found);
         return;
     }
 
@@ -310,7 +313,8 @@ void protocol_electrum::complete_list_unspent(const code& ec,
 
     if (ec)
     {
-        send_code(ec);
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
         return;
     }
 

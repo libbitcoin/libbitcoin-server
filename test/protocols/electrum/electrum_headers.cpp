@@ -22,10 +22,10 @@
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 using namespace system;
-static const code not_found{ server::error::not_found };
-static const code wrong_version{ server::error::wrong_version };
-static const code target_overflow{ server::error::target_overflow };
-static const code invalid_argument{ server::error::invalid_argument };
+static const code not_found{ server::error::electrum::bad_request };
+static const code wrong_version{ server::error::electrum::bad_request };
+static const code target_overflow{ server::error::electrum::bad_request };
+static const code invalid_argument{ server::error::electrum::bad_request };
 
 // blockchain.numblocks.subscribe
 

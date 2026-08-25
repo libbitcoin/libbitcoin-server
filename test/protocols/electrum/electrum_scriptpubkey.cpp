@@ -20,9 +20,9 @@
 #include "electrum_setup_fixture.hpp"
 
 using namespace system;
-static const code not_found{ server::error::not_found };
-static const code wrong_version{ server::error::wrong_version };
-static const code invalid_argument{ server::error::invalid_argument };
+static const code not_found{ server::error::electrum::bad_request };
+static const code wrong_version{ server::error::electrum::bad_request };
+static const code invalid_argument{ server::error::electrum::bad_request };
 static const chain::script bogus{ chain::script::to_pay_key_hash_pattern({ 0x42 }) };
 static const chain::script found{ chain::script::to_pay_key_hash_pattern({ 0x02 }) };
 static const auto bogus_script = encode_base16(bogus.to_data(false));

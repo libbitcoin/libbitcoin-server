@@ -38,7 +38,7 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
 
     if (!at_least(electrum::version::v1_2))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -56,7 +56,7 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
     // Not documented, but replaces blockchain.relayfee.
     if (!at_least(electrum::version::v1_6))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 

@@ -206,6 +206,52 @@ code translate(const code& ec, error_t failure) NOEXCEPT
 }
 
 } // namespace btcd
+
+namespace electrum {
+
+DEFINE_ERROR_T_MESSAGE_MAP(error)
+{
+    // general
+    { success, "success" },
+
+    // application
+    { bad_request, "bad_request" },
+    { daemon_error, "daemon_error" },
+    { excessive_history, "excessive_history" },
+
+    // json-rpc
+    { invalid_request, "invalid_request" },
+    { method_not_found, "method_not_found" },
+    { invalid_args, "invalid_args" },
+    { internal_error, "internal_error" },
+    { parse_error, "parse_error" },
+
+    // resource
+    { unavailable, "unavailable" },
+    { excessive_resource_usage, "excessive_resource_usage" },
+    { server_busy, "server_busy" }
+};
+
+DEFINE_ERROR_T_CATEGORY(error, "electrum", "electrum code")
+
+code translate(const code& ec, error_t failure) NOEXCEPT
+{
+    if (!ec)
+        return success;
+
+    if (error_category::contains(ec))
+        return ec;
+
+    if (ec == database::error::depth_limited)
+        return excessive_history;
+
+    if (database::error::error_category::contains(ec))
+        return daemon_error;
+
+    return failure;
+}
+
+} // namespace electrum
 } // namespace error
 } // namespace server
 } // namespace libbitcoin

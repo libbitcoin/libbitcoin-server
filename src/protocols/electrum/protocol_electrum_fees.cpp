@@ -53,27 +53,27 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
 
     if (!at_least(electrum::version::v1_0))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     size_t target{};
     if (!to_integer(target, number))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     if (!mode.empty() && !at_least(electrum::version::v1_6))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     const auto mode_ = mode_from_string(mode);
     if (mode_ == mode_t::unknown)
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -105,7 +105,7 @@ void protocol_electrum::complete_estimate_fee(const code& ec,
     if (!disabled && ec)
     {
         // node::error::estimates_failed, implies store fault.
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -129,7 +129,7 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
     if (!at_least(electrum::version::v1_0) ||
          at_least(electrum::version::v1_6))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
