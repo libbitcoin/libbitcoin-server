@@ -117,18 +117,24 @@ static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader getblockstats "
     "getchaintxstats gettxout verifychain gettxoutproof verifytxoutproof "
-    "getchainstates getchaintips getdeploymentinfo getdifficulty");
+    "getchainstates getchaintips getdeploymentinfo getdescriptoractivity "
+    "getdifficulty scanblocks waitforblock waitforblockheight "
+    "waitfornewblock");
 static_assert(bitcoind_control_methods::names ==
-    "help getmemoryinfo getrpcinfo logging uptime");
+    "help getmemoryinfo getopenrpcinfo getrpcinfo logging uptime");
 static_assert(bitcoind_mining_methods::names ==
-    "getnetworkhashps getmininginfo");
+    "getnetworkhashps getmininginfo submitblock submitheader");
 static_assert(bitcoind_network_methods::names ==
-    "getnetworkinfo getconnectioncount getnettotals");
+    "getnetworkinfo addnode getaddrmaninfo getconnectioncount getnettotals "
+    "getnodeaddresses ping setnetworkactive");
 static_assert(bitcoind_notifications_methods::names == "getzmqnotifications");
 static_assert(bitcoind_test_methods::names == "");
 static_assert(bitcoind_transaction_methods::names ==
     "createrawtransaction decoderawtransaction getrawtransaction "
-    "sendrawtransaction testmempoolaccept");
+    "sendrawtransaction testmempoolaccept analyzepsbt combinepsbt "
+    "converttopsbt createpsbt decodepsbt finalizepsbt joinpsbts "
+    "utxoupdatepsbt");
 static_assert(bitcoind_utility_methods::names ==
-    "decodescript validateaddress createmultisig verifymessage getindexinfo");
+    "decodescript validateaddress createmultisig deriveaddresses "
+    "getdescriptorinfo verifymessage getindexinfo");
 static_assert(bitcoind_wallet_methods::names == "");

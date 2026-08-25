@@ -52,11 +52,17 @@ enum block_verbosity : size_t
     hashed = 1,
 
     /// Block object embedding full tx objects.
-    verbose = 2
+    verbose = 2,
+
+    /// Adds per-input prevout context and per-tx fee.
+    prevouts = 3
 };
 
 // bitcoind defines only the "basic" (neutrino) block filter type.
 constexpr auto basic_filter = "basic";
+
+static bool expand_scan_object(chain::scripts& out,
+    const value_t& item) NOEXCEPT;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -95,13 +101,13 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_chain_states, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_chain_tips, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
@@ -110,7 +116,16 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
     SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
+    subscribe_chase(BIND(handle_chase, _1, _2, _3));
     protocol_bitcoind_dispatch<rpc_interface>::start();
+}
+
+void protocol_bitcoind_blockchain::stopping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    unsubscribe_chase();
+    wait_timer_->stop();
+    protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
 }
 
 // Blockchain methods.
@@ -142,7 +157,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     }
 
     size_t level{};
-    if (!to_integer(level, verbosity) || level > block_verbosity::verbose)
+    if (!to_integer(level, verbosity) || level > block_verbosity::prevouts)
     {
         send_error(error::invalid_argument);
         return true;
@@ -169,6 +184,25 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         value_from(bitcoind_verbose(*block));
 
     inject_block_context(model.as_object(), query, link, block->header());
+
+    if (level == block_verbosity::prevouts &&
+        query.populate_without_metadata(*block))
+    {
+        auto entry = model.as_object().at("tx").as_array().begin();
+        std::ranges::for_each(*block->transactions_ptr(),
+            [&](const auto& tx) NOEXCEPT
+        {
+            if (!tx->is_coinbase())
+            {
+                inject_tx_prevouts(entry->as_object(), query, *tx);
+                entry->as_object()["fee"] =
+                    tx->fee() / to_floating(chain::satoshi_per_bitcoin);
+            }
+
+            ++entry;
+        });
+    }
+
     send_result(std::move(model), two * block->serialized_size(witness));
     return true;
 }
@@ -954,11 +988,114 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(const code& ec,
-    rpc_interface::get_descriptor_activity) NOEXCEPT
+bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
+    const code& ec, rpc_interface::get_descriptor_activity,
+    const array_t& blockhashes, const array_t& scanobjects,
+    bool include_spent) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    chain::scripts derived{};
+    for (const auto& item: scanobjects)
+    {
+        if (!expand_scan_object(derived, item))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+    }
+
+    std::unordered_set<std::string> watch{};
+    for (const auto& script: derived)
+        watch.insert(encode_base16(script.to_data(false)));
+
+    const auto& query = archive();
+    array_t activity{};
+    for (const auto& item: blockhashes)
+    {
+        hash_digest hash{};
+        if (!std::holds_alternative<string_t>(item.value()) ||
+            !decode_hash(hash, std::get<string_t>(item.value())))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+
+        constexpr auto witness = true;
+        const auto link = query.to_header(hash);
+        const auto block = query.get_block(link, witness);
+        size_t height{};
+        if (!block || !query.get_height(height, link))
+        {
+            send_error(error::not_found);
+            return true;
+        }
+
+        const auto encoded = encode_hash(hash);
+        const auto populated = include_spent &&
+            query.populate_without_metadata(*block);
+
+        for (const auto& tx: *block->transactions_ptr())
+        {
+            const auto txid = encode_hash(tx->hash(false));
+            uint32_t index{};
+            for (const auto& out: *tx->outputs_ptr())
+            {
+                const auto script = encode_base16(
+                    out->script().to_data(false));
+                if (watch.contains(script))
+                {
+                    activity.emplace_back(object_t
+                    {
+                        { "type", std::string{ "receive" } },
+                        { "amount", out->value() /
+                            to_floating(chain::satoshi_per_bitcoin) },
+                        { "blockhash", encoded },
+                        { "height", height },
+                        { "txid", txid },
+                        { "vout", index },
+                        { "output_spk", value_from(bitcoind(out->script())) }
+                    });
+                }
+
+                ++index;
+            }
+
+            if (!populated || tx->is_coinbase())
+                continue;
+
+            uint32_t spend{};
+            for (const auto& in: *tx->inputs_ptr())
+            {
+                const auto& prevout = *in->prevout;
+                const auto script = encode_base16(
+                    prevout.script().to_data(false));
+                if (watch.contains(script))
+                {
+                    activity.emplace_back(object_t
+                    {
+                        { "type", std::string{ "spend" } },
+                        { "amount", prevout.value() /
+                            to_floating(chain::satoshi_per_bitcoin) },
+                        { "blockhash", encoded },
+                        { "height", height },
+                        { "spend_txid", txid },
+                        { "spend_vout", spend },
+                        { "prevout_txid", encode_hash(in->point().hash()) },
+                        { "prevout_vout", in->point().index() },
+                        { "prevout_spk", value_from(bitcoind(
+                            prevout.script())) }
+                    });
+                }
+
+                ++spend;
+            }
+        }
+    }
+
+    const auto size = 256 * activity.size();
+    send_result(object_t{ { "activity", std::move(activity) } }, size);
     return true;
 }
 
@@ -989,35 +1126,309 @@ bool protocol_bitcoind_blockchain::handle_precious_block(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
-    rpc_interface::scan_blocks) NOEXCEPT
+// A scan object is a descriptor string or { "desc", "range" } object.
+static bool expand_scan_object(chain::scripts& out,
+    const value_t& item) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    std::string expression{};
+    uint32_t begin{};
+    uint32_t end{};
+
+    // bitcoind's default range for ranged descriptors.
+    constexpr uint32_t default_range = 1'000;
+    constexpr uint32_t maximum_range = 10'000;
+
+    if (std::holds_alternative<string_t>(item.value()))
+    {
+        expression = std::get<string_t>(item.value());
+        end = default_range;
+    }
+    else if (std::holds_alternative<object_t>(item.value()))
+    {
+        const auto& fields = std::get<object_t>(item.value());
+        const auto desc = fields.find("desc");
+        if (desc == fields.end() ||
+            !std::holds_alternative<string_t>(desc->second.value()))
+            return false;
+
+        expression = std::get<string_t>(desc->second.value());
+        end = default_range;
+        const auto range = fields.find("range");
+        if (range != fields.end())
+        {
+            const auto& value = range->second.value();
+            if (std::holds_alternative<number_t>(value))
+            {
+                if (!to_integer(end, std::get<number_t>(value)))
+                    return false;
+            }
+            else if (std::holds_alternative<array_t>(value))
+            {
+                const auto& pair = std::get<array_t>(value);
+                if (pair.size() != 2u ||
+                    !std::holds_alternative<number_t>(pair.front().value()) ||
+                    !std::holds_alternative<number_t>(pair.back().value()) ||
+                    !to_integer(begin,
+                        std::get<number_t>(pair.front().value())) ||
+                    !to_integer(end,
+                        std::get<number_t>(pair.back().value())) ||
+                    end < begin)
+                    return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    const wallet::descriptor parsed{ expression };
+    if (!parsed || floored_subtract(end, begin) >= maximum_range)
+        return false;
+
+    if (!parsed.ranged())
+        end = begin;
+
+    for (auto index = begin; index <= end; ++index)
+    {
+        const auto derived = parsed.scripts(index);
+        if (derived.empty())
+            return false;
+
+        out.insert(out.end(), derived.begin(), derived.end());
+    }
+
     return true;
 }
 
-bool protocol_bitcoind_blockchain::handle_wait_for_block(const code& ec,
-    rpc_interface::wait_for_block) NOEXCEPT
+bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
+    rpc_interface::scan_blocks, const std::string& action,
+    const array_t& scanobjects, double start_height, double stop_height,
+    const std::string& filtertype) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (action != "start" || filtertype != basic_filter ||
+        scanobjects.empty())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto& query = archive();
+    if (!query.filter_enabled())
+    {
+        send_error(error::not_implemented);
+        return true;
+    }
+
+    const auto top = query.get_top_confirmed();
+    size_t from{};
+    auto to = top;
+    if (!to_integer(from, start_height) ||
+        (stop_height >= 0 && !to_integer(to, stop_height)))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    to = std::min(to, top);
+    if (from > to)
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    chain::scripts scripts{};
+    for (const auto& item: scanobjects)
+    {
+        if (!expand_scan_object(scripts, item))
+        {
+            send_error(error::invalid_argument);
+            return true;
+        }
+    }
+
+    array_t relevant{};
+    for (auto height = from; height <= to; ++height)
+    {
+        const auto link = query.to_confirmed(height);
+        const auto hash = query.get_header_key(link);
+        neutrino::block_filter filter{ hash, {} };
+        if (!query.get_filter_body(filter.filter, link))
+        {
+            send_error(database::error::integrity);
+            return true;
+        }
+
+        if (neutrino::match_filter(filter, scripts))
+            relevant.emplace_back(encode_hash(hash));
+    }
+
+    send_result(object_t
+    {
+        { "from_height", from },
+        { "to_height", to },
+        { "relevant_blocks", std::move(relevant) },
+        { "completed", true }
+    }, 1024);
+    return true;
+}
+
+// The response defers to the chase event or the timeout (long poll). The
+// saved request context carries the deferred send (see dispatch).
+bool protocol_bitcoind_blockchain::handle_wait_for_block(const code& ec,
+    rpc_interface::wait_for_block, const std::string& blockhash,
+    double timeout) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!decode_hash(wait_hash_, blockhash))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    wait_ = wait::block;
+    arm_wait(timeout);
     return true;
 }
 
 bool protocol_bitcoind_blockchain::handle_wait_for_block_height(const code& ec,
-    rpc_interface::wait_for_block_height) NOEXCEPT
+    rpc_interface::wait_for_block_height, const double height,
+    double timeout) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    if (!to_integer(wait_height_, height))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    wait_ = wait::height;
+    arm_wait(timeout);
     return true;
 }
 
 bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
-    rpc_interface::wait_for_new_block) NOEXCEPT
+    rpc_interface::wait_for_new_block, double timeout) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    wait_ = wait::new_block;
+    wait_height_ = add1(archive().get_top_confirmed());
+    arm_wait(timeout);
+    return true;
+}
+
+// Wait machinery (strand).
+// ----------------------------------------------------------------------------
+
+bool protocol_bitcoind_blockchain::wait_done() const NOEXCEPT
+{
+    const auto& query = archive();
+    switch (wait_)
+    {
+        case wait::new_block:
+        case wait::height:
+            return query.get_top_confirmed() >= wait_height_;
+        case wait::block:
+        {
+            const auto link = query.to_header(wait_hash_);
+            return !link.is_terminal() && query.is_confirmed_block(link);
+        }
+        default:
+            return false;
+    }
+}
+
+void protocol_bitcoind_blockchain::send_tip() NOEXCEPT
+{
+    const auto& query = archive();
+    const auto top = query.get_top_confirmed();
+    send_result(object_t
+    {
+        { "hash", encode_hash(query.get_header_key(query.to_confirmed(top))) },
+        { "height", top }
+    }, 128);
+}
+
+void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
+{
+    if (wait_done())
+    {
+        wait_ = wait::none;
+        send_tip();
+        return;
+    }
+
+    // A zero timeout waits indefinitely (as bitcoind).
+    uint64_t span{};
+    if (!to_integer(span, timeout))
+    {
+        wait_ = wait::none;
+        send_error(error::invalid_argument);
+        return;
+    }
+
+    if (!is_zero(span))
+        wait_timer_->start(BIND(handle_wait_timeout, _1),
+            network::milliseconds(span));
+}
+
+void protocol_bitcoind_blockchain::do_wait_event() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (wait_ == wait::none || !wait_done())
+        return;
+
+    wait_ = wait::none;
+    wait_timer_->stop();
+    send_tip();
+}
+
+void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped() || ec == network::error::operation_canceled ||
+        wait_ == wait::none)
+        return;
+
+    wait_ = wait::none;
+    send_tip();
+}
+
+// Chase events.
+// ----------------------------------------------------------------------------
+
+bool protocol_bitcoind_blockchain::handle_chase(const code&,
+    node::chase event_, node::event_value) NOEXCEPT
+{
+    // Do not pass ec to stopped, it is not a call status.
+    if (stopped())
+        return false;
+
+    switch (event_)
+    {
+        case node::chase::organized:
+        case node::chase::reorganized:
+        {
+            network::protocol::post<CLASS>(&CLASS::do_wait_event);
+            break;
+        }
+        default:
+            break;
+    }
+
     return true;
 }
 

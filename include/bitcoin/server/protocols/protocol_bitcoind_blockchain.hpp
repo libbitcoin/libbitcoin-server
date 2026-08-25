@@ -47,11 +47,14 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_bitcoind_dispatch<rpc_interface>(session, channel, options),
-        network::tracker<protocol_bitcoind_blockchain>(session->log)
+        network::tracker<protocol_bitcoind_blockchain>(session->log),
+        wait_timer_(std::make_shared<network::deadline>(session->log,
+            channel->strand()))
     {
     }
 
     void start() NOEXCEPT override;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     /// Handlers.
@@ -109,19 +112,26 @@ protected:
         rpc_interface::get_deployment_info,
         const std::string& blockhash) NOEXCEPT;
     bool handle_get_descriptor_activity(const code& ec,
-        rpc_interface::get_descriptor_activity) NOEXCEPT;
+        rpc_interface::get_descriptor_activity,
+        const network::rpc::array_t& blockhashes,
+        const network::rpc::array_t& scanobjects,
+        bool include_spent) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,
         rpc_interface::get_difficulty) NOEXCEPT;
     bool handle_precious_block(const code& ec,
         rpc_interface::precious_block) NOEXCEPT;
     bool handle_scan_blocks(const code& ec,
-        rpc_interface::scan_blocks) NOEXCEPT;
+        rpc_interface::scan_blocks, const std::string& action,
+        const network::rpc::array_t& scanobjects, double start_height,
+        double stop_height, const std::string& filtertype) NOEXCEPT;
     bool handle_wait_for_block(const code& ec,
-        rpc_interface::wait_for_block) NOEXCEPT;
+        rpc_interface::wait_for_block, const std::string& blockhash,
+        double timeout) NOEXCEPT;
     bool handle_wait_for_block_height(const code& ec,
-        rpc_interface::wait_for_block_height) NOEXCEPT;
+        rpc_interface::wait_for_block_height, double height,
+        double timeout) NOEXCEPT;
     bool handle_wait_for_new_block(const code& ec,
-        rpc_interface::wait_for_new_block) NOEXCEPT;
+        rpc_interface::wait_for_new_block, double timeout) NOEXCEPT;
     bool handle_get_mempool_ancestors(const code& ec,
         rpc_interface::get_mempool_ancestors) NOEXCEPT;
     bool handle_get_mempool_cluster(const code& ec,
@@ -138,6 +148,25 @@ protected:
         rpc_interface::get_tx_spending_prevout) NOEXCEPT;
     bool handle_import_mempool(const code& ec,
         rpc_interface::import_mempool) NOEXCEPT;
+
+    /// Chase events (block wait long polling).
+    bool handle_chase(const code& ec, node::chase event_,
+        node::event_value value) NOEXCEPT;
+
+private:
+    enum class wait : uint8_t { none, new_block, block, height };
+
+    void arm_wait(double timeout) NOEXCEPT;
+    void do_wait_event() NOEXCEPT;
+    void handle_wait_timeout(const code& ec) NOEXCEPT;
+    bool wait_done() const NOEXCEPT;
+    void send_tip() NOEXCEPT;
+
+    // These are protected by strand.
+    wait wait_{ wait::none };
+    size_t wait_height_{};
+    system::hash_digest wait_hash_{};
+    network::deadline::ptr wait_timer_;
 };
 
 } // namespace server

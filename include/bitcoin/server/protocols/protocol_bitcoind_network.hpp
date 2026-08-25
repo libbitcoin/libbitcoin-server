@@ -64,7 +64,8 @@ protected:
     bool handle_set_ban(const code& ec,
         rpc_interface::set_ban) NOEXCEPT;
     bool handle_add_node(const code& ec,
-        rpc_interface::add_node) NOEXCEPT;
+        rpc_interface::add_node, const std::string& node,
+        const std::string& command, bool v2transport) NOEXCEPT;
     bool handle_disconnect_node(const code& ec,
         rpc_interface::disconnect_node) NOEXCEPT;
     bool handle_export_asmap(const code& ec,
@@ -73,18 +74,33 @@ protected:
         rpc_interface::get_added_node_info) NOEXCEPT;
     bool handle_get_addrman_info(const code& ec,
         rpc_interface::get_addrman_info) NOEXCEPT;
+    bool handle_get_node_addresses(const code& ec,
+        rpc_interface::get_node_addresses, double count,
+        const std::string& network) NOEXCEPT;
+    bool handle_ping(const code& ec, rpc_interface::ping) NOEXCEPT;
+    bool handle_set_network_active(const code& ec,
+        rpc_interface::set_network_active, bool state) NOEXCEPT;
     bool handle_get_connection_count(const code& ec,
         rpc_interface::get_connection_count) NOEXCEPT;
     bool handle_get_net_totals(const code& ec,
         rpc_interface::get_net_totals) NOEXCEPT;
-    bool handle_get_node_addresses(const code& ec,
-        rpc_interface::get_node_addresses) NOEXCEPT;
     bool handle_get_peer_info(const code& ec,
         rpc_interface::get_peer_info) NOEXCEPT;
-    bool handle_ping(const code& ec,
-        rpc_interface::ping) NOEXCEPT;
-    bool handle_set_network_active(const code& ec,
-        rpc_interface::set_network_active) NOEXCEPT;
+
+private:
+    /// Address fetch completions (bounced to the channel strand).
+    void handle_fetch_nodes(const code& ec,
+        const network::address_cptr& message) NOEXCEPT;
+    void handle_fetch_info(const code& ec,
+        const network::address_cptr& message) NOEXCEPT;
+    void do_send_nodes(const code& ec,
+        const network::address_cptr& message) NOEXCEPT;
+    void do_send_info(const code& ec,
+        const network::address_cptr& message) NOEXCEPT;
+
+    // These are protected by strand.
+    size_t node_count_{};
+    std::string node_network_{};
 };
 
 } // namespace server

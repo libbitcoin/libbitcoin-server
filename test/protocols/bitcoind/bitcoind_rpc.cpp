@@ -64,35 +64,11 @@ const std::vector<std::string> rejected_methods
 const std::vector<std::string> wip_methods
 {
     "getblockfrompeer",
-    "getdescriptoractivity",
     "preciousblock",
-    "scanblocks",
-    "waitforblock",
-    "waitforblockheight",
-    "waitfornewblock",
-    "analyzepsbt",
-    "combinepsbt",
-    "converttopsbt",
-    "createpsbt",
-    "decodepsbt",
-    "finalizepsbt",
-    "joinpsbts",
     "descriptorprocesspsbt",
-    "utxoupdatepsbt",
-    "submitblock",
-    "submitheader",
-    "addnode",
     "disconnectnode",
     "exportasmap",
     "getaddednodeinfo",
-    "getaddrmaninfo",
-    "getnodeaddresses",
-    "getpeerinfo",
-    "ping",
-    "setnetworkactive",
-    "deriveaddresses",
-    "getdescriptorinfo",
-    "getopenrpcinfo"
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -261,6 +237,22 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity2__tx_objects)
     BOOST_REQUIRE(tx.at(0).as_object().contains("txid"));
 }
 
+// Coinbase-only blocks carry no prevout context (no fee, no prevouts).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity3__tx_objects)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "3"));
+    const auto& tx = response.at("result").at("tx");
+    BOOST_REQUIRE(tx.is_array());
+    BOOST_REQUIRE(tx.at(0).as_object().contains("txid"));
+    BOOST_REQUIRE(!tx.at(0).as_object().contains("fee"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__invalid)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "4"));
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
 {
     const auto response = rpc("getblockchaininfo");
@@ -273,6 +265,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     BOOST_REQUIRE(result.at("warnings").is_string());
     BOOST_REQUIRE(result.at("initialblockdownload").is_bool());
     BOOST_REQUIRE(result.at("chainwork").is_string());
+    BOOST_REQUIRE(result.at("size_on_disk").as_int64() > 0);
 }
 
 // Ten blocks at minimum difficulty: cumulative work is 10 * 0x0100010001.
@@ -384,6 +377,19 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__default__number)
     BOOST_REQUIRE(response.at("result").is_double() || response.at("result").is_int64());
 }
 
+// Work over the window divided by its timestamp span (early 2009 blocks).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__nine_block_window__positive)
+{
+    const auto response = rpc("getnetworkhashps", "[9, 9]");
+    BOOST_REQUIRE(response.at("result").as_double() > 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__genesis_height__zero_window)
+{
+    const auto response = rpc("getnetworkhashps", "[120, 0]");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 0);
+}
+
 // currentblockweight/currentblocktx omitted (no block ever assembled).
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__ten_block_store__expected)
 {
@@ -404,6 +410,15 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__one_in_one_out__hex)
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
     const auto response = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__iswitness_false__round_trips)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\", false]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vin").as_array().size(), 1u);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__created__round_trips)
@@ -449,10 +464,43 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__pubkeyhash)
     BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("type")), "pubkeyhash");
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__descriptor_and_segwit)
+{
+    const auto response = rpc("decodescript", "[\"76a914000000000000000000000000000000000000000088ac\"]");
+    const auto& result = response.at("result");
+    const auto address = as_text(result.at("address"));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("desc")), "addr(" + address + ")#" + descriptor_checksum("addr(" + address + ")"));
+    const auto& segwit = result.at("segwit");
+    BOOST_REQUIRE_EQUAL(as_text(segwit.at("type")), "witness_v0_scripthash");
+    BOOST_REQUIRE(as_text(segwit.at("address")).starts_with("bc1q"));
+    BOOST_REQUIRE(segwit.as_object().contains("p2sh-segwit"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__witness_program__no_segwit)
+{
+    const auto response = rpc("decodescript", "[\"0014751e76e8199196d454941c45d1b3a323f1433bd6\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("type")), "witness_v0_keyhash");
+    BOOST_REQUIRE(!result.as_object().contains("segwit"));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__genesis__valid)
 {
     const auto response = rpc("validateaddress", "[\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\"]");
     REQUIRE_NO_THROW_TRUE(response.at("result").at("isvalid").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__genesis__expected_script)
+{
+    const auto response = rpc("validateaddress", "[\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("scriptPubKey")), "76a91462e907b15cbf27d5425399ebf6f0fb50ebb88f1888ac");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__witness__expected_script)
+{
+    const auto response = rpc("validateaddress", "[\"bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4\"]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").at("iswitness").as_bool());
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("scriptPubKey")), "0014751e76e8199196d454941c45d1b3a323f1433bd6");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__garbage__invalid)
@@ -539,7 +587,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BOOST_REQUIRE(result.as_object().contains("version"));
     BOOST_REQUIRE(result.at("subversion").is_string());
     BOOST_REQUIRE(result.as_object().contains("protocolversion"));
-    BOOST_REQUIRE(result.at("networks").is_array());
+    BOOST_REQUIRE_EQUAL(as_text(result.at("networks").at(0).at("name")), "ipv4");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("localservices")).size(), 16u);
+    BOOST_REQUIRE(result.at("localservicesnames").is_array());
+    BOOST_REQUIRE(result.at("connections_in").is_int64());
+    BOOST_REQUIRE(result.at("connections_out").is_int64());
 }
 
 // not implemented
@@ -1044,6 +1096,321 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__response__websocket__id_matches_request)
 
     const auto response = ws_rpc("getblockcount");
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
+}
+
+
+// descriptor activity
+
+// Block one's coinbase output is watched via its raw script descriptor.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__block1_coinbase__one_receive)
+{
+    const auto hash = encode_hash(test::block1.hash());
+    const auto script = encode_base16(test::block1.transactions_ptr()->front()->outputs_ptr()->front()->script().to_data(false));
+    const auto response = rpc("getdescriptoractivity", "[[\"" + hash + "\"], [\"raw(" + script + ")\"]]");
+    const auto& activity = response.at("result").at("activity");
+    BOOST_REQUIRE_EQUAL(activity.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(activity.at(0).at("type")), "receive");
+    BOOST_REQUIRE_EQUAL(activity.at(0).at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(activity.at(0).at("amount").as_double(), 50.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__unknown_block__not_found)
+{
+    const auto response = rpc("getdescriptoractivity", "[[\"0000000000000000000000000000000000000000000000000000000000000001\"], []]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+// scanblocks
+
+// The fixture runs with block filters disabled (as getblockfilter).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__filters_disabled__error)
+{
+    const auto response = rpc("scanblocks", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
+{
+    const auto response = rpc("scanblocks", "[\"status\", []]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+// openrpc
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getopenrpcinfo__always__document)
+{
+    const auto response = rpc("getopenrpcinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("openrpc")), "1.2.6");
+    BOOST_REQUIRE(result.at("methods").is_array());
+    BOOST_REQUIRE(!result.at("methods").as_array().empty());
+}
+
+// help
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__help__getblock__usage_line)
+{
+    const auto response = rpc("help", "[\"getblock\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "getblock blockhash ( verbosity )");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__help__unknown__reported)
+{
+    const auto response = rpc("help", "[\"nonsense\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "help: unknown command: nonsense");
+}
+
+// descriptors
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptorinfo__wpkh__expected)
+{
+    const auto response = rpc("getdescriptorinfo", "[\"wpkh([d34db33f/84h/0h/0h]xpub6DJ2dNUysrn5Vt36jH2KLBT2i1auw1tTSSomg8PhqNiUtx8QX2SvC9nrHu81fT41fvDUnhMjEzQgXnQjKEu3oaqMSzhSrHMxyyoEAmUHQbY/0/*)\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("checksum")), "cjjspncu");
+    BOOST_REQUIRE(result.at("isrange").as_bool());
+    BOOST_REQUIRE(result.at("issolvable").as_bool());
+    BOOST_REQUIRE(!result.at("hasprivatekeys").as_bool());
+}
+
+// The derived address round-trips to the bip386 vector script.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__tr_bip386__expected)
+{
+    const auto response = rpc("deriveaddresses", "[\"tr(a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd)\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 1u);
+    const auto address = as_text(result.at(0));
+    BOOST_REQUIRE(address.starts_with("bc1p"));
+    const auto validated = rpc("validateaddress", "[\"" + address + "\"]");
+    BOOST_REQUIRE_EQUAL(as_text(validated.at("result").at("scriptPubKey")), "512077aab6e066f8a7419c5ab714c12c67d25007ed55a43cadcacb4d7a970a093f11");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__ranged_without_range__invalid)
+{
+    const auto response = rpc("deriveaddresses", "[\"pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/*)\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__range_pair__two_addresses)
+{
+    const auto response = rpc("deriveaddresses", "[\"pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/*)\", [3, 4]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 2u);
+    BOOST_REQUIRE(as_text(result.at(0)).starts_with("1"));
+}
+
+// network group
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__remove__not_implemented)
+{
+    const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"remove\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__bad_command__invalid)
+{
+    const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"nonsense\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__ping__always__null)
+{
+    const auto response = rpc("ping");
+    BOOST_REQUIRE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnodeaddresses__empty_pool__empty)
+{
+    const auto response = rpc("getnodeaddresses");
+    BOOST_REQUIRE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnodeaddresses__bad_network__invalid)
+{
+    const auto response = rpc("getnodeaddresses", "[0, \"onion\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getaddrmaninfo__empty_pool__zero_buckets)
+{
+    const auto response = rpc("getaddrmaninfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("all_networks").at("total").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("ipv4").at("tried").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__setnetworkactive__toggle__round_trips)
+{
+    const auto off = rpc("setnetworkactive", "[false]");
+    BOOST_REQUIRE(!off.at("result").as_bool());
+    const auto on = rpc("setnetworkactive", "[true]");
+    BOOST_REQUIRE(on.at("result").as_bool());
+}
+
+// submit
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
+{
+    const auto block = encode_base16(test::block9.to_data(true));
+    const auto response = rpc("submitblock", "[\"" + block + "\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "duplicate");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__garbage__invalid)
+{
+    const auto response = rpc("submitblock", "[\"deadbeef\"]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__existing_header__null)
+{
+    const auto header = encode_base16(test::block9.header().to_data());
+    const auto response = rpc("submitheader", "[\"" + header + "\"]");
+    BOOST_REQUIRE(response.at("result").is_null());
+}
+
+// waitfor (all conditions immediately met or timing out on the fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__at_top__immediate_tip)
+{
+    const auto response = rpc("waitforblockheight", "[9]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblock__confirmed_hash__immediate_tip)
+{
+    const auto response = rpc("waitforblock", "[\"" + std::string{ block9 } + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitfornewblock__short_timeout__times_out_with_tip)
+{
+    const auto response = rpc("waitfornewblock", "[1]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+}
+
+// psbt (vectors from bip174)
+
+#define PSBT_UPDATER "cHNidP8BAJoCAAAAAljoeiG1ba8MI76OcHBFbDNvfLqlyHV5JPVFiHuyq911AAAAAAD/////g40EJ9DsZQpoqka7CwmK6kQiwHGyyng1Kgd5WdB86h0BAAAAAP////8CcKrwCAAAAAAWABTYXCtx0AYLCcmIauuBXlCZHdoSTQDh9QUAAAAAFgAUAK6pouXw+HaliN9VRuh0LR2HAI8AAAAAAAEAuwIAAAABqtc5MQGL0l+ErkALaISL4J23BurCrBgpi6vucatlb4sAAAAASEcwRAIgWPb8fGoz4bMVSNSByCbAFb0wE1qtQs1neQ2rZtKtJDsCIEoc7SYExnNbY5PltBaR3XiwDwxZQvufdRhW+qk4FX26Af7///8CgPD6AgAAAAAXqRQPuUY0IWlrgsgzryQceMF9295JNIfQ8gonAQAAABepFCnKdPigj4GZlCgYXJe12FLkBj9hh2UAAAABBEdSIQKVg785rgpgl0etGZrd1jT6YQhVnWxc05tMIYPxq5bgfyEC2rYf9JoU22p9ArDNH7t4/EsYMStbTlTa5Nui+/71NtdSriIGApWDvzmuCmCXR60Zmt3WNPphCFWdbFzTm0whg/GrluB/ENkMak8AAACAAAAAgAAAAIAiBgLath/0mhTban0CsM0fu3j8SxgxK1tOVNrk26L7/vU21xDZDGpPAAAAgAAAAIABAACAAAEBIADC6wsAAAAAF6kUt/X69A49QKWkWbHbNTXyty+pIeiHAQQiACCMI1MXN0O1ld+0oHtyuo5C43l9p06H/n2ddJfjsgKJAwEFR1IhAwidwQx6xttU+RMpr2FzM9s4jOrQwjH3IzedG5kDCwLcIQI63ZBPPW3PWd25BrDe4jUpt/+57VDl6GFRkmhgIh8Oc1KuIgYCOt2QTz1tz1nduQaw3uI1Kbf/ue1Q5ehhUZJoYCIfDnMQ2QxqTwAAAIAAAACAAwAAgCIGAwidwQx6xttU+RMpr2FzM9s4jOrQwjH3IzedG5kDCwLcENkMak8AAACAAAAAgAIAAIAAIgIDqaTDf1mW06ol26xrVwrwZQOUSSlCRgs1R1Ptnuylh3EQ2QxqTwAAAIAAAACABAAAgAAiAgJ/Y5l1fS7/VaE2rQLGhLGDi2VW5fG2s0KCqUtrUAUQlhDZDGpPAAAAgAAAAIAFAACAAA=="
+#define PSBT_SIGNER_A "cHNidP8BAJoCAAAAAljoeiG1ba8MI76OcHBFbDNvfLqlyHV5JPVFiHuyq911AAAAAAD/////g40EJ9DsZQpoqka7CwmK6kQiwHGyyng1Kgd5WdB86h0BAAAAAP////8CcKrwCAAAAAAWABTYXCtx0AYLCcmIauuBXlCZHdoSTQDh9QUAAAAAFgAUAK6pouXw+HaliN9VRuh0LR2HAI8AAAAAAAEAuwIAAAABqtc5MQGL0l+ErkALaISL4J23BurCrBgpi6vucatlb4sAAAAASEcwRAIgWPb8fGoz4bMVSNSByCbAFb0wE1qtQs1neQ2rZtKtJDsCIEoc7SYExnNbY5PltBaR3XiwDwxZQvufdRhW+qk4FX26Af7///8CgPD6AgAAAAAXqRQPuUY0IWlrgsgzryQceMF9295JNIfQ8gonAQAAABepFCnKdPigj4GZlCgYXJe12FLkBj9hh2UAAAAiAgLath/0mhTban0CsM0fu3j8SxgxK1tOVNrk26L7/vU210gwRQIhAPYQOLMI3B2oZaNIUnRvAVdyk0IIxtJEVDk82ZvfIhd3AiAFbmdaZ1ptCgK4WxTl4pB02KJam1dgvqKBb2YZEKAG6gEBAwQBAAAAAQRHUiEClYO/Oa4KYJdHrRma3dY0+mEIVZ1sXNObTCGD8auW4H8hAtq2H/SaFNtqfQKwzR+7ePxLGDErW05U2uTbovv+9TbXUq4iBgKVg785rgpgl0etGZrd1jT6YQhVnWxc05tMIYPxq5bgfxDZDGpPAAAAgAAAAIAAAACAIgYC2rYf9JoU22p9ArDNH7t4/EsYMStbTlTa5Nui+/71NtcQ2QxqTwAAAIAAAACAAQAAgAABASAAwusLAAAAABepFLf1+vQOPUClpFmx2zU18rcvqSHohyICAjrdkE89bc9Z3bkGsN7iNSm3/7ntUOXoYVGSaGAiHw5zRzBEAiBl9FulmYtZon/+GnvtAWrx8fkNVLOqj3RQql9WolEDvQIgf3JHA60e25ZoCyhLVtT/y4j3+3Weq74IqjDym4UTg9IBAQMEAQAAAAEEIgAgjCNTFzdDtZXftKB7crqOQuN5fadOh/59nXSX47ICiQMBBUdSIQMIncEMesbbVPkTKa9hczPbOIzq0MIx9yM3nRuZAwsC3CECOt2QTz1tz1nduQaw3uI1Kbf/ue1Q5ehhUZJoYCIfDnNSriIGAjrdkE89bc9Z3bkGsN7iNSm3/7ntUOXoYVGSaGAiHw5zENkMak8AAACAAAAAgAMAAIAiBgMIncEMesbbVPkTKa9hczPbOIzq0MIx9yM3nRuZAwsC3BDZDGpPAAAAgAAAAIACAACAACICA6mkw39ZltOqJdusa1cK8GUDlEkpQkYLNUdT7Z7spYdxENkMak8AAACAAAAAgAQAAIAAIgICf2OZdX0u/1WhNq0CxoSxg4tlVuXxtrNCgqlLa1AFEJYQ2QxqTwAAAIAAAACABQAAgAA="
+#define PSBT_SIGNER_B "cHNidP8BAJoCAAAAAljoeiG1ba8MI76OcHBFbDNvfLqlyHV5JPVFiHuyq911AAAAAAD/////g40EJ9DsZQpoqka7CwmK6kQiwHGyyng1Kgd5WdB86h0BAAAAAP////8CcKrwCAAAAAAWABTYXCtx0AYLCcmIauuBXlCZHdoSTQDh9QUAAAAAFgAUAK6pouXw+HaliN9VRuh0LR2HAI8AAAAAAAEAuwIAAAABqtc5MQGL0l+ErkALaISL4J23BurCrBgpi6vucatlb4sAAAAASEcwRAIgWPb8fGoz4bMVSNSByCbAFb0wE1qtQs1neQ2rZtKtJDsCIEoc7SYExnNbY5PltBaR3XiwDwxZQvufdRhW+qk4FX26Af7///8CgPD6AgAAAAAXqRQPuUY0IWlrgsgzryQceMF9295JNIfQ8gonAQAAABepFCnKdPigj4GZlCgYXJe12FLkBj9hh2UAAAAiAgKVg785rgpgl0etGZrd1jT6YQhVnWxc05tMIYPxq5bgf0cwRAIgdAGK1BgAl7hzMjwAFXILNoTMgSOJEEjn282bVa1nnJkCIHPTabdA4+tT3O+jOCPIBwUUylWn3ZVE8VfBZ5EyYRGMASICAtq2H/SaFNtqfQKwzR+7ePxLGDErW05U2uTbovv+9TbXSDBFAiEA9hA4swjcHahlo0hSdG8BV3KTQgjG0kRUOTzZm98iF3cCIAVuZ1pnWm0KArhbFOXikHTYolqbV2C+ooFvZhkQoAbqAQEDBAEAAAABBEdSIQKVg785rgpgl0etGZrd1jT6YQhVnWxc05tMIYPxq5bgfyEC2rYf9JoU22p9ArDNH7t4/EsYMStbTlTa5Nui+/71NtdSriIGApWDvzmuCmCXR60Zmt3WNPphCFWdbFzTm0whg/GrluB/ENkMak8AAACAAAAAgAAAAIAiBgLath/0mhTban0CsM0fu3j8SxgxK1tOVNrk26L7/vU21xDZDGpPAAAAgAAAAIABAACAAAEBIADC6wsAAAAAF6kUt/X69A49QKWkWbHbNTXyty+pIeiHIgIDCJ3BDHrG21T5EymvYXMz2ziM6tDCMfcjN50bmQMLAtxHMEQCIGLrelVhB6fHP0WsSrWh3d9vcHX7EnWWmn84Pv/3hLyyAiAMBdu3Rw2/LwhVfdNWxzJcHtMJE+mWzThAlF2xIijaXwEiAgI63ZBPPW3PWd25BrDe4jUpt/+57VDl6GFRkmhgIh8Oc0cwRAIgZfRbpZmLWaJ//hp77QFq8fH5DVSzqo90UKpfVqJRA70CIH9yRwOtHtuWaAsoS1bU/8uI9/t1nqu+CKow8puFE4PSAQEDBAEAAAABBCIAIIwjUxc3Q7WV37Sge3K6jkLjeX2nTof+fZ10l+OyAokDAQVHUiEDCJ3BDHrG21T5EymvYXMz2ziM6tDCMfcjN50bmQMLAtwhAjrdkE89bc9Z3bkGsN7iNSm3/7ntUOXoYVGSaGAiHw5zUq4iBgI63ZBPPW3PWd25BrDe4jUpt/+57VDl6GFRkmhgIh8OcxDZDGpPAAAAgAAAAIADAACAIgYDCJ3BDHrG21T5EymvYXMz2ziM6tDCMfcjN50bmQMLAtwQ2QxqTwAAAIAAAACAAgAAgAAiAgOppMN/WZbTqiXbrGtXCvBlA5RJKUJGCzVHU+2e7KWHcRDZDGpPAAAAgAAAAIAEAACAACICAn9jmXV9Lv9VoTatAsaEsYOLZVbl8bazQoKpS2tQBRCWENkMak8AAACAAAAAgAUAAIAA"
+#define PSBT_COMBINED "cHNidP8BAJoCAAAAAljoeiG1ba8MI76OcHBFbDNvfLqlyHV5JPVFiHuyq911AAAAAAD/////g40EJ9DsZQpoqka7CwmK6kQiwHGyyng1Kgd5WdB86h0BAAAAAP////8CcKrwCAAAAAAWABTYXCtx0AYLCcmIauuBXlCZHdoSTQDh9QUAAAAAFgAUAK6pouXw+HaliN9VRuh0LR2HAI8AAAAAAAEAuwIAAAABqtc5MQGL0l+ErkALaISL4J23BurCrBgpi6vucatlb4sAAAAASEcwRAIgWPb8fGoz4bMVSNSByCbAFb0wE1qtQs1neQ2rZtKtJDsCIEoc7SYExnNbY5PltBaR3XiwDwxZQvufdRhW+qk4FX26Af7///8CgPD6AgAAAAAXqRQPuUY0IWlrgsgzryQceMF9295JNIfQ8gonAQAAABepFCnKdPigj4GZlCgYXJe12FLkBj9hh2UAAAAiAgKVg785rgpgl0etGZrd1jT6YQhVnWxc05tMIYPxq5bgf0cwRAIgdAGK1BgAl7hzMjwAFXILNoTMgSOJEEjn282bVa1nnJkCIHPTabdA4+tT3O+jOCPIBwUUylWn3ZVE8VfBZ5EyYRGMASICAtq2H/SaFNtqfQKwzR+7ePxLGDErW05U2uTbovv+9TbXSDBFAiEA9hA4swjcHahlo0hSdG8BV3KTQgjG0kRUOTzZm98iF3cCIAVuZ1pnWm0KArhbFOXikHTYolqbV2C+ooFvZhkQoAbqAQEDBAEAAAABBEdSIQKVg785rgpgl0etGZrd1jT6YQhVnWxc05tMIYPxq5bgfyEC2rYf9JoU22p9ArDNH7t4/EsYMStbTlTa5Nui+/71NtdSriIGApWDvzmuCmCXR60Zmt3WNPphCFWdbFzTm0whg/GrluB/ENkMak8AAACAAAAAgAAAAIAiBgLath/0mhTban0CsM0fu3j8SxgxK1tOVNrk26L7/vU21xDZDGpPAAAAgAAAAIABAACAAAEBIADC6wsAAAAAF6kUt/X69A49QKWkWbHbNTXyty+pIeiHIgIDCJ3BDHrG21T5EymvYXMz2ziM6tDCMfcjN50bmQMLAtxHMEQCIGLrelVhB6fHP0WsSrWh3d9vcHX7EnWWmn84Pv/3hLyyAiAMBdu3Rw2/LwhVfdNWxzJcHtMJE+mWzThAlF2xIijaXwEiAgI63ZBPPW3PWd25BrDe4jUpt/+57VDl6GFRkmhgIh8Oc0cwRAIgZfRbpZmLWaJ//hp77QFq8fH5DVSzqo90UKpfVqJRA70CIH9yRwOtHtuWaAsoS1bU/8uI9/t1nqu+CKow8puFE4PSAQEDBAEAAAABBCIAIIwjUxc3Q7WV37Sge3K6jkLjeX2nTof+fZ10l+OyAokDAQVHUiEDCJ3BDHrG21T5EymvYXMz2ziM6tDCMfcjN50bmQMLAtwhAjrdkE89bc9Z3bkGsN7iNSm3/7ntUOXoYVGSaGAiHw5zUq4iBgI63ZBPPW3PWd25BrDe4jUpt/+57VDl6GFRkmhgIh8OcxDZDGpPAAAAgAAAAIADAACAIgYDCJ3BDHrG21T5EymvYXMz2ziM6tDCMfcjN50bmQMLAtwQ2QxqTwAAAIAAAACAAgAAgAAiAgOppMN/WZbTqiXbrGtXCvBlA5RJKUJGCzVHU+2e7KWHcRDZDGpPAAAAgAAAAIAEAACAACICAn9jmXV9Lv9VoTatAsaEsYOLZVbl8bazQoKpS2tQBRCWENkMak8AAACAAAAAgAUAAIAA"
+#define PSBT_FINALIZED "cHNidP8BAJoCAAAAAljoeiG1ba8MI76OcHBFbDNvfLqlyHV5JPVFiHuyq911AAAAAAD/////g40EJ9DsZQpoqka7CwmK6kQiwHGyyng1Kgd5WdB86h0BAAAAAP////8CcKrwCAAAAAAWABTYXCtx0AYLCcmIauuBXlCZHdoSTQDh9QUAAAAAFgAUAK6pouXw+HaliN9VRuh0LR2HAI8AAAAAAAEAuwIAAAABqtc5MQGL0l+ErkALaISL4J23BurCrBgpi6vucatlb4sAAAAASEcwRAIgWPb8fGoz4bMVSNSByCbAFb0wE1qtQs1neQ2rZtKtJDsCIEoc7SYExnNbY5PltBaR3XiwDwxZQvufdRhW+qk4FX26Af7///8CgPD6AgAAAAAXqRQPuUY0IWlrgsgzryQceMF9295JNIfQ8gonAQAAABepFCnKdPigj4GZlCgYXJe12FLkBj9hh2UAAAABB9oARzBEAiB0AYrUGACXuHMyPAAVcgs2hMyBI4kQSOfbzZtVrWecmQIgc9Npt0Dj61Pc76M4I8gHBRTKVafdlUTxV8FnkTJhEYwBSDBFAiEA9hA4swjcHahlo0hSdG8BV3KTQgjG0kRUOTzZm98iF3cCIAVuZ1pnWm0KArhbFOXikHTYolqbV2C+ooFvZhkQoAbqAUdSIQKVg785rgpgl0etGZrd1jT6YQhVnWxc05tMIYPxq5bgfyEC2rYf9JoU22p9ArDNH7t4/EsYMStbTlTa5Nui+/71NtdSrgABASAAwusLAAAAABepFLf1+vQOPUClpFmx2zU18rcvqSHohwEHIyIAIIwjUxc3Q7WV37Sge3K6jkLjeX2nTof+fZ10l+OyAokDAQjaBABHMEQCIGLrelVhB6fHP0WsSrWh3d9vcHX7EnWWmn84Pv/3hLyyAiAMBdu3Rw2/LwhVfdNWxzJcHtMJE+mWzThAlF2xIijaXwFHMEQCIGX0W6WZi1mif/4ae+0BavHx+Q1Us6qPdFCqX1aiUQO9AiB/ckcDrR7blmgLKEtW1P/LiPf7dZ6rvgiqMPKbhROD0gFHUiEDCJ3BDHrG21T5EymvYXMz2ziM6tDCMfcjN50bmQMLAtwhAjrdkE89bc9Z3bkGsN7iNSm3/7ntUOXoYVGSaGAiHw5zUq4AIgIDqaTDf1mW06ol26xrVwrwZQOUSSlCRgs1R1Ptnuylh3EQ2QxqTwAAAIAAAACABAAAgAAiAgJ/Y5l1fS7/VaE2rQLGhLGDi2VW5fG2s0KCqUtrUAUQlhDZDGpPAAAAgAAAAIAFAACAAA=="
+#define PSBT_EXTRACTED_TX "0200000000010258e87a21b56daf0c23be8e7070456c336f7cbaa5c8757924f545887bb2abdd7500000000da00473044022074018ad4180097b873323c0015720b3684cc8123891048e7dbcd9b55ad679c99022073d369b740e3eb53dcefa33823c8070514ca55a7dd9544f157c167913261118c01483045022100f61038b308dc1da865a34852746f015772934208c6d24454393cd99bdf2217770220056e675a675a6d0a02b85b14e5e29074d8a25a9b5760bea2816f661910a006ea01475221029583bf39ae0a609747ad199addd634fa6108559d6c5cd39b4c2183f1ab96e07f2102dab61ff49a14db6a7d02b0cd1fbb78fc4b18312b5b4e54dae4dba2fbfef536d752aeffffffff838d0427d0ec650a68aa46bb0b098aea4422c071b2ca78352a077959d07cea1d01000000232200208c2353173743b595dfb4a07b72ba8e42e3797da74e87fe7d9d7497e3b2028903ffffffff0270aaf00800000000160014d85c2b71d0060b09c9886aeb815e50991dda124d00e1f5050000000016001400aea9a2e5f0f876a588df5546e8742d1d87008f000400473044022062eb7a556107a7c73f45ac4ab5a1dddf6f7075fb1275969a7f383efff784bcb202200c05dbb7470dbf2f08557dd356c7325c1ed30913e996cd3840945db12228da5f01473044022065f45ba5998b59a27ffe1a7bed016af1f1f90d54b3aa8f7450aa5f56a25103bd02207f724703ad1edb96680b284b56d4ffcb88f7fb759eabbe08aa30f29b851383d20147522103089dc10c7ac6db54f91329af617333db388cead0c231f723379d1b99030b02dc21023add904f3d6dcf59ddb906b0dee23529b7ffb9ed50e5e86151926860221f0e7352ae00000000"
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__data_output__op_return)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"data\": \"deadbeef\"}]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto& out = response.at("result").at("vout").at(0);
+    BOOST_REQUIRE_EQUAL(out.at("value").as_double(), 0.0);
+    BOOST_REQUIRE_EQUAL(as_text(out.at("scriptPubKey").at("hex")), "6a04deadbeef");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__data_output__decodes)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"data\": \"deadbeef\"}]");
+    const auto response = rpc("decodepsbt", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 0);
+    const auto& out = result.at("tx").at("vout").at(0);
+    BOOST_REQUIRE_EQUAL(as_text(out.at("scriptPubKey").at("hex")), "6a04deadbeef");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__updater__expected_scripts)
+{
+    const auto response = rpc("decodepsbt", "[\"" PSBT_UPDATER "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("inputs").as_array().size(), 2u);
+    BOOST_REQUIRE(result.at("inputs").at(0).as_object().contains("non_witness_utxo"));
+    BOOST_REQUIRE(result.at("inputs").at(0).as_object().contains("redeem_script"));
+    BOOST_REQUIRE(result.at("inputs").at(1).as_object().contains("witness_utxo"));
+    BOOST_REQUIRE_EQUAL(result.at("outputs").as_array().size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__two_signed__combined)
+{
+    const auto response = rpc("combinepsbt", "[[\"" PSBT_SIGNER_A "\", \"" PSBT_SIGNER_B "\"]]");
+    const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
+    const auto& sigs = decoded.at("result").at("inputs").at(0).at("partial_signatures");
+    BOOST_REQUIRE_EQUAL(sigs.as_object().size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__finalizepsbt__combined__extracted_transaction)
+{
+    const auto response = rpc("finalizepsbt", "[\"" PSBT_COMBINED "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("complete").as_bool());
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hex")), PSBT_EXTRACTED_TX);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__finalizepsbt__no_extract__psbt)
+{
+    const auto response = rpc("finalizepsbt", "[\"" PSBT_COMBINED "\", false]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("complete").as_bool());
+    BOOST_REQUIRE(result.as_object().contains("psbt"));
+    BOOST_REQUIRE(!result.as_object().contains("hex"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__finalizepsbt__unsigned__incomplete)
+{
+    const auto response = rpc("finalizepsbt", "[\"" PSBT_UPDATER "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(!result.at("complete").as_bool());
+    BOOST_REQUIRE(result.as_object().contains("psbt"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__analyzepsbt__finalized__extractor_next)
+{
+    const auto response = rpc("analyzepsbt", "[\"" PSBT_FINALIZED "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("next")), "extractor");
+    BOOST_REQUIRE(result.as_object().contains("estimated_vsize"));
+    BOOST_REQUIRE(result.at("inputs").at(0).at("is_final").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__analyzepsbt__updater__signer_next)
+{
+    const auto response = rpc("analyzepsbt", "[\"" PSBT_UPDATER "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("next")), "signer");
+    BOOST_REQUIRE(result.at("inputs").at(0).at("has_utxo").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__joinpsbts__single__invalid)
+{
+    const auto response = rpc("joinpsbts", "[[\"" PSBT_UPDATER "\"]]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__created_raw__psbt)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("converttopsbt", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(decoded.at("result").at("inputs").as_array().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__descriptors__not_implemented)
+{
+    const auto response = rpc("utxoupdatepsbt", "[\"" PSBT_UPDATER "\", [\"wpkh(abc)\"]]");
+    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__no_matching_utxos__round_trips)
+{
+    const auto response = rpc("utxoupdatepsbt", "[\"" PSBT_UPDATER "\"]");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), PSBT_UPDATER);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

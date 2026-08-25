@@ -32,8 +32,8 @@ struct bitcoind_mining_methods
     {
         method<"getnetworkhashps", optional<120.0>, optional<-1.0>>{ "nblocks", "height" },
         method<"getmininginfo">{},
-        method<"submitblock">{ unimplemented },
-        method<"submitheader">{ unimplemented },
+        method<"submitblock", string_t, optional<""_t>>{ "hexdata", "dummy" },
+        method<"submitheader", string_t>{ "hexdata" },
         method<"getblocktemplate">{ unimplemented },
         method<"getprioritisedtransactions">{ unimplemented },
         method<"prioritisetransaction">{ unimplemented }

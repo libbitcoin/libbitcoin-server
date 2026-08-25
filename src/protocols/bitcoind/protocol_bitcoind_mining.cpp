@@ -55,8 +55,8 @@ void protocol_bitcoind_mining::start() NOEXCEPT
 
     SUBSCRIBE_BITCOIND(handle_get_network_hash_ps, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_mining_info, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_submit_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_submit_header, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_submit_block, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_submit_header, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_prioritised_transactions, _1, _2);
     SUBSCRIBE_BITCOIND(handle_prioritise_transaction, _1, _2);
@@ -67,7 +67,8 @@ void protocol_bitcoind_mining::start() NOEXCEPT
 // ----------------------------------------------------------------------------
 
 bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
-    rpc_interface::get_network_hash_ps, double, double height) NOEXCEPT
+    rpc_interface::get_network_hash_ps, double nblocks,
+    double height) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -91,22 +92,66 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
         target = std::min(target, top);
     }
 
-    const auto header = query.get_header(query.to_confirmed(target));
-    if (!header)
+    // A non-positive window selects the span since the last retarget.
+    size_t window{};
+    if (nblocks <= 0)
+    {
+        window = add1(target % system_settings().retargeting_interval());
+    }
+    else if (!to_integer(window, nblocks))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    window = std::min(window, target);
+    if (is_zero(window))
+    {
+        send_result(zero, 20);
+        return true;
+    }
+
+    // The window timespan is bounded by its observed timestamps.
+    const auto first = target - window;
+    auto minimum = max_uint32;
+    auto maximum = min_uint32;
+    for (auto index = first; index <= target; ++index)
+    {
+        const auto header = query.get_header(query.to_confirmed(index));
+        if (!header)
+        {
+            send_error(database::error::integrity);
+            return true;
+        }
+
+        minimum = std::min(minimum, header->timestamp());
+        maximum = std::max(maximum, header->timestamp());
+    }
+
+    if (minimum == maximum)
+    {
+        send_result(zero, 20);
+        return true;
+    }
+
+    uint256_t start_work{};
+    uint256_t end_work{};
+    if (!query.get_branch_work(start_work, query.to_confirmed(first)) ||
+        !query.get_branch_work(end_work, query.to_confirmed(target)))
     {
         send_error(database::error::integrity);
         return true;
     }
 
-    const auto period = system_settings().block_spacing_seconds;
-    const auto span = to_floating(power2<uint64_t>(32u));
-    send_result(header->difficulty() * span / period, 20);
+    const auto work = (end_work - start_work).convert_to<double>();
+    send_result(work / (maximum - minimum), 20);
     return true;
 }
 
 // currentblockweight/currentblocktx are omitted (bitcoind omits them until a
-// block is assembled, and there is no assembler). The tx pool is empty and no
-// packages are selected, so pooledtx and blockmintxfee are zero.
+// block is assembled, and there is no assembler). The tx pool is empty, so
+// pooledtx is zero, and no packages are selected, so blockmintxfee is the
+// maximum.
 bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     rpc_interface::get_mining_info) NOEXCEPT
 {
@@ -167,20 +212,105 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     return true;
 }
 
+// The response defers to organize completion (see dispatch).
 bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
-    rpc_interface::submit_block) NOEXCEPT
+    rpc_interface::submit_block, const std::string& hexdata,
+    const std::string&) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexdata))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto block = to_shared<chain::block>(data, witness);
+    if (!block->is_valid())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    // bitcoind reports an already-stored block as a duplicate result.
+    if (!archive().to_header(block->hash()).is_terminal())
+    {
+        send_result(std::string{ "duplicate" }, 32);
+        return true;
+    }
+
+    organize(block, BIND(handle_organize_block, _1, _2));
     return true;
 }
 
 bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
-    rpc_interface::submit_header) NOEXCEPT
+    rpc_interface::submit_header, const std::string& hexdata) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexdata))
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    const auto header = to_shared<chain::header>(data);
+    if (!header->is_valid())
+    {
+        send_error(error::invalid_argument);
+        return true;
+    }
+
+    if (!archive().to_header(header->hash()).is_terminal())
+    {
+        send_result(null_t{}, 8);
+        return true;
+    }
+
+    organize(header, BIND(handle_organize_header, _1, _2));
     return true;
+}
+
+void protocol_bitcoind_mining::handle_organize_block(const code& ec,
+    size_t) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    network::protocol::post<CLASS>(&CLASS::do_submit_block, ec);
+}
+
+void protocol_bitcoind_mining::handle_organize_header(const code& ec,
+    size_t) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    network::protocol::post<CLASS>(&CLASS::do_submit_header, ec);
+}
+
+// bitcoind returns null on acceptance and a reason string on rejection.
+void protocol_bitcoind_mining::do_submit_block(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (ec)
+        send_result(ec.message(), 64);
+    else
+        send_result(null_t{}, 8);
+}
+
+void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (ec)
+        send_error(ec);
+    else
+        send_result(null_t{}, 8);
 }
 
 bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
