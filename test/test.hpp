@@ -28,6 +28,10 @@
     BOOST_REQUIRE_NO_THROW(expression); \
     BOOST_REQUIRE(expression)
 
+#define REQUIRE_NO_THROW_FALSE(expression) \
+    BOOST_REQUIRE_NO_THROW(expression); \
+    BOOST_REQUIRE(!expression)
+
 #define TEST_NAME \
     boost::unit_test::framework::current_test_case().p_name.get()
 #define SUITE_NAME \

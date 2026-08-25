@@ -1167,7 +1167,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__status__null)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__abort__false)
 {
     const auto response = rpc("scantxoutset", "[\"abort\"]");
-    REQUIRE_NO_THROW_TRUE(!response.at("result").as_bool());
+    REQUIRE_NO_THROW_FALSE(response.at("result").as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__empty_scanobjects__invalid)
