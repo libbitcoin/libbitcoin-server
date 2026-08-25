@@ -623,8 +623,8 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
         return;
     }
 
-    database::unspent_stats stats{};
-    const auto ec = query.get_unspent_stats(stopping_, stats, branch,
+    database::unspent_totals totals{};
+    const auto ec = query.get_unspent_totals(stopping_, totals, branch,
         database_settings().turbo);
     if (ec)
     {
@@ -644,12 +644,12 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info() NOEXCEPT
     {
         { "height", top },
         { "bestblock", encode_hash(query.get_header_key(link)) },
-        { "transactions", stats.transactions },
-        { "txouts", stats.outputs },
+        { "transactions", totals.transactions },
+        { "txouts", totals.outputs },
 
         // bitcoind's per-utxo accounting fiction (50 byte overhead).
-        { "bogosize", 50u * stats.outputs + stats.script_bytes },
-        { "total_amount", to_floating(stats.value) /
+        { "bogosize", 50u * totals.outputs + totals.script_bytes },
+        { "total_amount", to_floating(totals.value) /
             chain::satoshi_per_bitcoin }
     };
 
