@@ -44,9 +44,9 @@ std::optional<std::thread> executor::poller_thread_{};
 executor& executor::factory(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
 {
-    // TODO: expose fork_flags() mapping from system static chain_state method.
-    ////metadata.configured.database.fork_flags =
-    ////    metadata.configured.bitcoin.fork_flags();
+    // Pack creation settings, stored at store create and read at load.
+    metadata.configured.database.envelope = database::envelope{
+        metadata.configured.bitcoin, metadata.configured.database };
 
     // Suppress configured batch cache sizing when batching cannot run.
     if (!system::batched::accelerated())
