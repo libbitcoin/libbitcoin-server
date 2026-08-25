@@ -27,6 +27,10 @@ static const code subscription_limit{ server::error::subscription_limit };
 static const code unauthorized{ network::error::unauthorized };
 static const code unexpected_method{ network::error::unexpected_method };
 
+// Inherited bitcoind paths send bitcoind codes (btcjson uses the same values).
+static const code method_not_found{ server::error::bitcoind::method_not_found };
+static const code deserialization{ server::error::bitcoind::deserialization_error };
+
 // mock_block10 chains onto block9 and pays found_address from its second
 // transaction only (its other outputs pay distinct key/script hashes), so a
 // filter watching found_address matches exactly one of its transactions.
@@ -63,12 +67,12 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__no_credential_configured__unauthori
     BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__unexpected_method)
+BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__method_not_found)
 {
     // authenticate is websocket-only (as btcd): not part of the post surface.
     const auto response = http_rpc("authenticate", R"(["user","pass"])");
     REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
-    BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), unexpected_method.value());
+    BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), method_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__help__default__method_list)
@@ -178,10 +182,10 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase__expected_t
     BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("txid")), encode_hash(coinbase.hash(false)));
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__invalid_argument)
+BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__deserialization)
 {
     const auto result = rpc_error("decoderawtransaction", R"(["not-hex"])");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BOOST_REQUIRE_EQUAL(result, deserialization.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__decodescript__pay_public_key__pubkey)
@@ -403,9 +407,9 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__response__sequential_requests__id_matches_request
     BOOST_REQUIRE_EQUAL(r1.at("id").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__unexpected_method)
+BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__method_not_found)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("nosuchmethod"), unexpected_method.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("nosuchmethod"), method_not_found.value());
 
     // The connection survives an unknown method (as btcd).
     const auto follow_up = rpc("session");

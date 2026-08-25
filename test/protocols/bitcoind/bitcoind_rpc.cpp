@@ -45,30 +45,33 @@ bool has_error(const boost::json::value& response) NOEXCEPT
         !response.at("error").is_null();
 }
 
-bool is_not_implemented(const boost::json::value& response) NOEXCEPT
+// Codes are the bitcoind wire values, not our enumeration.
+bool has_code(const boost::json::value& response, int64_t code) NOEXCEPT
 {
     return has_error(response) &&
-        response.at("error").at("message").as_string() == "not_implemented";
+        response.at("error").at("code").as_int64() == code;
 }
 
-const std::vector<std::string> rejected_methods
+using method_code = std::pair<std::string, int64_t>;
+
+const std::vector<method_code> rejected_methods
 {
-    "dumptxoutset",
-    "loadtxoutset",
-    "clearbanned",
-    "listbanned",
-    "setban",
-    "stop",
-    "descriptorprocesspsbt"
+    { "dumptxoutset", -32601 },
+    { "loadtxoutset", -32601 },
+    { "clearbanned", -20 },
+    { "listbanned", -20 },
+    { "setban", -20 },
+    { "stop", -32601 },
+    { "descriptorprocesspsbt", -32601 }
 };
 
-const std::vector<std::string> wip_methods
+const std::vector<method_code> wip_methods
 {
-    "getblockfrompeer",
-    "preciousblock",
-    "disconnectnode",
-    "exportasmap",
-    "getaddednodeinfo",
+    { "getblockfrompeer", -32601 },
+    { "preciousblock", -32601 },
+    { "disconnectnode", -32601 },
+    { "exportasmap", -32601 },
+    { "getaddednodeinfo", -24 }
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -157,23 +160,23 @@ const std::vector<std::string> scope_methods
     "enumeratesigners"
 };
 
-const std::vector<std::string> pending_methods
+const std::vector<method_code> pending_methods
 {
-    "getmempoolancestors",
-    "getmempoolcluster",
-    "getmempooldescendants",
-    "getmempoolentry",
-    "getmempoolinfo",
-    "getrawmempool",
-    "gettxspendingprevout",
-    "importmempool",
-    "abortprivatebroadcast",
-    "getprivatebroadcastinfo",
-    "submitpackage",
-    "getblocktemplate",
-    "getprioritisedtransactions",
-    "prioritisetransaction",
-    "estimatesmartfee"
+    { "getmempoolancestors", -33 },
+    { "getmempoolcluster", -33 },
+    { "getmempooldescendants", -33 },
+    { "getmempoolentry", -33 },
+    { "getmempoolinfo", -33 },
+    { "getrawmempool", -33 },
+    { "gettxspendingprevout", -33 },
+    { "importmempool", -33 },
+    { "abortprivatebroadcast", -32601 },
+    { "getprivatebroadcastinfo", -32601 },
+    { "submitpackage", -33 },
+    { "getblocktemplate", -33 },
+    { "getprioritisedtransactions", -33 },
+    { "prioritisetransaction", -33 },
+    { "estimatesmartfee", -32603 }
 };
 
 } // namespace
@@ -609,35 +612,35 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
         BOOST_REQUIRE_MESSAGE(has_error(rpc(method, params)), method);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__expected_code)
 {
-    for (const auto& method: rejected_methods)
+    for (const auto& [method, code]: rejected_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
     }
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__expected_code)
 {
-    for (const auto& method: wip_methods)
+    for (const auto& [method, code]: wip_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
     }
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__method_not_found)
 {
     for (const auto& method: scope_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), -32601), method);
     }
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__expected_code)
 {
-    for (const auto& method: pending_methods)
+    for (const auto& [method, code]: pending_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
     }
 }
 
