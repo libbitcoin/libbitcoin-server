@@ -696,7 +696,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     database::header_links branch{};
     if (!query.get_ancestry(branch, link, height))
     {
-        POST(complete_scan, database::error::integrity, std::move(result),
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
             zero);
         return;
     }
@@ -740,7 +740,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
     if (ec)
     {
-        POST(complete_scan, ec,
+        POST(complete_scan, error::bitcoind::internal_error,
             std::move(result), zero);
         return;
     }
@@ -748,7 +748,8 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     // A reorganization across the pinned top voids the scan.
     if (!query.is_confirmed_block(link))
     {
-        POST(complete_scan, error::server_error, std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
+            zero);
         return;
     }
 
@@ -839,8 +840,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
     {
         if (!expand_scan_object(scripts, item))
         {
-            POST(complete_scan, error::invalid_argument, std::move(result),
-                zero);
+            POST(complete_scan, error::bitcoind::invalid_address_or_key,
+                std::move(result), zero);
             return;
         }
     }
@@ -930,7 +931,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (ec)
     {
-        POST(complete_scan, ec,
+        POST(complete_scan, error::bitcoind::internal_error,
             std::move(result), zero);
         return;
     }
@@ -938,7 +939,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
     // A reorganization across the pinned top voids the scan.
     if (!query.is_confirmed_block(link))
     {
-        POST(complete_scan, error::server_error, std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error,
+            std::move(result), zero);
         return;
     }
 

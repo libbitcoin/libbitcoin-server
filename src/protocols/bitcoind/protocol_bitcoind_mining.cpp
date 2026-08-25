@@ -307,8 +307,9 @@ void protocol_bitcoind_mining::do_submit_block(const code& ec) NOEXCEPT
 void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    using namespace error::bitcoind;
     if (ec)
-        send_error(ec);
+        send_error(translate(ec, verify_error));
     else
         send_result(null_t{}, 8);
 }

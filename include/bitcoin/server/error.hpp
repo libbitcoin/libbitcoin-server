@@ -138,6 +138,10 @@ enum error_t : int32_t
 // No current need for error_code equivalence mapping.
 DECLARE_ERROR_T_CODE_CATEGORY(error);
 
+/// Map a foreign category code to the bitcoind code space, where a store
+/// fault is internal and any other failure is reported as the given code.
+BC_API code translate(const code& ec, error_t failure) NOEXCEPT;
+
 } // namespace bitcoind
 } // namespace error
 } // namespace server

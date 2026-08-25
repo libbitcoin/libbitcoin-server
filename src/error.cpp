@@ -125,6 +125,17 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
 
 DEFINE_ERROR_T_CATEGORY(error, "bitcoind", "bitcoind code")
 
+code translate(const code& ec, error_t failure) NOEXCEPT
+{
+    if (!ec)
+        return success;
+
+    if (database::error::error_category::contains(ec))
+        return internal_error;
+
+    return failure;
+}
+
 } // namespace bitcoind
 } // namespace error
 } // namespace server

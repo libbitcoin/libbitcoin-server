@@ -159,7 +159,8 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
 
     if (const auto fault = broadcast_tx(tx); fault)
     {
-        send_error(fault);
+        using namespace error::bitcoind;
+        send_error(translate(fault, verify_rejected));
         return true;
     }
 
@@ -224,7 +225,7 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
 {
     uint32_t lock_time{};
     if (!to_integer(lock_time, locktime))
-        return error::invalid_argument;
+        return error::bitcoind::invalid_parameter;
 
     using namespace chain;
     const auto sequence = replaceable ? messages::peer::bip125_sequence :
@@ -238,7 +239,7 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
     for (const auto& item: inputs)
     {
         if (!std::holds_alternative<object_t>(item.value()))
-            return error::invalid_argument;
+            return error::bitcoind::type_error;
 
         const auto& fields = std::get<object_t>(item.value());
         const auto txid_it = fields.find("txid");
@@ -246,11 +247,11 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
         if (txid_it == fields.end() || vout_it == fields.end() ||
             !std::holds_alternative<string_t>(txid_it->second.value()) ||
             !std::holds_alternative<number_t>(vout_it->second.value()))
-            return error::invalid_argument;
+            return error::bitcoind::invalid_parameter;
 
         if (!decode_hash(hash, std::get<string_t>(txid_it->second.value())) ||
             !to_integer(vout, std::get<number_t>(vout_it->second.value())))
-            return error::invalid_argument;
+            return error::bitcoind::invalid_parameter;
 
         ins->push_back(to_shared<input>(point{ hash, vout }, script{}, sequence));
     }
@@ -268,7 +269,7 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
             if (!std::holds_alternative<string_t>(pair.second.value()) ||
                 !decode_base16(data, std::get<string_t>(pair.second.value())) ||
                 data.size() > max_null_data_size)
-                return error::invalid_argument;
+                return error::bitcoind::invalid_parameter;
 
             outs->push_back(to_shared<output>(zero,
                 chain::script{ script::to_pay_null_data_pattern(data) }));
@@ -276,21 +277,20 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
         }
 
         if (!std::holds_alternative<number_t>(pair.second.value()))
-            return error::invalid_argument;
+            return error::bitcoind::type_error;
 
-        if (const auto fault = output_script(script, pair.first, p2kh_, p2sh_,
-            witness_))
-            return fault;
+        if (output_script(script, pair.first, p2kh_, p2sh_, witness_))
+            return error::bitcoind::invalid_address_or_key;
 
         const auto btc = std::get<number_t>(pair.second.value());
         if (!to_integer(satoshi, btc * satoshi_per_bitcoin, false))
-            return error::invalid_argument;
+            return error::bitcoind::type_error;
 
         outs->push_back(to_shared<output>(satoshi, std::move(script)));
     }
 
     out = { 1, ins, outs, lock_time };
-    return error::success;
+    return error::bitcoind::success;
 }
 
 bool protocol_bitcoind_transaction::handle_create_raw_transaction(
