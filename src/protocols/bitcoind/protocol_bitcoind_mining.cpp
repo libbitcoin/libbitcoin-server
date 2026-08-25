@@ -282,7 +282,7 @@ void protocol_bitcoind_mining::handle_organize_block(const code& ec,
     if (stopped())
         return;
 
-    network::protocol::post<CLASS>(&CLASS::do_submit_block, ec);
+    POST(do_submit_block, ec);
 }
 
 void protocol_bitcoind_mining::handle_organize_header(const code& ec,
@@ -291,7 +291,7 @@ void protocol_bitcoind_mining::handle_organize_header(const code& ec,
     if (stopped())
         return;
 
-    network::protocol::post<CLASS>(&CLASS::do_submit_header, ec);
+    POST(do_submit_header, ec);
 }
 
 // bitcoind returns null on acceptance and a reason string on rejection.

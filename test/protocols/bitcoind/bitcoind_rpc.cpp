@@ -58,14 +58,14 @@ const std::vector<std::string> rejected_methods
     "clearbanned",
     "listbanned",
     "setban",
-    "stop"
+    "stop",
+    "descriptorprocesspsbt"
 };
 
 const std::vector<std::string> wip_methods
 {
     "getblockfrompeer",
     "preciousblock",
-    "descriptorprocesspsbt",
     "disconnectnode",
     "exportasmap",
     "getaddednodeinfo",
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__help__default__implemented_method_list)
     const auto response = rpc("help");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_NE(as_text(response.at("result")).find("getblockcount"), std::string::npos);
-    BOOST_REQUIRE_EQUAL(as_text(response.at("result")).find("gettxoutsetinfo"), std::string::npos);
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")).find("pruneblockchain"), std::string::npos);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__default__number)
@@ -601,8 +601,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
 {
     const std::vector<std::pair<std::string, std::string>> methods
     {
-        { "gettxoutsetinfo", "[]" },
-        { "scantxoutset", "[\"start\", []]" },
         { "pruneblockchain", "[1]" },
         { "savemempool", "[]" }
     };
@@ -1133,6 +1131,73 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 {
     const auto response = rpc("scanblocks", "[\"status\", []]");
     REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+// gettxoutsetinfo
+
+// The genesis output is excluded from the utxo set (as bitcoind).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
+{
+    const auto response = rpc("gettxoutsetinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bestblock")), block9);
+    BOOST_REQUIRE_EQUAL(result.at("transactions").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("txouts").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("bogosize").as_int64(), 9 * (50 + 67));
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 450.0);
+}
+
+// Utxo set commitments have no consumer here (no assumeutxo).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__hash_type__invalid)
+{
+    const auto response = rpc("gettxoutsetinfo", "[\"muhash\"]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+// scantxoutset
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__status__null)
+{
+    const auto response = rpc("scantxoutset", "[\"status\"]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__abort__false)
+{
+    const auto response = rpc("scantxoutset", "[\"abort\"]");
+    REQUIRE_NO_THROW_TRUE(!response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__empty_scanobjects__invalid)
+{
+    const auto response = rpc("scantxoutset", "[\"start\", []]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__genesis_pk__expected)
+{
+    const auto response = rpc("scantxoutset", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE(result.at("success").as_bool());
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bestblock")), block9);
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 50.0);
+
+    const auto& unspents = result.at("unspents").as_array();
+    BOOST_REQUIRE_EQUAL(unspents.size(), 1u);
+    const auto& unspent = unspents.front();
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("txid")), "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+    BOOST_REQUIRE_EQUAL(unspent.at("vout").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("scriptPubKey")), "4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac");
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("desc")).find("pk(04678afd"), 0u);
+    BOOST_REQUIRE_EQUAL(unspent.at("amount").as_double(), 50.0);
+    BOOST_REQUIRE(unspent.at("coinbase").as_bool());
+    BOOST_REQUIRE_EQUAL(unspent.at("height").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(as_text(unspent.at("blockhash")), block0);
+    BOOST_REQUIRE_EQUAL(unspent.at("confirmations").as_int64(), 10);
 }
 
 // openrpc

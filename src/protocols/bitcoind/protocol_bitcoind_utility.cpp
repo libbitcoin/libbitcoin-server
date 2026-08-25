@@ -115,36 +115,6 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         return true;
     }
 
-    // Inferred where a pattern is expressible, otherwise raw.
-    const auto infer_descriptor = [&](const chain::script& target) NOEXCEPT
-    {
-        std::string body{};
-        const auto& ops = target.ops();
-        if (chain::script::is_pay_public_key_pattern(ops))
-        {
-            body = "pk(" + encode_base16(ops.front().data()) + ")";
-        }
-        else if (chain::script::is_pay_multisig_pattern(ops))
-        {
-            body = "multi(" + std::to_string(
-                chain::operation::opcode_to_positive(ops.front().code()));
-            for (auto op = std::next(ops.begin());
-                op != std::prev(ops.end(), 2); ++op)
-                body += "," + encode_base16(op->data());
-
-            body += ")";
-        }
-        else
-        {
-            const auto address = to_address(target);
-            body = address.empty() ?
-                "raw(" + encode_base16(target.to_data(false)) + ")" :
-                "addr(" + address + ")";
-        }
-
-        return body + "#" + descriptor_checksum(body);
-    };
-
     using namespace wallet;
     const auto pattern = script.output_pattern();
     object_t result
@@ -266,28 +236,6 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
 
     send_result(std::move(result), 256);
     return true;
-}
-
-// The address of a singular output script (empty if unaddressable).
-std::string protocol_bitcoind_utility::to_address(
-    const chain::script& script) const NOEXCEPT
-{
-    using namespace chain;
-    using namespace wallet;
-
-    const auto& ops = script.ops();
-    if (chain::script::is_pay_witness_pattern(ops))
-    {
-        const auto code = ops.front().code();
-        const auto version = (code == opcode::push_size_0) ? 0_u8 :
-            operation::opcode_to_positive(code);
-
-        return witness_address{ ops.at(1).data(), version,
-            witness_ }.encoded();
-    }
-
-    const auto pay = payment_address::extract_output(script, p2kh_, p2sh_);
-    return pay ? pay.encoded() : std::string{};
 }
 
 bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,

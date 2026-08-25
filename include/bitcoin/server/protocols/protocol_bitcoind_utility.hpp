@@ -77,10 +77,6 @@ protected:
         rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT;
     bool handle_estimate_smart_fee(const code& ec,
         rpc_interface::estimate_smart_fee) NOEXCEPT;
-
-    /// The address of a singular output script (empty if unaddressable).
-    std::string to_address(
-        const system::chain::script& script) const NOEXCEPT;
 };
 
 } // namespace server

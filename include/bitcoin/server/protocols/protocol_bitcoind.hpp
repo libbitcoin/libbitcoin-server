@@ -115,6 +115,14 @@ protected:
         const network::rpc::array_t& keys,
         const std::string& address_type) const NOEXCEPT;
 
+    /// The address of a singular output script (empty if unaddressable).
+    std::string to_address(
+        const system::chain::script& script) const NOEXCEPT;
+
+    /// Inferred where a pattern is expressible, otherwise raw.
+    std::string infer_descriptor(
+        const system::chain::script& script) const NOEXCEPT;
+
     /// Senders. close_reason (if truthy) stops the channel only once the
     /// write has completed, so the error reaches the client first.
     void send_error(const code& ec) NOEXCEPT;

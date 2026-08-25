@@ -70,10 +70,10 @@ constexpr bool bitcoind_unserved(const std::string_view& name) NOEXCEPT
 
 // These are dispatchable but answer not_implemented (see protocol).
 static_assert(bitcoind_served("getchaintxstats"));
-static_assert(bitcoind_unserved("gettxoutsetinfo"));
+static_assert(bitcoind_served("gettxoutsetinfo"));
 static_assert(bitcoind_unserved("pruneblockchain"));
 static_assert(bitcoind_unserved("savemempool"));
-static_assert(bitcoind_unserved("scantxoutset"));
+static_assert(bitcoind_served("scantxoutset"));
 
 // no-op that returns true (store is reliable, see protocol).
 static_assert(bitcoind_served("verifychain"));
@@ -116,10 +116,10 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader getblockstats "
-    "getchaintxstats gettxout verifychain gettxoutproof verifytxoutproof "
-    "getchainstates getchaintips getdeploymentinfo getdescriptoractivity "
-    "getdifficulty scanblocks waitforblock waitforblockheight "
-    "waitfornewblock");
+    "getchaintxstats gettxout gettxoutsetinfo scantxoutset verifychain "
+    "gettxoutproof verifytxoutproof getchainstates getchaintips "
+    "getdeploymentinfo getdescriptoractivity getdifficulty scanblocks "
+    "waitforblock waitforblockheight waitfornewblock");
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getopenrpcinfo getrpcinfo logging uptime");
 static_assert(bitcoind_mining_methods::names ==
