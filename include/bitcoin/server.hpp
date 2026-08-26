@@ -17,7 +17,6 @@
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/error.hpp>
 #include <bitcoin/server/parser.hpp>
 #include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -28,6 +27,11 @@
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
 #include <bitcoin/server/channels/channel_stratum_v2.hpp>
 #include <bitcoin/server/channels/channels.hpp>
+#include <bitcoin/server/error/bitcoind_error_t.hpp>
+#include <bitcoin/server/error/btcd_error_t.hpp>
+#include <bitcoin/server/error/electrum_error_t.hpp>
+#include <bitcoin/server/error/error.hpp>
+#include <bitcoin/server/error/error_t.hpp>
 #include <bitcoin/server/interfaces/admin.hpp>
 #include <bitcoin/server/interfaces/bitcoind_blockchain.hpp>
 #include <bitcoin/server/interfaces/bitcoind_control.hpp>

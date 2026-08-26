@@ -122,7 +122,10 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
-    <ClCompile Include="..\..\..\..\src\error.cpp" />
+    <ClCompile Include="..\..\..\..\src\error\bitcoind_error_t.cpp" />
+    <ClCompile Include="..\..\..\..\src\error\btcd_error_t.cpp" />
+    <ClCompile Include="..\..\..\..\src\error\electrum_error_t.cpp" />
+    <ClCompile Include="..\..\..\..\src\error\error_t.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\admin_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp" />
@@ -188,7 +191,11 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channels.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\configuration.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\error.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\bitcoind_error_t.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\btcd_error_t.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\electrum_error_t.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error_t.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_control.hpp" />

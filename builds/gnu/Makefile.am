@@ -48,10 +48,13 @@ src_libbitcoin_server_la_LIBADD = \
 
 src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/configuration.cpp \
-    ${srcdir}/../../src/error.cpp \
     ${srcdir}/../../src/parser.cpp \
     ${srcdir}/../../src/server_node.cpp \
     ${srcdir}/../../src/settings.cpp \
+    ${srcdir}/../../src/error/bitcoind_error_t.cpp \
+    ${srcdir}/../../src/error/btcd_error_t.cpp \
+    ${srcdir}/../../src/error/electrum_error_t.cpp \
+    ${srcdir}/../../src/error/error_t.cpp \
     ${srcdir}/../../src/parsers/admin_query.cpp \
     ${srcdir}/../../src/parsers/admin_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_script.cpp \
@@ -115,7 +118,6 @@ include_bitcoin_serverdir = \
 include_bitcoin_server_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/configuration.hpp \
     ${srcdir}/../../include/bitcoin/server/define.hpp \
-    ${srcdir}/../../include/bitcoin/server/error.hpp \
     ${srcdir}/../../include/bitcoin/server/parser.hpp \
     ${srcdir}/../../include/bitcoin/server/server_node.hpp \
     ${srcdir}/../../include/bitcoin/server/settings.hpp \
@@ -131,6 +133,16 @@ include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channels.hpp
+
+include_bitcoin_server_errordir = \
+    ${includedir}/bitcoin/server/error
+
+include_bitcoin_server_error_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/error/bitcoind_error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/btcd_error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/electrum_error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/error.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/error_t.hpp
 
 include_bitcoin_server_impl_protocolsdir = \
     ${includedir}/bitcoin/server/impl/protocols
