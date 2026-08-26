@@ -294,6 +294,13 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__genesis__self_inclusive_media
     BOOST_REQUIRE_EQUAL(response.at("result").at("mediantime").as_int64(), 1231006505);
 }
 
+// The top block has no stored child context, so its mtp is promoted.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__top__promoted_mediantime)
+{
+    const auto response = rpc("getblockheader", hash_param(test::block9_hash, "true"));
+    BOOST_REQUIRE_EQUAL(response.at("result").at("mediantime").as_int64(), 1231471428);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
 {
     const auto response = rpc("getblockchaininfo");
