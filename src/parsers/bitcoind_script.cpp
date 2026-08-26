@@ -33,13 +33,14 @@ code output_script(script& out, const std::string& text, uint8_t p2kh,
 {
     using namespace wallet;
 
-    if (const payment_address payment{ text }; payment)
+    // The parses accept any prefix, so the configured ones are checks.
+    if (const payment_address payment{ text }; payment &&
+        ((payment.prefix() == p2kh) || (payment.prefix() == p2sh)))
     {
         out = payment.output_script(p2kh, p2sh);
         return error::success;
     }
 
-    // The parse accepts any prefix, so the configured one is a check.
     if (const witness_address payment{ text };
         payment && payment.prefix() == witness)
     {

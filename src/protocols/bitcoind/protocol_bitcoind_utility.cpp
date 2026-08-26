@@ -170,7 +170,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
 
     using namespace wallet;
     const payment_address base58(address);
-    if (base58)
+    if (base58 && ((base58.prefix() == p2kh_) || (base58.prefix() == p2sh_)))
     {
         send_result(object_t
         {

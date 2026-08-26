@@ -554,6 +554,21 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__genesis__expected_script)
     BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("scriptPubKey")), "76a91462e907b15cbf27d5425399ebf6f0fb50ebb88f1888ac");
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__foreign_network__invalid)
+{
+    const wallet::payment_address testnet{ short_hash{}, 111 };
+    const auto response = rpc("validateaddress", "[\"" + testnet.encoded() + "\"]");
+    BOOST_REQUIRE(!response.at("result").at("isvalid").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__foreign_network__invalid_address)
+{
+    const wallet::payment_address testnet{ short_hash{}, 111 };
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"" + testnet.encoded() + "\": 0.001}]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -5), response);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__validateaddress__witness__expected_script)
 {
     const auto response = rpc("validateaddress", "[\"bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4\"]");
