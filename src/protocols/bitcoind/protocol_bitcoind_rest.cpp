@@ -136,28 +136,8 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         send_not_found();
 }
 
-// Serializers.
+// Media types.
 // ----------------------------------------------------------------------------
-
-template <typename Object, typename ...Args>
-data_chunk to_data(const Object& object, size_t size, Args&&... args) NOEXCEPT
-{
-    data_chunk out(size);
-    stream::out::fast sink{ out };
-    write::bytes::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    return out;
-}
-
-template <typename Object, typename ...Args>
-std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
-{
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    return out;
-}
 
 constexpr auto data = to_value(http::media_type::application_octet_stream);
 constexpr auto json = to_value(http::media_type::application_json);

@@ -16,13 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
-#define LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
+#ifndef LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_COIN_HPP
+#define LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_COIN_HPP
 
-#include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
-#include <bitcoin/server/serializers/bitcoind_coin.hpp>
-#include <bitcoin/server/serializers/bitcoind_data.hpp>
-#include <bitcoin/server/serializers/bitcoind_json.hpp>
-#include <bitcoin/server/serializers/bitcoind_psbt.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+/// bitcoind's utxo set coin serialization (outpoint, height code, value,
+/// script), the element of both set commitment forms.
+BCS_API void to_coin_data(system::data_chunk& out,
+    const database::unspent_coin& coin) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

@@ -130,6 +130,7 @@
     <ClCompile Include="..\..\..\..\src\parsers\admin_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_query.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_scan.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp" />
@@ -175,6 +176,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_block_stats.cpp" />
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_coin.cpp" />
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_json.cpp" />
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_psbt.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp" />
@@ -219,6 +223,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_query.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_scan.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp" />
@@ -250,6 +255,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_block_stats.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_coin.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_data.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_json.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_psbt.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\serializers.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session.hpp" />

@@ -63,9 +63,6 @@ enum block_verbosity : size_t
 // bitcoind defines only the "basic" (neutrino) block filter type.
 constexpr auto basic_filter = "basic";
 
-static bool expand_scan_object(chain::scripts& out,
-    const value_t& item) NOEXCEPT;
-
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
@@ -610,28 +607,6 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
         { "coinbase", query.is_coinbase(tx_link) }
     }, 256);
     return true;
-}
-
-// bitcoind's utxo set coin serialization (outpoint, height code, value,
-// script), the element of both set commitment forms.
-static void to_coin_data(data_chunk& out,
-    const database::unspent_coin& coin) NOEXCEPT
-{
-    constexpr auto overhead = hash_size + sizeof(uint32_t) + sizeof(uint32_t) +
-        sizeof(uint64_t);
-
-    out.resize(overhead + variable_size(coin.script.size()) +
-        coin.script.size());
-    stream::out::fast ostream(out);
-    write::bytes::fast sink(ostream);
-    sink.write_bytes(coin.txid);
-    sink.write_4_bytes_little_endian(coin.index);
-    sink.write_4_bytes_little_endian(bit_or(shift_left(
-        possible_narrow_cast<uint32_t>(coin.height), 1),
-        to_int<uint32_t>(coin.coinbase)));
-    sink.write_8_bytes_little_endian(coin.value);
-    sink.write_variable(coin.script.size());
-    sink.write_bytes(coin.script);
 }
 
 // The response defers to completion of the store scan (see dispatch). This is
@@ -1551,86 +1526,6 @@ bool protocol_bitcoind_blockchain::handle_precious_block(const code& ec,
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::method_not_found);
-    return true;
-}
-
-// A scan object is a descriptor string or { "desc", "range" } object.
-static bool expand_scan_object(chain::scripts& out,
-    const value_t& item) NOEXCEPT
-{
-    std::string expression{};
-    uint32_t begin{};
-    uint32_t end{};
-
-    // bitcoind's default and maximum ranges for ranged descriptors.
-    constexpr uint32_t default_range = 1'000;
-    constexpr uint32_t maximum_range = 1'000'000;
-
-    if (std::holds_alternative<string_t>(item.value()))
-    {
-        expression = std::get<string_t>(item.value());
-        end = default_range;
-    }
-    else if (std::holds_alternative<object_t>(item.value()))
-    {
-        const auto& fields = std::get<object_t>(item.value());
-        const auto desc = fields.find("desc");
-        if (desc == fields.end() ||
-            !std::holds_alternative<string_t>(desc->second.value()))
-            return false;
-
-        expression = std::get<string_t>(desc->second.value());
-        end = default_range;
-        const auto range = fields.find("range");
-        if (range != fields.end())
-        {
-            const auto& value = range->second.value();
-            if (std::holds_alternative<number_t>(value))
-            {
-                if (!to_integer(end, std::get<number_t>(value)))
-                    return false;
-            }
-            else if (std::holds_alternative<array_t>(value))
-            {
-                const auto& pair = std::get<array_t>(value);
-                if (pair.size() != 2u ||
-                    !std::holds_alternative<number_t>(pair.front().value()) ||
-                    !std::holds_alternative<number_t>(pair.back().value()) ||
-                    !to_integer(begin,
-                        std::get<number_t>(pair.front().value())) ||
-                    !to_integer(end,
-                        std::get<number_t>(pair.back().value())) ||
-                    end < begin)
-                    return false;
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-    else
-    {
-        return false;
-    }
-
-    const wallet::descriptor parsed{ expression };
-    if (!parsed || to_bool(shift_right(end, 31u)) ||
-        floored_subtract(end, begin) >= maximum_range)
-        return false;
-
-    if (!parsed.ranged())
-        end = begin;
-
-    for (auto index = begin; index <= end; ++index)
-    {
-        const auto derived = parsed.scripts(index);
-        if (derived.empty())
-            return false;
-
-        out.insert(out.end(), derived.begin(), derived.end());
-    }
-
     return true;
 }
 

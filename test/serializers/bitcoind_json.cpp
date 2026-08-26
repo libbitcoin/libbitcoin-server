@@ -16,9 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../../test.hpp"
-#include "../../mocks/blocks.hpp"
-#include <bitcoin/server/protocols/protocol_bitcoind.hpp>
+#include "../test.hpp"
+#include "../mocks/blocks.hpp"
 
 using namespace system;
 
@@ -26,17 +25,6 @@ static std::string as_text(const boost::json::value& value) NOEXCEPT
 {
     return { value.as_string().c_str() };
 }
-
-// Exposes the protected static json helpers for direct testing.
-struct json
-  : server::protocol_bitcoind
-{
-    using protocol_bitcoind::median_time;
-    using protocol_bitcoind::inject_block_context;
-    using protocol_bitcoind::inject_tx_context;
-    using protocol_bitcoind::header_to_bitcoind;
-    using protocol_bitcoind::chain_name;
-};
 
 // header_to_bitcoind
 // ----------------------------------------------------------------------------
@@ -46,7 +34,7 @@ BOOST_AUTO_TEST_SUITE(bitcoind_header_to_bitcoind_tests)
 BOOST_AUTO_TEST_CASE(bitcoind_json__header_to_bitcoind__block1_header__maps_fields)
 {
     const auto& header = test::block1.header();
-    const auto out = json::header_to_bitcoind(header);
+    const auto out = header_to_bitcoind(header);
 
     BOOST_REQUIRE_EQUAL(as_text(out.at("hash")), encode_hash(header.hash()));
     BOOST_REQUIRE_EQUAL(out.at("version").to_number<int64_t>(), header.version());
@@ -112,7 +100,7 @@ BOOST_FIXTURE_TEST_SUITE(bitcoind_json_tests, bitcoind_json_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(bitcoind_json__chain_name__mainnet_genesis__main)
 {
-    BOOST_REQUIRE_EQUAL(json::chain_name(query_), "main");
+    BOOST_REQUIRE_EQUAL(chain_name(query_), "main");
 }
 
 // median_time
@@ -122,7 +110,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__median_time__self_inclusive_window)
 {
     const system::settings settings{ chain::selection::mainnet };
     const auto link = query_.to_header(test::block5_hash);
-    BOOST_REQUIRE_EQUAL(json::median_time(query_, settings, link), 1231470173u);
+    BOOST_REQUIRE_EQUAL(median_time(query_, settings, link), 1231470173u);
 }
 
 // inject_block_context
@@ -135,7 +123,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__middle__height_confirm
     BOOST_REQUIRE(header);
 
     boost::json::object out{};
-    json::inject_block_context(out, query_, settings, link, *header);
+    inject_block_context(out, query_, settings, link, *header);
 
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 5u);
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 5);
@@ -152,7 +140,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__genesis__no_previous)
     BOOST_REQUIRE(header);
 
     boost::json::object out{};
-    json::inject_block_context(out, query_, settings, link, *header);
+    inject_block_context(out, query_, settings, link, *header);
 
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 0u);
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 10);
@@ -160,7 +148,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__genesis__no_previous)
     BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block1_hash));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__tip__no_next)
+BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__top__no_next)
 {
     const system::settings settings{ chain::selection::mainnet };
     const auto link = query_.to_header(test::block9_hash);
@@ -168,7 +156,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__tip__no_next)
     BOOST_REQUIRE(header);
 
     boost::json::object out{};
-    json::inject_block_context(out, query_, settings, link, *header);
+    inject_block_context(out, query_, settings, link, *header);
 
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 9u);
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 1);
@@ -184,7 +172,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__confirmed_coinbase__block
     const auto link = query_.to_tx(txid);
 
     boost::json::object out{};
-    json::inject_tx_context(out, query_, link);
+    inject_tx_context(out, query_, link);
 
     BOOST_REQUIRE(out.at("in_active_chain").as_bool());
     BOOST_REQUIRE_EQUAL(as_text(out.at("blockhash")), encode_hash(test::block1_hash));
@@ -197,7 +185,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__unknown__zero_confirmatio
     const auto link = query_.to_tx(null_hash);
 
     boost::json::object out{};
-    json::inject_tx_context(out, query_, link);
+    inject_tx_context(out, query_, link);
 
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 0);
     BOOST_REQUIRE(!out.contains("blockhash"));

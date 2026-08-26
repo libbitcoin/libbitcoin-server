@@ -22,6 +22,7 @@
 #include <bitcoin/server/parsers/admin_query.hpp>
 #include <bitcoin/server/parsers/admin_target.hpp>
 #include <bitcoin/server/parsers/bitcoind_query.hpp>
+#include <bitcoin/server/parsers/bitcoind_scan.hpp>
 #include <bitcoin/server/parsers/bitcoind_script.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/btcd_filter.hpp>

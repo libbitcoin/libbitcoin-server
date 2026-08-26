@@ -20,6 +20,7 @@
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
 
 namespace libbitcoin {
 namespace server {

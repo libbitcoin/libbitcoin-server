@@ -16,13 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
-#define LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCAN_HPP
+#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCAN_HPP
 
-#include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
-#include <bitcoin/server/serializers/bitcoind_coin.hpp>
-#include <bitcoin/server/serializers/bitcoind_data.hpp>
-#include <bitcoin/server/serializers/bitcoind_json.hpp>
-#include <bitcoin/server/serializers/bitcoind_psbt.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+/// Expand a scan object, a descriptor string or { "desc", "range" } object,
+/// to its derived output scripts (false if malformed or underivable).
+BCS_API bool expand_scan_object(system::chain::scripts& out,
+    const network::rpc::value_t& item) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

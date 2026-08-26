@@ -53,6 +53,7 @@
 #include <bitcoin/server/parsers/admin_query.hpp>
 #include <bitcoin/server/parsers/admin_target.hpp>
 #include <bitcoin/server/parsers/bitcoind_query.hpp>
+#include <bitcoin/server/parsers/bitcoind_scan.hpp>
 #include <bitcoin/server/parsers/bitcoind_script.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/btcd_filter.hpp>
@@ -84,6 +85,10 @@
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
 #include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
+#include <bitcoin/server/serializers/bitcoind_coin.hpp>
+#include <bitcoin/server/serializers/bitcoind_data.hpp>
+#include <bitcoin/server/serializers/bitcoind_json.hpp>
+#include <bitcoin/server/serializers/bitcoind_psbt.hpp>
 #include <bitcoin/server/serializers/serializers.hpp>
 #include <bitcoin/server/sessions/session.hpp>
 #include <bitcoin/server/sessions/session_handshake.hpp>

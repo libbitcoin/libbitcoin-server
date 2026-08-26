@@ -132,7 +132,6 @@
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_diagnostics.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp" />
@@ -161,6 +160,7 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp" />
+    <ClCompile Include="..\..\..\..\test\serializers\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\bitcoind_descriptor.cpp" />

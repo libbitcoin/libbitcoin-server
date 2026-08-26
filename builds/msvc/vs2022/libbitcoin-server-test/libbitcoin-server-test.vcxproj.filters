@@ -87,9 +87,6 @@
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.cpp">
       <Filter>src\protocols\admin</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_json.cpp">
-      <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
@@ -166,6 +163,9 @@
       <Filter>src\protocols\native</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp">
+      <Filter>src\serializers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\serializers\bitcoind_json.cpp">
       <Filter>src\serializers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\settings.cpp">

@@ -114,6 +114,9 @@
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_query.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_scan.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -249,6 +252,15 @@
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_block_stats.cpp">
       <Filter>src\serializers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_coin.cpp">
+      <Filter>src\serializers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_json.cpp">
+      <Filter>src\serializers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_psbt.cpp">
+      <Filter>src\serializers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -377,6 +389,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_query.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_scan.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
@@ -468,6 +483,18 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_block_stats.hpp">
+      <Filter>include\bitcoin\server\serializers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_coin.hpp">
+      <Filter>include\bitcoin\server\serializers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_data.hpp">
+      <Filter>include\bitcoin\server\serializers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_json.hpp">
+      <Filter>include\bitcoin\server\serializers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_psbt.hpp">
       <Filter>include\bitcoin\server\serializers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\serializers.hpp">
