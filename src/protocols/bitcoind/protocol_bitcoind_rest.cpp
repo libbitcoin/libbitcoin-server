@@ -466,10 +466,9 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
         return true;
     }
 
-    constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
-    if (!block)
+    const auto link = query.to_header(*hash);
+    if (!query.is_associated(link))
     {
         send_not_found();
         return true;
@@ -477,11 +476,9 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
 
     // Resolve every prevout spent by the block's non-coinbase transactions.
     chain::output_cptrs spent{};
-    const auto& txs = *block->transactions_ptr();
-    for (auto tx = one; tx < txs.size(); ++tx)
-        for (const auto& in: *txs.at(tx)->inputs_ptr())
-            if (const auto out = query.get_output(query.to_output(in->point())))
-                spent.push_back(out);
+    for (const auto& out: query.to_block_prevouts(link))
+        if (const auto output = query.get_output(out))
+            spent.push_back(output);
 
     size_t size{};
     for (const auto& output: spent)
