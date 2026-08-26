@@ -1339,13 +1339,18 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
         }
 
         link = query.to_header(hash);
+        if (link.is_terminal())
+        {
+            send_error(error::bitcoind::invalid_address_or_key, blockhash,
+                blockhash.size());
+            return true;
+        }
     }
 
     size_t height{};
     if (!query.get_height(height, link))
     {
-        send_error(error::bitcoind::invalid_address_or_key, blockhash,
-            blockhash.size());
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
