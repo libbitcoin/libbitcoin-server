@@ -180,7 +180,7 @@ void protocol_btcd::dispatch_websocket(
     // The credential may be restricted to a subset of interface methods.
     if (!authenticate && !permitted(message.method))
     {
-        send_error(network::error::unauthorized);
+        send_error(error::btcd::invalid_params);
         return;
     }
 

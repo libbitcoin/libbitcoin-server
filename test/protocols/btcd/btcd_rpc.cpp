@@ -35,6 +35,7 @@ static const code deserialization{ server::error::bitcoind::deserialization_erro
 static const code unimplemented{ server::error::btcd::unimplemented };
 static const code misc_error{ server::error::btcd::misc_error };
 static const code invalid_parameter{ server::error::btcd::invalid_parameter };
+static const code invalid_params{ server::error::btcd::invalid_params };
 static const code block_not_found{ server::error::btcd::invalid_address_or_key };
 
 // mock_block10 chains onto block9 and pays found_address from its second
@@ -524,12 +525,12 @@ BOOST_AUTO_TEST_CASE(btcd_scoped_credential__session__listed_method__permitted)
     REQUIRE_NO_THROW_TRUE(session.at("result").is_object());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__unauthorized)
+BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__invalid_params)
 {
     BOOST_REQUIRE(authenticate());
 
     // notifyblocks is implemented, so rejection is permitted()'s doing.
-    BOOST_REQUIRE_EQUAL(rpc_error("notifyblocks"), unauthorized.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("notifyblocks"), invalid_params.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
