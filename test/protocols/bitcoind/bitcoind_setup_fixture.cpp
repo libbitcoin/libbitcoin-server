@@ -162,6 +162,27 @@ boost::json::value bitcoind_setup_fixture::rpc_body(std::string_view body)
         test::parse_json(response.body());
 }
 
+bitcoind_setup_fixture::status
+bitcoind_setup_fixture::rpc_status(std::string_view method,
+    const std::string& username, const std::string& password)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method << R"(","params":[]})";
+
+    const std::string plain{ username + ":" + password };
+    const auto credential = "Basic " + system::encode_base64(plain);
+    auto request = create_post("/", body.str());
+    request.set(http::field::authorization, credential);
+    http::write(socket_, request);
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    return response.result();
+}
+
 network::boost_code bitcoind_setup_fixture::ws_upgrade()
 {
     network::boost_code ec{};
@@ -220,6 +241,24 @@ boost::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
     websocket_.value().read(buffer, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     return test::parse_json(buffers_to_string(buffer.data()));
+}
+
+boost::json::value bitcoind_setup_fixture::ws_rpc_dropped(
+    std::string_view method, std::string_view params)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method << R"(","params":)" << params << "}";
+
+    const auto frame = body.str();
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+    websocket_.value().write(net::buffer(frame), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    flat_buffer buffer{};
+    websocket_.value().read(buffer, ec);
+    return ec ? boost::json::parse(R"({"dropped":true})") :
+        test::parse_json(buffers_to_string(buffer.data()));
 }
 
 bitcoind_setup_fixture::status

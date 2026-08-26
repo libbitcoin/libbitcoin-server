@@ -1638,6 +1638,48 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__websocket__wrong_username_upgrade__refused)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+// scoped credential
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_scoped_credential_tests,
+    bitcoind_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__post_listed_method__ok)
+{
+    const auto result = rpc_status(BITCOIND_TEST_SCOPED_METHOD, BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(result, status::ok);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__post_unlisted_method__forbidden)
+{
+    const auto result = rpc_status("getbestblockhash", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(result, status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__post_unknown_method__forbidden)
+{
+    const auto result = rpc_status("nosuchmethod", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(result, status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_listed_method__result)
+{
+    BOOST_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
+
+    const auto response = ws_rpc(BITCOIND_TEST_SCOPED_METHOD);
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unlisted_method__dropped)
+{
+    BOOST_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
+
+    const auto response = ws_rpc_dropped("getbestblockhash");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 // witness
 // ----------------------------------------------------------------------------
 
