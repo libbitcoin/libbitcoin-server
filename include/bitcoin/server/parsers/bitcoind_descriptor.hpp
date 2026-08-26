@@ -16,17 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BLOCK_STATS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BLOCK_STATS_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_DESCRIPTOR_HPP
+#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_DESCRIPTOR_HPP
 
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// All bitcoind getblockstats statistics of a prevout-populated block.
-BCS_API network::rpc::object_t block_stats(const system::chain::block& block,
-    size_t height, uint32_t median_time_past, uint64_t subsidy) NOEXCEPT;
+/// The bip380 output descriptor checksum, empty on invalid characters.
+BCS_API std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

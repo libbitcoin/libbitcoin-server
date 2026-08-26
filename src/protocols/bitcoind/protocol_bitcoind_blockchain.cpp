@@ -171,7 +171,8 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     const auto block = query.get_block(link, witness);
     if (!block)
     {
-        send_error(error::bitcoind::invalid_address_or_key, blockhash, blockhash.size());
+        send_error(error::bitcoind::invalid_address_or_key, blockhash,
+            blockhash.size());
         return true;
     }
 
@@ -271,7 +272,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_filter(const code& ec,
     if (!query.get_filter_body(filter, link) ||
         !query.get_filter_head(filter_header, link))
     {
-        send_error(error::bitcoind::invalid_address_or_key, blockhash, blockhash.size());
+        send_error(error::bitcoind::invalid_address_or_key, blockhash,
+            blockhash.size());
         return true;
     }
 
@@ -327,7 +329,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
     const auto header = query.get_header(link);
     if (!header)
     {
-        send_error(error::bitcoind::invalid_address_or_key, blockhash, blockhash.size());
+        send_error(error::bitcoind::invalid_address_or_key, blockhash,
+            blockhash.size());
         return true;
     }
 
@@ -463,7 +466,8 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
     size_t height{};
     if (!query.get_height(height, link) || query.to_confirmed(height) != link)
     {
-        send_error(error::bitcoind::invalid_address_or_key, blockhash, blockhash.size());
+        send_error(error::bitcoind::invalid_address_or_key, blockhash,
+            blockhash.size());
         return true;
     }
 
@@ -1347,7 +1351,8 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     size_t height{};
     if (!query.get_height(height, link))
     {
-        send_error(error::bitcoind::invalid_address_or_key, blockhash, blockhash.size());
+        send_error(error::bitcoind::invalid_address_or_key, blockhash,
+            blockhash.size());
         return true;
     }
 

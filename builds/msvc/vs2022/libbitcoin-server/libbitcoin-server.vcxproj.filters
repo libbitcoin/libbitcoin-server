@@ -99,19 +99,22 @@
     <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_block_stats.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_descriptor.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_merkle.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\parsers\block_stats.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\parsers\descriptor.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\electrum_version.cpp">
@@ -121,9 +124,6 @@
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\parsers\partial_merkle.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp">
@@ -359,19 +359,22 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_target.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_block_stats.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_descriptor.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_merkle.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\block_stats.hpp">
-      <Filter>include\bitcoin\server\parsers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp">
-      <Filter>include\bitcoin\server\parsers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\descriptor.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_version.hpp">
@@ -384,9 +387,6 @@
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp">
-      <Filter>include\bitcoin\server\parsers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\partial_merkle.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp">

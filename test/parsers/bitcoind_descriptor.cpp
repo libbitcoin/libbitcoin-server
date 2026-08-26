@@ -18,27 +18,27 @@
  */
 #include "../test.hpp"
 
-BOOST_AUTO_TEST_SUITE(descriptor_tests)
+BOOST_AUTO_TEST_SUITE(bitcoind_descriptor_tests)
 
 // Vectors from bitcoind (rpc example and descriptor tests).
 
-BOOST_AUTO_TEST_CASE(descriptor__checksum__wpkh__expected)
+BOOST_AUTO_TEST_CASE(bitcoind_descriptor__checksum__wpkh__expected)
 {
     BOOST_REQUIRE_EQUAL(server::descriptor_checksum("wpkh([d34db33f/84h/0h/0h]xpub6DJ2dNUysrn5Vt36jH2KLBT2i1auw1tTSSomg8PhqNiUtx8QX2SvC9nrHu81fT41fvDUnhMjEzQgXnQjKEu3oaqMSzhSrHMxyyoEAmUHQbY/0/*)"), "cjjspncu");
 }
 
-BOOST_AUTO_TEST_CASE(descriptor__checksum__sh_multi_2__expected)
+BOOST_AUTO_TEST_CASE(bitcoind_descriptor__checksum__sh_multi_2__expected)
 {
     BOOST_REQUIRE_EQUAL(server::descriptor_checksum("sh(multi(2,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))"), "tjg09x5t");
 }
 
-BOOST_AUTO_TEST_CASE(descriptor__checksum__sh_multi_3__expected)
+BOOST_AUTO_TEST_CASE(bitcoind_descriptor__checksum__sh_multi_3__expected)
 {
     BOOST_REQUIRE_EQUAL(server::descriptor_checksum("sh(multi(3,[00000000/111'/222]xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0))"), "d4x0uxyv");
 }
 
 // A character outside the descriptor character set has no checksum.
-BOOST_AUTO_TEST_CASE(descriptor__checksum__invalid_character__empty)
+BOOST_AUTO_TEST_CASE(bitcoind_descriptor__checksum__invalid_character__empty)
 {
     BOOST_REQUIRE(server::descriptor_checksum("raw(\x01)").empty());
 }

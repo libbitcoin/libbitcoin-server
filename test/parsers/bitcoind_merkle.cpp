@@ -70,33 +70,33 @@ static void verify_round_trip(size_t count,
 // round trip
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(partial_merkle__single_tx__matched__root)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__single_tx__matched__root)
 {
     verify_round_trip(1, { 0 });
 }
 
-BOOST_AUTO_TEST_CASE(partial_merkle__seven_tx__two_matched__root_and_positions)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__seven_tx__two_matched__root_and_positions)
 {
     verify_round_trip(7, { 1, 4 });
 }
 
-BOOST_AUTO_TEST_CASE(partial_merkle__eight_tx__interior_matched__root)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__eight_tx__interior_matched__root)
 {
     verify_round_trip(8, { 0, 3, 7 });
 }
 
-BOOST_AUTO_TEST_CASE(partial_merkle__odd_tx__last_matched__root)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__odd_tx__last_matched__root)
 {
     verify_round_trip(5, { 4 });
 }
 
-BOOST_AUTO_TEST_CASE(partial_merkle__large__scattered__root)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__large__scattered__root)
 {
     verify_round_trip(100, { 0, 1, 50, 98, 99 });
 }
 
 // A branch smaller than a single-tx tree extracts the leaf as the root.
-BOOST_AUTO_TEST_CASE(partial_merkle__single_tx__is_leaf_root)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__single_tx__is_leaf_root)
 {
     const auto txids = make_txids(1);
     data_chunk flags{};
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(partial_merkle__single_tx__is_leaf_root)
 // malformed
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(partial_merkle__zero_tx__false)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__zero_tx__false)
 {
     hash_digest root{};
     hashes matched{};
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(partial_merkle__zero_tx__false)
 }
 
 // More branch hashes than transactions is malformed.
-BOOST_AUTO_TEST_CASE(partial_merkle__excess_hashes__false)
+BOOST_AUTO_TEST_CASE(bitcoind_merkle__excess_hashes__false)
 {
     hash_digest root{};
     hashes matched{};

@@ -18,7 +18,7 @@
  */
 #include "../test.hpp"
 
-BOOST_AUTO_TEST_SUITE(block_stats_tests)
+BOOST_AUTO_TEST_SUITE(bitcoind_block_stats_tests)
 
 using namespace system;
 using namespace system::chain;
@@ -46,7 +46,7 @@ static block make_block(transactions&& txs) NOEXCEPT
         std::move(txs) };
 }
 
-BOOST_AUTO_TEST_CASE(block_stats__coinbase_only__no_fees)
+BOOST_AUTO_TEST_CASE(bitcoind_block_stats__coinbase_only__no_fees)
 {
     const auto block = make_block({ make_coinbase() });
     const auto stats = server::block_stats(block, 1, 40, test_subsidy);
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(block_stats__coinbase_only__no_fees)
     BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 1);
 }
 
-BOOST_AUTO_TEST_CASE(block_stats__two_paying__fee_statistics)
+BOOST_AUTO_TEST_CASE(bitcoind_block_stats__two_paying__fee_statistics)
 {
     const auto block = make_block({ make_coinbase(),
         make_paying(100'000, 90'000), make_paying(50'000, 48'000) });
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(block_stats__two_paying__fee_statistics)
 }
 
 // Unspendable outputs are excluded from the actual utxo statistics.
-BOOST_AUTO_TEST_CASE(block_stats__unspendable_output__excluded_from_actual)
+BOOST_AUTO_TEST_CASE(bitcoind_block_stats__unspendable_output__excluded_from_actual)
 {
     const script unspendable{ operations{ operation{ opcode::op_return } } };
     const auto block = make_block({ make_coinbase(unspendable) });

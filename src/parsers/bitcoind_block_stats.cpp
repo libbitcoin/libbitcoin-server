@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/parsers/block_stats.hpp>
+#include <bitcoin/server/parsers/bitcoind_block_stats.hpp>
 
 #include <algorithm>
 #include <array>
