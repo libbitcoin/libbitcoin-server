@@ -495,21 +495,54 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__created__round_trips)
 
 // The input sequence encodes locktime enforceability and replaceability: a
 // final sequence disables locktime and near-final does not signal bip125.
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__default__final_sequence)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__default__replaceable_sequence)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
     const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
     const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("version").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vin").at(0).at("sequence").as_int64(), 4294967293);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__not_replaceable__final_sequence)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}, 0, false]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
     BOOST_REQUIRE_EQUAL(response.at("result").at("vin").at(0).at("sequence").as_int64(), 4294967295);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__locktime__near_final_sequence)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__locktime_not_replaceable__near_final_sequence)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
-    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}, 500]");
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}, 500, false]");
     const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
     BOOST_REQUIRE_EQUAL(response.at("result").at("locktime").as_int64(), 500);
     BOOST_REQUIRE_EQUAL(response.at("result").at("vin").at(0).at("sequence").as_int64(), 4294967294);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__explicit_sequence__overrides)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0,\"sequence\":42}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vin").at(0).at("sequence").as_int64(), 42);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__array_outputs__repeated_address)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], [{\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}, {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.002}]]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("vout").as_array().size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__version_three__decodes)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}, 0, true, 3]");
+    const auto response = rpc("decoderawtransaction", "[\"" + as_text(created.at("result")) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("version").as_int64(), 3);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__replaceable__bip125_sequence)

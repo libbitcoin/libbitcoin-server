@@ -30,7 +30,7 @@ struct bitcoind_transaction_methods
 {
     static constexpr std::tuple methods
     {
-        method<"createrawtransaction", array_t, object_t, optional<0.0>, optional<false>>{ "inputs", "outputs", "locktime", "replaceable" },
+        method<"createrawtransaction", array_t, value_t, optional<0.0>, optional<true>, optional<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version" },
         method<"decoderawtransaction", string_t, nullable<boolean_t>>{ "hexstring", "iswitness" },
         method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
         method<"sendrawtransaction", string_t, optional<0.1>, optional<0.0>>{ "hexstring", "maxfeerate", "maxburnamount" },
@@ -38,7 +38,7 @@ struct bitcoind_transaction_methods
         method<"analyzepsbt", string_t>{ "psbt" },
         method<"combinepsbt", array_t>{ "txs" },
         method<"converttopsbt", string_t, optional<false>, nullable<boolean_t>, optional<2.0>>{ "hexstring", "permitsigdata", "iswitness", "psbt_version" },
-        method<"createpsbt", array_t, object_t, optional<0.0>, optional<false>, optional<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "psbt_version" },
+        method<"createpsbt", array_t, value_t, optional<0.0>, optional<true>, optional<2.0>, optional<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version", "psbt_version" },
         method<"decodepsbt", string_t>{ "psbt" },
         method<"finalizepsbt", string_t, optional<true>>{ "psbt", "extract" },
         method<"joinpsbts", array_t>{ "txs" },

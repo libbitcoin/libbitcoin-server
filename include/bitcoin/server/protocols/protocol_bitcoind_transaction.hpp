@@ -58,8 +58,8 @@ protected:
     bool handle_create_raw_transaction(const code& ec,
         rpc_interface::create_raw_transaction,
         const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, double locktime,
-        bool replaceable) NOEXCEPT;
+        const network::rpc::value_t& outputs, double locktime,
+        bool replaceable, double version) NOEXCEPT;
     bool handle_decode_raw_transaction(const code& ec,
         rpc_interface::decode_raw_transaction, const std::string& hexstring,
         const std::optional<bool>& iswitness) NOEXCEPT;
@@ -83,8 +83,8 @@ protected:
         double psbt_version) NOEXCEPT;
     bool handle_create_psbt(const code& ec,
         rpc_interface::create_psbt, const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, double locktime,
-        bool replaceable, double psbt_version) NOEXCEPT;
+        const network::rpc::value_t& outputs, double locktime,
+        bool replaceable, double version, double psbt_version) NOEXCEPT;
     bool handle_decode_psbt(const code& ec,
         rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT;
     bool handle_finalize_psbt(const code& ec,
@@ -102,8 +102,8 @@ protected:
     /// Shared transaction construction (createrawtransaction, createpsbt).
     code build_transaction(system::chain::transaction& out,
         const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, double locktime,
-        bool replaceable) const NOEXCEPT;
+        const network::rpc::value_t& outputs, double locktime,
+        bool replaceable, double version) const NOEXCEPT;
     bool handle_abort_private_broadcast(const code& ec,
         rpc_interface::abort_private_broadcast) NOEXCEPT;
     bool handle_get_private_broadcast_info(const code& ec,

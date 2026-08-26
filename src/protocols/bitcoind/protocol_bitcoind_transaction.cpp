@@ -54,7 +54,7 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     if (started())
         return;
 
-    SUBSCRIBE_BITCOIND(handle_create_raw_transaction, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_create_raw_transaction, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_BITCOIND(handle_decode_raw_transaction, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4, _5);
@@ -62,7 +62,7 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_analyze_psbt, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_combine_psbt, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_BITCOIND(handle_decode_psbt, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_finalize_psbt, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_join_psbts, _1, _2, _3);
@@ -247,11 +247,17 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
 
 // Shared by createrawtransaction and createpsbt.
 code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
-    const array_t& inputs, const object_t& outputs, double locktime,
-    bool replaceable) const NOEXCEPT
+    const array_t& inputs, const value_t& outputs, double locktime,
+    bool replaceable, double version) const NOEXCEPT
 {
     uint32_t lock_time{};
     if (!to_integer(lock_time, locktime))
+        return error::bitcoind::invalid_parameter;
+
+    // bitcoind bounds the version to the maximum standard (currently 3).
+    uint32_t tx_version{};
+    if (!to_integer(tx_version, version) || is_zero(tx_version) ||
+        (tx_version > 3u))
         return error::bitcoind::invalid_parameter;
 
     using namespace chain;
@@ -280,58 +286,96 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
             !to_integer(vout, std::get<number_t>(vout_it->second.value())))
             return error::bitcoind::invalid_parameter;
 
-        ins->push_back(to_shared<input>(point{ hash, vout }, script{}, sequence));
+        // An explicit sequence overrides the derived default.
+        auto sequenced = sequence;
+        const auto sequence_it = fields.find("sequence");
+        if (sequence_it != fields.end() &&
+            (!std::holds_alternative<number_t>(sequence_it->second.value()) ||
+            !to_integer(sequenced,
+                std::get<number_t>(sequence_it->second.value()))))
+            return error::bitcoind::invalid_parameter;
+
+        ins->push_back(to_shared<input>(point{ hash, vout }, script{},
+            sequenced));
     }
 
     script script{};
     uint64_t satoshi{};
     const auto outs = std::make_shared<output_cptrs>();
-    outs->reserve(outputs.size());
-    for (const auto& pair: outputs)
+
+    // Appends one address or data output from a name/value pair.
+    const auto append = [&](const std::string& name,
+        const value_t& item) NOEXCEPT -> code
     {
         // A data output carries a null data script and no value.
-        if (pair.first == "data")
+        if (name == "data")
         {
             data_chunk data{};
-            if (!std::holds_alternative<string_t>(pair.second.value()) ||
-                !decode_base16(data, std::get<string_t>(pair.second.value())) ||
+            if (!std::holds_alternative<string_t>(item.value()) ||
+                !decode_base16(data, std::get<string_t>(item.value())) ||
                 data.size() > max_null_data_size)
                 return error::bitcoind::invalid_parameter;
 
             outs->push_back(to_shared<output>(zero,
                 chain::script{ script::to_pay_null_data_pattern(data) }));
-            continue;
+            return error::bitcoind::success;
         }
 
-        if (!std::holds_alternative<number_t>(pair.second.value()))
+        if (!std::holds_alternative<number_t>(item.value()))
             return error::bitcoind::type_error;
 
-        if (output_script(script, pair.first, p2kh_, p2sh_, witness_))
+        if (output_script(script, name, p2kh_, p2sh_, witness_))
             return error::bitcoind::invalid_address_or_key;
 
-        const auto btc = std::get<number_t>(pair.second.value());
+        const auto btc = std::get<number_t>(item.value());
         if (!to_integer(satoshi, btc * satoshi_per_bitcoin, true) ||
             satoshi > system_settings().max_money())
             return error::bitcoind::type_error;
 
         outs->push_back(to_shared<output>(satoshi, std::move(script)));
+        return error::bitcoind::success;
+    };
+
+    // bitcoind accepts outputs as one object or an array of objects (which
+    // permits address repetition).
+    if (std::holds_alternative<object_t>(outputs.value()))
+    {
+        for (const auto& pair: std::get<object_t>(outputs.value()))
+            if (const auto fault = append(pair.first, pair.second))
+                return fault;
+    }
+    else if (std::holds_alternative<array_t>(outputs.value()))
+    {
+        for (const auto& element: std::get<array_t>(outputs.value()))
+        {
+            if (!std::holds_alternative<object_t>(element.value()))
+                return error::bitcoind::type_error;
+
+            for (const auto& pair: std::get<object_t>(element.value()))
+                if (const auto fault = append(pair.first, pair.second))
+                    return fault;
+        }
+    }
+    else
+    {
+        return error::bitcoind::type_error;
     }
 
-    out = { 1, ins, outs, lock_time };
+    out = { tx_version, ins, outs, lock_time };
     return error::bitcoind::success;
 }
 
 bool protocol_bitcoind_transaction::handle_create_raw_transaction(
     const code& ec, rpc_interface::create_raw_transaction,
-    const array_t& inputs, const object_t& outputs, double locktime,
-    bool replaceable) NOEXCEPT
+    const array_t& inputs, const value_t& outputs, double locktime,
+    bool replaceable, double version) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     chain::transaction tx{};
     if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
-        replaceable))
+        replaceable, version))
     {
         send_error(fault);
         return true;
@@ -807,7 +851,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
     rpc_interface::create_psbt, const array_t& inputs,
-    const object_t& outputs, double locktime, bool replaceable,
+    const value_t& outputs, double locktime, bool replaceable, double version,
     double psbt_version) NOEXCEPT
 {
     if (stopped(ec))
@@ -822,7 +866,7 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
 
     chain::transaction tx{};
     if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
-        replaceable))
+        replaceable, version))
     {
         send_error(fault);
         return true;
