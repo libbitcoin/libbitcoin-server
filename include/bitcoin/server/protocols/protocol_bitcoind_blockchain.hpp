@@ -124,7 +124,8 @@ protected:
     bool handle_scan_blocks(const code& ec,
         rpc_interface::scan_blocks, const std::string& action,
         const network::rpc::array_t& scanobjects, double start_height,
-        double stop_height, const std::string& filtertype) NOEXCEPT;
+        double stop_height, const std::string& filtertype,
+        const network::rpc::object_t& options) NOEXCEPT;
     bool handle_wait_for_block(const code& ec,
         rpc_interface::wait_for_block, const std::string& blockhash,
         double timeout) NOEXCEPT;
@@ -132,7 +133,8 @@ protected:
         rpc_interface::wait_for_block_height, double height,
         double timeout) NOEXCEPT;
     bool handle_wait_for_new_block(const code& ec,
-        rpc_interface::wait_for_new_block, double timeout) NOEXCEPT;
+        rpc_interface::wait_for_new_block, double timeout,
+        const std::string& current_tip) NOEXCEPT;
     bool handle_get_mempool_ancestors(const code& ec,
         rpc_interface::get_mempool_ancestors) NOEXCEPT;
     bool handle_get_mempool_cluster(const code& ec,

@@ -105,10 +105,10 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2, _3, _4);
-    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
@@ -1610,10 +1610,11 @@ static bool expand_scan_object(chain::scripts& out,
     return true;
 }
 
+// Exact index matching produces no false positives to optionally filter.
 bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
     rpc_interface::scan_blocks, const std::string& action,
     const array_t& scanobjects, double start_height, double stop_height,
-    const std::string& filtertype) NOEXCEPT
+    const std::string& filtertype, const object_t&) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -1735,10 +1736,20 @@ bool protocol_bitcoind_blockchain::handle_wait_for_block_height(const code& ec,
 }
 
 bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
-    rpc_interface::wait_for_new_block, double timeout) NOEXCEPT
+    rpc_interface::wait_for_new_block, double timeout,
+    const std::string& current_tip) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // A stated top that is no longer current completes the wait immediately.
+    hash_digest given{};
+    if (!current_tip.empty() && decode_hash(given, current_tip) &&
+        (given != archive().get_top_confirmed_hash()))
+    {
+        send_tip();
+        return true;
+    }
 
     wait_ = wait::new_block;
     wait_height_ = add1(archive().get_top_confirmed());

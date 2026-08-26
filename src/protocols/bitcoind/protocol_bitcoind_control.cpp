@@ -56,7 +56,7 @@ void protocol_bitcoind_control::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_help, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_stop, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_memory_info, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_get_openrpc_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_openrpc_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_rpc_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_logging, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_uptime, _1, _2);
@@ -203,8 +203,9 @@ static void append_methods(array_t& out) NOEXCEPT
     }, Methods::methods);
 }
 
+// There are no hidden methods (unimplemented rows are refusals, not hidden).
 bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
-    rpc_interface::get_openrpc_info) NOEXCEPT
+    rpc_interface::get_openrpc_info, bool) NOEXCEPT
 {
     if (stopped(ec))
         return false;

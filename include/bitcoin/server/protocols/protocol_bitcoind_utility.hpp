@@ -56,7 +56,7 @@ public:
 protected:
     /// Handlers.
     bool handle_decode_script(const code& ec,
-        rpc_interface::decode_script, const std::string& hex) NOEXCEPT;
+        rpc_interface::decode_script, const std::string& hexstring) NOEXCEPT;
     bool handle_validate_address(const code& ec,
         rpc_interface::validate_address,
         const std::string& address) NOEXCEPT;

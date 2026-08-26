@@ -68,7 +68,7 @@ protected:
         double verbose, const std::string& blockhash) NOEXCEPT;
     bool handle_send_raw_transaction(const code& ec,
         rpc_interface::send_raw_transaction, const std::string& hexstring,
-        double maxfeerate) NOEXCEPT;
+        double maxfeerate, double maxburnamount) NOEXCEPT;
     bool handle_test_mempool_accept(const code& ec,
         rpc_interface::test_mempool_accept,
         const network::rpc::array_t& rawtxs, double maxfeerate) NOEXCEPT;
@@ -79,11 +79,12 @@ protected:
         const network::rpc::array_t& txs) NOEXCEPT;
     bool handle_convert_to_psbt(const code& ec,
         rpc_interface::convert_to_psbt, const std::string& hexstring,
-        bool permitsigdata, const std::optional<bool>& iswitness) NOEXCEPT;
+        bool permitsigdata, const std::optional<bool>& iswitness,
+        double psbt_version) NOEXCEPT;
     bool handle_create_psbt(const code& ec,
         rpc_interface::create_psbt, const network::rpc::array_t& inputs,
         const network::rpc::object_t& outputs, double locktime,
-        bool replaceable) NOEXCEPT;
+        bool replaceable, double psbt_version) NOEXCEPT;
     bool handle_decode_psbt(const code& ec,
         rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT;
     bool handle_finalize_psbt(const code& ec,

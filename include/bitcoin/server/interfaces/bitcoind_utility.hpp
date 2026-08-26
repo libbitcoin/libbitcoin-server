@@ -30,7 +30,7 @@ struct bitcoind_utility_methods
 {
     static constexpr std::tuple methods
     {
-        method<"decodescript", string_t>{ "hex" },
+        method<"decodescript", string_t>{ "hexstring" },
         method<"validateaddress", string_t>{ "address" },
         method<"createmultisig", number_t, array_t, optional<"legacy"_t>>{ "nrequired", "keys", "address_type" },
         method<"deriveaddresses", string_t, nullable<value_t>>{ "descriptor", "range" },

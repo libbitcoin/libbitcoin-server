@@ -33,7 +33,7 @@ struct bitcoind_control_methods
         method<"help", optional<""_t>>{ "command" },
         method<"stop">{ unimplemented },
         method<"getmemoryinfo", optional<"stats"_t>>{ "mode" },
-        method<"getopenrpcinfo">{},
+        method<"getopenrpcinfo", optional<false>>{ "show_hidden" },
         method<"getrpcinfo">{},
         method<"logging", optional<empty::array>, optional<empty::array>>{ "include", "exclude" },
         method<"uptime">{}

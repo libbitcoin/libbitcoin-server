@@ -94,13 +94,13 @@ static std::string to_script_type(chain::script_pattern pattern) NOEXCEPT
 }
 
 bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
-    rpc_interface::decode_script, const std::string& hex) NOEXCEPT
+    rpc_interface::decode_script, const std::string& hexstring) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     data_chunk data{};
-    if (!decode_base16(data, hex))
+    if (!decode_base16(data, hexstring))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;

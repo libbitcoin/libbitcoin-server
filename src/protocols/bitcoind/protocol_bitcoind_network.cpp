@@ -331,10 +331,17 @@ bool protocol_bitcoind_network::handle_set_ban(const code& ec,
 // transport is determined by the outbound privacy configuration.
 bool protocol_bitcoind_network::handle_add_node(const code& ec,
     rpc_interface::add_node, const std::string& node,
-    const std::string& command, bool) NOEXCEPT
+    const std::string& command, bool v2transport) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // bitcoind reports v2transport as invalid when not enabled.
+    if (v2transport)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
 
     if (command != "add" && command != "onetry")
     {

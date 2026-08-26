@@ -57,12 +57,12 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_create_raw_transaction, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_BITCOIND(handle_decode_raw_transaction, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_test_mempool_accept, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_analyze_psbt, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_combine_psbt, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_BITCOIND(handle_decode_psbt, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_finalize_psbt, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_join_psbts, _1, _2, _3);
@@ -141,7 +141,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     rpc_interface::send_raw_transaction, const std::string& hexstring,
-    double) NOEXCEPT
+    double, double) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -739,10 +739,18 @@ bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     rpc_interface::convert_to_psbt, const std::string& hexstring,
-    bool permitsigdata, const std::optional<bool>& iswitness) NOEXCEPT
+    bool permitsigdata, const std::optional<bool>& iswitness,
+    double psbt_version) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // Construction is bip370 only.
+    if (psbt_version != 2.0)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
 
     data_chunk data{};
     if (!decode_base16(data, hexstring))
@@ -799,10 +807,18 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
     rpc_interface::create_psbt, const array_t& inputs,
-    const object_t& outputs, double locktime, bool replaceable) NOEXCEPT
+    const object_t& outputs, double locktime, bool replaceable,
+    double psbt_version) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // Construction is bip370 only.
+    if (psbt_version != 2.0)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
 
     chain::transaction tx{};
     if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
