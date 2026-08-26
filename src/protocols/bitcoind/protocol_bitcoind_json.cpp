@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 #include <algorithm>
+#include <iterator>
 #include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
@@ -39,22 +40,19 @@ double protocol_bitcoind::progress(size_t blocks, size_t headers) NOEXCEPT
 uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     const database::header_link& link) NOEXCEPT
 {
-    std::vector<uint32_t> times{};
-    times.reserve(chain::median_time_past_interval);
-
-    for (auto walk = link; !walk.is_terminal() &&
-        times.size() < chain::median_time_past_interval;
+    size_t count{};
+    std_array<uint32_t, chain::median_time_past_interval> times{};
+    for (auto walk = link; !walk.is_terminal() && count < times.size();
         walk = query.to_parent(walk))
-    {
-        const auto header = query.get_header(walk);
-        if (!header)
+        if (!query.get_timestamp(times.at(count++), walk))
             return 0_u32;
 
-        times.push_back(header->timestamp());
-    }
+    if (is_zero(count))
+        return 0_u32;
 
-    std::sort(times.begin(), times.end());
-    return times.empty() ? 0_u32 : times.at(to_half(times.size()));
+    const auto median = std::next(times.begin(), to_half(count));
+    std::nth_element(times.begin(), median, std::next(times.begin(), count));
+    return *median;
 }
 
 // A getchainstates entry for candidate or confirmed at the link (top).
