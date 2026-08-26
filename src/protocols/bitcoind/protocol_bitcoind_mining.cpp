@@ -110,13 +110,20 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
         return true;
     }
 
+    // The pinned ancestry makes the window walk reorg-stable.
+    database::header_links branch{};
+    if (!query.get_ancestry(branch, query.to_confirmed(target), add1(window)))
+    {
+        send_error(error::bitcoind::internal_error);
+        return true;
+    }
+
     // The window timespan is bounded by its observed timestamps.
-    const auto first = target - window;
     auto minimum = max_uint32;
     auto maximum = min_uint32;
-    for (auto index = first; index <= target; ++index)
+    for (const auto& ancestor: branch)
     {
-        const auto header = query.get_header(query.to_confirmed(index));
+        const auto header = query.get_header(ancestor);
         if (!header)
         {
             send_error(error::bitcoind::internal_error);
@@ -135,8 +142,8 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
 
     uint256_t start_work{};
     uint256_t end_work{};
-    if (!query.get_branch_work(start_work, query.to_confirmed(first)) ||
-        !query.get_branch_work(end_work, query.to_confirmed(target)))
+    if (!query.get_branch_work(start_work, branch.back()) ||
+        !query.get_branch_work(end_work, branch.front()))
     {
         send_error(error::bitcoind::internal_error);
         return true;
