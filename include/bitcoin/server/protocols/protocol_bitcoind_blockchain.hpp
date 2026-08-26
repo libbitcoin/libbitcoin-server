@@ -116,7 +116,7 @@ protected:
         rpc_interface::get_descriptor_activity,
         const network::rpc::array_t& blockhashes,
         const network::rpc::array_t& scanobjects,
-        bool include_spent) NOEXCEPT;
+        bool include_mempool) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,
         rpc_interface::get_difficulty) NOEXCEPT;
     bool handle_precious_block(const code& ec,

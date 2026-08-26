@@ -1388,10 +1388,10 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     return true;
 }
 
+// The mempool option is meaningless here (no mempool), always applied false.
 bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
     const code& ec, rpc_interface::get_descriptor_activity,
-    const array_t& blockhashes, const array_t& scanobjects,
-    bool include_spent) NOEXCEPT
+    const array_t& blockhashes, const array_t& scanobjects, bool) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -1432,9 +1432,13 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
             return true;
         }
 
+        // Confirmed spends are unconditional (as bitcoind, from undo data).
         const auto encoded = encode_hash(hash);
-        const auto populated = include_spent &&
-            query.populate_without_metadata(*block);
+        if (!query.populate_without_metadata(*block))
+        {
+            send_error(error::bitcoind::internal_error);
+            return true;
+        }
 
         for (const auto& tx: *block->transactions_ptr())
         {
@@ -1462,7 +1466,7 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
                 ++index;
             }
 
-            if (!populated || tx->is_coinbase())
+            if (tx->is_coinbase())
                 continue;
 
             uint32_t spend{};
@@ -1481,7 +1485,7 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
                         { "blockhash", encoded },
                         { "height", height },
                         { "spend_txid", txid },
-                        { "spend_vout", spend },
+                        { "spend_vin", spend },
                         { "prevout_txid", encode_hash(in->point().hash()) },
                         { "prevout_vout", in->point().index() },
                         { "prevout_spk", value_from(bitcoind(
