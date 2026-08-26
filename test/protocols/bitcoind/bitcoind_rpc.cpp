@@ -445,6 +445,21 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__one_in_one_out__hex)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__amount__exact_satoshis)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 83052.07783498}]");
+    const auto decoded = rpc("decoderawtransaction", "[\"" + std::string{ as_text(created.at("result")) } + "\"]");
+    BOOST_REQUIRE_EQUAL(decoded.at("result").at("vout").at(0).at("value").as_double(), 83052.07783498);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__excess_amount__error)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 21000001}]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -3), response);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__iswitness_false__round_trips)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));

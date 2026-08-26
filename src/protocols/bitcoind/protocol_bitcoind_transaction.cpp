@@ -310,7 +310,8 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
             return error::bitcoind::invalid_address_or_key;
 
         const auto btc = std::get<number_t>(pair.second.value());
-        if (!to_integer(satoshi, btc * satoshi_per_bitcoin, false))
+        if (!to_integer(satoshi, btc * satoshi_per_bitcoin, true) ||
+            satoshi > system_settings().max_money())
             return error::bitcoind::type_error;
 
         outs->push_back(to_shared<output>(satoshi, std::move(script)));
