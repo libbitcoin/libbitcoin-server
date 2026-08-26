@@ -511,14 +511,20 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
 
     if (is_nonzero(window))
     {
-        const auto first = floored_subtract(height, window);
-        const auto past = query.to_confirmed(first);
+        // The pinned ancestry makes the window walk reorg-stable.
+        database::header_links branch{};
+        if (!query.get_ancestry(branch, link, add1(window)))
+        {
+            send_error(error::bitcoind::internal_error);
+            return true;
+        }
+
         const auto interval = floored_subtract(median_time_past(query, link),
-            median_time_past(query, past));
+            median_time_past(query, branch.back()));
 
         size_t txs{};
-        for (auto index = add1(first); index <= height; ++index)
-            txs += query.get_tx_count(query.to_confirmed(index));
+        for (auto index = zero; index < window; ++index)
+            txs += query.get_tx_count(branch.at(index));
 
         result.emplace("window_interval", interval);
         result.emplace("window_tx_count", txs);
