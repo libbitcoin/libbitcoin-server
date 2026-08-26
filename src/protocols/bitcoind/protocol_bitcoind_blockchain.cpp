@@ -399,7 +399,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     const auto block = query.get_block(link, true);
     if (!block || !query.populate_without_metadata(*block))
     {
-        send_error(error::bitcoind::misc_error);
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
