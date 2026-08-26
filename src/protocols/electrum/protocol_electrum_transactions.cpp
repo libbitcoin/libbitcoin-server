@@ -399,7 +399,7 @@ code protocol_electrum::validate_tx(
 code protocol_electrum::broadcast_tx(
     const chain::transaction::cptr& tx) NOEXCEPT
 {
-    const auto ec = validate_tx(*tx);
+    if (const auto ec = validate_tx(*tx))
         return ec;
 
     BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
