@@ -188,7 +188,9 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         value_from(bitcoind_hashed(*block)) :
         value_from(bitcoind_verbose(*block));
 
-    inject_block_context(model.as_object(), query, link, block->header());
+    const auto& settings = system_settings();
+    const auto& header = block->header();
+    inject_block_context(model.as_object(), query, settings, link, header);
 
     if (level >= block_verbosity::verbose &&
         query.populate_with_metadata(*block))
@@ -221,8 +223,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_chain_info(const code& ec,
         return false;
 
     object_t out{};
-    if (!chain_info(out, archive(), node_settings().limited_blocks,
-        is_current_chain(true)))
+    if (!chain_info(out, archive(), system_settings(),
+        node_settings().limited_blocks, is_current_chain(true)))
     {
         send_error(error::bitcoind::internal_error);
         return true;
@@ -346,7 +348,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
 
     auto out = header_to_bitcoind(*header);
     out["nTx"] = query.get_tx_count(link);
-    inject_block_context(out, query, link, *header);
+    inject_block_context(out, query, system_settings(), link, *header);
     send_result(value{ std::move(out) }, 512);
     return true;
 }
@@ -408,8 +410,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
         settings.subsidy_interval_blocks, settings.initial_subsidy(),
         settings.forks.bip42);
 
-    auto result = block_stats(*block, height, median_time_past(query, link),
-        subsidy);
+    const auto mtp = median_time_past(query, settings, link);
+    auto result = block_stats(*block, height, mtp, subsidy);
 
     // An empty selection returns all statistics, otherwise the named subset.
     if (stats.empty())
@@ -519,8 +521,10 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
             return true;
         }
 
-        const auto interval = floored_subtract(median_time_past(query, link),
-            median_time_past(query, branch.back()));
+        const auto& settings = system_settings();
+        const auto start = median_time_past(query, settings, branch.back());
+        const auto end = median_time_past(query, settings, link);
+        const auto interval = floored_subtract(end, start);
 
         size_t txs{};
         for (size_t index{}; index < window; ++index)

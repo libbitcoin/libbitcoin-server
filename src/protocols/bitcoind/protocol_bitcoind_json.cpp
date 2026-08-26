@@ -19,7 +19,6 @@
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 #include <algorithm>
-#include <iterator>
 #include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
@@ -36,23 +35,28 @@ double protocol_bitcoind::progress(size_t blocks, size_t headers) NOEXCEPT
         std::min(1.0, to_floating(blocks) / headers);
 }
 
-// bitcoind's mtp window includes the block's own timestamp (reproduced).
+// bitcoind's mtp window includes the block: the child's stored context mtp.
 uint32_t protocol_bitcoind::median_time_past(const node::query& query,
+    const system::settings& settings,
     const database::header_link& link) NOEXCEPT
 {
-    size_t count{};
-    std_array<uint32_t, chain::median_time_past_interval> times{};
-    for (auto walk = link; !walk.is_terminal() && count < times.size();
-        walk = query.to_parent(walk))
-        if (!query.get_timestamp(times.at(count++), walk))
-            return 0_u32;
-
-    if (is_zero(count))
+    size_t height{};
+    if (!query.get_height(height, link))
         return 0_u32;
 
-    const auto median = std::next(times.begin(), to_half(count));
-    std::nth_element(times.begin(), median, std::next(times.begin(), count));
-    return *median;
+    database::context ctx{};
+    const auto child = query.to_confirmed(add1(height));
+    if (!child.is_terminal() && (query.to_parent(child) == link) &&
+        query.get_context(ctx, child))
+        return ctx.mtp;
+
+    // The top block has no child, its promoted chain state carries the value.
+    const auto key = query.get_header_key(link);
+    const auto state = query.get_chain_state(settings, key);
+    if (!state)
+        return 0_u32;
+
+    return chain::chain_state{ *state, settings }.context().median_time_past;
 }
 
 // A getchainstates entry for candidate or confirmed at the link (top).
@@ -85,8 +89,8 @@ network::rpc::object_t protocol_bitcoind::chain_states_entry(
 }
 
 void protocol_bitcoind::inject_block_context(boost::json::object& out,
-    const node::query& query, const database::header_link& link,
-    const chain::header& header) NOEXCEPT
+    const node::query& query, const system::settings& settings,
+    const database::header_link& link, const chain::header& header) NOEXCEPT
 {
     size_t height{};
     if (!query.get_height(height, link))
@@ -99,7 +103,7 @@ void protocol_bitcoind::inject_block_context(boost::json::object& out,
     // bitcoind reports -1 confirmations for a block not on the active chain.
     out["confirmations"] = confirmed ?
         to_signed(add1(floored_subtract(top, height))) : -1;
-    out["mediantime"] = median_time_past(query, link);
+    out["mediantime"] = median_time_past(query, settings, link);
 
     // Cumulative work to this block, big-endian per bitcoind chainwork.
     uint256_t work{};
@@ -207,7 +211,8 @@ std::string protocol_bitcoind::chain_name(const node::query& query) NOEXCEPT
 // Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
 // augments the result with bip9_softforks (required by lnd).
 bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
-    const node::query& query, bool pruned, bool current) NOEXCEPT
+    const node::query& query, const system::settings& settings,
+    bool pruned, bool current) NOEXCEPT
 {
     const auto blocks = query.get_top_confirmed();
     const auto headers = query.get_top_candidate();
@@ -230,7 +235,7 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
         { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, link) },
+        { "mediantime", median_time_past(query, settings, link) },
         { "verificationprogress", progress(blocks, headers) },
         { "initialblockdownload", !current },
         { "chainwork", encode_hash(from_uintx(work)) },
