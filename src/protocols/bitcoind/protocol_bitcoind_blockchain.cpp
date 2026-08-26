@@ -546,38 +546,26 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
         return true;
     }
 
+    // Return only unspent output.
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
-
-    // bitcoind returns json null for a missing or confirmed-spent output; with
-    // mempool ignored this matches gettxout's include_mempool=false semantics
-    // (is_spent would also count unconfirmed/conflicting/invalid-block spenders).
     if (output_link.is_terminal() || query.is_confirmed_spent(output_link))
     {
         send_result(null_t{}, 42);
         return true;
     }
 
+    const auto top = query.get_top_confirmed();
+    const auto header_link = query.to_confirmed(top);
     const auto output = query.get_output(output_link);
-    if (!output)
-    {
-        send_result(null_t{}, 42);
-        return true;
-    }
-
-    // Output's tx must exist.
-    const auto tx_link = query.to_tx(hash);
-    if (tx_link.is_terminal())
+    const auto tx_link = query.to_output_tx(output_link);
+    if (!output || tx_link.is_terminal() || header_link.is_terminal())
     {
         send_error(error::bitcoind::internal_error);
         return true;
     }
 
-    // Derive header from top for consistent depth result (also cheaper).
-    const auto top = query.get_top_confirmed();
-    const auto header_link = query.to_confirmed(top);
-
-    // An archived but unconfirmed output is not an unspent coin.
+    // Return only confirmed output.
     size_t height{};
     if (!query.get_tx_height(height, tx_link))
     {
