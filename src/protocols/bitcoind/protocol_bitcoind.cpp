@@ -363,7 +363,7 @@ code protocol_bitcoind::validate_tx(
     const auto& settings = system_settings();
     const auto link = query.to_confirmed(query.get_top_confirmed());
     const auto key = query.get_header_key(link);
-    const auto state = query.get_chain_state(settings, key);
+    const auto state = query.get_confirmed_chain_state(settings, key);
 
     // The store always has chain state for the confirmed top.
     if (!state)

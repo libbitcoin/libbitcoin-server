@@ -52,7 +52,7 @@ uint32_t protocol_bitcoind::median_time_past(const node::query& query,
 
     // The top block has no child, its promoted chain state carries the value.
     const auto key = query.get_header_key(link);
-    const auto state = query.get_chain_state(settings, key);
+    const auto state = query.get_confirmed_chain_state(settings, key);
     if (!state)
         return 0_u32;
 

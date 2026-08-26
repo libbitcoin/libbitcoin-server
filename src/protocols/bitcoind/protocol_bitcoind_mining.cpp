@@ -176,7 +176,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     // The pool state over the top block carries the next work required.
     const auto& bitcoin = system_settings();
     const auto key = query.get_header_key(link);
-    const auto state = query.get_chain_state(bitcoin, key);
+    const auto state = query.get_confirmed_chain_state(bitcoin, key);
     if (!state)
     {
         send_error(error::bitcoind::internal_error);
