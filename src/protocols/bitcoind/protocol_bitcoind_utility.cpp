@@ -61,6 +61,7 @@ void protocol_bitcoind_utility::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_index_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_estimate_smart_fee, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_sign_message_with_priv_key, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
@@ -428,6 +429,15 @@ bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::internal_error);
+    return true;
+}
+
+// Signing is a wallet function, keys never transit the server.
+bool protocol_bitcoind_utility::handle_sign_message_with_priv_key(
+    const code& ec, rpc_interface::sign_message_with_priv_key) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 

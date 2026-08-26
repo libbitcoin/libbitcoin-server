@@ -60,6 +60,7 @@ void protocol_bitcoind_control::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_rpc_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_logging, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_uptime, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_rpc_discover, _1, _2, _3);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
@@ -204,12 +205,8 @@ static void append_methods(array_t& out) NOEXCEPT
 }
 
 // There are no hidden methods (unimplemented rows are refusals, not hidden).
-bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
-    rpc_interface::get_openrpc_info, bool) NOEXCEPT
+void protocol_bitcoind_control::send_openrpc() NOEXCEPT
 {
-    if (stopped(ec))
-        return false;
-
     using namespace interface;
     array_t methods{};
     append_methods<bitcoind_blockchain_methods>(methods);
@@ -234,6 +231,26 @@ bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
         } },
         { "methods", std::move(methods) }
     }, size);
+}
+
+bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
+    rpc_interface::get_openrpc_info, bool) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    send_openrpc();
+    return true;
+}
+
+// bitcoind's discovery alias for the openrpc document.
+bool protocol_bitcoind_control::handle_rpc_discover(const code& ec,
+    rpc_interface::rpc_discover, bool) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    send_openrpc();
     return true;
 }
 

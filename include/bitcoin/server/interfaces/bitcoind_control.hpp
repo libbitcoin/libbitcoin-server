@@ -36,7 +36,8 @@ struct bitcoind_control_methods
         method<"getopenrpcinfo", optional<false>>{ "show_hidden" },
         method<"getrpcinfo">{},
         method<"logging", optional<empty::array>, optional<empty::array>>{ "include", "exclude" },
-        method<"uptime">{}
+        method<"uptime">{},
+        method<"rpc.discover", optional<false>>{ "show_hidden" }
     };
 
     template <typename... Args>
@@ -58,6 +59,7 @@ struct bitcoind_control_methods
     using get_rpc_info = at<4>;
     using logging = at<5>;
     using uptime = at<6>;
+    using rpc_discover = at<7>;
 };
 
 } // namespace interface

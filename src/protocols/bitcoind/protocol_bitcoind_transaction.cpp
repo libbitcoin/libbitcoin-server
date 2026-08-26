@@ -71,6 +71,8 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_abort_private_broadcast, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_private_broadcast_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_combine_raw_transaction, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_sign_raw_transaction_with_key, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
@@ -1035,6 +1037,23 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::client_mempool_disabled);
+    return true;
+}
+
+bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
+    const code& ec, rpc_interface::combine_raw_transaction) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
+    return true;
+}
+
+// Signing is a wallet function, keys never transit the server.
+bool protocol_bitcoind_transaction::handle_sign_raw_transaction_with_key(
+    const code& ec, rpc_interface::sign_raw_transaction_with_key) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 

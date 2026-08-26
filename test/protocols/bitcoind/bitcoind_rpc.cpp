@@ -62,7 +62,9 @@ const std::vector<method_code> rejected_methods
     { "listbanned", -20 },
     { "setban", -20 },
     { "stop", -32601 },
-    { "descriptorprocesspsbt", -32601 }
+    { "descriptorprocesspsbt", -32601 },
+    { "signrawtransactionwithkey", -32601 },
+    { "signmessagewithprivkey", -32601 }
 };
 
 const std::vector<method_code> wip_methods
@@ -71,7 +73,8 @@ const std::vector<method_code> wip_methods
     { "preciousblock", -32601 },
     { "disconnectnode", -32601 },
     { "exportasmap", -32601 },
-    { "getaddednodeinfo", -24 }
+    { "getaddednodeinfo", -24 },
+    { "combinerawtransaction", -32601 }
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -686,6 +689,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__excess_keys__invalid_paramete
 {
     const auto response = rpc("createmultisig", "[1, [\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\"]]");
     BOOST_REQUIRE_MESSAGE(has_code(response, -8), response);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__rpc_discover__default__openrpc_version)
+{
+    const auto response = rpc("rpc.discover");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("openrpc")), "1.2.6");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)

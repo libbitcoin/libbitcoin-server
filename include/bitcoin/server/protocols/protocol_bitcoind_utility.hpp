@@ -77,6 +77,8 @@ protected:
         rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT;
     bool handle_estimate_smart_fee(const code& ec,
         rpc_interface::estimate_smart_fee) NOEXCEPT;
+    bool handle_sign_message_with_priv_key(const code& ec,
+        rpc_interface::sign_message_with_priv_key) NOEXCEPT;
 };
 
 } // namespace server

@@ -46,7 +46,9 @@ struct bitcoind_transaction_methods
         method<"utxoupdatepsbt", string_t, optional<empty::array>>{ "psbt", "descriptors" },
         method<"abortprivatebroadcast">{ unimplemented },
         method<"getprivatebroadcastinfo">{ unimplemented },
-        method<"submitpackage">{ unimplemented }
+        method<"submitpackage">{ unimplemented },
+        method<"combinerawtransaction">{ unimplemented },
+        method<"signrawtransactionwithkey">{ unimplemented }
     };
 
     template <typename... Args>
@@ -78,6 +80,8 @@ struct bitcoind_transaction_methods
     using abort_private_broadcast = at<14>;
     using get_private_broadcast_info = at<15>;
     using submit_package = at<16>;
+    using combine_raw_transaction = at<17>;
+    using sign_raw_transaction_with_key = at<18>;
 };
 
 } // namespace interface

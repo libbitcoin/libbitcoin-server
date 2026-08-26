@@ -110,6 +110,10 @@ protected:
         rpc_interface::get_private_broadcast_info) NOEXCEPT;
     bool handle_submit_package(const code& ec,
         rpc_interface::submit_package) NOEXCEPT;
+    bool handle_combine_raw_transaction(const code& ec,
+        rpc_interface::combine_raw_transaction) NOEXCEPT;
+    bool handle_sign_raw_transaction_with_key(const code& ec,
+        rpc_interface::sign_raw_transaction_with_key) NOEXCEPT;
 };
 
 } // namespace server

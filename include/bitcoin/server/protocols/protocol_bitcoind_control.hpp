@@ -70,6 +70,11 @@ protected:
         const network::rpc::array_t& exclude) NOEXCEPT;
     bool handle_uptime(const code& ec,
         rpc_interface::uptime) NOEXCEPT;
+    bool handle_rpc_discover(const code& ec,
+        rpc_interface::rpc_discover, bool show_hidden) NOEXCEPT;
+
+private:
+    void send_openrpc() NOEXCEPT;
 };
 
 } // namespace server
