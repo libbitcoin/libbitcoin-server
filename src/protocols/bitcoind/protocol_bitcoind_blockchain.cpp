@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
  * This file is part of libbitcoin.
@@ -389,7 +389,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     }
 
     size_t height{};
-    if (!query.get_height(height, link) || query.to_confirmed(height) != link)
+    if (!query.get_height(height, link) || !query.is_confirmed_block(link))
     {
         send_error(error::bitcoind::invalid_address_or_key);
         return true;
@@ -468,7 +468,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
     }
 
     size_t height{};
-    if (!query.get_height(height, link) || query.to_confirmed(height) != link)
+    if (!query.get_height(height, link) || !query.is_confirmed_block(link))
     {
         send_error(error::bitcoind::invalid_address_or_key, blockhash,
             blockhash.size());
@@ -679,7 +679,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
         }
 
         if (!query.get_height(height, link) ||
-            query.to_confirmed(height) != link)
+            !query.is_confirmed_block(link))
         {
             send_error(error::bitcoind::invalid_address_or_key);
             return true;

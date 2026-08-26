@@ -329,7 +329,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
     const auto link = query.to_header(*hash);
     size_t height{};
     if (!query.get_height(height, link) ||
-        (query.to_confirmed(height) != link))
+        !query.is_confirmed_block(link))
     {
         send_not_found();
         return true;
