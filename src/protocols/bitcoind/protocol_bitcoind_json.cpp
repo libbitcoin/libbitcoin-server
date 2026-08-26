@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
  * This file is part of libbitcoin.
@@ -28,6 +28,13 @@ namespace server {
 
 using namespace system;
 
+// Clamped ratio of validated blocks to chain height.
+double protocol_bitcoind::progress(size_t blocks, size_t headers) NOEXCEPT
+{
+    return is_zero(headers) ? 1.0 :
+        std::min(1.0, to_floating(blocks) / headers);
+}
+
 // bitcoind's mtp window includes the block's own timestamp (reproduced).
 uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     const database::header_link& link) NOEXCEPT
@@ -48,13 +55,6 @@ uint32_t protocol_bitcoind::median_time_past(const node::query& query,
 
     std::sort(times.begin(), times.end());
     return times.empty() ? 0_u32 : times.at(to_half(times.size()));
-}
-
-// Clamped ratio of validated blocks to chain height.
-double protocol_bitcoind::progress(size_t blocks, size_t headers) NOEXCEPT
-{
-    return is_zero(headers) ? 1.0 :
-        std::min(1.0, to_floating(blocks) / headers);
 }
 
 // A getchainstates entry for candidate or confirmed at the link (top).
@@ -116,6 +116,29 @@ void protocol_bitcoind::inject_block_context(boost::json::object& out,
             query.get_header_key(query.to_confirmed(add1(height))));
 }
 
+void protocol_bitcoind::inject_tx_context(boost::json::object& out,
+    const node::query& query, const database::tx_link& link) NOEXCEPT
+{
+    size_t height{};
+    if (!query.get_tx_height(height, link))
+    {
+        out["confirmations"] = zero;
+        return;
+    }
+
+    const auto block = query.to_confirmed(height);
+    const auto top = query.get_top_confirmed();
+    const auto header = query.get_header(block);
+    out["blockhash"] = encode_hash(query.get_header_key(block));
+    out["confirmations"] = add1(floored_subtract(top, height));
+    out["in_active_chain"] = true;
+    if (header)
+    {
+        out["blocktime"] = header->timestamp();
+        out["time"] = header->timestamp();
+    }
+}
+
 // The tx must be populated (populate_without_metadata).
 void protocol_bitcoind::inject_tx_prevouts(boost::json::object& out,
     const node::query& query, const chain::transaction& tx) NOEXCEPT
@@ -141,29 +164,6 @@ void protocol_bitcoind::inject_tx_prevouts(boost::json::object& out,
 
         ++entry;
     });
-}
-
-void protocol_bitcoind::inject_tx_context(boost::json::object& out,
-    const node::query& query, const database::tx_link& link) NOEXCEPT
-{
-    size_t height{};
-    if (!query.get_tx_height(height, link))
-    {
-        out["confirmations"] = zero;
-        return;
-    }
-
-    const auto block = query.to_confirmed(height);
-    const auto top = query.get_top_confirmed();
-    const auto header = query.get_header(block);
-    out["blockhash"] = encode_hash(query.get_header_key(block));
-    out["confirmations"] = add1(floored_subtract(top, height));
-    out["in_active_chain"] = true;
-    if (header)
-    {
-        out["blocktime"] = header->timestamp();
-        out["time"] = header->timestamp();
-    }
 }
 
 boost::json::object protocol_bitcoind::header_to_bitcoind(
@@ -207,6 +207,43 @@ std::string protocol_bitcoind::chain_name(const node::query& query) NOEXCEPT
     return "unknown";
 }
 
+// Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
+// augments the result with bip9_softforks (required by lnd).
+bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
+    const node::query& query, bool pruned, bool current) NOEXCEPT
+{
+    const auto blocks = query.get_top_confirmed();
+    const auto headers = query.get_top_candidate();
+    const auto link = query.to_confirmed(blocks);
+    const auto header = query.get_header(link);
+
+    uint256_t work{};
+    if (!header || !query.get_branch_work(work, link))
+        return false;
+
+    const auto bits = header->bits();
+    out = network::rpc::object_t
+    {
+        // bitcoind OB1 error ("blocks" wants height).
+        { "chain", chain_name(query) },
+        { "blocks", blocks },
+        { "headers", headers },
+        { "bestblockhash", encode_hash(query.get_header_key(link)) },
+        { "bits", encode_base16(to_big_endian(bits)) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
+        { "difficulty", header->difficulty() },
+        { "time", header->timestamp() },
+        { "mediantime", median_time_past(query, link) },
+        { "verificationprogress", progress(blocks, headers) },
+        { "initialblockdownload", !current },
+        { "chainwork", encode_hash(from_uintx(work)) },
+        { "size_on_disk", query.store_size() },
+        { "pruned", pruned },
+        { "warnings", network::rpc::array_t{} }
+    };
+
+    return true;
+}
 // The createmultisig result, empty if a key is invalid or the p2sh embedded
 // script exceeds one push element. An uncompressed key downgrades a segwit
 // address type to legacy with a warning (as bitcoind).
@@ -334,44 +371,6 @@ std::string protocol_bitcoind::infer_descriptor(
     }
 
     return body + "#" + descriptor_checksum(body);
-}
-
-// Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
-// augments the result with bip9_softforks (required by lnd).
-bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
-    const node::query& query, bool pruned, bool current) NOEXCEPT
-{
-    const auto blocks = query.get_top_confirmed();
-    const auto headers = query.get_top_candidate();
-    const auto link = query.to_confirmed(blocks);
-    const auto header = query.get_header(link);
-
-    uint256_t work{};
-    if (!header || !query.get_branch_work(work, link))
-        return false;
-
-    const auto bits = header->bits();
-    out = network::rpc::object_t
-    {
-        // bitcoind OB1 error ("blocks" wants height).
-        { "chain", chain_name(query) },
-        { "blocks", blocks },
-        { "headers", headers },
-        { "bestblockhash", encode_hash(query.get_header_key(link)) },
-        { "bits", encode_base16(to_big_endian(bits)) },
-        { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
-        { "difficulty", header->difficulty() },
-        { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, link) },
-        { "verificationprogress", progress(blocks, headers) },
-        { "initialblockdownload", !current },
-        { "chainwork", encode_hash(from_uintx(work)) },
-        { "size_on_disk", query.store_size() },
-        { "pruned", pruned },
-        { "warnings", network::rpc::array_t{} }
-    };
-
-    return true;
 }
 
 } // namespace server
