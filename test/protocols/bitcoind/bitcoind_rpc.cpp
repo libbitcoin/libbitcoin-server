@@ -262,6 +262,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__negative_verbosity__clamped_hex)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__genesis__self_inclusive_mediantime)
+{
+    const auto response = rpc("getblockheader", hash_param(test::genesis.hash(), "true"));
+    BOOST_REQUIRE_EQUAL(response.at("result").at("mediantime").as_int64(), 1231006505);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
 {
     const auto response = rpc("getblockchaininfo");

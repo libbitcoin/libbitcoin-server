@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 
 #include <algorithm>
+#include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
 
@@ -27,11 +28,27 @@ namespace server {
 
 using namespace system;
 
+// bitcoind reports the median time past of the CHILD of the given block (its
+// window includes the block's own timestamp). Reproduced for compatibility.
 uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     const database::header_link& link) NOEXCEPT
 {
-    chain::context ctx{};
-    return query.get_context(ctx, link) ? ctx.median_time_past : 0_u32;
+    std::vector<uint32_t> times{};
+    times.reserve(chain::median_time_past_interval);
+
+    for (auto walk = link; !walk.is_terminal() &&
+        times.size() < chain::median_time_past_interval;
+        walk = query.to_parent(walk))
+    {
+        const auto header = query.get_header(walk);
+        if (!header)
+            return 0_u32;
+
+        times.push_back(header->timestamp());
+    }
+
+    std::sort(times.begin(), times.end());
+    return times.empty() ? 0_u32 : times.at(to_half(times.size()));
 }
 
 // Clamped ratio of validated blocks to chain height.

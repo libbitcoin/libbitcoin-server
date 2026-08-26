@@ -117,12 +117,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__chain_name__mainnet_genesis__main)
 
 // median_time_past
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__median_time_past__matches_stored_context)
+// The median of mainnet block 0..5 timestamps (self-inclusive, as bitcoind).
+BOOST_AUTO_TEST_CASE(bitcoind_json__median_time_past__self_inclusive_window)
 {
     const auto link = query_.to_header(test::block5_hash);
-    chain::context ctx{};
-    BOOST_REQUIRE(query_.get_context(ctx, link));
-    BOOST_REQUIRE_EQUAL(json::median_time_past(query_, link), ctx.median_time_past);
+    BOOST_REQUIRE_EQUAL(json::median_time_past(query_, link), 1231470173u);
 }
 
 // inject_block_context
@@ -136,11 +135,9 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__middle__height_confirm
     boost::json::object out{};
     json::inject_block_context(out, query_, link, *header);
 
-    chain::context ctx{};
-    BOOST_REQUIRE(query_.get_context(ctx, link));
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 5u);
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 5);
-    BOOST_REQUIRE_EQUAL(out.at("mediantime").to_number<uint32_t>(), ctx.median_time_past);
+    BOOST_REQUIRE_EQUAL(out.at("mediantime").to_number<uint32_t>(), 1231470173u);
     BOOST_REQUIRE_EQUAL(as_text(out.at("previousblockhash")), encode_hash(test::block4_hash));
     BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block6_hash));
 }
