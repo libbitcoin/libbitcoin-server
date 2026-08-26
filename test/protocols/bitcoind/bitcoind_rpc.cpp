@@ -363,6 +363,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__malformed__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_unspent__verify_already_in_utxo_set)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + tx0 + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -27), response);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
+}
+
 // control, mining, rawtransactions, util (moved from btcd)
 // ----------------------------------------------------------------------------
 

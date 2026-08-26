@@ -157,10 +157,34 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
+    // A confirmed tx with any unspent output is reported without validating.
+    const auto& query = archive();
+    const auto link = query.to_tx(tx->hash(false));
+    if (!link.is_terminal() && query.is_confirmed_tx(link))
+    {
+        const auto outs = query.to_outputs(link);
+        const auto unspent = [&query](const auto& out) NOEXCEPT
+        {
+            return !query.is_confirmed_spent(out);
+        };
+
+        if (std::any_of(outs.begin(), outs.end(), unspent))
+        {
+            send_error(error::bitcoind::verify_already_in_utxo_set);
+            return true;
+        }
+    }
+
     if (const auto fault = broadcast_tx(tx); fault)
     {
         using namespace error::bitcoind;
-        send_error(translate(fault, verify_rejected));
+
+        // Absent and confirmed-spent inputs are missing coins (as bitcoind).
+        const auto missing =
+            (fault == system::error::missing_previous_output) ||
+            (fault == system::error::confirmed_double_spend);
+
+        send_error(translate(fault, missing ? verify_error : verify_rejected));
         return true;
     }
 
