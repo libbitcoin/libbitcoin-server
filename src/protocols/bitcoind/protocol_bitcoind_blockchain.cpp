@@ -390,10 +390,16 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
         return true;
     }
 
-    size_t height{};
-    if (!query.get_height(height, link) || !query.is_confirmed_block(link))
+    if (!query.is_confirmed_block(link))
     {
         send_error(error::bitcoind::invalid_address_or_key);
+        return true;
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link))
+    {
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -469,11 +475,17 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
         link = query.to_header(hash);
     }
 
-    size_t height{};
-    if (!query.get_height(height, link) || !query.is_confirmed_block(link))
+    if (!query.is_confirmed_block(link))
     {
         send_error(error::bitcoind::invalid_address_or_key, blockhash,
             blockhash.size());
+        return true;
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link))
+    {
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -682,10 +694,15 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
             return true;
         }
 
-        if (!query.get_height(height, link) ||
-            !query.is_confirmed_block(link))
+        if (!query.is_confirmed_block(link))
         {
             send_error(error::bitcoind::invalid_address_or_key);
+            return true;
+        }
+
+        if (!query.get_height(height, link))
+        {
+            send_error(error::bitcoind::internal_error);
             return true;
         }
     }
@@ -1424,10 +1441,16 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
         constexpr auto witness = true;
         const auto link = query.to_header(hash);
         const auto block = query.get_block(link, witness);
-        size_t height{};
-        if (!block || !query.get_height(height, link))
+        if (!block)
         {
             send_error(error::bitcoind::invalid_address_or_key);
+            return true;
+        }
+
+        size_t height{};
+        if (!query.get_height(height, link))
+        {
+            send_error(error::bitcoind::internal_error);
             return true;
         }
 
