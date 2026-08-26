@@ -620,6 +620,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__empty__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__coinbase__coinbase_token)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("testmempoolaccept", "[[\"" + tx0 + "\"]]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "coinbase");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unknown_inputs__missingorspent_token)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("testmempoolaccept", "[[\"" + hex + "\"]]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "bad-txns-inputs-missingorspent");
+}
+
 // network
 // ----------------------------------------------------------------------------
 
@@ -1483,6 +1500,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
     const auto block = encode_base16(test::block9.to_data(true));
     const auto response = rpc("submitblock", "[\"" + block + "\"]");
     BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "duplicate");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__unknown_header__prev_blk_not_found_token)
+{
+    auto data = test::block1.to_data(true);
+    data[76]++;
+    const auto response = rpc("submitblock", "[\"" + encode_base16(data) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "prev-blk-not-found");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__garbage__invalid)

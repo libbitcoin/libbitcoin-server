@@ -93,6 +93,9 @@ DECLARE_ERROR_T_CODE_CATEGORY(error);
 /// A code of this category passes through unchanged.
 BC_API code translate(const code& ec, error_t failure) NOEXCEPT;
 
+/// The bitcoind (bip22) reject token for a validation code, message otherwise.
+BC_API std::string reject(const code& ec) NOEXCEPT;
+
 } // namespace bitcoind
 } // namespace error
 } // namespace server

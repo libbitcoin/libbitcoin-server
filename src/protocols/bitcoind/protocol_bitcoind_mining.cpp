@@ -294,12 +294,12 @@ void protocol_bitcoind_mining::handle_organize_header(const code& ec,
     POST(do_submit_header, ec);
 }
 
-// bitcoind returns null on acceptance and a reason string on rejection.
+// bitcoind returns null on acceptance and a reject token on rejection.
 void protocol_bitcoind_mining::do_submit_block(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (ec)
-        send_result(ec.message(), 64);
+        send_result(error::bitcoind::reject(ec), 64);
     else
         send_result(null_t{}, 8);
 }

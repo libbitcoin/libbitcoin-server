@@ -235,7 +235,7 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
         };
 
         if (fault)
-            result.emplace("reject-reason", fault.message());
+            result.emplace("reject-reason", error::bitcoind::reject(fault));
 
         results.emplace_back(std::move(result));
     }
