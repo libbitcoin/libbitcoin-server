@@ -37,6 +37,12 @@
     <Filter Include="src\protocols\native">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000009}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\serializers">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utilities">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000B}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\configuration.cpp">
@@ -63,22 +69,10 @@
     <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_block_stats.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_descriptor.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_merkle.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp">
@@ -171,11 +165,23 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp">
+      <Filter>src\serializers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\test.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\bitcoind_descriptor.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\bitcoind_merkle.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
+      <Filter>src\utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

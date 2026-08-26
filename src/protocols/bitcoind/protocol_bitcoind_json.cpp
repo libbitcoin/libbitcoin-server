@@ -22,6 +22,8 @@
 #include <vector>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {

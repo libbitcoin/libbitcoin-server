@@ -16,18 +16,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_DESCRIPTOR_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_DESCRIPTOR_HPP
+#ifndef LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
+#define LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
 
-#include <bitcoin/server/define.hpp>
-
-namespace libbitcoin {
-namespace server {
-
-/// The bip380 output descriptor checksum, empty on invalid characters.
-BCS_API std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT;
-
-} // namespace server
-} // namespace libbitcoin
+#include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
 
 #endif

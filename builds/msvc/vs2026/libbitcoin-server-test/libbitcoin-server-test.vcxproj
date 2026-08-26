@@ -126,14 +126,8 @@
     <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\admin_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp" />
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_block_stats.cpp" />
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_descriptor.cpp" />
-    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_merkle.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
-    <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
-      <ObjectFileName>$(IntDir)test_parsers_electrum_version.obj</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_diagnostics.cpp" />
@@ -166,8 +160,14 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_output.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp" />
+    <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp" />
+    <ClCompile Include="..\..\..\..\test\utilities\bitcoind_descriptor.cpp" />
+    <ClCompile Include="..\..\..\..\test\utilities\bitcoind_merkle.cpp" />
+    <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
+      <ObjectFileName>$(IntDir)test_utilities_electrum_version.obj</ObjectFileName>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp" />
