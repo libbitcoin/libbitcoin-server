@@ -133,6 +133,18 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_json__expected)
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__tx_json__expected)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_target(out, "/rest/tx/" + test_hash + ".json"));
+    BOOST_REQUIRE_EQUAL(out.method, "tx");
+
+    const auto& object = params_of(out);
+    BOOST_REQUIRE_EQUAL(object.size(), 2u);
+    BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
+}
+
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_media__mapped)
 {
     const std::vector<std::pair<std::string, media_type>> cases

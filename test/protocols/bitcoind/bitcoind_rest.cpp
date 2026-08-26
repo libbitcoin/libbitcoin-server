@@ -59,6 +59,20 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__block_json__block9_with_txs)
     BOOST_REQUIRE(result.at("tx").at(0).is_object());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rest__tx_json__coinbase_txid)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto result = rest_json("/rest/tx/" + txid + ".json");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("txid")), txid);
+    BOOST_REQUIRE(result.at("vin").is_array());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__tx_unknown__not_found)
+{
+    const auto txid = encode_hash(null_hash);
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/tx/" + txid + ".json"), status::not_found);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rest__block_hex__hashes_to_block9)
 {
     const auto hex = rest_text("/rest/block/" + block9 + ".hex");

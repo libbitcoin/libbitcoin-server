@@ -60,6 +60,7 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_filter, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_tx, _1, _2, _3, _4);
     SUBSCRIBE_CHANNEL(get, handle_receive_get, _1, _2);
     network::protocol::start();
 }
@@ -179,6 +180,50 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
         case json:
             send_json(value_from(bitcoind_verbose(*block)), two * size);
             return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_tx(const code& ec,
+    rest_interface::tx, uint8_t media, const hash_cptr& hash) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!hash)
+    {
+        send_not_found();
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto& query = archive();
+    const auto link = query.to_tx(*hash);
+    const auto tx = query.get_transaction(link, witness);
+    if (!tx)
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto size = tx->serialized_size(witness);
+    switch (media)
+    {
+        case data:
+            send_data(to_data(*tx, size, witness));
+            return true;
+        case text:
+            send_text(to_text(*tx, size, witness));
+            return true;
+        case json:
+        {
+            auto model = value_from(bitcoind(*tx));
+            inject_tx_context(model.as_object(), query, link);
+            send_json(std::move(model), two * size);
+            return true;
+        }
     }
 
     send_not_found();
