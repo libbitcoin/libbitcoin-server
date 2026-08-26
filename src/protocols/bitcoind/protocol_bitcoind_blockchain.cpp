@@ -410,8 +410,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
         settings.subsidy_interval_blocks, settings.initial_subsidy(),
         settings.forks.bip42);
 
-    const auto mtp = median_time_past(query, settings, link);
-    auto result = block_stats(*block, height, mtp, subsidy);
+    const auto median = median_time(query, settings, link);
+    auto result = block_stats(*block, height, median, subsidy);
 
     // An empty selection returns all statistics, otherwise the named subset.
     if (stats.empty())
@@ -522,8 +522,8 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
         }
 
         const auto& settings = system_settings();
-        const auto start = median_time_past(query, settings, branch.back());
-        const auto end = median_time_past(query, settings, link);
+        const auto start = median_time(query, settings, branch.back());
+        const auto end = median_time(query, settings, link);
         const auto interval = floored_subtract(end, start);
 
         size_t txs{};

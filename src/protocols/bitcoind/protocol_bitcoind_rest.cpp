@@ -630,7 +630,7 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         { "bits", encode_base16(to_big_endian(header->bits())) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, system_settings(), link) },
+        { "mediantime", median_time(query, system_settings(), link) },
         { "pruned", node_settings().limited_blocks }
     }, 256);
     return true;

@@ -87,7 +87,7 @@ protected:
 
     /// Model composition.
     static double progress(size_t blocks, size_t headers) NOEXCEPT;
-    static uint32_t median_time_past(const node::query& query,
+    static uint32_t median_time(const node::query& query,
         const system::settings& settings,
         const database::header_link& link) NOEXCEPT;
     static network::rpc::object_t chain_states_entry(const node::query& query,

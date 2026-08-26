@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
  * This file is part of libbitcoin.
@@ -36,7 +36,7 @@ double protocol_bitcoind::progress(size_t blocks, size_t headers) NOEXCEPT
 }
 
 // bitcoind's mtp window includes the block: the child's stored context mtp.
-uint32_t protocol_bitcoind::median_time_past(const node::query& query,
+uint32_t protocol_bitcoind::median_time(const node::query& query,
     const system::settings& settings,
     const database::header_link& link) NOEXCEPT
 {
@@ -97,7 +97,7 @@ void protocol_bitcoind::inject_block_context(boost::json::object& out,
     // bitcoind reports -1 confirmations for a block not on the active chain.
     out["confirmations"] = confirmed ?
         to_signed(add1(floored_subtract(top, height))) : -1;
-    out["mediantime"] = median_time_past(query, settings, link);
+    out["mediantime"] = median_time(query, settings, link);
 
     // Cumulative work to this block, big-endian per bitcoind chainwork.
     uint256_t work{};
@@ -229,7 +229,7 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
         { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, settings, link) },
+        { "mediantime", median_time(query, settings, link) },
         { "verificationprogress", progress(blocks, headers) },
         { "initialblockdownload", !current },
         { "chainwork", encode_hash(from_uintx(work)) },

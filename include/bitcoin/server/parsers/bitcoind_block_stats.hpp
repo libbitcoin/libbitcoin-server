@@ -26,7 +26,7 @@ namespace server {
 
 /// All bitcoind getblockstats statistics of a prevout-populated block.
 BCS_API network::rpc::object_t block_stats(const system::chain::block& block,
-    size_t height, uint32_t median_time_past, uint64_t subsidy) NOEXCEPT;
+    size_t height, uint32_t median_time, uint64_t subsidy) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

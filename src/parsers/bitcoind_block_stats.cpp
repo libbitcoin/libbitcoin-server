@@ -75,7 +75,7 @@ static std::array<uint64_t, 5> fee_rate_percentiles(
 }
 
 object_t block_stats(const chain::block& block, size_t height,
-    uint32_t median_time_past, uint64_t subsidy) NOEXCEPT
+    uint32_t median_time, uint64_t subsidy) NOEXCEPT
 {
     const auto& txs = *block.transactions_ptr();
 
@@ -165,7 +165,7 @@ object_t block_stats(const chain::block& block, size_t height,
         { "maxfeerate", max_fee_rate },
         { "maxtxsize", max_tx_size },
         { "medianfee", truncated_median(fees) },
-        { "mediantime", median_time_past },
+        { "mediantime", median_time },
         { "mediantxsize", truncated_median(sizes) },
         { "minfee", min_fee == max_uint64 ? zero : min_fee },
         { "minfeerate", min_fee_rate == max_uint64 ? zero : min_fee_rate },
