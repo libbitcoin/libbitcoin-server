@@ -576,9 +576,15 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     const auto top = query.get_top_confirmed();
     const auto header_link = query.to_confirmed(top);
 
+    // An archived but unconfirmed output is not an unspent coin.
     size_t height{};
-    const auto strong = query.get_tx_height(height, tx_link);
-    const auto depth = strong ? add1(floored_subtract(top, height)) : zero;
+    if (!query.get_tx_height(height, tx_link))
+    {
+        send_result(null_t{}, 42);
+        return true;
+    }
+
+    const auto depth = add1(floored_subtract(top, height));
     const auto coins = to_floating(output->value()) /
         chain::satoshi_per_bitcoin;
 

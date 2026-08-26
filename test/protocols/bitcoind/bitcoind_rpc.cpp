@@ -312,6 +312,15 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unspent_coinbase__output)
     BOOST_REQUIRE(result.as_object().contains("scriptPubKey"));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__archived_unconfirmed__null)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+
+    const auto txid = test::mock_block10.transactions_ptr()->at(1)->hash(false);
+    const auto response = rpc("gettxout", hash_param(txid, "0"));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
 // rawtransactions
 // ----------------------------------------------------------------------------
 
