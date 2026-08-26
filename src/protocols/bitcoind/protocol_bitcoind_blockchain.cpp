@@ -191,7 +191,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     inject_block_context(model.as_object(), query, link, block->header());
 
     if (level >= block_verbosity::verbose &&
-        query.populate_without_metadata(*block))
+        query.populate_with_metadata(*block))
     {
         auto entry = model.as_object().at("tx").as_array().begin();
         std::ranges::for_each(*block->transactions_ptr(),

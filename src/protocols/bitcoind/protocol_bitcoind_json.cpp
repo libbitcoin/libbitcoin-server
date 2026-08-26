@@ -139,7 +139,7 @@ void protocol_bitcoind::inject_tx_context(boost::json::object& out,
     }
 }
 
-// The tx must be populated (populate_without_metadata).
+// The tx must be populated (populate_with_metadata).
 void protocol_bitcoind::inject_tx_prevouts(boost::json::object& out,
     const node::query& query, const chain::transaction& tx) NOEXCEPT
 {
@@ -147,13 +147,12 @@ void protocol_bitcoind::inject_tx_prevouts(boost::json::object& out,
     auto entry = out.at("vin").as_array().begin();
     std::ranges::for_each(*tx.inputs_ptr(), [&](const auto& in) NOEXCEPT
     {
-        const auto spent = query.to_tx(in->point().hash());
-        if (query.get_tx_height(height, spent))
+        if (query.get_tx_height(height, in->metadata.parent_tx))
         {
             auto put = value_from(bitcoind(*in->prevout)).as_object();
             boost::json::object prevout
             {
-                { "generated", query.is_coinbase(spent) },
+                { "generated", in->metadata.coinbase },
                 { "height", height },
                 { "value", put.at("value") },
                 { "scriptPubKey", std::move(put.at("scriptPubKey")) }

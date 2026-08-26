@@ -300,7 +300,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     auto model = value_from(bitcoind(*tx));
     inject_tx_context(model.as_object(), query, link);
     if (level == verbosity::json_verbose && !tx->is_coinbase() &&
-        query.populate_without_metadata(*tx))
+        query.populate_with_metadata(*tx))
     {
         inject_tx_prevouts(model.as_object(), query, *tx);
         model.as_object()["fee"] =
