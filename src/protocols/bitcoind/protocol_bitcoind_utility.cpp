@@ -223,6 +223,14 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
         return true;
     }
 
+    // The multisig pattern is limited to op_16 (bitcoind allows 20 for wsh).
+    constexpr auto maximum_keys = 16_size;
+    if (keys.size() > maximum_keys)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
     if (address_type != "legacy" && 
         address_type != "p2sh-segwit" &&
         address_type != "bech32")

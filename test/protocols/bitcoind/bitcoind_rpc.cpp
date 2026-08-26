@@ -643,6 +643,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__excess_required__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__excess_keys__invalid_parameter)
+{
+    const auto response = rpc("createmultisig", "[1, [\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\",\"00\"]]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -8), response);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
