@@ -25,7 +25,6 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
-
 namespace server {
 
 #define CLASS protocol_bitcoind_mining
@@ -148,10 +147,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     return true;
 }
 
-// currentblockweight/currentblocktx are omitted (bitcoind omits them until a
-// block is assembled, and there is no assembler). The tx pool is empty, so
-// pooledtx is zero, and no packages are selected, so blockmintxfee is the
-// maximum.
+// bitcoind omits currentblockweight/currentblocktx until block assembly.
 bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     rpc_interface::get_mining_info) NOEXCEPT
 {
@@ -235,8 +231,9 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
         return true;
     }
 
-    // bitcoind reports an already-stored block as a duplicate result.
-    if (!archive().to_header(block->hash()).is_terminal())
+    // A known header without its block still organizes (the submitheader flow).
+    const auto link = archive().to_header(block->hash());
+    if (!link.is_terminal() && archive().is_associated(link))
     {
         send_result(std::string{ "duplicate" }, 32);
         return true;

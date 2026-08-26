@@ -89,7 +89,7 @@ void CLASS::handle_receive_post(const code& ec,
     // Claim the request (informs the terminal responder).
     set_claimed();
 
-    // The post is saved off during asynchonous handling and used in
+    // The post is saved off during asynchronous handling and used in
     // send_json to formulate response headers, isolating handlers from
     // http semantics.
     set_rpc_request(message.jsonrpc, message.id, post);

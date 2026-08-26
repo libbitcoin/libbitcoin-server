@@ -30,15 +30,16 @@ struct bitcoind_transaction_methods
 {
     static constexpr std::tuple methods
     {
-        method<"createrawtransaction", array_t, object_t, optional<0.0>, optional<false>>{ "inputs", "outputs", "locktime", "replaceable" },
+        method<"createrawtransaction", array_t, value_t, optional<0.0>, optional<true>, optional<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version" },
         method<"decoderawtransaction", string_t, nullable<boolean_t>>{ "hexstring", "iswitness" },
         method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
-        method<"sendrawtransaction", string_t, optional<0.0>>{ "hexstring", "maxfeerate" },
-        method<"testmempoolaccept", array_t, optional<0.0>>{ "rawtxs", "maxfeerate" },
+        // bitcoind also accepts quoted amounts (slop; needs dispatch special case).
+        method<"sendrawtransaction", string_t, optional<0.1>, optional<0.0>>{ "hexstring", "maxfeerate", "maxburnamount" },
+        method<"testmempoolaccept", array_t, optional<0.1>>{ "rawtxs", "maxfeerate" },
         method<"analyzepsbt", string_t>{ "psbt" },
         method<"combinepsbt", array_t>{ "txs" },
-        method<"converttopsbt", string_t, optional<false>, nullable<boolean_t>>{ "hexstring", "permitsigdata", "iswitness" },
-        method<"createpsbt", array_t, object_t, optional<0.0>, optional<false>>{ "inputs", "outputs", "locktime", "replaceable" },
+        method<"converttopsbt", string_t, optional<false>, nullable<boolean_t>, optional<2.0>>{ "hexstring", "permitsigdata", "iswitness", "psbt_version" },
+        method<"createpsbt", array_t, value_t, optional<0.0>, optional<true>, optional<2.0>, optional<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version", "psbt_version" },
         method<"decodepsbt", string_t>{ "psbt" },
         method<"finalizepsbt", string_t, optional<true>>{ "psbt", "extract" },
         method<"joinpsbts", array_t>{ "txs" },
@@ -46,7 +47,9 @@ struct bitcoind_transaction_methods
         method<"utxoupdatepsbt", string_t, optional<empty::array>>{ "psbt", "descriptors" },
         method<"abortprivatebroadcast">{ unimplemented },
         method<"getprivatebroadcastinfo">{ unimplemented },
-        method<"submitpackage">{ unimplemented }
+        method<"submitpackage">{ unimplemented },
+        method<"combinerawtransaction">{ unimplemented },
+        method<"signrawtransactionwithkey">{ unimplemented }
     };
 
     template <typename... Args>
@@ -78,6 +81,8 @@ struct bitcoind_transaction_methods
     using abort_private_broadcast = at<14>;
     using get_private_broadcast_info = at<15>;
     using submit_package = at<16>;
+    using combine_raw_transaction = at<17>;
+    using sign_raw_transaction_with_key = at<18>;
 };
 
 } // namespace interface

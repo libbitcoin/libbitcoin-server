@@ -60,6 +60,7 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_filter, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_tx, _1, _2, _3, _4);
     SUBSCRIBE_CHANNEL(get, handle_receive_get, _1, _2);
     network::protocol::start();
 }
@@ -100,15 +101,24 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
-    // The get is saved off during asynchonous handling and used in send_json
+    // The get is saved off during asynchronous handling and used in send_json
     // to formulate response headers, isolating handlers from http semantics.
     set_request(get);
 
     // Parse the REST url into a json-rpc model and dispatch to a handler.
+    // Malformed parameters are bad requests, unknown targets are not found.
     request_t model{};
-    if (bitcoind_target(model, get->target()))
+    if (const auto fault = bitcoind_target(model, get->target()))
     {
-        send_not_found();
+        if ((fault == error::invalid_hash) ||
+            (fault == error::invalid_number) ||
+            (fault == error::missing_hash) ||
+            (fault == error::missing_height) ||
+            (fault == error::missing_target))
+            send_bad_request(*get);
+        else
+            send_not_found();
+
         return;
     }
 
@@ -179,6 +189,50 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
         case json:
             send_json(value_from(bitcoind_verbose(*block)), two * size);
             return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_tx(const code& ec,
+    rest_interface::tx, uint8_t media, const hash_cptr& hash) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!hash)
+    {
+        send_not_found();
+        return true;
+    }
+
+    constexpr auto witness = true;
+    const auto& query = archive();
+    const auto link = query.to_tx(*hash);
+    const auto tx = query.get_transaction(link, witness);
+    if (!tx)
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto size = tx->serialized_size(witness);
+    switch (media)
+    {
+        case data:
+            send_data(to_data(*tx, size, witness));
+            return true;
+        case text:
+            send_text(to_text(*tx, size, witness));
+            return true;
+        case json:
+        {
+            auto model = value_from(bitcoind(*tx));
+            inject_tx_context(model.as_object(), query, link);
+            send_json(std::move(model), two * size);
+            return true;
+        }
     }
 
     send_not_found();
@@ -270,9 +324,12 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         return true;
     }
 
+    // bitcoind serves headers only for a hash on the active chain.
     const auto& query = archive();
+    const auto link = query.to_header(*hash);
     size_t height{};
-    if (!query.get_height(height, query.to_header(*hash)))
+    if (!query.get_height(height, link) ||
+        (query.to_confirmed(height) != link))
     {
         send_not_found();
         return true;
@@ -632,9 +689,6 @@ void protocol_bitcoind_rest::send_json(value&& model,
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, error::success);
 }
-
-// private
-// ----------------------------------------------------------------------------
 
 BC_POP_WARNING()
 BC_POP_WARNING()

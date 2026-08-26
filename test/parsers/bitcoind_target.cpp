@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
     {
         { "", server::error::empty_path },
         { "?foo=bar", server::error::empty_path },
-        { "/rest", server::error::missing_target },
+        { "/rest", server::error::invalid_target },
         { "/rest/bogus", server::error::invalid_target },
         { "/bogus", server::error::invalid_target },
         { "/rest/block", server::error::missing_hash },
@@ -126,6 +126,18 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_json__expected)
     request_t out{};
     BOOST_REQUIRE(!bitcoind_target(out, "/rest/block/" + test_hash + ".json"));
     BOOST_REQUIRE_EQUAL(out.method, "block");
+
+    const auto& object = params_of(out);
+    BOOST_REQUIRE_EQUAL(object.size(), 2u);
+    BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__tx_json__expected)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_target(out, "/rest/tx/" + test_hash + ".json"));
+    BOOST_REQUIRE_EQUAL(out.method, "tx");
 
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(object.size(), 2u);

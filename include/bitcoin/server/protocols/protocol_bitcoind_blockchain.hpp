@@ -116,7 +116,7 @@ protected:
         rpc_interface::get_descriptor_activity,
         const network::rpc::array_t& blockhashes,
         const network::rpc::array_t& scanobjects,
-        bool include_spent) NOEXCEPT;
+        bool include_mempool) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,
         rpc_interface::get_difficulty) NOEXCEPT;
     bool handle_precious_block(const code& ec,
@@ -124,7 +124,8 @@ protected:
     bool handle_scan_blocks(const code& ec,
         rpc_interface::scan_blocks, const std::string& action,
         const network::rpc::array_t& scanobjects, double start_height,
-        double stop_height, const std::string& filtertype) NOEXCEPT;
+        double stop_height, const std::string& filtertype,
+        const network::rpc::object_t& options) NOEXCEPT;
     bool handle_wait_for_block(const code& ec,
         rpc_interface::wait_for_block, const std::string& blockhash,
         double timeout) NOEXCEPT;
@@ -132,7 +133,8 @@ protected:
         rpc_interface::wait_for_block_height, double height,
         double timeout) NOEXCEPT;
     bool handle_wait_for_new_block(const code& ec,
-        rpc_interface::wait_for_new_block, double timeout) NOEXCEPT;
+        rpc_interface::wait_for_new_block, double timeout,
+        const std::string& current_tip) NOEXCEPT;
     bool handle_get_mempool_ancestors(const code& ec,
         rpc_interface::get_mempool_ancestors) NOEXCEPT;
     bool handle_get_mempool_cluster(const code& ec,
@@ -161,7 +163,7 @@ private:
     void do_wait_event() NOEXCEPT;
     void handle_wait_timeout(const code& ec) NOEXCEPT;
     bool wait_done() const NOEXCEPT;
-    void send_tip() NOEXCEPT;
+    void send_top() NOEXCEPT;
 
     enum class set_hash : uint8_t { none, muhash, serialized };
 

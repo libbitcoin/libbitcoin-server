@@ -62,7 +62,7 @@ protected:
     bool handle_get_memory_info(const code& ec,
         rpc_interface::get_memory_info, const std::string& mode) NOEXCEPT;
     bool handle_get_openrpc_info(const code& ec,
-        rpc_interface::get_openrpc_info) NOEXCEPT;
+        rpc_interface::get_openrpc_info, bool show_hidden) NOEXCEPT;
     bool handle_get_rpc_info(const code& ec,
         rpc_interface::get_rpc_info) NOEXCEPT;
     bool handle_logging(const code& ec, rpc_interface::logging,
@@ -70,6 +70,11 @@ protected:
         const network::rpc::array_t& exclude) NOEXCEPT;
     bool handle_uptime(const code& ec,
         rpc_interface::uptime) NOEXCEPT;
+    bool handle_rpc_discover(const code& ec,
+        rpc_interface::rpc_discover, bool show_hidden) NOEXCEPT;
+
+private:
+    void send_openrpc() NOEXCEPT;
 };
 
 } // namespace server

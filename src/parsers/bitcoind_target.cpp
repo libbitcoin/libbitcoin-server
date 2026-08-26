@@ -119,7 +119,7 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         ++segment;
 
     if (segment == segments.size())
-        return error::missing_target;
+        return error::invalid_target;
 
     const auto target = segments[segment++];
 
@@ -156,6 +156,27 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
             return error::invalid_hash;
 
         method = rest_method;
+        params["media"] = media;
+        params["hash"] = hash;
+        return error::success;
+    }
+
+    // /rest/tx/<txid>.<ext>
+    if (target == "tx")
+    {
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
+            return error::invalid_target;
+
+        const auto hash = to_hash(name);
+        if (!hash)
+            return error::invalid_hash;
+
+        method = "tx";
         params["media"] = media;
         params["hash"] = hash;
         return error::success;

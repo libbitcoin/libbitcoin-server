@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
  * This file is part of libbitcoin.
@@ -26,7 +26,6 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
-
 namespace server {
 
 #define CLASS protocol_bitcoind_transaction
@@ -54,15 +53,15 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     if (started())
         return;
 
-    SUBSCRIBE_BITCOIND(handle_create_raw_transaction, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_create_raw_transaction, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_BITCOIND(handle_decode_raw_transaction, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_raw_transaction, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_send_raw_transaction, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_test_mempool_accept, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_analyze_psbt, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_combine_psbt, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_convert_to_psbt, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_BITCOIND(handle_create_psbt, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_BITCOIND(handle_decode_psbt, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_finalize_psbt, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_join_psbts, _1, _2, _3);
@@ -71,11 +70,184 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_abort_private_broadcast, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_private_broadcast_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_combine_raw_transaction, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_sign_raw_transaction_with_key, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
 // Raw transaction methods.
 // ----------------------------------------------------------------------------
+
+bool protocol_bitcoind_transaction::handle_create_raw_transaction(
+    const code& ec, rpc_interface::create_raw_transaction,
+    const array_t& inputs, const value_t& outputs, double locktime,
+    bool replaceable, double version) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    chain::transaction tx{};
+    if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
+        replaceable, version))
+    {
+        send_error(fault);
+        return true;
+    }
+
+    constexpr auto witness = false;
+    send_result(to_text(tx, tx.serialized_size(witness), witness), 400);
+    return true;
+}
+
+// Shared by createrawtransaction and createpsbt.
+code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
+    const array_t& inputs, const value_t& outputs, double locktime,
+    bool replaceable, double version) const NOEXCEPT
+{
+    uint32_t lock_time{};
+    if (!to_integer(lock_time, locktime))
+        return error::bitcoind::invalid_parameter;
+
+    // bitcoind bounds the version to the maximum standard (currently 3).
+    uint32_t tx_version{};
+    if (!to_integer(tx_version, version) || is_zero(tx_version) ||
+        (tx_version > 3u))
+        return error::bitcoind::invalid_parameter;
+
+    using namespace chain;
+    const auto sequence = replaceable ? messages::peer::bip125_sequence :
+        (is_zero(lock_time) ? max_input_sequence : sub1(max_input_sequence));
+
+    const auto ins = to_shared<input_cptrs>();
+    ins->reserve(inputs.size());
+    hash_digest hash{};
+    uint32_t vout{};
+
+    for (const auto& item: inputs)
+    {
+        if (!std::holds_alternative<object_t>(item.value()))
+            return error::bitcoind::type_error;
+
+        const auto& fields = std::get<object_t>(item.value());
+        const auto txid_it = fields.find("txid");
+        const auto vout_it = fields.find("vout");
+        if (txid_it == fields.end() || vout_it == fields.end() ||
+            !std::holds_alternative<string_t>(txid_it->second.value()) ||
+            !std::holds_alternative<number_t>(vout_it->second.value()))
+            return error::bitcoind::invalid_parameter;
+
+        if (!decode_hash(hash, std::get<string_t>(txid_it->second.value())) ||
+            !to_integer(vout, std::get<number_t>(vout_it->second.value())))
+            return error::bitcoind::invalid_parameter;
+
+        // An explicit sequence overrides the derived default.
+        auto sequenced = sequence;
+        const auto sequence_it = fields.find("sequence");
+        if (sequence_it != fields.end() &&
+            (!std::holds_alternative<number_t>(sequence_it->second.value()) ||
+            !to_integer(sequenced,
+                std::get<number_t>(sequence_it->second.value()))))
+            return error::bitcoind::invalid_parameter;
+
+        ins->push_back(to_shared<input>(point{ hash, vout }, script{},
+            sequenced));
+    }
+
+    script script{};
+    uint64_t satoshi{};
+    const auto outs = std::make_shared<output_cptrs>();
+
+    // Appends one address or data output from a name/value pair.
+    const auto append = [&](const std::string& name,
+        const value_t& item) NOEXCEPT -> code
+    {
+        // A data output carries a null data script and no value.
+        if (name == "data")
+        {
+            data_chunk data{};
+            if (!std::holds_alternative<string_t>(item.value()) ||
+                !decode_base16(data, std::get<string_t>(item.value())) ||
+                data.size() > max_null_data_size)
+                return error::bitcoind::invalid_parameter;
+
+            outs->push_back(to_shared<output>(zero,
+                chain::script{ script::to_pay_null_data_pattern(data) }));
+            return error::bitcoind::success;
+        }
+
+        // bitcoind also accepts a quoted amount (slop; not special-cased).
+        if (!std::holds_alternative<number_t>(item.value()))
+            return error::bitcoind::type_error;
+
+        if (output_script(script, name, p2kh_, p2sh_, witness_))
+            return error::bitcoind::invalid_address_or_key;
+
+        const auto btc = std::get<number_t>(item.value());
+        if (!to_integer(satoshi, btc * satoshi_per_bitcoin, true) ||
+            satoshi > system_settings().max_money())
+            return error::bitcoind::type_error;
+
+        outs->push_back(to_shared<output>(satoshi, std::move(script)));
+        return error::bitcoind::success;
+    };
+
+    // outputs is one object or an array of objects (permits repeated address).
+    if (std::holds_alternative<object_t>(outputs.value()))
+    {
+        for (const auto& pair: std::get<object_t>(outputs.value()))
+            if (const auto fault = append(pair.first, pair.second))
+                return fault;
+    }
+    else if (std::holds_alternative<array_t>(outputs.value()))
+    {
+        for (const auto& element: std::get<array_t>(outputs.value()))
+        {
+            if (!std::holds_alternative<object_t>(element.value()))
+                return error::bitcoind::type_error;
+
+            for (const auto& pair: std::get<object_t>(element.value()))
+                if (const auto fault = append(pair.first, pair.second))
+                    return fault;
+        }
+    }
+    else
+    {
+        return error::bitcoind::type_error;
+    }
+
+    out = { tx_version, ins, outs, lock_time };
+    return error::bitcoind::success;
+}
+
+bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec,
+    rpc_interface::decode_raw_transaction, const std::string& hexstring,
+    const std::optional<bool>& iswitness) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexstring))
+    {
+        send_error(error::bitcoind::deserialization_error);
+        return true;
+    }
+
+    // Absent the hint, witness deserialization is tried first (as bitcoind).
+    const auto witness = iswitness.value_or(true);
+    auto tx = chain::transaction{ data, witness };
+    if (!iswitness.has_value() && !tx.is_valid())
+        tx = chain::transaction{ data, false };
+
+    if (!tx.is_valid())
+    {
+        send_error(error::bitcoind::deserialization_error);
+        return true;
+    }
+
+    send_result(value_from(bitcoind(tx)), two * tx.serialized_size(true));
+    return true;
+}
 
 // The hint is unused (not required).
 bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
@@ -141,7 +313,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     rpc_interface::send_raw_transaction, const std::string& hexstring,
-    double) NOEXCEPT
+    double, double) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -191,7 +363,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    send_result(encode_hash(tx->hash(false)), two * system::hash_size);
+    send_result(encode_hash(tx->hash(false)), two * hash_size);
     return true;
 }
 
@@ -242,132 +414,6 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
 
     const auto size = 128 * results.size();
     send_result(std::move(results), size);
-    return true;
-}
-
-// Shared by createrawtransaction and createpsbt.
-code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
-    const array_t& inputs, const object_t& outputs, double locktime,
-    bool replaceable) const NOEXCEPT
-{
-    uint32_t lock_time{};
-    if (!to_integer(lock_time, locktime))
-        return error::bitcoind::invalid_parameter;
-
-    using namespace chain;
-    const auto sequence = replaceable ? messages::peer::bip125_sequence :
-        (is_zero(lock_time) ? max_input_sequence : sub1(max_input_sequence));
-
-    const auto ins = to_shared<input_cptrs>();
-    ins->reserve(inputs.size());
-    hash_digest hash{};
-    uint32_t vout{};
-
-    for (const auto& item: inputs)
-    {
-        if (!std::holds_alternative<object_t>(item.value()))
-            return error::bitcoind::type_error;
-
-        const auto& fields = std::get<object_t>(item.value());
-        const auto txid_it = fields.find("txid");
-        const auto vout_it = fields.find("vout");
-        if (txid_it == fields.end() || vout_it == fields.end() ||
-            !std::holds_alternative<string_t>(txid_it->second.value()) ||
-            !std::holds_alternative<number_t>(vout_it->second.value()))
-            return error::bitcoind::invalid_parameter;
-
-        if (!decode_hash(hash, std::get<string_t>(txid_it->second.value())) ||
-            !to_integer(vout, std::get<number_t>(vout_it->second.value())))
-            return error::bitcoind::invalid_parameter;
-
-        ins->push_back(to_shared<input>(point{ hash, vout }, script{}, sequence));
-    }
-
-    script script{};
-    uint64_t satoshi{};
-    const auto outs = std::make_shared<output_cptrs>();
-    outs->reserve(outputs.size());
-    for (const auto& pair: outputs)
-    {
-        // A data output carries a null data script and no value.
-        if (pair.first == "data")
-        {
-            data_chunk data{};
-            if (!std::holds_alternative<string_t>(pair.second.value()) ||
-                !decode_base16(data, std::get<string_t>(pair.second.value())) ||
-                data.size() > max_null_data_size)
-                return error::bitcoind::invalid_parameter;
-
-            outs->push_back(to_shared<output>(zero,
-                chain::script{ script::to_pay_null_data_pattern(data) }));
-            continue;
-        }
-
-        if (!std::holds_alternative<number_t>(pair.second.value()))
-            return error::bitcoind::type_error;
-
-        if (output_script(script, pair.first, p2kh_, p2sh_, witness_))
-            return error::bitcoind::invalid_address_or_key;
-
-        const auto btc = std::get<number_t>(pair.second.value());
-        if (!to_integer(satoshi, btc * satoshi_per_bitcoin, false))
-            return error::bitcoind::type_error;
-
-        outs->push_back(to_shared<output>(satoshi, std::move(script)));
-    }
-
-    out = { 1, ins, outs, lock_time };
-    return error::bitcoind::success;
-}
-
-bool protocol_bitcoind_transaction::handle_create_raw_transaction(
-    const code& ec, rpc_interface::create_raw_transaction,
-    const array_t& inputs, const object_t& outputs, double locktime,
-    bool replaceable) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    chain::transaction tx{};
-    if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
-        replaceable))
-    {
-        send_error(fault);
-        return true;
-    }
-
-    constexpr auto witness = false;
-    send_result(to_text(tx, tx.serialized_size(witness), witness), 400);
-    return true;
-}
-
-bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec,
-    rpc_interface::decode_raw_transaction, const std::string& hexstring,
-    const std::optional<bool>& iswitness) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    data_chunk data{};
-    if (!decode_base16(data, hexstring))
-    {
-        send_error(error::bitcoind::deserialization_error);
-        return true;
-    }
-
-    // Absent the hint, witness deserialization is tried first (as bitcoind).
-    const auto witness = iswitness.value_or(true);
-    auto tx = chain::transaction{ data, witness };
-    if (!iswitness.has_value() && !tx.is_valid())
-        tx = chain::transaction{ data, false };
-
-    if (!tx.is_valid())
-    {
-        send_error(error::bitcoind::deserialization_error);
-        return true;
-    }
-
-    send_result(value_from(bitcoind(tx)), two * tx.serialized_size(true));
     return true;
 }
 
@@ -540,78 +586,6 @@ static object_t decode_psbt_output(const wallet::psbt::output& out) NOEXCEPT
     return entry;
 }
 
-bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
-    rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    const psbt_tx doc(psbt);
-    if (!doc)
-    {
-        send_error(error::bitcoind::deserialization_error);
-        return true;
-    }
-
-    object_t result{};
-    const auto version0 = (doc.version() == psbt_tx::version_0);
-    if (version0)
-        result.emplace("tx", value_from(bitcoind(doc.unsigned_tx())));
-
-    if (!doc.xpubs().empty())
-    {
-        array_t xpubs{};
-        for (const auto& key: doc.xpubs())
-        {
-            auto checked = key.key;
-            append_checksum(checked);
-            xpubs.emplace_back(object_t
-            {
-                { "xpub", encode_base58(checked) },
-                { "master_fingerprint", encode_base16(to_little_endian(
-                    key.origin.fingerprint)) },
-                { "path", to_key_path(key.origin.path) }
-            });
-        }
-
-        result.emplace("global_xpubs", std::move(xpubs));
-    }
-
-    result.emplace("psbt_version", doc.version());
-
-    if (!version0)
-    {
-        result.emplace("tx_version", doc.tx_version());
-        if (doc.fallback_locktime().has_value())
-            result.emplace("fallback_locktime",
-                doc.fallback_locktime().value());
-
-        if (doc.tx_modifiable().has_value())
-            result.emplace("tx_modifiable", doc.tx_modifiable().value());
-    }
-
-    if (!doc.others().empty())
-        result.emplace("unknown", to_unknown(doc.others()));
-
-    array_t ins{};
-    for (const auto& in: doc.inputs())
-        ins.emplace_back(decode_psbt_input(in));
-
-    array_t outs{};
-    for (const auto& out: doc.outputs())
-        outs.emplace_back(decode_psbt_output(out));
-
-    result.emplace("inputs", std::move(ins));
-    result.emplace("outputs", std::move(outs));
-
-    if (const auto fee = doc.fee(); fee.has_value())
-        result.emplace("fee", fee.value() /
-            to_floating(chain::satoshi_per_bitcoin));
-
-    send_result(std::move(result), 2048);
-    return true;
-}
-
 bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
     rpc_interface::analyze_psbt, const std::string& psbt) NOEXCEPT
 {
@@ -738,10 +712,18 @@ bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     rpc_interface::convert_to_psbt, const std::string& hexstring,
-    bool permitsigdata, const std::optional<bool>& iswitness) NOEXCEPT
+    bool permitsigdata, const std::optional<bool>& iswitness,
+    double psbt_version) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    // Construction is bip370 only.
+    if (psbt_version != 2.0)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
 
     data_chunk data{};
     if (!decode_base16(data, hexstring))
@@ -798,14 +780,22 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
     rpc_interface::create_psbt, const array_t& inputs,
-    const object_t& outputs, double locktime, bool replaceable) NOEXCEPT
+    const value_t& outputs, double locktime, bool replaceable, double version,
+    double psbt_version) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
+    // Construction is bip370 only.
+    if (psbt_version != 2.0)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
     chain::transaction tx{};
     if (const auto fault = build_transaction(tx, inputs, outputs, locktime,
-        replaceable))
+        replaceable, version))
     {
         send_error(fault);
         return true;
@@ -819,6 +809,78 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
     }
 
     send_result(doc.encoded(), 1024);
+    return true;
+}
+
+bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
+    rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const psbt_tx doc(psbt);
+    if (!doc)
+    {
+        send_error(error::bitcoind::deserialization_error);
+        return true;
+    }
+
+    object_t result{};
+    const auto version0 = (doc.version() == psbt_tx::version_0);
+    if (version0)
+        result.emplace("tx", value_from(bitcoind(doc.unsigned_tx())));
+
+    if (!doc.xpubs().empty())
+    {
+        array_t xpubs{};
+        for (const auto& key: doc.xpubs())
+        {
+            auto checked = key.key;
+            append_checksum(checked);
+            xpubs.emplace_back(object_t
+            {
+                { "xpub", encode_base58(checked) },
+                { "master_fingerprint", encode_base16(to_little_endian(
+                    key.origin.fingerprint)) },
+                { "path", to_key_path(key.origin.path) }
+            });
+        }
+
+        result.emplace("global_xpubs", std::move(xpubs));
+    }
+
+    result.emplace("psbt_version", doc.version());
+
+    if (!version0)
+    {
+        result.emplace("tx_version", doc.tx_version());
+        if (doc.fallback_locktime().has_value())
+            result.emplace("fallback_locktime",
+                doc.fallback_locktime().value());
+
+        if (doc.tx_modifiable().has_value())
+            result.emplace("tx_modifiable", doc.tx_modifiable().value());
+    }
+
+    if (!doc.others().empty())
+        result.emplace("unknown", to_unknown(doc.others()));
+
+    array_t ins{};
+    for (const auto& in: doc.inputs())
+        ins.emplace_back(decode_psbt_input(in));
+
+    array_t outs{};
+    for (const auto& out: doc.outputs())
+        outs.emplace_back(decode_psbt_output(out));
+
+    result.emplace("inputs", std::move(ins));
+    result.emplace("outputs", std::move(outs));
+
+    if (const auto fee = doc.fee(); fee.has_value())
+        result.emplace("fee", fee.value() /
+            to_floating(chain::satoshi_per_bitcoin));
+
+    send_result(std::move(result), 2048);
     return true;
 }
 
@@ -935,7 +997,7 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
         auto& in = doc.inputs().at(index);
         const auto& hash = version0 ?
             doc.unsigned_tx().inputs_ptr()->at(index)->point().hash() :
-            in.previous_txid.value_or(system::null_hash);
+            in.previous_txid.value_or(null_hash);
         const auto vout = version0 ?
             doc.unsigned_tx().inputs_ptr()->at(index)->point().index() :
             in.output_index.value_or(0);
@@ -974,6 +1036,23 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::client_mempool_disabled);
+    return true;
+}
+
+bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
+    const code& ec, rpc_interface::combine_raw_transaction) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
+    return true;
+}
+
+// Signing is a wallet function, keys never transit the server.
+bool protocol_bitcoind_transaction::handle_sign_raw_transaction_with_key(
+    const code& ec, rpc_interface::sign_raw_transaction_with_key) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 

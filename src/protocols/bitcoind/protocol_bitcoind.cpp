@@ -121,9 +121,9 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
         return;
     }
 
-    // Get the parsed json-rpc request object.
-    // v1 or v2 both supported, batch not yet supported.
-    // v1 null id and v2 missing id implies notification and no response.
+    // Get the parsed json-rpc request object (v1 or v2, singleton or batch).
+    // v2 missing id is a notification (no response object is sent).
+    // v1 null id is also a notification, but bitcoind answers (non-compliant).
     const auto& message = post->body().get<request>().message;
 
     // Cache request context for response building (version + id).
@@ -270,10 +270,26 @@ void protocol_bitcoind::send_rpc(response_t&& model, size_t size_hint,
     using namespace http;
     static const auto json = from_media_type(media_type::application_json);
 
+    // A v2 request without an id is a notification (no response object).
+    const auto notification = (model.jsonrpc == version::v2) &&
+        !model.id.has_value();
+
     if (websocket())
     {
         id_.reset();
         version_ = version::undefined;
+
+        // An unsent response does not restart the read cycle, so resume it.
+        if (notification)
+        {
+            if (close_reason)
+                stop(close_reason);
+            else
+                network::protocol::resume();
+
+            return;
+        }
+
         http::response message{ status::ok, 11 };
         message.set(field::content_type, json);
         message.body() = rpc::response
@@ -286,6 +302,18 @@ void protocol_bitcoind::send_rpc(response_t&& model, size_t size_hint,
     }
 
     const auto request = reset_rpc_request();
+    const auto& body = request->body().get<rpc::request>();
+
+    // A batched notification is answered (response parts are sequenced).
+    if (notification && !body.batch && !body.changed)
+    {
+        http::response message{ status::no_content, request->version() };
+        add_common_headers(message, *request);
+        add_access_control_headers(message, *request);
+        SEND(std::move(message), handle_complete, _1, close_reason);
+        return;
+    }
+
     http::response message{ status::ok, request->version() };
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
@@ -325,7 +353,7 @@ http::request_cptr protocol_bitcoind::reset_rpc_request() NOEXCEPT
     return reset_request();
 }
 
-// utility (redundant with protocol_electrum)
+// Utility (redundant with protocol_electrum).
 // ----------------------------------------------------------------------------
 
 code protocol_bitcoind::validate_tx(

@@ -46,6 +46,9 @@ struct bitcoind_setup_fixture
     // the parsed json response, or {"dropped":true} if the channel dropped.
     boost::json::value rpc_body(std::string_view body);
 
+    // As rpc_body(), returning only the http status.
+    status rpc_body_status(std::string_view body);
+
     // As rpc(), with basic authorization, returning only the http status.
     status rpc_status(std::string_view method, const std::string& username,
         const std::string& password);
@@ -64,6 +67,9 @@ struct bitcoind_setup_fixture
     // As ws_rpc(), returning {"dropped":true} if the channel dropped.
     boost::json::value ws_rpc_dropped(std::string_view method,
         std::string_view params="[]");
+
+    // Write a raw frame over the upgraded websocket without reading.
+    void ws_notify(std::string_view body);
 
 
     // bitcoind REST over HTTP GET (target under "/rest/...").

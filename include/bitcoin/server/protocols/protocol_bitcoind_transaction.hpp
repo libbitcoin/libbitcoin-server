@@ -58,8 +58,8 @@ protected:
     bool handle_create_raw_transaction(const code& ec,
         rpc_interface::create_raw_transaction,
         const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, double locktime,
-        bool replaceable) NOEXCEPT;
+        const network::rpc::value_t& outputs, double locktime,
+        bool replaceable, double version) NOEXCEPT;
     bool handle_decode_raw_transaction(const code& ec,
         rpc_interface::decode_raw_transaction, const std::string& hexstring,
         const std::optional<bool>& iswitness) NOEXCEPT;
@@ -68,7 +68,7 @@ protected:
         double verbose, const std::string& blockhash) NOEXCEPT;
     bool handle_send_raw_transaction(const code& ec,
         rpc_interface::send_raw_transaction, const std::string& hexstring,
-        double maxfeerate) NOEXCEPT;
+        double maxfeerate, double maxburnamount) NOEXCEPT;
     bool handle_test_mempool_accept(const code& ec,
         rpc_interface::test_mempool_accept,
         const network::rpc::array_t& rawtxs, double maxfeerate) NOEXCEPT;
@@ -79,11 +79,12 @@ protected:
         const network::rpc::array_t& txs) NOEXCEPT;
     bool handle_convert_to_psbt(const code& ec,
         rpc_interface::convert_to_psbt, const std::string& hexstring,
-        bool permitsigdata, const std::optional<bool>& iswitness) NOEXCEPT;
+        bool permitsigdata, const std::optional<bool>& iswitness,
+        double psbt_version) NOEXCEPT;
     bool handle_create_psbt(const code& ec,
         rpc_interface::create_psbt, const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, double locktime,
-        bool replaceable) NOEXCEPT;
+        const network::rpc::value_t& outputs, double locktime,
+        bool replaceable, double version, double psbt_version) NOEXCEPT;
     bool handle_decode_psbt(const code& ec,
         rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT;
     bool handle_finalize_psbt(const code& ec,
@@ -101,14 +102,18 @@ protected:
     /// Shared transaction construction (createrawtransaction, createpsbt).
     code build_transaction(system::chain::transaction& out,
         const network::rpc::array_t& inputs,
-        const network::rpc::object_t& outputs, double locktime,
-        bool replaceable) const NOEXCEPT;
+        const network::rpc::value_t& outputs, double locktime,
+        bool replaceable, double version) const NOEXCEPT;
     bool handle_abort_private_broadcast(const code& ec,
         rpc_interface::abort_private_broadcast) NOEXCEPT;
     bool handle_get_private_broadcast_info(const code& ec,
         rpc_interface::get_private_broadcast_info) NOEXCEPT;
     bool handle_submit_package(const code& ec,
         rpc_interface::submit_package) NOEXCEPT;
+    bool handle_combine_raw_transaction(const code& ec,
+        rpc_interface::combine_raw_transaction) NOEXCEPT;
+    bool handle_sign_raw_transaction_with_key(const code& ec,
+        rpc_interface::sign_raw_transaction_with_key) NOEXCEPT;
 };
 
 } // namespace server

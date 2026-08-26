@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
  * This file is part of libbitcoin.
@@ -25,7 +25,6 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
-
 namespace server {
 
 #define CLASS protocol_bitcoind_network
@@ -145,13 +144,99 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
         { "connections", connections },
         { "connections_in", inbound },
         { "connections_out", floored_subtract(connections, inbound) },
-        { "networkactive", true },
+        { "networkactive", !node::protocol::suspended() },
         { "networks", array_t{ network("ipv4"), network("ipv6") } },
         { "relayfee", node_settings().minimum_fee_rate },
         { "incrementalfee", node_settings().minimum_bump_rate },
         { "localaddresses", std::move(locals) },
-        { "warnings", std::string{} }
+        { "warnings", array_t{} }
     }, 512);
+    return true;
+}
+
+bool protocol_bitcoind_network::handle_clear_banned(const code& ec,
+    rpc_interface::clear_banned) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::database_error);
+    return true;
+}
+
+bool protocol_bitcoind_network::handle_list_banned(const code& ec,
+    rpc_interface::list_banned) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::database_error);
+    return true;
+}
+
+bool protocol_bitcoind_network::handle_set_ban(const code& ec,
+    rpc_interface::set_ban) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::database_error);
+    return true;
+}
+
+// Removal requires manual session deregistration (not supported), and the
+// transport is determined by the outbound privacy configuration.
+bool protocol_bitcoind_network::handle_add_node(const code& ec,
+    rpc_interface::add_node, const std::string& node,
+    const std::string& command, bool v2transport) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // bitcoind reports v2transport as invalid when not enabled.
+    if (v2transport)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    if (command != "add" && command != "onetry")
+    {
+        send_error(command == "remove" ? error::bitcoind::client_node_not_added :
+            error::bitcoind::misc_error);
+        return true;
+    }
+
+    // The endpoint parse throws on malformed input.
+    try
+    {
+        connect(network::config::endpoint{ node });
+    }
+    catch (const std::exception&)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    send_result(null_t{}, 8);
+    return true;
+}
+
+bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
+    rpc_interface::disconnect_node) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
+    return true;
+}
+
+bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
+    rpc_interface::export_asmap) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
+    return true;
+}
+
+bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
+    rpc_interface::get_added_node_info) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::client_node_not_added);
     return true;
 }
 
@@ -276,17 +361,13 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
     send_result(std::move(out), size);
 }
 
-// The nonce is discarded (pong correlation is a channel concern).
+// An injected ping would violate channel pong correlation (no-op).
 bool protocol_bitcoind_network::handle_ping(const code& ec,
     rpc_interface::ping) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    data_array<sizeof(uint64_t)> entropy{};
-    pseudo_random::fill(entropy);
-    const auto nonce = from_little_endian<uint64_t>(entropy);
-    BROADCAST(peer::ping, to_shared<peer::ping>(nonce));
     send_result(null_t{}, 8);
     return true;
 }
@@ -303,85 +384,6 @@ bool protocol_bitcoind_network::handle_set_network_active(const code& ec,
         node::protocol::suspend(network::error::service_suspended);
 
     send_result(state, 8);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_clear_banned(const code& ec,
-    rpc_interface::clear_banned) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::database_error);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_list_banned(const code& ec,
-    rpc_interface::list_banned) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::database_error);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_set_ban(const code& ec,
-    rpc_interface::set_ban) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::database_error);
-    return true;
-}
-
-// Removal requires manual session deregistration (not supported), and the
-// transport is determined by the outbound privacy configuration.
-bool protocol_bitcoind_network::handle_add_node(const code& ec,
-    rpc_interface::add_node, const std::string& node,
-    const std::string& command, bool) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    if (command != "add" && command != "onetry")
-    {
-        send_error(command == "remove" ? error::bitcoind::client_node_not_added :
-            error::bitcoind::misc_error);
-        return true;
-    }
-
-    // The endpoint parse throws on malformed input.
-    try
-    {
-        connect(network::config::endpoint{ node });
-    }
-    catch (const std::exception&)
-    {
-        send_error(error::bitcoind::invalid_parameter);
-        return true;
-    }
-
-    send_result(null_t{}, 8);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
-    rpc_interface::disconnect_node) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::method_not_found);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
-    rpc_interface::export_asmap) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::method_not_found);
-    return true;
-}
-
-bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
-    rpc_interface::get_added_node_info) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_node_not_added);
     return true;
 }
 

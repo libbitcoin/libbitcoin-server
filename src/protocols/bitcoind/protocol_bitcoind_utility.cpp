@@ -25,7 +25,6 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
-
 namespace server {
 
 #define CLASS protocol_bitcoind_utility
@@ -61,6 +60,7 @@ void protocol_bitcoind_utility::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_index_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_estimate_smart_fee, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_sign_message_with_priv_key, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
@@ -94,13 +94,13 @@ static std::string to_script_type(chain::script_pattern pattern) NOEXCEPT
 }
 
 bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
-    rpc_interface::decode_script, const std::string& hex) NOEXCEPT
+    rpc_interface::decode_script, const std::string& hexstring) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     data_chunk data{};
-    if (!decode_base16(data, hex))
+    if (!decode_base16(data, hexstring))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
@@ -170,7 +170,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
 
     using namespace wallet;
     const payment_address base58(address);
-    if (base58)
+    if (base58 && ((base58.prefix() == p2kh_) || (base58.prefix() == p2sh_)))
     {
         send_result(object_t
         {
@@ -218,6 +218,14 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     uint8_t required{};
     if (!to_integer(required, nrequired) || is_zero(required) ||
         required > keys.size())
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    // The multisig pattern is limited to op_16 (bitcoind allows 20 for wsh).
+    constexpr auto maximum_keys = 16_size;
+    if (keys.size() > maximum_keys)
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
@@ -392,10 +400,8 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Indexes track the confirmed chain only (no pool txs until v5 tx pool).
-    // tx lookup is always available (all txs are archived).
-    // synced: current chain (not a stale checkpoint) and confirmation has
-    // coalesced with the candidate top (no stronger blocks pending).
+    // Indexes track the confirmed chain only; all txs are archived (lookup).
+    // synced: current chain and confirmation coalesced with the candidate top.
     const auto& query = archive();
     const object_t status
     {
@@ -420,6 +426,15 @@ bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::internal_error);
+    return true;
+}
+
+// Signing is a wallet function, keys never transit the server.
+bool protocol_bitcoind_utility::handle_sign_message_with_priv_key(
+    const code& ec, rpc_interface::sign_message_with_priv_key) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 

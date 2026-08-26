@@ -30,14 +30,15 @@ struct bitcoind_utility_methods
 {
     static constexpr std::tuple methods
     {
-        method<"decodescript", string_t>{ "hex" },
+        method<"decodescript", string_t>{ "hexstring" },
         method<"validateaddress", string_t>{ "address" },
         method<"createmultisig", number_t, array_t, optional<"legacy"_t>>{ "nrequired", "keys", "address_type" },
         method<"deriveaddresses", string_t, nullable<value_t>>{ "descriptor", "range" },
         method<"getdescriptorinfo", string_t>{ "descriptor" },
         method<"verifymessage", string_t, string_t, string_t>{ "address", "signature", "message" },
         method<"getindexinfo", optional<""_t>>{ "index_name" },
-        method<"estimatesmartfee">{ unimplemented }
+        method<"estimatesmartfee">{ unimplemented },
+        method<"signmessagewithprivkey">{ unimplemented }
     };
 
     template <typename... Args>
@@ -60,6 +61,7 @@ struct bitcoind_utility_methods
     using verify_message = at<5>;
     using get_index_info = at<6>;
     using estimate_smart_fee = at<7>;
+    using sign_message_with_priv_key = at<8>;
 };
 
 } // namespace interface

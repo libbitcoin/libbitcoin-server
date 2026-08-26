@@ -58,6 +58,8 @@ protected:
     /// REST interface handlers.
     bool handle_get_block(const code& ec, rest_interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_tx(const code& ec, rest_interface::tx,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
     bool handle_get_block_hash(const code& ec, rest_interface::block_hash,
         uint8_t media, uint32_t height) NOEXCEPT;
     bool handle_get_block_txs(const code& ec, rest_interface::block_txs,

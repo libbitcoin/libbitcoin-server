@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
  * This file is part of libbitcoin.
@@ -28,7 +28,6 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
-
 namespace server {
 
 #define CLASS protocol_bitcoind_blockchain
@@ -105,10 +104,10 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
     SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2, _3, _4);
-    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3);
+    SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
@@ -140,7 +139,7 @@ bool protocol_bitcoind_blockchain::handle_get_best_block_hash(const code& ec,
         return false;
 
     const auto hash = archive().get_top_confirmed_hash();
-    send_result(encode_hash(hash), two * system::hash_size);
+    send_result(encode_hash(hash), two * hash_size);
     return true;
 }
 
@@ -191,7 +190,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
 
     inject_block_context(model.as_object(), query, link, block->header());
 
-    if (level == block_verbosity::prevouts &&
+    if (level >= block_verbosity::verbose &&
         query.populate_without_metadata(*block))
     {
         auto entry = model.as_object().at("tx").as_array().begin();
@@ -200,7 +199,9 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         {
             if (!tx->is_coinbase())
             {
-                inject_tx_prevouts(entry->as_object(), query, *tx);
+                if (level == block_verbosity::prevouts)
+                    inject_tx_prevouts(entry->as_object(), query, *tx);
+
                 entry->as_object()["fee"] =
                     tx->fee() / to_floating(chain::satoshi_per_bitcoin);
             }
@@ -576,9 +577,15 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     const auto top = query.get_top_confirmed();
     const auto header_link = query.to_confirmed(top);
 
+    // An archived but unconfirmed output is not an unspent coin.
     size_t height{};
-    const auto strong = query.get_tx_height(height, tx_link);
-    const auto depth = strong ? add1(floored_subtract(top, height)) : zero;
+    if (!query.get_tx_height(height, tx_link))
+    {
+        send_result(null_t{}, 42);
+        return true;
+    }
+
+    const auto depth = add1(floored_subtract(top, height));
     const auto coins = to_floating(output->value()) /
         chain::satoshi_per_bitcoin;
 
@@ -747,8 +754,8 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
     if (ec)
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
+            zero);
         return;
     }
 
@@ -782,8 +789,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     if (type == set_hash::muhash)
         result.emplace("muhash", encode_hash(digest));
 
-    POST(complete_scan, code{},
-        std::move(result), 512);
+    POST(complete_scan, code{}, std::move(result), 512);
 }
 
 bool protocol_bitcoind_blockchain::handle_prune_block_chain(const code& ec,
@@ -938,16 +944,16 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (ec)
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
+            zero);
         return;
     }
 
     // A reorganization across the pinned top voids the scan.
     if (!query.is_confirmed_block(link))
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
+            zero);
         return;
     }
 
@@ -997,8 +1003,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         { "total_amount", to_floating(amount) / chain::satoshi_per_bitcoin }
     };
 
-    POST(complete_scan, code{},
-        std::move(result), size);
+    POST(complete_scan, code{}, std::move(result), size);
 }
 
 void protocol_bitcoind_blockchain::complete_scan(const code& ec,
@@ -1224,10 +1229,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
 
     if (!query.is_coalesced())
     {
-        // The candidate chain is validated to the fork point (confirmed) plus
-        // the contiguously validated span above it. This does not imply
-        // confirmability, which is not determined until blocks are
-        // reorganized into the confirmed chain.
+        // Validated above the fork point does not imply confirmability.
         size_t fork{};
         const auto span = query.get_validated_fork(fork,
             system_settings().top_checkpoint().height());
@@ -1382,10 +1384,10 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     return true;
 }
 
+// The mempool option is meaningless here (no mempool), always applied false.
 bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
     const code& ec, rpc_interface::get_descriptor_activity,
-    const array_t& blockhashes, const array_t& scanobjects,
-    bool include_spent) NOEXCEPT
+    const array_t& blockhashes, const array_t& scanobjects, bool) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -1426,9 +1428,13 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
             return true;
         }
 
+        // Confirmed spends are unconditional (as bitcoind, from undo data).
         const auto encoded = encode_hash(hash);
-        const auto populated = include_spent &&
-            query.populate_without_metadata(*block);
+        if (!query.populate_without_metadata(*block))
+        {
+            send_error(error::bitcoind::internal_error);
+            return true;
+        }
 
         for (const auto& tx: *block->transactions_ptr())
         {
@@ -1456,7 +1462,7 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
                 ++index;
             }
 
-            if (!populated || tx->is_coinbase())
+            if (tx->is_coinbase())
                 continue;
 
             uint32_t spend{};
@@ -1475,7 +1481,7 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
                         { "blockhash", encoded },
                         { "height", height },
                         { "spend_txid", txid },
-                        { "spend_vout", spend },
+                        { "spend_vin", spend },
                         { "prevout_txid", encode_hash(in->point().hash()) },
                         { "prevout_vout", in->point().index() },
                         { "prevout_spk", value_from(bitcoind(
@@ -1600,10 +1606,11 @@ static bool expand_scan_object(chain::scripts& out,
     return true;
 }
 
+// Exact index matching produces no false positives to optionally filter.
 bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
     rpc_interface::scan_blocks, const std::string& action,
     const array_t& scanobjects, double start_height, double stop_height,
-    const std::string& filtertype) NOEXCEPT
+    const std::string& filtertype, const object_t&) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -1725,116 +1732,24 @@ bool protocol_bitcoind_blockchain::handle_wait_for_block_height(const code& ec,
 }
 
 bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
-    rpc_interface::wait_for_new_block, double timeout) NOEXCEPT
+    rpc_interface::wait_for_new_block, double timeout,
+    const std::string& current_tip) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
+    // A stated top that is no longer current completes the wait immediately.
+    hash_digest given{};
+    if (!current_tip.empty() && decode_hash(given, current_tip) &&
+        (given != archive().get_top_confirmed_hash()))
+    {
+        send_top();
+        return true;
+    }
+
     wait_ = wait::new_block;
     wait_height_ = add1(archive().get_top_confirmed());
     arm_wait(timeout);
-    return true;
-}
-
-// Wait machinery (strand).
-// ----------------------------------------------------------------------------
-
-bool protocol_bitcoind_blockchain::wait_done() const NOEXCEPT
-{
-    const auto& query = archive();
-    switch (wait_)
-    {
-        case wait::new_block:
-        case wait::height:
-            return query.get_top_confirmed() >= wait_height_;
-        case wait::block:
-        {
-            const auto link = query.to_header(wait_hash_);
-            return !link.is_terminal() && query.is_confirmed_block(link);
-        }
-        default:
-            return false;
-    }
-}
-
-void protocol_bitcoind_blockchain::send_tip() NOEXCEPT
-{
-    const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    send_result(object_t
-    {
-        { "hash", encode_hash(query.get_header_key(query.to_confirmed(top))) },
-        { "height", top }
-    }, 128);
-}
-
-void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
-{
-    if (wait_done())
-    {
-        wait_ = wait::none;
-        send_tip();
-        return;
-    }
-
-    // A zero timeout waits indefinitely (as bitcoind).
-    uint64_t span{};
-    if (!to_integer(span, timeout))
-    {
-        wait_ = wait::none;
-        send_error(error::bitcoind::misc_error);
-        return;
-    }
-
-    if (!is_zero(span))
-        wait_timer_->start(BIND(handle_wait_timeout, _1),
-            network::milliseconds(span));
-}
-
-void protocol_bitcoind_blockchain::do_wait_event() NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (wait_ == wait::none || !wait_done())
-        return;
-
-    wait_ = wait::none;
-    wait_timer_->stop();
-    send_tip();
-}
-
-void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (stopped() || ec == network::error::operation_canceled ||
-        wait_ == wait::none)
-        return;
-
-    wait_ = wait::none;
-    send_tip();
-}
-
-// Chase events.
-// ----------------------------------------------------------------------------
-
-bool protocol_bitcoind_blockchain::handle_chase(const code&,
-    node::chase event_, node::event_value) NOEXCEPT
-{
-    // Do not pass ec to stopped, it is not a call status.
-    if (stopped())
-        return false;
-
-    switch (event_)
-    {
-        case node::chase::organized:
-        case node::chase::reorganized:
-        {
-            POST(do_wait_event);
-            break;
-        }
-        default:
-            break;
-    }
-
     return true;
 }
 
@@ -1900,6 +1815,108 @@ bool protocol_bitcoind_blockchain::handle_import_mempool(const code& ec,
     if (stopped(ec)) return false;
     send_error(error::bitcoind::client_mempool_disabled);
     return true;
+}
+
+// Chase events.
+// ----------------------------------------------------------------------------
+
+bool protocol_bitcoind_blockchain::handle_chase(const code&,
+    node::chase event_, node::event_value) NOEXCEPT
+{
+    // Do not pass ec to stopped, it is not a call status.
+    if (stopped())
+        return false;
+
+    switch (event_)
+    {
+        case node::chase::organized:
+        case node::chase::reorganized:
+        {
+            POST(do_wait_event);
+            break;
+        }
+        default:
+            break;
+    }
+
+    return true;
+}
+
+// Wait machinery (strand).
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
+{
+    if (wait_done())
+    {
+        wait_ = wait::none;
+        send_top();
+        return;
+    }
+
+    // A zero timeout waits indefinitely (as bitcoind).
+    uint64_t span{};
+    if (!to_integer(span, timeout))
+    {
+        wait_ = wait::none;
+        send_error(error::bitcoind::misc_error);
+        return;
+    }
+
+    if (!is_zero(span))
+        wait_timer_->start(BIND(handle_wait_timeout, _1),
+            network::milliseconds(span));
+}
+
+void protocol_bitcoind_blockchain::do_wait_event() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (wait_ == wait::none || !wait_done())
+        return;
+
+    wait_ = wait::none;
+    wait_timer_->stop();
+    send_top();
+}
+
+void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped() || ec == network::error::operation_canceled ||
+        wait_ == wait::none)
+        return;
+
+    wait_ = wait::none;
+    send_top();
+}
+
+bool protocol_bitcoind_blockchain::wait_done() const NOEXCEPT
+{
+    const auto& query = archive();
+    switch (wait_)
+    {
+        case wait::new_block:
+        case wait::height:
+            return query.get_top_confirmed() >= wait_height_;
+        case wait::block:
+        {
+            const auto link = query.to_header(wait_hash_);
+            return !link.is_terminal() && query.is_confirmed_block(link);
+        }
+        default:
+            return false;
+    }
+}
+
+void protocol_bitcoind_blockchain::send_top() NOEXCEPT
+{
+    const auto& query = archive();
+    const auto top = query.get_top_confirmed();
+    send_result(object_t
+    {
+        { "hash", encode_hash(query.get_header_key(query.to_confirmed(top))) },
+        { "height", top }
+    }, 128);
 }
 
 BC_POP_WARNING()
