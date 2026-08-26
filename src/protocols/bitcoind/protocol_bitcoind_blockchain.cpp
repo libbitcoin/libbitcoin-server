@@ -523,7 +523,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
             median_time_past(query, branch.back()));
 
         size_t txs{};
-        for (auto index = zero; index < window; ++index)
+        for (size_t index{}; index < window; ++index)
             txs += query.get_tx_count(branch.at(index));
 
         result.emplace("window_interval", interval);
@@ -1666,13 +1666,20 @@ bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
         }
     }
 
-    array_t relevant{};
-    for (auto height = from; height <= to; ++height)
+    // The pinned ancestry makes the range walk reorg-stable.
+    database::header_links branch{};
+    if (!query.get_ancestry(branch, query.to_confirmed(to), add1(to - from)))
     {
-        const auto link = query.to_confirmed(height);
-        const auto hash = query.get_header_key(link);
+        send_error(error::bitcoind::internal_error);
+        return true;
+    }
+
+    array_t relevant{};
+    for (auto it = branch.rbegin(); it != branch.rend(); ++it)
+    {
+        const auto hash = query.get_header_key(*it);
         neutrino::block_filter filter{ hash, {} };
-        if (!query.get_filter_body(filter.filter, link))
+        if (!query.get_filter_body(filter.filter, *it))
         {
             send_error(error::bitcoind::internal_error);
             return true;
