@@ -108,7 +108,8 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
     // Parse the REST url into a json-rpc model and dispatch to a handler.
     // Malformed parameters are bad requests, unknown targets are not found.
     request_t model{};
-    if (const auto fault = bitcoind_target(model, get->target()))
+    const auto target = get->target();
+    if (const auto fault = bitcoind_target(model, target))
     {
         if ((fault == error::invalid_hash) ||
             (fault == error::invalid_number) ||
@@ -119,6 +120,13 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         else
             send_not_found();
 
+        return;
+    }
+
+    // Overlay query string parameters onto the parsed model.
+    if (!bitcoind_query(model, target))
+    {
+        send_bad_request(*get);
         return;
     }
 
@@ -324,14 +332,18 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         return true;
     }
 
-    // bitcoind serves headers only for a hash on the active chain.
     const auto& query = archive();
-    const auto link = query.to_header(*hash);
-    size_t height{};
-    if (!query.get_height(height, link) ||
-        (query.to_confirmed(height) != link))
+    const auto header_link = query.to_header(*hash);
+    if (!query.is_confirmed_block(header_link))
     {
         send_not_found();
+        return true;
+    }
+
+    size_t height{};
+    if (!query.get_height(height, header_link))
+    {
+        send_internal_server_error(database::error::integrity);
         return true;
     }
 
@@ -466,10 +478,9 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
         return true;
     }
 
-    constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
-    if (!block)
+    const auto link = query.to_header(*hash);
+    if (!query.is_associated(link))
     {
         send_not_found();
         return true;
@@ -477,11 +488,9 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
 
     // Resolve every prevout spent by the block's non-coinbase transactions.
     chain::output_cptrs spent{};
-    const auto& txs = *block->transactions_ptr();
-    for (auto tx = one; tx < txs.size(); ++tx)
-        for (const auto& in: *txs.at(tx)->inputs_ptr())
-            if (const auto out = query.get_output(query.to_output(in->point())))
-                spent.push_back(out);
+    for (const auto& out: query.to_block_prevouts(link))
+        if (const auto output = query.get_output(out))
+            spent.push_back(output);
 
     size_t size{};
     for (const auto& output: spent)
@@ -630,7 +639,7 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         { "bits", encode_base16(to_big_endian(header->bits())) },
         { "difficulty", header->difficulty() },
         { "time", header->timestamp() },
-        { "mediantime", median_time_past(query, link) },
+        { "mediantime", median_time(query, system_settings(), link) },
         { "pruned", node_settings().limited_blocks }
     }, 256);
     return true;

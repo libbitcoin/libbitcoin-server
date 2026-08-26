@@ -264,6 +264,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__spend_verbosity2__fee)
     BOOST_REQUIRE(!tx.at(0).at("vin").at(0).as_object().contains("prevout"));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__spend_verbose__prevout)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+
+    const auto txid = test::mock_block11.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("getrawtransaction", hash_param(txid, "2"));
+    const auto& vin = response.at("result").at("vin").at(0);
+    REQUIRE_NO_THROW_TRUE(vin.at("prevout").at("generated").as_bool());
+    BOOST_REQUIRE_EQUAL(vin.at("prevout").at("height").as_int64(), 3);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__clamped_tx_objects)
 {
     const auto response = rpc("getblock", hash_param(test::block9_hash, "4"));
@@ -280,6 +292,13 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__genesis__self_inclusive_media
 {
     const auto response = rpc("getblockheader", hash_param(test::genesis.hash(), "true"));
     BOOST_REQUIRE_EQUAL(response.at("result").at("mediantime").as_int64(), 1231006505);
+}
+
+// The top block has no stored child context, so its mtp is promoted.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__top__promoted_mediantime)
+{
+    const auto response = rpc("getblockheader", hash_param(test::block9_hash, "true"));
+    BOOST_REQUIRE_EQUAL(response.at("result").at("mediantime").as_int64(), 1231471428);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)

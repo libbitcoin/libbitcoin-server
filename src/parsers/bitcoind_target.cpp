@@ -203,18 +203,17 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         return error::success;
     }
 
-    // /rest/headers/<count>/<hash>.<ext>
+    // /rest/headers/<hash>.<ext>?count=<count> (count defaults to 5) and the
+    // legacy /rest/headers/<count>/<hash>.<ext> form.
     if (target == "headers")
     {
         if (segment == segments.size())
             return error::missing_target;
 
-        uint32_t count{};
-        if (!to_number(count, segments[segment++]))
+        uint32_t count{ 5 };
+        if ((segments.size() - segment > one) &&
+            !to_number(count, segments[segment++]))
             return error::invalid_number;
-
-        if (segment == segments.size())
-            return error::missing_hash;
 
         std::string name{};
         uint8_t media{};

@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
         { "/rest/blockhashbyheight/01.json", server::error::invalid_number },
         { "/rest/headers", server::error::missing_target },
         { "/rest/headers/abc/" + test_hash + ".json", server::error::invalid_number },
-        { "/rest/headers/3", server::error::missing_hash },
+        { "/rest/headers/3", server::error::invalid_target },
         { "/rest/headers/3/nothex.json", server::error::invalid_hash },
         { "/rest/blockfilter", server::error::missing_target },
         { "/rest/blockfilter/extended/" + test_hash + ".json", server::error::invalid_target },
@@ -220,6 +220,18 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__headers__block_headers)
     BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("count").value()), 3u);
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__headers_no_query__default_count)
+{
+    request_t out{};
+    const auto path = "/rest/headers/" + test_hash + ".bin";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE_EQUAL(out.method, "block_headers");
+
+    const auto& object = params_of(out);
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("count").value()), 5u);
+    BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
 // blockfilter

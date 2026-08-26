@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (c) 2011-2026 libbitcoin developers
  *
  * This file is part of libbitcoin.
@@ -188,10 +188,12 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         value_from(bitcoind_hashed(*block)) :
         value_from(bitcoind_verbose(*block));
 
-    inject_block_context(model.as_object(), query, link, block->header());
+    const auto& settings = system_settings();
+    const auto& header = block->header();
+    inject_block_context(model.as_object(), query, settings, link, header);
 
     if (level >= block_verbosity::verbose &&
-        query.populate_without_metadata(*block))
+        query.populate_with_metadata(*block))
     {
         auto entry = model.as_object().at("tx").as_array().begin();
         std::ranges::for_each(*block->transactions_ptr(),
@@ -221,8 +223,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_chain_info(const code& ec,
         return false;
 
     object_t out{};
-    if (!chain_info(out, archive(), node_settings().limited_blocks,
-        is_current_chain(true)))
+    if (!chain_info(out, archive(), system_settings(),
+        node_settings().limited_blocks, is_current_chain(true)))
     {
         send_error(error::bitcoind::internal_error);
         return true;
@@ -346,7 +348,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
 
     auto out = header_to_bitcoind(*header);
     out["nTx"] = query.get_tx_count(link);
-    inject_block_context(out, query, link, *header);
+    inject_block_context(out, query, system_settings(), link, *header);
     send_result(value{ std::move(out) }, 512);
     return true;
 }
@@ -388,10 +390,16 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
         return true;
     }
 
-    size_t height{};
-    if (!query.get_height(height, link) || query.to_confirmed(height) != link)
+    if (!query.is_confirmed_block(link))
     {
         send_error(error::bitcoind::invalid_address_or_key);
+        return true;
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link))
+    {
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -399,7 +407,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     const auto block = query.get_block(link, true);
     if (!block || !query.populate_without_metadata(*block))
     {
-        send_error(error::bitcoind::misc_error);
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -408,8 +416,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
         settings.subsidy_interval_blocks, settings.initial_subsidy(),
         settings.forks.bip42);
 
-    auto result = block_stats(*block, height, median_time_past(query, link),
-        subsidy);
+    const auto median = median_time(query, settings, link);
+    auto result = block_stats(*block, height, median, subsidy);
 
     // An empty selection returns all statistics, otherwise the named subset.
     if (stats.empty())
@@ -467,11 +475,17 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
         link = query.to_header(hash);
     }
 
-    size_t height{};
-    if (!query.get_height(height, link) || query.to_confirmed(height) != link)
+    if (!query.is_confirmed_block(link))
     {
         send_error(error::bitcoind::invalid_address_or_key, blockhash,
             blockhash.size());
+        return true;
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link))
+    {
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -511,14 +525,22 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
 
     if (is_nonzero(window))
     {
-        const auto first = floored_subtract(height, window);
-        const auto past = query.to_confirmed(first);
-        const auto interval = floored_subtract(median_time_past(query, link),
-            median_time_past(query, past));
+        // The pinned ancestry makes the window walk reorg-stable.
+        database::header_links branch{};
+        if (!query.get_ancestry(branch, link, add1(window)))
+        {
+            send_error(error::bitcoind::internal_error);
+            return true;
+        }
+
+        const auto& settings = system_settings();
+        const auto start = median_time(query, settings, branch.back());
+        const auto end = median_time(query, settings, link);
+        const auto interval = floored_subtract(end, start);
 
         size_t txs{};
-        for (auto index = add1(first); index <= height; ++index)
-            txs += query.get_tx_count(query.to_confirmed(index));
+        for (size_t index{}; index < window; ++index)
+            txs += query.get_tx_count(branch.at(index));
 
         result.emplace("window_interval", interval);
         result.emplace("window_tx_count", txs);
@@ -546,38 +568,26 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
         return true;
     }
 
+    // Return only unspent output.
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
-
-    // bitcoind returns json null for a missing or confirmed-spent output; with
-    // mempool ignored this matches gettxout's include_mempool=false semantics
-    // (is_spent would also count unconfirmed/conflicting/invalid-block spenders).
     if (output_link.is_terminal() || query.is_confirmed_spent(output_link))
     {
         send_result(null_t{}, 42);
         return true;
     }
 
+    const auto top = query.get_top_confirmed();
+    const auto header_link = query.to_confirmed(top);
     const auto output = query.get_output(output_link);
-    if (!output)
-    {
-        send_result(null_t{}, 42);
-        return true;
-    }
-
-    // Output's tx must exist.
-    const auto tx_link = query.to_tx(hash);
-    if (tx_link.is_terminal())
+    const auto tx_link = query.to_output_tx(output_link);
+    if (!output || tx_link.is_terminal() || header_link.is_terminal())
     {
         send_error(error::bitcoind::internal_error);
         return true;
     }
 
-    // Derive header from top for consistent depth result (also cheaper).
-    const auto top = query.get_top_confirmed();
-    const auto header_link = query.to_confirmed(top);
-
-    // An archived but unconfirmed output is not an unspent coin.
+    // Return only confirmed output.
     size_t height{};
     if (!query.get_tx_height(height, tx_link))
     {
@@ -684,10 +694,15 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
             return true;
         }
 
-        if (!query.get_height(height, link) ||
-            query.to_confirmed(height) != link)
+        if (!query.is_confirmed_block(link))
         {
             send_error(error::bitcoind::invalid_address_or_key);
+            return true;
+        }
+
+        if (!query.get_height(height, link))
+        {
+            send_error(error::bitcoind::internal_error);
             return true;
         }
     }
@@ -1351,13 +1366,18 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
         }
 
         link = query.to_header(hash);
+        if (link.is_terminal())
+        {
+            send_error(error::bitcoind::invalid_address_or_key, blockhash,
+                blockhash.size());
+            return true;
+        }
     }
 
     size_t height{};
     if (!query.get_height(height, link))
     {
-        send_error(error::bitcoind::invalid_address_or_key, blockhash,
-            blockhash.size());
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -1421,10 +1441,16 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
         constexpr auto witness = true;
         const auto link = query.to_header(hash);
         const auto block = query.get_block(link, witness);
-        size_t height{};
-        if (!block || !query.get_height(height, link))
+        if (!block)
         {
             send_error(error::bitcoind::invalid_address_or_key);
+            return true;
+        }
+
+        size_t height{};
+        if (!query.get_height(height, link))
+        {
+            send_error(error::bitcoind::internal_error);
             return true;
         }
 
@@ -1667,13 +1693,20 @@ bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
         }
     }
 
-    array_t relevant{};
-    for (auto height = from; height <= to; ++height)
+    // The pinned ancestry makes the range walk reorg-stable.
+    database::header_links branch{};
+    if (!query.get_ancestry(branch, query.to_confirmed(to), add1(to - from)))
     {
-        const auto link = query.to_confirmed(height);
-        const auto hash = query.get_header_key(link);
+        send_error(error::bitcoind::internal_error);
+        return true;
+    }
+
+    array_t relevant{};
+    for (auto it = branch.rbegin(); it != branch.rend(); ++it)
+    {
+        const auto hash = query.get_header_key(*it);
         neutrino::block_filter filter{ hash, {} };
-        if (!query.get_filter_body(filter.filter, link))
+        if (!query.get_filter_body(filter.filter, *it))
         {
             send_error(error::bitcoind::internal_error);
             return true;

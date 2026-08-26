@@ -153,8 +153,6 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
             sequenced));
     }
 
-    script script{};
-    uint64_t satoshi{};
     const auto outs = std::make_shared<output_cptrs>();
 
     // Appends one address or data output from a name/value pair.
@@ -175,19 +173,21 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
             return error::bitcoind::success;
         }
 
+        script script{};
+        if (output_script(script, name, p2kh_, p2sh_, witness_))
+            return error::bitcoind::invalid_address_or_key;
+
         // bitcoind also accepts a quoted amount (slop; not special-cased).
         if (!std::holds_alternative<number_t>(item.value()))
             return error::bitcoind::type_error;
 
-        if (output_script(script, name, p2kh_, p2sh_, witness_))
-            return error::bitcoind::invalid_address_or_key;
-
-        const auto btc = std::get<number_t>(item.value());
-        if (!to_integer(satoshi, btc * satoshi_per_bitcoin, true) ||
-            satoshi > system_settings().max_money())
+        uint64_t satoshis{};
+        const auto bitcoins = std::get<number_t>(item.value());
+        if (!to_integer(satoshis, bitcoins * satoshi_per_bitcoin, true) ||
+            satoshis > system_settings().max_money())
             return error::bitcoind::type_error;
 
-        outs->push_back(to_shared<output>(satoshi, std::move(script)));
+        outs->push_back(to_shared<output>(satoshis, std::move(script)));
         return error::bitcoind::success;
     };
 
@@ -300,7 +300,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     auto model = value_from(bitcoind(*tx));
     inject_tx_context(model.as_object(), query, link);
     if (level == verbosity::json_verbose && !tx->is_coinbase() &&
-        query.populate_without_metadata(*tx))
+        query.populate_with_metadata(*tx))
     {
         inject_tx_prevouts(model.as_object(), query, *tx);
         model.as_object()["fee"] =
@@ -325,7 +325,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    const auto tx = to_shared<chain::transaction>(data, true);
+    const auto tx = emplace_shared<chain::transaction>(data, true);
     if (!tx->is_valid())
     {
         send_error(error::bitcoind::deserialization_error);

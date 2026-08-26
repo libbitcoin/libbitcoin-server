@@ -87,13 +87,15 @@ protected:
 
     /// Model composition.
     static double progress(size_t blocks, size_t headers) NOEXCEPT;
-    static uint32_t median_time_past(const node::query& query,
+    static uint32_t median_time(const node::query& query,
+        const system::settings& settings,
         const database::header_link& link) NOEXCEPT;
     static network::rpc::object_t chain_states_entry(const node::query& query,
         const database::header_link& link, double progress,
         bool validated) NOEXCEPT;
     static void inject_block_context(boost::json::object& out,
-        const node::query& query, const database::header_link& link,
+        const node::query& query, const system::settings& settings,
+        const database::header_link& link,
         const system::chain::header& header) NOEXCEPT;
     static void inject_tx_context(boost::json::object& out,
         const node::query& query, const database::tx_link& link) NOEXCEPT;
@@ -107,7 +109,8 @@ protected:
     /// The getblockchaininfo result, bitcoind field set (btcd augments it).
     /// False if the store is inconsistent, the caller sends the error.
     static bool chain_info(network::rpc::object_t& out,
-        const node::query& query, bool pruned, bool current) NOEXCEPT;
+        const node::query& query, const system::settings& settings,
+        bool pruned, bool current) NOEXCEPT;
 
     /// The createmultisig result, empty if a key is invalid or the p2sh
     /// embedded script exceeds one push element.

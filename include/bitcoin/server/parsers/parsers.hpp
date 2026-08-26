@@ -24,6 +24,7 @@
 #include <bitcoin/server/parsers/bitcoind_block_stats.hpp>
 #include <bitcoin/server/parsers/bitcoind_descriptor.hpp>
 #include <bitcoin/server/parsers/bitcoind_merkle.hpp>
+#include <bitcoin/server/parsers/bitcoind_query.hpp>
 #include <bitcoin/server/parsers/bitcoind_script.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/btcd_filter.hpp>

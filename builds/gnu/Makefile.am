@@ -60,6 +60,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parsers/bitcoind_block_stats.cpp \
     ${srcdir}/../../src/parsers/bitcoind_descriptor.cpp \
     ${srcdir}/../../src/parsers/bitcoind_merkle.cpp \
+    ${srcdir}/../../src/parsers/bitcoind_query.cpp \
     ${srcdir}/../../src/parsers/bitcoind_script.cpp \
     ${srcdir}/../../src/parsers/bitcoind_target.cpp \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
@@ -182,6 +183,7 @@ include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_block_stats.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_descriptor.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_merkle.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_script.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/btcd_filter.hpp \
@@ -266,6 +268,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/parsers/bitcoind_block_stats.cpp \
     ${srcdir}/../../test/parsers/bitcoind_descriptor.cpp \
     ${srcdir}/../../test/parsers/bitcoind_merkle.cpp \
+    ${srcdir}/../../test/parsers/bitcoind_query.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
     ${srcdir}/../../test/parsers/electrum_version.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \

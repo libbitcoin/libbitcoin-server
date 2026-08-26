@@ -16,17 +16,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_BLOCK_STATS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_BLOCK_STATS_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_QUERY_HPP
+#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_QUERY_HPP
 
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// All bitcoind getblockstats statistics of a prevout-populated block.
-BCS_API network::rpc::object_t block_stats(const system::chain::block& block,
-    size_t height, uint32_t median_time, uint64_t subsidy) NOEXCEPT;
+BCS_API bool bitcoind_query(network::rpc::request_t& out,
+    const std::string& target) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

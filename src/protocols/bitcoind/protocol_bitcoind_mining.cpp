@@ -110,13 +110,20 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
         return true;
     }
 
+    // The pinned ancestry makes the window walk reorg-stable.
+    database::header_links branch{};
+    if (!query.get_ancestry(branch, query.to_confirmed(target), add1(window)))
+    {
+        send_error(error::bitcoind::internal_error);
+        return true;
+    }
+
     // The window timespan is bounded by its observed timestamps.
-    const auto first = target - window;
     auto minimum = max_uint32;
     auto maximum = min_uint32;
-    for (auto index = first; index <= target; ++index)
+    for (const auto& ancestor: branch)
     {
-        const auto header = query.get_header(query.to_confirmed(index));
+        const auto header = query.get_header(ancestor);
         if (!header)
         {
             send_error(error::bitcoind::internal_error);
@@ -135,8 +142,8 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
 
     uint256_t start_work{};
     uint256_t end_work{};
-    if (!query.get_branch_work(start_work, query.to_confirmed(first)) ||
-        !query.get_branch_work(end_work, query.to_confirmed(target)))
+    if (!query.get_branch_work(start_work, branch.back()) ||
+        !query.get_branch_work(end_work, branch.front()))
     {
         send_error(error::bitcoind::internal_error);
         return true;
@@ -169,7 +176,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     // The pool state over the top block carries the next work required.
     const auto& bitcoin = system_settings();
     const auto key = query.get_header_key(link);
-    const auto state = query.get_chain_state(bitcoin, key);
+    const auto state = query.get_confirmed_chain_state(bitcoin, key);
     if (!state)
     {
         send_error(error::bitcoind::internal_error);
@@ -224,16 +231,15 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     }
 
     constexpr auto witness = true;
-    const auto block = to_shared<chain::block>(data, witness);
+    const auto block = emplace_shared<chain::block>(data, witness);
     if (!block->is_valid())
     {
         send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
-    // A known header without its block still organizes (the submitheader flow).
-    const auto link = archive().to_header(block->hash());
-    if (!link.is_terminal() && archive().is_associated(link))
+    const auto& query = archive();
+    if (query.is_associated(query.to_header(block->hash())))
     {
         send_result(std::string{ "duplicate" }, 32);
         return true;
@@ -256,7 +262,7 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
         return true;
     }
 
-    const auto header = to_shared<chain::header>(data);
+    const auto header = emplace_shared<chain::header>(data);
     if (!header->is_valid())
     {
         send_error(error::bitcoind::deserialization_error);

@@ -136,6 +136,22 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_json__count_three_from_block5)
     BOOST_REQUIRE_EQUAL(as_text(result.at(0).at("hash")), block5);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_json__query_count_two_from_block5)
+{
+    const auto result = rest_json("/rest/headers/" + block5 + ".json?count=2");
+    BOOST_REQUIRE(result.is_array());
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 2u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at(0).at("hash")), block5);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_json__no_query__default_count_five)
+{
+    const auto result = rest_json("/rest/headers/" + block5 + ".json");
+    BOOST_REQUIRE(result.is_array());
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 5u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at(0).at("hash")), block5);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_hex__one_header__eighty_bytes)
 {
     const auto hex = rest_text("/rest/headers/1/" + block9 + ".hex");
