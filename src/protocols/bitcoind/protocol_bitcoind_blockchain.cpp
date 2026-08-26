@@ -190,7 +190,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
 
     inject_block_context(model.as_object(), query, link, block->header());
 
-    if (level == block_verbosity::prevouts &&
+    if (level >= block_verbosity::verbose &&
         query.populate_without_metadata(*block))
     {
         auto entry = model.as_object().at("tx").as_array().begin();
@@ -199,7 +199,9 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         {
             if (!tx->is_coinbase())
             {
-                inject_tx_prevouts(entry->as_object(), query, *tx);
+                if (level == block_verbosity::prevouts)
+                    inject_tx_prevouts(entry->as_object(), query, *tx);
+
                 entry->as_object()["fee"] =
                     tx->fee() / to_floating(chain::satoshi_per_bitcoin);
             }

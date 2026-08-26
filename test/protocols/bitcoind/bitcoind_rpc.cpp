@@ -253,6 +253,17 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity3__tx_objects)
     BOOST_REQUIRE(!tx.at(0).as_object().contains("fee"));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__spend_verbosity2__fee)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+
+    const auto response = rpc("getblock", hash_param(test::mock_block11.hash(), "2"));
+    const auto& tx = response.at("result").at("tx");
+    BOOST_REQUIRE(tx.at(0).as_object().contains("fee"));
+    BOOST_REQUIRE(!tx.at(0).at("vin").at(0).as_object().contains("prevout"));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__clamped_tx_objects)
 {
     const auto response = rpc("getblock", hash_param(test::block9_hash, "4"));
