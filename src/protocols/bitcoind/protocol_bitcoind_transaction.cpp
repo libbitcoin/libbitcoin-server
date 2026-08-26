@@ -175,6 +175,7 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
             return error::bitcoind::success;
         }
 
+        // bitcoind also accepts a quoted amount (not jrpc compliant).
         if (!std::holds_alternative<number_t>(item.value()))
             return error::bitcoind::type_error;
 
