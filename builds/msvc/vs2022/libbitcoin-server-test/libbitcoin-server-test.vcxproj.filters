@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_merkle.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>

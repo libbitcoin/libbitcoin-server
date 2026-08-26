@@ -129,6 +129,7 @@
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_block_stats.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_descriptor.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_merkle.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_parsers_electrum_version.obj</ObjectFileName>

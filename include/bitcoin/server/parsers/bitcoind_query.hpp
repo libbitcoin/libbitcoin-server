@@ -16,20 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_QUERY_HPP
+#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_QUERY_HPP
 
-#include <bitcoin/server/parsers/admin_query.hpp>
-#include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_block_stats.hpp>
-#include <bitcoin/server/parsers/bitcoind_descriptor.hpp>
-#include <bitcoin/server/parsers/bitcoind_merkle.hpp>
-#include <bitcoin/server/parsers/bitcoind_query.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
-#include <bitcoin/server/parsers/bitcoind_target.hpp>
-#include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/electrum_version.hpp>
-#include <bitcoin/server/parsers/native_query.hpp>
-#include <bitcoin/server/parsers/native_target.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+BCS_API bool bitcoind_query(network::rpc::request_t& out,
+    const std::string& target) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

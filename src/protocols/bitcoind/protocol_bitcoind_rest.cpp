@@ -108,7 +108,8 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
     // Parse the REST url into a json-rpc model and dispatch to a handler.
     // Malformed parameters are bad requests, unknown targets are not found.
     request_t model{};
-    if (const auto fault = bitcoind_target(model, get->target()))
+    const auto target = get->target();
+    if (const auto fault = bitcoind_target(model, target))
     {
         if ((fault == error::invalid_hash) ||
             (fault == error::invalid_number) ||
@@ -119,6 +120,13 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         else
             send_not_found();
 
+        return;
+    }
+
+    // Overlay query string parameters onto the parsed model.
+    if (!bitcoind_query(model, target))
+    {
+        send_bad_request(*get);
         return;
     }
 
