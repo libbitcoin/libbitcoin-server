@@ -101,7 +101,7 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
-    // The get is saved off during asynchonous handling and used in send_json
+    // The get is saved off during asynchronous handling and used in send_json
     // to formulate response headers, isolating handlers from http semantics.
     set_request(get);
 
@@ -689,9 +689,6 @@ void protocol_bitcoind_rest::send_json(value&& model,
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, error::success);
 }
-
-// private
-// ----------------------------------------------------------------------------
 
 BC_POP_WARNING()
 BC_POP_WARNING()

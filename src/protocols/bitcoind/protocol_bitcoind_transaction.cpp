@@ -26,7 +26,6 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
-
 namespace server {
 
 #define CLASS protocol_bitcoind_transaction
@@ -193,7 +192,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    send_result(encode_hash(tx->hash(false)), two * system::hash_size);
+    send_result(encode_hash(tx->hash(false)), two * hash_size);
     return true;
 }
 
@@ -998,7 +997,7 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
         auto& in = doc.inputs().at(index);
         const auto& hash = version0 ?
             doc.unsigned_tx().inputs_ptr()->at(index)->point().hash() :
-            in.previous_txid.value_or(system::null_hash);
+            in.previous_txid.value_or(null_hash);
         const auto vout = version0 ?
             doc.unsigned_tx().inputs_ptr()->at(index)->point().index() :
             in.output_index.value_or(0);

@@ -325,7 +325,7 @@ http::request_cptr protocol_bitcoind::reset_rpc_request() NOEXCEPT
     return reset_request();
 }
 
-// utility (redundant with protocol_electrum)
+// Utility (redundant with protocol_electrum).
 // ----------------------------------------------------------------------------
 
 code protocol_bitcoind::validate_tx(

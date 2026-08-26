@@ -163,7 +163,7 @@ private:
     void do_wait_event() NOEXCEPT;
     void handle_wait_timeout(const code& ec) NOEXCEPT;
     bool wait_done() const NOEXCEPT;
-    void send_tip() NOEXCEPT;
+    void send_top() NOEXCEPT;
 
     enum class set_hash : uint8_t { none, muhash, serialized };
 

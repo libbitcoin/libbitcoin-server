@@ -28,7 +28,6 @@
 #include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
-
 namespace server {
 
 #define CLASS protocol_bitcoind_blockchain
@@ -140,7 +139,7 @@ bool protocol_bitcoind_blockchain::handle_get_best_block_hash(const code& ec,
         return false;
 
     const auto hash = archive().get_top_confirmed_hash();
-    send_result(encode_hash(hash), two * system::hash_size);
+    send_result(encode_hash(hash), two * hash_size);
     return true;
 }
 
@@ -1747,7 +1746,7 @@ bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
     if (!current_tip.empty() && decode_hash(given, current_tip) &&
         (given != archive().get_top_confirmed_hash()))
     {
-        send_tip();
+        send_top();
         return true;
     }
 
@@ -1778,7 +1777,7 @@ bool protocol_bitcoind_blockchain::wait_done() const NOEXCEPT
     }
 }
 
-void protocol_bitcoind_blockchain::send_tip() NOEXCEPT
+void protocol_bitcoind_blockchain::send_top() NOEXCEPT
 {
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
@@ -1794,7 +1793,7 @@ void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
     if (wait_done())
     {
         wait_ = wait::none;
-        send_tip();
+        send_top();
         return;
     }
 
@@ -1820,7 +1819,7 @@ void protocol_bitcoind_blockchain::do_wait_event() NOEXCEPT
 
     wait_ = wait::none;
     wait_timer_->stop();
-    send_tip();
+    send_top();
 }
 
 void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec) NOEXCEPT
@@ -1831,7 +1830,7 @@ void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec) NOEXCEPT
         return;
 
     wait_ = wait::none;
-    send_tip();
+    send_top();
 }
 
 // Chase events.
