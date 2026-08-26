@@ -332,14 +332,18 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         return true;
     }
 
-    // bitcoind serves headers only for a hash on the active chain.
     const auto& query = archive();
-    const auto link = query.to_header(*hash);
-    size_t height{};
-    if (!query.get_height(height, link) ||
-        !query.is_confirmed_block(link))
+    const auto header_link = query.to_header(*hash);
+    if (!query.is_confirmed_block(header_link))
     {
         send_not_found();
+        return true;
+    }
+
+    size_t height{};
+    if (!query.get_height(height, header_link))
+    {
+        send_internal_server_error(database::error::integrity);
         return true;
     }
 
