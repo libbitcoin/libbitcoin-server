@@ -224,16 +224,15 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     }
 
     constexpr auto witness = true;
-    const auto block = to_shared<chain::block>(data, witness);
+    const auto block = emplace_shared<chain::block>(data, witness);
     if (!block->is_valid())
     {
         send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
-    // A known header without its block still organizes (the submitheader flow).
-    const auto link = archive().to_header(block->hash());
-    if (!link.is_terminal() && archive().is_associated(link))
+    const auto& query = archive();
+    if (query.is_associated(query.to_header(block->hash())))
     {
         send_result(std::string{ "duplicate" }, 32);
         return true;
@@ -256,7 +255,7 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
         return true;
     }
 
-    const auto header = to_shared<chain::header>(data);
+    const auto header = emplace_shared<chain::header>(data);
     if (!header->is_valid())
     {
         send_error(error::bitcoind::deserialization_error);
