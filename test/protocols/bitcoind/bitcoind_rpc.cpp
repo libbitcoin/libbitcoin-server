@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
     BOOST_REQUIRE(result.at("headers").is_int64());
     BOOST_REQUIRE_EQUAL(as_text(result.at("bestblockhash")), block9);
     BOOST_REQUIRE(result.as_object().contains("target"));
-    BOOST_REQUIRE(result.at("warnings").is_string());
+    BOOST_REQUIRE(result.at("warnings").is_array());
     BOOST_REQUIRE(result.at("initialblockdownload").is_bool());
     BOOST_REQUIRE(result.at("chainwork").is_string());
     BOOST_REQUIRE(result.at("size_on_disk").as_int64() > 0);

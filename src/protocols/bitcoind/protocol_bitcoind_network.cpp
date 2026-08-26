@@ -150,7 +150,7 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
         { "relayfee", node_settings().minimum_fee_rate },
         { "incrementalfee", node_settings().minimum_bump_rate },
         { "localaddresses", std::move(locals) },
-        { "warnings", std::string{} }
+        { "warnings", array_t{} }
     }, 512);
     return true;
 }

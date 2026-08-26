@@ -352,7 +352,7 @@ bool protocol_bitcoind::chain_info(network::rpc::object_t& out,
         { "chainwork", encode_hash(from_uintx(work)) },
         { "size_on_disk", query.store_size() },
         { "pruned", pruned },
-        { "warnings", std::string{} }
+        { "warnings", network::rpc::array_t{} }
     };
 
     return true;
