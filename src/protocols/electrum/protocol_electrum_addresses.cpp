@@ -43,7 +43,7 @@ void protocol_electrum::handle_blockchain_address_get_balance(const code& ec,
 
     if (at_least(electrum::version::v1_3))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -59,7 +59,7 @@ void protocol_electrum::handle_blockchain_address_get_history(const code& ec,
 
     if (at_least(electrum::version::v1_3))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -75,7 +75,7 @@ void protocol_electrum::handle_blockchain_address_get_mempool(const code& ec,
 
     if (at_least(electrum::version::v1_3))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -91,7 +91,7 @@ void protocol_electrum::handle_blockchain_address_list_unspent(const code& ec,
 
     if (at_least(electrum::version::v1_3))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -107,14 +107,14 @@ void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,
 
     if (at_least(electrum::version::v1_3))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     const auto hash = extract_scripthash(address);
     if (hash == null_hash)
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 

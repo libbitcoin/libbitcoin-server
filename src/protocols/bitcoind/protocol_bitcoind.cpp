@@ -132,12 +132,12 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_error(error::method_unauthorized);
+        send_forbidden(*post);
         return;
     }
 
     // No subgroup interface defines the method.
-    send_error(network::error::unexpected_method);
+    send_error(error::bitcoind::method_not_found);
 }
 
 // The websocket transport of the interface: subgroup protocols handle claimed
@@ -174,12 +174,12 @@ void protocol_bitcoind::dispatch_websocket(
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_error(error::method_unauthorized);
+        stop(network::error::unauthorized);
         return;
     }
 
     // No subgroup interface defines the method.
-    send_error(network::error::unexpected_method);
+    send_error(error::bitcoind::method_not_found);
 }
 
 // Help.

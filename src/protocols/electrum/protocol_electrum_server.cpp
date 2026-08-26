@@ -41,13 +41,13 @@ void protocol_electrum::handle_server_add_peer(const code& ec,
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     // This is an unsafe feature and server outbound connections are a bad idea.
     // Instead we rely strictly on a configured list servers to advertise.
-    send_code(error::not_implemented);
+    send_code(error::electrum::method_not_found);
 }
 
 void protocol_electrum::handle_server_banner(const code& ec,
@@ -58,7 +58,7 @@ void protocol_electrum::handle_server_banner(const code& ec,
 
     if (!at_least(electrum::version::v1_0))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -73,7 +73,7 @@ void protocol_electrum::handle_server_donation_address(const code& ec,
 
     if (!at_least(electrum::version::v1_0))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -89,7 +89,7 @@ void protocol_electrum::handle_server_features(const code& ec,
 
     if (!at_least(electrum::version::v1_0))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -97,14 +97,14 @@ void protocol_electrum::handle_server_features(const code& ec,
     const auto genesis = query.to_confirmed(zero);
     if (genesis.is_terminal())
     {
-        send_code(error::not_found);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
     const auto hash = query.get_header_key(genesis);
     if (hash == null_hash)
     {
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -150,7 +150,7 @@ void protocol_electrum::handle_server_peers_subscribe(const code& ec,
 
     if (!at_least(electrum::version::v1_0))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -168,7 +168,7 @@ void protocol_electrum::handle_server_ping(const code& ec,
 
     if (!at_least(electrum::version::v1_2))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -180,7 +180,7 @@ void protocol_electrum::handle_server_ping(const code& ec,
     {
         if (!data.empty() || is_nonzero(pong_len))
         {
-            send_code(error::wrong_version);
+            send_code(error::electrum::bad_request);
             return;
         }
     }
@@ -192,7 +192,7 @@ void protocol_electrum::handle_server_ping(const code& ec,
         if (!to_integer(size, pong_len) || (size != data.length()) ||
             !decode_base16(unused, data))
         {
-            send_code(error::invalid_argument);
+            send_code(error::electrum::bad_request);
             return;
         }
 

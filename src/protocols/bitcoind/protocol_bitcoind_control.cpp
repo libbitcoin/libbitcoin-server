@@ -133,7 +133,7 @@ bool protocol_bitcoind_control::handle_stop(const code& ec,
     rpc_interface::stop) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::method_not_found);
     return true;
 }
 
@@ -148,7 +148,7 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
     // mallocinfo is a glibc-specific malloc dump.
     if (mode != "stats")
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -264,7 +264,7 @@ bool protocol_bitcoind_control::handle_logging(const code& ec,
 
     if (!include.empty() || !exclude.empty())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 

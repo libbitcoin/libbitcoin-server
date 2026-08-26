@@ -102,18 +102,13 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hex))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
     using namespace chain;
     constexpr auto prefix = false;
     const script script{ data, prefix };
-    if (!script.is_valid())
-    {
-        send_error(error::invalid_argument);
-        return true;
-    }
 
     using namespace wallet;
     const auto pattern = script.output_pattern();
@@ -123,6 +118,15 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         { "desc", infer_descriptor(script) },
         { "type", to_script_type(pattern) }
     };
+
+    // An undecodable script is rendered, not rejected (as bitcoind).
+    if (!script.is_valid() || script.is_underflow())
+    {
+        const auto body = "raw(" + encode_base16(data) + ")";
+        result["desc"] = body + "#" + descriptor_checksum(body);
+        send_result(std::move(result), 512);
+        return true;
+    }
 
     if (pattern == script_pattern::pay_key_hash ||
         pattern == script_pattern::pay_script_hash)
@@ -215,7 +219,7 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     if (!to_integer(required, nrequired) || is_zero(required) ||
         required > keys.size())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -223,14 +227,16 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
         address_type != "p2sh-segwit" &&
         address_type != "bech32")
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_address_or_key);
         return true;
     }
 
+    // An invalid key (bitcoind -5) and an oversized script (-8) are not
+    // distinguished by the helper.
     auto result = create_multisig(required, keys, address_type);
     if (result.empty())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_address_or_key);
         return true;
     }
 
@@ -246,9 +252,15 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         return false;
 
     const wallet::descriptor parsed{ expression };
-    if (!parsed || parsed.ranged() != range.has_value())
+    if (!parsed)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_address_or_key);
+        return true;
+    }
+
+    if (parsed.ranged() != range.has_value())
+    {
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -262,7 +274,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         {
             if (!to_integer(end, std::get<number_t>(value)))
             {
-                send_error(error::invalid_argument);
+                send_error(error::bitcoind::invalid_parameter);
                 return true;
             }
         }
@@ -276,13 +288,13 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
                 !to_integer(end, std::get<number_t>(pair.back().value())) ||
                 end < begin)
             {
-                send_error(error::invalid_argument);
+                send_error(error::bitcoind::invalid_parameter);
                 return true;
             }
         }
         else
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::invalid_parameter);
             return true;
         }
     }
@@ -291,7 +303,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
     constexpr uint32_t maximum_range = 10'000;
     if (floored_subtract(end, begin) >= maximum_range)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -305,7 +317,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
 
         if (address.empty())
         {
-            send_error(error::invalid_argument);
+            send_error(error::bitcoind::invalid_address_or_key);
             return true;
         }
 
@@ -327,7 +339,7 @@ bool protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
     const wallet::descriptor parsed{ expression };
     if (!parsed)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_address_or_key);
         return true;
     }
 
@@ -353,7 +365,7 @@ bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
     const payment_address payment(address);
     if (!payment)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_address_or_key);
         return true;
     }
 
@@ -361,7 +373,7 @@ bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
     if (!decode_base64(decoded, signature) ||
         decoded.size() != message_signature_size)
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::type_error);
         return true;
     }
 
@@ -407,7 +419,7 @@ bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
     rpc_interface::estimate_smart_fee) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::internal_error);
     return true;
 }
 

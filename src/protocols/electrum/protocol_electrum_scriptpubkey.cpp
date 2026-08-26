@@ -43,21 +43,21 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_balance(
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     data_chunk bytes{};
     if (!decode_base16(bytes, scriptpubkey))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     chain::script script{ std::move(bytes), false };
     if (!script.is_valid())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -73,21 +73,21 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_history(
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     data_chunk bytes{};
     if (!decode_base16(bytes, scriptpubkey))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     chain::script script{ std::move(bytes), false };
     if (!script.is_valid())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -103,21 +103,21 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_mempool(
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     data_chunk bytes{};
     if (!decode_base16(bytes, scriptpubkey))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     chain::script script{ std::move(bytes), false };
     if (!script.is_valid())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -133,21 +133,21 @@ void protocol_electrum::handle_blockchain_scriptpubkey_list_unspent(
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     data_chunk bytes{};
     if (!decode_base16(bytes, scriptpubkey))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     chain::script script{ std::move(bytes), false };
     if (!script.is_valid())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -163,21 +163,21 @@ void protocol_electrum::handle_blockchain_scriptpubkey_subscribe(
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     data_chunk bytes{};
     if (!decode_base16(bytes, scriptpubkey))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     chain::script script{ std::move(bytes), false };
     if (!script.is_valid())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -193,21 +193,21 @@ void protocol_electrum::handle_blockchain_scriptpubkey_unsubscribe(
 
     if (!at_least(electrum::version::v1_7))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     data_chunk bytes{};
     if (!decode_base16(bytes, scriptpubkey))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     chain::script script{ std::move(bytes), false };
     if (!script.is_valid())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 

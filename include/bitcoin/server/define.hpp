@@ -20,7 +20,7 @@
 #define LIBBITCOIN_SERVER_DEFINE_HPP
 
 #include <bitcoin/node.hpp>
-#include <bitcoin/server/error.hpp>
+#include <bitcoin/server/error/error.hpp>
 
 /// Now we use the generic helper definitions above to define BCS_API
 /// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL

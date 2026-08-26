@@ -16,19 +16,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
+#ifndef LIBBITCOIN_SERVER_ERROR_ERROR_HPP
+#define LIBBITCOIN_SERVER_ERROR_ERROR_HPP
 
-#include <bitcoin/server/parsers/admin_query.hpp>
-#include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_block_stats.hpp>
-#include <bitcoin/server/parsers/bitcoind_descriptor.hpp>
-#include <bitcoin/server/parsers/bitcoind_merkle.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
-#include <bitcoin/server/parsers/bitcoind_target.hpp>
-#include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/electrum_version.hpp>
-#include <bitcoin/server/parsers/native_query.hpp>
-#include <bitcoin/server/parsers/native_target.hpp>
+#include <bitcoin/server/error/bitcoind_error_t.hpp>
+#include <bitcoin/server/error/btcd_error_t.hpp>
+#include <bitcoin/server/error/electrum_error_t.hpp>
+#include <bitcoin/server/error/error_t.hpp>
 
 #endif

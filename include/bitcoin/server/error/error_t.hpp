@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_ERROR_HPP
-#define LIBBITCOIN_SERVER_ERROR_HPP
+#ifndef LIBBITCOIN_SERVER_ERROR_ERROR_T_HPP
+#define LIBBITCOIN_SERVER_ERROR_ERROR_T_HPP
 
 #include <bitcoin/system.hpp>
 #include <bitcoin/server/version.hpp>
@@ -68,8 +68,7 @@ enum error_t : uint8_t
     target_overflow,
     maximum_depth,
     wrong_version,
-    server_error,
-    method_unauthorized
+    server_error
 };
 
 // No current need for error_code equivalence mapping.

@@ -101,7 +101,7 @@ void protocol_electrum_version::handle_server_version(const code& ec,
     if ((channel_->version() == electrum::version::v0_0) &&
         (!set_client(client_name) || !set_version(protocol_version)))
     {
-        const auto reason = error::invalid_argument;
+        const auto reason = error::electrum::bad_request;
         send_code(reason, BIND(finished, _1, reason));
     }
     else

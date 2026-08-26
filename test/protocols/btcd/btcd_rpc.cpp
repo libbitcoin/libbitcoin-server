@@ -27,6 +27,17 @@ static const code subscription_limit{ server::error::subscription_limit };
 static const code unauthorized{ network::error::unauthorized };
 static const code unexpected_method{ network::error::unexpected_method };
 
+// Inherited bitcoind paths send bitcoind codes (btcjson uses the same values).
+static const code method_not_found{ server::error::bitcoind::method_not_found };
+static const code deserialization{ server::error::bitcoind::deserialization_error };
+
+// btcd reports unimplemented and misc alike as -1.
+static const code unimplemented{ server::error::btcd::unimplemented };
+static const code misc_error{ server::error::btcd::misc_error };
+static const code invalid_parameter{ server::error::btcd::invalid_parameter };
+static const code invalid_params{ server::error::btcd::invalid_params };
+static const code block_not_found{ server::error::btcd::invalid_address_or_key };
+
 // mock_block10 chains onto block9 and pays found_address from its second
 // transaction only (its other outputs pay distinct key/script hashes), so a
 // filter watching found_address matches exactly one of its transactions.
@@ -63,12 +74,12 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__no_credential_configured__unauthori
     BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__unexpected_method)
+BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__method_not_found)
 {
     // authenticate is websocket-only (as btcd): not part of the post surface.
     const auto response = http_rpc("authenticate", R"(["user","pass"])");
     REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
-    BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), unexpected_method.value());
+    BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), method_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__help__default__method_list)
@@ -87,7 +98,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__session__default__returns_id)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__stop__default__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("stop"), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("stop"), unimplemented.value());
 }
 
 // getters
@@ -178,10 +189,10 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase__expected_t
     BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("txid")), encode_hash(coinbase.hash(false)));
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__invalid_argument)
+BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__deserialization)
 {
     const auto result = rpc_error("decoderawtransaction", R"(["not-hex"])");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BOOST_REQUIRE_EQUAL(result, deserialization.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__decodescript__pay_public_key__pubkey)
@@ -239,12 +250,12 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__subscribed__null_result)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__notifynewtransactions__default__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("notifynewtransactions", "[false]"), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("notifynewtransactions", "[false]"), unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifynewtransactions__default__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifynewtransactions"), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifynewtransactions"), unimplemented.value());
 }
 
 // filters
@@ -261,7 +272,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_address__null_result)
 BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__invalid_address__invalid_argument)
 {
     const auto result = rpc_error("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % bogus_address).str());
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BOOST_REQUIRE_EQUAL(result, invalid_parameter.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_outpoint__null_result)
@@ -274,7 +285,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_outpoint__null_result)
 BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__malformed_outpoint__invalid_argument)
 {
     const auto result = rpc_error("loadtxfilter", R"([true,[],[{"hash":"00"}]])");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BOOST_REQUIRE_EQUAL(result, invalid_parameter.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
@@ -282,7 +293,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
     // 'blockhashes' is one positional arg that is itself an array, so the
     // wire params need double-wrapping: [[...]], not [...].
     const auto result = rpc_error("rescanblocks", (boost_format(R"([["%1%"]])") % encode_hash(null_hash)).str());
-    BOOST_REQUIRE_EQUAL(result, not_found.value());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__no_filter_match__empty_result)
@@ -337,28 +348,28 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__notifyreceived__default__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("notifyreceived", "[[]]"), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("notifyreceived", "[[]]"), unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyreceived__default__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifyreceived", "[[]]"), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifyreceived", "[[]]"), unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__notifyspent__default__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("notifyspent", "[[]]"), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("notifyspent", "[[]]"), unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyspent__default__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifyspent", "[[]]"), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifyspent", "[[]]"), unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
 {
     const auto result = rpc_error("rescan", (boost_format(R"(["%1%",[],[],""])") % encode_hash(null_hash)).str());
-    BOOST_REQUIRE_EQUAL(result, not_found.value());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finished)
@@ -379,7 +390,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
 {
     const auto request = R"(["%1%",["%2%"],[],""])";
     const auto result = rpc_error("rescan", (boost_format(request) % block9 % found_address).str());
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
 // bitcoind interface methods (bridged into the ws dispatcher)
@@ -403,9 +414,9 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__response__sequential_requests__id_matches_request
     BOOST_REQUIRE_EQUAL(r1.at("id").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__unexpected_method)
+BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__method_not_found)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("nosuchmethod"), unexpected_method.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("nosuchmethod"), method_not_found.value());
 
     // The connection survives an unknown method (as btcd).
     const auto follow_up = rpc("session");
@@ -463,7 +474,7 @@ BOOST_AUTO_TEST_CASE(btcd_limited_filter__loadtxfilter__over_limit__subscription
     // The fixture allows one watch; the second address exceeds it.
     const auto request = R"([true,["%1%","%2%"],[]])";
     const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address % other_address).str());
-    BOOST_REQUIRE_EQUAL(result, subscription_limit.value());
+    BOOST_REQUIRE_EQUAL(result, misc_error.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -478,7 +489,7 @@ BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__address__not_implemented)
 {
     const auto request = R"([true,["%1%"],[]])";
     const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address).str());
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__outpoint_only__null_result)
@@ -493,7 +504,7 @@ BOOST_AUTO_TEST_CASE(btcd_no_index__rescanblocks__any__not_implemented)
 {
     const auto request = R"([["%1%"]])";
     const auto result = rpc_error("rescanblocks", (boost_format(request) % encode_hash(test::block1_hash)).str());
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -514,12 +525,12 @@ BOOST_AUTO_TEST_CASE(btcd_scoped_credential__session__listed_method__permitted)
     REQUIRE_NO_THROW_TRUE(session.at("result").is_object());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__unauthorized)
+BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__invalid_params)
 {
     BOOST_REQUIRE(authenticate());
 
     // notifyblocks is implemented, so rejection is permitted()'s doing.
-    BOOST_REQUIRE_EQUAL(rpc_error("notifyblocks"), unauthorized.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("notifyblocks"), invalid_params.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

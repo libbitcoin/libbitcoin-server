@@ -97,7 +97,7 @@ void CLASS::handle_receive_post(const code& ec,
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_error(error::method_unauthorized);
+        send_forbidden(*post);
         return;
     }
 
@@ -140,7 +140,7 @@ void CLASS::dispatch_websocket(
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_error(error::method_unauthorized);
+        stop(network::error::unauthorized);
         return;
     }
 

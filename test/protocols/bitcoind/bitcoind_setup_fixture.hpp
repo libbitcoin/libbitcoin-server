@@ -25,6 +25,7 @@
 #define BITCOIND_ENDPOINT "127.0.0.1:65003"
 #define BITCOIND_TEST_USERNAME "user"
 #define BITCOIND_TEST_PASSWORD "pass"
+#define BITCOIND_TEST_SCOPED_METHOD "getblockcount"
 
 struct bitcoind_setup_fixture
 {
@@ -45,6 +46,10 @@ struct bitcoind_setup_fixture
     // the parsed json response, or {"dropped":true} if the channel dropped.
     boost::json::value rpc_body(std::string_view body);
 
+    // As rpc(), with basic authorization, returning only the http status.
+    status rpc_status(std::string_view method, const std::string& username,
+        const std::string& password);
+
     // Upgrade the connection to websocket (no further http requests).
     network::boost_code ws_upgrade();
 
@@ -54,6 +59,10 @@ struct bitcoind_setup_fixture
 
     // As rpc(), over the upgraded websocket connection.
     boost::json::value ws_rpc(std::string_view method,
+        std::string_view params="[]");
+
+    // As ws_rpc(), returning {"dropped":true} if the channel dropped.
+    boost::json::value ws_rpc_dropped(std::string_view method,
         std::string_view params="[]");
 
 
@@ -111,6 +120,27 @@ struct bitcoind_credentialed_setup_fixture
             config.server.bitcoind.credentials =
             {
                 { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD }
+            };
+        })
+    {
+    }
+};
+
+// Configured with a credential scoped to a single method -- for tests that
+// verify permitted() refuses at the transport (post 403, websocket stop).
+struct bitcoind_scoped_credential_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_scoped_credential_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind.credentials =
+            {
+                { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
+                    BITCOIND_TEST_SCOPED_METHOD }
             };
         })
     {

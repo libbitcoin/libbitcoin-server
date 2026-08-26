@@ -45,7 +45,7 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
 
     if (!at_least(electrum::version::v1_0))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -53,7 +53,7 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     const auto tx = to_shared<chain::transaction>(hexer, true);
     if (!tx->is_valid() || !hexer.is_exhausted())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -70,7 +70,8 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
         return;
     }
 
-    send_code(fault);
+    using namespace error::electrum;
+    send_code(translate(fault, daemon_error));
 }
 
 void protocol_electrum::handle_blockchain_transaction_broadcast_package(
@@ -82,7 +83,7 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
 
     if (!at_least(electrum::version::v1_6))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -91,20 +92,20 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
     // experimental and better-suited for debugging." - do not support this.
     if (verbose)
     {
-        send_code(error::unsupported_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     if (!std::holds_alternative<array_t>(raw_txs.value()))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     const auto& txs_hex = std::get<array_t>(raw_txs.value());
     if (txs_hex.empty())
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -117,7 +118,7 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
     {
         if (!std::holds_alternative<string_t>(tx_hex.value()))
         {
-            send_code(error::invalid_argument);
+            send_code(error::electrum::bad_request);
             return;
         }
 
@@ -125,7 +126,7 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
         const auto tx = to_shared<chain::transaction>(hexer, true);
         if (!tx->is_valid() || !hexer.is_exhausted())
         {
-            send_code(error::invalid_argument);
+            send_code(error::electrum::bad_request);
             return;
         }
 
@@ -160,14 +161,14 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     if ((!at_least(electrum::version::v1_0)) ||
         (!at_least(electrum::version::v1_2) && verbose))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     hash_digest hash{};
     if (!decode_hash(hash, tx_hash))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -175,7 +176,8 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     const auto link = query.to_tx(hash);
     if (link.is_terminal())
     {
-        send_code(error::not_found);
+        // electrumx passes tx lookup to its daemon, failing as daemon error.
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -186,7 +188,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         const auto tx = query.get_wire_tx(link, true);
         if (tx.empty())
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
 
@@ -198,7 +200,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         const auto tx = query.get_transaction(link, true);
         if (!tx)
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
 
@@ -206,7 +208,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         value = value_from(bitcoind(*tx));
         if (!value.is_object())
         {
-            send_code(error::server_error);
+            send_code(error::electrum::daemon_error);
             return;
         }
 
@@ -222,7 +224,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
             if (height.is_terminal() || (block_hash == null_hash) ||
                 !query.get_timestamp(timestamp, block))
             {
-                send_code(error::server_error);
+                send_code(error::electrum::daemon_error);
                 return;
             }
 
@@ -251,7 +253,7 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(
 
     if (!at_least(electrum::version::v1_4))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -259,7 +261,7 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(
     size_t block_height{};
     if (!to_integer(block_height, height) || !decode_hash(hash, tx_hash))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -267,21 +269,21 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(
     const auto block_link = query.to_confirmed(block_height);
     if (block_link.is_terminal())
     {
-        send_code(error::not_found);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     auto hashes = query.get_tx_keys(block_link);
     if (hashes.empty())
     {
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
     const auto index = find_position(hashes, hash);
     if (is_negative(index))
     {
-        send_code(error::not_found);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -310,7 +312,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
 
     if (!at_least(electrum::version::v1_4))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -319,7 +321,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     if (!to_integer(block_height, height) ||
         !to_integer(position, tx_pos))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -328,7 +330,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     const auto tx_link = query.get_position_tx(block_link, position);
     if (tx_link.is_terminal())
     {
-        send_code(error::not_found);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -336,7 +338,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     const auto hash = query.get_tx_key(tx_link);
     if (hash == null_hash)
     {
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
@@ -349,13 +351,13 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     auto hashes = query.get_tx_keys(block_link);
     if (hashes.empty())
     {
-        send_code(error::server_error);
+        send_code(error::electrum::daemon_error);
         return;
     }
 
     if (position >= hashes.size())
     {
-        send_code(error::not_found);
+        send_code(error::electrum::bad_request);
         return;
     }
 

@@ -22,9 +22,9 @@
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 using namespace system;
-static const code wrong_version{ server::error::wrong_version };
-static const code not_implemented{ server::error::not_implemented };
-static const code invalid_argument{ server::error::invalid_argument };
+static const code wrong_version{ server::error::electrum::bad_request };
+static const code not_implemented{ server::error::electrum::method_not_found };
+static const code invalid_argument{ server::error::electrum::bad_request };
 
 // blockchain.estimatefee
 

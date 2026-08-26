@@ -45,30 +45,33 @@ bool has_error(const boost::json::value& response) NOEXCEPT
         !response.at("error").is_null();
 }
 
-bool is_not_implemented(const boost::json::value& response) NOEXCEPT
+// Codes are the bitcoind wire values, not our enumeration.
+bool has_code(const boost::json::value& response, int64_t code) NOEXCEPT
 {
     return has_error(response) &&
-        response.at("error").at("message").as_string() == "not_implemented";
+        response.at("error").at("code").as_int64() == code;
 }
 
-const std::vector<std::string> rejected_methods
+using method_code = std::pair<std::string, int64_t>;
+
+const std::vector<method_code> rejected_methods
 {
-    "dumptxoutset",
-    "loadtxoutset",
-    "clearbanned",
-    "listbanned",
-    "setban",
-    "stop",
-    "descriptorprocesspsbt"
+    { "dumptxoutset", -32601 },
+    { "loadtxoutset", -32601 },
+    { "clearbanned", -20 },
+    { "listbanned", -20 },
+    { "setban", -20 },
+    { "stop", -32601 },
+    { "descriptorprocesspsbt", -32601 }
 };
 
-const std::vector<std::string> wip_methods
+const std::vector<method_code> wip_methods
 {
-    "getblockfrompeer",
-    "preciousblock",
-    "disconnectnode",
-    "exportasmap",
-    "getaddednodeinfo",
+    { "getblockfrompeer", -32601 },
+    { "preciousblock", -32601 },
+    { "disconnectnode", -32601 },
+    { "exportasmap", -32601 },
+    { "getaddednodeinfo", -24 }
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -157,23 +160,23 @@ const std::vector<std::string> scope_methods
     "enumeratesigners"
 };
 
-const std::vector<std::string> pending_methods
+const std::vector<method_code> pending_methods
 {
-    "getmempoolancestors",
-    "getmempoolcluster",
-    "getmempooldescendants",
-    "getmempoolentry",
-    "getmempoolinfo",
-    "getrawmempool",
-    "gettxspendingprevout",
-    "importmempool",
-    "abortprivatebroadcast",
-    "getprivatebroadcastinfo",
-    "submitpackage",
-    "getblocktemplate",
-    "getprioritisedtransactions",
-    "prioritisetransaction",
-    "estimatesmartfee"
+    { "getmempoolancestors", -33 },
+    { "getmempoolcluster", -33 },
+    { "getmempooldescendants", -33 },
+    { "getmempoolentry", -33 },
+    { "getmempoolinfo", -33 },
+    { "getrawmempool", -33 },
+    { "gettxspendingprevout", -33 },
+    { "importmempool", -33 },
+    { "abortprivatebroadcast", -32601 },
+    { "getprivatebroadcastinfo", -32601 },
+    { "submitpackage", -33 },
+    { "getblocktemplate", -33 },
+    { "getprioritisedtransactions", -33 },
+    { "prioritisetransaction", -33 },
+    { "estimatesmartfee", -32603 }
 };
 
 } // namespace
@@ -247,10 +250,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity3__tx_objects)
     BOOST_REQUIRE(!tx.at(0).as_object().contains("fee"));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__invalid)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__clamped_tx_objects)
 {
     const auto response = rpc("getblock", hash_param(test::block9_hash, "4"));
-    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+    REQUIRE_NO_THROW_TRUE(response.at("result").at("tx").at(0).is_object());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__negative_verbosity__clamped_hex)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "-1"));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
@@ -335,11 +344,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__coinbase_verbosity_two__no
     BOOST_REQUIRE(!result.as_object().contains("fee"));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__excess_verbosity__error)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__excess_verbosity__clamped_verbose)
 {
     const auto txid = test::block1.transactions_ptr()->front()->hash(false);
     const auto response = rpc("getrawtransaction", hash_param(txid, "3"));
-    BOOST_REQUIRE(has_error(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").at("vin").is_array());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__negative_verbosity__clamped_hex)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("getrawtransaction", hash_param(txid, "-1"));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__unknown_txid__error)
@@ -358,6 +374,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__malformed__error)
 {
     const auto response = rpc("sendrawtransaction", "[\"00\"]");
     BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_unspent__verify_already_in_utxo_set)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + tx0 + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -27), response);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
 }
 
 // control, mining, rawtransactions, util (moved from btcd)
@@ -476,6 +509,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__descriptor_and_segwit)
     BOOST_REQUIRE(segwit.as_object().contains("p2sh-segwit"));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__undecodable__nonstandard)
+{
+    const auto response = rpc("decodescript", "[\"01\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("type").as_string(), "nonstandard");
+    BOOST_REQUIRE_EQUAL(result.at("desc").as_string().subview(0, 8), "raw(01)#");
+    BOOST_REQUIRE(!result.as_object().contains("p2sh"));
+    BOOST_REQUIRE(!result.as_object().contains("segwit"));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__witness_program__no_segwit)
 {
     const auto response = rpc("decodescript", "[\"0014751e76e8199196d454941c45d1b3a323f1433bd6\"]");
@@ -577,6 +620,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__empty__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__coinbase__coinbase_token)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("testmempoolaccept", "[[\"" + tx0 + "\"]]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "coinbase");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unknown_inputs__missingorspent_token)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("testmempoolaccept", "[[\"" + hex + "\"]]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "bad-txns-inputs-missingorspent");
+}
+
 // network
 // ----------------------------------------------------------------------------
 
@@ -609,35 +669,35 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
         BOOST_REQUIRE_MESSAGE(has_error(rpc(method, params)), method);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__expected_code)
 {
-    for (const auto& method: rejected_methods)
+    for (const auto& [method, code]: rejected_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
     }
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__expected_code)
 {
-    for (const auto& method: wip_methods)
+    for (const auto& [method, code]: wip_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
     }
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__method_not_found)
 {
     for (const auto& method: scope_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), -32601), method);
     }
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__expected_code)
 {
-    for (const auto& method: pending_methods)
+    for (const auto& [method, code]: pending_methods)
     {
-        BOOST_REQUIRE_MESSAGE(is_not_implemented(rpc(method, "[]")), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
     }
 }
 
@@ -1442,6 +1502,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
     BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "duplicate");
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__unknown_header__prev_blk_not_found_token)
+{
+    auto data = test::block1.to_data(true);
+    data[76]++;
+    const auto response = rpc("submitblock", "[\"" + encode_base16(data) + "\"]");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "prev-blk-not-found");
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__garbage__invalid)
 {
     const auto response = rpc("submitblock", "[\"deadbeef\"]");
@@ -1631,6 +1699,48 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__websocket__wrong_password_upgrade__refused)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__websocket__wrong_username_upgrade__refused)
 {
     BOOST_REQUIRE(ws_upgrade("wrong", BITCOIND_TEST_PASSWORD));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// scoped credential
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_scoped_credential_tests,
+    bitcoind_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__post_listed_method__ok)
+{
+    const auto result = rpc_status(BITCOIND_TEST_SCOPED_METHOD, BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(result, status::ok);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__post_unlisted_method__forbidden)
+{
+    const auto result = rpc_status("getbestblockhash", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(result, status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__post_unknown_method__forbidden)
+{
+    const auto result = rpc_status("nosuchmethod", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(result, status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_listed_method__result)
+{
+    BOOST_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
+
+    const auto response = ws_rpc(BITCOIND_TEST_SCOPED_METHOD);
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unlisted_method__dropped)
+{
+    BOOST_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
+
+    const auto response = ws_rpc_dropped("getbestblockhash");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

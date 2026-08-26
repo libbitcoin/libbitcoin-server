@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum_setup_fixture.hpp"
 
-static const code invalid_argument{ error::invalid_argument };
+static const code invalid_argument{ error::electrum::bad_request };
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 

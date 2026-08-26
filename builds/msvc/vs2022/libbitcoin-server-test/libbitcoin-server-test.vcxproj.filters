@@ -63,13 +63,16 @@
     <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_block_stats.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_descriptor.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\parsers\bitcoind_merkle.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\block_stats.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\descriptor.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\electrum_version.cpp">
@@ -79,9 +82,6 @@
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\parsers\partial_merkle.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_diagnostics.cpp">

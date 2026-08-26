@@ -48,21 +48,24 @@ src_libbitcoin_server_la_LIBADD = \
 
 src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/configuration.cpp \
-    ${srcdir}/../../src/error.cpp \
     ${srcdir}/../../src/parser.cpp \
     ${srcdir}/../../src/server_node.cpp \
     ${srcdir}/../../src/settings.cpp \
+    ${srcdir}/../../src/error/bitcoind_error_t.cpp \
+    ${srcdir}/../../src/error/btcd_error_t.cpp \
+    ${srcdir}/../../src/error/electrum_error_t.cpp \
+    ${srcdir}/../../src/error/error_t.cpp \
     ${srcdir}/../../src/parsers/admin_query.cpp \
     ${srcdir}/../../src/parsers/admin_target.cpp \
+    ${srcdir}/../../src/parsers/bitcoind_block_stats.cpp \
+    ${srcdir}/../../src/parsers/bitcoind_descriptor.cpp \
+    ${srcdir}/../../src/parsers/bitcoind_merkle.cpp \
     ${srcdir}/../../src/parsers/bitcoind_script.cpp \
     ${srcdir}/../../src/parsers/bitcoind_target.cpp \
-    ${srcdir}/../../src/parsers/block_stats.cpp \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
-    ${srcdir}/../../src/parsers/descriptor.cpp \
     ${srcdir}/../../src/parsers/electrum_version.cpp \
     ${srcdir}/../../src/parsers/native_query.cpp \
     ${srcdir}/../../src/parsers/native_target.cpp \
-    ${srcdir}/../../src/parsers/partial_merkle.cpp \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
     ${srcdir}/../../src/protocols/protocol_http.cpp \
     ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \
@@ -115,7 +118,6 @@ include_bitcoin_serverdir = \
 include_bitcoin_server_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/configuration.hpp \
     ${srcdir}/../../include/bitcoin/server/define.hpp \
-    ${srcdir}/../../include/bitcoin/server/error.hpp \
     ${srcdir}/../../include/bitcoin/server/parser.hpp \
     ${srcdir}/../../include/bitcoin/server/server_node.hpp \
     ${srcdir}/../../include/bitcoin/server/settings.hpp \
@@ -131,6 +133,16 @@ include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channels.hpp
+
+include_bitcoin_server_errordir = \
+    ${includedir}/bitcoin/server/error
+
+include_bitcoin_server_error_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/error/bitcoind_error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/btcd_error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/electrum_error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/error.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/error_t.hpp
 
 include_bitcoin_server_impl_protocolsdir = \
     ${includedir}/bitcoin/server/impl/protocols
@@ -167,16 +179,16 @@ include_bitcoin_server_parsersdir = \
 include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/admin_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/admin_target.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_block_stats.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_descriptor.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_script.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_target.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/block_stats.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/btcd_filter.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/descriptor.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_target.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/parsers.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/partial_merkle.hpp
+    ${srcdir}/../../include/bitcoin/server/parsers/parsers.hpp
 
 include_bitcoin_server_protocolsdir = \
     ${includedir}/bitcoin/server/protocols
@@ -251,13 +263,13 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/mocks/blocks.cpp \
     ${srcdir}/../../test/parsers/admin_query.cpp \
     ${srcdir}/../../test/parsers/admin_target.cpp \
+    ${srcdir}/../../test/parsers/bitcoind_block_stats.cpp \
+    ${srcdir}/../../test/parsers/bitcoind_descriptor.cpp \
+    ${srcdir}/../../test/parsers/bitcoind_merkle.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
-    ${srcdir}/../../test/parsers/block_stats.cpp \
-    ${srcdir}/../../test/parsers/descriptor.cpp \
     ${srcdir}/../../test/parsers/electrum_version.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \
-    ${srcdir}/../../test/parsers/partial_merkle.cpp \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
     ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_json.cpp \

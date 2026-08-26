@@ -51,14 +51,14 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     hash_digest hash{};
     if (!decode_hash(hash, scripthash))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -73,7 +73,7 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
 
     if (!archive().address_enabled())
     {
-        send_code(error::not_implemented);
+        send_code(error::electrum::method_not_found);
         return;
     }
 
@@ -87,7 +87,7 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     hash_digest status{};
-    code ec{ error::subscription_limit };
+    code ec{ error::electrum::excessive_resource_usage };
     if (address_subscriptions_.size() < options().maximum_subscriptions)
     {
         const auto at = address_subscriptions_.try_emplace(hash,
@@ -120,7 +120,8 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
 
     if (ec)
     {
-        send_code(ec);
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
         return;
     }
 
@@ -142,14 +143,14 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
 
     if (!at_least(electrum::version::v1_4_2))
     {
-        send_code(error::wrong_version);
+        send_code(error::electrum::bad_request);
         return;
     }
 
     hash_digest hash{};
     if (!decode_hash(hash, scripthash))
     {
-        send_code(error::invalid_argument);
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -164,7 +165,7 @@ void protocol_electrum::scripthash_unsubscribe(
 
     if (!archive().address_enabled())
     {
-        send_code(error::not_implemented);
+        send_code(error::electrum::method_not_found);
         return;
     }
 

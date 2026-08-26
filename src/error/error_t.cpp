@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/error.hpp>
+#include <bitcoin/server/error/error_t.hpp>
 
 #include <bitcoin/server/define.hpp>
 
@@ -58,8 +58,7 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
     { target_overflow, "target_overflow" },
     { maximum_depth, "maximum_depth" },
     { wrong_version, "wrong_version" },
-    { server_error, "server_error" },
-    { method_unauthorized, "method_unauthorized" }
+    { server_error, "server_error" }
 };
 
 DEFINE_ERROR_T_CATEGORY(error, "server", "server code")

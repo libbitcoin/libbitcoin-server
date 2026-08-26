@@ -84,7 +84,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     }
     else if (!to_integer(target, height))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
     else
@@ -100,7 +100,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     }
     else if (!to_integer(window, nblocks))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
@@ -120,7 +120,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
         const auto header = query.get_header(query.to_confirmed(index));
         if (!header)
         {
-            send_error(database::error::integrity);
+            send_error(error::bitcoind::internal_error);
             return true;
         }
 
@@ -139,7 +139,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     if (!query.get_branch_work(start_work, query.to_confirmed(first)) ||
         !query.get_branch_work(end_work, query.to_confirmed(target)))
     {
-        send_error(database::error::integrity);
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -166,7 +166,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     const auto top = query.get_header(link);
     if (!top)
     {
-        send_error(database::error::integrity);
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -176,7 +176,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     const auto state = query.get_chain_state(bitcoin, key);
     if (!state)
     {
-        send_error(database::error::integrity);
+        send_error(error::bitcoind::internal_error);
         return true;
     }
 
@@ -223,7 +223,7 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hexdata))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -231,7 +231,7 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     const auto block = to_shared<chain::block>(data, witness);
     if (!block->is_valid())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -255,14 +255,14 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hexdata))
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
     const auto header = to_shared<chain::header>(data);
     if (!header->is_valid())
     {
-        send_error(error::invalid_argument);
+        send_error(error::bitcoind::deserialization_error);
         return true;
     }
 
@@ -294,12 +294,12 @@ void protocol_bitcoind_mining::handle_organize_header(const code& ec,
     POST(do_submit_header, ec);
 }
 
-// bitcoind returns null on acceptance and a reason string on rejection.
+// bitcoind returns null on acceptance and a reject token on rejection.
 void protocol_bitcoind_mining::do_submit_block(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (ec)
-        send_result(ec.message(), 64);
+        send_result(error::bitcoind::reject(ec), 64);
     else
         send_result(null_t{}, 8);
 }
@@ -307,8 +307,9 @@ void protocol_bitcoind_mining::do_submit_block(const code& ec) NOEXCEPT
 void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    using namespace error::bitcoind;
     if (ec)
-        send_error(ec);
+        send_error(translate(ec, verify_error));
     else
         send_result(null_t{}, 8);
 }
@@ -317,7 +318,7 @@ bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     rpc_interface::get_block_template) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::client_mempool_disabled);
     return true;
 }
 
@@ -325,7 +326,7 @@ bool protocol_bitcoind_mining::handle_get_prioritised_transactions(const code& e
     rpc_interface::get_prioritised_transactions) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::client_mempool_disabled);
     return true;
 }
 
@@ -333,7 +334,7 @@ bool protocol_bitcoind_mining::handle_prioritise_transaction(const code& ec,
     rpc_interface::prioritise_transaction) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::not_implemented);
+    send_error(error::bitcoind::client_mempool_disabled);
     return true;
 }
 
