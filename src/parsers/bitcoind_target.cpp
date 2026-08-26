@@ -119,7 +119,7 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         ++segment;
 
     if (segment == segments.size())
-        return error::missing_target;
+        return error::invalid_target;
 
     const auto target = segments[segment++];
 

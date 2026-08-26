@@ -73,6 +73,21 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__tx_unknown__not_found)
     BOOST_REQUIRE_EQUAL(rest_status("/rest/tx/" + txid + ".json"), status::not_found);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rest__malformed_hash__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/block/nothex.json"), status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__malformed_height__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/blockhashbyheight/abc.json"), status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__unknown_target__not_found)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/bogus"), status::not_found);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rest__block_hex__hashes_to_block9)
 {
     const auto hex = rest_text("/rest/block/" + block9 + ".hex");

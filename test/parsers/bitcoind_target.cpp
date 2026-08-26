@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
     {
         { "", server::error::empty_path },
         { "?foo=bar", server::error::empty_path },
-        { "/rest", server::error::missing_target },
+        { "/rest", server::error::invalid_target },
         { "/rest/bogus", server::error::invalid_target },
         { "/bogus", server::error::invalid_target },
         { "/rest/block", server::error::missing_hash },
