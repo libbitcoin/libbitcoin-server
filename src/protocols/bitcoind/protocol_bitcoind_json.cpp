@@ -40,14 +40,8 @@ uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     const system::settings& settings,
     const database::header_link& link) NOEXCEPT
 {
-    size_t height{};
-    if (!query.get_height(height, link))
-        return 0_u32;
-
     database::context ctx{};
-    const auto child = query.to_confirmed(add1(height));
-    if (!child.is_terminal() && (query.to_parent(child) == link) &&
-        query.get_context(ctx, child))
+    if (query.get_context(ctx, query.to_confirmed_child(link)))
         return ctx.mtp;
 
     // The top block has no child, its promoted chain state carries the value.
