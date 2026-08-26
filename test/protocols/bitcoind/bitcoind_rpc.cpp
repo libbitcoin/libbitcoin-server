@@ -1202,6 +1202,33 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+// notifications
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__notification__v2_missing_id__no_content)
+{
+    const auto result = rpc_body_status(R"({"jsonrpc":"2.0","method":"getblockcount","params":[]})");
+    BOOST_REQUIRE(result == bitcoind_setup_fixture::status::no_content);
+}
+
+// bitcoind answers a v1 null id notification (non-compliant, reproduced).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__notification__v1_null_id__answered)
+{
+    const auto response = rpc_body(R"({"id":null,"method":"getblockcount","params":[]})");
+    BOOST_REQUIRE(response.at("id").is_null());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__notification__ws_v2_missing_id__no_response)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    ws_notify(R"({"jsonrpc":"2.0","method":"getblockcount","params":[]})");
+    const auto response = ws_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
 // websocket
 // ----------------------------------------------------------------------------
 
