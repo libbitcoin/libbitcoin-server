@@ -109,11 +109,6 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     using namespace chain;
     constexpr auto prefix = false;
     const script script{ data, prefix };
-    if (!script.is_valid())
-    {
-        send_error(error::bitcoind::invalid_parameter);
-        return true;
-    }
 
     using namespace wallet;
     const auto pattern = script.output_pattern();
@@ -123,6 +118,15 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         { "desc", infer_descriptor(script) },
         { "type", to_script_type(pattern) }
     };
+
+    // An undecodable script is rendered, not rejected (as bitcoind).
+    if (!script.is_valid() || script.is_underflow())
+    {
+        const auto body = "raw(" + encode_base16(data) + ")";
+        result["desc"] = body + "#" + descriptor_checksum(body);
+        send_result(std::move(result), 512);
+        return true;
+    }
 
     if (pattern == script_pattern::pay_key_hash ||
         pattern == script_pattern::pay_script_hash)

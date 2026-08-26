@@ -109,12 +109,15 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         json_verbose = 2
     };
 
-    size_t level{};
-    if (!to_integer(level, verbose) || level > verbosity::json_verbose)
+    int64_t requested{};
+    if (!to_integer(requested, verbose))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(error::bitcoind::misc_error);
         return true;
     }
+
+    // bitcoind clamps out of range verbosity.
+    const auto level = limit<size_t>(requested, verbosity::json_verbose);
 
     if (level == verbosity::hexadecimal)
     {

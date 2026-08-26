@@ -158,12 +158,15 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         return true;
     }
 
-    size_t level{};
-    if (!to_integer(level, verbosity) || level > block_verbosity::prevouts)
+    int64_t requested{};
+    if (!to_integer(requested, verbosity))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(error::bitcoind::misc_error);
         return true;
     }
+
+    // bitcoind clamps out of range verbosity.
+    const auto level = limit<size_t>(requested, block_verbosity::prevouts);
 
     constexpr auto witness = true;
     const auto& query = archive();

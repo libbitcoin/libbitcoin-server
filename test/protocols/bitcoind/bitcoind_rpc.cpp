@@ -250,10 +250,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity3__tx_objects)
     BOOST_REQUIRE(!tx.at(0).as_object().contains("fee"));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__invalid)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__verbosity4__clamped_tx_objects)
 {
     const auto response = rpc("getblock", hash_param(test::block9_hash, "4"));
-    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+    REQUIRE_NO_THROW_TRUE(response.at("result").at("tx").at(0).is_object());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__negative_verbosity__clamped_hex)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "-1"));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__ten_block_store__expected)
@@ -338,11 +344,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__coinbase_verbosity_two__no
     BOOST_REQUIRE(!result.as_object().contains("fee"));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__excess_verbosity__error)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__excess_verbosity__clamped_verbose)
 {
     const auto txid = test::block1.transactions_ptr()->front()->hash(false);
     const auto response = rpc("getrawtransaction", hash_param(txid, "3"));
-    BOOST_REQUIRE(has_error(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").at("vin").is_array());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__negative_verbosity__clamped_hex)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("getrawtransaction", hash_param(txid, "-1"));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__unknown_txid__error)
@@ -494,6 +507,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__p2kh__descriptor_and_segwit)
     BOOST_REQUIRE_EQUAL(as_text(segwit.at("type")), "witness_v0_scripthash");
     BOOST_REQUIRE(as_text(segwit.at("address")).starts_with("bc1q"));
     BOOST_REQUIRE(segwit.as_object().contains("p2sh-segwit"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__undecodable__nonstandard)
+{
+    const auto response = rpc("decodescript", "[\"01\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("type").as_string(), "nonstandard");
+    BOOST_REQUIRE_EQUAL(result.at("desc").as_string().subview(0, 8), "raw(01)#");
+    BOOST_REQUIRE(!result.as_object().contains("p2sh"));
+    BOOST_REQUIRE(!result.as_object().contains("segwit"));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__witness_program__no_segwit)
