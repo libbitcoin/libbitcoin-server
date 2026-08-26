@@ -28,8 +28,7 @@ namespace server {
 
 using namespace system;
 
-// bitcoind reports the median time past of the CHILD of the given block (its
-// window includes the block's own timestamp). Reproduced for compatibility.
+// bitcoind's mtp window includes the block's own timestamp (reproduced).
 uint32_t protocol_bitcoind::median_time_past(const node::query& query,
     const database::header_link& link) NOEXCEPT
 {

@@ -752,8 +752,8 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
     if (ec)
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
+            zero);
         return;
     }
 
@@ -787,8 +787,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     if (type == set_hash::muhash)
         result.emplace("muhash", encode_hash(digest));
 
-    POST(complete_scan, code{},
-        std::move(result), 512);
+    POST(complete_scan, code{}, std::move(result), 512);
 }
 
 bool protocol_bitcoind_blockchain::handle_prune_block_chain(const code& ec,
@@ -943,16 +942,16 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (ec)
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
+            zero);
         return;
     }
 
     // A reorganization across the pinned top voids the scan.
     if (!query.is_confirmed_block(link))
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), zero);
+        POST(complete_scan, error::bitcoind::internal_error, std::move(result),
+            zero);
         return;
     }
 
@@ -1002,8 +1001,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         { "total_amount", to_floating(amount) / chain::satoshi_per_bitcoin }
     };
 
-    POST(complete_scan, code{},
-        std::move(result), size);
+    POST(complete_scan, code{}, std::move(result), size);
 }
 
 void protocol_bitcoind_blockchain::complete_scan(const code& ec,
@@ -1229,10 +1227,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
 
     if (!query.is_coalesced())
     {
-        // The candidate chain is validated to the fork point (confirmed) plus
-        // the contiguously validated span above it. This does not imply
-        // confirmability, which is not determined until blocks are
-        // reorganized into the confirmed chain.
+        // Validated above the fork point does not imply confirmability.
         size_t fork{};
         const auto span = query.get_validated_fork(fork,
             system_settings().top_checkpoint().height());

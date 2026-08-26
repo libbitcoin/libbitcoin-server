@@ -400,10 +400,8 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Indexes track the confirmed chain only (no pool txs until v5 tx pool).
-    // tx lookup is always available (all txs are archived).
-    // synced: current chain (not a stale checkpoint) and confirmation has
-    // coalesced with the candidate top (no stronger blocks pending).
+    // Indexes track the confirmed chain only; all txs are archived (lookup).
+    // synced: current chain and confirmation coalesced with the candidate top.
     const auto& query = archive();
     const object_t status
     {

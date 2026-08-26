@@ -337,8 +337,7 @@ code protocol_bitcoind_transaction::build_transaction(chain::transaction& out,
         return error::bitcoind::success;
     };
 
-    // bitcoind accepts outputs as one object or an array of objects (which
-    // permits address repetition).
+    // outputs is one object or an array of objects (permits repeated address).
     if (std::holds_alternative<object_t>(outputs.value()))
     {
         for (const auto& pair: std::get<object_t>(outputs.value()))

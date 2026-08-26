@@ -275,8 +275,7 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
     send_result(std::move(out), size);
 }
 
-// An injected ping would violate channel pong correlation, and there is no
-// peer timing instrumentation to serve, so this is a no-op (null result).
+// An injected ping would violate channel pong correlation (no-op).
 bool protocol_bitcoind_network::handle_ping(const code& ec,
     rpc_interface::ping) NOEXCEPT
 {
