@@ -235,8 +235,10 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
         return true;
     }
 
-    // bitcoind reports an already-stored block as a duplicate result.
-    if (!archive().to_header(block->hash()).is_terminal())
+    // bitcoind reports an already-stored block as a duplicate result. A known
+    // header without its block still organizes (the submitheader flow).
+    const auto link = archive().to_header(block->hash());
+    if (!link.is_terminal() && archive().is_associated(link))
     {
         send_result(std::string{ "duplicate" }, 32);
         return true;
