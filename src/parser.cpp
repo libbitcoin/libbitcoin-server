@@ -93,6 +93,7 @@ parser::parser(system::chain::selection context,
     configured.database.turbo = true;
 
     // load factors are set to 2.5 @ 950K (except duplicate).
+    // expected are element counts @ 950K, deriving filter k at create.
     // sizes are set to 1% of measured pruned body @ 950K (tiny tables 100%).
 
     // Only used for electrum queries (255 is optimal otherwise).
@@ -101,6 +102,7 @@ parser::parser(system::chain::selection context,
     // archive
 
     configured.database.header.buckets = 385'181;
+    configured.database.header.expected = 962'953;
     configured.database.header.size = 93'406'247;
     configured.database.header.rate = 1;
 
@@ -109,17 +111,20 @@ parser::parser(system::chain::selection context,
     configured.database.txs.rate = 1;
 
     configured.database.tx.buckets = 543'948'678;
+    configured.database.tx.expected = 1'359'871'695;
     configured.database.tx.size = 870'317'885;
     configured.database.tx.rate = 1;
 
     // ins (required)
     configured.database.ins.buckets = 1'345'386'901;
+    configured.database.ins.expected = 3'363'467'253;
     configured.database.ins.size = 1'749'002'971;
     configured.database.ins.rate = 1;
 
     // outs (optional)
     ////configured.database.outs.buckets = 1'496'771'635;
     configured.database.outs.buckets = 0;
+    configured.database.outs.expected = 3'741'929'088;
     configured.database.outs.size = 336'773'618;
     configured.database.outs.rate = 1;
 
@@ -136,6 +141,7 @@ parser::parser(system::chain::selection context,
     configured.database.confirmed.rate = 1;
 
     configured.database.strong_tx.buckets = 543'948'678;
+    configured.database.strong_tx.expected = 1'359'871'695;
     configured.database.strong_tx.size = 149'585'887;
     configured.database.strong_tx.rate = 1;
 
@@ -155,6 +161,7 @@ parser::parser(system::chain::selection context,
     configured.database.prevout.rate = 1;
 
     configured.database.duplicate.buckets = 1024;
+    configured.database.duplicate.expected = 0;
     configured.database.duplicate.size = 0;
     configured.database.duplicate.rate = 1;
 
@@ -164,6 +171,7 @@ parser::parser(system::chain::selection context,
 
     // unused in v4
     configured.database.validated_tx.buckets = 0;
+    configured.database.validated_tx.expected = 0;
     configured.database.validated_tx.size = 0;
     configured.database.validated_tx.rate = 1;
 
@@ -1658,6 +1666,11 @@ options_metadata parser::load_settings() THROWS
         "The number of buckets in the archive_header table head, defaults to '385181'."
     )
     (
+        "table.header.expected",
+        value<uint64_t>(&configured.database.header.expected),
+        "The expected element count of the archive_header table, defaults to '962953'."
+    )
+    (
         "table.header.size",
         value<uint64_t>(&configured.database.header.size),
         "The minimum allocation of the archive_header table body, defaults to '93406247'."
@@ -1699,6 +1712,11 @@ options_metadata parser::load_settings() THROWS
         "The number of buckets in the archive_ins table head, defaults to '1345386901'."
     )
     (
+        "table.ins.expected",
+        value<uint64_t>(&configured.database.ins.expected),
+        "The expected element count of the archive_ins table, defaults to '3363467253'."
+    )
+    (
         "table.ins.size",
         value<uint64_t>(&configured.database.ins.size),
         "The minimum allocation of the archive_ins table body, defaults to '1749002971'."
@@ -1716,6 +1734,11 @@ options_metadata parser::load_settings() THROWS
         "The number of buckets in the archive_outs table head, defaults to '0' (0 disables address index)."
     )
     (
+        "table.outs.expected",
+        value<uint64_t>(&configured.database.outs.expected),
+        "The expected element count of the archive_outs table, defaults to '3741929088'."
+    )
+    (
         "table.outs.size",
         value<uint64_t>(&configured.database.outs.size),
         "The minimum allocation of the archive_outs table body, defaults to '336773618'."
@@ -1731,6 +1754,11 @@ options_metadata parser::load_settings() THROWS
         "table.tx.buckets",
         value<uint32_t>(&configured.database.tx.buckets),
         "The number of buckets in the archive_tx table head, defaults to '543948678'."
+    )
+    (
+        "table.tx.expected",
+        value<uint64_t>(&configured.database.tx.expected),
+        "The expected element count of the archive_tx table, defaults to '1359871695'."
     )
     (
         "table.tx.size",
@@ -1789,6 +1817,11 @@ options_metadata parser::load_settings() THROWS
         "table.strong.buckets",
         value<uint32_t>(&configured.database.strong_tx.buckets),
         "The number of buckets in the index_strong table head, defaults to '543948678'."
+    )
+    (
+        "table.strong.expected",
+        value<uint64_t>(&configured.database.strong_tx.expected),
+        "The expected element count of the index_strong table, defaults to '1359871695'."
     )
     (
         "table.strong.size",
@@ -1873,6 +1906,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum number of buckets in the cache_duplicate table head, defaults to '1024'."
     )
     (
+        "table.duplicate.expected",
+        value<uint64_t>(&configured.database.duplicate.expected),
+        "The expected element count of the cache_duplicate table, defaults to '0'."
+    )
+    (
         "table.duplicate.size",
         value<uint64_t>(&configured.database.duplicate.size),
         "The minimum allocation of the cache_duplicate table body, defaults to '0'."
@@ -1905,6 +1943,11 @@ options_metadata parser::load_settings() THROWS
         "table.validated_tx.buckets",
         value<uint32_t>(&configured.database.validated_tx.buckets),
         "The number of buckets in the validated_tx table head, defaults to '0' (0 disables)."
+    )
+    (
+        "table.validated_tx.expected",
+        value<uint64_t>(&configured.database.validated_tx.expected),
+        "The expected element count of the validated_tx table, defaults to '0'."
     )
     (
         "table.validated_tx.size",
