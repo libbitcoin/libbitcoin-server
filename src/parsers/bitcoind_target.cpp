@@ -253,8 +253,8 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         return error::success;
     }
 
-    // /rest/blockfilter/<type>/<hash>.<ext> and blockfilterheaders likewise.
-    if (target == "blockfilter" || target == "blockfilterheaders")
+    // /rest/blockfilter/<type>/<hash>.<ext>
+    if (target == "blockfilter")
     {
         if (segment == segments.size())
             return error::missing_target;
@@ -275,11 +275,46 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         if (!hash)
             return error::invalid_hash;
 
-        method = target == "blockfilter" ? "block_filter" :
-            "block_filter_headers";
+        method = "block_filter";
         params["media"] = media;
         params["hash"] = hash;
         params["type"] = 0_u8;
+        return error::success;
+    }
+
+    // /rest/blockfilterheaders/<type>/<hash>.<ext>?count=<count> (count
+    // defaults to 5) and the legacy .../<type>/<count>/<hash>.<ext> form.
+    if (target == "blockfilterheaders")
+    {
+        if (segment == segments.size())
+            return error::missing_target;
+
+        // libbitcoin supports only the "basic" (neutrino) filter type.
+        if (segments[segment++] != "basic")
+            return error::invalid_target;
+
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        uint32_t count{ 5 };
+        if ((segments.size() - segment > one) &&
+            !to_number(count, segments[segment++]))
+            return error::invalid_number;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
+            return error::invalid_target;
+
+        const auto hash = to_hash(name);
+        if (!hash)
+            return error::invalid_hash;
+
+        method = "block_filter_headers";
+        params["media"] = media;
+        params["hash"] = hash;
+        params["type"] = 0_u8;
+        params["count"] = count;
         return error::success;
     }
 

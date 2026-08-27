@@ -277,6 +277,17 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_basic__block_f
     BOOST_REQUIRE(!bitcoind_target(out, path));
     BOOST_REQUIRE_EQUAL(out.method, "block_filter_headers");
     BOOST_REQUIRE_EQUAL(std::get<uint8_t>(params_of(out).at("type").value()), 0u);
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 5u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_count__legacy_form)
+{
+    request_t out{};
+    const auto path = "/rest/blockfilterheaders/basic/7/" + test_hash + ".json";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE_EQUAL(out.method, "block_filter_headers");
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 7u);
+    BOOST_REQUIRE_EQUAL(*hash_of(params_of(out)), expected_hash);
 }
 
 // blockpart

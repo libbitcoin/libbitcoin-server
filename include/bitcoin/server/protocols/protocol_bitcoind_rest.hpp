@@ -76,7 +76,8 @@ protected:
         uint8_t media, const system::hash_cptr& hash, uint8_t type) NOEXCEPT;
     bool handle_get_block_filter_headers(const code& ec,
         rest_interface::block_filter_headers, uint8_t media,
-        const system::hash_cptr& hash, uint8_t type) NOEXCEPT;
+        const system::hash_cptr& hash, uint8_t type,
+        uint32_t count) NOEXCEPT;
     bool handle_get_chain_information(const code& ec,
         rest_interface::chain_information) NOEXCEPT;
     bool handle_get_deployment_info(const code& ec,

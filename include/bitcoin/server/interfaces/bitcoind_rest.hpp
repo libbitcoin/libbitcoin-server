@@ -41,7 +41,7 @@ struct bitcoind_rest_methods
 
         // client filters
         method<"block_filter", uint8_t, system::hash_cptr, uint8_t>{ "media", "hash", "type" },
-        method<"block_filter_headers", uint8_t, system::hash_cptr, uint8_t>{ "media", "hash", "type" },
+        method<"block_filter_headers", uint8_t, system::hash_cptr, uint8_t, uint32_t>{ "media", "hash", "type", "count" },
 
         // unspent outputs
         method<"get_utxos", uint8_t, system::hash_cptr, uint8_t>{ "media", "hash", "type" },

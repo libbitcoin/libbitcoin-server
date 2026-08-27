@@ -60,7 +60,7 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_part, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_BITCOIND(handle_get_block_spent_tx_outputs, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_block_filter, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_tx, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
@@ -558,7 +558,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
 
 bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
     rest_interface::block_filter_headers, uint8_t media, const hash_cptr& hash,
-    uint8_t) NOEXCEPT
+    uint8_t, uint32_t count) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -570,27 +570,76 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
         return true;
     }
 
-    hash_digest filter_head{};
-    if (!query.get_filter_head(filter_head, query.to_header(*hash)))
+    // bitcoind serves filter headers only for a hash on the active chain.
+    const auto header_link = query.to_header(*hash);
+    if (!query.is_confirmed_block(header_link))
     {
         send_not_found();
         return true;
     }
 
+    size_t height{};
+    if (!query.get_height(height, header_link))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    constexpr size_t maximum_headers = 2000;
+    const auto limit = lesser(count, maximum_headers);
+    const auto links = query.get_confirmed_headers(height, limit);
+    if (links.empty())
+    {
+        send_not_found();
+        return true;
+    }
+
+    hashes filter_heads{};
+    filter_heads.reserve(links.size());
+    for (const auto& link: links)
+    {
+        hash_digest filter_head{};
+        if (!query.get_filter_head(filter_head, link))
+        {
+            send_internal_server_error(database::error::integrity);
+            return true;
+        }
+
+        filter_heads.push_back(filter_head);
+    }
+
     switch (media)
     {
         case data:
-            send_data(to_chunk(filter_head));
+        {
+            data_chunk out{};
+            out.reserve(filter_heads.size() * hash_size);
+            for (const auto& head: filter_heads)
+                out.insert(out.end(), head.begin(), head.end());
+
+            send_data(std::move(out));
             return true;
+        }
         case text:
-            send_text(encode_base16(filter_head));
+        {
+            std::string out{};
+            out.reserve(filter_heads.size() * two * hash_size);
+            for (const auto& head: filter_heads)
+                out += encode_base16(head);
+
+            send_text(std::move(out));
             return true;
+        }
         case json:
-            send_json(object
-            {
-                { "filter_header", encode_hash(filter_head) }
-            }, two * hash_size);
+        {
+            array models{};
+            for (const auto& head: filter_heads)
+                models.emplace_back(encode_hash(head));
+
+            const auto size = filter_heads.size() * two * hash_size;
+            send_json(std::move(models), size);
             return true;
+        }
     }
 
     send_not_found();
