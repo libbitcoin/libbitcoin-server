@@ -133,6 +133,33 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__block_notxdetails_json__txid_list)
     BOOST_REQUIRE(result.at("tx").at(0).is_string());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_json__block1_coinbase__hit)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto result = rest_json("/rest/getutxos/" + txid + "-0.json");
+    BOOST_REQUIRE_EQUAL(result.at("chainHeight").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chaintipHash")), block9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bitmap")), "1");
+    BOOST_REQUIRE_EQUAL(result.at("utxos").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(result.at("utxos").at(0).at("height").as_int64(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_json__checkmempool_miss__empty)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto result = rest_json("/rest/getutxos/checkmempool/" + txid + "-1.json");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bitmap")), "0");
+    BOOST_REQUIRE(result.at("utxos").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_bin__miss__bip64_framing)
+{
+    const std::string unknown(64, '1');
+    const auto wire = rest_data("/rest/getutxos/" + unknown + "-0.bin");
+    BOOST_REQUIRE_EQUAL(wire.size(), 39u);
+    BOOST_REQUIRE_EQUAL(wire.at(0), 9u);
+}
+
 // A coinbase-only block undo is one empty per-tx prevout list.
 BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_json__block9__coinbase_only)
 {

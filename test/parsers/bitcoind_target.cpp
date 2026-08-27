@@ -74,6 +74,11 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
         { "/rest/block/" + test_hash + ".txt", server::error::invalid_target },
         { "/rest/block/nothex.json", server::error::invalid_hash },
         { "/rest/block/notxdetails", server::error::missing_hash },
+        { "/rest/getutxos", server::error::missing_target },
+        { "/rest/getutxos/checkmempool", server::error::missing_target },
+        { "/rest/getutxos/nothex-0.json", server::error::invalid_hash },
+        { "/rest/getutxos/" + test_hash + "-abc.json", server::error::invalid_number },
+        { "/rest/getutxos/" + test_hash + ".json", server::error::invalid_hash },
         { "/rest/spenttxouts", server::error::missing_hash },
         { "/rest/spenttxouts/nothex.json", server::error::invalid_hash },
         { "/rest/blockhashbyheight", server::error::missing_target },
@@ -173,6 +178,18 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_notxdetails__block_txs)
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(object.size(), 2u);
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__getutxos__outpoints)
+{
+    request_t out{};
+    const auto path = "/rest/getutxos/checkmempool/" + test_hash + "-0/" + test_hash + "-7.json";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE_EQUAL(out.method, "get_utxos");
+
+    const auto& object = params_of(out);
+    BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
+    BOOST_REQUIRE_EQUAL(std::get<array_t>(object.at("outpoints").value()).size(), 2u);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__spenttxouts__block_spent_tx_outputs)

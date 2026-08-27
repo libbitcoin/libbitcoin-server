@@ -315,6 +315,53 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         return error::success;
     }
 
+    // /rest/getutxos[/checkmempool]/<txid>-<n>/.../<ext>
+    if (target == "getutxos")
+    {
+        if (segment == segments.size())
+            return error::missing_target;
+
+        // The mempool is empty, so the checkmempool option is ignored.
+        if (segments[segment] == "checkmempool")
+            ++segment;
+
+        if (segment == segments.size())
+            return error::missing_target;
+
+        uint8_t media{};
+        array_t outpoints{};
+        const auto last = sub1(segments.size());
+        for (; segment < segments.size(); ++segment)
+        {
+            std::string token{ segments[segment] };
+            if (segment == last &&
+                !split_leaf(token, media, segments[segment]))
+                return error::invalid_target;
+
+            const auto pair = split(token, "-", false, false);
+            if (pair.size() != two)
+                return error::invalid_hash;
+
+            const auto hash = to_hash(pair.front());
+            if (!hash)
+                return error::invalid_hash;
+
+            uint32_t index{};
+            if (!to_number(index, pair.back()))
+                return error::invalid_number;
+
+            object_t outpoint{};
+            outpoint["hash"] = hash;
+            outpoint["index"] = index;
+            outpoints.emplace_back(std::move(outpoint));
+        }
+
+        method = "get_utxos";
+        params["media"] = media;
+        params["outpoints"] = std::move(outpoints);
+        return error::success;
+    }
+
     // /rest/spenttxouts/<hash>.<ext>
     if (target == "spenttxouts")
     {

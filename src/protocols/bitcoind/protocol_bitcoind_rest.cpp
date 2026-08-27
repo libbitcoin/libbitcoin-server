@@ -63,6 +63,7 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_tx, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_utxos, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
     SUBSCRIBE_CHANNEL(get, handle_receive_get, _1, _2);
     network::protocol::start();
@@ -725,6 +726,137 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         { "mediantime", median_time(query, system_settings(), link) },
         { "pruned", node_settings().limited_blocks }
     }, 256);
+    return true;
+}
+
+// bitcoind's bip64 form: dummy version, height, output (all confirmed only).
+bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
+    rest_interface::get_utxos, uint8_t media,
+    const array_t& outpoints) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // bitcoind's bip64 outpoint limit.
+    constexpr size_t maximum_outpoints = 15;
+    if (outpoints.empty() || outpoints.size() > maximum_outpoints)
+    {
+        send_bad_request();
+        return true;
+    }
+
+    struct utxo { uint32_t height; chain::output::cptr out; };
+    const auto& query = archive();
+    std::vector<bool> hits{};
+    std::vector<utxo> utxos{};
+    for (const auto& item: outpoints)
+    {
+        const auto& fields = std::get<object_t>(item.value());
+        const auto& any = std::get<any_t>(fields.at("hash").value());
+        const auto hash = any.get<const hash_digest>();
+        const auto index = std::get<uint32_t>(fields.at("index").value());
+
+        const auto output_link = query.to_output(*hash, index);
+        const auto hit = !output_link.is_terminal() &&
+            query.is_confirmed_output(output_link) &&
+            !query.is_confirmed_spent(output_link);
+        hits.push_back(hit);
+        if (!hit)
+            continue;
+
+        size_t height{};
+        const auto output = query.get_output(output_link);
+        if (!output ||
+            !query.get_tx_height(height, query.to_output_tx(output_link)))
+        {
+            send_internal_server_error(database::error::integrity);
+            return true;
+        }
+
+        utxos.push_back({ possible_narrow_cast<uint32_t>(height), output });
+    }
+
+    const auto top = query.get_top_confirmed();
+    const auto top_hash = query.get_header_key(query.to_confirmed(top));
+
+    // The bip64 bitmap flags each outpoint hit, lsb first within each byte.
+    data_chunk bitmap(ceilinged_divide(hits.size(), 8u), 0x00);
+    for (size_t index = 0; index < hits.size(); ++index)
+        if (hits.at(index))
+            bitmap.at(index / 8u) |= possible_narrow_cast<uint8_t>(
+                shift_left(one, index % 8u));
+
+    auto size = sizeof(uint32_t) + hash_size +
+        variable_size(bitmap.size()) + bitmap.size() +
+        variable_size(utxos.size());
+    for (const auto& unspent: utxos)
+        size += two * sizeof(uint32_t) + unspent.out->serialized_size();
+
+    const auto serialize = [&](auto& writer) NOEXCEPT
+    {
+        writer.write_4_bytes_little_endian(
+            possible_narrow_cast<uint32_t>(top));
+        writer.write_bytes(top_hash);
+        writer.write_variable(bitmap.size());
+        writer.write_bytes(bitmap);
+        writer.write_variable(utxos.size());
+        for (const auto& unspent: utxos)
+        {
+            writer.write_4_bytes_little_endian(0);
+            writer.write_4_bytes_little_endian(unspent.height);
+            unspent.out->to_data(writer);
+        }
+    };
+
+    switch (media)
+    {
+        case data:
+        {
+            data_chunk out(size);
+            stream::out::fast sink{ out };
+            write::bytes::fast writer{ sink };
+            serialize(writer);
+            send_data(std::move(out));
+            return true;
+        }
+        case text:
+        {
+            std::string out(two * size, '\0');
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
+            serialize(writer);
+            send_text(std::move(out));
+            return true;
+        }
+        case json:
+        {
+            std::string bits{};
+            for (const auto hit: hits)
+                bits += hit ? "1" : "0";
+
+            array models{};
+            for (const auto& unspent: utxos)
+                models.emplace_back(object
+                {
+                    { "height", unspent.height },
+                    { "value", unspent.out->value() /
+                        to_floating(chain::satoshi_per_bitcoin) },
+                    { "scriptPubKey", value_from(bitcoind(
+                        unspent.out->script())) }
+                });
+
+            send_json(object
+            {
+                { "chainHeight", top },
+                { "chaintipHash", encode_hash(top_hash) },
+                { "bitmap", bits },
+                { "utxos", std::move(models) }
+            }, two * size);
+            return true;
+        }
+    }
+
+    send_not_found();
     return true;
 }
 

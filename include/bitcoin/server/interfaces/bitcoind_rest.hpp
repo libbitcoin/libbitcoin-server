@@ -43,9 +43,8 @@ struct bitcoind_rest_methods
         method<"block_filter", uint8_t, system::hash_cptr, uint8_t>{ "media", "hash", "type" },
         method<"block_filter_headers", uint8_t, system::hash_cptr, uint8_t, uint32_t>{ "media", "hash", "type", "count" },
 
-        // unspent outputs
-        method<"get_utxos", uint8_t, system::hash_cptr, uint8_t>{ "media", "hash", "type" },
-        method<"get_utxos_confirmed", uint8_t, system::hash_cptr, uint8_t>{ "media", "hash", "type" },
+        // unspent outputs (bip64)
+        method<"get_utxos", uint8_t, network::rpc::array_t>{ "media", "outpoints" },
 
         // mempool (json only)
         method<"mempool", optional<true>, optional<false>>{ "verbose", "sequence" },
@@ -78,13 +77,12 @@ struct bitcoind_rest_methods
     using block_filter = at<6>;
     using block_filter_headers = at<7>;
     using get_utxos = at<8>;
-    using get_utxos_confirmed = at<9>;
-    using mempool = at<10>;
-    using chain_information = at<11>;
-    using mempool_information = at<12>;
-    using fork_information = at<13>;
-    using tx = at<14>;
-    using deployment_info = at<15>;
+    using mempool = at<9>;
+    using chain_information = at<10>;
+    using mempool_information = at<11>;
+    using fork_information = at<12>;
+    using tx = at<13>;
+    using deployment_info = at<14>;
 };
 
 } // namespace interface
