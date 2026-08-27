@@ -105,6 +105,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp \
     ${srcdir}/../../src/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../src/serializers/bitcoind_coin.cpp \
+    ${srcdir}/../../src/serializers/bitcoind_deployments.cpp \
     ${srcdir}/../../src/serializers/bitcoind_json.cpp \
     ${srcdir}/../../src/serializers/bitcoind_psbt.cpp \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
@@ -229,6 +230,7 @@ include_bitcoin_server_serializers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_block_stats.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_coin.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_data.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_deployments.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_json.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_psbt.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/serializers.hpp

@@ -177,6 +177,7 @@
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_block_stats.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_coin.cpp" />
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_deployments.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_psbt.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
@@ -257,6 +258,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_block_stats.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_coin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_data.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_deployments.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_json.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_psbt.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\serializers.hpp" />

@@ -51,6 +51,29 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__chaininfo_json__main_nine)
     BOOST_REQUIRE_EQUAL(as_text(result.at("bestblockhash")), block9);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rest__deploymentinfo_json__top__height_nine)
+{
+    const auto result = rest_json("/rest/deploymentinfo.json");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+    BOOST_REQUIRE(result.at("deployments").is_object());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__deploymentinfo_json__block5__height_five)
+{
+    const auto result = rest_json("/rest/deploymentinfo/" + block5 + ".json");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block5);
+}
+
+// bitcoind reports an unknown deploymentinfo block as a bad request.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__deploymentinfo_unknown__bad_request)
+{
+    const std::string unknown(64, '1');
+    const auto result = rest_status("/rest/deploymentinfo/" + unknown + ".json");
+    BOOST_REQUIRE(result == bitcoind_setup_fixture::status::bad_request);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rest__block_json__block9_with_txs)
 {
     const auto result = rest_json("/rest/block/" + block9 + ".json");

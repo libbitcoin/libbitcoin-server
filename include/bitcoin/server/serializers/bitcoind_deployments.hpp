@@ -16,14 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
-#define LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
+#ifndef LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_DEPLOYMENTS_HPP
+#define LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_DEPLOYMENTS_HPP
 
-#include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
-#include <bitcoin/server/serializers/bitcoind_coin.hpp>
-#include <bitcoin/server/serializers/bitcoind_data.hpp>
-#include <bitcoin/server/serializers/bitcoind_deployments.hpp>
-#include <bitcoin/server/serializers/bitcoind_json.hpp>
-#include <bitcoin/server/serializers/bitcoind_psbt.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+/// The getdeploymentinfo result for the block at link/height.
+BCS_API network::rpc::object_t deployment_info(const node::query& query,
+    const system::settings& settings, const database::header_link& link,
+    size_t height) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

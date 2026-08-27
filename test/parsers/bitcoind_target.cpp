@@ -82,6 +82,8 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
         { "/rest/headers/abc/" + test_hash + ".json", server::error::invalid_number },
         { "/rest/headers/3", server::error::invalid_target },
         { "/rest/headers/3/nothex.json", server::error::invalid_hash },
+        { "/rest/deploymentinfo/nothex.json", server::error::invalid_hash },
+        { "/rest/deploymentinfo/" + test_hash + ".bin", server::error::invalid_target },
         { "/rest/blockfilter", server::error::missing_target },
         { "/rest/blockfilter/extended/" + test_hash + ".json", server::error::invalid_target },
         { "/rest/blockfilter/basic", server::error::missing_hash },
@@ -232,6 +234,25 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__headers_no_query__default_count)
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("count").value()), 5u);
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
+}
+
+// deploymentinfo
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__deploymentinfo__no_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_target(out, "/rest/deploymentinfo.json"));
+    BOOST_REQUIRE_EQUAL(out.method, "deployment_info");
+    BOOST_REQUIRE(params_of(out).empty());
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__deploymentinfo_hash__deployment_info)
+{
+    request_t out{};
+    const auto path = "/rest/deploymentinfo/" + test_hash + ".json";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE_EQUAL(out.method, "deployment_info");
+    BOOST_REQUIRE_EQUAL(*hash_of(params_of(out)), expected_hash);
 }
 
 // blockfilter

@@ -255,6 +255,9 @@
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_coin.cpp">
       <Filter>src\serializers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\serializers\bitcoind_deployments.cpp">
+      <Filter>src\serializers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_json.cpp">
       <Filter>src\serializers</Filter>
     </ClCompile>
@@ -489,6 +492,9 @@
       <Filter>include\bitcoin\server\serializers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_data.hpp">
+      <Filter>include\bitcoin\server\serializers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_deployments.hpp">
       <Filter>include\bitcoin\server\serializers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_json.hpp">

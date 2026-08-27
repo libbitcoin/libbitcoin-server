@@ -63,6 +63,7 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_tx, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
     SUBSCRIBE_CHANNEL(get, handle_receive_get, _1, _2);
     network::protocol::start();
 }
@@ -624,6 +625,39 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         { "mediantime", median_time(query, system_settings(), link) },
         { "pruned", node_settings().limited_blocks }
     }, 256);
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_deployment_info(const code& ec,
+    rest_interface::deployment_info,
+    const std::optional<hash_cptr>& hash) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    auto link = query.to_confirmed(query.get_top_confirmed());
+
+    // bitcoind reports an unknown block as a bad request here.
+    if (hash.has_value())
+    {
+        link = query.to_header(*hash.value());
+        if (link.is_terminal())
+        {
+            send_bad_request();
+            return true;
+        }
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    const auto doc = deployment_info(query, system_settings(), link, height);
+    send_json(value_from(doc), 512);
     return true;
 }
 

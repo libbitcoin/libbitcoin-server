@@ -87,6 +87,7 @@
 #include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
 #include <bitcoin/server/serializers/bitcoind_coin.hpp>
 #include <bitcoin/server/serializers/bitcoind_data.hpp>
+#include <bitcoin/server/serializers/bitcoind_deployments.hpp>
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
 #include <bitcoin/server/serializers/bitcoind_psbt.hpp>
 #include <bitcoin/server/serializers/serializers.hpp>

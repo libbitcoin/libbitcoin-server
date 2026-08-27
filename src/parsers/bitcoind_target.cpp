@@ -161,6 +161,28 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         return error::success;
     }
 
+    // /rest/deploymentinfo.json and /rest/deploymentinfo/<hash>.json
+    if (target == "deploymentinfo" || target == "deploymentinfo.json")
+    {
+        method = "deployment_info";
+        if (target == "deploymentinfo" && segment != segments.size())
+        {
+            std::string name{};
+            uint8_t media{};
+            if (!split_leaf(name, media, segments[segment++]) ||
+                media != to_value(media_type::application_json))
+                return error::invalid_target;
+
+            const auto hash = to_hash(name);
+            if (!hash)
+                return error::invalid_hash;
+
+            params["hash"] = hash;
+        }
+
+        return error::success;
+    }
+
     // /rest/tx/<txid>.<ext>
     if (target == "tx")
     {

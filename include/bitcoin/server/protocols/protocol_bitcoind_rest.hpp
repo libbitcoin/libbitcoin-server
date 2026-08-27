@@ -79,6 +79,9 @@ protected:
         const system::hash_cptr& hash, uint8_t type) NOEXCEPT;
     bool handle_get_chain_information(const code& ec,
         rest_interface::chain_information) NOEXCEPT;
+    bool handle_get_deployment_info(const code& ec,
+        rest_interface::deployment_info,
+        const std::optional<system::hash_cptr>& hash) NOEXCEPT;
 
     /// REST raw-http response senders (not json-rpc enveloped).
     void send_data(system::data_chunk&& bytes) NOEXCEPT;
