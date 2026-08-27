@@ -25,6 +25,8 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 
 namespace libbitcoin {

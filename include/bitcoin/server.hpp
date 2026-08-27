@@ -52,14 +52,11 @@
 #include <bitcoin/server/interfaces/types.hpp>
 #include <bitcoin/server/parsers/admin_query.hpp>
 #include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_block_stats.hpp>
-#include <bitcoin/server/parsers/bitcoind_descriptor.hpp>
-#include <bitcoin/server/parsers/bitcoind_merkle.hpp>
 #include <bitcoin/server/parsers/bitcoind_query.hpp>
+#include <bitcoin/server/parsers/bitcoind_scan.hpp>
 #include <bitcoin/server/parsers/bitcoind_script.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/electrum_version.hpp>
 #include <bitcoin/server/parsers/native_query.hpp>
 #include <bitcoin/server/parsers/native_target.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
@@ -87,9 +84,20 @@
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
+#include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
+#include <bitcoin/server/serializers/bitcoind_coin.hpp>
+#include <bitcoin/server/serializers/bitcoind_data.hpp>
+#include <bitcoin/server/serializers/bitcoind_deployments.hpp>
+#include <bitcoin/server/serializers/bitcoind_json.hpp>
+#include <bitcoin/server/serializers/bitcoind_psbt.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
 #include <bitcoin/server/sessions/session.hpp>
 #include <bitcoin/server/sessions/session_handshake.hpp>
 #include <bitcoin/server/sessions/session_server.hpp>
 #include <bitcoin/server/sessions/sessions.hpp>
+#include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
+#include <bitcoin/server/utilities/bitcoind_merkle.hpp>
+#include <bitcoin/server/utilities/electrum_version.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 #endif

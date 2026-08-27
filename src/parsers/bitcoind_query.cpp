@@ -56,14 +56,17 @@ bool bitcoind_query(rpc::request_t& out, const std::string& target) NOEXCEPT
     auto query = uri.decode_query();
     auto& params = std::get<rpc::object_t>(out.params.value());
 
-    // Count is optional (defaulted by the target parser where applicable).
-    if (const auto count = query.find("count"); count != query.end())
+    // Decimal parameters, defaulted or required by the target interface.
+    for (const auto& name: { "count", "offset", "size" })
     {
-        uint32_t value{};
-        if (!to_number(value, count->second))
-            return false;
+        if (const auto it = query.find(name); it != query.end())
+        {
+            uint32_t value{};
+            if (!to_number(value, it->second))
+                return false;
 
-        params["count"] = value;
+            params[name] = value;
+        }
     }
 
     return true;

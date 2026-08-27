@@ -23,6 +23,8 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -58,9 +60,11 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_part, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_BITCOIND(handle_get_block_spent_tx_outputs, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_block_filter, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_tx, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_utxos, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
     SUBSCRIBE_CHANNEL(get, handle_receive_get, _1, _2);
     network::protocol::start();
 }
@@ -130,32 +134,18 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
-    if (rest_dispatcher_.notify(model))
-        send_not_found();
+    // Required parameters may be query string sourced (e.g. blockpart).
+    if (const auto fault = rest_dispatcher_.notify(model))
+    {
+        if (fault == network::error::missing_parameter)
+            send_bad_request(*get);
+        else
+            send_not_found();
+    }
 }
 
-// Serializers.
+// Media types.
 // ----------------------------------------------------------------------------
-
-template <typename Object, typename ...Args>
-data_chunk to_data(const Object& object, size_t size, Args&&... args) NOEXCEPT
-{
-    data_chunk out(size);
-    stream::out::fast sink{ out };
-    write::bytes::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    return out;
-}
-
-template <typename Object, typename ...Args>
-std::string to_text(const Object& object, size_t size, Args&&... args) NOEXCEPT
-{
-    std::string out(two * size, '\0');
-    stream::out::fast sink{ out };
-    write::base16::fast writer{ sink };
-    object.to_data(writer, std::forward<Args>(args)...);
-    return out;
-}
 
 constexpr auto data = to_value(http::media_type::application_octet_stream);
 constexpr auto json = to_value(http::media_type::application_json);
@@ -440,16 +430,16 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
         return true;
     }
 
+    // bitcoind reports an out of range part as a bad request.
     const auto full = to_data(*block, block->serialized_size(witness), witness);
-    if (!is_lesser(offset, full.size()))
+    if (ceilinged_add<size_t>(offset, size) > full.size())
     {
-        send_not_found();
+        send_bad_request();
         return true;
     }
 
-    const auto begin = full.begin();
-    const auto stop = lesser(ceilinged_add<size_t>(offset, size), full.size());
-    data_chunk part{ std::next(begin, offset), std::next(begin, stop) };
+    const auto begin = std::next(full.begin(), offset);
+    data_chunk part{ begin, std::next(begin, size) };
     switch (media)
     {
         case data:
@@ -460,8 +450,8 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
             return true;
     }
 
-    // block_part is bin|hex only (json not supported).
-    send_not_found();
+    // block_part is bin|hex only (json is a bad request, as bitcoind).
+    send_bad_request();
     return true;
 }
 
@@ -478,23 +468,55 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
         return true;
     }
 
+    // bitcoind serves spent outputs from undo data (confirmed blocks only).
     const auto& query = archive();
     const auto link = query.to_header(*hash);
-    if (!query.is_associated(link))
+    if (!query.is_confirmed_block(link))
     {
         send_not_found();
         return true;
     }
 
-    // Resolve every prevout spent by the block's non-coinbase transactions.
-    chain::output_cptrs spent{};
-    for (const auto& out: query.to_block_prevouts(link))
-        if (const auto output = query.get_output(out))
-            spent.push_back(output);
+    // Prevouts grouped per spending tx (the undo form).
+    std::vector<chain::output_cptrs> spent{};
+    for (const auto& tx: query.to_spending_txs(link))
+    {
+        chain::output_cptrs outs{};
+        for (const auto& out: query.to_prevouts(tx))
+        {
+            const auto output = query.get_output(out);
+            if (!output)
+            {
+                send_internal_server_error(database::error::integrity);
+                return true;
+            }
 
-    size_t size{};
-    for (const auto& output: spent)
-        size += output->serialized_size();
+            outs.push_back(output);
+        }
+
+        spent.push_back(std::move(outs));
+    }
+
+    // The tx count includes the coinbase, which has no prevouts.
+    auto size = variable_size(add1(spent.size())) + variable_size(zero);
+    for (const auto& outs: spent)
+    {
+        size += variable_size(outs.size());
+        for (const auto& output: outs)
+            size += output->serialized_size();
+    }
+
+    const auto serialize = [&spent](auto& writer) NOEXCEPT
+    {
+        writer.write_variable(add1(spent.size()));
+        writer.write_variable(zero);
+        for (const auto& outs: spent)
+        {
+            writer.write_variable(outs.size());
+            for (const auto& output: outs)
+                output->to_data(writer);
+        }
+    };
 
     switch (media)
     {
@@ -503,9 +525,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
             data_chunk out(size);
             stream::out::fast sink{ out };
             write::bytes::fast writer{ sink };
-            for (const auto& output: spent)
-                output->to_data(writer);
-
+            serialize(writer);
             send_data(std::move(out));
             return true;
         }
@@ -514,15 +534,30 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
             std::string out(two * size, '\0');
             stream::out::fast sink{ out };
             write::base16::fast writer{ sink };
-            for (const auto& output: spent)
-                output->to_data(writer);
-
+            serialize(writer);
             send_text(std::move(out));
             return true;
         }
         case json:
         {
-            send_json(value_from(bitcoind(spent)), two * size);
+            array models{};
+            models.emplace_back(array{});
+            for (const auto& outs: spent)
+            {
+                array prevouts{};
+                for (const auto& output: outs)
+                    prevouts.emplace_back(object
+                    {
+                        { "value", output->value() /
+                            to_floating(chain::satoshi_per_bitcoin) },
+                        { "scriptPubKey", value_from(bitcoind(
+                            output->script())) }
+                    });
+
+                models.emplace_back(std::move(prevouts));
+            }
+
+            send_json(std::move(models), two * size);
             return true;
         }
     }
@@ -575,7 +610,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
 
 bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
     rest_interface::block_filter_headers, uint8_t media, const hash_cptr& hash,
-    uint8_t) NOEXCEPT
+    uint8_t, uint32_t count) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -587,27 +622,76 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
         return true;
     }
 
-    hash_digest filter_head{};
-    if (!query.get_filter_head(filter_head, query.to_header(*hash)))
+    // bitcoind serves filter headers only for a hash on the active chain.
+    const auto header_link = query.to_header(*hash);
+    if (!query.is_confirmed_block(header_link))
     {
         send_not_found();
         return true;
     }
 
+    size_t height{};
+    if (!query.get_height(height, header_link))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    constexpr size_t maximum_headers = 2000;
+    const auto limit = lesser(count, maximum_headers);
+    const auto links = query.get_confirmed_headers(height, limit);
+    if (links.empty())
+    {
+        send_not_found();
+        return true;
+    }
+
+    hashes filter_heads{};
+    filter_heads.reserve(links.size());
+    for (const auto& link: links)
+    {
+        hash_digest filter_head{};
+        if (!query.get_filter_head(filter_head, link))
+        {
+            send_internal_server_error(database::error::integrity);
+            return true;
+        }
+
+        filter_heads.push_back(filter_head);
+    }
+
     switch (media)
     {
         case data:
-            send_data(to_chunk(filter_head));
+        {
+            data_chunk out{};
+            out.reserve(filter_heads.size() * hash_size);
+            for (const auto& head: filter_heads)
+                out.insert(out.end(), head.begin(), head.end());
+
+            send_data(std::move(out));
             return true;
+        }
         case text:
-            send_text(encode_base16(filter_head));
+        {
+            std::string out{};
+            out.reserve(filter_heads.size() * two * hash_size);
+            for (const auto& head: filter_heads)
+                out += encode_base16(head);
+
+            send_text(std::move(out));
             return true;
+        }
         case json:
-            send_json(object
-            {
-                { "filter_header", encode_hash(filter_head) }
-            }, two * hash_size);
+        {
+            array models{};
+            for (const auto& head: filter_heads)
+                models.emplace_back(encode_hash(head));
+
+            const auto size = filter_heads.size() * two * hash_size;
+            send_json(std::move(models), size);
             return true;
+        }
     }
 
     send_not_found();
@@ -642,6 +726,170 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         { "mediantime", median_time(query, system_settings(), link) },
         { "pruned", node_settings().limited_blocks }
     }, 256);
+    return true;
+}
+
+// bitcoind's bip64 form: dummy version, height, output (all confirmed only).
+bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
+    rest_interface::get_utxos, uint8_t media,
+    const array_t& outpoints) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    // bitcoind's bip64 outpoint limit.
+    constexpr size_t maximum_outpoints = 15;
+    if (outpoints.empty() || outpoints.size() > maximum_outpoints)
+    {
+        send_bad_request();
+        return true;
+    }
+
+    struct utxo { uint32_t height; chain::output::cptr out; };
+    const auto& query = archive();
+    std::vector<bool> hits{};
+    std::vector<utxo> utxos{};
+    for (const auto& item: outpoints)
+    {
+        const auto& fields = std::get<object_t>(item.value());
+        const auto& any = std::get<any_t>(fields.at("hash").value());
+        const auto hash = any.get<const hash_digest>();
+        const auto index = std::get<uint32_t>(fields.at("index").value());
+
+        const auto output_link = query.to_output(*hash, index);
+        const auto hit = !output_link.is_terminal() &&
+            query.is_confirmed_output(output_link) &&
+            !query.is_confirmed_spent(output_link);
+        hits.push_back(hit);
+        if (!hit)
+            continue;
+
+        size_t height{};
+        const auto output = query.get_output(output_link);
+        if (!output ||
+            !query.get_tx_height(height, query.to_output_tx(output_link)))
+        {
+            send_internal_server_error(database::error::integrity);
+            return true;
+        }
+
+        utxos.push_back({ possible_narrow_cast<uint32_t>(height), output });
+    }
+
+    const auto top = query.get_top_confirmed();
+    const auto top_hash = query.get_header_key(query.to_confirmed(top));
+
+    // The bip64 bitmap flags each outpoint hit, lsb first within each byte.
+    data_chunk bitmap(ceilinged_divide(hits.size(), 8u), 0x00);
+    for (size_t index = 0; index < hits.size(); ++index)
+        if (hits.at(index))
+            bitmap.at(index / 8u) |= possible_narrow_cast<uint8_t>(
+                shift_left(one, index % 8u));
+
+    auto size = sizeof(uint32_t) + hash_size +
+        variable_size(bitmap.size()) + bitmap.size() +
+        variable_size(utxos.size());
+    for (const auto& unspent: utxos)
+        size += two * sizeof(uint32_t) + unspent.out->serialized_size();
+
+    const auto serialize = [&](auto& writer) NOEXCEPT
+    {
+        writer.write_4_bytes_little_endian(
+            possible_narrow_cast<uint32_t>(top));
+        writer.write_bytes(top_hash);
+        writer.write_variable(bitmap.size());
+        writer.write_bytes(bitmap);
+        writer.write_variable(utxos.size());
+        for (const auto& unspent: utxos)
+        {
+            writer.write_4_bytes_little_endian(0);
+            writer.write_4_bytes_little_endian(unspent.height);
+            unspent.out->to_data(writer);
+        }
+    };
+
+    switch (media)
+    {
+        case data:
+        {
+            data_chunk out(size);
+            stream::out::fast sink{ out };
+            write::bytes::fast writer{ sink };
+            serialize(writer);
+            send_data(std::move(out));
+            return true;
+        }
+        case text:
+        {
+            std::string out(two * size, '\0');
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
+            serialize(writer);
+            send_text(std::move(out));
+            return true;
+        }
+        case json:
+        {
+            std::string bits{};
+            for (const auto hit: hits)
+                bits += hit ? "1" : "0";
+
+            array models{};
+            for (const auto& unspent: utxos)
+                models.emplace_back(object
+                {
+                    { "height", unspent.height },
+                    { "value", unspent.out->value() /
+                        to_floating(chain::satoshi_per_bitcoin) },
+                    { "scriptPubKey", value_from(bitcoind(
+                        unspent.out->script())) }
+                });
+
+            send_json(object
+            {
+                { "chainHeight", top },
+                { "chaintipHash", encode_hash(top_hash) },
+                { "bitmap", bits },
+                { "utxos", std::move(models) }
+            }, two * size);
+            return true;
+        }
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_deployment_info(const code& ec,
+    rest_interface::deployment_info,
+    const std::optional<hash_cptr>& hash) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    auto link = query.to_confirmed(query.get_top_confirmed());
+
+    // bitcoind reports an unknown block as a bad request here.
+    if (hash.has_value())
+    {
+        link = query.to_header(*hash.value());
+        if (link.is_terminal())
+        {
+            send_bad_request();
+            return true;
+        }
+    }
+
+    size_t height{};
+    if (!query.get_height(height, link))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    const auto doc = deployment_info(query, system_settings(), link, height);
+    send_json(value_from(doc), 512);
     return true;
 }
 

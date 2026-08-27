@@ -16,17 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
+#ifndef LIBBITCOIN_SERVER_UTILITIES_BITCOIND_DESCRIPTOR_HPP
+#define LIBBITCOIN_SERVER_UTILITIES_BITCOIND_DESCRIPTOR_HPP
 
-#include <bitcoin/server/parsers/admin_query.hpp>
-#include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_query.hpp>
-#include <bitcoin/server/parsers/bitcoind_scan.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
-#include <bitcoin/server/parsers/bitcoind_target.hpp>
-#include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/native_query.hpp>
-#include <bitcoin/server/parsers/native_target.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+/// The bip380 output descriptor checksum, empty on invalid characters.
+BCS_API std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

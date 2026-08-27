@@ -74,7 +74,13 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
         { "/rest/block/" + test_hash + ".txt", server::error::invalid_target },
         { "/rest/block/nothex.json", server::error::invalid_hash },
         { "/rest/block/notxdetails", server::error::missing_hash },
-        { "/rest/block/spent", server::error::missing_hash },
+        { "/rest/getutxos", server::error::missing_target },
+        { "/rest/getutxos/checkmempool", server::error::missing_target },
+        { "/rest/getutxos/nothex-0.json", server::error::invalid_hash },
+        { "/rest/getutxos/" + test_hash + "-abc.json", server::error::invalid_number },
+        { "/rest/getutxos/" + test_hash + ".json", server::error::invalid_hash },
+        { "/rest/spenttxouts", server::error::missing_hash },
+        { "/rest/spenttxouts/nothex.json", server::error::invalid_hash },
         { "/rest/blockhashbyheight", server::error::missing_target },
         { "/rest/blockhashbyheight/abc.json", server::error::invalid_number },
         { "/rest/blockhashbyheight/01.json", server::error::invalid_number },
@@ -82,16 +88,15 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
         { "/rest/headers/abc/" + test_hash + ".json", server::error::invalid_number },
         { "/rest/headers/3", server::error::invalid_target },
         { "/rest/headers/3/nothex.json", server::error::invalid_hash },
+        { "/rest/deploymentinfo/nothex.json", server::error::invalid_hash },
+        { "/rest/deploymentinfo/" + test_hash + ".bin", server::error::invalid_target },
         { "/rest/blockfilter", server::error::missing_target },
         { "/rest/blockfilter/extended/" + test_hash + ".json", server::error::invalid_target },
         { "/rest/blockfilter/basic", server::error::missing_hash },
         { "/rest/blockfilterheaders/basic", server::error::missing_hash },
         { "/rest/blockpart", server::error::missing_hash },
-        { "/rest/blockpart/nothex/0/80.bin", server::error::invalid_hash },
-        { "/rest/blockpart/" + test_hash, server::error::missing_target },
-        { "/rest/blockpart/" + test_hash + "/abc/80.bin", server::error::invalid_number },
-        { "/rest/blockpart/" + test_hash + "/0", server::error::missing_target },
-        { "/rest/blockpart/" + test_hash + "/0/abc.bin", server::error::invalid_number }
+        { "/rest/blockpart/nothex.bin", server::error::invalid_hash },
+        { "/rest/blockpart/" + test_hash, server::error::invalid_target }
     };
 
     for (const auto& [path, expected]: cases)
@@ -175,10 +180,22 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_notxdetails__block_txs)
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_spent__block_spent_tx_outputs)
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__getutxos__outpoints)
 {
     request_t out{};
-    const auto path = "/rest/block/spent/" + test_hash + ".json";
+    const auto path = "/rest/getutxos/checkmempool/" + test_hash + "-0/" + test_hash + "-7.json";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE_EQUAL(out.method, "get_utxos");
+
+    const auto& object = params_of(out);
+    BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
+    BOOST_REQUIRE_EQUAL(std::get<array_t>(object.at("outpoints").value()).size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__spenttxouts__block_spent_tx_outputs)
+{
+    request_t out{};
+    const auto path = "/rest/spenttxouts/" + test_hash + ".json";
     BOOST_REQUIRE(!bitcoind_target(out, path));
     BOOST_REQUIRE_EQUAL(out.method, "block_spent_tx_outputs");
     BOOST_REQUIRE_EQUAL(*hash_of(params_of(out)), expected_hash);
@@ -234,6 +251,25 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__headers_no_query__default_count)
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
+// deploymentinfo
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__deploymentinfo__no_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_target(out, "/rest/deploymentinfo.json"));
+    BOOST_REQUIRE_EQUAL(out.method, "deployment_info");
+    BOOST_REQUIRE(params_of(out).empty());
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__deploymentinfo_hash__deployment_info)
+{
+    request_t out{};
+    const auto path = "/rest/deploymentinfo/" + test_hash + ".json";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE_EQUAL(out.method, "deployment_info");
+    BOOST_REQUIRE_EQUAL(*hash_of(params_of(out)), expected_hash);
+}
+
 // blockfilter
 
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilter_basic__block_filter)
@@ -256,6 +292,17 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_basic__block_f
     BOOST_REQUIRE(!bitcoind_target(out, path));
     BOOST_REQUIRE_EQUAL(out.method, "block_filter_headers");
     BOOST_REQUIRE_EQUAL(std::get<uint8_t>(params_of(out).at("type").value()), 0u);
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 5u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_count__legacy_form)
+{
+    request_t out{};
+    const auto path = "/rest/blockfilterheaders/basic/7/" + test_hash + ".json";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE_EQUAL(out.method, "block_filter_headers");
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 7u);
+    BOOST_REQUIRE_EQUAL(*hash_of(params_of(out)), expected_hash);
 }
 
 // blockpart
@@ -263,14 +310,12 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_basic__block_f
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockpart__block_part)
 {
     request_t out{};
-    const auto path = "/rest/blockpart/" + test_hash + "/0/80.bin";
+    const auto path = "/rest/blockpart/" + test_hash + ".bin";
     BOOST_REQUIRE(!bitcoind_target(out, path));
     BOOST_REQUIRE_EQUAL(out.method, "block_part");
 
     const auto& object = params_of(out);
-    BOOST_REQUIRE_EQUAL(object.size(), 4u);
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("offset").value()), 0u);
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("size").value()), 80u);
+    BOOST_REQUIRE_EQUAL(object.size(), 2u);
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_octet_stream));
 }

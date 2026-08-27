@@ -51,6 +51,29 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__chaininfo_json__main_nine)
     BOOST_REQUIRE_EQUAL(as_text(result.at("bestblockhash")), block9);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rest__deploymentinfo_json__top__height_nine)
+{
+    const auto result = rest_json("/rest/deploymentinfo.json");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+    BOOST_REQUIRE(result.at("deployments").is_object());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__deploymentinfo_json__block5__height_five)
+{
+    const auto result = rest_json("/rest/deploymentinfo/" + block5 + ".json");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block5);
+}
+
+// bitcoind reports an unknown deploymentinfo block as a bad request.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__deploymentinfo_unknown__bad_request)
+{
+    const std::string unknown(64, '1');
+    const auto result = rest_status("/rest/deploymentinfo/" + unknown + ".json");
+    BOOST_REQUIRE(result == bitcoind_setup_fixture::status::bad_request);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rest__block_json__block9_with_txs)
 {
     const auto result = rest_json("/rest/block/" + block9 + ".json");
@@ -110,10 +133,46 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__block_notxdetails_json__txid_list)
     BOOST_REQUIRE(result.at("tx").at(0).is_string());
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rest__block_spent_json__structured)
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_json__block1_coinbase__hit)
 {
-    const auto result = rest_json("/rest/block/spent/" + block9 + ".json");
-    BOOST_REQUIRE(result.is_array() || result.is_object());
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto result = rest_json("/rest/getutxos/" + txid + "-0.json");
+    BOOST_REQUIRE_EQUAL(result.at("chainHeight").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("chaintipHash")), block9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bitmap")), "1");
+    BOOST_REQUIRE_EQUAL(result.at("utxos").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(result.at("utxos").at(0).at("height").as_int64(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_json__checkmempool_miss__empty)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto result = rest_json("/rest/getutxos/checkmempool/" + txid + "-1.json");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bitmap")), "0");
+    BOOST_REQUIRE(result.at("utxos").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_bin__miss__bip64_framing)
+{
+    const std::string unknown(64, '1');
+    const auto wire = rest_data("/rest/getutxos/" + unknown + "-0.bin");
+    BOOST_REQUIRE_EQUAL(wire.size(), 39u);
+    BOOST_REQUIRE_EQUAL(wire.at(0), 9u);
+}
+
+// A coinbase-only block undo is one empty per-tx prevout list.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_json__block9__coinbase_only)
+{
+    const auto result = rest_json("/rest/spenttxouts/" + block9 + ".json");
+    BOOST_REQUIRE(result.is_array());
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 1u);
+    BOOST_REQUIRE(result.at(0).as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_bin__block9__undo_framing)
+{
+    const auto wire = rest_data("/rest/spenttxouts/" + block9 + ".bin");
+    BOOST_REQUIRE_EQUAL(encode_base16(wire), "0100");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_json__height_five__block5)
@@ -163,9 +222,24 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_hex__one_header__eighty_bytes)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_bin__block9_header)
 {
-    const auto wire = rest_data("/rest/blockpart/" + block9 + "/0/80.bin");
+    const auto target = "/rest/blockpart/" + block9 + ".bin?offset=0&size=80";
+    const auto wire = rest_data(target);
     BOOST_REQUIRE_EQUAL(wire.size(), 80u);
     BOOST_REQUIRE_EQUAL(encode_base16(wire), header9);
+}
+
+// bitcoind reports missing part parameters as bad requests.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_no_query__bad_request)
+{
+    const auto result = rest_status("/rest/blockpart/" + block9 + ".bin");
+    BOOST_REQUIRE(result == bitcoind_setup_fixture::status::bad_request);
+}
+
+// bitcoind reports an out of range part as a bad request.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_excess__bad_request)
+{
+    const auto target = "/rest/blockpart/" + block9 + ".bin?offset=0&size=1000000";
+    BOOST_REQUIRE(rest_status(target) == bitcoind_setup_fixture::status::bad_request);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_basic__filters_disabled__not_ok)

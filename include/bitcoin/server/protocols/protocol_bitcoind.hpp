@@ -71,47 +71,6 @@ protected:
     /// The method names reported by help (channel-registered on start).
     std::string help_names() const NOEXCEPT;
 
-    /// Serialize an object (chain::header, chain::transaction, ...) to a
-    /// base16 string.
-    template <typename Object, typename ...Args>
-    static std::string to_text(const Object& object, size_t size,
-        Args&&... args) NOEXCEPT
-    {
-        std::string out(two * size, '\0');
-        system::stream::out::fast sink{ out };
-        system::write::base16::fast writer{ sink };
-        object.to_data(writer, std::forward<Args>(args)...);
-        BC_ASSERT(writer);
-        return out;
-    }
-
-    /// Model composition.
-    static double progress(size_t blocks, size_t headers) NOEXCEPT;
-    static uint32_t median_time(const node::query& query,
-        const system::settings& settings,
-        const database::header_link& link) NOEXCEPT;
-    static network::rpc::object_t chain_states_entry(const node::query& query,
-        const database::header_link& link, double progress,
-        bool validated) NOEXCEPT;
-    static void inject_block_context(boost::json::object& out,
-        const node::query& query, const system::settings& settings,
-        const database::header_link& link,
-        const system::chain::header& header) NOEXCEPT;
-    static void inject_tx_context(boost::json::object& out,
-        const node::query& query, const database::tx_link& link) NOEXCEPT;
-    static void inject_tx_prevouts(boost::json::object& out,
-        const node::query& query,
-        const system::chain::transaction& tx) NOEXCEPT;
-    static boost::json::object header_to_bitcoind(
-        const system::chain::header& header) NOEXCEPT;
-    static std::string chain_name(const node::query& query) NOEXCEPT;
-
-    /// The getblockchaininfo result, bitcoind field set (btcd augments it).
-    /// False if the store is inconsistent, the caller sends the error.
-    static bool chain_info(network::rpc::object_t& out,
-        const node::query& query, const system::settings& settings,
-        bool pruned, bool current) NOEXCEPT;
-
     /// The createmultisig result, empty if a key is invalid or the p2sh
     /// embedded script exceeds one push element.
     network::rpc::object_t create_multisig(uint8_t required,

@@ -57,14 +57,11 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/error/error_t.cpp \
     ${srcdir}/../../src/parsers/admin_query.cpp \
     ${srcdir}/../../src/parsers/admin_target.cpp \
-    ${srcdir}/../../src/parsers/bitcoind_block_stats.cpp \
-    ${srcdir}/../../src/parsers/bitcoind_descriptor.cpp \
-    ${srcdir}/../../src/parsers/bitcoind_merkle.cpp \
     ${srcdir}/../../src/parsers/bitcoind_query.cpp \
+    ${srcdir}/../../src/parsers/bitcoind_scan.cpp \
     ${srcdir}/../../src/parsers/bitcoind_script.cpp \
     ${srcdir}/../../src/parsers/bitcoind_target.cpp \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
-    ${srcdir}/../../src/parsers/electrum_version.cpp \
     ${srcdir}/../../src/parsers/native_query.cpp \
     ${srcdir}/../../src/parsers/native_target.cpp \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
@@ -105,7 +102,15 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/native/protocol_native_input.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_output.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_tx.cpp \
-    ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp
+    ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp \
+    ${srcdir}/../../src/serializers/bitcoind_block_stats.cpp \
+    ${srcdir}/../../src/serializers/bitcoind_coin.cpp \
+    ${srcdir}/../../src/serializers/bitcoind_deployments.cpp \
+    ${srcdir}/../../src/serializers/bitcoind_json.cpp \
+    ${srcdir}/../../src/serializers/bitcoind_psbt.cpp \
+    ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
+    ${srcdir}/../../src/utilities/bitcoind_merkle.cpp \
+    ${srcdir}/../../src/utilities/electrum_version.cpp
 
 include_bitcoindir = \
     ${includedir}/bitcoin
@@ -180,14 +185,11 @@ include_bitcoin_server_parsersdir = \
 include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/admin_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/admin_target.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_block_stats.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_descriptor.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_query.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_scan.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_script.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/btcd_filter.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/parsers.hpp
@@ -221,6 +223,18 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocols.hpp
 
+include_bitcoin_server_serializersdir = \
+    ${includedir}/bitcoin/server/serializers
+
+include_bitcoin_server_serializers_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_block_stats.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_coin.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_data.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_deployments.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_json.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_psbt.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/serializers.hpp
+
 include_bitcoin_server_sessionsdir = \
     ${includedir}/bitcoin/server/sessions
 
@@ -229,6 +243,15 @@ include_bitcoin_server_sessions_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/sessions/session_handshake.hpp \
     ${srcdir}/../../include/bitcoin/server/sessions/session_server.hpp \
     ${srcdir}/../../include/bitcoin/server/sessions/sessions.hpp
+
+include_bitcoin_server_utilitiesdir = \
+    ${includedir}/bitcoin/server/utilities
+
+include_bitcoin_server_utilities_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_descriptor.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_merkle.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
 
 # Tests.
 #==============================================================================
@@ -265,17 +288,12 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/mocks/blocks.cpp \
     ${srcdir}/../../test/parsers/admin_query.cpp \
     ${srcdir}/../../test/parsers/admin_target.cpp \
-    ${srcdir}/../../test/parsers/bitcoind_block_stats.cpp \
-    ${srcdir}/../../test/parsers/bitcoind_descriptor.cpp \
-    ${srcdir}/../../test/parsers/bitcoind_merkle.cpp \
     ${srcdir}/../../test/parsers/bitcoind_query.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
-    ${srcdir}/../../test/parsers/electrum_version.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
     ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
-    ${srcdir}/../../test/protocols/bitcoind/bitcoind_json.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rpc.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
@@ -300,7 +318,12 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/native/native_input.cpp \
     ${srcdir}/../../test/protocols/native/native_output.cpp \
     ${srcdir}/../../test/protocols/native/native_setup_fixture.cpp \
-    ${srcdir}/../../test/protocols/native/native_tx.cpp
+    ${srcdir}/../../test/protocols/native/native_tx.cpp \
+    ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \
+    ${srcdir}/../../test/serializers/bitcoind_json.cpp \
+    ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \
+    ${srcdir}/../../test/utilities/bitcoind_merkle.cpp \
+    ${srcdir}/../../test/utilities/electrum_version.cpp
 
 TESTS = test_runner.sh
 
