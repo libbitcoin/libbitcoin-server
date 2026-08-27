@@ -186,9 +186,24 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_hex__one_header__eighty_bytes)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_bin__block9_header)
 {
-    const auto wire = rest_data("/rest/blockpart/" + block9 + "/0/80.bin");
+    const auto target = "/rest/blockpart/" + block9 + ".bin?offset=0&size=80";
+    const auto wire = rest_data(target);
     BOOST_REQUIRE_EQUAL(wire.size(), 80u);
     BOOST_REQUIRE_EQUAL(encode_base16(wire), header9);
+}
+
+// bitcoind reports missing part parameters as bad requests.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_no_query__bad_request)
+{
+    const auto result = rest_status("/rest/blockpart/" + block9 + ".bin");
+    BOOST_REQUIRE(result == bitcoind_setup_fixture::status::bad_request);
+}
+
+// bitcoind reports an out of range part as a bad request.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_excess__bad_request)
+{
+    const auto target = "/rest/blockpart/" + block9 + ".bin?offset=0&size=1000000";
+    BOOST_REQUIRE(rest_status(target) == bitcoind_setup_fixture::status::bad_request);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_basic__filters_disabled__not_ok)

@@ -318,40 +318,24 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         return error::success;
     }
 
-    // /rest/blockpart/<hash>/<offset>/<size>.<ext> (libbitcoin extension)
+    // /rest/blockpart/<hash>.<bin|hex>?offset=<offset>&size=<size>
     if (target == "blockpart")
     {
         if (segment == segments.size())
             return error::missing_hash;
-
-        const auto hash = to_hash(segments[segment++]);
-        if (!hash)
-            return error::invalid_hash;
-
-        if (segment == segments.size())
-            return error::missing_target;
-
-        uint32_t offset{};
-        if (!to_number(offset, segments[segment++]))
-            return error::invalid_number;
-
-        if (segment == segments.size())
-            return error::missing_target;
 
         std::string name{};
         uint8_t media{};
         if (!split_leaf(name, media, segments[segment++]))
             return error::invalid_target;
 
-        uint32_t size{};
-        if (!to_number(size, name))
-            return error::invalid_number;
+        const auto hash = to_hash(name);
+        if (!hash)
+            return error::invalid_hash;
 
         method = "block_part";
         params["media"] = media;
         params["hash"] = hash;
-        params["offset"] = offset;
-        params["size"] = size;
         return error::success;
     }
 

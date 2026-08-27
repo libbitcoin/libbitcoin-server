@@ -133,8 +133,14 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
-    if (rest_dispatcher_.notify(model))
-        send_not_found();
+    // Required parameters may be query string sourced (e.g. blockpart).
+    if (const auto fault = rest_dispatcher_.notify(model))
+    {
+        if (fault == network::error::missing_parameter)
+            send_bad_request(*get);
+        else
+            send_not_found();
+    }
 }
 
 // Media types.
@@ -423,16 +429,16 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
         return true;
     }
 
+    // bitcoind reports an out of range part as a bad request.
     const auto full = to_data(*block, block->serialized_size(witness), witness);
-    if (!is_lesser(offset, full.size()))
+    if (ceilinged_add<size_t>(offset, size) > full.size())
     {
-        send_not_found();
+        send_bad_request();
         return true;
     }
 
-    const auto begin = full.begin();
-    const auto stop = lesser(ceilinged_add<size_t>(offset, size), full.size());
-    data_chunk part{ std::next(begin, offset), std::next(begin, stop) };
+    const auto begin = std::next(full.begin(), offset);
+    data_chunk part{ begin, std::next(begin, size) };
     switch (media)
     {
         case data:
@@ -443,8 +449,8 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
             return true;
     }
 
-    // block_part is bin|hex only (json not supported).
-    send_not_found();
+    // block_part is bin|hex only (json is a bad request, as bitcoind).
+    send_bad_request();
     return true;
 }
 

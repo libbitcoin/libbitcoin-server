@@ -89,11 +89,8 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
         { "/rest/blockfilter/basic", server::error::missing_hash },
         { "/rest/blockfilterheaders/basic", server::error::missing_hash },
         { "/rest/blockpart", server::error::missing_hash },
-        { "/rest/blockpart/nothex/0/80.bin", server::error::invalid_hash },
-        { "/rest/blockpart/" + test_hash, server::error::missing_target },
-        { "/rest/blockpart/" + test_hash + "/abc/80.bin", server::error::invalid_number },
-        { "/rest/blockpart/" + test_hash + "/0", server::error::missing_target },
-        { "/rest/blockpart/" + test_hash + "/0/abc.bin", server::error::invalid_number }
+        { "/rest/blockpart/nothex.bin", server::error::invalid_hash },
+        { "/rest/blockpart/" + test_hash, server::error::invalid_target }
     };
 
     for (const auto& [path, expected]: cases)
@@ -295,14 +292,12 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_count__legacy_
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockpart__block_part)
 {
     request_t out{};
-    const auto path = "/rest/blockpart/" + test_hash + "/0/80.bin";
+    const auto path = "/rest/blockpart/" + test_hash + ".bin";
     BOOST_REQUIRE(!bitcoind_target(out, path));
     BOOST_REQUIRE_EQUAL(out.method, "block_part");
 
     const auto& object = params_of(out);
-    BOOST_REQUIRE_EQUAL(object.size(), 4u);
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("offset").value()), 0u);
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(object.at("size").value()), 80u);
+    BOOST_REQUIRE_EQUAL(object.size(), 2u);
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_octet_stream));
 }
