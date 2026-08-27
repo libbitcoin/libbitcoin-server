@@ -130,8 +130,7 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         return error::success;
     }
 
-    // /rest/block/<hash>.<ext>, /rest/block/notxdetails/<hash>.<ext> and
-    // /rest/block/spent/<hash>.<ext> (the latter is a libbitcoin extension).
+    // /rest/block/<hash>.<ext> and /rest/block/notxdetails/<hash>.<ext>
     if (target == "block")
     {
         if (segment == segments.size())
@@ -140,8 +139,6 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         std::string rest_method = "block";
         if (segments[segment] == "notxdetails")
             rest_method = "block_txs";
-        else if (segments[segment] == "spent")
-            rest_method = "block_spent_tx_outputs";
 
         if (rest_method != "block" && ++segment == segments.size())
             return error::missing_hash;
@@ -315,6 +312,27 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         params["hash"] = hash;
         params["type"] = 0_u8;
         params["count"] = count;
+        return error::success;
+    }
+
+    // /rest/spenttxouts/<hash>.<ext>
+    if (target == "spenttxouts")
+    {
+        if (segment == segments.size())
+            return error::missing_hash;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]))
+            return error::invalid_target;
+
+        const auto hash = to_hash(name);
+        if (!hash)
+            return error::invalid_hash;
+
+        method = "block_spent_tx_outputs";
+        params["media"] = media;
+        params["hash"] = hash;
         return error::success;
     }
 

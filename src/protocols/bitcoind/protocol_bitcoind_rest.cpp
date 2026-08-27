@@ -467,23 +467,55 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
         return true;
     }
 
+    // bitcoind serves spent outputs from undo data (confirmed blocks only).
     const auto& query = archive();
     const auto link = query.to_header(*hash);
-    if (!query.is_associated(link))
+    if (!query.is_confirmed_block(link))
     {
         send_not_found();
         return true;
     }
 
-    // Resolve every prevout spent by the block's non-coinbase transactions.
-    chain::output_cptrs spent{};
-    for (const auto& out: query.to_block_prevouts(link))
-        if (const auto output = query.get_output(out))
-            spent.push_back(output);
+    // Prevouts grouped per spending tx (the undo form).
+    std::vector<chain::output_cptrs> spent{};
+    for (const auto& tx: query.to_spending_txs(link))
+    {
+        chain::output_cptrs outs{};
+        for (const auto& out: query.to_prevouts(tx))
+        {
+            const auto output = query.get_output(out);
+            if (!output)
+            {
+                send_internal_server_error(database::error::integrity);
+                return true;
+            }
 
-    size_t size{};
-    for (const auto& output: spent)
-        size += output->serialized_size();
+            outs.push_back(output);
+        }
+
+        spent.push_back(std::move(outs));
+    }
+
+    // The tx count includes the coinbase, which has no prevouts.
+    auto size = variable_size(add1(spent.size())) + variable_size(zero);
+    for (const auto& outs: spent)
+    {
+        size += variable_size(outs.size());
+        for (const auto& output: outs)
+            size += output->serialized_size();
+    }
+
+    const auto serialize = [&spent](auto& writer) NOEXCEPT
+    {
+        writer.write_variable(add1(spent.size()));
+        writer.write_variable(zero);
+        for (const auto& outs: spent)
+        {
+            writer.write_variable(outs.size());
+            for (const auto& output: outs)
+                output->to_data(writer);
+        }
+    };
 
     switch (media)
     {
@@ -492,9 +524,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
             data_chunk out(size);
             stream::out::fast sink{ out };
             write::bytes::fast writer{ sink };
-            for (const auto& output: spent)
-                output->to_data(writer);
-
+            serialize(writer);
             send_data(std::move(out));
             return true;
         }
@@ -503,15 +533,30 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
             std::string out(two * size, '\0');
             stream::out::fast sink{ out };
             write::base16::fast writer{ sink };
-            for (const auto& output: spent)
-                output->to_data(writer);
-
+            serialize(writer);
             send_text(std::move(out));
             return true;
         }
         case json:
         {
-            send_json(value_from(bitcoind(spent)), two * size);
+            array models{};
+            models.emplace_back(array{});
+            for (const auto& outs: spent)
+            {
+                array prevouts{};
+                for (const auto& output: outs)
+                    prevouts.emplace_back(object
+                    {
+                        { "value", output->value() /
+                            to_floating(chain::satoshi_per_bitcoin) },
+                        { "scriptPubKey", value_from(bitcoind(
+                            output->script())) }
+                    });
+
+                models.emplace_back(std::move(prevouts));
+            }
+
+            send_json(std::move(models), two * size);
             return true;
         }
     }

@@ -133,10 +133,19 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__block_notxdetails_json__txid_list)
     BOOST_REQUIRE(result.at("tx").at(0).is_string());
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rest__block_spent_json__structured)
+// A coinbase-only block undo is one empty per-tx prevout list.
+BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_json__block9__coinbase_only)
 {
-    const auto result = rest_json("/rest/block/spent/" + block9 + ".json");
-    BOOST_REQUIRE(result.is_array() || result.is_object());
+    const auto result = rest_json("/rest/spenttxouts/" + block9 + ".json");
+    BOOST_REQUIRE(result.is_array());
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 1u);
+    BOOST_REQUIRE(result.at(0).as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_bin__block9__undo_framing)
+{
+    const auto wire = rest_data("/rest/spenttxouts/" + block9 + ".bin");
+    BOOST_REQUIRE_EQUAL(encode_base16(wire), "0100");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_json__height_five__block5)

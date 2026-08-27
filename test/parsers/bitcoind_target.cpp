@@ -74,7 +74,8 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__error_paths__expected)
         { "/rest/block/" + test_hash + ".txt", server::error::invalid_target },
         { "/rest/block/nothex.json", server::error::invalid_hash },
         { "/rest/block/notxdetails", server::error::missing_hash },
-        { "/rest/block/spent", server::error::missing_hash },
+        { "/rest/spenttxouts", server::error::missing_hash },
+        { "/rest/spenttxouts/nothex.json", server::error::invalid_hash },
         { "/rest/blockhashbyheight", server::error::missing_target },
         { "/rest/blockhashbyheight/abc.json", server::error::invalid_number },
         { "/rest/blockhashbyheight/01.json", server::error::invalid_number },
@@ -174,10 +175,10 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_notxdetails__block_txs)
     BOOST_REQUIRE_EQUAL(*hash_of(object), expected_hash);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__block_spent__block_spent_tx_outputs)
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__spenttxouts__block_spent_tx_outputs)
 {
     request_t out{};
-    const auto path = "/rest/block/spent/" + test_hash + ".json";
+    const auto path = "/rest/spenttxouts/" + test_hash + ".json";
     BOOST_REQUIRE(!bitcoind_target(out, path));
     BOOST_REQUIRE_EQUAL(out.method, "block_spent_tx_outputs");
     BOOST_REQUIRE_EQUAL(*hash_of(params_of(out)), expected_hash);
