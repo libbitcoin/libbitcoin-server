@@ -308,7 +308,6 @@ Info: Runs a full node bitcoin server.
 
 Options (named):
 
--a [--slabs]         Scan and display store slab measures.               
 -b [--backup]        Backup to a snapshot (can also do live).            
 -c [--config]        Specify path to a configuration settings file.      
 -f [--flags]         Scan and display all flag transitions.              

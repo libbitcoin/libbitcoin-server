@@ -38,7 +38,6 @@ BOOST_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
     BOOST_REQUIRE(!instance.user);
     BOOST_REQUIRE(!instance.flags);
     BOOST_REQUIRE(!instance.information);
-    BOOST_REQUIRE(!instance.slabs);
     BOOST_REQUIRE(!instance.buckets);
     BOOST_REQUIRE(!instance.collisions);
     BOOST_REQUIRE_EQUAL(instance.get, system::null_hash);

@@ -56,7 +56,6 @@ public:
     /// Chain scans.
     bool flags{};
     bool information{};
-    bool slabs{};
     bool buckets{};
     bool collisions{};
 

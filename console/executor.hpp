@@ -88,7 +88,6 @@ private:
 
     // Long-running queries (scans).
     void scan_flags() const;
-    void scan_slabs() const;
     void scan_buckets() const;
     void scan_collisions() const;
 
@@ -103,7 +102,6 @@ private:
     bool do_daemon();
     bool do_flags();
     bool do_information();
-    bool do_slabs();
     bool do_buckets();
     bool do_collisions();
     bool do_get(const system::hash_digest& hash);

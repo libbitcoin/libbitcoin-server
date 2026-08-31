@@ -269,12 +269,6 @@ options_metadata parser::load_options() THROWS
         "Scan and display all flag transitions."
     )
     (
-        alias(slabs_variable, 'a').c_str(),
-        value<bool>(&configured.slabs)->
-            default_value(false)->zero_tokens(),
-        "Scan and display store slab measures."
-    )
-    (
         alias(buckets_variable, 'k').c_str(),
         value<bool>(&configured.buckets)->
             default_value(false)->zero_tokens(),
