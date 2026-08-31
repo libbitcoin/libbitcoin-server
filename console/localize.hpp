@@ -159,14 +159,6 @@
     "   duplicate :%11%\n" \
     "   strong_tx :%12%\n" \
     "   filter_bk :%13%"
-#define BS_INFORMATION_SLABS \
-    "Table slabs..."
-#define BS_INFORMATION_SLABS_ROW \
-    "   @tx       :%1%, inputs:%2%, outputs:%3%"
-#define BS_INFORMATION_STOP \
-    "   input     :%1%\n" \
-    "   output    :%2%\n" \
-    "   seconds   :%3%"
 #define BS_INFORMATION_BUCKETS \
     "Head buckets...\n" \
     "   header    :%1%\n" \

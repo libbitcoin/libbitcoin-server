@@ -46,7 +46,6 @@ public:
     static constexpr auto daemon_variable = "daemon";
     static constexpr auto user_variable = "user";
     static constexpr auto flags_variable = "flags";
-    static constexpr auto slabs_variable = "slabs";
     static constexpr auto buckets_variable = "buckets";
     static constexpr auto collisions_variable = "collisions";
     static constexpr auto information_variable = "information";

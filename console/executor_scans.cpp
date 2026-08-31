@@ -73,35 +73,6 @@ void executor::scan_flags() const
         span.count());
 }
 
-// input and output table slab counts.
-void executor::scan_slabs() const
-{
-    logger(BS_INFORMATION_SLABS);
-    logger(BS_OPERATION_INTERRUPT);
-    database::tx_link::integer link{};
-    size_t inputs{}, outputs{};
-    const auto start = logger::now();
-    constexpr auto frequency = 100'000;
-
-    // Tx (record) links are sequential and so iterable, however the terminal
-    // condition assumes all tx entries fully written (ok for stopped node).
-    // A running node cannot safely iterate over record links, but stopped can.
-    for (auto puts = query_.put_counts(link); to_bool(puts.first) && !canceled();
-        puts = query_.put_counts(++link))
-    {
-        inputs += puts.first;
-        outputs += puts.second;
-        if (is_zero(link % frequency))
-            logger(format(BS_INFORMATION_SLABS_ROW) % link % inputs % outputs);
-    }
-
-    if (canceled())
-        logger(BS_OPERATION_CANCELED);
-
-    const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_INFORMATION_STOP) % inputs % outputs % span.count());
-}
-
 // hashmap bucket fill rates.
 void executor::scan_buckets() const
 {

@@ -135,18 +135,6 @@ bool executor::do_information()
     return close_store();
 }
 
-// --sl[a]bs
-bool executor::do_slabs()
-{
-    log_.stop();
-    if (!check_store_path() ||
-        !open_store())
-        return false;
-
-    scan_slabs();
-    return close_store();
-}
-
 // --buc[k]ets
 bool executor::do_buckets()
 {
@@ -207,9 +195,6 @@ bool executor::dispatch()
 
     // Order below matches help output (alphabetical), so that first option is
     // executed in the case where multiple options are parsed.
-
-    if (config.slabs)
-        return do_slabs();
 
     if (config.backup)
         return do_backup();
