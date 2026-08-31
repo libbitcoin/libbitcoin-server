@@ -304,8 +304,9 @@ void executor::scan_collisions() const
     // TODO: expose filter type from hashhead to table.
     ///////////////////////////////////////////////////////////////////////////
     constexpr size_t m = 32;
-    constexpr size_t k = floored_log2(m);
-    using bloom_t = bloom<m, k>;
+    constexpr size_t k_max = 12;
+    using bloom_t = bloom<m, k_max>;
+    const auto k = store_.ins.filter_k();
     ////using sieve_t = sieve<m, 3>;
     ///////////////////////////////////////////////////////////////////////////
 
@@ -342,7 +343,7 @@ void executor::scan_collisions() const
                 ++window;
 
                 auto prev = bloom_filter.at(bucket);
-                auto next = bloom_t::screen(prev, entropy);
+                auto next = bloom_t::screen(prev, entropy, k);
                 bloom_filter.at(bucket) = next;
                 auto coll = to_int(bloom_t::is_collision(prev, next));
                 bloom_collisions += coll;
@@ -388,8 +389,8 @@ void executor::scan_collisions() const
 
     const auto spends = inserts - coinbases;
     const auto bloom_spend_collisions = bloom_collisions - coinbases;
-    logger(format("bloom: %1% fps of %2% spends (ex %3% cbs) rate %4%") %
-        bloom_spend_collisions % spends % coinbases %
+    logger(format("bloom k %1%: %2% fps of %3% spends (ex %4% cbs) rate %5%") %
+        k % bloom_spend_collisions % spends % coinbases %
         (to_double(bloom_spend_collisions) / spends));
 
     ////const auto sieve_spend_collisions = sieve_collisions - coinbases;
