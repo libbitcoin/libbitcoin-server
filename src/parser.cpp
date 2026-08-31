@@ -48,7 +48,6 @@ parser::parser(system::chain::selection context,
     // network
 
     using level = network::messages::peer::level;
-    using service = network::messages::peer::service;
 
     configured.network.threads = 16;
     configured.network.enable_relay = true;
