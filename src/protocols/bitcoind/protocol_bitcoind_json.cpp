@@ -107,15 +107,10 @@ std::string protocol_bitcoind::to_address(
 {
     using namespace wallet;
 
-    const auto& ops = script.ops();
-    if (chain::script::is_pay_witness_pattern(ops))
-    {
-        // TODO: this should be an extractor (don't parse scripts).
-        const auto code = ops.front().code();
-        const auto& program = ops.at(1).data();
-        const auto version = chain::operation::opcode_to_nonnegative(code);
-        return witness_address{ program, version, witness_ }.encoded();
-    }
+    const auto version = script.version_value();
+    if (version != to_value(chain::script_version::unversioned))
+        return witness_address{ *script.witness_program(), version,
+            witness_ }.encoded();
 
     const auto pay = payment_address::extract_output(script, p2kh_, p2sh_);
     return pay ? pay.encoded() : std::string{};
