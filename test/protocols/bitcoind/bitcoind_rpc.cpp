@@ -70,7 +70,6 @@ const std::vector<method_code> rejected_methods
 const std::vector<method_code> wip_methods
 {
     { "getblockfrompeer", -32601 },
-    { "preciousblock", -32601 },
     { "disconnectnode", -32601 },
     { "exportasmap", -32601 },
     { "getaddednodeinfo", -24 },
@@ -1445,6 +1444,28 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__no_index_at_height__invalid)
 {
     const auto response = rpc("gettxoutsetinfo", "[\"muhash\", 5, false]");
     BOOST_REQUIRE(has_error(response));
+}
+
+// preciousblock
+
+// Only a cached (tied) branch is prioritizable, an organized one is not.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__preciousblock__archived__invalid_address)
+{
+    const auto response = rpc("preciousblock", hash_param(test::block5_hash));
+    BOOST_REQUIRE(has_code(response, -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__preciousblock__unknown__invalid_address)
+{
+    const std::string unknown(64, '1');
+    const auto response = rpc("preciousblock", "[\"" + unknown + "\"]");
+    BOOST_REQUIRE(has_code(response, -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__preciousblock__not_hash__invalid_parameter)
+{
+    const auto response = rpc("preciousblock", "[\"nothex\"]");
+    BOOST_REQUIRE(has_code(response, -8));
 }
 
 // scantxoutset

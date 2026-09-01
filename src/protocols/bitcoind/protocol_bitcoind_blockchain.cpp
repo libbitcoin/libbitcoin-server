@@ -102,7 +102,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_descriptor_activity, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_difficulty, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_precious_block, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_scan_blocks, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2, _3, _4);
@@ -1282,7 +1282,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
         }
     };
 
-    // The candidate is a distinct tip only where it forks above confirmed.
+    // The candidate is a distinct top only where it forks above confirmed.
     const auto candidate = query.get_top_candidate();
     const auto branchlen = floored_subtract(candidate, query.get_fork());
     if (!is_zero(branchlen))
@@ -1494,12 +1494,45 @@ bool protocol_bitcoind_blockchain::handle_get_difficulty(const code& ec,
     return true;
 }
 
+// The response defers to reorganize completion (see dispatch).
 bool protocol_bitcoind_blockchain::handle_precious_block(const code& ec,
-    rpc_interface::precious_block) NOEXCEPT
+    rpc_interface::precious_block, const std::string& blockhash) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::method_not_found);
+    if (stopped(ec))
+        return false;
+
+    hash_digest hash{};
+    if (!decode_hash(hash, blockhash))
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    // The block may be cached (tied branch), so the organizer resolves it.
+    prioritize(hash, BIND(handle_prioritize, _1, _2));
     return true;
+}
+
+void protocol_bitcoind_blockchain::handle_prioritize(const code& ec,
+    size_t) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_precious_block, ec);
+}
+
+// bitcoind returns null, having preferred the block where it could.
+void protocol_bitcoind_blockchain::do_precious_block(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec == database::error::not_found)
+        send_error(error::bitcoind::invalid_address_or_key);
+    else if (ec)
+        send_error(error::bitcoind::internal_error);
+    else
+        send_result(null_t{}, 8);
 }
 
 // Exact index matching produces no false positives to optionally filter.

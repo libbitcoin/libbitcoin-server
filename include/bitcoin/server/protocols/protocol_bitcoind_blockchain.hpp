@@ -120,7 +120,7 @@ protected:
     bool handle_get_difficulty(const code& ec,
         rpc_interface::get_difficulty) NOEXCEPT;
     bool handle_precious_block(const code& ec,
-        rpc_interface::precious_block) NOEXCEPT;
+        rpc_interface::precious_block, const std::string& blockhash) NOEXCEPT;
     bool handle_scan_blocks(const code& ec,
         rpc_interface::scan_blocks, const std::string& action,
         const network::rpc::array_t& scanobjects, double start_height,
@@ -164,6 +164,9 @@ private:
     void handle_wait_timeout(const code& ec) NOEXCEPT;
     bool wait_done() const NOEXCEPT;
     void send_top() NOEXCEPT;
+
+    void handle_prioritize(const code& ec, size_t height) NOEXCEPT;
+    void do_precious_block(const code& ec) NOEXCEPT;
 
     enum class set_hash : uint8_t { none, muhash, serialized };
 
