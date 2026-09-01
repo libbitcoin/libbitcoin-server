@@ -635,8 +635,8 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
     auto height = query.get_top_confirmed();
     if (!std::holds_alternative<null_t>(hash_or_height.value()))
     {
-        // bitcoind restricts specific block queries (coinstatsindex bounds).
-        if ((type == set_hash::serialized) || !use_index)
+        // The scan commits at any height, so only the contradiction applies.
+        if (!use_index)
         {
             send_error(error::bitcoind::invalid_parameter);
             return true;
@@ -738,7 +738,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
                 serial.write(element);
         };
 
-        ec = query.get_unspent_coins(stopping_, visit, branch,
+        ec = query.get_unspent_coins(stopping_, totals, visit, branch,
             type == set_hash::serialized, database_settings().turbo);
         digest = (type == set_hash::muhash) ? muhash.flush() :
             serial.double_flush();
@@ -774,6 +774,17 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
         { "total_amount", to_floating(totals.value) /
             chain::satoshi_per_bitcoin }
     };
+
+    // Coins issued but not in the set are permanently unspendable.
+    const auto& settings = system_settings();
+    const auto issued = total_subsidy(settings, height);
+    const auto bitcoin = to_floating(chain::satoshi_per_bitcoin);
+    result.emplace("total_unspendable_amount",
+        floored_subtract(issued, totals.value) / bitcoin);
+
+    object_t amounts{};
+    if (block_info(amounts, query, settings, link, height))
+        result.emplace("block_info", std::move(amounts));
 
     if (type == set_hash::serialized)
         result.emplace("hash_serialized_3", encode_hash(digest));
@@ -929,8 +940,9 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
                         coin.height, coin.coinbase, &it->second);
             };
 
-            ec = query.get_unspent_coins(stopping_, visit, branch, false,
-                database_settings().turbo);
+            database::unspent_totals unused{};
+            ec = query.get_unspent_coins(stopping_, unused, visit, branch,
+                false, database_settings().turbo);
         }
     }
 
