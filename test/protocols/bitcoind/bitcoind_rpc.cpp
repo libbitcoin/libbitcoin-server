@@ -1363,6 +1363,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
     BOOST_REQUIRE(!result.as_object().contains("muhash"));
 }
 
+// Ten coinbase-only blocks issue 500 and retain 450, the genesis coinbase
+// being excluded from the set (as bitcoind).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__genesis_unspendable)
+{
+    const auto response = rpc("gettxoutsetinfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 450.0);
+    BOOST_REQUIRE_EQUAL(result.at("total_unspendable_amount").as_double(), 50.0);
+
+    const auto& info = result.at("block_info");
+    BOOST_REQUIRE_EQUAL(info.at("coinbase").as_double(), 50.0);
+    BOOST_REQUIRE_EQUAL(info.at("prevout_spent").as_double(), 0.0);
+    BOOST_REQUIRE_EQUAL(info.at("new_outputs_ex_coinbase").as_double(), 0.0);
+    BOOST_REQUIRE_EQUAL(info.at("unspendable").as_double(), 0.0);
+    BOOST_REQUIRE_EQUAL(info.at("unspendables").at("scripts").as_double(), 0.0);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__muhash__expected)
 {
     const auto response = rpc("gettxoutsetinfo", "[\"muhash\"]");
@@ -1415,14 +1432,15 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__hash__expected)
     BOOST_REQUIRE_EQUAL(as_text(result.at("muhash")).size(), 64u);
 }
 
-// bitcoind restricts specific block queries (coinstatsindex bounds).
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__serialized_at_height__invalid)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__serialized_at_height__expected)
 {
     const auto response = rpc("gettxoutsetinfo", "[\"hash_serialized_3\", 5]");
-    BOOST_REQUIRE(has_error(response));
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash_serialized_3")).size(), 64u);
 }
 
-// bitcoind restricts specific block queries (coinstatsindex bounds).
+// bitcoind rejects the use_index contradiction.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__no_index_at_height__invalid)
 {
     const auto response = rpc("gettxoutsetinfo", "[\"muhash\", 5, false]");

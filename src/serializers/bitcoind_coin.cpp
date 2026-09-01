@@ -47,6 +47,53 @@ void to_coin_data(data_chunk& out,
     sink.write_bytes(coin.script);
 }
 
+uint64_t total_subsidy(const system::settings& settings,
+    size_t height) NOEXCEPT
+{
+    uint64_t total{};
+    for (auto index = zero; index <= height; ++index)
+        total += chain::block::subsidy(index, settings.subsidy_interval_blocks,
+            settings.initial_subsidy(), settings.forks.bip42);
+
+    return total;
+}
+
+// The block is read and populated, as bitcoind's index accumulates these.
+bool block_info(network::rpc::object_t& out, const node::query& query,
+    const system::settings& settings, const database::header_link& link,
+    size_t height) NOEXCEPT
+{
+    database::block_amounts amounts{};
+    if (query.get_block_amounts(amounts, link))
+        return false;
+
+    // Coins issued but not claimed by the coinbase are destroyed.
+    const auto fees = floored_subtract(amounts.prevouts, amounts.outputs);
+    const auto reward = chain::block::subsidy(height,
+        settings.subsidy_interval_blocks, settings.initial_subsidy(),
+        settings.forks.bip42) + fees;
+    const auto unclaimed = floored_subtract(reward, amounts.coinbase);
+    const auto unspendable = unclaimed + amounts.unspendable + amounts.bip30;
+    const auto bitcoin = to_floating(chain::satoshi_per_bitcoin);
+
+    out = network::rpc::object_t
+    {
+        { "prevout_spent", amounts.prevouts / bitcoin },
+        { "coinbase", amounts.coinbase / bitcoin },
+        { "new_outputs_ex_coinbase", amounts.outputs / bitcoin },
+        { "unspendable", unspendable / bitcoin },
+        { "unspendables", network::rpc::object_t
+        {
+            { "genesis_block", zero },
+            { "bip30", amounts.bip30 / bitcoin },
+            { "scripts", amounts.unspendable / bitcoin },
+            { "unclaimed_rewards", unclaimed / bitcoin }
+        }}
+    };
+
+    return true;
+}
+
 BC_POP_WARNING()
 
 } // namespace server
