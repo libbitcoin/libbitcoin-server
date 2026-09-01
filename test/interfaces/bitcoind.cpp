@@ -118,8 +118,8 @@ static_assert(bitcoind_blockchain_methods::names ==
     "getblockfilter getblockhash getblockheader getblockstats "
     "getchaintxstats gettxout gettxoutsetinfo scantxoutset verifychain "
     "gettxoutproof verifytxoutproof getchainstates getchaintips "
-    "getdeploymentinfo getdescriptoractivity getdifficulty scanblocks "
-    "waitforblock waitforblockheight waitfornewblock");
+    "getdeploymentinfo getdescriptoractivity getdifficulty preciousblock "
+    "scanblocks waitforblock waitforblockheight waitfornewblock");
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getopenrpcinfo getrpcinfo logging uptime "
     "rpc.discover");

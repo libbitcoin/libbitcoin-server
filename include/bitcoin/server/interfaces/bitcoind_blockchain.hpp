@@ -55,7 +55,7 @@ struct bitcoind_blockchain_methods
         method<"getdeploymentinfo", optional<""_t>>{ "blockhash" },
         method<"getdescriptoractivity", optional<empty::array>, optional<empty::array>, optional<true>>{ "blockhashes", "scanobjects", "include_mempool" },
         method<"getdifficulty">{},
-        method<"preciousblock">{ unimplemented },
+        method<"preciousblock", string_t>{ "blockhash" },
         method<"scanblocks", string_t, optional<empty::array>, optional<0.0>, optional<-1.0>, optional<"basic"_t>, optional<empty::object>>{ "action", "scanobjects", "start_height", "stop_height", "filtertype", "options" },
         method<"waitforblock", string_t, optional<0.0>>{ "blockhash", "timeout" },
         method<"waitforblockheight", number_t, optional<0.0>>{ "height", "timeout" },
