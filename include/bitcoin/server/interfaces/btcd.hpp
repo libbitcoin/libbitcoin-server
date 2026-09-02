@@ -33,7 +33,7 @@ struct btcd_methods
     static constexpr std::tuple methods
     {
         /// Administrative.
-        method<"authenticate", string_t, string_t>{ "username", "password" },
+        method<"authenticate", string_t, string_t>{ "username", "passphrase" },
         method<"session">{},
         method<"stop">{ unimplemented },
 

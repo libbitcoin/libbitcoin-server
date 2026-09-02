@@ -199,13 +199,14 @@ void protocol_btcd::dispatch_websocket(
 
 bool protocol_btcd::handle_authenticate(const code& ec,
     btcd_interface::authenticate, const std::string& username,
-    const std::string& password) NOEXCEPT
+    const std::string& passphrase) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     // Reachable only when not authorized (see dispatch_websocket).
-    set_authorized(network::config::credential::to_digest(username, password));
+    set_authorized(network::config::credential::to_digest(username,
+        passphrase));
 
     if (authorized())
     {
