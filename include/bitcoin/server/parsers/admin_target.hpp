@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PARSERS_ADMIN_TARGET_HPP
 #define LIBBITCOIN_SERVER_PARSERS_ADMIN_TARGET_HPP
 
-#include <string_view>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

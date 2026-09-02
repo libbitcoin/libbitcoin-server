@@ -21,12 +21,9 @@
 
 #include <memory>
 #include <bitcoin/server/channels/channel.hpp>
-#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/parsers/parsers.hpp>
-#include <bitcoin/server/serializers/serializers.hpp>
-#include <bitcoin/server/utilities/utilities.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {

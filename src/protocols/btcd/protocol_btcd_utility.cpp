@@ -236,10 +236,10 @@ bool protocol_btcd::handle_get_info(const code& ec,
         return true;
     }
 
-    // btcd's numeric version encoding (1'000'000 major, 10'000 minor, 100 patch).
-    const auto& segments = server_settings().btcd.version.segments();
-    const auto version = 1'000'000 * segments[0] + 10'000 * segments[1] +
-        100 * segments[2];
+    constexpr auto version =
+        1'000'000 * to_value(btcd::version::major) +
+        10'000 * to_value(btcd::version::minor) +
+        100 * to_value(btcd::version::patch);
 
     send_result(object_t
     {

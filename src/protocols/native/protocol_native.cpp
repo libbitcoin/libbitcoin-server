@@ -22,6 +22,7 @@
 #include <optional>
 #include <utility>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/parsers/parsers.hpp>
 
 namespace libbitcoin {
 namespace server {

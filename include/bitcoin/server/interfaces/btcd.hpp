@@ -28,11 +28,12 @@ namespace interface {
 
 struct btcd_methods
 {
-    /// BTCD protocol (unversioned, json-rpc v1.0 over http/ws).
+    /// BTCD protocol (json-rpc v2.0 over http/ws). Named arguments are
+    /// required by v2.0, but btcd does not support them (supported here).
     static constexpr std::tuple methods
     {
         /// Administrative.
-        method<"authenticate", string_t, string_t>{ "username", "password" },
+        method<"authenticate", string_t, string_t>{ "username", "passphrase" },
         method<"session">{},
         method<"stop">{ unimplemented },
 
@@ -115,6 +116,17 @@ struct btcd_methods
 };
 
 } // namespace interface
+
+namespace btcd
+{
+    enum class version : uint32_t
+    {
+        major = 0,
+        minor = 26,
+        patch = 2
+    };
+} // namespace btcd
+
 } // namespace server
 } // namespace libbitcoin
 

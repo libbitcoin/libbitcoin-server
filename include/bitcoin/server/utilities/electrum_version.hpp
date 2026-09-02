@@ -20,62 +20,11 @@
 #define LIBBITCOIN_SERVER_UTILITIES_ELECTRUM_VERSION_HPP
 
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace electrum {
-
-enum class version
-{
-    /// Invalid version.
-    v0_0,
-
-    /// 2011, initial protocol negotiation (unsupported).
-    v0_6,
-
-    /// 2012, enhanced protocol negotiation (unsupported).
-    v0_8,
-
-    /// 2012, added pruning limits and transport indicators (unsupported).
-    v0_9,
-
-    /// 2013, baseline for core methods in official specification (unsupported).
-    v0_10,
-
-    /// 2014, deprecations of utxo and block number methods (minimum).
-    v1_0,
-
-    /// 2015, updated version response and introduced scripthash methods.
-    v1_1,
-
-    /// 2017, added optional parameters for transactions and headers.
-    v1_2,
-
-    /// 2018, defaulted raw headers and introduced new block methods.
-    v1_3,
-
-    /// 2019, removed deserialized headers and added merkle proof features.
-    v1_4,
-
-    /// 2019, modifications for auxiliary proof-of-work handling (unsupported).
-    /// The version number is allowed but there is no difference from v1.4.
-    v1_4_1,
-
-    /// 2020, added scripthash unsubscribe functionality.
-    v1_4_2,
-
-    /// Name index coins only (e.g. Namecoin) (unsupported).
-    //v1_4_3,
-
-    /// There is no v1.5 release (skipped).
-    //v1_5,
-
-    /// 2022, updated response formats, added fee estimation modes (maximum).
-    v1_6,
-
-    /// Not yet valid, just defined for out of bounds testing.
-    v1_7
-};
 
 /// The numeric form of a defined version (0.0 if undefined).
 system::config::version version_to_number(version value) NOEXCEPT;
