@@ -28,7 +28,8 @@ namespace interface {
 
 struct btcd_methods
 {
-    /// BTCD protocol (unversioned, json-rpc v1.0 over http/ws).
+    /// BTCD protocol (json-rpc v2.0 over http/ws). Named arguments are
+    /// required by v2.0, but btcd does not support them (supported here).
     static constexpr std::tuple methods
     {
         /// Administrative.
