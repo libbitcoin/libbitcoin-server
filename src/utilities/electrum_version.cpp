@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <utility>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 
 namespace libbitcoin {
 namespace server {

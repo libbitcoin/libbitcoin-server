@@ -1255,11 +1255,6 @@ options_metadata parser::load_settings() THROWS
         "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
     )
     (
-        "btcd.version",
-        value<version>(&configured.server.btcd.version),
-        "The version identity (getinfo), defaults to '0.0'."
-    )
-    (
         "btcd.maximum_filters",
         value<uint32_t>(&configured.server.btcd.maximum_filters),
         "The maximum number of loadtxfilter watches, defaults to '1000000'."

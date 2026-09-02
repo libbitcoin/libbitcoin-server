@@ -116,6 +116,17 @@ struct btcd_methods
 };
 
 } // namespace interface
+
+namespace btcd
+{
+    enum class version : uint32_t
+    {
+        major = 0,
+        minor = 26,
+        patch = 2
+    };
+} // namespace btcd
+
 } // namespace server
 } // namespace libbitcoin
 

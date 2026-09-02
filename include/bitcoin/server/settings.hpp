@@ -174,7 +174,7 @@ public:
         using base = network::settings::http_server;
         using base::base;
 
-        /// Arbitrary version identity returned by getnetworkinfo.
+        /// Version identity returned by getnetworkinfo.
         system::config::version version{};
         std::string subversion{ "/libbitcoin:server/" };
     };
@@ -184,9 +184,6 @@ public:
     {
         using base = network::settings::http_server;
         using base::base;
-
-        /// Arbitrary version identity returned by getinfo.
-        system::config::version version{};
 
         /// Maximum cumulative number of loadtxfilter watches per channel.
         uint32_t maximum_filters{ 1'000'000 };
@@ -213,7 +210,7 @@ public:
     /// bitcoind compat interface (http/s, stateless json-rpc-v2)
     bitcoind_server bitcoind{ "bitcoind" };
 
-    /// btcd compat interface (http/s + websocket, json-rpc-v1)
+    /// btcd compat interface (http/s + websocket, json-rpc-v2 [no positional])
     btcd_server btcd{ "btcd" };
 
     /// electrum compat interface (tcp/s, json-rpc-v2)
