@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -311,6 +312,180 @@ void protocol_btcd::complete_rescan_blocks(const code& ec,
     }
 
     send_result(std::move(*discovered), 256);
+}
+
+// Handlers (transactions).
+// ----------------------------------------------------------------------------
+
+bool protocol_btcd::handle_search_raw_transactions(const code& ec,
+    btcd_interface::search_raw_transactions, const std::string& address,
+    double verbose, double skip, double count, double prevouts, bool reverse,
+    const array_t& filteraddrs) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (!archive().address_enabled())
+    {
+        send_error(error::btcd::misc_error);
+        return true;
+    }
+
+    hashes keys{};
+    data_chunk point{};
+    chain::script script_{};
+
+    // A serialized public key implies two output scripts (p2pk and p2pkh).
+    if (decode_base16(point, address) && is_public_key(point))
+    {
+        using namespace chain;
+        const auto hash = bitcoin_short_hash(point);
+        keys.push_back(script{ script::to_pay_public_key_pattern(point) }.hash());
+        keys.push_back(script{ script::to_pay_key_hash_pattern(hash) }.hash());
+    }
+    else if (!output_script(script_, address, p2kh_, p2sh_, witness_))
+    {
+        keys.push_back(script_.hash());
+    }
+    else
+    {
+        send_error(error::btcd::invalid_address_or_key);
+        return true;
+    }
+
+    int64_t level{}, first{}, extra{}, requested{};
+    if (!to_integer(level, verbose)   || !to_integer(first, skip) ||
+        !to_integer(requested, count) || !to_integer(extra, prevouts))
+    {
+        send_error(error::btcd::invalid_params);
+        return true;
+    }
+
+    if (is_zero(requested))
+    {
+        send_result(null_t{}, 5);
+        return true;
+    }
+
+    std::set<std::string> filter{};
+    for (const auto& item: filteraddrs)
+    {
+        if (!std::holds_alternative<string_t>(item.value()))
+        {
+            send_error(error::btcd::invalid_params);
+            return true;
+        }
+
+        filter.emplace(std::get<string_t>(item.value()));
+    }
+
+    monitor(true);
+    PARALLEL(do_search_raw_transactions, std::move(keys), !is_zero(level),
+        limit<size_t>(first, zero, max_size_t),
+        limit<size_t>(requested, one, max_size_t), !is_zero(extra), reverse,
+        std::move(filter));
+    return true;
+}
+
+void protocol_btcd::do_search_raw_transactions(const hashes& keys,
+    bool verbose, size_t skip, size_t count, bool prevouts, bool reverse,
+    const std::set<std::string>& filter) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    histories history{};
+    auto& query = archive();
+    const auto limit = server_settings().btcd.maximum_history;
+    for (const auto& key: keys)
+    {
+        histories part{};
+        database::height_link cursor{};
+        if (const auto fault = query.get_confirmed_history(stopping_, cursor,
+            part, key, limit, turbo_))
+        {
+            if (fault == database::error::query_canceled)
+                return;
+
+            POST_BTCD(complete_search_raw_transactions, fault,
+                to_shared<array_t>());
+            return;
+        }
+
+        history.insert(history.end(), part.begin(), part.end());
+    }
+
+    // A transaction can pay more than one of the searched scripts.
+    if (keys.size() > one)
+        database::history::filter_sort_and_dedup(history);
+
+    // Confirmed history ascends by height, btcd's default order.
+    if (reverse)
+        std::reverse(history.begin(), history.end());
+
+    array_t found{};
+    for (const auto& entry: history)
+    {
+        if (stopping_)
+            return;
+
+        if (to_bool(skip))
+        {
+            --skip;
+            continue;
+        }
+
+        if (found.size() == count)
+            break;
+
+        constexpr auto witness = true;
+        const auto link = query.to_tx(entry.tx.hash());
+        const auto tx = query.get_transaction(link, witness);
+        if (!tx)
+        {
+            POST_BTCD(complete_search_raw_transactions,
+                error::btcd::internal_error, to_shared<array_t>());
+            return;
+        }
+
+        if (!verbose)
+        {
+            const auto size = tx->serialized_size(witness);
+            found.emplace_back(to_text(*tx, size, witness));
+            continue;
+        }
+
+        found.emplace_back(boost::json::value{ btcd::search_transaction(
+            query, link, *tx, filter, prevouts, p2kh_, p2sh_, witness_) });
+    }
+
+    POST_BTCD(complete_search_raw_transactions, error::success,
+        emplace_shared<array_t>(std::move(found)));
+}
+
+void protocol_btcd::complete_search_raw_transactions(const code& ec,
+    const array_ptr& found) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        using namespace error::btcd;
+        send_error(translate(ec, internal_error));
+        return;
+    }
+
+    // btcd reports an address without transactions as -5 (no tx info).
+    if (found->empty())
+    {
+        send_error(error::btcd::invalid_address_or_key);
+        return;
+    }
+
+    send_result(std::move(*found), add1(found->size()) * 512);
 }
 
 // Notification event handlers.

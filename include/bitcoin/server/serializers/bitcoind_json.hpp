@@ -52,6 +52,10 @@ BCS_API void inject_tx_prevouts(boost::json::object& out,
     const node::query& query,
     const system::chain::transaction& tx) NOEXCEPT;
 
+/// The address of a singular output script (empty if unaddressable).
+BCS_API std::string to_address(const system::chain::script& script,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
 /// The bitcoind block header object.
 BCS_API boost::json::object header_to_bitcoind(
     const system::chain::header& header) NOEXCEPT;

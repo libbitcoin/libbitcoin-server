@@ -16,15 +16,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
-#define LIBBITCOIN_SERVER_SERIALIZERS_SERIALIZERS_HPP
+#ifndef LIBBITCOIN_SERVER_SERIALIZERS_BTCD_JSON_HPP
+#define LIBBITCOIN_SERVER_SERIALIZERS_BTCD_JSON_HPP
 
-#include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
-#include <bitcoin/server/serializers/bitcoind_coin.hpp>
-#include <bitcoin/server/serializers/bitcoind_data.hpp>
-#include <bitcoin/server/serializers/bitcoind_deployments.hpp>
-#include <bitcoin/server/serializers/bitcoind_json.hpp>
-#include <bitcoin/server/serializers/bitcoind_psbt.hpp>
-#include <bitcoin/server/serializers/btcd_json.hpp>
+#include <set>
+#include <string>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+namespace btcd {
+
+/// The verbose searchrawtransactions element: the bitcoind transaction model
+/// with btcd's prevOut extension and address filtering.
+BCS_API boost::json::object search_transaction(const node::query& query,
+    const database::tx_link& link, const system::chain::transaction& tx,
+    const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
+} // namespace btcd
+} // namespace server
+} // namespace libbitcoin
 
 #endif

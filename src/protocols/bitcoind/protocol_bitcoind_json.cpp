@@ -20,6 +20,7 @@
 
 #include <iterator>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
@@ -105,15 +106,7 @@ network::rpc::object_t protocol_bitcoind::create_multisig(uint8_t required,
 std::string protocol_bitcoind::to_address(
     const chain::script& script) const NOEXCEPT
 {
-    using namespace wallet;
-
-    const auto version = script.version_value();
-    if (version != to_value(chain::script_version::unversioned))
-        return witness_address{ *script.witness_program(), version,
-            witness_ }.encoded();
-
-    const auto pay = payment_address::extract_output(script, p2kh_, p2sh_);
-    return pay ? pay.encoded() : std::string{};
+    return server::to_address(script, p2kh_, p2sh_, witness_);
 }
 
 // Inferred where a pattern is expressible, otherwise raw.

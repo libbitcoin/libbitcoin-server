@@ -108,6 +108,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/serializers/bitcoind_deployments.cpp \
     ${srcdir}/../../src/serializers/bitcoind_json.cpp \
     ${srcdir}/../../src/serializers/bitcoind_psbt.cpp \
+    ${srcdir}/../../src/serializers/btcd_json.cpp \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
     ${srcdir}/../../src/utilities/bitcoind_merkle.cpp \
     ${srcdir}/../../src/utilities/electrum_version.cpp
@@ -233,6 +234,7 @@ include_bitcoin_server_serializers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_deployments.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_json.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/bitcoind_psbt.hpp \
+    ${srcdir}/../../include/bitcoin/server/serializers/btcd_json.hpp \
     ${srcdir}/../../include/bitcoin/server/serializers/serializers.hpp
 
 include_bitcoin_server_sessionsdir = \

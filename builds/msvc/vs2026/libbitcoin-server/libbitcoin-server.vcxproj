@@ -180,6 +180,7 @@
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_deployments.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_psbt.cpp" />
+    <ClCompile Include="..\..\..\..\src\serializers\btcd_json.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_deployments.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_json.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_psbt.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\btcd_json.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\serializers.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\server_node.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session.hpp" />
