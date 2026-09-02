@@ -87,8 +87,8 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__extra_param__dropped)
 
 BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
 {
-    config_.node.minimum_fee_rate = 42.42f;
-    config_.node.minimum_bump_rate = 24.24f;
+    config_.node.minimum_fee_rate = 42.42;
+    config_.node.minimum_bump_rate = 24.24;
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":703,"method":"mempool.get_info","params":[]})" "\n");

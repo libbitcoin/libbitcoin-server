@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
 {
-    config_.node.minimum_fee_rate = 42.42f;
+    config_.node.minimum_fee_rate = 42.42;
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":90,"method":"blockchain.relayfee","params":[]})" "\n");
