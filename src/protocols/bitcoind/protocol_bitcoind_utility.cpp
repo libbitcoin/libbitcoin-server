@@ -117,7 +117,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     object_t result
     {
         { "asm", script.to_string(flags::all_rules, true) },
-        { "desc", infer_descriptor(script) },
+        { "desc", infer_descriptor(script, p2kh_, p2sh_, witness_) },
         { "type", to_script_type(pattern) }
     };
 
@@ -155,7 +155,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
             { "hex", encode_base16(wsh.to_data(false)) },
             { "type", to_script_type(script_pattern::pay_witness_script_hash) },
             { "address", witness_address{ script, witness_ }.encoded() },
-            { "desc", infer_descriptor(wsh) },
+            { "desc", infer_descriptor(wsh, p2kh_, p2sh_, witness_) },
             { "p2sh-segwit", payment_address{ wsh, p2sh_ }.encoded() }
         });
     }
@@ -243,7 +243,8 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
 
     // An invalid key (bitcoind -5) and an oversized script (-8) are not
     // distinguished by the helper.
-    auto result = create_multisig(required, keys, address_type);
+    auto result = create_multisig(required, keys, address_type, p2sh_,
+        witness_);
     if (result.empty())
     {
         send_error(error::bitcoind::invalid_address_or_key);
@@ -323,7 +324,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         const auto scripts = parsed.scripts(index);
         std::string address{};
         if (is_one(scripts.size()))
-            address = to_address(scripts.front());
+            address = to_address(scripts.front(), p2kh_, p2sh_, witness_);
 
         if (address.empty())
         {

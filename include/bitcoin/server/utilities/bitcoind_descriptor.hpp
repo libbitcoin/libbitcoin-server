@@ -27,6 +27,17 @@ namespace server {
 /// The bip380 output descriptor checksum, empty on invalid characters.
 BCS_API std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT;
 
+/// The output descriptor of a script, raw where no pattern is expressible.
+BCS_API std::string infer_descriptor(const system::chain::script& script,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
+/// The createmultisig result, empty if a key is invalid or the p2sh embedded
+/// script exceeds one push element. An uncompressed key downgrades a segwit
+/// address type to legacy with a warning (as bitcoind).
+BCS_API network::rpc::object_t create_multisig(uint8_t required,
+    const network::rpc::array_t& keys, const std::string& address_type,
+    uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
 } // namespace server
 } // namespace libbitcoin
 

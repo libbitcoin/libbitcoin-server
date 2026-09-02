@@ -874,7 +874,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
         const auto data = script.to_data(false);
         needles.emplace(sha256_hash(data),
-            needle{ encode_base16(data), infer_descriptor(script) });
+            needle{ encode_base16(data),
+                infer_descriptor(script, p2kh_, p2sh_, witness_) });
     }
 
     struct match

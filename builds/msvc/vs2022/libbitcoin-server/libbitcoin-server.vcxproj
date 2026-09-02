@@ -141,7 +141,6 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_control.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_dispatch.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_mining.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_network.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_notifications.cpp" />
@@ -183,6 +182,7 @@
     <ClCompile Include="..\..\..\..\src\serializers\btcd_json.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\bitcoind_combine.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_merkle.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp" />
@@ -270,6 +270,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\sessions.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_combine.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_descriptor.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_merkle.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />

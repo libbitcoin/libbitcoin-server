@@ -71,7 +71,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_blockchain.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_control.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_dispatch.cpp \
-    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_json.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_mining.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_network.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_notifications.cpp \
@@ -109,6 +108,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/serializers/bitcoind_json.cpp \
     ${srcdir}/../../src/serializers/bitcoind_psbt.cpp \
     ${srcdir}/../../src/serializers/btcd_json.cpp \
+    ${srcdir}/../../src/utilities/bitcoind_combine.cpp \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
     ${srcdir}/../../src/utilities/bitcoind_merkle.cpp \
     ${srcdir}/../../src/utilities/electrum_version.cpp
@@ -250,6 +250,7 @@ include_bitcoin_server_utilitiesdir = \
     ${includedir}/bitcoin/server/utilities
 
 include_bitcoin_server_utilities_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_combine.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_descriptor.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \

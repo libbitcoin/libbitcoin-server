@@ -111,7 +111,8 @@ protected:
     bool handle_submit_package(const code& ec,
         rpc_interface::submit_package) NOEXCEPT;
     bool handle_combine_raw_transaction(const code& ec,
-        rpc_interface::combine_raw_transaction) NOEXCEPT;
+        rpc_interface::combine_raw_transaction,
+        const network::rpc::array_t& txs) NOEXCEPT;
     bool handle_sign_raw_transaction_with_key(const code& ec,
         rpc_interface::sign_raw_transaction_with_key) NOEXCEPT;
 };

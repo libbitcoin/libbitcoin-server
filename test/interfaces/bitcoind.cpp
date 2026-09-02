@@ -134,7 +134,7 @@ static_assert(bitcoind_transaction_methods::names ==
     "createrawtransaction decoderawtransaction getrawtransaction "
     "sendrawtransaction testmempoolaccept analyzepsbt combinepsbt "
     "converttopsbt createpsbt decodepsbt finalizepsbt joinpsbts "
-    "utxoupdatepsbt");
+    "utxoupdatepsbt combinerawtransaction");
 static_assert(bitcoind_utility_methods::names ==
     "decodescript validateaddress createmultisig deriveaddresses "
     "getdescriptorinfo verifymessage getindexinfo");

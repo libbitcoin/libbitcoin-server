@@ -48,7 +48,7 @@ struct bitcoind_transaction_methods
         method<"abortprivatebroadcast">{ unimplemented },
         method<"getprivatebroadcastinfo">{ unimplemented },
         method<"submitpackage">{ unimplemented },
-        method<"combinerawtransaction">{ unimplemented },
+        method<"combinerawtransaction", array_t>{ "txs" },
         method<"signrawtransactionwithkey">{ unimplemented }
     };
 

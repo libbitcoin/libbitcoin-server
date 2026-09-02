@@ -147,9 +147,6 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_dispatch.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_json.cpp">
-      <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_mining.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
@@ -272,6 +269,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\bitcoind_combine.cpp">
+      <Filter>src\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp">
       <Filter>src\utilities</Filter>
@@ -529,6 +529,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
       <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_combine.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_descriptor.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>

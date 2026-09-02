@@ -96,6 +96,7 @@
 #include <bitcoin/server/sessions/session_handshake.hpp>
 #include <bitcoin/server/sessions/session_server.hpp>
 #include <bitcoin/server/sessions/sessions.hpp>
+#include <bitcoin/server/utilities/bitcoind_combine.hpp>
 #include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
 #include <bitcoin/server/utilities/bitcoind_merkle.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>

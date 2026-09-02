@@ -16,12 +16,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_UTILITIES_UTILITIES_HPP
-#define LIBBITCOIN_SERVER_UTILITIES_UTILITIES_HPP
+#ifndef LIBBITCOIN_SERVER_UTILITIES_BITCOIND_COMBINE_HPP
+#define LIBBITCOIN_SERVER_UTILITIES_BITCOIND_COMBINE_HPP
 
-#include <bitcoin/server/utilities/bitcoind_combine.hpp>
-#include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
-#include <bitcoin/server/utilities/bitcoind_merkle.hpp>
-#include <bitcoin/server/utilities/electrum_version.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+/// The combined input from the variants' candidates at the same position.
+/// Multisig (bare, p2sh, p2wsh) merges endorsements across the candidates;
+/// any other form is taken from the first candidate carrying a signature.
+BCS_API code combine_input(system::chain::input::cptr& out,
+    const node::query& query,
+    const system::chain::transaction_cptrs& variants,
+    uint32_t index) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

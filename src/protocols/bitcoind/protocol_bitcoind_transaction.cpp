@@ -72,7 +72,7 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_abort_private_broadcast, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_private_broadcast_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_combine_raw_transaction, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_combine_raw_transaction, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_sign_raw_transaction_with_key, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
@@ -878,10 +878,64 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
 }
 
 bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
-    const code& ec, rpc_interface::combine_raw_transaction) NOEXCEPT
+    const code& ec, rpc_interface::combine_raw_transaction,
+    const array_t& txs) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::method_not_found);
+    if (stopped(ec))
+        return false;
+
+    using namespace chain;
+    transaction_cptrs variants{};
+    variants.reserve(txs.size());
+    for (const auto& item: txs)
+    {
+        data_chunk data{};
+        if (!std::holds_alternative<string_t>(item.value()) ||
+            !decode_base16(data, std::get<string_t>(item.value())))
+        {
+            send_error(error::bitcoind::deserialization_error);
+            return true;
+        }
+
+        const auto tx = emplace_shared<transaction>(data, true);
+        if (!tx->is_valid())
+        {
+            send_error(error::bitcoind::deserialization_error);
+            return true;
+        }
+
+        variants.push_back(tx);
+    }
+
+    if (variants.empty())
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    const auto& base = *variants.front();
+    const auto ins = to_shared<input_cptrs>();
+    ins->reserve(base.inputs_ptr()->size());
+
+    const auto inputs = base.inputs_ptr()->size();
+    for (uint32_t index = 0; index < inputs; ++index)
+    {
+        input::cptr combined{};
+        if (const auto fault = combine_input(combined, archive(), variants,
+            index))
+        {
+            send_error(fault);
+            return true;
+        }
+
+        ins->push_back(combined);
+    }
+
+    constexpr auto witness = true;
+    const transaction merged{ base.version(), ins, base.outputs_ptr(),
+        base.locktime() };
+    send_result(to_text(merged, merged.serialized_size(witness), witness),
+        400);
     return true;
 }
 
