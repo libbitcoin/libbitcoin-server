@@ -1559,12 +1559,12 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "node.minimum_fee_rate",
-        value<float>(&configured.node.minimum_fee_rate),
+        value<double>(&configured.node.minimum_fee_rate),
         "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.0'."
     )
     (
         "node.minimum_bump_rate",
-        value<float>(&configured.node.minimum_bump_rate),
+        value<double>(&configured.node.minimum_bump_rate),
         "Minimum fee rate increment for conflicting tx acceptance, defaults to '0.0'."
     )
     (
