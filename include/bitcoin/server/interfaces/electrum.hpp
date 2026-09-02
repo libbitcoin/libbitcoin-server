@@ -80,7 +80,7 @@ struct electrum_methods
         method<"server.features">{},
         method<"server.peers.subscribe">{},
         method<"server.ping", optional<0.0>, optional<""_t>>{ "pong_len", "data" },
-        method<"server.version", string_t, optional<empty::value>>{ "client_name", "protocol_version" },
+        method<"server.version", optional<""_t>, optional<empty::value>>{ "client_name", "protocol_version" },
 
         /// Mempool methods.
         method<"mempool.get_fee_histogram">{},
