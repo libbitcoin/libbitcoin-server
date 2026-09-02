@@ -31,7 +31,7 @@ struct bitcoind_control_methods
     static constexpr std::tuple methods
     {
         method<"help", nullopt<""_t>>{ "command" },
-        method<"stop">{ unimplemented },
+        method<"stop", nullable<number_t>>{ unimplemented, "wait" },
         method<"getmemoryinfo", nullopt<"stats"_t>>{ "mode" },
         method<"getopenrpcinfo", nullopt<false>>{ "show_hidden" },
         method<"getrpcinfo">{},

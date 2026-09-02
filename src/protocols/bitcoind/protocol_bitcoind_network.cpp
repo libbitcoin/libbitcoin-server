@@ -60,7 +60,7 @@ void protocol_bitcoind_network::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_set_ban, _1, _2);
     SUBSCRIBE_BITCOIND(handle_add_node, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_disconnect_node, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_export_asmap, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_export_asmap, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_added_node_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_addrman_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_connection_count, _1, _2);
@@ -227,7 +227,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
 }
 
 bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
-    rpc_interface::export_asmap) NOEXCEPT
+    rpc_interface::export_asmap, const std::string&) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::method_not_found);

@@ -69,7 +69,7 @@ protected:
     bool handle_disconnect_node(const code& ec,
         rpc_interface::disconnect_node) NOEXCEPT;
     bool handle_export_asmap(const code& ec,
-        rpc_interface::export_asmap) NOEXCEPT;
+        rpc_interface::export_asmap, const std::string&) NOEXCEPT;
     bool handle_get_added_node_info(const code& ec,
         rpc_interface::get_added_node_info) NOEXCEPT;
     bool handle_get_addrman_info(const code& ec,

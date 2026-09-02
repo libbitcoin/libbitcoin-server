@@ -43,13 +43,13 @@ struct bitcoind_transaction_methods
         method<"decodepsbt", string_t>{ "psbt" },
         method<"finalizepsbt", string_t, nullopt<true>>{ "psbt", "extract" },
         method<"joinpsbts", array_t>{ "txs" },
-        method<"descriptorprocesspsbt">{ unimplemented },
+        method<"descriptorprocesspsbt", string_t, array_t, nullable<string_t>, nullopt<true>, nullopt<true>>{ unimplemented, "psbt", "descriptors", "sighashtype", "bip32derivs", "finalize" },
         method<"utxoupdatepsbt", string_t, nullopt<empty::array>>{ "psbt", "descriptors" },
-        method<"abortprivatebroadcast">{ unimplemented },
+        method<"abortprivatebroadcast", string_t>{ unimplemented, "id" },
         method<"getprivatebroadcastinfo">{ unimplemented },
-        method<"submitpackage">{ unimplemented },
+        method<"submitpackage", array_t, nullopt<0.1>, nullopt<0.0>>{ unimplemented, "package", "maxfeerate", "maxburnamount" },
         method<"combinerawtransaction", array_t>{ "txs" },
-        method<"signrawtransactionwithkey">{ unimplemented }
+        method<"signrawtransactionwithkey", string_t, array_t, nullable<array_t>, nullable<string_t>>{ unimplemented, "hexstring", "privkeys", "prevtxs", "sighashtype" }
     };
 
     template <typename... Args>

@@ -45,11 +45,11 @@ struct bitcoind_blockchain_methods
         method<"savemempool">{ unimplemented },
         method<"scantxoutset", string_t, nullopt<empty::array>>{ "action", "scanobjects" },
         method<"verifychain", nullopt<3.0>, nullopt<6.0>>{ "checklevel", "nblocks" },
-        method<"dumptxoutset">{ unimplemented },
-        method<"loadtxoutset">{ unimplemented },
+        method<"dumptxoutset", string_t, nullopt<""_t>, nullable<value_t>>{ unimplemented, "path", "type", "options" },
+        method<"loadtxoutset", string_t>{ unimplemented, "path" },
         method<"gettxoutproof", array_t, nullopt<""_t>>{ "txids", "blockhash" },
         method<"verifytxoutproof", string_t>{ "proof" },
-        method<"getblockfrompeer">{ unimplemented },
+        method<"getblockfrompeer", string_t, number_t>{ unimplemented, "blockhash", "peer_id" },
         method<"getchainstates">{},
         method<"getchaintips">{},
         method<"getdeploymentinfo", nullopt<""_t>>{ "blockhash" },
@@ -60,14 +60,14 @@ struct bitcoind_blockchain_methods
         method<"waitforblock", string_t, nullopt<0.0>>{ "blockhash", "timeout" },
         method<"waitforblockheight", number_t, nullopt<0.0>>{ "height", "timeout" },
         method<"waitfornewblock", nullopt<0.0>, nullopt<""_t>>{ "timeout", "current_tip" },
-        method<"getmempoolancestors">{ unimplemented },
-        method<"getmempoolcluster">{ unimplemented },
-        method<"getmempooldescendants">{ unimplemented },
-        method<"getmempoolentry">{ unimplemented },
+        method<"getmempoolancestors", string_t, nullopt<false>>{ unimplemented, "txid", "verbose" },
+        method<"getmempoolcluster", string_t>{ unimplemented, "txid" },
+        method<"getmempooldescendants", string_t, nullopt<false>>{ unimplemented, "txid", "verbose" },
+        method<"getmempoolentry", string_t>{ unimplemented, "txid" },
         method<"getmempoolinfo">{ unimplemented },
-        method<"getrawmempool">{ unimplemented },
-        method<"gettxspendingprevout">{ unimplemented },
-        method<"importmempool">{ unimplemented }
+        method<"getrawmempool", nullopt<false>, nullopt<false>>{ unimplemented, "verbose", "mempool_sequence" },
+        method<"gettxspendingprevout", array_t, nullable<object_t>>{ unimplemented, "outputs", "options" },
+        method<"importmempool", string_t, nullable<object_t>>{ unimplemented, "filepath", "options" }
     };
 
     template <typename... Args>

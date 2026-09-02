@@ -37,8 +37,8 @@ struct bitcoind_utility_methods
         method<"getdescriptorinfo", string_t>{ "descriptor" },
         method<"verifymessage", string_t, string_t, string_t>{ "address", "signature", "message" },
         method<"getindexinfo", nullopt<""_t>>{ "index_name" },
-        method<"estimatesmartfee">{ unimplemented },
-        method<"signmessagewithprivkey">{ unimplemented }
+        method<"estimatesmartfee", number_t, nullopt<"economical"_t>, nullable<object_t>>{ unimplemented, "conf_target", "estimate_mode", "options" },
+        method<"signmessagewithprivkey", string_t, string_t>{ unimplemented, "privkey", "message" }
     };
 
     template <typename... Args>
