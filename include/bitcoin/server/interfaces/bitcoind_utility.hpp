@@ -32,13 +32,13 @@ struct bitcoind_utility_methods
     {
         method<"decodescript", string_t>{ "hexstring" },
         method<"validateaddress", string_t>{ "address" },
-        method<"createmultisig", number_t, array_t, optional<"legacy"_t>>{ "nrequired", "keys", "address_type" },
+        method<"createmultisig", number_t, array_t, nullopt<"legacy"_t>>{ "nrequired", "keys", "address_type" },
         method<"deriveaddresses", string_t, nullable<value_t>>{ "descriptor", "range" },
         method<"getdescriptorinfo", string_t>{ "descriptor" },
         method<"verifymessage", string_t, string_t, string_t>{ "address", "signature", "message" },
-        method<"getindexinfo", optional<""_t>>{ "index_name" },
-        method<"estimatesmartfee">{ unimplemented },
-        method<"signmessagewithprivkey">{ unimplemented }
+        method<"getindexinfo", nullopt<""_t>>{ "index_name" },
+        method<"estimatesmartfee", number_t, nullopt<"economical"_t>, nullable<object_t>>{ unimplemented, "conf_target", "estimate_mode", "options" },
+        method<"signmessagewithprivkey", string_t, string_t>{ unimplemented, "privkey", "message" }
     };
 
     template <typename... Args>

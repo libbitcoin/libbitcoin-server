@@ -931,10 +931,46 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__expected_code)
     }
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__core_shaped_params__expected_code)
+{
+    const auto prioritise = rpc("prioritisetransaction", R"(["0000000000000000000000000000000000000000000000000000000000000001",null,100])");
+    const auto blocktemplate = rpc("getblocktemplate", R"([{"rules":["segwit"]}])");
+    const auto package = rpc("submitpackage", "[[],0.1,0]");
+
+    BOOST_REQUIRE(has_code(prioritise, -33));
+    BOOST_REQUIRE(has_code(blocktemplate, -33));
+    BOOST_REQUIRE(has_code(package, -33));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__noop__true)
 {
     const auto response = rpc("verifychain", "[]");
     REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__null_params__true)
+{
+    const auto response = rpc("verifychain", "[null,null]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__interior_null__true)
+{
+    const auto response = rpc("verifychain", "[null,6]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__named_null_params__true)
+{
+    const auto response = rpc("verifychain", R"({"checklevel":null,"nblocks":null})");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__null_required__dropped)
+{
+    const auto request = R"({"id":1,"method":"getblockhash","params":[null]})";
+    const auto response = rpc_body(request);
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdifficulty__ten_block_store__one)

@@ -30,26 +30,26 @@ struct bitcoind_transaction_methods
 {
     static constexpr std::tuple methods
     {
-        method<"createrawtransaction", array_t, value_t, optional<0.0>, optional<true>, optional<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version" },
+        method<"createrawtransaction", array_t, value_t, nullopt<0.0>, nullopt<true>, nullopt<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version" },
         method<"decoderawtransaction", string_t, nullable<boolean_t>>{ "hexstring", "iswitness" },
-        method<"getrawtransaction", string_t, optional<0.0>, optional<""_t>>{ "txid", "verbosity", "blockhash" },
+        method<"getrawtransaction", string_t, nullopt<0.0>, nullopt<""_t>>{ "txid", "verbosity", "blockhash" },
         // bitcoind also accepts quoted amounts (slop; needs dispatch special case).
-        method<"sendrawtransaction", string_t, optional<0.1>, optional<0.0>>{ "hexstring", "maxfeerate", "maxburnamount" },
-        method<"testmempoolaccept", array_t, optional<0.1>>{ "rawtxs", "maxfeerate" },
+        method<"sendrawtransaction", string_t, nullopt<0.1>, nullopt<0.0>>{ "hexstring", "maxfeerate", "maxburnamount" },
+        method<"testmempoolaccept", array_t, nullopt<0.1>>{ "rawtxs", "maxfeerate" },
         method<"analyzepsbt", string_t>{ "psbt" },
         method<"combinepsbt", array_t>{ "txs" },
-        method<"converttopsbt", string_t, optional<false>, nullable<boolean_t>, optional<2.0>>{ "hexstring", "permitsigdata", "iswitness", "psbt_version" },
-        method<"createpsbt", array_t, value_t, optional<0.0>, optional<true>, optional<2.0>, optional<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version", "psbt_version" },
+        method<"converttopsbt", string_t, nullopt<false>, nullable<boolean_t>, nullopt<2.0>>{ "hexstring", "permitsigdata", "iswitness", "psbt_version" },
+        method<"createpsbt", array_t, value_t, nullopt<0.0>, nullopt<true>, nullopt<2.0>, nullopt<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version", "psbt_version" },
         method<"decodepsbt", string_t>{ "psbt" },
-        method<"finalizepsbt", string_t, optional<true>>{ "psbt", "extract" },
+        method<"finalizepsbt", string_t, nullopt<true>>{ "psbt", "extract" },
         method<"joinpsbts", array_t>{ "txs" },
-        method<"descriptorprocesspsbt">{ unimplemented },
-        method<"utxoupdatepsbt", string_t, optional<empty::array>>{ "psbt", "descriptors" },
-        method<"abortprivatebroadcast">{ unimplemented },
+        method<"descriptorprocesspsbt", string_t, array_t, nullable<string_t>, nullopt<true>, nullopt<true>>{ unimplemented, "psbt", "descriptors", "sighashtype", "bip32derivs", "finalize" },
+        method<"utxoupdatepsbt", string_t, nullopt<empty::array>>{ "psbt", "descriptors" },
+        method<"abortprivatebroadcast", string_t>{ unimplemented, "id" },
         method<"getprivatebroadcastinfo">{ unimplemented },
-        method<"submitpackage">{ unimplemented },
+        method<"submitpackage", array_t, nullopt<0.1>, nullopt<0.0>>{ unimplemented, "package", "maxfeerate", "maxburnamount" },
         method<"combinerawtransaction", array_t>{ "txs" },
-        method<"signrawtransactionwithkey">{ unimplemented }
+        method<"signrawtransactionwithkey", string_t, array_t, nullable<array_t>, nullable<string_t>>{ unimplemented, "hexstring", "privkeys", "prevtxs", "sighashtype" }
     };
 
     template <typename... Args>

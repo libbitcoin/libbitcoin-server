@@ -51,13 +51,13 @@ struct btcd_methods
         method<"getheaders", array_t, string_t>{ "blocklocators", "hashstop" },
         method<"getinfo">{},
         method<"getnettotals">{},
-        method<"searchrawtransactions", string_t, optional<1.0>, optional<0.0>, optional<100.0>, optional<0.0>, optional<false>, optional<empty::array>>{ "address", "verbose", "skip", "count", "vinextra", "reverse", "filteraddrs" },
+        method<"searchrawtransactions", string_t, nullopt<1.0>, nullopt<0.0>, nullopt<100.0>, nullopt<0.0>, nullopt<false>, nullopt<empty::array>>{ "address", "verbose", "skip", "count", "vinextra", "reverse", "filteraddrs" },
         method<"version">{},
 
         /// Subscription.
         method<"notifyblocks">{},
         method<"stopnotifyblocks">{},
-        method<"notifynewtransactions", optional<false>>{ unimplemented, "verbose" },
+        method<"notifynewtransactions", nullopt<false>>{ unimplemented, "verbose" },
         method<"stopnotifynewtransactions">{ unimplemented },
 
         /// Filters.
@@ -69,7 +69,7 @@ struct btcd_methods
         method<"stopnotifyreceived", value_t>{ unimplemented, "addresses" },
         method<"notifyspent", value_t>{ unimplemented, "outpoints" },
         method<"stopnotifyspent", value_t>{ unimplemented, "outpoints" },
-        method<"rescan", string_t, value_t, value_t, optional<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
+        method<"rescan", string_t, value_t, value_t, nullopt<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
     };
 
     /// Method names as reported by help.

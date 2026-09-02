@@ -47,7 +47,7 @@ struct bitcoind_rest_methods
         method<"get_utxos", uint8_t, network::rpc::array_t>{ "media", "outpoints" },
 
         // mempool (json only)
-        method<"mempool", optional<true>, optional<false>>{ "verbose", "sequence" },
+        method<"mempool", nullopt<true>, nullopt<false>>{ "verbose", "sequence" },
 
         // info (json only)
         method<"chain_information">{},
