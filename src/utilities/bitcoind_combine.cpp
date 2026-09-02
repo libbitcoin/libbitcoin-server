@@ -76,14 +76,14 @@ code combine_input(input::cptr& out, const node::query& query,
     const auto& base = *variants.front();
     const auto& in = *base.inputs_ptr()->at(index);
 
-    // The prevout must be known and unspent (as bitcoind).
+    // The prevout must be known and unspent.
     const auto tx_link = query.to_tx(in.point().hash());
     const auto prevout = query.get_output(tx_link, in.point().index());
     if (!prevout || query.is_confirmed_spent(query.to_output(tx_link,
         in.point().index())))
         return error::bitcoind::verify_error;
 
-    // A variant with fewer inputs contributes no candidate (as bitcoind).
+    // A variant with fewer inputs contributes no candidate.
     std::vector<script::cptr> scripts{};
     std::vector<witness::cptr> witnesses{};
     for (const auto& variant: variants)

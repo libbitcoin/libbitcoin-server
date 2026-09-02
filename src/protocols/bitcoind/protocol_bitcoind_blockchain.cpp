@@ -698,7 +698,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     const auto& query = archive();
     const auto link = query.to_confirmed(height);
 
-    // The pinned ancestry excludes genesis, absent from the set (as bitcoind).
+    // The pinned ancestry excludes genesis, absent from the set.
     database::header_links branch{};
     if (!query.get_ancestry(branch, link, height))
     {
@@ -910,7 +910,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
             for (const auto& utxo: outs)
             {
-                // The genesis output is excluded from the set (as bitcoind).
+                // The genesis output is excluded from the set.
                 if (is_zero(utxo.height) && is_zero(utxo.position))
                     continue;
 
@@ -962,7 +962,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         return;
     }
 
-    // Report in canonical (txid, index) order (as bitcoind).
+    // Report in canonical (txid, index) order.
     std::sort(matches.begin(), matches.end(),
         [](const auto& left, const auto& right) NOEXCEPT
         {
@@ -1149,7 +1149,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
 }
 
 // Verifies a serialized merkle block, returning the array of proven txids, or
-// an empty array if the proof is invalid (as bitcoind).
+// an empty array if the proof is invalid.
 bool protocol_bitcoind_blockchain::handle_verify_tx_out_proof(const code& ec,
     rpc_interface::verify_tx_out_proof, const std::string& proof) NOEXCEPT
 {
@@ -1791,7 +1791,7 @@ void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
         return;
     }
 
-    // A zero timeout waits indefinitely (as bitcoind).
+    // A zero timeout waits indefinitely.
     uint64_t span{};
     if (!to_integer(span, timeout))
     {

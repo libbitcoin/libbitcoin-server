@@ -121,7 +121,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         { "type", to_script_type(pattern) }
     };
 
-    // An undecodable script is rendered, not rejected (as bitcoind).
+    // An undecodable script is rendered, not rejected.
     if (!script.is_valid() || script.is_underflow())
     {
         const auto body = "raw(" + encode_base16(data) + ")";
@@ -209,7 +209,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     return true;
 }
 
-// bech32m multisig is rejected (as bitcoind).
+// bech32m multisig is rejected.
 bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     rpc_interface::create_multisig, double nrequired, const array_t& keys,
     const std::string& address_type) NOEXCEPT
@@ -275,7 +275,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         return true;
     }
 
-    // The range is an end index or a [begin, end] pair (as bitcoind).
+    // The range is an end index or a [begin, end] pair.
     uint32_t begin{};
     uint32_t end{};
     if (range.has_value())
@@ -292,7 +292,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         else if (std::holds_alternative<array_t>(value))
         {
             const auto& pair = std::get<array_t>(value);
-            if (pair.size() != 2u ||
+            if (pair.size() != two ||
                 !std::holds_alternative<number_t>(pair.front().value()) ||
                 !std::holds_alternative<number_t>(pair.back().value()) ||
                 !to_integer(begin, std::get<number_t>(pair.front().value())) ||

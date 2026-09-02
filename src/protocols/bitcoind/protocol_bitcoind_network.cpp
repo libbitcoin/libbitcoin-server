@@ -272,7 +272,7 @@ void protocol_bitcoind_network::handle_fetch_info(const code& ec,
     POST(do_send_info, ec, message);
 }
 
-// An empty or unavailable pool is reported as empty (as bitcoind).
+// An empty or unavailable pool is reported as empty.
 void protocol_bitcoind_network::do_send_info(const code& ec,
     const network::address_cptr& message) NOEXCEPT
 {
@@ -330,14 +330,14 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    // An empty or unavailable pool is reported as empty (as bitcoind).
+    // An empty or unavailable pool is reported as empty.
     if (ec || !message)
     {
         send_result(array_t{}, 16);
         return;
     }
 
-    // A zero count returns all addresses (as bitcoind).
+    // A zero count returns all addresses.
     array_t out{};
     for (const auto& item: message->addresses)
     {

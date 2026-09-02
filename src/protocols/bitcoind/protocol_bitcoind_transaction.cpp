@@ -235,7 +235,7 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
         return true;
     }
 
-    // Absent the hint, witness deserialization is tried first (as bitcoind).
+    // Absent the hint, witness deserialization is tried first.
     const auto witness = iswitness.value_or(true);
     auto tx = chain::transaction{ data, witness };
     if (!iswitness.has_value() && !tx.is_valid())
@@ -356,7 +356,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     {
         using namespace error::bitcoind;
 
-        // Absent and confirmed-spent inputs are missing coins (as bitcoind).
+        // Absent and confirmed-spent inputs are missing coins.
         const auto missing =
             (fault == system::error::missing_previous_output) ||
             (fault == system::error::confirmed_double_spend);
@@ -439,7 +439,7 @@ bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
 
     auto missing_utxo = false;
     array_t ins{};
-    for (size_t index = 0; index < doc.inputs().size(); ++index)
+    for (size_t index{}; index < doc.inputs().size(); ++index)
     {
         const auto& in = doc.inputs().at(index);
         const auto utxo = !!doc.prevout(index);
@@ -570,7 +570,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
         return true;
     }
 
-    // Absent the hint, witness deserialization is tried first (as bitcoind).
+    // Absent the hint, witness deserialization is tried first.
     auto tx = chain::transaction{ data, iswitness.value_or(true) };
     if (!iswitness.has_value() && !tx.is_valid())
         tx = chain::transaction{ data, false };
@@ -760,7 +760,7 @@ bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (txs.size() < 2u)
+    if (txs.size() < two)
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
@@ -918,7 +918,7 @@ bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
     ins->reserve(base.inputs_ptr()->size());
 
     const auto inputs = base.inputs_ptr()->size();
-    for (uint32_t index = 0; index < inputs; ++index)
+    for (uint32_t index{}; index < inputs; ++index)
     {
         input::cptr combined{};
         if (const auto fault = combine_input(combined, archive(), variants,
@@ -932,10 +932,9 @@ bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
     }
 
     constexpr auto witness = true;
-    const transaction merged{ base.version(), ins, base.outputs_ptr(),
-        base.locktime() };
-    send_result(to_text(merged, merged.serialized_size(witness), witness),
-        400);
+    const auto outs = base.outputs_ptr();
+    const transaction merged{ base.version(), ins, outs, base.locktime() };
+    send_result(to_text(merged, merged.serialized_size(witness), witness), 400);
     return true;
 }
 

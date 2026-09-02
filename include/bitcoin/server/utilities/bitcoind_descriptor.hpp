@@ -33,7 +33,7 @@ BCS_API std::string infer_descriptor(const system::chain::script& script,
 
 /// The createmultisig result, empty if a key is invalid or the p2sh embedded
 /// script exceeds one push element. An uncompressed key downgrades a segwit
-/// address type to legacy with a warning (as bitcoind).
+/// address type to legacy with a warning.
 BCS_API network::rpc::object_t create_multisig(uint8_t required,
     const network::rpc::array_t& keys, const std::string& address_type,
     uint8_t p2sh, const std::string& witness) NOEXCEPT;

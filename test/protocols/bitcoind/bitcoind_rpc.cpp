@@ -1452,7 +1452,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 
 // gettxoutsetinfo
 
-// The genesis output is excluded from the utxo set (as bitcoind).
+// The genesis output is excluded from the utxo set.
 // TODO: pin the hash_serialized_3/muhash digests against bitcoind vectors.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
 {
@@ -1471,7 +1471,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
 }
 
 // Ten coinbase-only blocks issue 500 and retain 450, the genesis coinbase
-// being excluded from the set (as bitcoind).
+// being excluded from the set.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__genesis_unspendable)
 {
     const auto response = rpc("gettxoutsetinfo");
@@ -1601,7 +1601,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__empty_scanobjects__empty)
     BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 0.0);
 }
 
-// The genesis output is excluded from the utxo set (as bitcoind).
+// The genesis output is excluded from the utxo set.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__genesis_pk__excluded)
 {
     const auto response = rpc("scantxoutset", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");

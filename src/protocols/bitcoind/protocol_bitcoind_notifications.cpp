@@ -61,7 +61,7 @@ void protocol_bitcoind_notifications::start() NOEXCEPT
 // Notifications methods.
 // ----------------------------------------------------------------------------
 
-// The result is the set of configured publisher endpoints (as bitcoind), so
+// The result is the set of configured publisher endpoints, so
 // it is empty until the zeromq service is introduced and configured.
 bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& ec,
     rpc_interface::get_zmq_notifications) NOEXCEPT

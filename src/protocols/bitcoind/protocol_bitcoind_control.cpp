@@ -68,8 +68,7 @@ void protocol_bitcoind_control::start() NOEXCEPT
 // Control methods.
 // ----------------------------------------------------------------------------
 
-// One usage line synthesized from the interface metadata (not bitcoind's
-// narrative help text). Optional parameters are parenthesized.
+// One usage line synthesized from interface metadata, optionals parenthesized.
 template <typename Method>
 static void append_usage(std::string& out, const Method& entry,
     const std::string& command) NOEXCEPT
@@ -139,8 +138,6 @@ bool protocol_bitcoind_control::handle_stop(const code& ec,
     return true;
 }
 
-// libbitcoin has no locked memory manager (bitcoind locks pages holding key
-// material), so nothing is locked and the arena is empty, not unknown.
 bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
     rpc_interface::get_memory_info, const std::string& mode) NOEXCEPT
 {
@@ -154,6 +151,7 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
         return true;
     }
 
+    // Nothing is locked and the arena is empty, not unknown.
     object_t locked
     {
         { "used", zero },
@@ -244,7 +242,6 @@ bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
     return true;
 }
 
-// bitcoind's discovery alias for the openrpc document.
 bool protocol_bitcoind_control::handle_rpc_discover(const code& ec,
     rpc_interface::rpc_discover, bool) NOEXCEPT
 {
@@ -271,9 +268,6 @@ bool protocol_bitcoind_control::handle_get_rpc_info(const code& ec,
     return true;
 }
 
-// libbitcoin logs by level, where bitcoind logs by category. A level is
-// reported active when compiled in and enabled by configuration. Levels are
-// configured, so the set cannot be changed at run time.
 bool protocol_bitcoind_control::handle_logging(const code& ec,
     rpc_interface::logging, const array_t& include,
     const array_t& exclude) NOEXCEPT

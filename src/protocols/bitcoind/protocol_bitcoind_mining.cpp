@@ -77,7 +77,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
 
-    // A negative height selects the confirmed top (as bitcoind).
+    // A negative height selects the confirmed top.
     size_t target{};
     if (height < 0)
     {

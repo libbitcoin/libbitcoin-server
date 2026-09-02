@@ -337,9 +337,8 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         return true;
     }
 
-    constexpr size_t maximum_headers = 2000;
     constexpr auto header_size = chain::header::serialized_size();
-    const auto limit = lesser(count, maximum_headers);
+    const auto limit = lesser(count, messages::peer::max_get_headers);
     const auto links = query.get_confirmed_headers(height, limit);
     if (links.empty())
     {
@@ -637,8 +636,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
         return true;
     }
 
-    constexpr size_t maximum_headers = 2000;
-    const auto limit = lesser(count, maximum_headers);
+    const auto limit = lesser(count, messages::peer::max_get_headers);
     const auto links = query.get_confirmed_headers(height, limit);
     if (links.empty())
     {
