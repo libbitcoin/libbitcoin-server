@@ -109,6 +109,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/serializers/bitcoind_json.cpp \
     ${srcdir}/../../src/serializers/bitcoind_psbt.cpp \
     ${srcdir}/../../src/serializers/btcd_json.cpp \
+    ${srcdir}/../../src/sessions/session.cpp \
     ${srcdir}/../../src/utilities/bitcoind_combine.cpp \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
     ${srcdir}/../../src/utilities/bitcoind_merkle.cpp \

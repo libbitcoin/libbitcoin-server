@@ -23,6 +23,9 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 
+// Only session.hpp.
+#include <bitcoin/server/sessions/session.hpp>
+
 namespace libbitcoin {
 namespace server {
 
@@ -38,7 +41,8 @@ public:
         const network::channel::ptr& channel) NOEXCEPT
       : node::protocol(session, channel),
         config_(session->server_config()),
-        network::tracker<protocol>(session->log)
+        network::tracker<protocol>(session->log),
+        session_(session)
     {
     }
 
@@ -54,8 +58,23 @@ public:
         return server_config().server;
     }
 
+    /// The number of host pool addresses by address type.
+    inline network::config::address_counts address_counts() const NOEXCEPT
+    {
+        return session_->address_counts();
+    }
+
+    /// Get a randomized subset of pooled addresses.
+    inline void dump_addresses(
+        network::address_handler&& handler) const NOEXCEPT
+    {
+        session_->dump_addresses(std::move(handler));
+    }
+
 private:
+    // These are thread safe.
     const configuration& config_;
+    const session::ptr session_;
 };
 
 } // namespace server
