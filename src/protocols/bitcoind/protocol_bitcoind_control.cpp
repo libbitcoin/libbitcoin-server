@@ -80,7 +80,7 @@ static void append_usage(std::string& out, const Method& entry,
     const auto& names = entry.parameter_names();
     [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
     {
-        ((out += is_optional<std::tuple_element_t<Index,
+        ((out += is_defaulted<std::tuple_element_t<Index,
             typename Method::args_native>> ?
                 " ( " + std::string{ names.at(Index) } + " )" :
                 " " + std::string{ names.at(Index) }), ...);
@@ -182,7 +182,7 @@ static void append_method(array_t& out, const Method& entry) NOEXCEPT
         (parameters.emplace_back(object_t
         {
             { "name", std::string{ names.at(Index) } },
-            { "required", !is_optional<std::tuple_element_t<Index,
+            { "required", !is_defaulted<std::tuple_element_t<Index,
                 typename Method::args_native>> }
         }), ...);
     }(std::make_index_sequence<Method::size>{});

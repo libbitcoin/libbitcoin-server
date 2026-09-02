@@ -40,10 +40,12 @@ template <typename Methods, network::rpc::grouping Mode =
     network::rpc::grouping::either>
 using publish = network::rpc::publish<Methods, Mode>;
 
-template <auto Default>
-using optional = network::rpc::optional<Default>;
 template <typename Type>
 using nullable = network::rpc::nullable<Type>;
+template <auto Default>
+using optional = network::rpc::optional<Default>;
+template <auto Default>
+using nullopt = network::rpc::nullopt<Default>;
 using boolean_t = network::rpc::boolean_t;
 using string_t = network::rpc::string_t;
 using number_t = network::rpc::number_t;
