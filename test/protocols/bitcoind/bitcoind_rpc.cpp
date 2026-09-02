@@ -71,7 +71,6 @@ const std::vector<method_code> wip_methods
 {
     { "getblockfrompeer", -32601 },
     { "disconnectnode", -32601 },
-    { "exportasmap", -32601 },
     { "getaddednodeinfo", -24 }
 };
 
@@ -1789,6 +1788,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__bad_command__invalid)
 {
     const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"nonsense\"]");
     REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__exportasmap__no_embedded_data__misc_error)
+{
+    const auto response = rpc("exportasmap", "[\"asmap.dat\"]");
+    BOOST_REQUIRE(has_code(response, -1));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__ping__always__null)
