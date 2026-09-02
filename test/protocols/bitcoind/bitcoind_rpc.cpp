@@ -1952,16 +1952,74 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__created_raw__psbt)
     BOOST_REQUIRE_EQUAL(decoded.at("result").at("inputs").as_array().size(), 1u);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__descriptors__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__invalid_descriptor__invalid_address)
 {
     const auto response = rpc("utxoupdatepsbt", "[\"" PSBT_UPDATER "\", [\"wpkh(abc)\"]]");
-    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+    BOOST_REQUIRE(has_code(response, -5));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__no_matching_utxos__round_trips)
 {
     const auto response = rpc("utxoupdatepsbt", "[\"" PSBT_UPDATER "\"]");
     BOOST_REQUIRE_EQUAL(as_text(response.at("result")), PSBT_UPDATER);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__matching_input_descriptor__derivation)
+{
+    using namespace chain;
+    using namespace wallet;
+
+    // The block1 coinbase pays p2pk, matched by its pk() descriptor.
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto& point = coinbase.outputs_ptr()->front()->script().ops().front().data();
+    const auto txid = encode_hash(coinbase.hash(false));
+
+    const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto request = "[\"" + as_text(created.at("result")) + "\", [\"pk(" + encode_base16(point) + ")\"]]";
+    const auto response = rpc("utxoupdatepsbt", request);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const psbt::transaction updated{ as_text(response.at("result")) };
+    BOOST_REQUIRE(updated);
+    BOOST_REQUIRE_EQUAL(updated.inputs().size(), 1u);
+
+    // A bare key is its own fingerprint, with an empty path.
+    const auto& derivations = updated.inputs().front().derivations;
+    BOOST_REQUIRE_EQUAL(derivations.size(), 1u);
+    BOOST_REQUIRE(derivations.front().point == point);
+    BOOST_REQUIRE(derivations.front().origin.path.empty());
+    BOOST_REQUIRE_EQUAL(derivations.front().origin.fingerprint,
+        from_little_endian<uint32_t>(bitcoin_short_hash(point)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__matching_output_descriptor__witness_script)
+{
+    using namespace chain;
+    using namespace wallet;
+
+    const ec_secret secret{ { 0x07 } };
+    ec_compressed point{};
+    BOOST_REQUIRE(secret_to_public(point, secret));
+
+    // A wsh output paying 1-of-1 multisig, matched by its descriptor.
+    const script multisig{ script::to_pay_multisig_pattern(1, ec_compresseds{ point }) };
+    const auto address = witness_address{ multisig, "bc" }.encoded();
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+
+    const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"" + address + "\": 0.001}]");
+    const auto request = "[\"" + as_text(created.at("result")) + "\", [\"wsh(multi(1," + encode_base16(point) + "))\"]]";
+    const auto response = rpc("utxoupdatepsbt", request);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const psbt::transaction updated{ as_text(response.at("result")) };
+    BOOST_REQUIRE(updated);
+    BOOST_REQUIRE_EQUAL(updated.outputs().size(), 1u);
+
+    const auto& out = updated.outputs().front();
+    BOOST_REQUIRE(out.witness_script);
+    BOOST_REQUIRE(*out.witness_script == multisig);
+    BOOST_REQUIRE_EQUAL(out.derivations.size(), 1u);
+    BOOST_REQUIRE(out.derivations.front().point == to_chunk(point));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

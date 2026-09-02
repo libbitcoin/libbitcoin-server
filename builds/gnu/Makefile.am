@@ -111,6 +111,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/utilities/bitcoind_combine.cpp \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
     ${srcdir}/../../src/utilities/bitcoind_merkle.cpp \
+    ${srcdir}/../../src/utilities/bitcoind_update.cpp \
     ${srcdir}/../../src/utilities/electrum_version.cpp
 
 include_bitcoindir = \
@@ -253,6 +254,7 @@ include_bitcoin_server_utilities_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_combine.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_descriptor.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_merkle.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_update.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
 

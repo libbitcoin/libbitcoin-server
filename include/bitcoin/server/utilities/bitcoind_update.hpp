@@ -16,23 +16,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCAN_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCAN_HPP
+#ifndef LIBBITCOIN_SERVER_UTILITIES_BITCOIND_UPDATE_HPP
+#define LIBBITCOIN_SERVER_UTILITIES_BITCOIND_UPDATE_HPP
 
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Expand a scan object, a descriptor string or { "desc", "range" } object,
-/// to its derived output scripts (false if malformed or underivable).
-BCS_API bool expand_scan_object(system::chain::scripts& out,
-    const network::rpc::value_t& item) NOEXCEPT;
-
-/// As expand_scan_object, retaining embedded scripts and key origins.
-BCS_API bool expand_scan_signings(
-    system::wallet::descriptor::signing::list& out,
-    const network::rpc::value_t& item) NOEXCEPT;
+/// Update the psbt with witness utxos from the store and signing metadata
+/// from the expanded descriptors (utxoupdatepsbt).
+BCS_API void update_psbt(system::wallet::psbt::transaction& doc,
+    const node::query& query,
+    const system::wallet::descriptor::signing::list& signings) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

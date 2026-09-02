@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/parsers/bitcoind_scan.hpp>
 
+#include <iterator>
 #include <variant>
 #include <bitcoin/server/define.hpp>
 
@@ -31,6 +32,20 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 // A scan object is a descriptor string or { "desc", "range" } object.
 bool expand_scan_object(chain::scripts& out, const value_t& item) NOEXCEPT
+{
+    wallet::descriptor::signing::list signings{};
+    if (!expand_scan_signings(signings, item))
+        return false;
+
+    out.reserve(out.size() + signings.size());
+    for (auto& derived: signings)
+        out.push_back(std::move(derived.script));
+
+    return true;
+}
+
+bool expand_scan_signings(wallet::descriptor::signing::list& out,
+    const value_t& item) NOEXCEPT
 {
     std::string expression{};
     uint32_t begin{};
@@ -98,11 +113,12 @@ bool expand_scan_object(chain::scripts& out, const value_t& item) NOEXCEPT
 
     for (auto index = begin; index <= end; ++index)
     {
-        const auto derived = parsed.scripts(index);
+        auto derived = parsed.signings(index);
         if (derived.empty())
             return false;
 
-        out.insert(out.end(), derived.begin(), derived.end());
+        out.insert(out.end(), std::make_move_iterator(derived.begin()),
+            std::make_move_iterator(derived.end()));
     }
 
     return true;

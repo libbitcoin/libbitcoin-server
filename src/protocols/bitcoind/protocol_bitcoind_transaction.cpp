@@ -811,11 +811,15 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     if (stopped(ec))
         return false;
 
-    // Descriptor expansion requires the descriptor engine (pending).
-    if (!descriptors.empty())
+    using namespace wallet;
+    descriptor::signing::list signings{};
+    for (const auto& item: descriptors)
     {
-        send_error(error::bitcoind::invalid_parameter);
-        return true;
+        if (!expand_scan_signings(signings, item))
+        {
+            send_error(error::bitcoind::invalid_address_or_key);
+            return true;
+        }
     }
 
     psbt_tx doc(psbt);
@@ -825,30 +829,7 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
         return true;
     }
 
-    const auto& query = archive();
-    const auto version0 = (doc.version() == psbt_tx::version_0);
-    for (size_t index = 0; index < doc.inputs().size(); ++index)
-    {
-        if (doc.prevout(index))
-            continue;
-
-        auto& in = doc.inputs().at(index);
-        const auto& hash = version0 ?
-            doc.unsigned_tx().inputs_ptr()->at(index)->point().hash() :
-            in.previous_txid.value_or(null_hash);
-        const auto vout = version0 ?
-            doc.unsigned_tx().inputs_ptr()->at(index)->point().index() :
-            in.output_index.value_or(0);
-
-        const auto out = query.get_output(query.to_tx(hash), vout);
-        if (!out)
-            continue;
-
-        // Only witness utxos are populated (as bitcoind).
-        if (chain::script::is_pay_witness_pattern(out->script().ops()))
-            in.witness_utxo = out;
-    }
-
+    update_psbt(doc, archive(), signings);
     send_result(doc.encoded(), 1024);
     return true;
 }
