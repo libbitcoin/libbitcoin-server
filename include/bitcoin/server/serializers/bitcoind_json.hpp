@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_JSON_HPP
 #define LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_JSON_HPP
 
-#include <string>
 #include <unordered_set>
 #include <bitcoin/server/define.hpp>
 

@@ -19,9 +19,7 @@
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
 
 #include <algorithm>
-#include <string>
 #include <unordered_set>
-#include <vector>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

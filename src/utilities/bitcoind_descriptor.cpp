@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
 
-#include <string>
 #include <utility>
 #include <variant>
 #include <bitcoin/server/define.hpp>

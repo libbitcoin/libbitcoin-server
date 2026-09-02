@@ -19,7 +19,6 @@
 #include <bitcoin/server/utilities/electrum_version.hpp>
 
 #include <algorithm>
-#include <array>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 

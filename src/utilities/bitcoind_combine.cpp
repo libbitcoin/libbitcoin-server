@@ -19,7 +19,6 @@
 #include <bitcoin/server/utilities/bitcoind_combine.hpp>
 
 #include <set>
-#include <vector>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

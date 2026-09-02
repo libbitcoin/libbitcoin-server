@@ -20,7 +20,6 @@
 #define LIBBITCOIN_SERVER_SERIALIZERS_BTCD_JSON_HPP
 
 #include <set>
-#include <string>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

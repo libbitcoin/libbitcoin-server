@@ -19,7 +19,6 @@
 #include <bitcoin/server/serializers/btcd_json.hpp>
 
 #include <set>
-#include <string>
 #include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
