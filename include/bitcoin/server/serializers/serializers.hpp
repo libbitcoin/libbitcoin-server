@@ -25,5 +25,6 @@
 #include <bitcoin/server/serializers/bitcoind_deployments.hpp>
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
 #include <bitcoin/server/serializers/bitcoind_psbt.hpp>
+#include <bitcoin/server/serializers/btcd_json.hpp>
 
 #endif

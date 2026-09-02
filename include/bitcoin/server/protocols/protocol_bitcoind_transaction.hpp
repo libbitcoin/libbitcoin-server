@@ -99,11 +99,6 @@ protected:
         rpc_interface::utxo_update_psbt, const std::string& psbt,
         const network::rpc::array_t& descriptors) NOEXCEPT;
 
-    /// Shared transaction construction (createrawtransaction, createpsbt).
-    code build_transaction(system::chain::transaction& out,
-        const network::rpc::array_t& inputs,
-        const network::rpc::value_t& outputs, double locktime,
-        bool replaceable, double version) const NOEXCEPT;
     bool handle_abort_private_broadcast(const code& ec,
         rpc_interface::abort_private_broadcast) NOEXCEPT;
     bool handle_get_private_broadcast_info(const code& ec,
@@ -111,7 +106,8 @@ protected:
     bool handle_submit_package(const code& ec,
         rpc_interface::submit_package) NOEXCEPT;
     bool handle_combine_raw_transaction(const code& ec,
-        rpc_interface::combine_raw_transaction) NOEXCEPT;
+        rpc_interface::combine_raw_transaction,
+        const network::rpc::array_t& txs) NOEXCEPT;
     bool handle_sign_raw_transaction_with_key(const code& ec,
         rpc_interface::sign_raw_transaction_with_key) NOEXCEPT;
 };

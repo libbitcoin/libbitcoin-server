@@ -21,7 +21,6 @@
 
 #include <atomic>
 #include <memory>
-#include <string>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>

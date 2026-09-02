@@ -123,6 +123,9 @@
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_transaction.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -145,9 +148,6 @@
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_dispatch.cpp">
-      <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_json.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_mining.cpp">
@@ -264,16 +264,25 @@
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_psbt.cpp">
       <Filter>src\serializers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\serializers\btcd_json.cpp">
+      <Filter>src\serializers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\bitcoind_combine.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_merkle.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\bitcoind_update.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp">
@@ -401,6 +410,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_transaction.hpp">
+      <Filter>include\bitcoin\server\parsers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
@@ -503,6 +515,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_psbt.hpp">
       <Filter>include\bitcoin\server\serializers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\btcd_json.hpp">
+      <Filter>include\bitcoin\server\serializers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\serializers.hpp">
       <Filter>include\bitcoin\server\serializers</Filter>
     </ClInclude>
@@ -524,10 +539,16 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_combine.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_descriptor.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_merkle.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_update.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp">

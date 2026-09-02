@@ -93,6 +93,64 @@ bool protocol_btcd::handle_get_block_chain_info(const code& ec,
     return true;
 }
 
+bool protocol_btcd::handle_get_cfilter(const code& ec,
+    btcd_interface::get_cfilter, const std::string& hash,
+    double filtertype) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    hash_digest key{};
+    if (!decode_hash(key, hash))
+    {
+        send_error(error::btcd::deserialization_error);
+        return true;
+    }
+
+    uint8_t type{};
+    data_chunk filter{};
+    const auto& query = archive();
+    if (!to_integer(type, filtertype) || !is_zero(type) ||
+        !query.filter_enabled() ||
+        !query.get_filter_body(filter, query.to_header(key)))
+    {
+        send_error(error::btcd::invalid_address_or_key);
+        return true;
+    }
+
+    send_result(encode_base16(filter), two * filter.size());
+    return true;
+}
+
+bool protocol_btcd::handle_get_cfilter_header(const code& ec,
+    btcd_interface::get_cfilter_header, const std::string& hash,
+    double filtertype) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    hash_digest key{};
+    if (!decode_hash(key, hash))
+    {
+        send_error(error::btcd::deserialization_error);
+        return true;
+    }
+
+    uint8_t type{};
+    hash_digest head{};
+    const auto& query = archive();
+    if (!to_integer(type, filtertype) || !is_zero(type) ||
+        !query.filter_enabled() ||
+        !query.get_filter_head(head, query.to_header(key)))
+    {
+        send_error(error::btcd::invalid_address_or_key);
+        return true;
+    }
+
+    send_result(encode_hash(head), two * hash_size);
+    return true;
+}
+
 // p2p magic (checked once by btcwallet/lnd to confirm network).
 bool protocol_btcd::handle_get_current_net(const code& ec,
     btcd_interface::get_current_net) NOEXCEPT
@@ -120,6 +178,46 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
     }
 
     send_result(header->difficulty(), 20);
+    return true;
+}
+
+bool protocol_btcd::handle_get_headers(const code& ec,
+    btcd_interface::get_headers, const array_t& blocklocators,
+    const std::string& hashstop) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    hashes locator{};
+    hash_digest hash{};
+    for (const auto& item: blocklocators)
+    {
+        if (!std::holds_alternative<string_t>(item.value()) ||
+            !decode_hash(hash, std::get<string_t>(item.value())))
+        {
+            send_error(error::btcd::deserialization_error);
+            return true;
+        }
+
+        locator.push_back(hash);
+    }
+
+    auto stop = null_hash;
+    if (!hashstop.empty() && !decode_hash(stop, hashstop))
+    {
+        send_error(error::btcd::deserialization_error);
+        return true;
+    }
+    
+    constexpr auto max = messages::peer::max_get_headers;
+    const auto headers = archive().get_headers(locator, stop, max);
+
+    array_t out{};
+    out.reserve(headers.size());
+    for (const auto& header: headers)
+        out.emplace_back(encode_base16(header->to_data()));
+
+    send_result(std::move(out), add1(headers.size()) * 164);
     return true;
 }
 
@@ -171,6 +269,27 @@ bool protocol_btcd::handle_get_net_totals(const code& ec,
         { "totalbytessent", 0 },
         { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 }
     }, 64);
+    return true;
+}
+
+bool protocol_btcd::handle_version(const code& ec,
+    btcd_interface::version) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    send_result(object_t
+    {
+        { "btcdjsonrpcapi", object_t
+            {
+                { "versionstring", std::string{ "1.3.0" } },
+                { "major", 1 },
+                { "minor", 3 },
+                { "patch", 0 },
+                { "prerelease", std::string{} },
+                { "buildmetadata", std::string{} }
+            } }
+    }, 160);
     return true;
 }
 

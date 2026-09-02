@@ -117,11 +117,11 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     object_t result
     {
         { "asm", script.to_string(flags::all_rules, true) },
-        { "desc", infer_descriptor(script) },
+        { "desc", infer_descriptor(script, p2kh_, p2sh_, witness_) },
         { "type", to_script_type(pattern) }
     };
 
-    // An undecodable script is rendered, not rejected (as bitcoind).
+    // An undecodable script is rendered, not rejected.
     if (!script.is_valid() || script.is_underflow())
     {
         const auto body = "raw(" + encode_base16(data) + ")";
@@ -155,7 +155,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
             { "hex", encode_base16(wsh.to_data(false)) },
             { "type", to_script_type(script_pattern::pay_witness_script_hash) },
             { "address", witness_address{ script, witness_ }.encoded() },
-            { "desc", infer_descriptor(wsh) },
+            { "desc", infer_descriptor(wsh, p2kh_, p2sh_, witness_) },
             { "p2sh-segwit", payment_address{ wsh, p2sh_ }.encoded() }
         });
     }
@@ -209,7 +209,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     return true;
 }
 
-// bech32m multisig is rejected (as bitcoind).
+// bech32m multisig is rejected.
 bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     rpc_interface::create_multisig, double nrequired, const array_t& keys,
     const std::string& address_type) NOEXCEPT
@@ -243,7 +243,8 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
 
     // An invalid key (bitcoind -5) and an oversized script (-8) are not
     // distinguished by the helper.
-    auto result = create_multisig(required, keys, address_type);
+    auto result = create_multisig(required, keys, address_type, p2sh_,
+        witness_);
     if (result.empty())
     {
         send_error(error::bitcoind::invalid_address_or_key);
@@ -274,39 +275,12 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         return true;
     }
 
-    // The range is an end index or a [begin, end] pair (as bitcoind).
     uint32_t begin{};
     uint32_t end{};
-    if (range.has_value())
+    if (range.has_value() && !parse_scan_range(begin, end, range.value()))
     {
-        const auto& value = range.value().value();
-        if (std::holds_alternative<number_t>(value))
-        {
-            if (!to_integer(end, std::get<number_t>(value)))
-            {
-                send_error(error::bitcoind::invalid_parameter);
-                return true;
-            }
-        }
-        else if (std::holds_alternative<array_t>(value))
-        {
-            const auto& pair = std::get<array_t>(value);
-            if (pair.size() != 2u ||
-                !std::holds_alternative<number_t>(pair.front().value()) ||
-                !std::holds_alternative<number_t>(pair.back().value()) ||
-                !to_integer(begin, std::get<number_t>(pair.front().value())) ||
-                !to_integer(end, std::get<number_t>(pair.back().value())) ||
-                end < begin)
-            {
-                send_error(error::bitcoind::invalid_parameter);
-                return true;
-            }
-        }
-        else
-        {
-            send_error(error::bitcoind::invalid_parameter);
-            return true;
-        }
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
     }
 
     // bitcoind's derivation range limit.
@@ -323,7 +297,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         const auto scripts = parsed.scripts(index);
         std::string address{};
         if (is_one(scripts.size()))
-            address = to_address(scripts.front());
+            address = to_address(scripts.front(), p2kh_, p2sh_, witness_);
 
         if (address.empty())
         {

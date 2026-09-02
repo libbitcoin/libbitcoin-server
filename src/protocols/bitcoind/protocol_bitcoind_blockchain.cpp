@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <ranges>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <bitcoin/server/define.hpp>
@@ -698,7 +697,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     const auto& query = archive();
     const auto link = query.to_confirmed(height);
 
-    // The pinned ancestry excludes genesis, absent from the set (as bitcoind).
+    // The pinned ancestry excludes genesis, absent from the set.
     database::header_links branch{};
     if (!query.get_ancestry(branch, link, height))
     {
@@ -862,34 +861,17 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         }
     }
 
-    // Needle identity is the script hash (the address index key). The set
-    // excludes unspendable outputs, so those needles are dropped (as
-    // bitcoind), and needles deduplicate repeated expressions.
-    struct needle { std::string hex; std::string desc; };
-    std::unordered_map<hash_digest, needle> needles{};
+    // The needle set is keyed by output script hash (the address index key).
+    // The utxo set excludes unspendable outputs, so those needles are
+    // dropped, and the set deduplicates repeated expressions.
+    std::unordered_set<hash_digest> keys{};
     for (const auto& script: scripts)
-    {
-        if (script.is_unspendable())
-            continue;
-
-        const auto data = script.to_data(false);
-        needles.emplace(sha256_hash(data),
-            needle{ encode_base16(data), infer_descriptor(script) });
-    }
-
-    struct match
-    {
-        hash_digest txid;
-        uint32_t index;
-        uint64_t value;
-        size_t height;
-        bool coinbase;
-        const needle* found;
-    };
+        if (!script.is_unspendable())
+            keys.insert(sha256_hash(script.to_data(false)));
 
     code ec{};
     uint64_t txouts{};
-    std_vector<match> matches{};
+    database::unspent_coins coins{};
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     const auto link = query.to_confirmed(top);
@@ -899,8 +881,13 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
     {
         // Indexed candidates avoid the full scan, so the scanned coin count
         // reflects only examined candidates (bitcoind scans the whole set).
-        for (const auto& [key, item]: needles)
+        for (const auto& script: scripts)
         {
+            const auto data = script.to_data(false);
+            const auto key = sha256_hash(data);
+            if (!keys.erase(key))
+                continue;
+
             database::unspents outs{};
             ec = query.get_confirmed_unspent(stopping_, outs, key,
                 database_settings().turbo);
@@ -909,14 +896,14 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
             for (const auto& utxo: outs)
             {
-                // The genesis output is excluded from the set (as bitcoind).
+                // The genesis output is excluded from the set.
                 if (is_zero(utxo.height) && is_zero(utxo.position))
                     continue;
 
                 ++txouts;
-                matches.emplace_back(utxo.out.point().hash(),
-                    utxo.out.point().index(), utxo.out.value(), utxo.height,
-                    is_zero(utxo.position), &item);
+                coins.push_back({ false, utxo.out.point().hash(),
+                    utxo.out.point().index(), utxo.height,
+                    is_zero(utxo.position), utxo.out.value(), data });
             }
         }
     }
@@ -933,11 +920,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
             const auto visit = [&](const database::unspent_coin& coin) NOEXCEPT
             {
                 ++txouts;
-                const auto it = needles.find(accumulator<sha256>::hash(
-                    coin.script));
-                if (it != needles.end())
-                    matches.emplace_back(coin.txid, coin.index, coin.value,
-                        coin.height, coin.coinbase, &it->second);
+                if (keys.contains(accumulator<sha256>::hash(coin.script)))
+                    coins.push_back(coin);
             };
 
             database::unspent_totals unused{};
@@ -961,52 +945,9 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         return;
     }
 
-    // Report in canonical (txid, index) order (as bitcoind).
-    std::sort(matches.begin(), matches.end(),
-        [](const auto& left, const auto& right) NOEXCEPT
-        {
-            return (left.txid == right.txid) ? (left.index < right.index) :
-                (left.txid < right.txid);
-        });
-
-    uint64_t amount{};
-    array_t unspents{};
-    for (auto& item: matches)
-    {
-        // bitcoind retains duplicated coinbases at the overwriting heights.
-        if (bip30 && item.coinbase)
-            item.height = (item.height == 91812) ? 91842 :
-                (item.height == 91722) ? 91880 : item.height;
-
-        unspents.emplace_back(object_t
-        {
-            { "txid", encode_hash(item.txid) },
-            { "vout", item.index },
-            { "scriptPubKey", item.found->hex },
-            { "desc", item.found->desc },
-            { "amount", to_floating(item.value) /
-                chain::satoshi_per_bitcoin },
-            { "coinbase", item.coinbase },
-            { "height", item.height },
-            { "blockhash", encode_hash(query.get_header_key(
-                query.to_confirmed(item.height))) },
-            { "confirmations", add1(floored_subtract(top, item.height)) }
-        });
-
-        amount += item.value;
-    }
-
-    const auto size = add1(unspents.size()) * 384u;
-    result = object_t
-    {
-        { "success", true },
-        { "txouts", txouts },
-        { "height", top },
-        { "bestblock", encode_hash(query.get_header_key(link)) },
-        { "unspents", std::move(unspents) },
-        { "total_amount", to_floating(amount) / chain::satoshi_per_bitcoin }
-    };
-
+    size_t size{};
+    result = scan_result(size, coins, query, scripts, top, txouts, bip30,
+        p2kh_, p2sh_, witness_);
     POST(complete_scan, code{}, std::move(result), size);
 }
 
@@ -1148,7 +1089,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
 }
 
 // Verifies a serialized merkle block, returning the array of proven txids, or
-// an empty array if the proof is invalid (as bitcoind).
+// an empty array if the proof is invalid.
 bool protocol_bitcoind_blockchain::handle_verify_tx_out_proof(const code& ec,
     rpc_interface::verify_tx_out_proof, const std::string& proof) NOEXCEPT
 {
@@ -1405,69 +1346,13 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
         }
 
         // Confirmed spends are unconditional (as bitcoind, from undo data).
-        const auto encoded = encode_hash(hash);
         if (!query.populate_without_metadata(*block))
         {
             send_error(error::bitcoind::internal_error);
             return true;
         }
 
-        for (const auto& tx: *block->transactions_ptr())
-        {
-            const auto txid = encode_hash(tx->hash(false));
-            uint32_t index{};
-            for (const auto& out: *tx->outputs_ptr())
-            {
-                const auto script = encode_base16(
-                    out->script().to_data(false));
-                if (watch.contains(script))
-                {
-                    activity.emplace_back(object_t
-                    {
-                        { "type", std::string{ "receive" } },
-                        { "amount", out->value() /
-                            to_floating(chain::satoshi_per_bitcoin) },
-                        { "blockhash", encoded },
-                        { "height", height },
-                        { "txid", txid },
-                        { "vout", index },
-                        { "output_spk", value_from(bitcoind(out->script())) }
-                    });
-                }
-
-                ++index;
-            }
-
-            if (tx->is_coinbase())
-                continue;
-
-            uint32_t spend{};
-            for (const auto& in: *tx->inputs_ptr())
-            {
-                const auto& prevout = *in->prevout;
-                const auto script = encode_base16(
-                    prevout.script().to_data(false));
-                if (watch.contains(script))
-                {
-                    activity.emplace_back(object_t
-                    {
-                        { "type", std::string{ "spend" } },
-                        { "amount", prevout.value() /
-                            to_floating(chain::satoshi_per_bitcoin) },
-                        { "blockhash", encoded },
-                        { "height", height },
-                        { "spend_txid", txid },
-                        { "spend_vin", spend },
-                        { "prevout_txid", encode_hash(in->point().hash()) },
-                        { "prevout_vout", in->point().index() },
-                        { "prevout_spk", value_from(bitcoind(
-                            prevout.script())) }
-                    });
-                }
-
-                ++spend;
-            }
-        }
+        inject_activity(activity, *block, height, encode_hash(hash), watch);
     }
 
     const auto size = 256 * activity.size();
@@ -1790,7 +1675,7 @@ void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
         return;
     }
 
-    // A zero timeout waits indefinitely (as bitcoind).
+    // A zero timeout waits indefinitely.
     uint64_t span{};
     if (!to_integer(span, timeout))
     {

@@ -76,13 +76,26 @@ protected:
         btcd_interface::get_best_block) NOEXCEPT;
     bool handle_get_block_chain_info(const code& ec,
         btcd_interface::get_block_chain_info) NOEXCEPT;
+    bool handle_get_cfilter(const code& ec, btcd_interface::get_cfilter,
+        const std::string& hash, double filtertype) NOEXCEPT;
+    bool handle_get_cfilter_header(const code& ec,
+        btcd_interface::get_cfilter_header, const std::string& hash,
+        double filtertype) NOEXCEPT;
     bool handle_get_current_net(const code& ec,
         btcd_interface::get_current_net) NOEXCEPT;
     bool handle_get_difficulty(const code& ec,
         btcd_interface::get_difficulty) NOEXCEPT;
+    bool handle_get_headers(const code& ec, btcd_interface::get_headers,
+        const network::rpc::array_t& blocklocators,
+        const std::string& hashstop) NOEXCEPT;
     bool handle_get_info(const code& ec, btcd_interface::get_info) NOEXCEPT;
     bool handle_get_net_totals(const code& ec,
         btcd_interface::get_net_totals) NOEXCEPT;
+    bool handle_search_raw_transactions(const code& ec,
+        btcd_interface::search_raw_transactions, const std::string& address,
+        double verbose, double skip, double count, double prevouts,
+        bool reverse, const network::rpc::array_t& filteraddrs) NOEXCEPT;
+    bool handle_version(const code& ec, btcd_interface::version) NOEXCEPT;
 
     /// Handlers (subscription).
     bool handle_notify_blocks(const code& ec,
@@ -162,6 +175,12 @@ protected:
         const system::hashes& keys, system::chain::points& points) NOEXCEPT;
     void complete_rescan_blocks(const code& ec,
         const array_ptr& discovered) NOEXCEPT;
+
+    void do_search_raw_transactions(const system::hashes& keys, bool verbose,
+        size_t skip, size_t count, bool prevouts, bool reverse,
+        const std::set<std::string>& filter) NOEXCEPT;
+    void complete_search_raw_transactions(const code& ec,
+        const array_ptr& found) NOEXCEPT;
 
     /// Notification event handlers.
     /// -----------------------------------------------------------------------

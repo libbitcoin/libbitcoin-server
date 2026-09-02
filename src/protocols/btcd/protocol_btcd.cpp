@@ -59,10 +59,15 @@ void protocol_btcd::start() NOEXCEPT
     // Getter methods.
     SUBSCRIBE_BTCD(handle_get_best_block, _1, _2);
     SUBSCRIBE_BTCD(handle_get_block_chain_info, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_cfilter, _1, _2, _3, _4);
+    SUBSCRIBE_BTCD(handle_get_cfilter_header, _1, _2, _3, _4);
     SUBSCRIBE_BTCD(handle_get_current_net, _1, _2);
     SUBSCRIBE_BTCD(handle_get_difficulty, _1, _2);
+    SUBSCRIBE_BTCD(handle_get_headers, _1, _2, _3, _4);
     SUBSCRIBE_BTCD(handle_get_info, _1, _2);
     SUBSCRIBE_BTCD(handle_get_net_totals, _1, _2);
+    SUBSCRIBE_BTCD(handle_search_raw_transactions, _1, _2, _3, _4, _5, _6, _7, _8, _9);
+    SUBSCRIBE_BTCD(handle_version, _1, _2);
 
     // Subscription methods.
     SUBSCRIBE_BTCD(handle_notify_blocks, _1, _2);

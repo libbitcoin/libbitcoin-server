@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_JSON_HPP
 #define LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_JSON_HPP
 
+#include <unordered_set>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -51,6 +52,17 @@ BCS_API void inject_tx_context(boost::json::object& out,
 BCS_API void inject_tx_prevouts(boost::json::object& out,
     const node::query& query,
     const system::chain::transaction& tx) NOEXCEPT;
+
+/// The address of a singular output script (empty if unaddressable).
+BCS_API std::string to_address(const system::chain::script& script,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
+/// Append the block's receive/spend activity on the watched scripts (hex
+/// encoded), requires populate_without_metadata (getdescriptoractivity).
+BCS_API void inject_activity(network::rpc::array_t& out,
+    const system::chain::block& block, size_t height,
+    const std::string& blockhash,
+    const std::unordered_set<std::string>& watch) NOEXCEPT;
 
 /// The bitcoind block header object.
 BCS_API boost::json::object header_to_bitcoind(

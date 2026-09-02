@@ -16,18 +16,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_TRANSACTION_HPP
+#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_TRANSACTION_HPP
 
-#include <bitcoin/server/parsers/admin_query.hpp>
-#include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_query.hpp>
-#include <bitcoin/server/parsers/bitcoind_scan.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
-#include <bitcoin/server/parsers/bitcoind_transaction.hpp>
-#include <bitcoin/server/parsers/bitcoind_target.hpp>
-#include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/native_query.hpp>
-#include <bitcoin/server/parsers/native_target.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+/// Parse the createrawtransaction/createpsbt inputs and outputs.
+BCS_API code parse_transaction(system::chain::transaction& out,
+    const network::rpc::array_t& inputs,
+    const network::rpc::value_t& outputs, double locktime, bool replaceable,
+    double version, uint8_t p2kh, uint8_t p2sh, const std::string& witness,
+    uint64_t maximum) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

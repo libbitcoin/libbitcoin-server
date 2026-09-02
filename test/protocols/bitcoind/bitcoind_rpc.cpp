@@ -72,8 +72,7 @@ const std::vector<method_code> wip_methods
     { "getblockfrompeer", -32601 },
     { "disconnectnode", -32601 },
     { "exportasmap", -32601 },
-    { "getaddednodeinfo", -24 },
-    { "combinerawtransaction", -32601 }
+    { "getaddednodeinfo", -24 }
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -505,6 +504,115 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__excess_amount__error)
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
     const auto response = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 21000001}]");
     BOOST_REQUIRE_MESSAGE(has_code(response, -3), response);
+}
+
+// combinerawtransaction
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__no_transactions__invalid_parameter)
+{
+    // 'txs' is one positional arg that is itself an array: [[...]].
+    const auto response = rpc("combinerawtransaction", "[[]]");
+    BOOST_REQUIRE(has_code(response, -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__invalid_hex__deserialization)
+{
+    const auto response = rpc("combinerawtransaction", R"([["not-hex"]])");
+    BOOST_REQUIRE(has_code(response, -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__unknown_input__verify_error)
+{
+    using namespace chain;
+    const transaction tx
+    {
+        1,
+        inputs{ input{ point{ one_hash, 0 }, script{}, witness{}, 0xffffffff } },
+        outputs{ output{ 1, script{ script::to_pay_key_hash_pattern(short_hash{}) } } },
+        0
+    };
+
+    const auto hex = encode_base16(tx.to_data(true));
+    const auto response = rpc("combinerawtransaction", R"([[")" + hex + R"("]])");
+    BOOST_REQUIRE(has_code(response, -25));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__key_hash_variants__endorsing_candidate)
+{
+    using namespace chain;
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    // The found_address p2kh output of mock_block10's second transaction.
+    const point prevout{ test::mock_block10.transactions_ptr()->at(1)->hash(false), 0 };
+    const output out{ 1, script{ script::to_pay_key_hash_pattern(short_hash{}) } };
+    const script endorsing{ operations{ { data_chunk(71, 0x30), false }, { data_chunk(33, 0x02), false } } };
+
+    const transaction unsigned_tx{ 1, inputs{ input{ prevout, script{}, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+    const transaction signed_tx{ 1, inputs{ input{ prevout, endorsing, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    // The unsigned variant is the base, the endorsing candidate is taken.
+    const auto params = R"([[")" + encode_base16(unsigned_tx.to_data(true)) + R"(",")" + encode_base16(signed_tx.to_data(true)) + R"("]])";
+    const auto response = rpc("combinerawtransaction", params);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), encode_base16(signed_tx.to_data(true)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__multisig_partials__merged_in_key_order)
+{
+    using namespace chain;
+    const ec_secret secret1{ { 0x01 } };
+    const ec_secret secret2{ { 0x02 } };
+    const ec_secret secret3{ { 0x03 } };
+    ec_compressed point1{};
+    ec_compressed point2{};
+    ec_compressed point3{};
+    BOOST_REQUIRE(secret_to_public(point1, secret1));
+    BOOST_REQUIRE(secret_to_public(point2, secret2));
+    BOOST_REQUIRE(secret_to_public(point3, secret3));
+
+    // A block paying 2-of-3 multisig of the derived keys, confirmed at 10.
+    constexpr uint64_t value = 100'000'000;
+    const script multisig{ script::to_pay_multisig_pattern(2, ec_compresseds{ point1, point2, point3 }) };
+    const block block10
+    {
+        header{ 0x31323334, test::block9_hash, hash_digest{ 0x10, 0xcc }, 0x41424344, 0x51525354, 0x61626364 },
+        transactions{ transaction{ 1, inputs{ input{ point{}, script{}, witness{}, 0x01 } }, outputs{ output{ value, multisig } }, 0 } }
+    };
+
+    BOOST_REQUIRE(query_.set(block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10.hash()), true));
+
+    // A spend of the multisig output, endorsed separately by two keys.
+    const point prevout{ block10.transactions_ptr()->front()->hash(false), 0 };
+    const output out{ 1, script{ script::to_pay_key_hash_pattern(short_hash{}) } };
+    const transaction spend{ 1, inputs{ input{ prevout, script{}, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    endorsement endorse1{};
+    endorsement endorse2{};
+    BOOST_REQUIRE(spend.create_endorsement(endorse1, secret1, multisig, 0, value, coverage::hash_all, script_version::unversioned, flags::no_rules));
+    BOOST_REQUIRE(spend.create_endorsement(endorse2, secret2, multisig, 0, value, coverage::hash_all, script_version::unversioned, flags::no_rules));
+
+    const script partial1{ operations{ { opcode::push_size_0 }, { data_chunk{ endorse1 }, false } } };
+    const script partial2{ operations{ { opcode::push_size_0 }, { data_chunk{ endorse2 }, false } } };
+    const transaction variant1{ 1, inputs{ input{ prevout, partial1, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+    const transaction variant2{ 1, inputs{ input{ prevout, partial2, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    // Passed in reverse to show ordering is by key position, not variant.
+    const auto params = R"([[")" + encode_base16(variant2.to_data(true)) + R"(",")" + encode_base16(variant1.to_data(true)) + R"("]])";
+    const auto response = rpc("combinerawtransaction", params);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    data_chunk data{};
+    BOOST_REQUIRE(decode_base16(data, as_text(response.at("result"))));
+
+    const transaction merged{ data, true };
+    BOOST_REQUIRE(merged.is_valid());
+
+    const auto& ops = merged.inputs_ptr()->front()->script().ops();
+    BOOST_REQUIRE_EQUAL(ops.size(), 3u);
+    BOOST_REQUIRE(ops.at(1).data() == endorse1);
+    BOOST_REQUIRE(ops.at(2).data() == endorse2);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__iswitness_false__round_trips)
@@ -1344,7 +1452,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 
 // gettxoutsetinfo
 
-// The genesis output is excluded from the utxo set (as bitcoind).
+// The genesis output is excluded from the utxo set.
 // TODO: pin the hash_serialized_3/muhash digests against bitcoind vectors.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
 {
@@ -1363,7 +1471,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
 }
 
 // Ten coinbase-only blocks issue 500 and retain 450, the genesis coinbase
-// being excluded from the set (as bitcoind).
+// being excluded from the set.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__genesis_unspendable)
 {
     const auto response = rpc("gettxoutsetinfo");
@@ -1493,7 +1601,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__empty_scanobjects__empty)
     BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 0.0);
 }
 
-// The genesis output is excluded from the utxo set (as bitcoind).
+// The genesis output is excluded from the utxo set.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__genesis_pk__excluded)
 {
     const auto response = rpc("scantxoutset", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");
@@ -1844,16 +1952,74 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__created_raw__psbt)
     BOOST_REQUIRE_EQUAL(decoded.at("result").at("inputs").as_array().size(), 1u);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__descriptors__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__invalid_descriptor__invalid_address)
 {
     const auto response = rpc("utxoupdatepsbt", "[\"" PSBT_UPDATER "\", [\"wpkh(abc)\"]]");
-    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+    BOOST_REQUIRE(has_code(response, -5));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__no_matching_utxos__round_trips)
 {
     const auto response = rpc("utxoupdatepsbt", "[\"" PSBT_UPDATER "\"]");
     BOOST_REQUIRE_EQUAL(as_text(response.at("result")), PSBT_UPDATER);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__matching_input_descriptor__derivation)
+{
+    using namespace chain;
+    using namespace wallet;
+
+    // The block1 coinbase pays p2pk, matched by its pk() descriptor.
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto& point = coinbase.outputs_ptr()->front()->script().ops().front().data();
+    const auto txid = encode_hash(coinbase.hash(false));
+
+    const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto request = "[\"" + as_text(created.at("result")) + "\", [\"pk(" + encode_base16(point) + ")\"]]";
+    const auto response = rpc("utxoupdatepsbt", request);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const psbt::transaction updated{ as_text(response.at("result")) };
+    BOOST_REQUIRE(updated);
+    BOOST_REQUIRE_EQUAL(updated.inputs().size(), 1u);
+
+    // A bare key is its own fingerprint, with an empty path.
+    const auto& derivations = updated.inputs().front().derivations;
+    BOOST_REQUIRE_EQUAL(derivations.size(), 1u);
+    BOOST_REQUIRE(derivations.front().point == point);
+    BOOST_REQUIRE(derivations.front().origin.path.empty());
+    BOOST_REQUIRE_EQUAL(derivations.front().origin.fingerprint,
+        from_little_endian<uint32_t>(bitcoin_short_hash(point)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__matching_output_descriptor__witness_script)
+{
+    using namespace chain;
+    using namespace wallet;
+
+    const ec_secret secret{ { 0x07 } };
+    ec_compressed point{};
+    BOOST_REQUIRE(secret_to_public(point, secret));
+
+    // A wsh output paying 1-of-1 multisig, matched by its descriptor.
+    const script multisig{ script::to_pay_multisig_pattern(1, ec_compresseds{ point }) };
+    const auto address = witness_address{ multisig, "bc" }.encoded();
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+
+    const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"" + address + "\": 0.001}]");
+    const auto request = "[\"" + as_text(created.at("result")) + "\", [\"wsh(multi(1," + encode_base16(point) + "))\"]]";
+    const auto response = rpc("utxoupdatepsbt", request);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    const psbt::transaction updated{ as_text(response.at("result")) };
+    BOOST_REQUIRE(updated);
+    BOOST_REQUIRE_EQUAL(updated.outputs().size(), 1u);
+
+    const auto& out = updated.outputs().front();
+    BOOST_REQUIRE(out.witness_script);
+    BOOST_REQUIRE(*out.witness_script == multisig);
+    BOOST_REQUIRE_EQUAL(out.derivations.size(), 1u);
+    BOOST_REQUIRE(out.derivations.front().point == to_chunk(point));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

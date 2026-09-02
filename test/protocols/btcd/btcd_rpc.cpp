@@ -114,6 +114,29 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
     BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__filters_disabled__block_not_found)
+{
+    const auto result = rpc_error("getcfilter", (boost_format(R"(["%1%",0])") % block9).str());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__malformed_hash__deserialization)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("getcfilter", R"(["not-a-hash",0])"), deserialization.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__unsupported_type__block_not_found)
+{
+    const auto result = rpc_error("getcfilter", (boost_format(R"(["%1%",1])") % block9).str());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilterheader__filters_disabled__block_not_found)
+{
+    const auto result = rpc_error("getcfilterheader", (boost_format(R"(["%1%",0])") % block9).str());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
 BOOST_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet__magic)
 {
     // The fixture configures mainnet, magic 3652501241 (0xd9b4bef9).
@@ -125,6 +148,40 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__ten_block_store__number)
 {
     const auto response = rpc("getdifficulty");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__block5_locator__headers_after_fork)
+{
+    const auto response = rpc("getheaders", (boost_format(R"([["%1%"],""])") % encode_hash(test::block5_hash)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 4u);
+    BOOST_REQUIRE_EQUAL(as_text(result.front()), encode_base16(test::block6.header().to_data()));
+    BOOST_REQUIRE_EQUAL(as_text(result.back()), encode_base16(test::block9.header().to_data()));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__hashstop__bounded)
+{
+    const auto request = (boost_format(R"([["%1%"],"%2%"])") % encode_hash(test::block5_hash) % encode_hash(test::block8_hash)).str();
+    const auto response = rpc("getheaders", request);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 2u);
+    BOOST_REQUIRE_EQUAL(as_text(result.back()), encode_base16(test::block7.header().to_data()));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__unknown_locator__headers_from_genesis)
+{
+    const auto response = rpc("getheaders", (boost_format(R"([["%1%"],""])") % encode_hash(system::one_hash)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 9u);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__malformed_locator__deserialization)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("getheaders", R"([["not-a-hash"],""])"), deserialization.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__ten_block_store__nine)
@@ -160,6 +217,18 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getnetworkhashps__ten_block_store__number)
 {
     const auto response = rpc("getnetworkhashps");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__version__default__api_semver)
+{
+    const auto response = rpc("version");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& api = response.at("result").at("btcdjsonrpcapi");
+    BOOST_REQUIRE_EQUAL(as_text(api.at("versionstring")), "1.3.0");
+    BOOST_REQUIRE_EQUAL(api.at("major").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(api.at("minor").as_int64(), 3);
+    BOOST_REQUIRE_EQUAL(api.at("patch").as_int64(), 0);
 }
 
 // tools
@@ -343,6 +412,119 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
     BOOST_REQUIRE_EQUAL(params[2].as_array().size(), 1u);
 }
 
+// transactions
+// ----------------------------------------------------------------------------
+// found_address is paid only by mock_block10's second transaction (see above),
+// so it carries exactly one history entry once that block is confirmed.
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__unused_address__no_tx_info)
+{
+    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%"])") % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__invalid_address__invalid_address)
+{
+    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%"])") % bogus_address).str());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__public_key__p2pk_transaction)
+{
+    // A public key implies both the p2pk and derived p2pkh scripts.
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto& point = coinbase.outputs_ptr()->front()->script().ops().front().data();
+    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%"])") % encode_base16(point)).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.front().at("txid")), encode_hash(coinbase.hash(false)));
+    BOOST_REQUIRE_EQUAL(result.front().at("confirmations").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__zero_count__null_result)
+{
+    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",1,0,0])") % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__paid_address__verbose_transaction)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    const auto& paying = *test::mock_block10.transactions_ptr()->at(1);
+    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%"])") % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+
+    const auto& entry = result.front();
+    BOOST_REQUIRE_EQUAL(as_text(entry.at("txid")), encode_hash(paying.hash(false)));
+    BOOST_REQUIRE_EQUAL(as_text(entry.at("blockhash")), encode_hash(test::mock_block10.hash()));
+    BOOST_REQUIRE_EQUAL(entry.at("confirmations").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(entry.at("vin").as_array().size(), 2u);
+    BOOST_REQUIRE_EQUAL(entry.at("vout").as_array().size(), 2u);
+    BOOST_REQUIRE(entry.as_object().contains("hex"));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__not_verbose__serialized_transaction)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    const auto& paying = *test::mock_block10.transactions_ptr()->at(1);
+    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",0])") % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.front()), encode_base16(paying.to_data(true)));
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__skip_past_history__no_tx_info)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%",1,1])") % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__vinextra__prevout_injected)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",1,0,100,1])") % found_address).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    // The paying transaction spends the block1 and block2 coinbases (50 btc).
+    // The coinbases are p2pk, which has no address (btcd fabricates one).
+    const auto& vin = response.at("result").as_array().front().at("vin").as_array();
+    BOOST_REQUIRE_EQUAL(vin.size(), 2u);
+    BOOST_REQUIRE_EQUAL(vin.front().at("prevOut").at("value").as_double(), 50.0);
+    BOOST_REQUIRE(vin.front().at("prevOut").at("addresses").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__filteraddrs__filtered_vin_vout)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    const auto request = (boost_format(R"(["%1%",1,0,100,0,false,["%1%"]])") % found_address).str();
+    const auto response = rpc("searchrawtransactions", request);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    // No prevout pays found_address and only the first output does.
+    const auto& entry = response.at("result").as_array().front();
+    BOOST_REQUIRE_EQUAL(entry.at("vin").as_array().size(), 0u);
+    BOOST_REQUIRE_EQUAL(entry.at("vout").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(entry.at("vout").as_array().front().at("n").as_int64(), 0);
+}
+
 // deprecated
 // ----------------------------------------------------------------------------
 
@@ -505,6 +687,12 @@ BOOST_AUTO_TEST_CASE(btcd_no_index__rescanblocks__any__not_implemented)
     const auto request = R"([["%1%"]])";
     const auto result = rpc_error("rescanblocks", (boost_format(request) % encode_hash(test::block1_hash)).str());
     BOOST_REQUIRE_EQUAL(result, unimplemented.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__searchrawtransactions__any__misc_error)
+{
+    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%"])") % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, misc_error.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

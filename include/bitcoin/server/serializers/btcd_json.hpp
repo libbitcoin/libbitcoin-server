@@ -16,18 +16,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
+#ifndef LIBBITCOIN_SERVER_SERIALIZERS_BTCD_JSON_HPP
+#define LIBBITCOIN_SERVER_SERIALIZERS_BTCD_JSON_HPP
 
-#include <bitcoin/server/parsers/admin_query.hpp>
-#include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_query.hpp>
-#include <bitcoin/server/parsers/bitcoind_scan.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
-#include <bitcoin/server/parsers/bitcoind_transaction.hpp>
-#include <bitcoin/server/parsers/bitcoind_target.hpp>
-#include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/native_query.hpp>
-#include <bitcoin/server/parsers/native_target.hpp>
+#include <set>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+namespace btcd {
+
+/// The verbose searchrawtransactions element: the bitcoind transaction model
+/// with btcd's prevOut extension and address filtering.
+BCS_API boost::json::object search_transaction(const node::query& query,
+    const database::tx_link& link, const system::chain::transaction& tx,
+    const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
+} // namespace btcd
+} // namespace server
+} // namespace libbitcoin
 
 #endif

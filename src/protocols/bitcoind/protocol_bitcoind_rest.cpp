@@ -337,9 +337,8 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         return true;
     }
 
-    constexpr size_t maximum_headers = 2000;
     constexpr auto header_size = chain::header::serialized_size();
-    const auto limit = lesser(count, maximum_headers);
+    const auto limit = lesser(count, messages::peer::max_get_headers);
     const auto links = query.get_confirmed_headers(height, limit);
     if (links.empty())
     {
@@ -506,36 +505,28 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
             size += output->serialized_size();
     }
 
-    const auto serialize = [&spent](auto& writer) NOEXCEPT
+    data_chunk wire(size);
+    stream::out::fast sink{ wire };
+    write::bytes::fast writer{ sink };
+    writer.write_variable(add1(spent.size()));
+    writer.write_variable(zero);
+    for (const auto& outs: spent)
     {
-        writer.write_variable(add1(spent.size()));
-        writer.write_variable(zero);
-        for (const auto& outs: spent)
-        {
-            writer.write_variable(outs.size());
-            for (const auto& output: outs)
-                output->to_data(writer);
-        }
-    };
+        writer.write_variable(outs.size());
+        for (const auto& output: outs)
+            output->to_data(writer);
+    }
 
     switch (media)
     {
         case data:
         {
-            data_chunk out(size);
-            stream::out::fast sink{ out };
-            write::bytes::fast writer{ sink };
-            serialize(writer);
-            send_data(std::move(out));
+            send_data(std::move(wire));
             return true;
         }
         case text:
         {
-            std::string out(two * size, '\0');
-            stream::out::fast sink{ out };
-            write::base16::fast writer{ sink };
-            serialize(writer);
-            send_text(std::move(out));
+            send_text(encode_base16(wire));
             return true;
         }
         case json:
@@ -637,8 +628,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
         return true;
     }
 
-    constexpr size_t maximum_headers = 2000;
-    const auto limit = lesser(count, maximum_headers);
+    const auto limit = lesser(count, messages::peer::max_get_headers);
     const auto links = query.get_confirmed_headers(height, limit);
     if (links.empty())
     {
@@ -792,40 +782,31 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
     for (const auto& unspent: utxos)
         size += two * sizeof(uint32_t) + unspent.out->serialized_size();
 
-    const auto serialize = [&](auto& writer) NOEXCEPT
+    data_chunk wire(size);
+    stream::out::fast sink{ wire };
+    write::bytes::fast writer{ sink };
+    writer.write_4_bytes_little_endian(possible_narrow_cast<uint32_t>(top));
+    writer.write_bytes(top_hash);
+    writer.write_variable(bitmap.size());
+    writer.write_bytes(bitmap);
+    writer.write_variable(utxos.size());
+    for (const auto& unspent: utxos)
     {
-        writer.write_4_bytes_little_endian(
-            possible_narrow_cast<uint32_t>(top));
-        writer.write_bytes(top_hash);
-        writer.write_variable(bitmap.size());
-        writer.write_bytes(bitmap);
-        writer.write_variable(utxos.size());
-        for (const auto& unspent: utxos)
-        {
-            writer.write_4_bytes_little_endian(0);
-            writer.write_4_bytes_little_endian(unspent.height);
-            unspent.out->to_data(writer);
-        }
-    };
+        writer.write_4_bytes_little_endian(0);
+        writer.write_4_bytes_little_endian(unspent.height);
+        unspent.out->to_data(writer);
+    }
 
     switch (media)
     {
         case data:
         {
-            data_chunk out(size);
-            stream::out::fast sink{ out };
-            write::bytes::fast writer{ sink };
-            serialize(writer);
-            send_data(std::move(out));
+            send_data(std::move(wire));
             return true;
         }
         case text:
         {
-            std::string out(two * size, '\0');
-            stream::out::fast sink{ out };
-            write::base16::fast writer{ sink };
-            serialize(writer);
-            send_text(std::move(out));
+            send_text(encode_base16(wire));
             return true;
         }
         case json:

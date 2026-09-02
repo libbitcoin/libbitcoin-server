@@ -24,8 +24,7 @@
 namespace libbitcoin {
 namespace server {
 
-/// bitcoind's utxo set coin serialization (outpoint, height code, value,
-/// script), the element of both set commitment forms.
+/// Utxo set coin serialization, the element of both set commitment forms.
 BCS_API void to_coin_data(system::data_chunk& out,
     const database::unspent_coin& coin) NOEXCEPT;
 
@@ -37,6 +36,13 @@ BCS_API uint64_t total_subsidy(const system::settings& settings,
 BCS_API bool block_info(network::rpc::object_t& out, const node::query& query,
     const system::settings& settings, const database::header_link& link,
     size_t height) NOEXCEPT;
+
+/// The scantxoutset result from the matched coins (canonical order).
+BCS_API network::rpc::object_t scan_result(size_t& size,
+    database::unspent_coins& coins, const node::query& query,
+    const system::chain::scripts& scripts, size_t top, uint64_t txouts,
+    bool bip30, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

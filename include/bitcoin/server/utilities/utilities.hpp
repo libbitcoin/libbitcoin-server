@@ -19,8 +19,10 @@
 #ifndef LIBBITCOIN_SERVER_UTILITIES_UTILITIES_HPP
 #define LIBBITCOIN_SERVER_UTILITIES_UTILITIES_HPP
 
+#include <bitcoin/server/utilities/bitcoind_combine.hpp>
 #include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
 #include <bitcoin/server/utilities/bitcoind_merkle.hpp>
+#include <bitcoin/server/utilities/bitcoind_update.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>
 
 #endif

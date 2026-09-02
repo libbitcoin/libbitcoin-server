@@ -43,10 +43,15 @@ struct btcd_methods
         /// reports it, and lnd requires the taproot key to accept a backend).
         method<"getblockchaininfo">{},
 
+        method<"getcfilter", string_t, number_t>{ "hash", "filtertype" },
+        method<"getcfilterheader", string_t, number_t>{ "hash", "filtertype" },
         method<"getcurrentnet">{},
         method<"getdifficulty">{},
+        method<"getheaders", array_t, string_t>{ "blocklocators", "hashstop" },
         method<"getinfo">{},
         method<"getnettotals">{},
+        method<"searchrawtransactions", string_t, optional<1.0>, optional<0.0>, optional<100.0>, optional<0.0>, optional<false>, optional<empty::array>>{ "address", "verbose", "skip", "count", "vinextra", "reverse", "filteraddrs" },
+        method<"version">{},
 
         /// Subscription.
         method<"notifyblocks">{},
@@ -84,24 +89,29 @@ struct btcd_methods
 
     using get_best_block = at<3>;
     using get_block_chain_info = at<4>;
-    using get_current_net = at<5>;
-    using get_difficulty = at<6>;
-    using get_info = at<7>;
-    using get_net_totals = at<8>;
+    using get_cfilter = at<5>;
+    using get_cfilter_header = at<6>;
+    using get_current_net = at<7>;
+    using get_difficulty = at<8>;
+    using get_headers = at<9>;
+    using get_info = at<10>;
+    using get_net_totals = at<11>;
+    using search_raw_transactions = at<12>;
+    using version = at<13>;
 
-    using notify_blocks = at<9>;
-    using stop_notify_blocks = at<10>;
-    using notify_new_transactions = at<11>;
-    using stop_notify_new_transactions = at<12>;
+    using notify_blocks = at<14>;
+    using stop_notify_blocks = at<15>;
+    using notify_new_transactions = at<16>;
+    using stop_notify_new_transactions = at<17>;
 
-    using load_tx_filter = at<13>;
-    using rescan_blocks = at<14>;
+    using load_tx_filter = at<18>;
+    using rescan_blocks = at<19>;
 
-    using notify_received = at<15>;
-    using stop_notify_received = at<16>;
-    using notify_spent = at<17>;
-    using stop_notify_spent = at<18>;
-    using rescan = at<19>;
+    using notify_received = at<20>;
+    using stop_notify_received = at<21>;
+    using notify_spent = at<22>;
+    using stop_notify_spent = at<23>;
+    using rescan = at<24>;
 };
 
 } // namespace interface
