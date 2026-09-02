@@ -937,6 +937,32 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__noop__true)
     REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
 }
 
+// nullopt<> accepts explicit null as the default (bitcoind contract).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__null_params__true)
+{
+    const auto response = rpc("verifychain", "[null,null]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__interior_null__true)
+{
+    const auto response = rpc("verifychain", "[null,6]");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__named_null_params__true)
+{
+    const auto response = rpc("verifychain", R"({"checklevel":null,"nblocks":null})");
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_bool());
+}
+
+// A required argument does not accept null (binding failure drops channel).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__null_required__dropped)
+{
+    const auto response = rpc_body(R"({"id":1,"method":"getblockhash","params":[null]})");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdifficulty__ten_block_store__one)
 {
     const auto response = rpc("getdifficulty");

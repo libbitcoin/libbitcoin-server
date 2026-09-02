@@ -30,14 +30,14 @@ struct bitcoind_control_methods
 {
     static constexpr std::tuple methods
     {
-        method<"help", optional<""_t>>{ "command" },
+        method<"help", nullopt<""_t>>{ "command" },
         method<"stop">{ unimplemented },
-        method<"getmemoryinfo", optional<"stats"_t>>{ "mode" },
-        method<"getopenrpcinfo", optional<false>>{ "show_hidden" },
+        method<"getmemoryinfo", nullopt<"stats"_t>>{ "mode" },
+        method<"getopenrpcinfo", nullopt<false>>{ "show_hidden" },
         method<"getrpcinfo">{},
-        method<"logging", optional<empty::array>, optional<empty::array>>{ "include", "exclude" },
+        method<"logging", nullopt<empty::array>, nullopt<empty::array>>{ "include", "exclude" },
         method<"uptime">{},
-        method<"rpc.discover", optional<false>>{ "show_hidden" }
+        method<"rpc.discover", nullopt<false>>{ "show_hidden" }
     };
 
     template <typename... Args>

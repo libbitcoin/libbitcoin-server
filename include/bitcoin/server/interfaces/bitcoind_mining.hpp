@@ -30,9 +30,9 @@ struct bitcoind_mining_methods
 {
     static constexpr std::tuple methods
     {
-        method<"getnetworkhashps", optional<120.0>, optional<-1.0>>{ "nblocks", "height" },
+        method<"getnetworkhashps", nullopt<120.0>, nullopt<-1.0>>{ "nblocks", "height" },
         method<"getmininginfo">{},
-        method<"submitblock", string_t, optional<""_t>>{ "hexdata", "dummy" },
+        method<"submitblock", string_t, nullopt<""_t>>{ "hexdata", "dummy" },
         method<"submitheader", string_t>{ "hexdata" },
         method<"getblocktemplate">{ unimplemented },
         method<"getprioritisedtransactions">{ unimplemented },
