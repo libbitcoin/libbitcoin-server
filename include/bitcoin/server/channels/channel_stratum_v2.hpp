@@ -21,7 +21,6 @@
 
 #include <memory>
 #include <bitcoin/server/channels/channel.hpp>
-#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

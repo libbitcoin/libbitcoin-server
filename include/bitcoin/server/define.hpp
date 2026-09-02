@@ -75,8 +75,8 @@ namespace std::placeholders
 // Server inclusions are chained as follows.
 
 // version        : <generated>
-// error          : version
-// define         : error
+// /error         : version
+// define         : /error
 
 // Other directory common includes are not internally chained.
 // Each header includes only its required common headers.
@@ -84,8 +84,12 @@ namespace std::placeholders
 // settings       : define
 // configuration  : define settings
 // parser         : define configuration
-// /channels      : define configuration
-// server_node    : define configuration
 // session        : define                   [forward: server_node]
+// /parsers       : define
+// /serializers   : define
+// /interfaces    : define
+// /utilities     : define /interfaces
+// /channels      : define settings /interfaces
 // /protocols     : define /channels         [session.hpp]
 // /sessions      : define /protocols        [forward: server_node]
+// server_node    : define /sessions
