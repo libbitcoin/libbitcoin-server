@@ -133,6 +133,7 @@
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_scan.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_transaction.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp" />
@@ -229,6 +230,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_scan.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_target.hpp" />

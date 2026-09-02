@@ -18,7 +18,11 @@
  */
 #include <bitcoin/server/serializers/bitcoind_coin.hpp>
 
+#include <algorithm>
+#include <unordered_map>
+#include <utility>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -92,6 +96,79 @@ bool block_info(network::rpc::object_t& out, const node::query& query,
     };
 
     return true;
+}
+
+network::rpc::object_t scan_result(size_t& size,
+    database::unspent_coins& coins, const node::query& query,
+    const chain::scripts& scripts, size_t top, uint64_t txouts, bool bip30,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT
+{
+    using namespace network::rpc;
+
+    // The needle set, keyed by output script hash (the address index key).
+    struct needle { std::string hex; std::string desc; };
+    std::unordered_map<hash_digest, needle> needles{};
+    for (const auto& script: scripts)
+    {
+        if (script.is_unspendable())
+            continue;
+
+        const auto data = script.to_data(false);
+        needles.emplace(sha256_hash(data), needle{ encode_base16(data),
+            infer_descriptor(script, p2kh, p2sh, witness) });
+    }
+
+    // Report in canonical (txid, index) order.
+    std::sort(coins.begin(), coins.end(),
+        [](const auto& left, const auto& right) NOEXCEPT
+        {
+            return (left.txid == right.txid) ? (left.index < right.index) :
+                (left.txid < right.txid);
+        });
+
+    uint64_t amount{};
+    array_t unspents{};
+    for (auto& coin: coins)
+    {
+        const auto found = needles.find(accumulator<sha256>::hash(
+            coin.script));
+        if (found == needles.end())
+            continue;
+
+        // bitcoind retains duplicated coinbases at the overwriting heights.
+        if (bip30 && coin.coinbase)
+            coin.height = (coin.height == 91812) ? 91842 :
+                (coin.height == 91722) ? 91880 : coin.height;
+
+        unspents.emplace_back(object_t
+        {
+            { "txid", encode_hash(coin.txid) },
+            { "vout", coin.index },
+            { "scriptPubKey", found->second.hex },
+            { "desc", found->second.desc },
+            { "amount", to_floating(coin.value) /
+                chain::satoshi_per_bitcoin },
+            { "coinbase", coin.coinbase },
+            { "height", coin.height },
+            { "blockhash", encode_hash(query.get_header_key(
+                query.to_confirmed(coin.height))) },
+            { "confirmations", add1(floored_subtract(top, coin.height)) }
+        });
+
+        amount += coin.value;
+    }
+
+    size = add1(unspents.size()) * 384u;
+    return object_t
+    {
+        { "success", true },
+        { "txouts", txouts },
+        { "height", top },
+        { "bestblock", encode_hash(query.get_header_key(
+            query.to_confirmed(top))) },
+        { "unspents", std::move(unspents) },
+        { "total_amount", to_floating(amount) / chain::satoshi_per_bitcoin }
+    };
 }
 
 BC_POP_WARNING()

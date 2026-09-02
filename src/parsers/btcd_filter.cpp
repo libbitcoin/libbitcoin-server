@@ -84,6 +84,28 @@ code filter_points(points& out, const value_t& outpoints) NOEXCEPT
     return error::success;
 }
 
+code search_keys(hashes& out, const std::string& address, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness) NOEXCEPT
+{
+    data_chunk point{};
+    if (decode_base16(point, address) && is_public_key(point))
+    {
+        const auto hash = bitcoin_short_hash(point);
+        out.push_back(script{ script::to_pay_public_key_pattern(
+            point) }.hash());
+        out.push_back(script{ script::to_pay_key_hash_pattern(
+            hash) }.hash());
+        return error::success;
+    }
+
+    script parsed{};
+    if (const auto ec = output_script(parsed, address, p2kh, p2sh, witness))
+        return ec;
+
+    out.push_back(parsed.hash());
+    return error::success;
+}
+
 BC_POP_WARNING()
 
 } // namespace btcd

@@ -71,32 +71,9 @@ bool expand_scan_signings(wallet::descriptor::signing::list& out,
         expression = std::get<string_t>(desc->second.value());
         end = default_range;
         const auto range = fields.find("range");
-        if (range != fields.end())
-        {
-            const auto& value = range->second.value();
-            if (std::holds_alternative<number_t>(value))
-            {
-                if (!to_integer(end, std::get<number_t>(value)))
-                    return false;
-            }
-            else if (std::holds_alternative<array_t>(value))
-            {
-                const auto& pair = std::get<array_t>(value);
-                if (pair.size() != 2u ||
-                    !std::holds_alternative<number_t>(pair.front().value()) ||
-                    !std::holds_alternative<number_t>(pair.back().value()) ||
-                    !to_integer(begin,
-                        std::get<number_t>(pair.front().value())) ||
-                    !to_integer(end,
-                        std::get<number_t>(pair.back().value())) ||
-                    end < begin)
-                    return false;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        if (range != fields.end() &&
+            !parse_scan_range(begin, end, range->second))
+            return false;
     }
     else
     {
@@ -122,6 +99,25 @@ bool expand_scan_signings(wallet::descriptor::signing::list& out,
     }
 
     return true;
+}
+
+bool parse_scan_range(uint32_t& begin, uint32_t& end,
+    const value_t& range) NOEXCEPT
+{
+    const auto& value = range.value();
+    if (std::holds_alternative<number_t>(value))
+        return to_integer(end, std::get<number_t>(value));
+
+    if (!std::holds_alternative<array_t>(value))
+        return false;
+
+    const auto& pair = std::get<array_t>(value);
+    return pair.size() == two &&
+        std::holds_alternative<number_t>(pair.front().value()) &&
+        std::holds_alternative<number_t>(pair.back().value()) &&
+        to_integer(begin, std::get<number_t>(pair.front().value())) &&
+        to_integer(end, std::get<number_t>(pair.back().value())) &&
+        end >= begin;
 }
 
 BC_POP_WARNING()

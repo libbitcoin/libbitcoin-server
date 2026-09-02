@@ -332,22 +332,7 @@ bool protocol_btcd::handle_search_raw_transactions(const code& ec,
     }
 
     hashes keys{};
-    data_chunk point{};
-    chain::script script_{};
-
-    // A serialized public key implies two output scripts (p2pk and p2pkh).
-    if (decode_base16(point, address) && is_public_key(point))
-    {
-        using namespace chain;
-        const auto hash = bitcoin_short_hash(point);
-        keys.push_back(script{ script::to_pay_public_key_pattern(point) }.hash());
-        keys.push_back(script{ script::to_pay_key_hash_pattern(hash) }.hash());
-    }
-    else if (!output_script(script_, address, p2kh_, p2sh_, witness_))
-    {
-        keys.push_back(script_.hash());
-    }
-    else
+    if (btcd::search_keys(keys, address, p2kh_, p2sh_, witness_))
     {
         send_error(error::btcd::invalid_address_or_key);
         return true;

@@ -19,6 +19,8 @@
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
 
 #include <algorithm>
+#include <string>
+#include <unordered_set>
 #include <vector>
 #include <bitcoin/server/define.hpp>
 
@@ -160,6 +162,66 @@ void inject_tx_prevouts(boost::json::object& out,
 
         ++entry;
     });
+}
+
+void inject_activity(network::rpc::array_t& out, const chain::block& block,
+    size_t height, const std::string& blockhash,
+    const std::unordered_set<std::string>& watch) NOEXCEPT
+{
+    using namespace network::rpc;
+    for (const auto& tx: *block.transactions_ptr())
+    {
+        const auto txid = encode_hash(tx->hash(false));
+        uint32_t index{};
+        for (const auto& put: *tx->outputs_ptr())
+        {
+            const auto script = encode_base16(put->script().to_data(false));
+            if (watch.contains(script))
+            {
+                out.emplace_back(object_t
+                {
+                    { "type", std::string{ "receive" } },
+                    { "amount", put->value() /
+                        to_floating(chain::satoshi_per_bitcoin) },
+                    { "blockhash", blockhash },
+                    { "height", height },
+                    { "txid", txid },
+                    { "vout", index },
+                    { "output_spk", value_from(bitcoind(put->script())) }
+                });
+            }
+
+            ++index;
+        }
+
+        if (tx->is_coinbase())
+            continue;
+
+        uint32_t spend{};
+        for (const auto& in: *tx->inputs_ptr())
+        {
+            const auto& prevout = *in->prevout;
+            const auto script = encode_base16(prevout.script().to_data(false));
+            if (watch.contains(script))
+            {
+                out.emplace_back(object_t
+                {
+                    { "type", std::string{ "spend" } },
+                    { "amount", prevout.value() /
+                        to_floating(chain::satoshi_per_bitcoin) },
+                    { "blockhash", blockhash },
+                    { "height", height },
+                    { "spend_txid", txid },
+                    { "spend_vin", spend },
+                    { "prevout_txid", encode_hash(in->point().hash()) },
+                    { "prevout_vout", in->point().index() },
+                    { "prevout_spk", value_from(bitcoind(prevout.script())) }
+                });
+            }
+
+            ++spend;
+        }
+    }
 }
 
 std::string to_address(const chain::script& script, uint8_t p2kh,

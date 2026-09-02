@@ -34,6 +34,10 @@ BCS_API bool expand_scan_signings(
     system::wallet::descriptor::signing::list& out,
     const network::rpc::value_t& item) NOEXCEPT;
 
+/// Parse a derivation range, an end index or a [begin, end] pair.
+BCS_API bool parse_scan_range(uint32_t& begin, uint32_t& end,
+    const network::rpc::value_t& range) NOEXCEPT;
+
 } // namespace server
 } // namespace libbitcoin
 

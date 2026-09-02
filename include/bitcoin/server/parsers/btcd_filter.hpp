@@ -34,6 +34,11 @@ BCS_API code filter_keys(system::hashes& out,
 BCS_API code filter_points(system::chain::points& out,
     const network::rpc::value_t& outpoints) NOEXCEPT;
 
+/// Parse a searchrawtransactions address to its output script hashes. A
+/// serialized public key implies two scripts (p2pk and its derived p2pkh).
+BCS_API code search_keys(system::hashes& out, const std::string& address,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
 } // namespace btcd
 } // namespace server
 } // namespace libbitcoin

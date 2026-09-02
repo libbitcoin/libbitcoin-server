@@ -28,8 +28,7 @@ namespace server {
 /// Multisig (bare, p2sh, p2wsh) merges endorsements across the candidates;
 /// any other form is taken from the first candidate carrying a signature.
 BCS_API code combine_input(system::chain::input::cptr& out,
-    const node::query& query,
-    const system::chain::transaction_cptrs& variants,
+    const node::query& query, const system::chain::transaction_cptrs& variants,
     uint32_t index) NOEXCEPT;
 
 } // namespace server
