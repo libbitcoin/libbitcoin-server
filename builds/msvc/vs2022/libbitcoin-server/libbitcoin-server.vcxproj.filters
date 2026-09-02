@@ -82,8 +82,11 @@
     <Filter Include="src\serializers">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\utilities">
+    <Filter Include="src\sessions">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utilities">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000A1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -269,6 +272,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\server_node.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\sessions\session.cpp">
+      <Filter>src\sessions</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>

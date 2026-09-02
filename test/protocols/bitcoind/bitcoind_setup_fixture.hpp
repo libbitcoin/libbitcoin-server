@@ -35,7 +35,7 @@ struct bitcoind_setup_fixture
 
     DELETE_COPY_MOVE(bitcoind_setup_fixture);
     explicit bitcoind_setup_fixture(const initializer& setup,
-        const configurator& configure={});
+        const configurator& configure={}, bool start=false);
     ~bitcoind_setup_fixture();
 
     // JSON-RPC 2.0 over HTTP POST to "/". params is a raw json value (array or
@@ -194,6 +194,40 @@ struct bitcoind_witness_setup_fixture
         {
             return test::setup_three_block_witness_store(query);
         })
+    {
+    }
+};
+
+// Configured with a populated address pool -- loaded from a hosts file.
+// The pool is loaded by the start sequence, which the base fixture bypasses.
+struct bitcoind_hosts_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_hosts_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            // Write a hosts file (10 ipv4, 2 ipv6) for the pool to load.
+            // Services must satisfy node.services_required (network|witness).
+            system::ofstream file{ TEST_DIRECTORY + "/hosts.cache" };
+            file << "10.0.0.1:42/0/9\n";
+            file << "10.0.0.2:42/0/9\n";
+            file << "10.0.0.3:42/0/9\n";
+            file << "10.0.0.4:42/0/9\n";
+            file << "10.0.0.5:42/0/9\n";
+            file << "10.0.0.6:42/0/9\n";
+            file << "10.0.0.7:42/0/9\n";
+            file << "10.0.0.8:42/0/9\n";
+            file << "10.0.0.9:42/0/9\n";
+            file << "10.0.0.10:42/0/9\n";
+            file << "[abcd::1]:42/0/9\n";
+            file << "[abcd::2]:42/0/9\n";
+            return file.good() && test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.network.path = TEST_DIRECTORY;
+            config.network.outbound.use_ipv6 = true;
+            config.network.outbound.host_pool_capacity = 42;
+        }, true)
     {
     }
 };

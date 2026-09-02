@@ -88,14 +88,10 @@ protected:
         rpc_interface::get_peer_info) NOEXCEPT;
 
 private:
-    /// Address fetch completions (bounced to the channel strand).
-    void handle_fetch_nodes(const code& ec,
-        const network::address_cptr& message) NOEXCEPT;
-    void handle_fetch_info(const code& ec,
+    /// Address dump completion (bounced to the channel strand).
+    void handle_dump_nodes(const code& ec,
         const network::address_cptr& message) NOEXCEPT;
     void do_send_nodes(const code& ec,
-        const network::address_cptr& message) NOEXCEPT;
-    void do_send_info(const code& ec,
         const network::address_cptr& message) NOEXCEPT;
 
     // These are protected by strand.

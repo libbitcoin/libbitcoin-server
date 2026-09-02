@@ -242,7 +242,14 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
     return true;
 }
 
-// The pool has no tried table, so all addresses are reported as new.
+// bitcoind's network name for each address type.
+constexpr std::array<std::string_view, network::config::address_types>
+network_names
+{
+    "ipv4", "ipv6", "onion", "i2p", "cjdns"
+};
+
+// The pool has no tried table (by design), so all addresses report as new.
 static object_t address_bucket(size_t count) NOEXCEPT
 {
     return object_t
@@ -259,42 +266,19 @@ bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    fetch_addresses(BIND(handle_fetch_info, _1, _2));
-    return true;
-}
+    const auto counts = address_counts();
 
-void protocol_bitcoind_network::handle_fetch_info(const code& ec,
-    const network::address_cptr& message) NOEXCEPT
-{
-    if (stopped())
-        return;
-
-    POST(do_send_info, ec, message);
-}
-
-// An empty or unavailable pool is reported as empty.
-void protocol_bitcoind_network::do_send_info(const code& ec,
-    const network::address_cptr& message) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto empty = (ec || !message);
-
-    size_t v4{};
-    if (!empty)
-        for (const auto& item: message->addresses)
-            if (network::config::address{ item }.is_v4())
-                ++v4;
-
-    const auto total = empty ? zero : message->addresses.size();
-    send_result(object_t
+    size_t total{};
+    object_t out{};
+    for (size_t type{}; type < counts.size(); ++type)
     {
-        { "ipv4", address_bucket(v4) },
-        { "ipv6", address_bucket(total - v4) },
-        { "onion", address_bucket(zero) },
-        { "i2p", address_bucket(zero) },
-        { "cjdns", address_bucket(zero) },
-        { "all_networks", address_bucket(total) }
-    }, 512);
+        out.emplace(network_names.at(type), address_bucket(counts.at(type)));
+        total += counts.at(type);
+    }
+
+    out.emplace("all_networks", address_bucket(total));
+    send_result(std::move(out), 512);
+    return true;
 }
 
 bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
@@ -305,18 +289,18 @@ bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
         return false;
 
     if (!to_integer(node_count_, count) ||
-        (!network.empty() && network != "ipv4" && network != "ipv6"))
+        (!network.empty() && !contains(network_names, network)))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
     node_network_ = network;
-    fetch_addresses(BIND(handle_fetch_nodes, _1, _2));
+    dump_addresses(BIND(handle_dump_nodes, _1, _2));
     return true;
 }
 
-void protocol_bitcoind_network::handle_fetch_nodes(const code& ec,
+void protocol_bitcoind_network::handle_dump_nodes(const code& ec,
     const network::address_cptr& message) NOEXCEPT
 {
     if (stopped())
@@ -337,7 +321,7 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
         return;
     }
 
-    // A zero count returns all addresses.
+    // A zero count does not limit the dump (a randomized pool subset).
     array_t out{};
     for (const auto& item: message->addresses)
     {
@@ -345,7 +329,8 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
             break;
 
         const network::config::address address{ item };
-        const auto name = address.is_v4() ? "ipv4" : "ipv6";
+        const auto name = network_names.at(
+            to_value(network::config::to_address_type(item.ip)));
         if (!node_network_.empty() && node_network_ != name)
             continue;
 

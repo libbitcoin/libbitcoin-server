@@ -1770,7 +1770,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnodeaddresses__empty_pool__empty)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnodeaddresses__bad_network__invalid)
 {
-    const auto response = rpc("getnodeaddresses", "[0, \"onion\"]");
+    const auto response = rpc("getnodeaddresses", "[0, \"bogus\"]");
     REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
 }
 
@@ -1780,6 +1780,41 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getaddrmaninfo__empty_pool__zero_buckets)
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(result.at("all_networks").at("total").as_int64(), 0);
     BOOST_REQUIRE_EQUAL(result.at("ipv4").at("tried").as_int64(), 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getaddrmaninfo__populated_pool__expected,
+    bitcoind_hosts_setup_fixture)
+{
+    const auto response = rpc("getaddrmaninfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("ipv4").at("new").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(result.at("ipv4").at("total").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(result.at("ipv6").at("total").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(result.at("onion").at("total").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("i2p").at("total").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("cjdns").at("total").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("all_networks").at("tried").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("all_networks").at("total").as_int64(), 12);
+}
+
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getnodeaddresses__populated_pool__count,
+    bitcoind_hosts_setup_fixture)
+{
+    // The dump is a randomized subset, at least 12/10 for a pool of 12.
+    const auto response = rpc("getnodeaddresses", "[1]");
+    BOOST_REQUIRE(response.at("result").is_array());
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+    const auto network = std::string{ result.at(0).at("network").as_string() };
+    BOOST_REQUIRE(network == "ipv4" || network == "ipv6");
+}
+
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getnodeaddresses__unpooled_network__empty,
+    bitcoind_hosts_setup_fixture)
+{
+    const auto response = rpc("getnodeaddresses", "[0, \"onion\"]");
+    BOOST_REQUIRE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__setnetworkactive__toggle__round_trips)

@@ -182,6 +182,7 @@
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_psbt.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\btcd_json.cpp" />
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
+    <ClCompile Include="..\..\..\..\src\sessions\session.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_combine.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp" />

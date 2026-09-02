@@ -30,7 +30,7 @@ namespace server {
 class server_node;
 
 /// Intermediate base class for future server injection.
-class session
+class BCS_API session
   : public node::session,
     protected network::tracker<session>
 {
@@ -40,7 +40,7 @@ public:
     /// Construct an instance (network should be started).
     inline session(server_node& node, const configuration& config) NOEXCEPT
       : node::session((node::full_node&)node), config_(config),
-        network::tracker<session>((network::net&)node)
+        network::tracker<session>((network::net&)node), node_(node)
     {
     }
 
@@ -56,9 +56,16 @@ public:
         return server_config().server;
     }
 
+    /// The number of host pool addresses by address type.
+    network::config::address_counts address_counts() const NOEXCEPT;
+
+    /// Get a randomized subset of pooled addresses.
+    void dump_addresses(network::address_handler&& handler) const NOEXCEPT;
+
 private:
-    // This is thread safe.
+    // These are thread safe.
     const configuration& config_;
+    server_node& node_;
 };
 
 } // namespace server
