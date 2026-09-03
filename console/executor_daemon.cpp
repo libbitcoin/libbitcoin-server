@@ -68,12 +68,12 @@ constexpr DWORD preshutdown_milliseconds = 600'000;
 // The manager terminates a pending start that does not progress within this.
 constexpr DWORD pending_milliseconds = 30'000;
 
+SERVICE_STATUS_HANDLE executor::status_handle_{};
 std::atomic<DWORD> executor::state_{ SERVICE_START_PENDING };
 std::atomic_bool executor::failed_{ false };
-SERVICE_STATUS_HANDLE executor::status_handle_{};
-parser* executor::service_metadata_{};
 std::istream* executor::service_input_{};
 std::ostream* executor::service_error_{};
+parser* executor::service_metadata_{};
 
 // Service runtime.
 // ----------------------------------------------------------------------------
