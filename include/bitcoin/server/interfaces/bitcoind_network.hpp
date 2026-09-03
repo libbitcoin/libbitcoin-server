@@ -36,7 +36,7 @@ struct bitcoind_network_methods
         method<"setban", string_t, string_t, nullopt<0.0>, nullopt<false>>{ unimplemented, "subnet", "command", "bantime", "absolute" },
         method<"addnode", string_t, string_t, nullopt<false>>{ "node", "command", "v2transport" },
         method<"disconnectnode", nullable<string_t>, nullable<number_t>>{ unimplemented, "address", "nodeid" },
-        method<"exportasmap", string_t>{ unimplemented, "path" },
+        method<"exportasmap", string_t>{ "path" },
         method<"getaddednodeinfo", nullable<string_t>>{ unimplemented, "node" },
         method<"getaddrmaninfo">{},
         method<"getconnectioncount">{},

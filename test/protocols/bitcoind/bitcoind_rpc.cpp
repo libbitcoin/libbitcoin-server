@@ -52,27 +52,27 @@ bool has_code(const boost::json::value& response, int64_t code) NOEXCEPT
         response.at("error").at("code").as_int64() == code;
 }
 
-using method_code = std::pair<std::string, int64_t>;
+using method_code = std::tuple<std::string, std::string, int64_t>;
+using method_params = std::pair<std::string, std::string>;
 
 const std::vector<method_code> rejected_methods
 {
-    { "dumptxoutset", -32601 },
-    { "loadtxoutset", -32601 },
-    { "clearbanned", -20 },
-    { "listbanned", -20 },
-    { "setban", -20 },
-    { "stop", -32601 },
-    { "descriptorprocesspsbt", -32601 },
-    { "signrawtransactionwithkey", -32601 },
-    { "signmessagewithprivkey", -32601 }
+    { "dumptxoutset", R"([""])", -32601 },
+    { "loadtxoutset", R"([""])", -32601 },
+    { "clearbanned", "[]", -20 },
+    { "listbanned", "[]", -20 },
+    { "setban", R"(["",""])", -20 },
+    { "stop", "[]", -32601 },
+    { "descriptorprocesspsbt", R"(["",[]])", -32601 },
+    { "signrawtransactionwithkey", R"(["",[]])", -32601 },
+    { "signmessagewithprivkey", R"(["",""])", -32601 }
 };
 
 const std::vector<method_code> wip_methods
 {
-    { "getblockfrompeer", -32601 },
-    { "disconnectnode", -32601 },
-    { "exportasmap", -32601 },
-    { "getaddednodeinfo", -24 }
+    { "getblockfrompeer", R"(["",0])", -32601 },
+    { "disconnectnode", "[]", -32601 },
+    { "getaddednodeinfo", "[]", -24 }
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -80,104 +80,104 @@ std::string as_text(const boost::json::value& value) NOEXCEPT
     return { value.as_string().c_str() };
 }
 
-const std::vector<std::string> scope_methods
+const std::vector<method_params> scope_methods
 {
-    "addconnection",
-    "addpeeraddress",
-    "echo",
-    "echoipc",
-    "echojson",
-    "estimaterawfee",
-    "generate",
-    "generateblock",
-    "generatetoaddress",
-    "generatetodescriptor",
-    "getmempoolfeeratediagram",
-    "getorphantxs",
-    "getrawaddrman",
-    "invalidateblock",
-    "mockscheduler",
-    "reconsiderblock",
-    "sendmsgtopeer",
-    "setmocktime",
-    "syncwithvalidationinterfacequeue",
-    "abandontransaction",
-    "abortrescan",
-    "addhdkey",
-    "backupwallet",
-    "bumpfee",
-    "createwallet",
-    "createwalletdescriptor",
-    "encryptwallet",
-    "exportwatchonlywallet",
-    "getaddressesbylabel",
-    "getaddressinfo",
-    "getbalance",
-    "getbalances",
-    "gethdkeys",
-    "getnewaddress",
-    "getrawchangeaddress",
-    "getreceivedbyaddress",
-    "getreceivedbylabel",
-    "gettransaction",
-    "getwalletinfo",
-    "importdescriptors",
-    "importprunedfunds",
-    "keypoolrefill",
-    "listaddressgroupings",
-    "listdescriptors",
-    "listlabels",
-    "listlockunspent",
-    "listreceivedbyaddress",
-    "listreceivedbylabel",
-    "listsinceblock",
-    "listtransactions",
-    "listunspent",
-    "listwalletdir",
-    "listwallets",
-    "loadwallet",
-    "lockunspent",
-    "migratewallet",
-    "psbtbumpfee",
-    "removeprunedfunds",
-    "rescanblockchain",
-    "restorewallet",
-    "send",
-    "sendall",
-    "sendmany",
-    "sendtoaddress",
-    "setlabel",
-    "setwalletflag",
-    "signmessage",
-    "signrawtransactionwithwallet",
-    "simulaterawtransaction",
-    "unloadwallet",
-    "walletcreatefundedpsbt",
-    "walletdisplayaddress",
-    "walletlock",
-    "walletpassphrase",
-    "walletpassphrasechange",
-    "walletprocesspsbt",
-    "enumeratesigners"
+    { "addconnection", R"(["","",false])" },
+    { "addpeeraddress", R"(["",0])" },
+    { "echo", "[]" },
+    { "echoipc", R"([""])" },
+    { "echojson", "[]" },
+    { "estimaterawfee", R"([0])" },
+    { "generate", "[]" },
+    { "generateblock", R"(["",[]])" },
+    { "generatetoaddress", R"([0,""])" },
+    { "generatetodescriptor", R"([0,""])" },
+    { "getmempoolfeeratediagram", "[]" },
+    { "getorphantxs", "[]" },
+    { "getrawaddrman", "[]" },
+    { "invalidateblock", R"([""])" },
+    { "mockscheduler", R"([0])" },
+    { "reconsiderblock", R"([""])" },
+    { "sendmsgtopeer", R"([0,"",""])" },
+    { "setmocktime", R"([0])" },
+    { "syncwithvalidationinterfacequeue", "[]" },
+    { "abandontransaction", R"([""])" },
+    { "abortrescan", "[]" },
+    { "addhdkey", "[]" },
+    { "backupwallet", R"([""])" },
+    { "bumpfee", R"([""])" },
+    { "createwallet", R"([""])" },
+    { "createwalletdescriptor", R"([""])" },
+    { "encryptwallet", R"([""])" },
+    { "exportwatchonlywallet", R"([""])" },
+    { "getaddressesbylabel", R"([""])" },
+    { "getaddressinfo", R"([""])" },
+    { "getbalance", "[]" },
+    { "getbalances", "[]" },
+    { "gethdkeys", "[]" },
+    { "getnewaddress", "[]" },
+    { "getrawchangeaddress", "[]" },
+    { "getreceivedbyaddress", R"([""])" },
+    { "getreceivedbylabel", R"([""])" },
+    { "gettransaction", R"([""])" },
+    { "getwalletinfo", "[]" },
+    { "importdescriptors", R"([[]])" },
+    { "importprunedfunds", R"(["",""])" },
+    { "keypoolrefill", "[]" },
+    { "listaddressgroupings", "[]" },
+    { "listdescriptors", "[]" },
+    { "listlabels", "[]" },
+    { "listlockunspent", "[]" },
+    { "listreceivedbyaddress", "[]" },
+    { "listreceivedbylabel", "[]" },
+    { "listsinceblock", "[]" },
+    { "listtransactions", "[]" },
+    { "listunspent", "[]" },
+    { "listwalletdir", "[]" },
+    { "listwallets", "[]" },
+    { "loadwallet", R"([""])" },
+    { "lockunspent", R"([false])" },
+    { "migratewallet", "[]" },
+    { "psbtbumpfee", R"([""])" },
+    { "removeprunedfunds", R"([""])" },
+    { "rescanblockchain", "[]" },
+    { "restorewallet", R"(["",""])" },
+    { "send", R"([0])" },
+    { "sendall", R"([[]])" },
+    { "sendmany", "[]" },
+    { "sendtoaddress", R"(["",0])" },
+    { "setlabel", R"(["",""])" },
+    { "setwalletflag", R"([""])" },
+    { "signmessage", R"(["",""])" },
+    { "signrawtransactionwithwallet", R"([""])" },
+    { "simulaterawtransaction", "[]" },
+    { "unloadwallet", "[]" },
+    { "walletcreatefundedpsbt", "[]" },
+    { "walletdisplayaddress", R"([""])" },
+    { "walletlock", "[]" },
+    { "walletpassphrase", R"(["",0])" },
+    { "walletpassphrasechange", R"(["",""])" },
+    { "walletprocesspsbt", R"([""])" },
+    { "enumeratesigners", "[]" }
 };
 
 const std::vector<method_code> pending_methods
 {
-    { "getmempoolancestors", -33 },
-    { "getmempoolcluster", -33 },
-    { "getmempooldescendants", -33 },
-    { "getmempoolentry", -33 },
-    { "getmempoolinfo", -33 },
-    { "getrawmempool", -33 },
-    { "gettxspendingprevout", -33 },
-    { "importmempool", -33 },
-    { "abortprivatebroadcast", -32601 },
-    { "getprivatebroadcastinfo", -32601 },
-    { "submitpackage", -33 },
-    { "getblocktemplate", -33 },
-    { "getprioritisedtransactions", -33 },
-    { "prioritisetransaction", -33 },
-    { "estimatesmartfee", -32603 }
+    { "getmempoolancestors", R"([""])", -33 },
+    { "getmempoolcluster", R"([""])", -33 },
+    { "getmempooldescendants", R"([""])", -33 },
+    { "getmempoolentry", R"([""])", -33 },
+    { "getmempoolinfo", "[]", -33 },
+    { "getrawmempool", "[]", -33 },
+    { "gettxspendingprevout", R"([[]])", -33 },
+    { "importmempool", R"([""])", -33 },
+    { "abortprivatebroadcast", R"([""])", -32601 },
+    { "getprivatebroadcastinfo", "[]", -32601 },
+    { "submitpackage", R"([[]])", -33 },
+    { "getblocktemplate", R"([{}])", -33 },
+    { "getprioritisedtransactions", "[]", -33 },
+    { "prioritisetransaction", R"([""])", -33 },
+    { "estimatesmartfee", R"([0])", -32603 }
 };
 
 } // namespace
@@ -901,33 +901,33 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__expected_code)
 {
-    for (const auto& [method, code]: rejected_methods)
+    for (const auto& [method, params, code]: rejected_methods)
     {
-        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, params), code), method);
     }
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__expected_code)
 {
-    for (const auto& [method, code]: wip_methods)
+    for (const auto& [method, params, code]: wip_methods)
     {
-        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, params), code), method);
     }
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scope__method_not_found)
 {
-    for (const auto& method: scope_methods)
+    for (const auto& [method, params]: scope_methods)
     {
-        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), -32601), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, params), -32601), method);
     }
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__expected_code)
 {
-    for (const auto& [method, code]: pending_methods)
+    for (const auto& [method, params, code]: pending_methods)
     {
-        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, "[]"), code), method);
+        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, params), code), method);
     }
 }
 
@@ -1789,6 +1789,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__bad_command__invalid)
 {
     const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"nonsense\"]");
     REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__exportasmap__no_embedded_data__misc_error)
+{
+    const auto response = rpc("exportasmap", "[\"asmap.dat\"]");
+    BOOST_REQUIRE(has_code(response, -1));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__ping__always__null)

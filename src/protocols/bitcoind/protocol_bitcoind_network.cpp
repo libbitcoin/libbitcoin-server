@@ -230,7 +230,7 @@ bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
     rpc_interface::export_asmap, const std::string&) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::method_not_found);
+    send_error(error::bitcoind::misc_error);
     return true;
 }
 
