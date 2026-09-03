@@ -160,6 +160,7 @@ private:
     server_node::store store_;
     server_node::query query_;
     node::count_t sequence_{};
+    std::atomic_bool result_{ true };
 
     std::istream& input_;
     std::ostream& output_;

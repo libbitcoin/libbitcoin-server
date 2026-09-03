@@ -115,7 +115,7 @@ int bc::system::main(int argc, char* argv[])
     const auto& args = const_cast<const char**>(argv);
     if (!metadata.parse(argc, args, cerr))
     {
-        return -1;
+        return EXIT_FAILURE;
     }
 
 #if defined(HAVE_MSC)
@@ -126,8 +126,8 @@ int bc::system::main(int argc, char* argv[])
 
     // Blocks until stopped if started by the service control manager.
     if (executor::service(metadata, cin, cerr))
-        return 0;
+        return EXIT_SUCCESS;
 
     executor& host = executor::factory(metadata, cin, cout, cerr);
-    return host.dispatch() ? 0 : -1;
+    return host.dispatch() ? EXIT_SUCCESS : EXIT_FAILURE;
 }

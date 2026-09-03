@@ -198,7 +198,7 @@ bool executor::do_run()
 
     // Stop console capture and issue terminating log message.
     stopper(BS_NODE_STOPPED);
-    return result;
+    return result && result_.load();
 }
 
 } // namespace server
