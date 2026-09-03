@@ -179,7 +179,7 @@ private:
     static std::promise<bool> stopping_;
     static std::optional<std::thread> poller_thread_;
 
-    // Service (supervisor) notifications, noops unless running as a service.
+    // Service notifications, noops unless running as a service.
     static bool service_;
     static std::atomic_bool exited_;
     static std::atomic_bool starting_;
@@ -187,12 +187,11 @@ private:
     static void notify_running();
     static void notify_stopping();
 
-    // Service installation, platform-specific. Returns a system error code
-    // (win32 or errno), where zero is success.
+    // Service installation, platform-specific.
+    static uint32_t delete_service() NOEXCEPT;
     static uint32_t create_service(const std::filesystem::path& config,
         const std::filesystem::path& logs, const std::string& account,
         const std::string& password) NOEXCEPT;
-    static uint32_t delete_service() NOEXCEPT;
 
     static void initialize_stop();
     static void uninitialize_stop();
@@ -213,19 +212,17 @@ private:
     static LRESULT CALLBACK window_proc(HWND handle, UINT message,
         WPARAM wparam, LPARAM lparam);
 
+    static SERVICE_STATUS_HANDLE status_handle_;
     static std::atomic<DWORD> state_;
     static std::atomic_bool failed_;
-    static SERVICE_STATUS_HANDLE status_handle_;
-    static parser* service_metadata_;
     static std::istream* service_input_;
     static std::ostream* service_error_;
-
+    static parser* service_metadata_;
     static void report_status(DWORD state) NOEXCEPT;
+    static DWORD grant_logon_right(const std::string& account) NOEXCEPT;
     static void WINAPI service_main(DWORD argc, LPWSTR* argv) NOEXCEPT;
     static DWORD WINAPI service_handler(DWORD control, DWORD type,
         LPVOID data, LPVOID context) NOEXCEPT;
-
-    static DWORD grant_logon_right(const std::string& account) NOEXCEPT;
 #endif
 
     static std::string command_line(

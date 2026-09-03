@@ -194,11 +194,11 @@ bool executor::do_run()
     ////dump_progress();
 
     // Store close logs its own results.
-    const auto result = close_store(true);
+    const auto closed = close_store(true);
 
     // Stop console capture and issue terminating log message.
     stopper(BS_NODE_STOPPED);
-    return result && result_.load();
+    return closed && result_.load();
 }
 
 } // namespace server
