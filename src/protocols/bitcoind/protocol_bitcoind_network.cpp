@@ -365,12 +365,18 @@ bool protocol_bitcoind_network::handle_set_network_active(const code& ec,
     if (stopped(ec))
         return false;
 
+    auto active = false;
     if (state)
-        node::protocol::resume();
+    {
+        // Resume is refused on a full or faulted store.
+        active = node::protocol::resume();
+    }
     else
+    {
         node::protocol::suspend(network::error::service_suspended);
+    }
 
-    send_result(state, 8);
+    send_result(active, 8);
     return true;
 }
 

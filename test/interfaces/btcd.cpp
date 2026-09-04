@@ -51,7 +51,6 @@ constexpr bool btcd_unserved(const std::string_view& name) NOEXCEPT
 // -----------------------------------------------------------------------------
 
 // These are dispatchable but answer not_implemented (see protocol_btcd).
-static_assert(btcd_unserved("stop"));
 static_assert(btcd_unserved("notifynewtransactions"));
 static_assert(btcd_unserved("stopnotifynewtransactions"));
 static_assert(btcd_unserved("notifyreceived"));

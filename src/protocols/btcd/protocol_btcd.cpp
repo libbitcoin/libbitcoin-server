@@ -54,7 +54,6 @@ void protocol_btcd::start() NOEXCEPT
     // Administrative methods.
     SUBSCRIBE_BTCD(handle_authenticate, _1, _2, _3, _4);
     SUBSCRIBE_BTCD(handle_session, _1, _2);
-    SUBSCRIBE_BTCD(handle_stop, _1, _2);
 
     // Getter methods.
     SUBSCRIBE_BTCD(handle_estimate_fee, _1, _2, _3);
@@ -231,17 +230,6 @@ bool protocol_btcd::handle_session(const code& ec,
     object_t result{};
     result.emplace("id", identifier());
     send_result(std::move(result), 32);
-    return true;
-}
-
-bool protocol_btcd::handle_stop(const code& ec,
-    btcd_interface::stop) NOEXCEPT
-{
-    if (stopped(ec))
-        return false;
-
-    // The server/node cannot stop itself.
-    send_error(error::btcd::unimplemented);
     return true;
 }
 

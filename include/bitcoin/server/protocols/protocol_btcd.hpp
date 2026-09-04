@@ -69,7 +69,6 @@ protected:
     bool handle_authenticate(const code& ec, btcd_interface::authenticate,
         const std::string& username, const std::string& passphrase) NOEXCEPT;
     bool handle_session(const code& ec, btcd_interface::session) NOEXCEPT;
-    bool handle_stop(const code& ec, btcd_interface::stop) NOEXCEPT;
 
     /// Handlers (getters).
     bool handle_estimate_fee(const code& ec, btcd_interface::estimate_fee,
