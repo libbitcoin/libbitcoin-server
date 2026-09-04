@@ -72,6 +72,8 @@ protected:
     bool handle_stop(const code& ec, btcd_interface::stop) NOEXCEPT;
 
     /// Handlers (getters).
+    bool handle_estimate_fee(const code& ec, btcd_interface::estimate_fee,
+        double numblocks) NOEXCEPT;
     bool handle_get_best_block(const code& ec,
         btcd_interface::get_best_block) NOEXCEPT;
     bool handle_get_block_chain_info(const code& ec,
@@ -137,6 +139,10 @@ protected:
     /// Event handlers.
     bool handle_chase(const code& ec, node::chase event_,
         node::event_value value) NOEXCEPT;
+
+    /// Estimate completion (node strand to channel strand).
+    void handle_estimate(const code& ec, uint64_t fee) NOEXCEPT;
+    void complete_estimate(const code& ec, uint64_t fee) NOEXCEPT;
 
     /// Sender (server push, no id).
     void send_notification(const std::string& method,

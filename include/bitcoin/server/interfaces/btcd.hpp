@@ -38,6 +38,7 @@ struct btcd_methods
         method<"stop">{ unimplemented },
 
         /// Getters.
+        method<"estimatefee", number_t>{ "numblocks" },
         method<"getbestblock">{},
 
         /// Overrides the bitcoind method, adding bip9_softforks (real btcd
@@ -88,31 +89,32 @@ struct btcd_methods
     using session = at<1>;
     using stop = at<2>;
 
-    using get_best_block = at<3>;
-    using get_block_chain_info = at<4>;
-    using get_cfilter = at<5>;
-    using get_cfilter_header = at<6>;
-    using get_current_net = at<7>;
-    using get_difficulty = at<8>;
-    using get_headers = at<9>;
-    using get_info = at<10>;
-    using get_net_totals = at<11>;
-    using search_raw_transactions = at<12>;
-    using version = at<13>;
+    using estimate_fee = at<3>;
+    using get_best_block = at<4>;
+    using get_block_chain_info = at<5>;
+    using get_cfilter = at<6>;
+    using get_cfilter_header = at<7>;
+    using get_current_net = at<8>;
+    using get_difficulty = at<9>;
+    using get_headers = at<10>;
+    using get_info = at<11>;
+    using get_net_totals = at<12>;
+    using search_raw_transactions = at<13>;
+    using version = at<14>;
 
-    using notify_blocks = at<14>;
-    using stop_notify_blocks = at<15>;
-    using notify_new_transactions = at<16>;
-    using stop_notify_new_transactions = at<17>;
+    using notify_blocks = at<15>;
+    using stop_notify_blocks = at<16>;
+    using notify_new_transactions = at<17>;
+    using stop_notify_new_transactions = at<18>;
 
-    using load_tx_filter = at<18>;
-    using rescan_blocks = at<19>;
+    using load_tx_filter = at<19>;
+    using rescan_blocks = at<20>;
 
-    using notify_received = at<20>;
-    using stop_notify_received = at<21>;
-    using notify_spent = at<22>;
-    using stop_notify_spent = at<23>;
-    using rescan = at<24>;
+    using notify_received = at<21>;
+    using stop_notify_received = at<22>;
+    using notify_spent = at<23>;
+    using stop_notify_spent = at<24>;
+    using rescan = at<25>;
 };
 
 } // namespace interface
