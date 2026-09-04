@@ -61,7 +61,7 @@ void protocol_bitcoind_utility::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_descriptor_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_verify_message, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_get_index_info, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_estimate_smart_fee, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_estimate_smart_fee, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_sign_message_with_priv_key, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
@@ -398,11 +398,84 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
 }
 
 bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
-    rpc_interface::estimate_smart_fee) NOEXCEPT
+    rpc_interface::estimate_smart_fee, double conf_target,
+    const std::string& estimate_mode, const std::optional<object_t>&) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::internal_error);
+    if (stopped(ec))
+        return false;
+
+    size_t target{};
+    if (!to_integer(target, conf_target) || is_zero(target) ||
+        target > node::estimator::maximum_horizon)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    // "unset" selects the default mode (as bitcoind, case insensitive).
+    using mode_t = node::estimator::mode;
+    const auto lower = ascii_to_lower(estimate_mode);
+    const auto mode =
+        (lower == "unset" || lower == "economical") ? mode_t::economical :
+        (lower == "conservative") ? mode_t::conservative : mode_t::unknown;
+
+    if (mode == mode_t::unknown)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    // The estimator targets the next block as zero.
+    estimate(sub1(target), mode, BIND(handle_estimate, _1, _2, target));
     return true;
+}
+
+void protocol_bitcoind_utility::handle_estimate(const code& ec, uint64_t fee,
+    size_t target) NOEXCEPT
+{
+    POST(complete_estimate, ec, fee, target);
+}
+
+// sats/vbyte to btc/kvbyte.
+constexpr double fee_scale = 100'000.0;
+
+void protocol_bitcoind_utility::complete_estimate(const code& ec,
+    uint64_t fee, size_t target) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    const auto unavailable =
+        ec == node::error::estimate_false ||
+        ec == node::error::estimate_disabled ||
+        ec == node::error::estimate_premature;
+
+    if (!unavailable && ec)
+    {
+        // node::error::estimates_failed, implies store fault.
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
+
+    // Estimate unavailability is reported in-band (as bitcoind).
+    if (unavailable)
+    {
+        send_result(object_t
+        {
+            { "errors", array_t{ std::string{
+                "Insufficient data or no feerate found" } } },
+            { "blocks", target }
+        }, 96);
+        return;
+    }
+
+    send_result(object_t
+    {
+        { "feerate", fee / fee_scale },
+        { "blocks", target }
+    }, 64);
 }
 
 // Signing is a wallet function, keys never transit the server.

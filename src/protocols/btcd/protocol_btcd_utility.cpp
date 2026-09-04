@@ -27,9 +27,15 @@ namespace server {
 
 #define CLASS protocol_btcd
 
+// protocol_bitcoind declares 'using post = network::http::method::post',
+// which shadows network::protocol::post<Derived>. Qualify explicitly.
+#define POST_BTCD(method, ...) \
+    this->network::protocol::template post<CLASS>(&CLASS::method, __VA_ARGS__)
+
 using namespace system;
 using namespace network;
 using namespace network::rpc;
+using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -37,6 +43,62 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
 // Handlers (getters).
 // ----------------------------------------------------------------------------
+
+bool protocol_btcd::handle_estimate_fee(const code& ec,
+    btcd_interface::estimate_fee, double numblocks) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    size_t target{};
+    if (!to_integer(target, numblocks) || is_zero(target) ||
+        target > node::estimator::maximum_horizon)
+    {
+        send_error(error::btcd::invalid_params);
+        return true;
+    }
+
+    // The estimator targets the next block as zero.
+    estimate(sub1(target), node::estimator::mode::basic,
+        BIND(handle_estimate, _1, _2));
+    return true;
+}
+
+void protocol_btcd::handle_estimate(const code& ec, uint64_t fee) NOEXCEPT
+{
+    POST_BTCD(complete_estimate, ec, fee);
+}
+
+void protocol_btcd::complete_estimate(const code& ec, uint64_t fee) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    const auto unavailable =
+        ec == node::error::estimate_false ||
+        ec == node::error::estimate_disabled ||
+        ec == node::error::estimate_premature;
+
+    // btcd reports estimate unavailability as an error (-1).
+    if (unavailable)
+    {
+        send_error(error::btcd::misc_error);
+        return;
+    }
+
+    if (ec)
+    {
+        // node::error::estimates_failed, implies store fault.
+        send_error(error::btcd::internal_error);
+        return;
+    }
+
+    // sats/vbyte to btc/kvbyte.
+    constexpr double fee_scale = 100'000.0;
+    send_result(fee / fee_scale, 20);
+}
 
 // Required by btcwallet during wallet chain-sync bootstrap.
 bool protocol_btcd::handle_get_best_block(const code& ec,

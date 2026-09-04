@@ -76,9 +76,16 @@ protected:
     bool handle_get_index_info(const code& ec,
         rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT;
     bool handle_estimate_smart_fee(const code& ec,
-        rpc_interface::estimate_smart_fee) NOEXCEPT;
+        rpc_interface::estimate_smart_fee, double conf_target,
+        const std::string& estimate_mode,
+        const std::optional<network::rpc::object_t>& options) NOEXCEPT;
     bool handle_sign_message_with_priv_key(const code& ec,
         rpc_interface::sign_message_with_priv_key) NOEXCEPT;
+
+    /// Estimate completion (node strand to channel strand).
+    void handle_estimate(const code& ec, uint64_t fee, size_t target) NOEXCEPT;
+    void complete_estimate(const code& ec, uint64_t fee,
+        size_t target) NOEXCEPT;
 };
 
 } // namespace server

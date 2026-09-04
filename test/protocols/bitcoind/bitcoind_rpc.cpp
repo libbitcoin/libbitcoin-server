@@ -176,8 +176,7 @@ const std::vector<method_code> pending_methods
     { "submitpackage", R"([[]])", -33 },
     { "getblocktemplate", R"([{}])", -33 },
     { "getprioritisedtransactions", "[]", -33 },
-    { "prioritisetransaction", R"([""])", -33 },
-    { "estimatesmartfee", R"([0])", -32603 }
+    { "prioritisetransaction", R"([""])", -33 }
 };
 
 } // namespace
@@ -1024,6 +1023,32 @@ BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getindexinfo__current_coalesced__txindex_s
     const auto& txindex = response.at("result").at("txindex");
     BOOST_REQUIRE(txindex.at("synced").as_bool());
     BOOST_REQUIRE_EQUAL(txindex.at("best_block_height").as_int64(), 9);
+}
+
+// estimatesmartfee
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__estimatesmartfee__zero_target__invalid_parameter)
+{
+    const auto response = rpc("estimatesmartfee", "[0]");
+    BOOST_REQUIRE(has_code(response, -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__estimatesmartfee__invalid_mode__invalid_parameter)
+{
+    const auto response = rpc("estimatesmartfee", R"([2,"bogus"])");
+    BOOST_REQUIRE(has_code(response, -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__estimatesmartfee__uninitialized__errors_with_blocks)
+{
+    // The fixture estimator is not initialized, reported in-band.
+    const auto response = rpc("estimatesmartfee", R"([2,"CONSERVATIVE"])");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(result.at("errors").as_array().size(), 1u);
+    BOOST_REQUIRE(!result.as_object().contains("feerate"));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__block1_by_height__coinbase_only)

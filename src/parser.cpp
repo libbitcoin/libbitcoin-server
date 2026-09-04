@@ -91,17 +91,23 @@ parser::parser(system::chain::selection context,
 
     configured.database.turbo = true;
 
-    // load factors are set to 2.5 @ 950K (except duplicate).
+    // Hashmap buckets derive from expected and installed memory; a configured
+    // count governs, and zero disables an optional table.
     // expected are element counts @ 950K, deriving filter k at create.
     // sizes are set to 1% of measured pruned body @ 950K (tiny tables 100%).
+    constexpr uint32_t contested = 75;
+    constexpr uint32_t target = 25;
+    constexpr uint32_t address_contested = 500;
+    constexpr uint32_t address_target = 50;
 
     // Only used for electrum queries (255 is optimal otherwise).
     configured.database.interval_depth = 11;
 
     // archive
 
-    configured.database.header.buckets = 385'181;
     configured.database.header.expected = 962'953;
+    configured.database.header.buckets = database::derive_buckets(
+        configured.database.header.expected, contested, target);
     configured.database.header.size = 93'406'247;
     configured.database.header.rate = 1;
 
@@ -109,21 +115,23 @@ parser::parser(system::chain::selection context,
     configured.database.txs.size = 54'471'017;
     configured.database.txs.rate = 1;
 
-    configured.database.tx.buckets = 543'948'678;
     configured.database.tx.expected = 1'359'871'695;
+    configured.database.tx.buckets = database::derive_buckets(
+        configured.database.tx.expected, contested, target);
     configured.database.tx.size = 870'317'885;
     configured.database.tx.rate = 1;
 
     // ins (required)
-    configured.database.ins.buckets = 1'345'386'901;
     configured.database.ins.expected = 3'363'467'253;
+    configured.database.ins.buckets = database::derive_buckets(
+        configured.database.ins.expected, contested, target);
     configured.database.ins.size = 1'749'002'971;
     configured.database.ins.rate = 1;
 
-    // outs (optional)
-    ////configured.database.outs.buckets = 1'496'771'635;
-    configured.database.outs.buckets = 0;
+    // outs (optional, disabled by a configured bucket count of zero)
     configured.database.outs.expected = 3'741'929'088;
+    configured.database.outs.buckets = database::derive_buckets(
+        configured.database.outs.expected, address_contested, address_target);
     configured.database.outs.size = 336'773'618;
     configured.database.outs.rate = 1;
 
@@ -139,8 +147,9 @@ parser::parser(system::chain::selection context,
     configured.database.confirmed.buckets = 950'001;
     configured.database.confirmed.rate = 1;
 
-    configured.database.strong_tx.buckets = 543'948'678;
     configured.database.strong_tx.expected = 1'359'871'695;
+    configured.database.strong_tx.buckets = database::derive_buckets(
+        configured.database.strong_tx.expected, contested, target);
     configured.database.strong_tx.size = 149'585'887;
     configured.database.strong_tx.rate = 1;
 

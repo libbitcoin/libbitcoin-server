@@ -96,13 +96,25 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__session__default__returns_id)
     BOOST_REQUIRE(response.at("result").as_object().contains("id"));
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__stop__default__not_implemented)
+// stop is refused by the inherited bitcoind interface.
+BOOST_AUTO_TEST_CASE(btcd_rpc__stop__default__method_not_found)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("stop"), unimplemented.value());
+    BOOST_REQUIRE_EQUAL(rpc_error("stop"), method_not_found.value());
 }
 
 // getters
 // ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__estimatefee__zero_blocks__invalid_params)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("estimatefee", "[0]"), invalid_params.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__estimatefee__uninitialized__misc_error)
+{
+    // The fixture estimator is not initialized (btcd reports an error).
+    BOOST_REQUIRE_EQUAL(rpc_error("estimatefee", "[2]"), misc_error.value());
+}
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
 {

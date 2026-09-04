@@ -35,9 +35,9 @@ struct btcd_methods
         /// Administrative.
         method<"authenticate", string_t, string_t>{ "username", "passphrase" },
         method<"session">{},
-        method<"stop">{ unimplemented },
 
         /// Getters.
+        method<"estimatefee", number_t>{ "numblocks" },
         method<"getbestblock">{},
 
         /// Overrides the bitcoind method, adding bip9_softforks (real btcd
@@ -86,8 +86,8 @@ struct btcd_methods
     // Derive this from above in c++26 using reflection.
     using authenticate = at<0>;
     using session = at<1>;
-    using stop = at<2>;
 
+    using estimate_fee = at<2>;
     using get_best_block = at<3>;
     using get_block_chain_info = at<4>;
     using get_cfilter = at<5>;

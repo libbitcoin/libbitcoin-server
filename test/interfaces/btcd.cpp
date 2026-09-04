@@ -51,7 +51,6 @@ constexpr bool btcd_unserved(const std::string_view& name) NOEXCEPT
 // -----------------------------------------------------------------------------
 
 // These are dispatchable but answer not_implemented (see protocol_btcd).
-static_assert(btcd_unserved("stop"));
 static_assert(btcd_unserved("notifynewtransactions"));
 static_assert(btcd_unserved("stopnotifynewtransactions"));
 static_assert(btcd_unserved("notifyreceived"));
@@ -72,6 +71,7 @@ static_assert(!btcd_served("getblockcount") && !btcd_unserved("getblockcount"));
 // The published list is the served subset, in interface order.
 static_assert(btcd_methods::names ==
     "authenticate session "
+    "estimatefee "
     "getbestblock getblockchaininfo getcfilter getcfilterheader getcurrentnet "
     "getdifficulty getheaders getinfo getnettotals searchrawtransactions "
     "version "

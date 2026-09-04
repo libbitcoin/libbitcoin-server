@@ -137,5 +137,5 @@ static_assert(bitcoind_transaction_methods::names ==
     "utxoupdatepsbt combinerawtransaction");
 static_assert(bitcoind_utility_methods::names ==
     "decodescript validateaddress createmultisig deriveaddresses "
-    "getdescriptorinfo verifymessage getindexinfo");
+    "getdescriptorinfo verifymessage getindexinfo estimatesmartfee");
 static_assert(bitcoind_wallet_methods::names == "");
