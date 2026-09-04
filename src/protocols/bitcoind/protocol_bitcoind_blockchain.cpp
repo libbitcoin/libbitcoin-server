@@ -709,39 +709,15 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     code ec{};
     hash_digest digest{};
     database::unspent_totals totals{};
+    const auto turbo = database_settings().turbo;
+
     if (type == set_hash::none)
-    {
-        ec = query.get_unspent_totals(stopping_, totals, branch,
-            database_settings().turbo);
-    }
+        ec = query.get_unspent_totals(stopping_, totals, branch, turbo);
+    else if (type == set_hash::muhash)
+        ec = query.get_unspent_muhash(stopping_, totals, digest, branch, turbo);
     else
-    {
-        // The commitment accumulates each visited coin, and the totals with
-        // it, so the totals scan is not repeated for hashed queries.
-        muhash3072 muhash{};
-        accumulator<sha256> serial{};
-        data_chunk element{};
-        const auto visit = [&](const database::unspent_coin& coin) NOEXCEPT
-        {
-            if (coin.first)
-                ++totals.transactions;
-
-            to_coin_data(element, coin);
-            ++totals.outputs;
-            totals.value += coin.value;
-            totals.script_bytes += coin.script.size();
-            totals.coin_bytes += element.size();
-            if (type == set_hash::muhash)
-                muhash.insert(element);
-            else
-                serial.write(element);
-        };
-
-        ec = query.get_unspent_coins(stopping_, totals, visit, branch,
-            type == set_hash::serialized, database_settings().turbo);
-        digest = (type == set_hash::muhash) ? muhash.flush() :
-            serial.double_flush();
-    }
+        ec = query.get_unspent_serialized(stopping_, totals, digest, branch,
+            turbo);
 
     if (ec)
     {
@@ -870,7 +846,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
             keys.insert(sha256_hash(script.to_data(false)));
 
     code ec{};
-    uint64_t txouts{};
+    size_t txouts{};
     database::unspent_coins coins{};
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
@@ -888,7 +864,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
             if (!keys.erase(key))
                 continue;
 
-            database::unspents outs{};
+            database::unspent_outputs outs{};
             ec = query.get_confirmed_unspent(stopping_, outs, key,
                 database_settings().turbo);
             if (ec)
@@ -901,9 +877,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
                     continue;
 
                 ++txouts;
-                coins.push_back({ false, utxo.out.point().hash(),
-                    utxo.out.point().index(), utxo.height,
-                    is_zero(utxo.position), utxo.out.value(), data });
+                coins.push_back({ false, utxo.out, utxo.height,
+                    is_zero(utxo.position), data });
             }
         }
     }
@@ -917,16 +892,10 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         }
         else
         {
-            const auto visit = [&](const database::unspent_coin& coin) NOEXCEPT
-            {
-                ++txouts;
-                if (keys.contains(accumulator<sha256>::hash(coin.script)))
-                    coins.push_back(coin);
-            };
-
-            database::unspent_totals unused{};
-            ec = query.get_unspent_coins(stopping_, unused, visit, branch,
-                false, database_settings().turbo);
+            // The store matches by script hash over the scan (the set size is
+            // the count of coins examined, as bitcoind scans the whole set).
+            ec = query.get_unspent_matches(stopping_, coins, txouts, keys,
+                branch, database_settings().turbo);
         }
     }
 
