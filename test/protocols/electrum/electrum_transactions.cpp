@@ -482,3 +482,145 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_id_from_pos__missing_posit
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// Broadcast tx retention.
+// ----------------------------------------------------------------------------
+// There is no tx pool, so a successfully-broadcast tx is retained on the
+// channel that sent it, and reported to that client until it is archived.
+
+BOOST_FIXTURE_TEST_SUITE(electrum_retain_tests, electrum_broadcast_setup_fixture)
+
+using namespace system;
+static const code retain_daemon_error{ server::error::electrum::daemon_error };
+
+// The tx1c fee, which the store cannot report for an unarchived tx.
+static constexpr uint64_t tx1c_fee = 0x64 - 0x5a;
+
+static std::string tx1c_text() NOEXCEPT
+{
+    return encode_base16(test::tx1c.to_data(true));
+}
+
+static std::string tx1c_hash() NOEXCEPT
+{
+    return encode_hash(test::tx1c.hash(false));
+}
+
+// The scripthash tx1c pays to (not archived, so unknown to the store).
+static std::string received_scripthash() NOEXCEPT
+{
+    return encode_hash(test::tx1c.outputs_ptr()->front()->script().hash());
+}
+
+// The scripthash tx1c spends from (archived by block1c at height one).
+static std::string spent_scripthash() NOEXCEPT
+{
+    const auto& funder = *test::block1c.transactions_ptr()->front();
+    return encode_hash(funder.outputs_ptr()->front()->script().hash());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__spendable_prevout__txid)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto request = R"({"id":2000,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % tx1c_text()).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), tx1c_hash());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__not_broadcast__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto request = R"({"id":2001,"method":"blockchain.transaction.get","params":["%1%",false]})" "\n";
+    const auto response = get((boost_format(request) % tx1c_hash()).str());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), retain_daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__broadcast__retained_tx)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto broadcast = R"({"id":2002,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    BOOST_REQUIRE(get((boost_format(broadcast) % tx1c_text()).str()).as_object().contains("result"));
+
+    constexpr auto request = R"({"id":2003,"method":"blockchain.transaction.get","params":["%1%",false]})" "\n";
+    const auto response = get((boost_format(request) % tx1c_hash()).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), tx1c_text());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__broadcast__received_unconfirmed)
+{
+    BOOST_REQUIRE(query_.address_enabled());
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto broadcast = R"({"id":2004,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    BOOST_REQUIRE(get((boost_format(broadcast) % tx1c_text()).str()).as_object().contains("result"));
+
+    constexpr auto request = R"({"id":2005,"method":"blockchain.scripthash.get_history","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % received_scripthash()).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    // The store knows nothing of this scripthash, so the tx is the only entry.
+    const auto& history = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(history.size(), 1u);
+
+    const auto& tx = history.front().as_object();
+    REQUIRE_NO_THROW_TRUE(tx.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(tx.at("tx_hash").is_string());
+    BOOST_REQUIRE_EQUAL(tx.at("height").as_int64(), 0);  // rooted
+    BOOST_REQUIRE_EQUAL(tx.at("tx_hash").as_string(), tx1c_hash());
+    BOOST_REQUIRE_EQUAL(tx.at("fee").as_int64(), tx1c_fee);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__broadcast__spent_appended)
+{
+    BOOST_REQUIRE(query_.address_enabled());
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto broadcast = R"({"id":2006,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    BOOST_REQUIRE(get((boost_format(broadcast) % tx1c_text()).str()).as_object().contains("result"));
+
+    constexpr auto request = R"({"id":2007,"method":"blockchain.scripthash.get_history","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % spent_scripthash()).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    // The archived funding tx, followed by the unconfirmed spend of it.
+    const auto& history = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(history.size(), 2u);
+
+    const auto& funding = history.front().as_object();
+    BOOST_REQUIRE_EQUAL(funding.at("height").as_int64(), 1);
+    BOOST_REQUIRE(!funding.contains("fee"));
+
+    const auto& tx = history.back().as_object();
+    BOOST_REQUIRE_EQUAL(tx.at("height").as_int64(), 0);  // rooted
+    BOOST_REQUIRE_EQUAL(tx.at("tx_hash").as_string(), tx1c_hash());
+    BOOST_REQUIRE_EQUAL(tx.at("fee").as_int64(), tx1c_fee);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__broadcast__received_unconfirmed)
+{
+    BOOST_REQUIRE(query_.address_enabled());
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto broadcast = R"({"id":2008,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    BOOST_REQUIRE(get((boost_format(broadcast) % tx1c_text()).str()).as_object().contains("result"));
+
+    constexpr auto request = R"({"id":2009,"method":"blockchain.scripthash.get_mempool","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % received_scripthash()).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& history = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(history.size(), 1u);
+
+    const auto& tx = history.front().as_object();
+    BOOST_REQUIRE_EQUAL(tx.at("height").as_int64(), 0);  // rooted
+    BOOST_REQUIRE_EQUAL(tx.at("tx_hash").as_string(), tx1c_hash());
+    BOOST_REQUIRE_EQUAL(tx.at("fee").as_int64(), tx1c_fee);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

@@ -80,6 +80,18 @@ struct electrum_three_block_confirmed_address_setup_fixture
     }
 };
 
+struct electrum_broadcast_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_broadcast_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_broadcast_store(query);
+        })
+    {
+    }
+};
+
 struct electrum_disabled_address_index_setup_fixture
   : electrum_setup_fixture
 {
