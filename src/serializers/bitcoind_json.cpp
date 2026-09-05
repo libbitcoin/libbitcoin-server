@@ -212,6 +212,7 @@ boost::json::value to_script_public_key(const chain::script& script,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness,
     uint32_t flags) NOEXCEPT
 {
+    // Key order differs from bitcoind (asm, desc, hex, address, type).
     auto value = value_from(bitcoind(script, flags));
     inject_script_context(value.as_object(), script, p2kh, p2sh, witness);
     return value;
