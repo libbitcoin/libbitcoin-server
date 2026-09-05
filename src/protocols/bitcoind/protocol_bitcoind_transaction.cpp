@@ -555,6 +555,9 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
         const auto& unsigned_tx = doc.unsigned_tx();
         auto tx = value_from(bitcoind(unsigned_tx, flags_));
         inject_tx_scripts(tx.as_object(), unsigned_tx, p2kh_, p2sh_, witness_);
+
+        // bitcoind omits the hex of the decoded psbt transaction.
+        tx.as_object().erase("hex");
         result.emplace("tx", std::move(tx));
     }
 
