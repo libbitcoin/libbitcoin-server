@@ -396,7 +396,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
                     return true;
                 }
 
-                out.push_back(header_to_bitcoind(*header));
+                out.push_back(value_from(bitcoind(*header)));
             }
 
             send_json(std::move(out), links.size() * two * header_size);

@@ -347,10 +347,11 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
         return true;
     }
 
-    auto out = header_to_bitcoind(*header);
+    auto model = value_from(bitcoind(*header));
+    auto& out = model.as_object();
     out["nTx"] = query.get_tx_count(link);
     inject_block_context(out, query, system_settings(), link, *header);
-    send_result(value{ std::move(out) }, 512);
+    send_result(std::move(model), 512);
     return true;
 }
 

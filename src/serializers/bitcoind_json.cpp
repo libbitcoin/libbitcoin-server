@@ -285,23 +285,6 @@ void inject_activity(network::rpc::array_t& out, const chain::block& block,
     }
 }
 
-boost::json::object header_to_bitcoind(
-    const chain::header& header) NOEXCEPT
-{
-    return boost::json::object
-    {
-        { "hash", encode_hash(header.hash()) },
-        { "version", header.version() },
-        { "versionHex", encode_base16(to_big_endian(header.version())) },
-        { "merkleroot", encode_hash(header.merkle_root()) },
-        { "time", header.timestamp() },
-        { "nonce", header.nonce() },
-        { "bits", encode_base16(to_big_endian(header.bits())) },
-        { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) },
-        { "difficulty", header.difficulty() }
-    };
-}
-
 std::string chain_name(const node::query& query) NOEXCEPT
 {
     const auto genesis = query.get_header_key(query.to_confirmed(zero));

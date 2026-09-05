@@ -81,10 +81,6 @@ BCS_API void inject_activity(network::rpc::array_t& out,
     const std::unordered_set<std::string>& watch, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
 
-/// The bitcoind block header object.
-BCS_API boost::json::object header_to_bitcoind(
-    const system::chain::header& header) NOEXCEPT;
-
 /// The bitcoind chain name, resolved from the genesis block.
 BCS_API std::string chain_name(const node::query& query) NOEXCEPT;
 
