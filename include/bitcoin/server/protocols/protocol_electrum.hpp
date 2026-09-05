@@ -251,10 +251,14 @@ protected:
     void do_get_mempool(const hash_digest& hash) NOEXCEPT;
     void do_list_unspent(const hash_digest& hash) NOEXCEPT;
 
-    void complete_get_balance(const code& ec, uint64_t confirmed, int64_t unconfirmed) NOEXCEPT;
-    void complete_get_history(const code& ec, const histories& histories) NOEXCEPT;
-    void complete_get_mempool(const code& ec, const histories& histories) NOEXCEPT;
-    void complete_list_unspent(const code& ec, const unspent_outputs& unspents) NOEXCEPT;
+    void complete_get_balance(const code& ec, uint64_t confirmed,
+        int64_t unconfirmed) NOEXCEPT;
+    void complete_get_history(const code& ec, const hash_digest& scripthash,
+        const histories& histories) NOEXCEPT;
+    void complete_get_mempool(const code& ec, const hash_digest& scripthash,
+        const histories& histories) NOEXCEPT;
+    void complete_list_unspent(const code& ec,
+        const unspent_outputs& unspents) NOEXCEPT;
 
     void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
     void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
@@ -357,6 +361,16 @@ private:
     // Validate a transaction given next block context (node utility).
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
     code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
+
+    // Send a tx retained by this channel's broadcast (unconfirmed).
+    void send_retained_tx(const system::chain::transaction& tx,
+        bool verbose) NOEXCEPT;
+
+    // Append txs retained by this channel's broadcast to unconfirmed history.
+    void append_retained(array_t& out,
+        const hash_digest& scripthash) const NOEXCEPT;
+    static bool touches(const system::chain::transaction& tx,
+        const hash_digest& scripthash) NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;

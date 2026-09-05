@@ -65,6 +65,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
     ${srcdir}/../../src/parsers/native_query.cpp \
     ${srcdir}/../../src/parsers/native_target.cpp \
+    ${srcdir}/../../src/protocols/protocol.cpp \
     ${srcdir}/../../src/protocols/protocol_html.cpp \
     ${srcdir}/../../src/protocols/protocol_http.cpp \
     ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \

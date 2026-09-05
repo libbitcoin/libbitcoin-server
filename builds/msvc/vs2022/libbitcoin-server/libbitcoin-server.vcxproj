@@ -172,6 +172,7 @@
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_input.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_output.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_tx.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\protocol.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_html.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp" />
