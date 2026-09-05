@@ -226,8 +226,9 @@ bool protocol_bitcoind_rest::handle_get_tx(const code& ec,
             return true;
         case json:
         {
-            auto model = value_from(bitcoind(*tx));
+            auto model = value_from(bitcoind(*tx, flags_));
             inject_tx_context(model.as_object(), query, link);
+            inject_tx_scripts(model.as_object(), *tx, p2kh_, p2sh_, witness_);
             send_json(std::move(model), two * size);
             return true;
         }
@@ -395,7 +396,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
                     return true;
                 }
 
-                out.push_back(header_to_bitcoind(*header));
+                out.push_back(value_from(bitcoind(*header)));
             }
 
             send_json(std::move(out), links.size() * two * header_size);
@@ -541,8 +542,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
                     {
                         { "value", output->value() /
                             to_floating(chain::satoshi_per_bitcoin) },
-                        { "scriptPubKey", value_from(bitcoind(
-                            output->script())) }
+                        { "scriptPubKey", script_public_key(output->script()) }
                     });
 
                 models.emplace_back(std::move(prevouts));
@@ -822,8 +822,7 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
                     { "height", unspent.height },
                     { "value", unspent.out->value() /
                         to_floating(chain::satoshi_per_bitcoin) },
-                    { "scriptPubKey", value_from(bitcoind(
-                        unspent.out->script())) }
+                    { "scriptPubKey", script_public_key(unspent.out->script()) }
                 });
 
             send_json(object

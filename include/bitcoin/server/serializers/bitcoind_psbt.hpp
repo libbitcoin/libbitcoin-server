@@ -33,11 +33,13 @@ BCS_API network::rpc::object_t to_unknown(
 
 /// The bitcoind decodepsbt input object.
 BCS_API network::rpc::object_t decode_psbt_input(
-    const system::wallet::psbt::input& in) NOEXCEPT;
+    const system::wallet::psbt::input& in, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness, uint32_t flags) NOEXCEPT;
 
 /// The bitcoind decodepsbt output object.
 BCS_API network::rpc::object_t decode_psbt_output(
-    const system::wallet::psbt::output& out) NOEXCEPT;
+    const system::wallet::psbt::output& out, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness, uint32_t flags) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

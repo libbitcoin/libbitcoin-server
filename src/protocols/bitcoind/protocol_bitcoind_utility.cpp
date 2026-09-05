@@ -69,32 +69,6 @@ void protocol_bitcoind_utility::start() NOEXCEPT
 // Utility methods.
 // ----------------------------------------------------------------------------
 
-static std::string to_script_type(chain::script_pattern pattern) NOEXCEPT
-{
-    using namespace chain;
-    switch (pattern)
-    {
-        case script_pattern::pay_key_hash:
-            return "pubkeyhash";
-        case script_pattern::pay_script_hash:
-            return "scripthash";
-        case script_pattern::pay_multisig:
-            return "multisig";
-        case script_pattern::pay_public_key:
-            return "pubkey";
-        case script_pattern::pay_null_data:
-            return "nulldata";
-        case script_pattern::pay_witness_key_hash:
-            return "witness_v0_keyhash";
-        case script_pattern::pay_witness_script_hash:
-            return "witness_v0_scripthash";
-        case script_pattern::pay_witness_v1_taproot:
-            return "witness_v1_taproot";
-        default:
-            return "nonstandard";
-    }
-}
-
 bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     rpc_interface::decode_script, const std::string& hexstring) NOEXCEPT
 {
@@ -112,32 +86,22 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     constexpr auto prefix = false;
     const script script{ data, prefix };
 
-    using namespace wallet;
-    const auto pattern = script.output_pattern();
-    object_t result
-    {
-        { "asm", script.to_string(flags::all_rules, true) },
-        { "desc", infer_descriptor(script, p2kh_, p2sh_, witness_) },
-        { "type", to_script_type(pattern) }
-    };
+    // bitcoind omits the hex of the decoded script.
+    auto model = script_public_key(script);
+    auto& result = model.as_object();
+    result.erase("hex");
 
     // An undecodable script is rendered, not rejected.
     if (!script.is_valid() || script.is_underflow())
     {
         const auto body = "raw(" + encode_base16(data) + ")";
         result["desc"] = body + "#" + descriptor_checksum(body);
-        send_result(std::move(result), 512);
+        result.erase("address");
+        send_result(std::move(model), 512);
         return true;
     }
 
-    if (pattern == script_pattern::pay_key_hash ||
-        pattern == script_pattern::pay_script_hash)
-    {
-        const auto pay = payment_address::extract_output(script, p2kh_, p2sh_);
-        if (pay)
-            result.emplace("address", pay.encoded());
-    }
-
+    using namespace wallet;
     const payment_address pay{ script, p2sh_ };
     if (pay)
         result.emplace("p2sh", pay.encoded());
@@ -149,18 +113,13 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         const chain::script wsh{ chain::script::to_pay_witness_pattern(0,
             sha256_hash(script.to_data(false))) };
 
-        result.emplace("segwit", object_t
-        {
-            { "asm", wsh.to_string(flags::all_rules, true) },
-            { "hex", encode_base16(wsh.to_data(false)) },
-            { "type", to_script_type(script_pattern::pay_witness_script_hash) },
-            { "address", witness_address{ script, witness_ }.encoded() },
-            { "desc", infer_descriptor(wsh, p2kh_, p2sh_, witness_) },
-            { "p2sh-segwit", payment_address{ wsh, p2sh_ }.encoded() }
-        });
+        auto segwit = script_public_key(wsh);
+        const payment_address wrapped{ wsh, p2sh_ };
+        segwit.as_object().emplace("p2sh-segwit", wrapped.encoded());
+        result.emplace("segwit", std::move(segwit));
     }
 
-    send_result(std::move(result), 512);
+    send_result(std::move(model), 512);
     return true;
 }
 

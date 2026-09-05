@@ -281,6 +281,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_2_verbose__
     tx["confirmations"] = add1(top);
     tx["blocktime"] = test::genesis.header().timestamp();
     tx["time"] = test::genesis.header().timestamp();
+
+    // The server adds the network context (desc, no address for pay-to-public-key).
+    auto& script = tx.at("vout").as_array().front().as_object().at("scriptPubKey").as_object();
+    script["desc"] = "pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)#vlz6ztea";
     BOOST_REQUIRE_EQUAL(response.at("result").as_object(), expected);
 }
 

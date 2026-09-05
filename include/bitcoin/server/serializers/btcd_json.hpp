@@ -31,7 +31,7 @@ namespace btcd {
 BCS_API boost::json::object search_transaction(const node::query& query,
     const database::tx_link& link, const system::chain::transaction& tx,
     const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
-    uint8_t p2sh, const std::string& witness) NOEXCEPT;
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
 
 } // namespace btcd
 } // namespace server

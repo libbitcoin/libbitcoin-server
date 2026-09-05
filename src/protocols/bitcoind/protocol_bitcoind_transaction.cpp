@@ -128,7 +128,9 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
         return true;
     }
 
-    send_result(value_from(bitcoind(tx)), two * tx.serialized_size(true));
+    auto model = value_from(bitcoind(tx, flags_));
+    inject_tx_scripts(model.as_object(), tx, p2kh_, p2sh_, witness_);
+    send_result(std::move(model), two * tx.serialized_size(true));
     return true;
 }
 
@@ -180,14 +182,15 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         return true;
     }
 
-    auto model = value_from(bitcoind(*tx));
-    inject_tx_context(model.as_object(), query, link);
+    auto model = value_from(bitcoind(*tx, flags_));
+    auto& object = model.as_object();
+    inject_tx_context(object, query, link);
+    inject_tx_scripts(object, *tx, p2kh_, p2sh_, witness_);
     if (level == verbosity::json_verbose && !tx->is_coinbase() &&
         query.populate_with_metadata(*tx))
     {
-        inject_tx_prevouts(model.as_object(), query, *tx);
-        model.as_object()["fee"] =
-            tx->fee() / to_floating(chain::satoshi_per_bitcoin);
+        inject_tx_prevouts(object, query, *tx, p2kh_, p2sh_, witness_, flags_);
+        object["fee"] = tx->fee() / to_floating(chain::satoshi_per_bitcoin);
     }
 
     send_result(std::move(model), two * tx->serialized_size(witness));
@@ -548,7 +551,15 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
     object_t result{};
     const auto version0 = (doc.version() == psbt_tx::version_0);
     if (version0)
-        result.emplace("tx", value_from(bitcoind(doc.unsigned_tx())));
+    {
+        const auto& unsigned_tx = doc.unsigned_tx();
+        auto tx = value_from(bitcoind(unsigned_tx, flags_));
+        inject_tx_scripts(tx.as_object(), unsigned_tx, p2kh_, p2sh_, witness_);
+
+        // bitcoind omits the hex of the decoded psbt transaction.
+        tx.as_object().erase("hex");
+        result.emplace("tx", std::move(tx));
+    }
 
     if (!doc.xpubs().empty())
     {
@@ -587,11 +598,17 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
 
     array_t ins{};
     for (const auto& in: doc.inputs())
-        ins.emplace_back(decode_psbt_input(in));
+    {
+        auto entry = decode_psbt_input(in, p2kh_, p2sh_, witness_, flags_);
+        ins.emplace_back(std::move(entry));
+    }
 
     array_t outs{};
     for (const auto& out: doc.outputs())
-        outs.emplace_back(decode_psbt_output(out));
+    {
+        auto entry = decode_psbt_output(out, p2kh_, p2sh_, witness_, flags_);
+        outs.emplace_back(std::move(entry));
+    }
 
     result.emplace("inputs", std::move(ins));
     result.emplace("outputs", std::move(outs));

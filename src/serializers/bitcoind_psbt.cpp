@@ -18,7 +18,9 @@
  */
 #include <bitcoin/server/serializers/bitcoind_psbt.hpp>
 
+#include <utility>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/serializers/bitcoind_json.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -75,11 +77,11 @@ static array_t to_derivations(
     array_t out{};
     for (const auto& derived: derivations)
     {
+        const auto fingerprint = to_little_endian(derived.origin.fingerprint);
         out.emplace_back(object_t
         {
             { "pubkey", encode_base16(derived.point) },
-            { "master_fingerprint", encode_base16(to_little_endian(
-                derived.origin.fingerprint)) },
+            { "master_fingerprint", encode_base16(fingerprint) },
             { "path", to_key_path(derived.origin.path) }
         });
     }
@@ -87,22 +89,29 @@ static array_t to_derivations(
     return out;
 }
 
-object_t decode_psbt_input(const wallet::psbt::input& in) NOEXCEPT
+object_t decode_psbt_input(const wallet::psbt::input& in, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
     using namespace chain;
     object_t entry{};
 
     if (in.non_witness_utxo)
-        entry.emplace("non_witness_utxo",
-            value_from(bitcoind(*in.non_witness_utxo)));
+    {
+        const auto& tx = *in.non_witness_utxo;
+        auto utxo = value_from(bitcoind(tx, flags));
+        inject_tx_scripts(utxo.as_object(), tx, p2kh, p2sh, witness);
+        entry.emplace("non_witness_utxo", std::move(utxo));
+    }
 
     if (in.witness_utxo)
     {
+        const auto& script = in.witness_utxo->script();
+        constexpr auto satoshis = to_floating(satoshi_per_bitcoin);
+        const auto key = to_script_public_key(script, p2kh, p2sh, witness, flags);
         entry.emplace("witness_utxo", object_t
         {
-            { "amount", in.witness_utxo->value() /
-                to_floating(satoshi_per_bitcoin) },
-            { "scriptPubKey", value_from(bitcoind(in.witness_utxo->script())) }
+            { "amount", in.witness_utxo->value() / satoshis },
+            { "scriptPubKey", key }
         });
     }
 
@@ -121,18 +130,18 @@ object_t decode_psbt_input(const wallet::psbt::input& in) NOEXCEPT
 
     if (in.embedded_script)
         entry.emplace("redeem_script",
-            value_from(bitcoind(*in.embedded_script)));
+            value_from(bitcoind(*in.embedded_script, flags)));
 
     if (in.witness_script)
         entry.emplace("witness_script",
-            value_from(bitcoind(*in.witness_script)));
+            value_from(bitcoind(*in.witness_script, flags)));
 
     if (!in.derivations.empty())
         entry.emplace("bip32_derivs", to_derivations(in.derivations));
 
     if (in.final_script_sig)
         entry.emplace("final_scriptSig",
-            value_from(bitcoind(*in.final_script_sig)));
+            value_from(bitcoind_signature(*in.final_script_sig, flags)));
 
     if (in.final_script_witness)
     {
@@ -164,18 +173,19 @@ object_t decode_psbt_input(const wallet::psbt::input& in) NOEXCEPT
     return entry;
 }
 
-object_t decode_psbt_output(const wallet::psbt::output& out) NOEXCEPT
+object_t decode_psbt_output(const wallet::psbt::output& out, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
     using namespace chain;
     object_t entry{};
 
     if (out.embedded_script)
         entry.emplace("redeem_script",
-            value_from(bitcoind(*out.embedded_script)));
+            value_from(bitcoind(*out.embedded_script, flags)));
 
     if (out.witness_script)
         entry.emplace("witness_script",
-            value_from(bitcoind(*out.witness_script)));
+            value_from(bitcoind(*out.witness_script, flags)));
 
     if (!out.derivations.empty())
         entry.emplace("bip32_derivs", to_derivations(out.derivations));
@@ -185,7 +195,8 @@ object_t decode_psbt_output(const wallet::psbt::output& out) NOEXCEPT
             to_floating(satoshi_per_bitcoin));
 
     if (out.script)
-        entry.emplace("script", value_from(bitcoind(*out.script)));
+        entry.emplace("script", to_script_public_key(*out.script, p2kh, p2sh,
+            witness, flags));
 
     if (!out.others.empty())
         entry.emplace("unknown", to_unknown(out.others));

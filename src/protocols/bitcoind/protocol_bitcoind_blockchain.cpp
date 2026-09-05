@@ -184,25 +184,28 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
 
     auto model = level == block_verbosity::hashed ?
         value_from(bitcoind_hashed(*block)) :
-        value_from(bitcoind_verbose(*block));
+        value_from(bitcoind_verbose(*block, flags_));
 
     const auto& settings = system_settings();
     const auto& header = block->header();
     inject_block_context(model.as_object(), query, settings, link, header);
 
-    if (level >= block_verbosity::verbose &&
-        query.populate_with_metadata(*block))
+    if (level >= block_verbosity::verbose)
     {
+        const auto populated = query.populate_with_metadata(*block);
         auto entry = model.as_object().at("tx").as_array().begin();
         std::ranges::for_each(*block->transactions_ptr(),
             [&](const auto& tx) NOEXCEPT
         {
-            if (!tx->is_coinbase())
+            auto& object = entry->as_object();
+            inject_tx_scripts(object, *tx, p2kh_, p2sh_, witness_);
+            if (populated && !tx->is_coinbase())
             {
                 if (level == block_verbosity::prevouts)
-                    inject_tx_prevouts(entry->as_object(), query, *tx);
+                    inject_tx_prevouts(object, query, *tx, p2kh_, p2sh_,
+                        witness_, flags_);
 
-                entry->as_object()["fee"] =
+                object["fee"] =
                     tx->fee() / to_floating(chain::satoshi_per_bitcoin);
             }
 
@@ -344,10 +347,11 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
         return true;
     }
 
-    auto out = header_to_bitcoind(*header);
+    auto model = value_from(bitcoind(*header));
+    auto& out = model.as_object();
     out["nTx"] = query.get_tx_count(link);
     inject_block_context(out, query, system_settings(), link, *header);
-    send_result(value{ std::move(out) }, 512);
+    send_result(std::move(model), 512);
     return true;
 }
 
@@ -602,7 +606,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
         { "bestblock", encode_hash(query.get_header_key(header_link)) },
         { "confirmations", depth },
         { "value", coins },
-        { "scriptPubKey", value_from(bitcoind(output->script())) },
+        { "scriptPubKey", script_public_key(output->script()) },
         { "coinbase", query.is_coinbase(tx_link) }
     }, 256);
     return true;
@@ -1321,7 +1325,8 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
             return true;
         }
 
-        inject_activity(activity, *block, height, encode_hash(hash), watch);
+        inject_activity(activity, *block, height, encode_hash(hash), watch,
+            p2kh_, p2sh_, witness_, flags_);
     }
 
     const auto size = 256 * activity.size();

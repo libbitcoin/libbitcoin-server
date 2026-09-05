@@ -205,12 +205,14 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         }
 
         // Verbose is whatever bitcoind returns for getrawtransaction, lolz.
-        value = value_from(bitcoind(*tx));
+        value = value_from(bitcoind(*tx, flags_));
         if (!value.is_object())
         {
             send_code(error::electrum::daemon_error);
             return;
         }
+
+        inject_tx_scripts(value.as_object(), *tx, p2kh_, p2sh_, witness_);
 
         size = two * tx->serialized_size(true);
         if (const auto block = query.find_strong(link); !block.is_terminal())

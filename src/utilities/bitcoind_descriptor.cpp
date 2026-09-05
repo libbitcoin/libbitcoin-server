@@ -21,7 +21,7 @@
 #include <utility>
 #include <variant>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/serializers/bitcoind_json.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
 
 namespace libbitcoin {
 namespace server {

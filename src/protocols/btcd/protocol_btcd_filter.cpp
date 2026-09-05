@@ -440,7 +440,8 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
         }
 
         found.emplace_back(boost::json::value{ btcd::search_transaction(
-            query, link, *tx, filter, prevouts, p2kh_, p2sh_, witness_) });
+            query, link, *tx, filter, prevouts, p2kh_, p2sh_, witness_,
+            flags_) });
     }
 
     POST_BTCD(complete_search_raw_transactions, error::success,
