@@ -24,10 +24,6 @@
 namespace libbitcoin {
 namespace server {
 
-/// Utxo set coin serialization, the element of both set commitment forms.
-BCS_API void to_coin_data(system::data_chunk& out,
-    const database::unspent_coin& coin) NOEXCEPT;
-
 /// Total subsidy issued through the given height (all coins in existence).
 BCS_API uint64_t total_subsidy(const system::settings& settings,
     size_t height) NOEXCEPT;

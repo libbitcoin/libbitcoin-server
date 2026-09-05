@@ -206,7 +206,7 @@ protected:
     using point = system::chain::point;
     using hash_digest = system::hash_digest;
     using history = database::history;
-    using unspents = database::unspents;
+    using unspent_outputs = database::unspent_outputs;
     using histories = database::histories;
     using cursor_t = database::height_link;
     using midstate = system::accumulator<system::sha256>;
@@ -252,7 +252,7 @@ protected:
     void complete_get_balance(const code& ec, uint64_t confirmed, int64_t unconfirmed) NOEXCEPT;
     void complete_get_history(const code& ec, const histories& histories) NOEXCEPT;
     void complete_get_mempool(const code& ec, const histories& histories) NOEXCEPT;
-    void complete_list_unspent(const code& ec, const unspents& unspents) NOEXCEPT;
+    void complete_list_unspent(const code& ec, const unspent_outputs& unspents) NOEXCEPT;
 
     void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
     void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
@@ -327,7 +327,7 @@ private:
     }
 
     // Transformations.
-    static array_t transform(const unspents& unspents) NOEXCEPT;
+    static array_t transform(const unspent_outputs& unspents) NOEXCEPT;
     static array_t transform(const histories& histories) NOEXCEPT;
     static void write_status(midstate& accumulator,
         const history& history) NOEXCEPT;

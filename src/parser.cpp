@@ -33,6 +33,7 @@ namespace server {
 
 using namespace bc::system;
 using namespace bc::system::config;
+namespace table = bc::database::table;
 using namespace boost::program_options;
 
 // Initialize configuration using defaults of the given context.
@@ -106,7 +107,7 @@ parser::parser(system::chain::selection context,
     // archive
 
     configured.database.header.expected = 962'953;
-    configured.database.header.buckets = database::derive_buckets(
+    configured.database.header.buckets = table::header::derive_buckets(
         configured.database.header.expected, contested, target);
     configured.database.header.size = 93'406'247;
     configured.database.header.rate = 1;
@@ -116,21 +117,21 @@ parser::parser(system::chain::selection context,
     configured.database.txs.rate = 1;
 
     configured.database.tx.expected = 1'359'871'695;
-    configured.database.tx.buckets = database::derive_buckets(
+    configured.database.tx.buckets = table::transaction::derive_buckets(
         configured.database.tx.expected, contested, target);
     configured.database.tx.size = 870'317'885;
     configured.database.tx.rate = 1;
 
     // ins (required)
     configured.database.ins.expected = 3'363'467'253;
-    configured.database.ins.buckets = database::derive_buckets(
+    configured.database.ins.buckets = table::ins::derive_buckets(
         configured.database.ins.expected, contested, target);
     configured.database.ins.size = 1'749'002'971;
     configured.database.ins.rate = 1;
 
     // outs (optional, disabled by a configured bucket count of zero)
     configured.database.outs.expected = 3'741'929'088;
-    configured.database.outs.buckets = database::derive_buckets(
+    configured.database.outs.buckets = table::outs::derive_buckets(
         configured.database.outs.expected, address_contested, address_target);
     configured.database.outs.size = 336'773'618;
     configured.database.outs.rate = 1;
@@ -148,7 +149,7 @@ parser::parser(system::chain::selection context,
     configured.database.confirmed.rate = 1;
 
     configured.database.strong_tx.expected = 1'359'871'695;
-    configured.database.strong_tx.buckets = database::derive_buckets(
+    configured.database.strong_tx.buckets = table::strong_tx::derive_buckets(
         configured.database.strong_tx.expected, contested, target);
     configured.database.strong_tx.size = 149'585'887;
     configured.database.strong_tx.rate = 1;

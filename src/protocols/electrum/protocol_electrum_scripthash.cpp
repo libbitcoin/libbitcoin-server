@@ -297,14 +297,14 @@ void protocol_electrum::list_unspent(const system::hash_digest& hash) NOEXCEPT
 void protocol_electrum::do_list_unspent(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(!stranded());
-    unspents unspents{};
+    unspent_outputs unspents{};
     const auto& query = archive();
     const auto ec = query.get_unspent(stopping_, unspents, hash, turbo_);
     POST(complete_list_unspent, ec, std::move(unspents));
 }
 
 void protocol_electrum::complete_list_unspent(const code& ec,
-    const unspents& unspents) NOEXCEPT
+    const unspent_outputs& unspents) NOEXCEPT
 {
     BC_ASSERT(stranded());
     monitor(false);
@@ -360,7 +360,7 @@ array_t protocol_electrum::transform(const histories& ins) NOEXCEPT
 
 // Height is zero for unconfirmed unspent output txs.
 // TODO: this can be implemented as electrum json serializers (see bitcoind).
-array_t protocol_electrum::transform(const unspents& ins) NOEXCEPT
+array_t protocol_electrum::transform(const unspent_outputs& ins) NOEXCEPT
 {
     array_t out(ins.size());
     std::ranges::transform(ins, out.begin(), [](const auto& in) NOEXCEPT

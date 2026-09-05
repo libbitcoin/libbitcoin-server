@@ -31,26 +31,6 @@ using namespace system;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-void to_coin_data(data_chunk& out,
-    const database::unspent_coin& coin) NOEXCEPT
-{
-    constexpr auto overhead = hash_size + sizeof(uint32_t) + sizeof(uint32_t) +
-        sizeof(uint64_t);
-
-    out.resize(overhead + variable_size(coin.script.size()) +
-        coin.script.size());
-    stream::out::fast ostream(out);
-    write::bytes::fast sink(ostream);
-    sink.write_bytes(coin.txid);
-    sink.write_4_bytes_little_endian(coin.index);
-    sink.write_4_bytes_little_endian(bit_or(shift_left(
-        possible_narrow_cast<uint32_t>(coin.height), 1),
-        to_int<uint32_t>(coin.coinbase)));
-    sink.write_8_bytes_little_endian(coin.value);
-    sink.write_variable(coin.script.size());
-    sink.write_bytes(coin.script);
-}
-
 uint64_t total_subsidy(const system::settings& settings,
     size_t height) NOEXCEPT
 {
@@ -122,8 +102,12 @@ network::rpc::object_t scan_result(size_t& size,
     std::sort(coins.begin(), coins.end(),
         [](const auto& left, const auto& right) NOEXCEPT
         {
-            return (left.txid == right.txid) ? (left.index < right.index) :
-                (left.txid < right.txid);
+            const auto& one = left.out.point();
+            const auto& two = right.out.point();
+            if (one.hash() == two.hash())
+                return one.index() < two.index();
+
+            return one.hash() < two.hash();
         });
 
     uint64_t amount{};
@@ -142,11 +126,11 @@ network::rpc::object_t scan_result(size_t& size,
 
         unspents.emplace_back(object_t
         {
-            { "txid", encode_hash(coin.txid) },
-            { "vout", coin.index },
+            { "txid", encode_hash(coin.out.point().hash()) },
+            { "vout", coin.out.point().index() },
             { "scriptPubKey", found->second.hex },
             { "desc", found->second.desc },
-            { "amount", to_floating(coin.value) /
+            { "amount", to_floating(coin.out.value()) /
                 chain::satoshi_per_bitcoin },
             { "coinbase", coin.coinbase },
             { "height", coin.height },
@@ -155,7 +139,7 @@ network::rpc::object_t scan_result(size_t& size,
             { "confirmations", add1(floored_subtract(top, coin.height)) }
         });
 
-        amount += coin.value;
+        amount += coin.out.value();
     }
 
     size = add1(unspents.size()) * 384u;
