@@ -333,15 +333,6 @@ uint32_t executor::delete_service() NOEXCEPT
 // to minutes, depending on dirty page volume and disk speed.
 constexpr auto stop_timeout_seconds = 600;
 
-// Console redirection file, within the configured log directory. Distinct
-// from the rotated log files, which the node writes and buffers itself.
-constexpr auto console_file = "console.log";
-
-// launchd clamps a positive ExitTimeOut to 60 seconds (600 reports as 60), so
-// this is the effective drain ceiling on osx. Do not "fix" this with zero,
-// which launchd documents as infinite but which kills without draining.
-constexpr auto exit_timeout_seconds = stop_timeout_seconds;
-
 #if defined(HAVE_LINUX)
 
 // A systemd unit, and the symlink by which the unit is enabled.
@@ -381,6 +372,11 @@ static std::string unit_text(const std::string& command,
 
 #else // HAVE_APPLE
 
+// launchd clamps a positive ExitTimeOut to 60 seconds (600 reports as 60), so
+// this is the effective drain ceiling on osx. Do not "fix" this with zero,
+// which launchd documents as infinite but which kills without draining.
+constexpr auto exit_timeout_seconds = stop_timeout_seconds;
+
 static std::filesystem::path unit_path(const std::string&) NOEXCEPT
 {
     return { "/Library/LaunchDaemons/" BS_SERVICE_LABEL ".plist" };
@@ -418,6 +414,10 @@ static std::string unit_text(const std::string& command,
 }
 
 #endif // HAVE_LINUX
+
+// Console redirection file, within the configured log directory. Distinct
+// from the rotated log files, which the node writes and buffers itself.
+constexpr auto console_file = "console.log";
 
 // Returns an errno value, where zero is success.
 uint32_t executor::create_service(const std::filesystem::path& config,
