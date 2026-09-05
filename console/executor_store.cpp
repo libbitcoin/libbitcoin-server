@@ -78,7 +78,17 @@ bool executor::create_store(bool details)
         return false;
     }
 
-    // Create and confirm genesis block (store invalid without it).
+    if (!initialize_store(details))
+        return false;
+
+    const auto span = duration_cast<seconds>(logger::now() - start);
+    logger(format(BS_INITCHAIN_CREATED) % span.count());
+    return true;
+}
+
+// Create and confirm genesis block (store invalid without it).
+bool executor::initialize_store(bool details)
+{
     logger(BS_INITCHAIN_DATABASE_INITIALIZE);
     if (!query_.initialize(metadata_.configured.bitcoin.genesis_block))
     {
@@ -87,8 +97,6 @@ bool executor::create_store(bool details)
         return false;
     }
 
-    const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_INITCHAIN_CREATED) % span.count());
     return true;
 }
 
@@ -199,6 +207,10 @@ bool executor::restore_store(bool details)
 
         return false;
     }
+
+    // Recovery without a snapshot recreates an empty store.
+    if (!query_.is_initialized() && !initialize_store(details))
+        return false;
 
     const auto span = duration_cast<seconds>(logger::now() - start);
     logger(format(BS_RESTORE_COMPLETE) % span.count());
