@@ -77,6 +77,7 @@ private:
     // Store functions.
     bool check_store_path(bool create=false) const;
     bool create_store(bool details = false);
+    bool initialize_store(bool details=false);
     bool open_store(bool details=false);
     code open_store_coded(bool details=false);
     bool close_store(bool details=false);
