@@ -44,7 +44,8 @@ public:
       : node::protocol(session, channel),
         config_(session->server_config()),
         network::tracker<protocol>(session->log),
-        session_(session)
+        session_(session),
+        channel_(channel)
     {
     }
 
@@ -98,6 +99,9 @@ private:
     // These are thread safe.
     const configuration& config_;
     const session::ptr session_;
+
+    // This is mostly thread safe, and used in a thread safe manner.
+    const network::channel::ptr channel_;
 
     // This is protected by the channel strand.
     retained_txs retained_{};

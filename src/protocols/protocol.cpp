@@ -34,7 +34,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 void protocol::retain_tx(const chain::transaction::cptr& tx) NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(channel_->stranded());
 
     auto hash = tx->hash(false);
     if (retained_tx(hash))
@@ -48,14 +48,14 @@ void protocol::retain_tx(const chain::transaction::cptr& tx) NOEXCEPT
 
 const protocol::retained_txs& protocol::retained() const NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(channel_->stranded());
     return retained_;
 }
 
 chain::transaction::cptr protocol::retained_tx(
     const hash_digest& hash) const NOEXCEPT
 {
-    BC_ASSERT(stranded());
+    BC_ASSERT(channel_->stranded());
 
     const auto match = [&hash](const auto& entry) NOEXCEPT
     {
