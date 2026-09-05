@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
+#include <algorithm>
 #include <ranges>
 #include <bitcoin/server/define.hpp>
 
@@ -157,11 +158,11 @@ void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
     const auto ec = query.get_history(stopping_, cursor, histories, hash,
         options().maximum_history, turbo_);
 
-    POST(complete_get_history, ec, std::move(histories));
+    POST(complete_get_history, ec, hash, std::move(histories));
 }
 
 void protocol_electrum::complete_get_history(const code& ec,
-    const histories& histories) NOEXCEPT
+    const hash_digest& scripthash, const histories& histories) NOEXCEPT
 {
     BC_ASSERT(stranded());
     monitor(false);
@@ -176,7 +177,9 @@ void protocol_electrum::complete_get_history(const code& ec,
     }
 
     const auto size = add1(histories.size()) * 128u;
-    send_result(transform(histories), size);
+    auto out = transform(histories);
+    append_retained(out, scripthash);
+    send_result(std::move(out), size);
 }
 
 // get_mempool
@@ -230,11 +233,11 @@ void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
     auto ec = query.get_unconfirmed_history(stopping_, histories, hash,
         options().maximum_history, turbo_);
 
-    POST(complete_get_mempool, ec, std::move(histories));
+    POST(complete_get_mempool, ec, hash, std::move(histories));
 }
 
 void protocol_electrum::complete_get_mempool(const code& ec,
-    const histories& histories) NOEXCEPT
+    const hash_digest& scripthash, const histories& histories) NOEXCEPT
 {
     BC_ASSERT(stranded());
     monitor(false);
@@ -249,7 +252,9 @@ void protocol_electrum::complete_get_mempool(const code& ec,
     }
 
     const auto size = add1(histories.size()) * 128u;
-    send_result(transform(histories), size);
+    auto out = transform(histories);
+    append_retained(out, scripthash);
+    send_result(std::move(out), size);
 }
 
 // list_unspent
@@ -325,6 +330,48 @@ void protocol_electrum::complete_list_unspent(const code& ec,
 // utilities
 // ----------------------------------------------------------------------------
 // private/static
+
+// There is no tx pool, so a tx broadcast on this channel is reported to that
+// client as unconfirmed history until it is archived (or the channel drops).
+// Its prevouts were populated by broadcast validation, so fee is available and
+// height is always rooted (a tx with unconfirmed prevouts cannot validate).
+void protocol_electrum::append_retained(array_t& out,
+    const hash_digest& scripthash) const NOEXCEPT
+{
+    const auto& query = archive();
+
+    for (const auto& [hash, tx]: retained())
+    {
+        // The archived tx is reported by the store history.
+        if (!query.to_tx(hash).is_terminal() || !touches(*tx, scripthash))
+            continue;
+
+        out.push_back(object_t
+        {
+            { "height", to_signed(database::history::rooted_height) },
+            { "tx_hash", encode_hash(hash) },
+            { "fee", tx->fee() }
+        });
+    }
+}
+
+bool protocol_electrum::touches(const chain::transaction& tx,
+    const hash_digest& scripthash) NOEXCEPT
+{
+    const auto received = [&scripthash](const auto& output) NOEXCEPT
+    {
+        return output->script().hash() == scripthash;
+    };
+
+    const auto spent = [&scripthash](const auto& input) NOEXCEPT
+    {
+        return input->prevout &&
+            input->prevout->script().hash() == scripthash;
+    };
+
+    return std::ranges::any_of(*tx.outputs_ptr(), received) ||
+        std::ranges::any_of(*tx.inputs_ptr(), spent);
+}
 
 // Height is zero (rooted) or max_size_t for unconfirmed history txs.
 // TODO: this can be implemented as electrum json serializers (see bitcoind).

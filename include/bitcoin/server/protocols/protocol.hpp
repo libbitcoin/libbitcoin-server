@@ -19,7 +19,9 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_HPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_HPP
 
+#include <deque>
 #include <memory>
+#include <utility>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 
@@ -71,10 +73,34 @@ public:
         session_->dump_addresses(std::move(handler));
     }
 
+protected:
+    /// A tx broadcast on this channel, with its identifier.
+    using retained_t = std::pair<system::hash_digest,
+        system::chain::transaction::cptr>;
+    using retained_txs = std::deque<retained_t>;
+
+    /// There is no tx pool, so a successfully-broadcast tx is retained on
+    /// the channel that sent it, allowing that client to see it before it
+    /// confirms. The buffer is bounded and dies with the channel.
+    void retain_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
+
+    /// Obtain a tx previously broadcast on this channel, or nullptr.
+    system::chain::transaction::cptr retained_tx(
+        const system::hash_digest& hash) const NOEXCEPT;
+
+    /// The txs broadcast on this channel, oldest first.
+    const retained_txs& retained() const NOEXCEPT;
+
 private:
+    // Bound on txs retained by one channel (evicted oldest first).
+    static constexpr size_t maximum_retained = 16;
+
     // These are thread safe.
     const configuration& config_;
     const session::ptr session_;
+
+    // This is protected by the channel strand.
+    retained_txs retained_{};
 };
 
 } // namespace server

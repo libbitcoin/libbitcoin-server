@@ -26,15 +26,16 @@ static std::string as_text(const boost::json::value& value) NOEXCEPT
     return { value.as_string().c_str() };
 }
 
-// header_to_bitcoind
+// bitcoind(header)
 // ----------------------------------------------------------------------------
+// The serializer moved to system, this guards the fields consumed by rpc.
 
 BOOST_AUTO_TEST_SUITE(bitcoind_header_to_bitcoind_tests)
 
 BOOST_AUTO_TEST_CASE(bitcoind_json__header_to_bitcoind__block1_header__maps_fields)
 {
     const auto& header = test::block1.header();
-    const auto out = header_to_bitcoind(header);
+    const auto out = boost::json::value_from(bitcoind(header)).as_object();
 
     BOOST_REQUIRE_EQUAL(as_text(out.at("hash")), encode_hash(header.hash()));
     BOOST_REQUIRE_EQUAL(out.at("version").to_number<int64_t>(), header.version());
