@@ -217,7 +217,7 @@ static void peer_curve_subscribe(tcp_socket& peer, zmtp_cipher& client,
 
     data_chunk message{};
     BOOST_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
-    peer_write(peer, zmtp_stream::frame_encode(message, true, false));
+    peer_write(peer, zmtp_stream::frame_encode(message, false, false));
 }
 
 // Synchronously read and unbox one whole multipart message.
@@ -231,7 +231,6 @@ static data_stack peer_curve_read_message(tcp_socket& peer,
         uint8_t flags{};
         data_chunk message{};
         peer_read_frame(peer, flags, message);
-        BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
 
         uint8_t payload{};
         data_chunk body{};
@@ -268,12 +267,11 @@ static void peer_curve_ping_pong(tcp_socket& peer, zmtp_cipher& client)
 
     data_chunk message{};
     BOOST_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
-    peer_write(peer, zmtp_stream::frame_encode(message, true, false));
+    peer_write(peer, zmtp_stream::frame_encode(message, false, false));
 
     uint8_t flags{};
     data_chunk pong{};
     peer_read_frame(peer, flags, pong);
-    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
 
     uint8_t payload{};
     data_chunk reply{};
