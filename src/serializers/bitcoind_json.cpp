@@ -20,7 +20,9 @@
 
 #include <algorithm>
 #include <unordered_set>
+#include <utility>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -138,7 +140,8 @@ void inject_tx_context(boost::json::object& out,
 
 // The tx must be populated (populate_with_metadata).
 void inject_tx_prevouts(boost::json::object& out,
-    const node::query& query, const chain::transaction& tx) NOEXCEPT
+    const node::query& query, const chain::transaction& tx, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
     size_t height{};
     auto entry = out.at("vin").as_array().begin();
@@ -146,13 +149,17 @@ void inject_tx_prevouts(boost::json::object& out,
     {
         if (query.get_tx_height(height, in->metadata.parent_tx))
         {
-            auto put = value_from(bitcoind(*in->prevout)).as_object();
+            const auto& put = *in->prevout;
+            auto script = to_script_public_key(put.script(), p2kh, p2sh,
+                witness, flags);
+
             boost::json::object prevout
             {
                 { "generated", in->metadata.coinbase },
                 { "height", height },
-                { "value", put.at("value") },
-                { "scriptPubKey", std::move(put.at("scriptPubKey")) }
+                { "value", put.value() /
+                    to_floating(chain::satoshi_per_bitcoin) },
+                { "scriptPubKey", std::move(script) }
             };
 
             entry->as_object()["prevout"] = std::move(prevout);
@@ -162,9 +169,58 @@ void inject_tx_prevouts(boost::json::object& out,
     });
 }
 
+std::string to_address(const chain::script& script, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness) NOEXCEPT
+{
+    using namespace wallet;
+
+    const auto version = script.version_value();
+    if (version != to_value(chain::script_version::unversioned))
+        return witness_address{ *script.witness_program(), version,
+            witness }.encoded();
+
+    const auto pay = payment_address::extract_output(script, p2kh, p2sh);
+    return pay ? pay.encoded() : std::string{};
+}
+
+void inject_script_context(boost::json::object& out,
+    const chain::script& script, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness) NOEXCEPT
+{
+    out["desc"] = infer_descriptor(script, p2kh, p2sh, witness);
+
+    // An unaddressable script (including pay-to-public-key) has no address.
+    const auto address = to_address(script, p2kh, p2sh, witness);
+    if (!address.empty())
+        out["address"] = address;
+}
+
+void inject_tx_scripts(boost::json::object& out,
+    const chain::transaction& tx, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness) NOEXCEPT
+{
+    auto entry = out.at("vout").as_array().begin();
+    std::ranges::for_each(*tx.outputs_ptr(), [&](const auto& put) NOEXCEPT
+    {
+        auto& script = entry->as_object().at("scriptPubKey").as_object();
+        inject_script_context(script, put->script(), p2kh, p2sh, witness);
+        ++entry;
+    });
+}
+
+boost::json::value to_script_public_key(const chain::script& script,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness,
+    uint32_t flags) NOEXCEPT
+{
+    auto value = value_from(bitcoind(script, flags));
+    inject_script_context(value.as_object(), script, p2kh, p2sh, witness);
+    return value;
+}
+
 void inject_activity(network::rpc::array_t& out, const chain::block& block,
     size_t height, const std::string& blockhash,
-    const std::unordered_set<std::string>& watch) NOEXCEPT
+    const std::unordered_set<std::string>& watch, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
     using namespace network::rpc;
     for (const auto& tx: *block.transactions_ptr())
@@ -176,6 +232,9 @@ void inject_activity(network::rpc::array_t& out, const chain::block& block,
             const auto script = encode_base16(put->script().to_data(false));
             if (watch.contains(script))
             {
+                auto output = to_script_public_key(put->script(), p2kh, p2sh,
+                    witness, flags);
+
                 out.emplace_back(object_t
                 {
                     { "type", std::string{ "receive" } },
@@ -185,7 +244,7 @@ void inject_activity(network::rpc::array_t& out, const chain::block& block,
                     { "height", height },
                     { "txid", txid },
                     { "vout", index },
-                    { "output_spk", value_from(bitcoind(put->script())) }
+                    { "output_spk", std::move(output) }
                 });
             }
 
@@ -202,6 +261,9 @@ void inject_activity(network::rpc::array_t& out, const chain::block& block,
             const auto script = encode_base16(prevout.script().to_data(false));
             if (watch.contains(script))
             {
+                auto output = to_script_public_key(prevout.script(), p2kh, p2sh,
+                    witness, flags);
+
                 out.emplace_back(object_t
                 {
                     { "type", std::string{ "spend" } },
@@ -213,27 +275,13 @@ void inject_activity(network::rpc::array_t& out, const chain::block& block,
                     { "spend_vin", spend },
                     { "prevout_txid", encode_hash(in->point().hash()) },
                     { "prevout_vout", in->point().index() },
-                    { "prevout_spk", value_from(bitcoind(prevout.script())) }
+                    { "prevout_spk", std::move(output) }
                 });
             }
 
             ++spend;
         }
     }
-}
-
-std::string to_address(const chain::script& script, uint8_t p2kh,
-    uint8_t p2sh, const std::string& witness) NOEXCEPT
-{
-    using namespace wallet;
-
-    const auto version = script.version_value();
-    if (version != to_value(chain::script_version::unversioned))
-        return witness_address{ *script.witness_program(), version,
-            witness }.encoded();
-
-    const auto pay = payment_address::extract_output(script, p2kh, p2sh);
-    return pay ? pay.encoded() : std::string{};
 }
 
 boost::json::object header_to_bitcoind(

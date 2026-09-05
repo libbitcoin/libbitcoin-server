@@ -48,6 +48,8 @@ public:
         turbo_(session->database_settings().turbo),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
+        flags_(session->system_settings().flags()),
+        witness_(session->server_settings().wallet.witness_prefix),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         notification_strand_(channel_->service().get_executor()),
         network::tracker<protocol_electrum>(session->log)
@@ -361,6 +363,8 @@ private:
     const bool turbo_;
     const uint8_t p2kh_;
     const uint8_t p2sh_;
+    const uint32_t flags_;
+    const std::string witness_;
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};

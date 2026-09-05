@@ -386,6 +386,12 @@ code protocol_bitcoind::broadcast_tx(
     return error::success;
 }
 
+boost::json::value protocol_bitcoind::script_public_key(
+    const chain::script& script) const NOEXCEPT
+{
+    return to_script_public_key(script, p2kh_, p2sh_, witness_, flags_);
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

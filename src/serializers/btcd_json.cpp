@@ -34,10 +34,11 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 boost::json::object search_transaction(const node::query& query,
     const database::tx_link& link, const chain::transaction& tx,
     const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
-    uint8_t p2sh, const std::string& witness) NOEXCEPT
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
-    auto model = boost::json::value_from(bitcoind(tx)).as_object();
+    auto model = boost::json::value_from(bitcoind(tx, flags)).as_object();
     inject_tx_context(model, query, link);
+    inject_tx_scripts(model, tx, p2kh, p2sh, witness);
 
     // Prevout resolution serves the prevOut extension and the filter.
     const auto populated = (prevouts || !filter.empty()) &&

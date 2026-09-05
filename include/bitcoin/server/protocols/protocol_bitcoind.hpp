@@ -50,6 +50,7 @@ public:
         network::tracker<protocol_bitcoind>(session->log),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
+        flags_(session->system_settings().flags()),
         witness_(session->server_settings().wallet.witness_prefix)
     {
     }
@@ -94,6 +95,10 @@ protected:
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
     code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 
+    /// The bitcoind scriptPubKey object with network context.
+    boost::json::value script_public_key(
+        const system::chain::script& script) const NOEXCEPT;
+
 private:
     // Senders.
     void send_rpc(network::rpc::response_t&& model,
@@ -112,6 +117,7 @@ protected:
     // These are thread safe.
     const uint8_t p2kh_;
     const uint8_t p2sh_;
+    const uint32_t flags_;
     const std::string witness_;
 };
 

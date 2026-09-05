@@ -22,7 +22,7 @@
 #include <unordered_map>
 #include <utility>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {

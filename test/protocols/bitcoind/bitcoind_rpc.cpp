@@ -346,6 +346,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unspent_coinbase__output)
     BOOST_REQUIRE(result.is_object());
     BOOST_REQUIRE(result.as_object().contains("value"));
     BOOST_REQUIRE(result.as_object().contains("scriptPubKey"));
+
+    // The coinbase is pay-to-public-key, which has a descriptor but no address.
+    const auto& script = result.at("scriptPubKey").as_object();
+    BOOST_REQUIRE_EQUAL(as_text(script.at("type")), "pubkey");
+    BOOST_REQUIRE_EQUAL(as_text(script.at("desc")).find("pk(04"), 0u);
+    BOOST_REQUIRE(as_text(script.at("asm")).ends_with(" OP_CHECKSIG"));
+    BOOST_REQUIRE(!script.contains("address"));
+    BOOST_REQUIRE(!script.contains("addresses"));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__archived_unconfirmed__null)
@@ -726,6 +734,9 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__witness_program__no_segwit)
     const auto response = rpc("decodescript", "[\"0014751e76e8199196d454941c45d1b3a323f1433bd6\"]");
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(as_text(result.at("type")), "witness_v0_keyhash");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("address")), "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("asm")), "0 751e76e8199196d454941c45d1b3a323f1433bd6");
+    BOOST_REQUIRE(!result.as_object().contains("hex"));
     BOOST_REQUIRE(!result.as_object().contains("segwit"));
 }
 
@@ -1964,6 +1975,9 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__data_output__op_return)
     const auto& out = response.at("result").at("vout").at(0);
     BOOST_REQUIRE_EQUAL(out.at("value").as_double(), 0.0);
     BOOST_REQUIRE_EQUAL(as_text(out.at("scriptPubKey").at("hex")), "6a04deadbeef");
+    BOOST_REQUIRE_EQUAL(as_text(out.at("scriptPubKey").at("asm")), "OP_RETURN -1874767326");
+    BOOST_REQUIRE_EQUAL(as_text(out.at("scriptPubKey").at("type")), "nulldata");
+    BOOST_REQUIRE(!out.at("scriptPubKey").as_object().contains("address"));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__data_output__decodes)

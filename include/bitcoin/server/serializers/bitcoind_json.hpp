@@ -50,19 +50,36 @@ BCS_API void inject_tx_context(boost::json::object& out,
 
 /// Per-input prevout context (requires populate_with_metadata).
 BCS_API void inject_tx_prevouts(boost::json::object& out,
-    const node::query& query,
-    const system::chain::transaction& tx) NOEXCEPT;
+    const node::query& query, const system::chain::transaction& tx,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness,
+    uint32_t flags) NOEXCEPT;
 
 /// The address of a singular output script (empty if unaddressable).
 BCS_API std::string to_address(const system::chain::script& script,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT;
+
+/// The network context (desc, address) of a scriptPubKey object.
+BCS_API void inject_script_context(boost::json::object& out,
+    const system::chain::script& script, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness) NOEXCEPT;
+
+/// The network context of each vout scriptPubKey object.
+BCS_API void inject_tx_scripts(boost::json::object& out,
+    const system::chain::transaction& tx, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness) NOEXCEPT;
+
+/// The bitcoind scriptPubKey object (asm, hex, type, desc, address).
+BCS_API boost::json::value to_script_public_key(
+    const system::chain::script& script, uint8_t p2kh, uint8_t p2sh,
+    const std::string& witness, uint32_t flags) NOEXCEPT;
 
 /// Append the block's receive/spend activity on the watched scripts (hex
 /// encoded), requires populate_without_metadata (getdescriptoractivity).
 BCS_API void inject_activity(network::rpc::array_t& out,
     const system::chain::block& block, size_t height,
     const std::string& blockhash,
-    const std::unordered_set<std::string>& watch) NOEXCEPT;
+    const std::unordered_set<std::string>& watch, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
 
 /// The bitcoind block header object.
 BCS_API boost::json::object header_to_bitcoind(
