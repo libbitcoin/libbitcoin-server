@@ -150,6 +150,14 @@ bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(block3a.hash()), true);
 }
 
+// A confirmed store with a spendable output, for broadcast validation.
+bool setup_broadcast_store(query_t& query) NOEXCEPT
+{
+    return query.initialize(genesis) &&
+        query.set(block1c, database::context{ 0, 1, 0 }, false, false) &&
+        query.push_confirmed(query.to_header(block1c.hash()), true);
+}
+
 bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&
@@ -847,6 +855,75 @@ const transaction tx2b
         },
         0xb1
     }
+};
+
+// Broadcast validation requires a spendable prevout, so unlike the other
+// mocks these scripts must actually evaluate. The prevout leaves true on
+// the stack, so the spend requires no signature (anyone-can-spend).
+const block block1c
+{
+    header
+    {
+        0x31323334,         // version
+        block0_hash,        // previous_block_hash
+        hash_digest{ 0x1c },// merkle_root
+        0x41424344,         // timestamp
+        0x51525354,         // bits
+        0x61626364          // nonce
+    },
+    transactions
+    {
+        // This first transaction is *not* a coinbase (no spend maturity).
+        transaction         // tx#1
+        {
+            0x01,           // version
+            inputs
+            {
+                input
+                {
+                    point{ one_hash, 0x18 },            // missing prevout
+                    script{ { { opcode::push_positive_1 } } },
+                    witness{},
+                    max_uint32  // sequence (not relative locked)
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x64,   // value (100)
+                    script{ { { opcode::push_positive_1 } } }
+                }
+            },
+            0x00            // locktime (not absolute locked)
+        }
+    }
+};
+
+// Spends the block1c output, leaving a fee. Not segregated, as bip141 is
+// not active at the height of the mock stores.
+const transaction tx1c
+{
+    0x01,           // version
+    inputs
+    {
+        input
+        {
+            point{ block1c.transactions_ptr()->front()->hash(false), 0x00 },
+            script{ { { opcode::push_positive_1 } } },
+            witness{},
+            max_uint32  // sequence (not relative locked)
+        }
+    },
+    outputs
+    {
+        output
+        {
+            0x5a,   // value (90, fee of 10)
+            script{ { { opcode::push_positive_2 } } }
+        }
+    },
+    0x00            // locktime (not absolute locked)
 };
 
 } // namespace test

@@ -97,12 +97,15 @@ extern const system::chain::transaction tx5;
 extern const system::chain::block block1b;
 extern const system::chain::block block2b;
 extern const system::chain::transaction tx2b;
+extern const system::chain::block block1c;
+extern const system::chain::transaction tx1c;
 
 bool setup_ten_block_store(query_t& query) NOEXCEPT;
 bool setup_three_block_store(query_t& query) NOEXCEPT;
 bool setup_three_block_witness_store(query_t& query) NOEXCEPT;
 bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT;
 bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT;
+bool setup_broadcast_store(query_t& query) NOEXCEPT;
 
 // TODO: move.
 boost::json::value parse_json(std::string_view value) NOEXCEPT;
