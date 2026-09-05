@@ -19,8 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_SESSIONS_SESSION_SERVER_HPP
 #define LIBBITCOIN_SERVER_SESSIONS_SESSION_SERVER_HPP
 
-#include <memory>
-#include <utility>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/sessions/session.hpp>

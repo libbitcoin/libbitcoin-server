@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
 
-#include <algorithm>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

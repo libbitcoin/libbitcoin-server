@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
-#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

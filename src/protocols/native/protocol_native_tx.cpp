@@ -19,7 +19,6 @@
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
 #include <atomic>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/parsers/bitcoind_transaction.hpp>
 
-#include <utility>
-#include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/bitcoind_script.hpp>
 

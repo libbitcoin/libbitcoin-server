@@ -20,7 +20,6 @@
 
 #include <atomic>
 #include <ranges>
-#include <variant>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

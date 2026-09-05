@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_DATA_HPP
 #define LIBBITCOIN_SERVER_SERIALIZERS_BITCOIND_DATA_HPP
 
-#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

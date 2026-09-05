@@ -20,8 +20,6 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_HPP
 
 #include <deque>
-#include <memory>
-#include <utility>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 

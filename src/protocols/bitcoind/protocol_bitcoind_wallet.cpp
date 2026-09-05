@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_wallet.hpp>
 
-#include <algorithm>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>

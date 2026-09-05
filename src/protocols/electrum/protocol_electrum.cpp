@@ -19,7 +19,6 @@
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
 #include <atomic>
-#include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>

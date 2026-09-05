@@ -20,7 +20,6 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_NATIVE_HPP
 
 #include <atomic>
-#include <memory>
 #include <optional>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>

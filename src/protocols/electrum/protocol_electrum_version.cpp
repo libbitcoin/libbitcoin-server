@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
 
-#include <algorithm>
-#include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>

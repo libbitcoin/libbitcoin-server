@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_HPP
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_HPP
 
-#include <memory>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

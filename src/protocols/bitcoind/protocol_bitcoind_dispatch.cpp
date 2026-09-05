@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp>
 
-#include <memory>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 

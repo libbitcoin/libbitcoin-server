@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
 
-#include <algorithm>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

@@ -19,7 +19,6 @@
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
 #include <ranges>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

@@ -18,9 +18,7 @@
  */
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
 
-#include <algorithm>
 #include <unordered_set>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 

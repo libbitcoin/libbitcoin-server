@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/settings.hpp>
 
-#include <algorithm>
 #include <filesystem>
 #include <bitcoin/server/define.hpp>
 
