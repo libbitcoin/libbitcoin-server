@@ -200,6 +200,9 @@ public:
 
         /// Maximum cumulative number of topic subscriptions per channel.
         uint32_t maximum_subscriptions{ 100 };
+
+        /// The CurveZMQ server secret key (Z85), empty for no encryption.
+        system::config::base85 curve_secret{};
     };
 
     // html_server precludes copy.

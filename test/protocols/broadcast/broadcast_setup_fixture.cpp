@@ -23,7 +23,8 @@
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-broadcast_setup_fixture::broadcast_setup_fixture(const initializer& setup)
+broadcast_setup_fixture::broadcast_setup_fixture(const initializer& setup,
+    const system::data_chunk& curve_secret)
   : config_
     {
       system::chain::selection::mainnet,
@@ -49,6 +50,7 @@ broadcast_setup_fixture::broadcast_setup_fixture(const initializer& setup)
 
     broadcast.binds = { { BROADCAST_ENDPOINT } };
     broadcast.maximum_subscriptions = 2;
+    broadcast.curve_secret = curve_secret;
     broadcast.connections = 1;
     broadcast.inactivity_minutes = 1;
     node_settings.delay_inbound = false;

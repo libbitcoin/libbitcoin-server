@@ -115,13 +115,15 @@ static data_stack peer_read_message(tcp_socket& peer)
 // Synchronously perform the peer (SUB) side of the ZMTP handshake.
 static void peer_handshake(tcp_socket& peer)
 {
-    peer_write(peer, zmtp_stream::make_greeting(false));
+    peer_write(peer, zmtp_stream::make_greeting(false, false));
 
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
     const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
     boost::asio::read(peer, in);
     uint8_t minor{};
-    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor));
+    bool curve{};
+    bool as_server{};
+    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
 
     peer_write(peer, ready("SUB"));
     uint8_t flags{};
@@ -155,6 +157,134 @@ static void peer_ping_pong(tcp_socket& peer)
     const std::span<const uint8_t> frame{ body };
     BOOST_REQUIRE(zmtp_stream::command_name(name, echo, frame));
     BOOST_REQUIRE_EQUAL(name, "PONG");
+}
+
+// CURVE peer (synchronous, driven by a client cipher).
+// ----------------------------------------------------------------------------
+
+using zmtp_cipher = network::zmtp::cipher;
+
+// Synchronously perform the peer (SUB) side of the CURVE handshake.
+static void peer_curve_handshake(tcp_socket& peer, zmtp_cipher& client)
+{
+    peer_write(peer, zmtp_stream::make_greeting(false, true));
+    data_chunk theirs(zmtp_stream::greeting_size, 0x00);
+    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
+    boost::asio::read(peer, in);
+
+    uint8_t minor{};
+    bool curve{};
+    bool as_server{};
+    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
+    BOOST_REQUIRE(curve);
+    BOOST_REQUIRE(as_server);
+
+    data_chunk hello{};
+    BOOST_REQUIRE(client.hello(hello));
+    peer_write(peer, zmtp_stream::frame_encode(hello, true, false));
+
+    uint8_t flags{};
+    data_chunk welcome{};
+    peer_read_frame(peer, flags, welcome);
+    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+
+    data_chunk initiate{};
+    const auto metadata = zmtp_stream::make_property("Socket-Type", "SUB");
+    BOOST_REQUIRE(client.initiate(initiate, welcome, metadata));
+    peer_write(peer, zmtp_stream::frame_encode(initiate, true, false));
+
+    data_chunk ready{};
+    peer_read_frame(peer, flags, ready);
+    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+
+    data_chunk peer_metadata{};
+    BOOST_REQUIRE(client.complete(peer_metadata, ready));
+
+    std::string type{};
+    BOOST_REQUIRE(zmtp_stream::ready_socket_type(type, peer_metadata));
+    BOOST_REQUIRE_EQUAL(type, "PUB");
+}
+
+// Box and send a SUBSCRIBE command (3.1 dialect) for the topic.
+static void peer_curve_subscribe(tcp_socket& peer, zmtp_cipher& client,
+    std::string_view topic)
+{
+    const std::string name{ "SUBSCRIBE" };
+    data_chunk body{};
+    body.push_back(possible_narrow_cast<uint8_t>(name.size()));
+    body.insert(body.end(), name.begin(), name.end());
+    body.insert(body.end(), topic.begin(), topic.end());
+
+    data_chunk message{};
+    BOOST_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
+    peer_write(peer, zmtp_stream::frame_encode(message, true, false));
+}
+
+// Synchronously read and unbox one whole multipart message.
+static data_stack peer_curve_read_message(tcp_socket& peer,
+    zmtp_cipher& client)
+{
+    data_stack parts{};
+    auto more = true;
+    while (more)
+    {
+        uint8_t flags{};
+        data_chunk message{};
+        peer_read_frame(peer, flags, message);
+        BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+
+        uint8_t payload{};
+        data_chunk body{};
+        BOOST_REQUIRE(client.decode(payload, body, message));
+        parts.push_back(body);
+        more = !is_zero(payload & zmtp_cipher::payload_more);
+    }
+
+    return parts;
+}
+
+// Construct a CURVE client for the fixture server (bob) as alice (rfc7748).
+static zmtp_cipher curve_client()
+{
+    const auto alice_secret = base16_array("77076d0a7318a57d3c16c17251b26645"
+        "df4c2f87ebc0992ab177fba51db92c2a");
+    const auto alice_public = base16_array("8520f0098930a754748b7ddcb43ef75a"
+        "0dbf3a0d26381af4eba4a98eaa9b4e6a");
+    const auto bob_public = base16_array("de9edb7d7b7dc1b4d35b61c2ece43537"
+        "3f8343c85b78674dadfc7e146f882b4f");
+    return { alice_secret, alice_public, bob_public };
+}
+
+// Send a boxed PING and require the boxed PONG, proving all prior frames
+// were consumed by the server (the stream is ordered).
+static void peer_curve_ping_pong(tcp_socket& peer, zmtp_cipher& client)
+{
+    const std::string name{ "PING" };
+    data_chunk body{};
+    body.push_back(possible_narrow_cast<uint8_t>(name.size()));
+    body.insert(body.end(), name.begin(), name.end());
+    const auto ping = base16_chunk("00000011223344556677");
+    body.insert(body.end(), ping.begin(), ping.end());
+
+    data_chunk message{};
+    BOOST_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
+    peer_write(peer, zmtp_stream::frame_encode(message, true, false));
+
+    uint8_t flags{};
+    data_chunk pong{};
+    peer_read_frame(peer, flags, pong);
+    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+
+    uint8_t payload{};
+    data_chunk reply{};
+    BOOST_REQUIRE(client.decode(payload, reply, pong));
+    BOOST_REQUIRE(!is_zero(payload & zmtp_cipher::payload_command));
+
+    std::string echo_name{};
+    std::span<const uint8_t> echo{};
+    const std::span<const uint8_t> frame{ reply };
+    BOOST_REQUIRE(zmtp_stream::command_name(echo_name, echo, frame));
+    BOOST_REQUIRE_EQUAL(echo_name, "PONG");
 }
 
 // Codec (static).
@@ -346,6 +476,63 @@ BOOST_AUTO_TEST_CASE(broadcast__maximum_subscriptions__third_subscription_not_re
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk(std::string{ "hashtx" }));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// CURVE mechanism.
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(broadcast_curve_tests, broadcast_curve_ten_block_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(broadcast_curve__handshake__alice_peer__ready)
+{
+    auto client = curve_client();
+    peer_curve_handshake(socket_, client);
+}
+
+BOOST_AUTO_TEST_CASE(broadcast_curve__handshake__null_peer__error_command)
+{
+    peer_write(socket_, zmtp_stream::make_greeting(false, false));
+    data_chunk theirs(zmtp_stream::greeting_size, 0x00);
+    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
+    boost::asio::read(socket_, in);
+
+    uint8_t minor{};
+    bool curve{};
+    bool as_server{};
+    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
+    BOOST_REQUIRE(curve);
+
+    uint8_t flags{};
+    data_chunk body{};
+    peer_read_frame(socket_, flags, body);
+    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+
+    std::string name{};
+    std::span<const uint8_t> reason{};
+    const std::span<const uint8_t> frame{ body };
+    BOOST_REQUIRE(zmtp_stream::command_name(name, reason, frame));
+    BOOST_REQUIRE_EQUAL(name, "ERROR");
+}
+
+BOOST_AUTO_TEST_CASE(broadcast_curve__hashblock__organized__boxed_notification)
+{
+    auto client = curve_client();
+    peer_curve_handshake(socket_, client);
+    peer_curve_subscribe(socket_, client, topics::hash_block);
+    peer_curve_ping_pong(socket_, client);
+
+    const auto link = query_.to_confirmed(1);
+    const auto header = query_.get_header(link);
+    BOOST_REQUIRE(header);
+    notify(node::chase::organized, node::header_t{ link });
+
+    const auto message = peer_curve_read_message(socket_, client);
+    BOOST_REQUIRE_EQUAL(message.size(), 3u);
+    BOOST_REQUIRE_EQUAL(message.at(0), data_chunk(topics::hash_block.begin(), topics::hash_block.end()));
+    BOOST_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(header->hash())));
+    BOOST_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

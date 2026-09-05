@@ -31,7 +31,8 @@ struct broadcast_setup_fixture
     DELETE_COPY_MOVE(broadcast_setup_fixture);
 
     using initializer = std::function<bool(test::query_t&)>;
-    explicit broadcast_setup_fixture(const initializer& setup);
+    explicit broadcast_setup_fixture(const initializer& setup,
+        const system::data_chunk& curve_secret={});
     ~broadcast_setup_fixture();
 
     // 0_32 vs {} for xcode variant issue.
@@ -58,6 +59,22 @@ struct broadcast_ten_block_setup_fixture
         {
             return test::setup_ten_block_store(query);
         })
+    {
+    }
+};
+
+// The rfc7748 (section 6.1) bob secret key, as the CURVE server secret.
+#define BROADCAST_CURVE_SECRET \
+    "5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb"
+
+struct broadcast_curve_ten_block_setup_fixture
+  : broadcast_setup_fixture
+{
+    inline broadcast_curve_ten_block_setup_fixture()
+      : broadcast_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, system::base16_chunk(BROADCAST_CURVE_SECRET))
     {
     }
 };

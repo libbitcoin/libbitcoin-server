@@ -1533,6 +1533,11 @@ options_metadata parser::load_settings() THROWS
         value<uint32_t>(&configured.server.bitcoind_broadcast.maximum_subscriptions),
         "The maximum topic subscriptions per connection, defaults to '100'."
     )
+    (
+        "bitcoind_broadcast.curve_secret",
+        value<config::base85>(&configured.server.bitcoind_broadcast.curve_secret),
+        "The Z85 encoded CurveZMQ server secret key, defaults to none (unencrypted)."
+    )
 
     /* [node] */
     (

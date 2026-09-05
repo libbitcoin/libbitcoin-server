@@ -51,13 +51,34 @@ using session_electrum = session_handshake<protocol_electrum_version,
     protocol_electrum>;
 
 /// The zmtp publisher applies the zmtp transport context to its clear binds.
+/// The context is CURVE if a server secret is configured, otherwise NULL.
 class BCS_API session_bitcoind_broadcast
   : public session_server<protocol_bitcoind_broadcast>
 {
 public:
     typedef std::shared_ptr<session_bitcoind_broadcast> ptr;
     using base = session_server<protocol_bitcoind_broadcast>;
-    using base::base;
+
+    inline session_bitcoind_broadcast(server_node& node, uint64_t identifier,
+        const configuration& config, const options_t& options) NOEXCEPT
+      : base(node, identifier, config, options),
+        configured_(!secret(options).empty()),
+        context_(secret(options))
+    {
+    }
+
+    /// A configured but malformed secret refuses to start, as the downgrade
+    /// to the NULL mechanism would otherwise be silent.
+    inline void start(network::result_handler&& handler) NOEXCEPT override
+    {
+        if (configured_ && !context_.curve())
+        {
+            handler(network::error::invalid_configuration);
+            return;
+        }
+
+        base::start(std::move(handler));
+    }
 
 protected:
     inline network::socket::context accept_context() const NOEXCEPT override
@@ -66,7 +87,14 @@ protected:
     }
 
 private:
-    const network::zmtp::context context_{};
+    static inline const system::data_chunk& secret(
+        const options_t& options) NOEXCEPT
+    {
+        return options.curve_secret;
+    }
+
+    const bool configured_;
+    const network::zmtp::context context_;
 };
 
 } // namespace server
