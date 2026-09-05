@@ -176,7 +176,22 @@ void server_node::start_stratum_v2(const code& ec,
         return;
     }
 
-    attach_stratum_v2_session()->start(move_copy(handler));
+    attach_stratum_v2_session()->start(
+        std::bind(&server_node::start_bitcoind_broadcast, this, _1, handler));
+}
+
+void server_node::start_bitcoind_broadcast(const code& ec,
+    const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    attach_bitcoind_broadcast_session()->start(move_copy(handler));
 }
 
 // Session attachments.
@@ -222,6 +237,13 @@ session_stratum_v2::ptr server_node::attach_stratum_v2_session() NOEXCEPT
 {
     return net::attach<session_stratum_v2>(*this, config_,
         config_.server.stratum_v2);
+}
+
+session_bitcoind_broadcast::ptr
+server_node::attach_bitcoind_broadcast_session() NOEXCEPT
+{
+    return net::attach<session_bitcoind_broadcast>(*this, config_,
+        config_.server.bitcoind_broadcast);
 }
 
 BC_POP_WARNING()

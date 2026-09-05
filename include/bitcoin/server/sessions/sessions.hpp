@@ -50,6 +50,25 @@ using session_stratum_v2 = session_server<protocol_stratum_v2>;
 using session_electrum = session_handshake<protocol_electrum_version,
     protocol_electrum>;
 
+/// The zmtp publisher applies the zmtp transport context to its clear binds.
+class BCS_API session_bitcoind_broadcast
+  : public session_server<protocol_bitcoind_broadcast>
+{
+public:
+    typedef std::shared_ptr<session_bitcoind_broadcast> ptr;
+    using base = session_server<protocol_bitcoind_broadcast>;
+    using base::base;
+
+protected:
+    inline network::socket::context accept_context() const NOEXCEPT override
+    {
+        return std::cref(context_);
+    }
+
+private:
+    const network::zmtp::context context_{};
+};
+
 } // namespace server
 } // namespace libbitcoin
 
@@ -92,6 +111,8 @@ server::session → node::session
             protocol_bitcoind_<subgroup>..., protocol_bitcoind>
     ╞══ session_stratum_v1 = server::session_server<protocol_stratum_v1>
     ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
+    ├── session_bitcoind_broadcast → server::session_server<
+    │       protocol_bitcoind_broadcast> (overrides accept_context: zmtp)
     └── server::session_handshake<...Protocols>
         ╘══ session_electrum = server::session_handshake<
                 protocol_electrum_version, protocol_electrum>

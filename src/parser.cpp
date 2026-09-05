@@ -87,6 +87,7 @@ parser::parser(system::chain::selection context,
     ////configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8480_u16);
     ////configured.server.stratum_v1.safes.emplace_back(asio::address{}, 8443_u16);
     ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
+    ////configured.server.bitcoind_broadcast.binds.emplace_back(asio::address{}, 8680_u16);
 
     // database
 
@@ -1489,6 +1490,48 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.rate_limit",
         value<uint32_t>(&configured.server.stratum_v2.rate_limit),
         "The send rate limit in bytes per second, defaults to '0' (unlimited)."
+    )
+
+    /* [bitcoind_broadcast] */
+    (
+        "bitcoind_broadcast.bind",
+        value<network::config::authorities>(&configured.server.bitcoind_broadcast.binds),
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "bitcoind_broadcast.connections",
+        value<uint16_t>(&configured.server.bitcoind_broadcast.connections),
+        "The required maximum number of connections, defaults to '0'."
+    )
+    (
+        "bitcoind_broadcast.inactivity_minutes",
+        value<uint32_t>(&configured.server.bitcoind_broadcast.inactivity_minutes),
+        "The idle timeout, defaults to '10'."
+    )
+    (
+        "bitcoind_broadcast.expiration_minutes",
+        value<uint32_t>(&configured.server.bitcoind_broadcast.expiration_minutes),
+        "The maximum connection duration, defaults to '60'."
+    )
+    (
+        "bitcoind_broadcast.minimum_buffer",
+        value<uint32_t>(&configured.server.bitcoind_broadcast.minimum_buffer),
+        "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "bitcoind_broadcast.maximum_request",
+        value<uint32_t>(&configured.server.bitcoind_broadcast.maximum_request),
+        "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "bitcoind_broadcast.rate_limit",
+        value<uint32_t>(&configured.server.bitcoind_broadcast.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
+    )
+    (
+        "bitcoind_broadcast.maximum_subscriptions",
+        value<uint32_t>(&configured.server.bitcoind_broadcast.maximum_subscriptions),
+        "The maximum topic subscriptions per connection, defaults to '100'."
     )
 
     /* [node] */

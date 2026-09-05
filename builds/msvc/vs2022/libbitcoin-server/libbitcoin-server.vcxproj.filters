@@ -147,6 +147,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_blockchain.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_broadcast.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_control.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
@@ -308,6 +311,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_bitcoind_broadcast.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
@@ -348,6 +354,9 @@
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_blockchain.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_broadcast.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_control.hpp">
@@ -444,6 +453,9 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_blockchain.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_broadcast.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_control.hpp">

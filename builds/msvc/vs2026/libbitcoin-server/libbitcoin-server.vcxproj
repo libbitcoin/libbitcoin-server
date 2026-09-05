@@ -140,6 +140,7 @@
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_blockchain.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_broadcast.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_control.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_dispatch.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_mining.cpp" />
@@ -195,6 +196,7 @@
     <ClInclude Include="..\..\..\..\builds\msvc\resource.h" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_bitcoind_broadcast.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp" />
@@ -209,6 +211,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error_t.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_broadcast.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_control.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_mining.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_network.hpp" />
@@ -241,6 +244,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_broadcast.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_control.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_dispatch.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_mining.hpp" />

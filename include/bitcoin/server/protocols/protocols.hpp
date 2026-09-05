@@ -22,6 +22,7 @@
 #include <bitcoin/server/protocols/protocol.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_broadcast.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_control.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_mining.hpp>

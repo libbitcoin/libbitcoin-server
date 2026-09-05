@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNELS_HPP
 
 #include <bitcoin/server/channels/channel.hpp>
+#include <bitcoin/server/channels/channel_bitcoind_broadcast.hpp>
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>

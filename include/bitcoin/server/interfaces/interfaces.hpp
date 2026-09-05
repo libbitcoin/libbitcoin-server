@@ -21,6 +21,7 @@
 
 #include <bitcoin/server/interfaces/admin.hpp>
 #include <bitcoin/server/interfaces/bitcoind_blockchain.hpp>
+#include <bitcoin/server/interfaces/bitcoind_broadcast.hpp>
 #include <bitcoin/server/interfaces/bitcoind_control.hpp>
 #include <bitcoin/server/interfaces/bitcoind_mining.hpp>
 #include <bitcoin/server/interfaces/bitcoind_network.hpp>
@@ -43,6 +44,7 @@ namespace interface {
     
 using admin                  = publish<admin_methods>;
 using bitcoind_blockchain    = publish<bitcoind_blockchain_methods>;
+using bitcoind_broadcast     = bitcoind_broadcast_topics;
 using bitcoind_control       = publish<bitcoind_control_methods>;
 using bitcoind_mining        = publish<bitcoind_mining_methods>;
 using bitcoind_network       = publish<bitcoind_network_methods>;
