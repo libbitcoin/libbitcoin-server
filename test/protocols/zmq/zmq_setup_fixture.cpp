@@ -18,12 +18,12 @@
  */
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
-#include "broadcast_setup_fixture.hpp"
+#include "zmq_setup_fixture.hpp"
 #include <future>
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-broadcast_setup_fixture::broadcast_setup_fixture(const initializer& setup,
+zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
     const system::data_chunk& curve_secret)
   : config_
     {
@@ -46,13 +46,22 @@ broadcast_setup_fixture::broadcast_setup_fixture(const initializer& setup,
 
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
-    auto& broadcast = config_.server.bitcoind_broadcast;
+    auto& zmq = config_.server.bitcoind_zmq;
 
-    broadcast.binds = { { BROADCAST_ENDPOINT } };
-    broadcast.maximum_subscriptions = 2;
-    broadcast.curve_secret = curve_secret;
-    broadcast.connections = 1;
-    broadcast.inactivity_minutes = 1;
+    // The secured (CURVE) bindings are configured only with a server secret.
+    if (curve_secret.empty())
+    {
+        zmq.binds = { { ZMQ_ENDPOINT } };
+    }
+    else
+    {
+        zmq.safes = { { ZMQ_ENDPOINT } };
+        zmq.curve_secret = curve_secret;
+    }
+
+    zmq.maximum_subscriptions = 2;
+    zmq.connections = 1;
+    zmq.inactivity_minutes = 1;
     node_settings.delay_inbound = false;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
@@ -81,10 +90,11 @@ broadcast_setup_fixture::broadcast_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(broadcast.binds.back().to_endpoint());
+    const auto& bound = curve_secret.empty() ? zmq.binds : zmq.safes;
+    socket_.connect(bound.back().to_endpoint());
 }
 
-broadcast_setup_fixture::~broadcast_setup_fixture()
+zmq_setup_fixture::~zmq_setup_fixture()
 {
     socket_.close();
     server_.close();
@@ -95,7 +105,7 @@ broadcast_setup_fixture::~broadcast_setup_fixture()
 
 BC_POP_WARNING()
 
-void broadcast_setup_fixture::notify(node::chase event_,
+void zmq_setup_fixture::notify(node::chase event_,
     node::event_value value)
 {
     server_.notify(error::success, event_, value);

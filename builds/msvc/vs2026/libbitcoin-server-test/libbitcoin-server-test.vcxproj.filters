@@ -28,16 +28,16 @@
     <Filter Include="src\protocols\bitcoind">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\broadcast">
+    <Filter Include="src\protocols\btcd">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\btcd">
+    <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\electrum">
+    <Filter Include="src\protocols\native">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\zmq">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000A}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\serializers">
@@ -98,12 +98,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp">
       <Filter>src\protocols\bitcoind</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\broadcast\broadcast.cpp">
-      <Filter>src\protocols\broadcast</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\broadcast\broadcast_setup_fixture.cpp">
-      <Filter>src\protocols\broadcast</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_rpc.cpp">
       <Filter>src\protocols\btcd</Filter>
@@ -171,6 +165,12 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq.cpp">
+      <Filter>src\protocols\zmq</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.cpp">
+      <Filter>src\protocols\zmq</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp">
       <Filter>src\serializers</Filter>
     </ClCompile>
@@ -203,9 +203,6 @@
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\test\protocols\broadcast\broadcast_setup_fixture.hpp">
-      <Filter>src\protocols\broadcast</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.hpp">
       <Filter>src\protocols\btcd</Filter>
     </ClInclude>
@@ -214,6 +211,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp">
       <Filter>src\protocols\native</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.hpp">
+      <Filter>src\protocols\zmq</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\test.hpp">
       <Filter>src</Filter>

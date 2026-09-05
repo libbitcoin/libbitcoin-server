@@ -63,17 +63,13 @@ void protocol_bitcoind_notifications::start() NOEXCEPT
 
 // Each configured publisher binding carries every topic (as bitcoind, one
 // entry per notifier). There is no high water mark, reported as unbounded.
-bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& ec,
-    rpc_interface::get_zmq_notifications) NOEXCEPT
+static void add_zmq_notifications(array_t& notifications,
+    const network::config::authorities& bindings) NOEXCEPT
 {
-    if (stopped(ec))
-        return false;
-
-    array_t notifications{};
-    for (const auto& bind: server_settings().bitcoind_broadcast.binds)
+    for (const auto& bind: bindings)
     {
         const auto address = "tcp://" + bind.to_string();
-        for (const auto topic: interface::bitcoind_broadcast::names)
+        for (const auto topic: interface::bitcoind_zmq::names)
         {
             notifications.push_back(object_t
             {
@@ -83,7 +79,19 @@ bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& e
             });
         }
     }
+}
 
+// The clear (NULL) and secured (CURVE) bindings are reported alike.
+bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& ec,
+    rpc_interface::get_zmq_notifications) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    array_t notifications{};
+    const auto& zmq = server_settings().bitcoind_zmq;
+    add_zmq_notifications(notifications, zmq.binds);
+    add_zmq_notifications(notifications, zmq.safes);
     send_result(std::move(notifications), 2);
     return true;
 }

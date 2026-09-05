@@ -22,7 +22,7 @@
 #include <bitcoin/server/protocols/protocol.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp>
-#include <bitcoin/server/protocols/protocol_bitcoind_broadcast.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_control.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_mining.hpp>
@@ -56,6 +56,7 @@ and html are not independent subclasses (operate within http).
 
 network::protocol
 ├── [server:protocol_stratum_v2]
+├── [server::protocol_bitcoind_zmq]
 ├── protocol_rpc<Channel>
 │   └── [server::protocol_rpc<server::channel_stratum_v1>]
 │   └── [server::protocol_rpc<server::channel_electrum>]
@@ -94,6 +95,7 @@ node::protocol
 
 server::protocol → node::protocol
 ├── protocol_stratum_v2              → network::protocol
+├── protocol_bitcoind_zmq            → network::protocol
 ├── protocol_rpc<channel_stratum_v1> → network::protocol_rpc<channel_stratum_v1>
 │   └── protocol_stratum_v1
 ├── protocol_rpc<channel_electrum>   → network::protocol_rpc<channel_electrum>

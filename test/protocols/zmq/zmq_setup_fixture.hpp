@@ -16,24 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_BROADCAST_BROADCAST_SETUP_FIXTURE
-#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BROADCAST_BROADCAST_SETUP_FIXTURE
+#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_ZMQ_ZMQ_SETUP_FIXTURE
+#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_ZMQ_ZMQ_SETUP_FIXTURE
 
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define BROADCAST_ENDPOINT "127.0.0.1:65003"
+#define ZMQ_ENDPOINT "127.0.0.1:65003"
 
-// A server with the bitcoind_broadcast (zmtp publisher) service bound, and a
+// A server with the bitcoind_zmq (zmtp publisher) service bound, and a
 // plain socket connected to it for a synchronous ZMTP subscriber peer.
-struct broadcast_setup_fixture
+struct zmq_setup_fixture
 {
-    DELETE_COPY_MOVE(broadcast_setup_fixture);
+    DELETE_COPY_MOVE(zmq_setup_fixture);
 
     using initializer = std::function<bool(test::query_t&)>;
-    explicit broadcast_setup_fixture(const initializer& setup,
+    explicit zmq_setup_fixture(const initializer& setup,
         const system::data_chunk& curve_secret={});
-    ~broadcast_setup_fixture();
+    ~zmq_setup_fixture();
 
     // 0_32 vs {} for xcode variant issue.
     void notify(node::chase event_, node::event_value value=0_u32);
@@ -51,11 +51,11 @@ private:
     server::server_node server_;
 };
 
-struct broadcast_ten_block_setup_fixture
-  : broadcast_setup_fixture
+struct zmq_ten_block_setup_fixture
+  : zmq_setup_fixture
 {
-    inline broadcast_ten_block_setup_fixture()
-      : broadcast_setup_fixture([](test::query_t& query)
+    inline zmq_ten_block_setup_fixture()
+      : zmq_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
         })
@@ -64,17 +64,17 @@ struct broadcast_ten_block_setup_fixture
 };
 
 // The rfc7748 (section 6.1) bob secret key, as the CURVE server secret.
-#define BROADCAST_CURVE_SECRET \
+#define ZMQ_CURVE_SECRET \
     "5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb"
 
-struct broadcast_curve_ten_block_setup_fixture
-  : broadcast_setup_fixture
+struct zmq_curve_ten_block_setup_fixture
+  : zmq_setup_fixture
 {
-    inline broadcast_curve_ten_block_setup_fixture()
-      : broadcast_setup_fixture([](test::query_t& query)
+    inline zmq_curve_ten_block_setup_fixture()
+      : zmq_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
-        }, system::base16_chunk(BROADCAST_CURVE_SECRET))
+        }, system::base16_chunk(ZMQ_CURVE_SECRET))
     {
     }
 };

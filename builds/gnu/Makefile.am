@@ -71,7 +71,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/admin/protocol_admin.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_blockchain.cpp \
-    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_broadcast.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_control.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_dispatch.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_mining.cpp \
@@ -82,6 +81,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_transaction.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_utility.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_wallet.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_zmq.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_filter.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_utility.cpp \
@@ -140,7 +140,7 @@ include_bitcoin_server_channelsdir = \
 
 include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel.hpp \
-    ${srcdir}/../../include/bitcoin/server/channels/channel_bitcoind_broadcast.hpp \
+    ${srcdir}/../../include/bitcoin/server/channels/channel_bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_http.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v1.hpp \
@@ -169,7 +169,6 @@ include_bitcoin_server_interfacesdir = \
 include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/admin.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_blockchain.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_broadcast.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_control.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_mining.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_network.hpp \
@@ -179,6 +178,7 @@ include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_utility.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_wallet.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/interfaces.hpp \
@@ -211,7 +211,6 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_admin.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp \
-    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_broadcast.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_control.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_mining.hpp \
@@ -222,6 +221,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_utility.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_wallet.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum_version.hpp \
@@ -310,8 +310,6 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rpc.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
-    ${srcdir}/../../test/protocols/broadcast/broadcast.cpp \
-    ${srcdir}/../../test/protocols/broadcast/broadcast_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/btcd/btcd_rpc.cpp \
     ${srcdir}/../../test/protocols/btcd/btcd_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_addresses.cpp \
@@ -334,6 +332,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/native/native_output.cpp \
     ${srcdir}/../../test/protocols/native/native_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_tx.cpp \
+    ${srcdir}/../../test/protocols/zmq/zmq.cpp \
+    ${srcdir}/../../test/protocols/zmq/zmq_setup_fixture.cpp \
     ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../test/serializers/bitcoind_json.cpp \
     ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \

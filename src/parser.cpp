@@ -87,7 +87,7 @@ parser::parser(system::chain::selection context,
     ////configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8480_u16);
     ////configured.server.stratum_v1.safes.emplace_back(asio::address{}, 8443_u16);
     ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
-    ////configured.server.bitcoind_broadcast.binds.emplace_back(asio::address{}, 8680_u16);
+    ////configured.server.bitcoind_zmq.binds.emplace_back(asio::address{}, 8680_u16);
 
     // database
 
@@ -1492,50 +1492,55 @@ options_metadata parser::load_settings() THROWS
         "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
 
-    /* [bitcoind_broadcast] */
+    /* [bitcoind_zmq] */
     (
-        "bitcoind_broadcast.bind",
-        value<network::config::authorities>(&configured.server.bitcoind_broadcast.binds),
+        "bitcoind_zmq.bind",
+        value<network::config::authorities>(&configured.server.bitcoind_zmq.binds),
         "IP address to bind, multiple allowed, defaults to empty (disabled)."
     )
     (
-        "bitcoind_broadcast.connections",
-        value<uint16_t>(&configured.server.bitcoind_broadcast.connections),
+        "bitcoind_zmq.safe",
+        value<network::config::authorities>(&configured.server.bitcoind_zmq.safes),
+        "IP address to secure (CurveZMQ) bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "bitcoind_zmq.connections",
+        value<uint16_t>(&configured.server.bitcoind_zmq.connections),
         "The required maximum number of connections, defaults to '0'."
     )
     (
-        "bitcoind_broadcast.inactivity_minutes",
-        value<uint32_t>(&configured.server.bitcoind_broadcast.inactivity_minutes),
+        "bitcoind_zmq.inactivity_minutes",
+        value<uint32_t>(&configured.server.bitcoind_zmq.inactivity_minutes),
         "The idle timeout, defaults to '10'."
     )
     (
-        "bitcoind_broadcast.expiration_minutes",
-        value<uint32_t>(&configured.server.bitcoind_broadcast.expiration_minutes),
+        "bitcoind_zmq.expiration_minutes",
+        value<uint32_t>(&configured.server.bitcoind_zmq.expiration_minutes),
         "The maximum connection duration, defaults to '60'."
     )
     (
-        "bitcoind_broadcast.minimum_buffer",
-        value<uint32_t>(&configured.server.bitcoind_broadcast.minimum_buffer),
+        "bitcoind_zmq.minimum_buffer",
+        value<uint32_t>(&configured.server.bitcoind_zmq.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
-        "bitcoind_broadcast.maximum_request",
-        value<uint32_t>(&configured.server.bitcoind_broadcast.maximum_request),
+        "bitcoind_zmq.maximum_request",
+        value<uint32_t>(&configured.server.bitcoind_zmq.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
     )
     (
-        "bitcoind_broadcast.rate_limit",
-        value<uint32_t>(&configured.server.bitcoind_broadcast.rate_limit),
+        "bitcoind_zmq.rate_limit",
+        value<uint32_t>(&configured.server.bitcoind_zmq.rate_limit),
         "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
-        "bitcoind_broadcast.maximum_subscriptions",
-        value<uint32_t>(&configured.server.bitcoind_broadcast.maximum_subscriptions),
+        "bitcoind_zmq.maximum_subscriptions",
+        value<uint32_t>(&configured.server.bitcoind_zmq.maximum_subscriptions),
         "The maximum topic subscriptions per connection, defaults to '100'."
     )
     (
-        "bitcoind_broadcast.curve_secret",
-        value<config::base85>(&configured.server.bitcoind_broadcast.curve_secret),
+        "bitcoind_zmq.curve_secret",
+        value<config::base85>(&configured.server.bitcoind_zmq.curve_secret),
         "The Z85 encoded CurveZMQ server secret key, defaults to none (unencrypted)."
     )
 

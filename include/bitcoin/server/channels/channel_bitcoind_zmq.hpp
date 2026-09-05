@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_BROADCAST_HPP
-#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_BROADCAST_HPP
+#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_ZMQ_HPP
+#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_ZMQ_HPP
 
 #include <memory>
 #include <bitcoin/server/channels/channel.hpp>
@@ -28,23 +28,23 @@ namespace libbitcoin {
 namespace server {
 
 /// Channel for bitcoind zmq notifications (native zmtp publisher, framed).
-class BCS_API channel_bitcoind_broadcast
+class BCS_API channel_bitcoind_zmq
   : public server::channel,
     public network::channel,
-    protected network::tracker<channel_bitcoind_broadcast>
+    protected network::tracker<channel_bitcoind_zmq>
 {
 public:
-    typedef std::shared_ptr<channel_bitcoind_broadcast> ptr;
-    using options_t = settings::bitcoind_broadcast_server;
+    typedef std::shared_ptr<channel_bitcoind_zmq> ptr;
+    using options_t = settings::bitcoind_zmq_server;
     using frame_t = network::zmtp::stream::frame;
 
-    inline channel_bitcoind_broadcast(const network::logger& log,
+    inline channel_bitcoind_zmq(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
         options_(options),
         network::channel(log, socket, identifier, config.network, options),
-        network::tracker<channel_bitcoind_broadcast>(log)
+        network::tracker<channel_bitcoind_zmq>(log)
     {
     }
 

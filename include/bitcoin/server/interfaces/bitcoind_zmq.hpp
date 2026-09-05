@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_INTERFACES_BITCOIND_BROADCAST_HPP
-#define LIBBITCOIN_SERVER_INTERFACES_BITCOIND_BROADCAST_HPP
+#ifndef LIBBITCOIN_SERVER_INTERFACES_BITCOIND_ZMQ_HPP
+#define LIBBITCOIN_SERVER_INTERFACES_BITCOIND_ZMQ_HPP
 
 #include <bitcoin/server/define.hpp>
 
@@ -28,7 +28,7 @@ namespace interface {
 /// The bitcoind zmq notification interface: a set of published topics, not
 /// json-rpc methods. Each notification is a three frame message of topic,
 /// body and a per-topic 32-bit little-endian sequence (bitcoind doc/zmq.md).
-struct bitcoind_broadcast_topics
+struct bitcoind_zmq_topics
 {
     /// Topic names (the subscription prefixes).
     static constexpr std::string_view hash_block{ "hashblock" };

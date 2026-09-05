@@ -17,12 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../../test.hpp"
-#include "broadcast_setup_fixture.hpp"
+#include "zmq_setup_fixture.hpp"
 
 using namespace system;
 using zmtp_stream = network::zmtp::stream;
-using broadcast = protocol_bitcoind_broadcast;
-using topics = interface::bitcoind_broadcast;
+using zmq_protocol = protocol_bitcoind_zmq;
+using topics = interface::bitcoind_zmq;
 using tcp_socket = boost::asio::ip::tcp::socket;
 
 // Test infrastructure (synchronous ZMTP subscriber peer).
@@ -246,12 +246,12 @@ static data_stack peer_curve_read_message(tcp_socket& peer,
 // Construct a CURVE client for the fixture server (bob) as alice (rfc7748).
 static zmtp_cipher curve_client()
 {
-    const auto alice_secret = base16_array("77076d0a7318a57d3c16c17251b26645"
-        "df4c2f87ebc0992ab177fba51db92c2a");
-    const auto alice_public = base16_array("8520f0098930a754748b7ddcb43ef75a"
-        "0dbf3a0d26381af4eba4a98eaa9b4e6a");
-    const auto bob_public = base16_array("de9edb7d7b7dc1b4d35b61c2ece43537"
-        "3f8343c85b78674dadfc7e146f882b4f");
+    const auto alice_secret = base16_array(
+        "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a");
+    const auto alice_public = base16_array(
+        "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a");
+    const auto bob_public = base16_array(
+        "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f");
     return { alice_secret, alice_public, bob_public };
 }
 
@@ -290,35 +290,43 @@ static void peer_curve_ping_pong(tcp_socket& peer, zmtp_cipher& client)
 // Codec (static).
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_SUITE(broadcast_codec_tests)
+BOOST_AUTO_TEST_SUITE(zmq_codec_tests)
 
-BOOST_AUTO_TEST_CASE(broadcast__subscription__subscribe_command__add_topic)
+BOOST_AUTO_TEST_CASE(zmq__subscription__subscribe_command__add_topic)
 {
     const auto topic = to_chunk(std::string{ "hashblock" });
     const auto framed = command("SUBSCRIBE", topic);
-    zmtp_stream::frame frame{ framed.at(0), { std::next(framed.begin(), 2), framed.end() } };
+    zmtp_stream::frame frame
+    {
+        framed.at(0),
+        { std::next(framed.begin(), 2), framed.end() }
+    };
 
     bool add{};
     data_chunk found{};
-    BOOST_REQUIRE(broadcast::subscription(add, found, frame));
+    BOOST_REQUIRE(zmq_protocol::subscription(add, found, frame));
     BOOST_REQUIRE(add);
     BOOST_REQUIRE_EQUAL(found, topic);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__subscription__cancel_command__remove_topic)
+BOOST_AUTO_TEST_CASE(zmq__subscription__cancel_command__remove_topic)
 {
     const auto topic = to_chunk(std::string{ "rawtx" });
     const auto framed = command("CANCEL", topic);
-    zmtp_stream::frame frame{ framed.at(0), { std::next(framed.begin(), 2), framed.end() } };
+    zmtp_stream::frame frame
+    {
+        framed.at(0),
+        { std::next(framed.begin(), 2), framed.end() }
+    };
 
     bool add{ true };
     data_chunk found{};
-    BOOST_REQUIRE(broadcast::subscription(add, found, frame));
+    BOOST_REQUIRE(zmq_protocol::subscription(add, found, frame));
     BOOST_REQUIRE(!add);
     BOOST_REQUIRE_EQUAL(found, topic);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__subscription__v30_message__add_topic)
+BOOST_AUTO_TEST_CASE(zmq__subscription__v30_message__add_topic)
 {
     const auto topic = to_chunk(std::string{ "sequence" });
     data_chunk body{ 0x01 };
@@ -327,38 +335,38 @@ BOOST_AUTO_TEST_CASE(broadcast__subscription__v30_message__add_topic)
 
     bool add{};
     data_chunk found{};
-    BOOST_REQUIRE(broadcast::subscription(add, found, frame));
+    BOOST_REQUIRE(zmq_protocol::subscription(add, found, frame));
     BOOST_REQUIRE(add);
     BOOST_REQUIRE_EQUAL(found, topic);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__subscription__data_message__false)
+BOOST_AUTO_TEST_CASE(zmq__subscription__data_message__false)
 {
     const zmtp_stream::frame frame{ 0x00, data_chunk{ 0x42, 0x43 } };
 
     bool add{};
     data_chunk found{};
-    BOOST_REQUIRE(!broadcast::subscription(add, found, frame));
+    BOOST_REQUIRE(!zmq_protocol::subscription(add, found, frame));
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__subscribed__prefix_and_empty__expected)
+BOOST_AUTO_TEST_CASE(zmq__subscribed__prefix_and_empty__expected)
 {
     const data_stack prefix{ to_chunk(std::string{ "hash" }) };
-    BOOST_REQUIRE(broadcast::subscribed(prefix, topics::hash_block));
-    BOOST_REQUIRE(broadcast::subscribed(prefix, topics::hash_tx));
-    BOOST_REQUIRE(!broadcast::subscribed(prefix, topics::raw_block));
+    BOOST_REQUIRE(zmq_protocol::subscribed(prefix, topics::hash_block));
+    BOOST_REQUIRE(zmq_protocol::subscribed(prefix, topics::hash_tx));
+    BOOST_REQUIRE(!zmq_protocol::subscribed(prefix, topics::raw_block));
 
     const data_stack all{ data_chunk{} };
-    BOOST_REQUIRE(broadcast::subscribed(all, topics::sequence));
+    BOOST_REQUIRE(zmq_protocol::subscribed(all, topics::sequence));
 
     const data_stack none{};
-    BOOST_REQUIRE(!broadcast::subscribed(none, topics::sequence));
+    BOOST_REQUIRE(!zmq_protocol::subscribed(none, topics::sequence));
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__notification__topic_body_sequence__three_frames)
+BOOST_AUTO_TEST_CASE(zmq__notification__topic_body_sequence__three_frames)
 {
     const auto body = base16_chunk("deadbeef");
-    const auto packet = broadcast::notification(topics::hash_tx, body, 0x01020304);
+    const auto packet = zmq_protocol::notification(topics::hash_tx, body, 0x01020304);
 
     // hashtx: flags(MORE) len(6) 6; body: flags(MORE) len(4) 4; seq: flags(0) len(4) 4 (LE).
     BOOST_REQUIRE_EQUAL(packet.size(), 8u + 6u + 6u);
@@ -374,10 +382,10 @@ BOOST_AUTO_TEST_CASE(broadcast__notification__topic_body_sequence__three_frames)
     BOOST_REQUIRE_EQUAL(packet.at(19), 0x01u);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__sequence_body__reversed_hash_then_label__expected)
+BOOST_AUTO_TEST_CASE(zmq__sequence_body__reversed_hash_then_label__expected)
 {
     const auto hash = base16_hash("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
-    const auto body = broadcast::sequence_body(hash, topics::block_connected);
+    const auto body = zmq_protocol::sequence_body(hash, topics::block_connected);
 
     BOOST_REQUIRE_EQUAL(body.size(), hash_size + 1u);
     BOOST_REQUIRE_EQUAL(body.front(), 0x00u);
@@ -390,15 +398,15 @@ BOOST_AUTO_TEST_SUITE_END()
 // Service (server with a subscribed peer).
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(broadcast_tests, broadcast_ten_block_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(zmq_tests, zmq_ten_block_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(broadcast__handshake__v31_peer__ready)
+BOOST_AUTO_TEST_CASE(zmq__handshake__v31_peer__ready)
 {
     peer_handshake(socket_);
     peer_ping_pong(socket_);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__hashblock__organized__reversed_hash_and_sequence)
+BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, topics::hash_block);
@@ -423,7 +431,7 @@ BOOST_AUTO_TEST_CASE(broadcast__hashblock__organized__reversed_hash_and_sequence
     BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__rawtx__organized__block_transaction_only_subscribed_topic)
+BOOST_AUTO_TEST_CASE(zmq__rawtx__organized__block_transaction_only_subscribed_topic)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, topics::raw_tx);
@@ -442,7 +450,7 @@ BOOST_AUTO_TEST_CASE(broadcast__rawtx__organized__block_transaction_only_subscri
     BOOST_REQUIRE_EQUAL(message.at(1), expected);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__sequence__organized__reversed_hash_and_connected_label)
+BOOST_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, topics::sequence);
@@ -461,7 +469,7 @@ BOOST_AUTO_TEST_CASE(broadcast__sequence__organized__reversed_hash_and_connected
     BOOST_REQUIRE_EQUAL(message.at(1), expected);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast__maximum_subscriptions__third_subscription_not_recorded)
+BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__third_subscription_not_recorded)
 {
     peer_handshake(socket_);
 
@@ -483,15 +491,15 @@ BOOST_AUTO_TEST_SUITE_END()
 // CURVE mechanism.
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(broadcast_curve_tests, broadcast_curve_ten_block_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(zmq_curve_tests, zmq_curve_ten_block_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(broadcast_curve__handshake__alice_peer__ready)
+BOOST_AUTO_TEST_CASE(zmq_curve__handshake__alice_peer__ready)
 {
     auto client = curve_client();
     peer_curve_handshake(socket_, client);
 }
 
-BOOST_AUTO_TEST_CASE(broadcast_curve__handshake__null_peer__error_command)
+BOOST_AUTO_TEST_CASE(zmq_curve__handshake__null_peer__error_command)
 {
     peer_write(socket_, zmtp_stream::make_greeting(false, false));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
@@ -516,7 +524,7 @@ BOOST_AUTO_TEST_CASE(broadcast_curve__handshake__null_peer__error_command)
     BOOST_REQUIRE_EQUAL(name, "ERROR");
 }
 
-BOOST_AUTO_TEST_CASE(broadcast_curve__hashblock__organized__boxed_notification)
+BOOST_AUTO_TEST_CASE(zmq_curve__hashblock__organized__boxed_notification)
 {
     auto client = curve_client();
     peer_curve_handshake(socket_, client);

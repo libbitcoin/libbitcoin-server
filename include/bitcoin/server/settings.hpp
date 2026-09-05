@@ -192,17 +192,14 @@ public:
         uint32_t maximum_history{ 1'000'000 };
     };
 
-    struct bitcoind_broadcast_server
-      : public network::settings::tls_server
+    struct bitcoind_zmq_server
+      : public network::settings::zmtp_server
     {
-        using base = network::settings::tls_server;
+        using base = network::settings::zmtp_server;
         using base::base;
 
         /// Maximum cumulative number of topic subscriptions per channel.
         uint32_t maximum_subscriptions{ 100 };
-
-        /// The CurveZMQ server secret key (Z85), empty for no encryption.
-        system::config::base85 curve_secret{};
     };
 
     // html_server precludes copy.
@@ -236,9 +233,8 @@ public:
     /// stratum v2 compat interface (tcp[/s], binary, auth/privacy handshake)
     network::settings::tls_server stratum_v2{ "stratum_v2" };
 
-    /// broadcast is not TLS, but normalized for session_server usage.
     /// bitcoind compat zmq notifications (tcp, native zmtp publisher)
-    bitcoind_broadcast_server bitcoind_broadcast{ "bitcoind_broadcast" };
+    bitcoind_zmq_server bitcoind_zmq{ "bitcoind_zmq" };
 };
 
 } // namespace server

@@ -16,11 +16,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_BROADCAST_HPP
-#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_BROADCAST_HPP
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_ZMQ_HPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_ZMQ_HPP
 
 #include <memory>
-#include <bitcoin/server/channels/channel_bitcoind_broadcast.hpp>
+#include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol.hpp>
@@ -32,26 +32,26 @@ namespace server {
 /// from the subscriber (3.1 commands and the 3.0 message form), bounded by
 /// configuration, and notifications are published for chaser events to
 /// matching subscriptions with per-topic sequences (bitcoind semantics).
-class BCS_API protocol_bitcoind_broadcast
+class BCS_API protocol_bitcoind_zmq
   : public server::protocol,
     public network::protocol,
-    protected network::tracker<protocol_bitcoind_broadcast>
+    protected network::tracker<protocol_bitcoind_zmq>
 {
 public:
-    typedef std::shared_ptr<protocol_bitcoind_broadcast> ptr;
-    using channel_t = channel_bitcoind_broadcast;
+    typedef std::shared_ptr<protocol_bitcoind_zmq> ptr;
+    using channel_t = channel_bitcoind_zmq;
     using options_t = channel_t::options_t;
     using frame_t = channel_t::frame_t;
-    using topics = interface::bitcoind_broadcast;
+    using topics = interface::bitcoind_zmq;
 
-    inline protocol_bitcoind_broadcast(const auto& session,
+    inline protocol_bitcoind_zmq(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol(session, channel),
         network::protocol(session, channel),
         options_(options),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
-        network::tracker<protocol_bitcoind_broadcast>(session->log)
+        network::tracker<protocol_bitcoind_zmq>(session->log)
     {
     }
 

@@ -20,7 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNELS_HPP
 
 #include <bitcoin/server/channels/channel.hpp>
-#include <bitcoin/server/channels/channel_bitcoind_broadcast.hpp>
+#include <bitcoin/server/channels/channel_bitcoind_zmq.hpp>
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
@@ -35,6 +35,7 @@ html are not fully independent subclasses (operate within http).
 
 network::channel
 ├── [server::channel_stratum_v2]
+├── [server::channel_bitcoind_zmq]
 ├── channel_rpc<Interface>
 │   └── [server::channel_stratum_v1]
 │   └── [server::channel_electrum]
@@ -49,6 +50,7 @@ node::channel
 
 server::channel → node::channel
 ├── channel_stratum_v2 → network::channel
+├── channel_bitcoind_zmq → network::channel
 ├── channel_stratum_v1 → network::channel_rpc<interface::stratum_v1>
 ├── channel_electrum   → network::channel_rpc<interface::electrum>
 └── channel_http<Body> → network::channel_http

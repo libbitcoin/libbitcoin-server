@@ -135,8 +135,6 @@
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rest.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_rpc.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\broadcast\broadcast.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\broadcast\broadcast_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_rpc.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_addresses.cpp" />
@@ -161,6 +159,8 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_output.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
@@ -175,10 +175,10 @@
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\admin\admin_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp" />
-    <ClInclude Include="..\..\..\..\test\protocols\broadcast\broadcast_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\test.hpp" />
   </ItemGroup>
   <ItemGroup>
