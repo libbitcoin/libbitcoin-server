@@ -494,7 +494,7 @@ using namespace system;
 static const code retain_daemon_error{ server::error::electrum::daemon_error };
 
 // The tx1c fee, which the store cannot report for an unarchived tx.
-static constexpr uint64_t tx1c_fee = 0x64 - 0x5a;
+static constexpr int64_t tx1c_fee = 0x64 - 0x5a;
 
 static std::string tx1c_text() NOEXCEPT
 {
