@@ -42,15 +42,10 @@ parser::parser(system::chain::selection context,
     const server::settings::embedded_pages& admin) NOEXCEPT
   : configured(context, native, admin)
 {
-    // node
-
-    configured.node.threads = 32;
-
     // network
 
     using level = network::messages::peer::level;
 
-    configured.network.threads = 16;
     configured.network.enable_relay = true;
     configured.network.enable_address = true;
     configured.network.enable_address_v2 = false;
@@ -575,7 +570,7 @@ options_metadata parser::load_settings() THROWS
     (
         "network.threads",
         value<uint32_t>(&configured.network.threads),
-        "The minimum number of threads in the network threadpool, defaults to '16'."
+        "The minimum number of threads in the network threadpool, defaults to '0' (hardware threads, at most 32)."
     )
     (
         "network.retry_timeout_seconds",
@@ -1553,7 +1548,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.threads",
         value<uint32_t>(&configured.node.threads),
-        "The number of threads in the validation threadpool, defaults to '32'."
+        "The number of threads in the validation threadpool, defaults to '0' (hardware threads)."
     )
     (
         "node.thread_priority",

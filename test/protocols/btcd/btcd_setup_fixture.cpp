@@ -104,13 +104,14 @@ btcd_setup_fixture::~btcd_setup_fixture()
     websocket_.close(websocket::close_code::normal, ec);
 
     // Expected and harmless during fixture teardown:
-    // beast::websocket::error::closed : normal (graceful handshake).
-    // asio::error::operation_aborted  : hard (invalid request test).
-    // asio::error::connection_reset   : peer gone (failed authenticate test).
+    // websocket_closed   : normal (graceful handshake).
+    // operation_canceled : hard (invalid request test).
+    // peer_disconnect    : peer gone (failed authenticate test).
+    const auto reason = network::error::ws_to_error_code(ec);
     if (ec &&
-        ec != boost::beast::websocket::error::closed &&
-        ec != boost::asio::error::operation_aborted &&
-        ec != boost::asio::error::connection_reset)
+        reason != network::error::websocket_closed &&
+        reason != network::error::operation_canceled &&
+        reason != network::error::peer_disconnect)
     {
         BOOST_WARN_MESSAGE(false, ec.message());
     }
