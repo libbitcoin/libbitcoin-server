@@ -179,7 +179,7 @@ bool protocol_bitcoind_network::handle_set_ban(const code& ec,
 }
 
 // Removal requires manual session deregistration (not supported), and the
-// transport is determined by the outbound privacy configuration.
+// transport is determined by the outbound p2ps configuration.
 bool protocol_bitcoind_network::handle_add_node(const code& ec,
     rpc_interface::add_node, const std::string& node,
     const std::string& command, bool v2transport) NOEXCEPT
