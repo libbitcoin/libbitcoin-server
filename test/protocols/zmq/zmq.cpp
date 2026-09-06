@@ -23,7 +23,7 @@ using namespace system;
 using zmtp_stream = network::zmtp::stream;
 using zmq_protocol = protocol_bitcoind_zmq;
 using topics = interface::bitcoind_zmq;
-using tcp_socket = boost::asio::ip::tcp::socket;
+using peer_socket = boost::asio::ip::tcp::socket;
 
 // Test infrastructure (synchronous ZMTP subscriber peer).
 // ----------------------------------------------------------------------------
@@ -56,14 +56,14 @@ static data_chunk ready(const std::string& type)
 }
 
 // Synchronously write the whole buffer to the peer socket.
-static void peer_write(tcp_socket& peer, const data_chunk& data)
+static void peer_write(peer_socket& peer, const data_chunk& data)
 {
     const boost::asio::const_buffer out{ data.data(), data.size() };
     boost::asio::write(peer, out);
 }
 
 // Synchronously read one frame (flags and body) from the peer socket.
-static void peer_read_frame(tcp_socket& peer, uint8_t& flags,
+static void peer_read_frame(peer_socket& peer, uint8_t& flags,
     data_chunk& body)
 {
     uint8_t head{};
@@ -96,7 +96,7 @@ static void peer_read_frame(tcp_socket& peer, uint8_t& flags,
 }
 
 // Synchronously read one whole (multipart) message from the peer socket.
-static data_stack peer_read_message(tcp_socket& peer)
+static data_stack peer_read_message(peer_socket& peer)
 {
     data_stack parts{};
     auto more = true;
@@ -113,7 +113,7 @@ static data_stack peer_read_message(tcp_socket& peer)
 }
 
 // Synchronously perform the peer (SUB) side of the ZMTP handshake.
-static void peer_handshake(tcp_socket& peer)
+static void peer_handshake(peer_socket& peer)
 {
     peer_write(peer, zmtp_stream::make_greeting(false, false));
 
@@ -133,14 +133,14 @@ static void peer_handshake(tcp_socket& peer)
 }
 
 // Subscribe to a topic (3.1 command dialect).
-static void peer_subscribe(tcp_socket& peer, std::string_view topic)
+static void peer_subscribe(peer_socket& peer, std::string_view topic)
 {
     peer_write(peer, command("SUBSCRIBE", { topic.begin(), topic.end() }));
 }
 
 // Send a PING and require the echoed PONG, proving all prior frames were
 // consumed by the server (the stream is ordered).
-static void peer_ping_pong(tcp_socket& peer)
+static void peer_ping_pong(peer_socket& peer)
 {
     const auto context_bytes = base16_chunk("0011223344556677");
     data_chunk ping{ 0x00, 0x00 };
@@ -165,7 +165,7 @@ static void peer_ping_pong(tcp_socket& peer)
 using zmtp_cipher = network::zmtp::cipher;
 
 // Synchronously perform the peer (SUB) side of the CURVE handshake.
-static void peer_curve_handshake(tcp_socket& peer, zmtp_cipher& client)
+static void peer_curve_handshake(peer_socket& peer, zmtp_cipher& client)
 {
     peer_write(peer, zmtp_stream::make_greeting(false, true));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
@@ -206,7 +206,7 @@ static void peer_curve_handshake(tcp_socket& peer, zmtp_cipher& client)
 }
 
 // Box and send a SUBSCRIBE command (3.1 dialect) for the topic.
-static void peer_curve_subscribe(tcp_socket& peer, zmtp_cipher& client,
+static void peer_curve_subscribe(peer_socket& peer, zmtp_cipher& client,
     std::string_view topic)
 {
     const std::string name{ "SUBSCRIBE" };
@@ -221,7 +221,7 @@ static void peer_curve_subscribe(tcp_socket& peer, zmtp_cipher& client,
 }
 
 // Synchronously read and unbox one whole multipart message.
-static data_stack peer_curve_read_message(tcp_socket& peer,
+static data_stack peer_curve_read_message(peer_socket& peer,
     zmtp_cipher& client)
 {
     data_stack parts{};
@@ -256,7 +256,7 @@ static zmtp_cipher curve_client()
 
 // Send a boxed PING and require the boxed PONG, proving all prior frames
 // were consumed by the server (the stream is ordered).
-static void peer_curve_ping_pong(tcp_socket& peer, zmtp_cipher& client)
+static void peer_curve_ping_pong(peer_socket& peer, zmtp_cipher& client)
 {
     const std::string name{ "PING" };
     data_chunk body{};
