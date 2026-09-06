@@ -1504,6 +1504,11 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure (CurveZMQ) bind, multiple allowed, defaults to empty (disabled)."
     )
     (
+        "bitcoind_zmq.cert",
+        value<std::vector<config::base85>>(&configured.server.bitcoind_zmq.certs),
+        "The Z85 encoded CurveZMQ public key of an authorized client, multiple allowed, defaults to empty (any client)."
+    )
+    (
         "bitcoind_zmq.connections",
         value<uint16_t>(&configured.server.bitcoind_zmq.connections),
         "The required maximum number of connections, defaults to '0'."
@@ -1539,8 +1544,8 @@ options_metadata parser::load_settings() THROWS
         "The maximum topic subscriptions per connection, defaults to '100'."
     )
     (
-        "bitcoind_zmq.curve_secret",
-        value<config::base85>(&configured.server.bitcoind_zmq.curve_secret),
+        "bitcoind_zmq.key",
+        value<config::base85>(&configured.server.bitcoind_zmq.key),
         "The Z85 encoded CurveZMQ server secret key, defaults to none (unencrypted)."
     )
 

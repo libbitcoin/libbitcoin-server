@@ -32,7 +32,8 @@ struct zmq_setup_fixture
 
     using initializer = std::function<bool(test::query_t&)>;
     explicit zmq_setup_fixture(const initializer& setup,
-        const system::data_chunk& curve_secret={});
+        const system::data_chunk& key={},
+        const system::data_stack& certs={});
     ~zmq_setup_fixture();
 
     // 0_32 vs {} for xcode variant issue.
@@ -63,9 +64,15 @@ struct zmq_ten_block_setup_fixture
     }
 };
 
-// The rfc7748 (section 6.1) bob secret key, as the CURVE server secret.
-#define ZMQ_CURVE_SECRET \
+// The rfc7748 (section 6.1) bob secret key as the CURVE server key (its
+// public key is the server cert) and the alice public key as the sole
+// authorized client cert.
+#define ZMQ_CURVE_KEY \
     "5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb"
+#define ZMQ_CURVE_SERVER \
+    "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f"
+#define ZMQ_CURVE_CERT \
+    "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
 
 struct zmq_curve_ten_block_setup_fixture
   : zmq_setup_fixture
@@ -74,7 +81,8 @@ struct zmq_curve_ten_block_setup_fixture
       : zmq_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
-        }, system::base16_chunk(ZMQ_CURVE_SECRET))
+        }, system::base16_chunk(ZMQ_CURVE_KEY),
+        { system::base16_chunk(ZMQ_CURVE_CERT) })
     {
     }
 };
