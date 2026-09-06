@@ -21,28 +21,33 @@
 
 #include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Channel for bitcoind zmq notifications (native zmtp publisher, framed).
+/// Channel for bitcoind zmq notifications (rpc over a native zmtp publisher).
 class BCS_API channel_bitcoind_zmq
   : public server::channel,
-    public network::channel,
+    public network::channel_rpc<interface::bitcoind_zmq>,
     protected network::tracker<channel_bitcoind_zmq>
 {
 public:
     typedef std::shared_ptr<channel_bitcoind_zmq> ptr;
+    using interface_t = interface::bitcoind_zmq;
     using options_t = settings::bitcoind_zmq_server;
-    using frame_t = network::zmtp::stream::frame;
+
+    /// The socket reads subscriptions and writes topic notifications.
+    static constexpr auto role{ network::zmtp::role::publisher };
 
     inline channel_bitcoind_zmq(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
         options_(options),
-        network::channel(log, socket, identifier, config.network, options),
+        network::channel_rpc<interface::bitcoind_zmq>(log, socket, identifier,
+            config.network, options),
         network::tracker<channel_bitcoind_zmq>(log)
     {
     }
@@ -53,22 +58,8 @@ public:
         return options_;
     }
 
-    /// Read the next frame from the subscriber (requires strand). The proxy
-    /// absorbs keepalive, so frames delivered here are subscriptions.
-    inline void read_frame(frame_t& out,
-        network::count_handler&& handler) NOEXCEPT
-    {
-        network::proxy::read(out, std::move(handler));
-    }
-
-    /// Write a framed notification (see zmtp::stream::frame_message).
-    inline void write_packet(const system::chunk_cptr& packet,
-        network::count_handler&& handler) NOEXCEPT
-    {
-        network::proxy::write(packet, std::move(handler));
-    }
-
 private:
+    // This is thread safe.
     const options_t& options_;
 };
 

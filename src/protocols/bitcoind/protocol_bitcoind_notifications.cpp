@@ -18,6 +18,8 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_notifications.hpp>
 
+#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
+
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
@@ -67,7 +69,7 @@ static void add_zmq_notifications(array_t& notifications,
     for (const auto& bind: bindings)
     {
         const auto address = "tcp://" + bind.to_string();
-        for (const auto topic: interface::bitcoind_zmq::names)
+        for (const auto topic: protocol_bitcoind_zmq::topics)
         {
             notifications.push_back(object_t
             {

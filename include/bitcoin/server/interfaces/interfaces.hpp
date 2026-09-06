@@ -44,7 +44,6 @@ namespace interface {
     
 using admin                  = publish<admin_methods>;
 using bitcoind_blockchain    = publish<bitcoind_blockchain_methods>;
-using bitcoind_zmq     = bitcoind_zmq_topics;
 using bitcoind_control       = publish<bitcoind_control_methods>;
 using bitcoind_mining        = publish<bitcoind_mining_methods>;
 using bitcoind_network       = publish<bitcoind_network_methods>;
@@ -54,6 +53,7 @@ using bitcoind_test          = publish<bitcoind_test_methods>;
 using bitcoind_transaction   = publish<bitcoind_transaction_methods>;
 using bitcoind_utility       = publish<bitcoind_utility_methods>;
 using bitcoind_wallet        = publish<bitcoind_wallet_methods>;
+using bitcoind_zmq           = publish<bitcoind_zmq_methods>;
 using btcd                   = publish<btcd_methods>;
 using electrum               = publish<electrum_methods>;
 using native                 = publish<native_methods>;
