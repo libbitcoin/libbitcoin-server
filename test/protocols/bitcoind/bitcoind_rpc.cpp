@@ -174,6 +174,7 @@ const std::vector<method_code> pending_methods
     { "abortprivatebroadcast", R"([""])", -32601 },
     { "getprivatebroadcastinfo", "[]", -32601 },
     { "submitpackage", R"([[]])", -33 },
+    { "submitblock", R"([""])", -33 },
     { "getblocktemplate", R"([{}])", -33 },
     { "getprioritisedtransactions", "[]", -33 },
     { "prioritisetransaction", R"([""])", -33 }
@@ -1904,27 +1905,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__setnetworkactive__toggle__round_trips)
 }
 
 // submit
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
-{
-    const auto block = encode_base16(test::block9.to_data(true));
-    const auto response = rpc("submitblock", "[\"" + block + "\"]");
-    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), "duplicate");
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__unknown_header__prev_blk_not_found_token)
-{
-    auto data = test::block1.to_data(true);
-    data[76]++;
-    const auto response = rpc("submitblock", "[\"" + encode_base16(data) + "\"]");
-    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "prev-blk-not-found");
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitblock__garbage__invalid)
-{
-    const auto response = rpc("submitblock", "[\"deadbeef\"]");
-    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
-}
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__existing_header__null)
 {

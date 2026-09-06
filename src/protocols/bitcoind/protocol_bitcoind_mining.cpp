@@ -215,40 +215,19 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     return true;
 }
 
-// The response defers to organize completion (see dispatch).
+// Submission pairs with getblocktemplate, which is disabled (no mempool).
+// The node accepts only blocks that it requests, so there is no path for a
+// client block, and a submitted block is by construction unrequested.
 bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
-    rpc_interface::submit_block, const std::string& hexdata,
+    rpc_interface::submit_block, const std::string&,
     const std::string&) NOEXCEPT
 {
-    if (stopped(ec))
-        return false;
-
-    data_chunk data{};
-    if (!decode_base16(data, hexdata))
-    {
-        send_error(error::bitcoind::deserialization_error);
-        return true;
-    }
-
-    constexpr auto witness = true;
-    const auto block = emplace_shared<chain::block>(data, witness);
-    if (!block->is_valid())
-    {
-        send_error(error::bitcoind::deserialization_error);
-        return true;
-    }
-
-    const auto& query = archive();
-    if (query.is_associated(query.to_header(block->hash())))
-    {
-        send_result(std::string{ "duplicate" }, 32);
-        return true;
-    }
-
-    organize(block, BIND(handle_organize_block, _1, _2));
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::client_mempool_disabled);
     return true;
 }
 
+// The response defers to organize completion (see dispatch).
 bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
     rpc_interface::submit_header, const std::string& hexdata) NOEXCEPT
 {
@@ -279,15 +258,6 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
     return true;
 }
 
-void protocol_bitcoind_mining::handle_organize_block(const code& ec,
-    size_t) NOEXCEPT
-{
-    if (stopped())
-        return;
-
-    POST(do_submit_block, ec);
-}
-
 void protocol_bitcoind_mining::handle_organize_header(const code& ec,
     size_t) NOEXCEPT
 {
@@ -295,16 +265,6 @@ void protocol_bitcoind_mining::handle_organize_header(const code& ec,
         return;
 
     POST(do_submit_header, ec);
-}
-
-// bitcoind returns null on acceptance and a reject token on rejection.
-void protocol_bitcoind_mining::do_submit_block(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (ec)
-        send_result(error::bitcoind::reject(ec), 64);
-    else
-        send_result(null_t{}, 8);
 }
 
 void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT

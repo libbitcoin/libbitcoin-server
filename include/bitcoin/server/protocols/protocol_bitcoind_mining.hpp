@@ -73,9 +73,7 @@ protected:
 
 private:
     /// Organize completions (bounced to the channel strand).
-    void handle_organize_block(const code& ec, size_t height) NOEXCEPT;
     void handle_organize_header(const code& ec, size_t height) NOEXCEPT;
-    void do_submit_block(const code& ec) NOEXCEPT;
     void do_submit_header(const code& ec) NOEXCEPT;
 };
 
