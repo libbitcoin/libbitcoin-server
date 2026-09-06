@@ -45,8 +45,8 @@ BOOST_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
 
     // Just a sample of settings.
     BOOST_REQUIRE(instance.node.headers_first);
-    BOOST_REQUIRE_EQUAL(instance.network.threads, 1_u32);
-    BOOST_REQUIRE_EQUAL(instance.bitcoin.first_version, 1_u32);
+    BOOST_REQUIRE_EQUAL(instance.network.threads, 0u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoin.first_version, 1u);
     BOOST_REQUIRE_EQUAL(instance.log.application, network::levels::application_defined);
 }
 
