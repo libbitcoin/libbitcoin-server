@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/server_node.hpp>
 
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/sessions/sessions.hpp>
 
@@ -176,7 +175,22 @@ void server_node::start_stratum_v2(const code& ec,
         return;
     }
 
-    attach_stratum_v2_session()->start(move_copy(handler));
+    attach_stratum_v2_session()->start(
+        std::bind(&server_node::start_bitcoind_zmq, this, _1, handler));
+}
+
+void server_node::start_bitcoind_zmq(const code& ec,
+    const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    attach_bitcoind_zmq_session()->start(move_copy(handler));
 }
 
 // Session attachments.
@@ -222,6 +236,13 @@ session_stratum_v2::ptr server_node::attach_stratum_v2_session() NOEXCEPT
 {
     return net::attach<session_stratum_v2>(*this, config_,
         config_.server.stratum_v2);
+}
+
+session_bitcoind_zmq::ptr
+server_node::attach_bitcoind_zmq_session() NOEXCEPT
+{
+    return net::attach<session_bitcoind_zmq>(*this, config_,
+        config_.server.bitcoind_zmq);
 }
 
 BC_POP_WARNING()

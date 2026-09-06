@@ -177,6 +177,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_wallet.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_zmq.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
@@ -308,6 +311,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_bitcoind_zmq.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
@@ -375,6 +381,9 @@
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_wallet.hpp">
+      <Filter>include\bitcoin\server\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_zmq.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp">
@@ -474,6 +483,9 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_wallet.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_zmq.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp">

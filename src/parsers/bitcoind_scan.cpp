@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/parsers/bitcoind_scan.hpp>
 
-#include <iterator>
-#include <variant>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

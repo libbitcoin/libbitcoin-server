@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
-#include <algorithm>
 #include <ranges>
 #include <bitcoin/server/define.hpp>
 

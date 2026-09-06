@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/utilities/bitcoind_update.hpp>
 
-#include <algorithm>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

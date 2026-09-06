@@ -159,6 +159,8 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_output.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_json.cpp" />
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
@@ -176,6 +178,7 @@
     <ClInclude Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\test.hpp" />
   </ItemGroup>
   <ItemGroup>

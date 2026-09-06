@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_notifications.hpp>
 
-#include <algorithm>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
@@ -61,15 +59,38 @@ void protocol_bitcoind_notifications::start() NOEXCEPT
 // Notifications methods.
 // ----------------------------------------------------------------------------
 
-// The result is the set of configured publisher endpoints, so
-// it is empty until the zeromq service is introduced and configured.
+// Each configured publisher binding carries every topic (as bitcoind, one
+// entry per notifier). There is no high water mark, reported as unbounded.
+static void add_zmq_notifications(array_t& notifications,
+    const network::config::authorities& bindings) NOEXCEPT
+{
+    for (const auto& bind: bindings)
+    {
+        const auto address = "tcp://" + bind.to_string();
+        for (const auto topic: interface::bitcoind_zmq::names)
+        {
+            notifications.push_back(object_t
+            {
+                { "type", "pub" + std::string{ topic } },
+                { "address", address },
+                { "hwm", 0 }
+            });
+        }
+    }
+}
+
+// The clear (NULL) and secured (CURVE) bindings are reported alike.
 bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& ec,
     rpc_interface::get_zmq_notifications) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    send_result(array_t{}, 2);
+    array_t notifications{};
+    const auto& zmq = server_settings().bitcoind_zmq;
+    add_zmq_notifications(notifications, zmq.binds);
+    add_zmq_notifications(notifications, zmq.safes);
+    send_result(std::move(notifications), 2);
     return true;
 }
 

@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
-#include <algorithm>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

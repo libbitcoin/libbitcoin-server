@@ -18,9 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 
-#include <algorithm>
-#include <memory>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>

@@ -18,10 +18,8 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp>
 
-#include <algorithm>
 #include <ranges>
 #include <unordered_set>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>

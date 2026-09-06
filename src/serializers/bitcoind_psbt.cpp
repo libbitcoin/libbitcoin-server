@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/serializers/bitcoind_psbt.hpp>
 
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
 

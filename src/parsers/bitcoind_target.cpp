@@ -19,8 +19,6 @@
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 
 #include <charconv>
-#include <iterator>
-#include <variant>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

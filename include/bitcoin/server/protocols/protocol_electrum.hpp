@@ -20,7 +20,6 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ELECTRUM_HPP
 
 #include <map>
-#include <memory>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>

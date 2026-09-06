@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 
-#include <utility>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 

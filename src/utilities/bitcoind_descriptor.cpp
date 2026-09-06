@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
 
-#include <utility>
-#include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/serializers/serializers.hpp>
 

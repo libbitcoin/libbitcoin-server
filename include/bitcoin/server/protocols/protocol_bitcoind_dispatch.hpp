@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_DISPATCH_HPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_DISPATCH_HPP
 
-#include <memory>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 

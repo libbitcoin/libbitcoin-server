@@ -192,6 +192,16 @@ public:
         uint32_t maximum_history{ 1'000'000 };
     };
 
+    struct bitcoind_zmq_server
+      : public network::settings::zmtp_server
+    {
+        using base = network::settings::zmtp_server;
+        using base::base;
+
+        /// Maximum cumulative number of topic subscriptions per channel.
+        uint32_t maximum_subscriptions{ 100 };
+    };
+
     // html_server precludes copy.
     DELETE_COPY(settings);
 
@@ -222,6 +232,9 @@ public:
     /// stratum vs is not TLS, but normalized for session_server usage.
     /// stratum v2 compat interface (tcp[/s], binary, auth/privacy handshake)
     network::settings::tls_server stratum_v2{ "stratum_v2" };
+
+    /// bitcoind compat zmq notifications (tcp, native zmtp publisher)
+    bitcoind_zmq_server bitcoind_zmq{ "bitcoind_zmq" };
 };
 
 } // namespace server

@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/parsers/btcd_filter.hpp>
 
-#include <variant>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/bitcoind_script.hpp>
 

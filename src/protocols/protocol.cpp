@@ -18,8 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol.hpp>
 
-#include <algorithm>
-#include <utility>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

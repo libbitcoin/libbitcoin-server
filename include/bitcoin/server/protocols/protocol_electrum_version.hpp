@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ELECTRUM_VERSION_HPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ELECTRUM_VERSION_HPP
 
-#include <memory>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
