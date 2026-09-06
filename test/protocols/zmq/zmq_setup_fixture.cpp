@@ -24,7 +24,7 @@
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
-    const system::data_chunk& curve_secret)
+    const system::data_chunk& key, const system::data_stack& certs)
   : config_
     {
       system::chain::selection::mainnet,
@@ -48,15 +48,17 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
     auto& node_settings = config_.node;
     auto& zmq = config_.server.bitcoind_zmq;
 
-    // The secured (CURVE) bindings are configured only with a server secret.
-    if (curve_secret.empty())
+    // The secured (CURVE) bindings are configured only with a server key.
+    if (key.empty())
     {
         zmq.binds = { { ZMQ_ENDPOINT } };
     }
     else
     {
         zmq.safes = { { ZMQ_ENDPOINT } };
-        zmq.curve_secret = curve_secret;
+        zmq.key = key;
+        for (const auto& cert: certs)
+            zmq.certs.emplace_back(cert);
     }
 
     zmq.maximum_subscriptions = 2;
@@ -90,7 +92,7 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    const auto& bound = curve_secret.empty() ? zmq.binds : zmq.safes;
+    const auto& bound = key.empty() ? zmq.binds : zmq.safes;
     socket_.connect(bound.back().to_endpoint());
 }
 

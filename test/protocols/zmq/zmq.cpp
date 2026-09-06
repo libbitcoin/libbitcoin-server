@@ -285,6 +285,39 @@ static void peer_curve_ping_pong(peer_socket& peer, zmtp_cipher& client)
     BOOST_REQUIRE_EQUAL(echo_name, "PONG");
 }
 
+// Synchronously attempt the CURVE handshake, returning the frame following
+// INITIATE (READY if authorized, otherwise ERROR).
+static data_chunk peer_curve_initiate(peer_socket& peer, zmtp_cipher& client)
+{
+    peer_write(peer, zmtp_stream::make_greeting(false, true));
+    data_chunk theirs(zmtp_stream::greeting_size, 0x00);
+    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
+    boost::asio::read(peer, in);
+
+    uint8_t minor{};
+    bool curve{};
+    bool as_server{};
+    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
+
+    data_chunk hello{};
+    BOOST_REQUIRE(client.hello(hello));
+    peer_write(peer, zmtp_stream::frame_encode(hello, true, false));
+
+    uint8_t flags{};
+    data_chunk welcome{};
+    peer_read_frame(peer, flags, welcome);
+
+    data_chunk initiate{};
+    const auto metadata = zmtp_stream::make_property("Socket-Type", "SUB");
+    BOOST_REQUIRE(client.initiate(initiate, welcome, metadata));
+    peer_write(peer, zmtp_stream::frame_encode(initiate, true, false));
+
+    data_chunk reply{};
+    peer_read_frame(peer, flags, reply);
+    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+    return reply;
+}
+
 // Codec (static).
 // ----------------------------------------------------------------------------
 
@@ -539,6 +572,23 @@ BOOST_AUTO_TEST_CASE(zmq_curve__hashblock__organized__boxed_notification)
     BOOST_REQUIRE_EQUAL(message.at(0), data_chunk(topics::hash_block.begin(), topics::hash_block.end()));
     BOOST_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(header->hash())));
     BOOST_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
+}
+
+
+BOOST_AUTO_TEST_CASE(zmq_curve__handshake__unauthorized_client__error_400)
+{
+    zmtp_cipher::key secret{};
+    zmtp_cipher::key public_key{};
+    x25519::generate(secret, public_key);
+    zmtp_cipher stranger{ secret, public_key, base16_array(ZMQ_CURVE_SERVER) };
+
+    const auto reply = peer_curve_initiate(socket_, stranger);
+    std::string name{};
+    std::span<const uint8_t> reason{};
+    const std::span<const uint8_t> frame{ reply };
+    BOOST_REQUIRE(zmtp_stream::command_name(name, reason, frame));
+    BOOST_REQUIRE_EQUAL(name, "ERROR");
+    BOOST_REQUIRE_EQUAL(std::string(std::next(reason.begin()), reason.end()), "400");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

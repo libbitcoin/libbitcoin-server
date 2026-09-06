@@ -52,7 +52,7 @@ class Server:
     """A bs process on a fresh store, closed via its console."""
 
     def __init__(self, bs, workdir, rpc_port, clear_port, curve_port,
-                 curve_secret):
+                 server_secret, client_public):
         self.bs = bs
         self.workdir = workdir
         self.rpc = f"http://127.0.0.1:{rpc_port}/"
@@ -70,7 +70,8 @@ class Server:
                 "[bitcoind_zmq]",
                 f"bind = 127.0.0.1:{clear_port}",
                 f"safe = 127.0.0.1:{curve_port}",
-                f"curve_secret = {curve_secret}",
+                f"key = {server_secret}",
+                f"cert = {client_public}",
                 "connections = 8", "maximum_subscriptions = 100", ""]))
         self.process = None
 
@@ -130,11 +131,11 @@ class Server:
 class Subscriber:
     """A libzmq SUB socket with handshake/heartbeat monitoring."""
 
-    def __init__(self, context, name, port, server_key=None):
+    def __init__(self, context, name, port, server_key=None, keypair=None):
         self.name = name
         self.socket = context.socket(zmq.SUB)
         if server_key is not None:
-            public, secret = zmq.curve_keypair()
+            public, secret = keypair or zmq.curve_keypair()
             self.socket.curve_secretkey = secret
             self.socket.curve_publickey = public
             self.socket.curve_serverkey = server_key
@@ -159,6 +160,17 @@ class Subscriber:
                              zmq.EVENT_HANDSHAKE_FAILED_NO_DETAIL):
                     raise AssertionError(f"{self.name}: handshake failed {event}")
         return False
+
+    def wait_auth_failure(self, timeout=5.0):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if self.monitor.poll(200):
+                message = recv_monitor_message(self.monitor)
+                if message["event"] == zmq.EVENT_HANDSHAKE_FAILED_AUTH:
+                    return message["value"]
+                if message["event"] == zmq.EVENT_HANDSHAKE_SUCCEEDED:
+                    return None
+        return None
 
     def disconnected(self):
         seen = False
@@ -230,8 +242,12 @@ def main():
     server_public, server_secret = zmq.curve_keypair()
     while b"#" in server_secret or b"#" in server_public:
         server_public, server_secret = zmq.curve_keypair()
+    client_public, client_secret = zmq.curve_keypair()
+    while b"#" in client_secret or b"#" in client_public:
+        client_public, client_secret = zmq.curve_keypair()
     ports = (free_port(), free_port(), free_port())
-    server = Server(args.bs, args.workdir, *ports, server_secret.decode())
+    server = Server(args.bs, args.workdir, *ports, server_secret.decode(),
+                    client_public.decode())
     context = zmq.Context()
     try:
         print("starting bs (newstore, run)...")
@@ -239,9 +255,13 @@ def main():
         check(server.call("getblockcount") == 0, "fresh store at genesis")
 
         clear = Subscriber(context, "null", ports[1])
-        curve = Subscriber(context, "curve", ports[2], server_public)
+        curve = Subscriber(context, "curve", ports[2], server_public, (client_public, client_secret))
         check(clear.wait_handshake(), "null: ZMTP handshake succeeded (libzmq monitor)")
-        check(curve.wait_handshake(), "curve: CURVE handshake succeeded (libzmq monitor)")
+        check(curve.wait_handshake(), "curve: CURVE handshake succeeded for the authorized client (libzmq monitor)")
+
+        stranger = Subscriber(context, "stranger", ports[2], server_public)
+        check(stranger.wait_auth_failure() == 400, "stranger: CURVE handshake refused with zap status 400 (libzmq monitor)")
+        stranger.socket.close(linger=0)
 
         clear.subscribe(b"hashblock", b"rawblock", b"hashtx", b"sequence")
         curve.subscribe(b"hashblock", b"sequence")
