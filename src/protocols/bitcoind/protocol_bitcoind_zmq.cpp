@@ -56,7 +56,7 @@ void protocol_bitcoind_zmq::stopping(const code& ec) NOEXCEPT
     protocol_rpc<channel_bitcoind_zmq>::stopping(ec);
 }
 
-// Codec (static).
+// Utilities (static).
 // ----------------------------------------------------------------------------
 
 bool protocol_bitcoind_zmq::subscribed(const data_stack& subscriptions,

@@ -22,6 +22,14 @@
 using namespace system;
 using zmtp_stream = network::zmtp::stream;
 using zmq_protocol = protocol_bitcoind_zmq;
+
+// Expose protected statics for test.
+struct zmq_accessor
+  : zmq_protocol
+{
+    using zmq_protocol::subscribed;
+    using zmq_protocol::sequence_body;
+};
 using peer_socket = boost::asio::ip::tcp::socket;
 
 // Test infrastructure (synchronous ZMTP subscriber peer).
@@ -325,21 +333,21 @@ BOOST_AUTO_TEST_SUITE(zmq_codec_tests)
 BOOST_AUTO_TEST_CASE(zmq__subscribed__prefix_and_empty__expected)
 {
     const data_stack prefix{ to_chunk(std::string{ "hash" }) };
-    BOOST_REQUIRE(zmq_protocol::subscribed(prefix, zmq_protocol::hash_block));
-    BOOST_REQUIRE(zmq_protocol::subscribed(prefix, zmq_protocol::hash_tx));
-    BOOST_REQUIRE(!zmq_protocol::subscribed(prefix, zmq_protocol::raw_block));
+    BOOST_REQUIRE(zmq_accessor::subscribed(prefix, zmq_protocol::hash_block));
+    BOOST_REQUIRE(zmq_accessor::subscribed(prefix, zmq_protocol::hash_tx));
+    BOOST_REQUIRE(!zmq_accessor::subscribed(prefix, zmq_protocol::raw_block));
 
     const data_stack all{ data_chunk{} };
-    BOOST_REQUIRE(zmq_protocol::subscribed(all, zmq_protocol::sequence));
+    BOOST_REQUIRE(zmq_accessor::subscribed(all, zmq_protocol::sequence));
 
     const data_stack none{};
-    BOOST_REQUIRE(!zmq_protocol::subscribed(none, zmq_protocol::sequence));
+    BOOST_REQUIRE(!zmq_accessor::subscribed(none, zmq_protocol::sequence));
 }
 
 BOOST_AUTO_TEST_CASE(zmq__sequence_body__reversed_hash_then_label__expected)
 {
     const auto hash = base16_hash("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
-    const auto body = zmq_protocol::sequence_body(hash, zmq_protocol::label::block_connected);
+    const auto body = zmq_accessor::sequence_body(hash, zmq_protocol::label::block_connected);
 
     BOOST_REQUIRE_EQUAL(body.size(), hash_size + 1u);
     BOOST_REQUIRE_EQUAL(body.front(), 0x00u);

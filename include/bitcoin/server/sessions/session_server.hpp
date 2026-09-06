@@ -77,10 +77,13 @@ protected:
         return !this->node_config().node.delay_inbound || this->is_recent();
     }
 
-    /// The ZeroMQ socket type is a property of the channel type.
+    /// The ZeroMQ socket type is a property of a zmtp channel type.
     inline network::zmtp::role role() const NOEXCEPT override
     {
-        return channel_t::role;
+        if constexpr (requires { channel_t::role; })
+            return channel_t::role;
+        else
+            return network::zmtp::role::undefined;
     }
 
     /// Override to construct channel. This allows the implementation to pass

@@ -74,9 +74,7 @@ public:
     void start() NOEXCEPT override;
     void stopping(const code& ec) NOEXCEPT override;
 
-    /// Codec (static, exposed for test).
-    /// -----------------------------------------------------------------------
-
+protected:
     /// The topic matches a subscription prefix (empty matches every topic).
     static bool subscribed(const system::data_stack& subscriptions,
         std::string_view topic) NOEXCEPT;
@@ -85,7 +83,6 @@ public:
     static system::data_chunk sequence_body(const system::hash_digest& hash,
         label label) NOEXCEPT;
 
-protected:
     /// Handlers (the method is native, its first parameter a shared_ptr).
     bool handle_subscribe(const code& ec, const system::chunk_cptr& prefix,
         bool stop) NOEXCEPT;

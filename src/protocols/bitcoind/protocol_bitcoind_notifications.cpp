@@ -18,11 +18,10 @@
  */
 #include <bitcoin/server/protocols/protocol_bitcoind_notifications.hpp>
 
-#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
-
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
 #include <bitcoin/server/serializers/serializers.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
