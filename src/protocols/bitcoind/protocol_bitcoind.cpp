@@ -285,7 +285,7 @@ void protocol_bitcoind::send_rpc(response_t&& model, size_t size_hint,
             if (close_reason)
                 stop(close_reason);
             else
-                network::protocol::resume();
+                read_next();
 
             return;
         }

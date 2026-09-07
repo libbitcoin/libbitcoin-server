@@ -118,9 +118,8 @@ bool protocol_bitcoind_zmq::handle_subscribe(const code& ec,
         subscriptions_.erase(it);
     }
 
-    // A subscription has no response, so the read is resumed once handled.
-    // Qualified, as node::protocol::resume resumes the suspended network.
-    network::protocol::resume();
+    // A subscription has no response, so the next read is armed once handled.
+    read_next();
     return true;
 }
 
