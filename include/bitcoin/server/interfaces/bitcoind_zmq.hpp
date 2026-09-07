@@ -31,7 +31,7 @@ struct bitcoind_zmq_methods
 {
     static constexpr std::tuple methods
     {
-        method<"subscribe", system::chunk_cptr, boolean_t>{ "prefix", "stop" }
+        method<"subscribe", system::chunk_cptr, boolean_t>{ "prefix", "cancel" }
     };
 
     template <typename... Args>

@@ -60,29 +60,36 @@ void protocol_bitcoind_notifications::start() NOEXCEPT
 // Notifications methods.
 // ----------------------------------------------------------------------------
 
-// Each configured publisher binding carries every topic (as bitcoind, one
-// entry per notifier). There is no high water mark, reported as unbounded.
+static object_t zmq_notification(const network::config::authority& bind,
+    const std::string_view& topic) NOEXCEPT
+{
+    const auto address = "tcp://" + bind.to_string();
+    return
+    {
+        { "type", "pub" + std::string{ topic } },
+        { "address", address },
+        { "hwm", 0 }
+    };
+}
+
+// There is no high water mark, reported as unbounded.
 static void add_zmq_notifications(array_t& notifications,
     const network::config::authorities& bindings) NOEXCEPT
 {
+    using topic = protocol_bitcoind_zmq::topic;
     for (const auto& bind: bindings)
     {
-        const auto address = "tcp://" + bind.to_string();
-        for (const auto topic: protocol_bitcoind_zmq::topics)
-        {
-            notifications.push_back(object_t
-            {
-                { "type", "pub" + std::string{ topic } },
-                { "address", address },
-                { "hwm", 0 }
-            });
-        }
+        notifications.push_back(zmq_notification(bind, topic::hash_block));
+        notifications.push_back(zmq_notification(bind, topic::raw_block));
+        notifications.push_back(zmq_notification(bind, topic::hash_tx));
+        notifications.push_back(zmq_notification(bind, topic::raw_tx));
+        notifications.push_back(zmq_notification(bind, topic::sequence));
     }
 }
 
 // The clear (NULL) and secured (CURVE) bindings are reported alike.
-bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& ec,
-    rpc_interface::get_zmq_notifications) NOEXCEPT
+bool protocol_bitcoind_notifications::handle_get_zmq_notifications(
+    const code& ec, rpc_interface::get_zmq_notifications) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -91,7 +98,8 @@ bool protocol_bitcoind_notifications::handle_get_zmq_notifications(const code& e
     const auto& zmq = server_settings().bitcoind_zmq;
     add_zmq_notifications(notifications, zmq.binds);
     add_zmq_notifications(notifications, zmq.safes);
-    send_result(std::move(notifications), 2);
+    const auto size = notifications.size() * 100;
+    send_result(std::move(notifications), size);
     return true;
 }
 
