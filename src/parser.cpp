@@ -48,6 +48,7 @@ parser::parser(system::chain::selection context,
 
     configured.network.enable_relay = true;
     configured.network.enable_address = true;
+    configured.network.enable_not_found = true;
     configured.network.enable_address_v2 = false;
     configured.network.enable_witness_tx = false;
     configured.network.enable_compact = false;
@@ -653,6 +654,11 @@ options_metadata parser::load_settings() THROWS
         "peer.enable_reject",
         value<bool>(&configured.network.enable_reject),
         "Enable reject messages, defaults to 'false'."
+    )
+    (
+        "peer.enable_not_found",
+        value<bool>(&configured.network.enable_not_found),
+        "Enable not found messages, defaults to 'true'."
     )
     (
         "peer.enable_relay",
