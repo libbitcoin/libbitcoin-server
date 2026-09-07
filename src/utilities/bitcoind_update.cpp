@@ -83,7 +83,7 @@ void update_psbt(psbt::transaction& doc, const node::query& query,
             if (!out)
                 continue;
 
-            // Only witness utxos are populated (as bitcoind).
+            // Only witness utxos are populated.
             if (chain::script::is_pay_witness_pattern(out->script().ops()))
                 in.witness_utxo = out;
 

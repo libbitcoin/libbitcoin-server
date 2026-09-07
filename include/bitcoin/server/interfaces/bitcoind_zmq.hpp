@@ -26,9 +26,7 @@ namespace libbitcoin {
 namespace server {
 namespace interface {
 
-/// The subscriber side of the bitcoind zmq notification interface (doc/zmq.md)
-/// as read by a publisher socket: a SUBSCRIBE or CANCEL command (or the 3.0
-/// message form) carrying a topic prefix.
+/// The subscriber side of the bitcoind zmq notification interface.
 struct bitcoind_zmq_methods
 {
     static constexpr std::tuple methods
@@ -41,8 +39,7 @@ struct bitcoind_zmq_methods
 
     /// Method names as reported by help.
     static constexpr auto name_data = method_names<methods>();
-    static constexpr std::string_view names{ name_data.data(),
-        name_data.size() };
+    static constexpr std::string_view names{ name_data.data(), name_data.size() };
 
     template <size_t Index>
     using at = method_at<methods, Index>;
