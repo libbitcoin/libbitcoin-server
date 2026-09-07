@@ -56,10 +56,10 @@ and html are not independent subclasses (operate within http).
 
 network::protocol
 ├── [server:protocol_stratum_v2]
-├── [server::protocol_bitcoind_zmq]
 ├── protocol_rpc<Channel>
-│   └── [server::protocol_rpc<server::channel_stratum_v1>]
-│   └── [server::protocol_rpc<server::channel_electrum>]
+│   ├── [server::protocol_rpc<server::channel_stratum_v1>]
+│   ├── [server::protocol_rpc<server::channel_electrum>]
+│   └── [server::protocol_rpc<server::channel_bitcoind_zmq>]
 ├── protocol_http
 │   └── [server::protocol_http]
 └── protocol_peer
@@ -94,14 +94,15 @@ node::protocol
     └── protocol_transaction_out_106
 
 server::protocol → node::protocol
-├── protocol_stratum_v2              → network::protocol
-├── protocol_bitcoind_zmq            → network::protocol
-├── protocol_rpc<channel_stratum_v1> → network::protocol_rpc<channel_stratum_v1>
+├── protocol_stratum_v2                → network::protocol
+├── protocol_rpc<channel_stratum_v1>   → network::protocol_rpc<channel_stratum_v1>
 │   └── protocol_stratum_v1
-├── protocol_rpc<channel_electrum>   → network::protocol_rpc<channel_electrum>
+├── protocol_rpc<channel_electrum>     → network::protocol_rpc<channel_electrum>
 │   ├── protocol_electrum
 │   └── protocol_electrum_version
-└── protocol_http                    → network::protocol_http
+├── protocol_rpc<channel_bitcoind_zmq> → network::protocol_rpc<channel_bitcoind_zmq>
+│   └── protocol_bitcoind_zmq
+└── protocol_http                      → network::protocol_http
     ├── protocol_html
     │   ├── protocol_admin
     │   └── protocol_native

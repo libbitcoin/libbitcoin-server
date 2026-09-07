@@ -35,10 +35,10 @@ html are not fully independent subclasses (operate within http).
 
 network::channel
 ├── [server::channel_stratum_v2]
-├── [server::channel_bitcoind_zmq]
 ├── channel_rpc<Interface>
-│   └── [server::channel_stratum_v1]
-│   └── [server::channel_electrum]
+│   ├── [server::channel_stratum_v1]
+│   ├── [server::channel_electrum]
+│   └── [server::channel_bitcoind_zmq]
 ├── channel_http
 │   └── [server::channel_http<Body>]
 └── channel_peer
@@ -49,10 +49,10 @@ node::channel
 └── channel_peer       → network::channel_peer
 
 server::channel → node::channel
-├── channel_stratum_v2 → network::channel
-├── channel_bitcoind_zmq → network::channel
-├── channel_stratum_v1 → network::channel_rpc<interface::stratum_v1>
-├── channel_electrum   → network::channel_rpc<interface::electrum>
-└── channel_http<Body> → network::channel_http
+├── channel_stratum_v2   → network::channel
+├── channel_stratum_v1   → network::channel_rpc<interface::stratum_v1>
+├── channel_electrum     → network::channel_rpc<interface::electrum>
+├── channel_bitcoind_zmq → network::channel_rpc<interface::bitcoind_zmq>
+└── channel_http<Body>   → network::channel_http
 
 */
