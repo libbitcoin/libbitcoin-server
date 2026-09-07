@@ -35,7 +35,7 @@ class BCS_API channel_stratum_v1
 public:
     typedef std::shared_ptr<channel_stratum_v1> ptr;
     using interface_t = interface::stratum_v1;
-    using options_t = typename network::channel_rpc<interface_t>::options_t;
+    using options_t = network::settings::tls_server;
 
     inline channel_stratum_v1(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,

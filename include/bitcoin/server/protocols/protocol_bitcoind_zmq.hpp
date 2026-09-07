@@ -22,34 +22,51 @@
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol.hpp>
+#include <bitcoin/server/protocols/protocol_rpc.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// bitcoind zmq notifications over native zmtp. Subscriptions are recorded
-/// from the subscriber (3.1 commands and the 3.0 message form), bounded by
-/// configuration, and notifications are published for chaser events to
-/// matching subscriptions with per-topic sequences (bitcoind semantics).
+/// bitcoind zmq notifications over native zmtp. Subscriptions are topic
+/// prefixes recorded from the subscriber (bounded by configuration), and
+/// notifications are published for chaser events to the matching topics with
+/// per-topic sequences (bitcoind semantics). The socket frames each
+/// notification as [topic][body][32-bit little-endian sequence].
 class BCS_API protocol_bitcoind_zmq
-  : public server::protocol,
-    public network::protocol,
+  : public protocol_rpc<channel_bitcoind_zmq>,
     protected network::tracker<protocol_bitcoind_zmq>
 {
 public:
     typedef std::shared_ptr<protocol_bitcoind_zmq> ptr;
-    using channel_t = channel_bitcoind_zmq;
-    using options_t = channel_t::options_t;
-    using frame_t = channel_t::frame_t;
-    using topics = interface::bitcoind_zmq;
+    using rpc_interface = interface::bitcoind_zmq;
+
+    /// Topics (bitcoind doc/zmq.md).
+    static constexpr std::string_view hash_block{ "hashblock" };
+    static constexpr std::string_view raw_block{ "rawblock" };
+    static constexpr std::string_view hash_tx{ "hashtx" };
+    static constexpr std::string_view raw_tx{ "rawtx" };
+    static constexpr std::string_view sequence{ "sequence" };
+
+    /// All topics (getzmqnotifications enumerates these per binding).
+    static constexpr std::array<std::string_view, 5> topics
+    {
+        hash_block, raw_block, hash_tx, raw_tx, sequence
+    };
+
+    /// Sequence topic labels, following the reversed 32 byte hash.
+    enum class label : uint8_t
+    {
+        block_connected = 'C',
+        block_disconnected = 'D',
+        transaction_accepted = 'A',
+        transaction_removed = 'R'
+    };
 
     inline protocol_bitcoind_zmq(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : server::protocol(session, channel),
-        network::protocol(session, channel),
+      : protocol_rpc<channel_bitcoind_zmq>(session, channel, options),
         options_(options),
-        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         network::tracker<protocol_bitcoind_zmq>(session->log)
     {
     }
@@ -57,50 +74,36 @@ public:
     void start() NOEXCEPT override;
     void stopping(const code& ec) NOEXCEPT override;
 
-    /// Codec (static, exposed for test).
-    /// -----------------------------------------------------------------------
-
-    /// Parse a delivered frame as a subscription: a 3.1 SUBSCRIBE/CANCEL
-    /// command or the 3.0 message form (0x01/0x00 prefix). False otherwise.
-    static bool subscription(bool& add, system::data_chunk& topic,
-        const frame_t& frame) NOEXCEPT;
-
+protected:
     /// The topic matches a subscription prefix (empty matches every topic).
     static bool subscribed(const system::data_stack& subscriptions,
         std::string_view topic) NOEXCEPT;
 
-    /// Frame a notification: [topic][body][32-bit little-endian sequence].
-    static system::data_chunk notification(std::string_view topic,
-        const system::data_chunk& body, uint32_t sequence) NOEXCEPT;
-
     /// The sequence topic body: reversed hash then label.
     static system::data_chunk sequence_body(const system::hash_digest& hash,
-        uint8_t label) NOEXCEPT;
+        label label) NOEXCEPT;
 
-protected:
-    /// Chaser events (not stranded).
+    /// Handlers (the method is native, its first parameter a shared_ptr).
+    bool handle_subscribe(const code& ec, const system::chunk_cptr& prefix,
+        bool stop) NOEXCEPT;
+
+    /// Event handlers.
     bool handle_chase(const code& ec, node::chase event_,
         node::event_value value) NOEXCEPT;
-
-    /// Subscriptions (stranded).
-    void handle_frame(const code& ec, size_t size) NOEXCEPT;
 
     /// Notifications (stranded).
     void do_organized(node::header_t link) NOEXCEPT;
     void publish(std::string_view topic, system::data_chunk&& body) NOEXCEPT;
-    void handle_publish(const code& ec, size_t size) NOEXCEPT;
 
 private:
     static size_t index(std::string_view topic) NOEXCEPT;
 
-    // These are thread safe.
+    // This is thread safe.
     const options_t& options_;
-    const channel_t::ptr channel_;
 
     // These are protected by the channel strand.
-    frame_t frame_{};
     system::data_stack subscriptions_{};
-    std::array<uint32_t, topics::names.size()> sequences_{};
+    std::array<uint32_t, topics.size()> sequences_{};
 };
 
 } // namespace server

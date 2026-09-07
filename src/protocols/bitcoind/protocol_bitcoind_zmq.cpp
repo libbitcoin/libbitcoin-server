@@ -44,10 +44,8 @@ void protocol_bitcoind_zmq::start() NOEXCEPT
     // Chaser subscription is asynchronous, events may be missed.
     subscribe_chase(BIND(handle_chase, _1, _2, _3));
 
-    // One read stays armed: the proxy absorbs keepalive and delivers
-    // subscriptions, each of which is recorded before the read is re-armed.
-    channel_->read_frame(frame_, BIND(handle_frame, _1, _2));
-    network::protocol::start();
+    SUBSCRIBE_RPC(handle_subscribe, _1, _2, _3);
+    protocol_rpc<channel_bitcoind_zmq>::start();
 }
 
 // Events unsubscription is asynchronous, race is ok.
@@ -55,45 +53,11 @@ void protocol_bitcoind_zmq::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     unsubscribe_chase();
-    network::protocol::stopping(ec);
+    protocol_rpc<channel_bitcoind_zmq>::stopping(ec);
 }
 
-// Codec (static).
+// Utilities (static).
 // ----------------------------------------------------------------------------
-
-bool protocol_bitcoind_zmq::subscription(bool& add, data_chunk& topic,
-    const frame_t& frame) NOEXCEPT
-{
-    using stream = zmtp::stream;
-
-    if (frame.command())
-    {
-        std::string name{};
-        std::span<const uint8_t> content{};
-        const std::span<const uint8_t> body{ frame.body };
-        if (!stream::command_name(name, content, body))
-            return false;
-
-        if (name == "SUBSCRIBE")
-            add = true;
-        else if (name == "CANCEL")
-            add = false;
-        else
-            return false;
-
-        topic.assign(content.begin(), content.end());
-        return true;
-    }
-
-    // The 3.0 dialect: a single frame message prefixed 0x01 (subscribe) or
-    // 0x00 (cancel), accepted from any peer (as libzmq).
-    if (frame.more() || frame.body.empty() || frame.body.front() > 0x01)
-        return false;
-
-    add = (frame.body.front() == 0x01);
-    topic.assign(std::next(frame.body.begin()), frame.body.end());
-    return true;
-}
 
 bool protocol_bitcoind_zmq::subscribed(const data_stack& subscriptions,
     std::string_view topic) NOEXCEPT
@@ -107,80 +71,54 @@ bool protocol_bitcoind_zmq::subscribed(const data_stack& subscriptions,
         });
 }
 
-data_chunk protocol_bitcoind_zmq::notification(std::string_view topic,
-    const data_chunk& body, uint32_t sequence) NOEXCEPT
-{
-    const data_stack parts
-    {
-        data_chunk{ topic.begin(), topic.end() },
-        body,
-        to_chunk(to_little_endian(sequence))
-    };
-
-    return zmtp::stream::frame_message(parts);
-}
-
 data_chunk protocol_bitcoind_zmq::sequence_body(const hash_digest& hash,
-    uint8_t label) NOEXCEPT
+    label label) NOEXCEPT
 {
     // Hashes are published in rpc (reversed) byte order.
     auto body = to_chunk(reverse_copy(hash));
-    body.push_back(label);
+    body.push_back(to_value(label));
     return body;
 }
 
 // private static
 size_t protocol_bitcoind_zmq::index(std::string_view topic) NOEXCEPT
 {
-    const auto it = std::find(topics::names.begin(), topics::names.end(),
-        topic);
-
-    if (it == topics::names.end())
+    const auto it = std::find(topics.begin(), topics.end(), topic);
+    if (it == topics.end())
         return zero;
 
-    return possible_narrow_sign_cast<size_t>(
-        std::distance(topics::names.begin(), it));
+    return possible_narrow_sign_cast<size_t>(std::distance(topics.begin(), it));
 }
 
-// Subscriptions.
+// Handlers.
 // ----------------------------------------------------------------------------
 
-void protocol_bitcoind_zmq::handle_frame(const code& ec,
-    size_t) NOEXCEPT
+// A subscription is a topic prefix (as libzmq), so it is matched against each
+// topic at publication. A subscription beyond the configured limit is not
+// recorded (there is no response by which to refuse it).
+bool protocol_bitcoind_zmq::handle_subscribe(const code& ec,
+    const chunk_cptr& prefix, bool stop) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return;
+        return false;
 
-    if (ec)
+    const auto it = std::find(subscriptions_.begin(), subscriptions_.end(),
+        *prefix);
+
+    // Prefix subscription set; duplicates collapse to a single entry.
+    if (!stop && it == subscriptions_.end())
     {
-        stop(ec);
-        return;
+        if (subscriptions_.size() < options_.maximum_subscriptions)
+            subscriptions_.push_back(*prefix);
+    }
+    else if (stop && it != subscriptions_.end())
+    {
+        subscriptions_.erase(it);
     }
 
-    bool add{};
-    data_chunk topic{};
-    if (subscription(add, topic, frame_))
-    {
-        const auto it = std::find(subscriptions_.begin(),
-            subscriptions_.end(), topic);
-
-        // Prefix subscription set; duplicates collapse to a single entry.
-        if (add && it == subscriptions_.end())
-        {
-            // A subscription beyond the configured limit is not recorded.
-            if (subscriptions_.size() < options_.maximum_subscriptions)
-                subscriptions_.push_back(std::move(topic));
-        }
-        else if (!add && it != subscriptions_.end())
-        {
-            subscriptions_.erase(it);
-        }
-    }
-
-    // A publisher expects nothing else, other frames are ignored.
-    channel_->read_frame(frame_, BIND(handle_frame, _1, _2));
+    return true;
 }
 
 // Notifications.
@@ -233,18 +171,20 @@ void protocol_bitcoind_zmq::do_organized(node::header_t link) NOEXCEPT
     }
 
     const auto hash = block->hash();
-    publish(topics::hash_block, to_chunk(reverse_copy(hash)));
-    publish(topics::raw_block, block->to_data(true));
-    publish(topics::sequence, sequence_body(hash, topics::block_connected));
+    publish(hash_block, to_chunk(reverse_copy(hash)));
+    publish(raw_block, block->to_data(true));
+    publish(sequence, sequence_body(hash, label::block_connected));
 
     // Every transaction of a connected block is published (as bitcoind).
     for (const auto& tx: *block->transactions_ptr())
     {
-        publish(topics::hash_tx, to_chunk(reverse_copy(tx->hash(false))));
-        publish(topics::raw_tx, tx->to_data(true));
+        publish(hash_tx, to_chunk(reverse_copy(tx->hash(false))));
+        publish(raw_tx, tx->to_data(true));
     }
 }
 
+// The socket frames the notification as [topic][body][sequence] (the params
+// are one part each, the sequence as 32-bit little-endian).
 void protocol_bitcoind_zmq::publish(std::string_view topic,
     data_chunk&& body) NOEXCEPT
 {
@@ -255,20 +195,12 @@ void protocol_bitcoind_zmq::publish(std::string_view topic,
 
     // The per-topic sequence is incremented after each publication.
     auto& sequence = sequences_.at(index(topic));
-    const auto packet = to_shared(notification(topic, body, sequence++));
-    channel_->write_packet(packet, BIND(handle_publish, _1, _2));
-}
-
-void protocol_bitcoind_zmq::handle_publish(const code& ec,
-    size_t) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (stopped(ec))
-        return;
-
-    if (ec)
-        stop(ec);
+    const auto size = topic.size() + body.size() + sizeof(uint32_t);
+    send_notification(std::string{ topic }, rpc::array_t
+    {
+        rpc::any_t{ to_shared(std::move(body)) },
+        rpc::value_t{ sequence++ }
+    }, size);
 }
 
 BC_POP_WARNING()

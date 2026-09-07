@@ -20,34 +20,35 @@
 #define LIBBITCOIN_SERVER_INTERFACES_BITCOIND_ZMQ_HPP
 
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/types.hpp>
 
 namespace libbitcoin {
 namespace server {
 namespace interface {
 
-/// The bitcoind zmq notification interface: a set of published topics, not
-/// json-rpc methods. Each notification is a three frame message of topic,
-/// body and a per-topic 32-bit little-endian sequence (bitcoind doc/zmq.md).
-struct bitcoind_zmq_topics
+/// The subscriber side of the bitcoind zmq notification interface (doc/zmq.md)
+/// as read by a publisher socket: a SUBSCRIBE or CANCEL command (or the 3.0
+/// message form) carrying a topic prefix.
+struct bitcoind_zmq_methods
 {
-    /// Topic names (the subscription prefixes).
-    static constexpr std::string_view hash_block{ "hashblock" };
-    static constexpr std::string_view raw_block{ "rawblock" };
-    static constexpr std::string_view hash_tx{ "hashtx" };
-    static constexpr std::string_view raw_tx{ "rawtx" };
-    static constexpr std::string_view sequence{ "sequence" };
-
-    /// All topics (getzmqnotifications enumerates these per binding).
-    static constexpr std::array<std::string_view, 5> names
+    static constexpr std::tuple methods
     {
-        hash_block, raw_block, hash_tx, raw_tx, sequence
+        method<"subscribe", system::chunk_cptr, boolean_t>{ "prefix", "stop" }
     };
 
-    /// Sequence topic labels, following the reversed 32 byte hash.
-    static constexpr uint8_t block_connected{ 'C' };
-    static constexpr uint8_t block_disconnected{ 'D' };
-    static constexpr uint8_t transaction_accepted{ 'A' };
-    static constexpr uint8_t transaction_removed{ 'R' };
+    template <typename... Args>
+    using subscriber = network::unsubscriber<Args...>;
+
+    /// Method names as reported by help.
+    static constexpr auto name_data = method_names<methods>();
+    static constexpr std::string_view names{ name_data.data(),
+        name_data.size() };
+
+    template <size_t Index>
+    using at = method_at<methods, Index>;
+
+    // Derive this from above in c++26 using reflection.
+    using subscribe = at<0>;
 };
 
 } // namespace interface
