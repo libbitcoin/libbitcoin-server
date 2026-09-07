@@ -416,7 +416,7 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
         return;
     }
 
-    // Estimate unavailability is reported in-band (as bitcoind).
+    // Estimate unavailability is reported in-band.
     if (unavailable)
     {
         send_result(object_t

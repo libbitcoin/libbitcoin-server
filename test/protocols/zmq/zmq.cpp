@@ -22,14 +22,6 @@
 using namespace system;
 using zmtp_stream = network::zmtp::stream;
 using zmq_protocol = protocol_bitcoind_zmq;
-
-// Expose protected statics for test.
-struct zmq_accessor
-  : zmq_protocol
-{
-    using zmq_protocol::subscribed;
-    using zmq_protocol::sequence_body;
-};
 using peer_socket = boost::asio::ip::tcp::socket;
 
 // Test infrastructure (synchronous ZMTP subscriber peer).
@@ -119,6 +111,16 @@ static data_stack peer_read_message(peer_socket& peer)
     return parts;
 }
 
+// Synchronously read to require that the server has closed the connection.
+static void peer_read_closed(peer_socket& peer)
+{
+    uint8_t byte{};
+    network::boost_code ec{};
+    const boost::asio::mutable_buffer in{ &byte, sizeof(byte) };
+    boost::asio::read(peer, in, ec);
+    BOOST_REQUIRE(ec);
+}
+
 // Synchronously perform the peer (SUB) side of the ZMTP handshake.
 static void peer_handshake(peer_socket& peer)
 {
@@ -143,6 +145,12 @@ static void peer_handshake(peer_socket& peer)
 static void peer_subscribe(peer_socket& peer, std::string_view topic)
 {
     peer_write(peer, command("SUBSCRIBE", { topic.begin(), topic.end() }));
+}
+
+// Cancel a topic subscription (3.1 command dialect).
+static void peer_cancel(peer_socket& peer, std::string_view topic)
+{
+    peer_write(peer, command("CANCEL", { topic.begin(), topic.end() }));
 }
 
 // Send a PING and require the echoed PONG, proving all prior frames were
@@ -325,38 +333,6 @@ static data_chunk peer_curve_initiate(peer_socket& peer, zmtp_cipher& client)
     return reply;
 }
 
-// Codec (static).
-// ----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_SUITE(zmq_codec_tests)
-
-BOOST_AUTO_TEST_CASE(zmq__subscribed__prefix_and_empty__expected)
-{
-    const data_stack prefix{ to_chunk(std::string{ "hash" }) };
-    BOOST_REQUIRE(zmq_accessor::subscribed(prefix, zmq_protocol::hash_block));
-    BOOST_REQUIRE(zmq_accessor::subscribed(prefix, zmq_protocol::hash_tx));
-    BOOST_REQUIRE(!zmq_accessor::subscribed(prefix, zmq_protocol::raw_block));
-
-    const data_stack all{ data_chunk{} };
-    BOOST_REQUIRE(zmq_accessor::subscribed(all, zmq_protocol::sequence));
-
-    const data_stack none{};
-    BOOST_REQUIRE(!zmq_accessor::subscribed(none, zmq_protocol::sequence));
-}
-
-BOOST_AUTO_TEST_CASE(zmq__sequence_body__reversed_hash_then_label__expected)
-{
-    const auto hash = base16_hash("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
-    const auto body = zmq_accessor::sequence_body(hash, zmq_protocol::label::block_connected);
-
-    BOOST_REQUIRE_EQUAL(body.size(), hash_size + 1u);
-    BOOST_REQUIRE_EQUAL(body.front(), 0x00u);
-    BOOST_REQUIRE_EQUAL(body.at(31), 0x6fu);
-    BOOST_REQUIRE_EQUAL(body.back(), 'C');
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
 // Service (server with a subscribed peer).
 // ----------------------------------------------------------------------------
 
@@ -371,7 +347,7 @@ BOOST_AUTO_TEST_CASE(zmq__handshake__v31_peer__ready)
 BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
 {
     peer_handshake(socket_);
-    peer_subscribe(socket_, zmq_protocol::hash_block);
+    peer_subscribe(socket_, "hashblock");
     peer_ping_pong(socket_);
 
     const auto link = query_.to_confirmed(1);
@@ -396,7 +372,7 @@ BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
 BOOST_AUTO_TEST_CASE(zmq__rawtx__organized__block_transaction_only_subscribed_topic)
 {
     peer_handshake(socket_);
-    peer_subscribe(socket_, zmq_protocol::raw_tx);
+    peer_subscribe(socket_, "rawtx");
     peer_ping_pong(socket_);
 
     const auto link = query_.to_confirmed(1);
@@ -408,14 +384,14 @@ BOOST_AUTO_TEST_CASE(zmq__rawtx__organized__block_transaction_only_subscribed_to
     notify(node::chase::organized, link);
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk(std::string{ "rawtx" }));
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
     BOOST_REQUIRE_EQUAL(message.at(1), expected);
 }
 
 BOOST_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label)
 {
     peer_handshake(socket_);
-    peer_subscribe(socket_, zmq_protocol::sequence);
+    peer_subscribe(socket_, "sequence");
     peer_ping_pong(socket_);
 
     const auto link = query_.to_confirmed(1);
@@ -427,25 +403,90 @@ BOOST_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label
     notify(node::chase::organized, link);
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk(std::string{ "sequence" }));
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
     BOOST_REQUIRE_EQUAL(message.at(1), expected);
 }
 
-BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__third_subscription_not_recorded)
+BOOST_AUTO_TEST_CASE(zmq__subscribe__empty_prefix__all_topics_published)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "");
+    peer_ping_pong(socket_);
+
+    // The empty prefix matches every topic, published in this order.
+    notify(node::chase::organized, query_.to_confirmed(1));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashtx"));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashblock"));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("sequence"));
+}
+
+BOOST_AUTO_TEST_CASE(zmq__rawtx__reorganized__block_transaction_published)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "rawtx");
+    peer_ping_pong(socket_);
+
+    const auto link = query_.to_confirmed(1);
+    const auto block = query_.get_block(link, true);
+    BOOST_REQUIRE(block);
+    const auto expected = block->transactions_ptr()->front()->to_data(true);
+
+    notify(node::chase::reorganized, link);
+    const auto message = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(message.size(), 3u);
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(message.at(1), expected);
+}
+
+BOOST_AUTO_TEST_CASE(zmq__sequence__reorganized__reversed_hash_and_disconnected_label)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "sequence");
+    peer_ping_pong(socket_);
+
+    const auto link = query_.to_confirmed(1);
+    const auto header = query_.get_header(link);
+    BOOST_REQUIRE(header);
+    auto expected = to_chunk(reverse_copy(header->hash()));
+    expected.push_back('D');
+
+    notify(node::chase::reorganized, link);
+    const auto message = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(message.size(), 3u);
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
+    BOOST_REQUIRE_EQUAL(message.at(1), expected);
+}
+
+BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__third_subscription__channel_closed)
 {
     peer_handshake(socket_);
 
-    // The fixture limit is two; hashblock (third) is not recorded.
-    peer_subscribe(socket_, zmq_protocol::hash_tx);
-    peer_subscribe(socket_, zmq_protocol::raw_tx);
-    peer_subscribe(socket_, zmq_protocol::hash_block);
+    // The fixture limit is two, and there is no response to carry a reject.
+    peer_subscribe(socket_, "hashtx");
+    peer_subscribe(socket_, "rawtx");
+    peer_subscribe(socket_, "hashblock");
+    peer_read_closed(socket_);
+}
+
+BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__cancelled__subscription_released)
+{
+    peer_handshake(socket_);
+
+    // The fixture limit is two, and the cancels release both subscriptions.
+    peer_subscribe(socket_, "hashtx");
+    peer_subscribe(socket_, "rawtx");
+    peer_cancel(socket_, "hashtx");
+    peer_cancel(socket_, "rawtx");
+    peer_subscribe(socket_, "hashblock");
     peer_ping_pong(socket_);
 
-    // hashblock would precede hashtx if it had been recorded.
+    // The cancelled topics precede hashblock but are no longer published.
     notify(node::chase::organized, query_.to_confirmed(1));
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk(std::string{ "hashtx" }));
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -490,7 +531,7 @@ BOOST_AUTO_TEST_CASE(zmq_curve__hashblock__organized__boxed_notification)
 {
     auto client = curve_client();
     peer_curve_handshake(socket_, client);
-    peer_curve_subscribe(socket_, client, zmq_protocol::hash_block);
+    peer_curve_subscribe(socket_, client, "hashblock");
     peer_curve_ping_pong(socket_, client);
 
     const auto link = query_.to_confirmed(1);
@@ -500,7 +541,7 @@ BOOST_AUTO_TEST_CASE(zmq_curve__hashblock__organized__boxed_notification)
 
     const auto message = peer_curve_read_message(socket_, client);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), data_chunk(zmq_protocol::hash_block.begin(), zmq_protocol::hash_block.end()));
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));
     BOOST_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(header->hash())));
     BOOST_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
 }
