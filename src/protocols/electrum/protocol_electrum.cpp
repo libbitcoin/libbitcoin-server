@@ -125,11 +125,11 @@ void protocol_electrum::stopping(const code& ec) NOEXCEPT
     protocol_rpc<interface::electrum>::stopping(ec);
 }
 
-// A method not subscribed by any attached protocol (as previously dispatched).
+// No attached protocol subscribes the method (terminal responder).
 void protocol_electrum::handle_unclaimed(const request_t&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    stop(network::error::unexpected_method);
+    send_code(error::electrum::method_not_found);
 }
 
 // Handlers (event subscription).
