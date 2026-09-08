@@ -81,23 +81,6 @@ protected:
         return true;
     }
 
-    /// Overridden to reject batched v1 (btcd laxness) on any transport.
-    inline void dispatch(
-        const network::http::request_cptr& request) NOEXCEPT override
-    {
-        BC_ASSERT(stranded());
-
-        const auto& body = request->body();
-        if (body.contains<network::rpc::request>() &&
-            body.get<network::rpc::request>().lax_batch)
-        {
-            stop(network::error::jsonrpc_batch_requires_v2);
-            return;
-        }
-
-        channel_rpc::dispatch(request);
-    }
-
 private:
     // This is thread safe.
     const options_t& options_;
