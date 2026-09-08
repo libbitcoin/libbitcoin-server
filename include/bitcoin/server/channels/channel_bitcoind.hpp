@@ -16,46 +16,38 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_HTTP_HPP
-#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_HTTP_HPP
+#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_HPP
+#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_HPP
 
-#include <bitcoin/server/channels/channel.hpp>
+#include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Common base for http service channels. A service channel overrides
-/// default_body to preselect its reader body, and a json-rpc body also
-/// implies tcp downgrade detection. An in-band service (e.g. btcd
-/// authenticate) authorizes after upgrade, so its upgrade is open.
-class BCS_API channel_http
-  : public server::channel,
-    public network::channel_http
+/// Channel for the bitcoind service, reads a json-rpc body (which implies
+/// tcp downgrade detection).
+class BCS_API channel_bitcoind
+  : public channel_http,
+    protected network::tracker<channel_bitcoind>
 {
 public:
-    typedef std::shared_ptr<channel_http> ptr;
+    typedef std::shared_ptr<channel_bitcoind> ptr;
 
-    inline channel_http(const network::logger& log,
+    inline channel_bitcoind(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options,
         bool in_band=false) NOEXCEPT
-      : server::channel(log, socket, identifier, config),
-        network::channel_http(log, socket, identifier, config.network, options,
-            in_band)
+      : channel_http(log, socket, identifier, config, options, in_band),
+        network::tracker<channel_bitcoind>(log)
     {
     }
 
 protected:
-    using value_type = network::http::body::value_type;
-
-    /// There is no forwarding constructor so assign and move.
-    template <typename Body>
-    static inline value_type to_body() NOEXCEPT
+    /// Overridden to set the preselected reader body type.
+    inline value_type default_body() const NOEXCEPT override
     {
-        value_type value{};
-        value = Body{};
-        return value;
+        return to_body<network::rpc::request>();
     }
 };
 
