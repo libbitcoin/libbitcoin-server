@@ -135,6 +135,11 @@ bool protocol_electrum::handle_chase(const code&, node::chase event_,
     if (stopped())
         return false;
 
+    // Notifications require a full duplex transport, so subscriptions on an
+    // http (post) connection are held but not computed until it is upgraded.
+    if (!channel_->websocket() && !channel_->downgraded())
+        return true;
+
     switch (event_)
     {
         case node::chase::transaction:
