@@ -56,7 +56,7 @@ void protocol_electrum_version::shake(result_handler&& handler) NOEXCEPT
     handler_ = system::move_shared<result_handler>(std::move(handler));
 
     SUBSCRIBE_RPC(handle_server_version, _1, _2, _3, _4);
-    protocol_rpc<channel_electrum>::start();
+    protocol_rpc<interface::electrum>::start();
 }
 
 void protocol_electrum_version::finished(const code& ec,

@@ -23,7 +23,7 @@
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol_rpc.hpp>
+#include <bitcoin/server/protocols/protocol.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -31,11 +31,14 @@ namespace server {
 /// bitcoind zmq notifications over native zmtp.
 /// The socket frames each as [topic][body][sequence].
 class BCS_API protocol_bitcoind_zmq
-  : public protocol_rpc<channel_bitcoind_zmq>,
+  : public server::protocol,
+    public network::protocol_rpc<channel_bitcoind_zmq>,
     protected network::tracker<protocol_bitcoind_zmq>
 {
 public:
     typedef std::shared_ptr<protocol_bitcoind_zmq> ptr;
+    using channel_t = channel_bitcoind_zmq;
+    using options_t = channel_t::options_t;
     using rpc_interface = interface::bitcoind_zmq;
 
     /// Sequence topic labels.
@@ -59,7 +62,8 @@ public:
     inline protocol_bitcoind_zmq(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_rpc<channel_bitcoind_zmq>(session, channel, options),
+      : server::protocol(session, channel),
+        network::protocol_rpc<channel_bitcoind_zmq>(session, channel, options),
         options_(options),
         network::tracker<protocol_bitcoind_zmq>(session->log)
     {

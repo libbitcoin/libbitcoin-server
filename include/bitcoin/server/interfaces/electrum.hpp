@@ -87,6 +87,10 @@ struct electrum_methods
         method<"mempool.get_info">{}
     };
 
+    /// Method names as reported by help.
+    static constexpr auto name_data = method_names<methods>();
+    static constexpr std::string_view names{ name_data.data(), name_data.size() };
+
     template <typename... Args>
     using subscriber = network::subscriber<Args...>;
 

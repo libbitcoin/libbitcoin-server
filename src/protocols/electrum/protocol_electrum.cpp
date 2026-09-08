@@ -113,7 +113,7 @@ void protocol_electrum::start() NOEXCEPT
     // Mempool methods.
     SUBSCRIBE_RPC(handle_mempool_get_fee_histogram, _1, _2);
     SUBSCRIBE_RPC(handle_mempool_get_info, _1, _2);
-    protocol_rpc<channel_electrum>::start();
+    protocol_rpc<interface::electrum>::start();
 }
 
 // Events unsubscription is asynchronous, race is ok.
@@ -122,7 +122,14 @@ void protocol_electrum::stopping(const code& ec) NOEXCEPT
     BC_ASSERT(stranded());
     stopping_.store(true);
     unsubscribe_chase();
-    protocol_rpc<channel_electrum>::stopping(ec);
+    protocol_rpc<interface::electrum>::stopping(ec);
+}
+
+// A method not subscribed by any attached protocol (as previously dispatched).
+void protocol_electrum::handle_unclaimed(const request_t&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    stop(network::error::unexpected_method);
 }
 
 // Handlers (event subscription).

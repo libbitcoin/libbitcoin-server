@@ -22,23 +22,27 @@
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol_rpc.hpp>
+#include <bitcoin/server/protocols/protocol.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class BCS_API protocol_stratum_v1
-  : public protocol_rpc<channel_stratum_v1>,
+  : public server::protocol,
+    public network::protocol_rpc<channel_stratum_v1>,
     protected network::tracker<protocol_stratum_v1>
 {
 public:
     typedef std::shared_ptr<protocol_stratum_v1> ptr;
+    using channel_t = channel_stratum_v1;
+    using options_t = channel_t::options_t;
     using rpc_interface = interface::stratum_v1;
 
     inline protocol_stratum_v1(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_rpc<channel_stratum_v1>(session, channel, options),
+      : server::protocol(session, channel),
+        network::protocol_rpc<channel_stratum_v1>(session, channel, options),
         network::tracker<protocol_stratum_v1>(session->log)
     {
     }
