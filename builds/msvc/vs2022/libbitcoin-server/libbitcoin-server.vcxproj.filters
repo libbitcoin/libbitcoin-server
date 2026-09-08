@@ -329,6 +329,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_rpc.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>

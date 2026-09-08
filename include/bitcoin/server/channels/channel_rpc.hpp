@@ -16,30 +16,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_HPP
-#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_HPP
+#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_RPC_HPP
+#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_RPC_HPP
 
-#include <bitcoin/server/channels/channel_rpc.hpp>
+#include <bitcoin/server/channels/channel_http.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Channel for the bitcoind service (universal json-rpc).
-class BCS_API channel_bitcoind
-  : public channel_rpc,
-    protected network::tracker<channel_bitcoind>
+/// Universal json-rpc channel, served over tcp/s (by downgrade), http/s and
+/// ws/s (by upgrade). Preselecting the json-rpc body is what implies the
+/// downgrade detection, so a service channel derives this to speak json-rpc
+/// on any of the three, adding only its own channel state.
+class BCS_API channel_rpc
+  : public channel_http
 {
 public:
-    typedef std::shared_ptr<channel_bitcoind> ptr;
+    typedef std::shared_ptr<channel_rpc> ptr;
+    using channel_http::channel_http;
 
-    inline channel_bitcoind(const network::logger& log,
-        const network::socket::ptr& socket, uint64_t identifier,
-        const node::configuration& config, const options_t& options,
-        bool in_band=false) NOEXCEPT
-      : channel_rpc(log, socket, identifier, config, options, in_band),
-        network::tracker<channel_bitcoind>(log)
+protected:
+    /// Overridden to set the preselected reader body type.
+    inline value_type default_body() const NOEXCEPT override
     {
+        return to_body<network::rpc::request>();
     }
 };
 

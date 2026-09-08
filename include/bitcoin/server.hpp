@@ -28,6 +28,7 @@
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_html.hpp>
 #include <bitcoin/server/channels/channel_http.hpp>
+#include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
 #include <bitcoin/server/channels/channel_stratum_v2.hpp>
 #include <bitcoin/server/channels/channels.hpp>

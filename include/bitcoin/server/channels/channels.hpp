@@ -26,6 +26,7 @@
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_html.hpp>
 #include <bitcoin/server/channels/channel_http.hpp>
+#include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
 #include <bitcoin/server/channels/channel_stratum_v2.hpp>
 
@@ -40,7 +41,6 @@ network::channel
 ├── [server::channel_stratum_v2]
 ├── channel_rpc<Interface>
 │   ├── [server::channel_stratum_v1]
-│   ├── [server::channel_electrum]
 │   └── [server::channel_bitcoind_zmq]
 ├── channel_http
 │   └── [server::channel_http]
@@ -54,11 +54,12 @@ node::channel
 server::channel → node::channel
 ├── channel_stratum_v2   → network::channel
 ├── channel_stratum_v1   → network::channel_rpc<interface::stratum_v1>
-├── channel_electrum     → network::channel_rpc<interface::electrum>
 ├── channel_bitcoind_zmq → network::channel_rpc<interface::bitcoind_zmq>
 └── channel_http         → network::channel_http
     ├── channel_html
-    └── channel_bitcoind
-        └── channel_btcd
+    └── channel_rpc          (universal json-rpc: tcp/s, http/s, ws/s)
+        ├── channel_bitcoind
+        │   └── channel_btcd
+        └── channel_electrum
 
 */

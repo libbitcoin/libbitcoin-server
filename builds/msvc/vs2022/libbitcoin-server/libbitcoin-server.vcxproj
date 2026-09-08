@@ -202,6 +202,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_html.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channels.hpp" />

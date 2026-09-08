@@ -19,7 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_ELECTRUM_HPP
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_ELECTRUM_HPP
 
-#include <bitcoin/server/channels/channel_http.hpp>
+#include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -27,11 +27,11 @@
 namespace libbitcoin {
 namespace server {
 
-/// Channel for the electrum service, reads a json-rpc body (which implies
-/// tcp downgrade detection). Carries the negotiated protocol version and
-/// the interface dispatcher, as electrum dispatches by method name.
+/// Channel for the electrum service (universal json-rpc). Carries the
+/// negotiated protocol version and the interface dispatcher, as electrum
+/// dispatches by method name.
 class BCS_API channel_electrum
-  : public channel_http,
+  : public channel_rpc,
     protected network::tracker<channel_electrum>
 {
 public:
@@ -43,7 +43,7 @@ public:
     inline channel_electrum(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
-      : channel_http(log, socket, identifier, config, options),
+      : channel_rpc(log, socket, identifier, config, options),
         options_(options),
         network::tracker<channel_electrum>(log)
     {
@@ -146,12 +146,6 @@ public:
     }
 
 protected:
-    /// Overridden to set the preselected reader body type.
-    inline value_type default_body() const NOEXCEPT override
-    {
-        return to_body<network::rpc::request>();
-    }
-
     /// Overridden to dispatch the json-rpc message by method name. Electrum
     /// laxness (single value params) is tolerated, so the base is not called.
     inline void dispatch(
