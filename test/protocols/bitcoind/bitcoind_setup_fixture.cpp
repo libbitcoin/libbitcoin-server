@@ -163,6 +163,24 @@ boost::json::value bitcoind_setup_fixture::rpc(std::string_view method,
     return test::parse_json(response.body());
 }
 
+boost::json::value bitcoind_setup_fixture::tcp_rpc(std::string_view method,
+    std::string_view params)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
+        << R"(","params":)" << params << "}\n";
+
+    network::boost_code ec{};
+    const auto request = body.str();
+    net::write(socket_, net::buffer(request), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    std::string response{};
+    net::read_until(socket_, net::dynamic_buffer(response), '\n', ec);
+    return ec ? boost::json::parse(R"({"dropped":true})") :
+        test::parse_json(response);
+}
+
 boost::json::value bitcoind_setup_fixture::rpc_body(std::string_view body)
 {
     http::write(socket_, create_post("/", body));

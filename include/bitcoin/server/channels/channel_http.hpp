@@ -25,8 +25,9 @@
 namespace libbitcoin {
 namespace server {
 
-/// Channel for http services, websocket frames read as Body (a json-rpc
-/// service instantiates with network::rpc::request). An in-band service
+/// Channel for http services, reads preselect Body (a json-rpc service
+/// instantiates with network::rpc::request, which also implies tcp
+/// downgrade detection). An in-band service
 /// (e.g. btcd authenticate) authorizes after upgrade, so its upgrade is open.
 template <typename Body = network::http::string_value, bool InBand = false>
 class BCS_API channel_http
@@ -50,8 +51,8 @@ public:
 protected:
     using value_type = network::http::body::value_type;
 
-    /// Overridden to set the websocket reader body type.
-    inline value_type websocket_body() const NOEXCEPT override
+    /// Overridden to set the preselected reader body type.
+    inline value_type default_body() const NOEXCEPT override
     {
         // There is no forwarding constructor so assign and move.
         value_type value{};

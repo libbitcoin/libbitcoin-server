@@ -274,7 +274,8 @@ void protocol_bitcoind::send_rpc(response_t&& model, size_t size_hint,
     const auto notification = (model.jsonrpc == version::v2) &&
         !model.id.has_value();
 
-    if (websocket())
+    // ws frames and a tcp downgrade carry no http envelope.
+    if (websocket() || downgraded())
     {
         id_.reset();
         version_ = version::undefined;
