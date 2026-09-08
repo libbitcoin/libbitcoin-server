@@ -31,19 +31,19 @@ namespace libbitcoin {
 namespace server {
 
 class BCS_API protocol_electrum_version
-  : public protocol_rpc<interface::electrum>,
+  : public protocol_rpc<interface::electrum_handshake>,
     protected network::tracker<protocol_electrum_version>
 {
 public:
     typedef std::shared_ptr<protocol_electrum_version> ptr;
-    using rpc_interface = interface::electrum;
+    using rpc_interface = interface::electrum_handshake;
     using channel_t = channel_electrum;
     using options_t = channel_t::options_t;
 
     inline protocol_electrum_version(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_rpc<interface::electrum>(session, channel, options),
+      : protocol_rpc<interface::electrum_handshake>(session, channel, options),
         options_(options),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         network::tracker<protocol_electrum_version>(session->log)

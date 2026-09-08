@@ -19,9 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_RPC_HPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_RPC_HPP
 
-#include <algorithm>
 #include <string_view>
-#include <vector>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
@@ -31,11 +29,11 @@ namespace server {
 
 /// Universal json-rpc service protocol, the common shape of a service (and
 /// its derivations) over channel_rpc. Carries the interface dispatcher and
-/// claims each request to a method it has subscribed, deferring all others
-/// to the protocol attached last (see handle_unclaimed). Protocols sharing an
-/// interface (e.g. a handshake) therefore claim disjointly by subscription.
-/// The senders are forwarded to the channel, so a service is served
-/// identically over tcp/s (by downgrade), http/s and ws/s (by upgrade).
+/// claims each request defined by the interface, deferring all others to the
+/// protocol attached last (see handle_unclaimed). Protocols attached to one
+/// channel (e.g. a handshake) therefore publish disjoint interfaces. The
+/// senders are forwarded to the channel, so a service is served identically
+/// over tcp/s (by downgrade), http/s and ws/s (by upgrade).
 template <typename Interface>
 class protocol_rpc
   : public server::protocol_http
@@ -56,7 +54,7 @@ public:
         using namespace std::placeholders;
 
         // Publish served method names (e.g. for help).
-        register_methods(Interface::names);
+        register_methods(names);
         subscribe_channel<self, post>(&self::handle_receive_post, _1, _2);
         subscribe_channel<self, unknown>(&self::handle_receive_unknown, _1, _2);
         network::protocol::start();
@@ -99,8 +97,8 @@ protected:
         const auto& message =
             post->body().template get<network::rpc::request>().message;
 
-        // Defer methods not subscribed by this protocol.
-        if (!subscribed(message.method))
+        // Defer methods not defined by the interface.
+        if (!rpc_dispatcher::contains(message.method))
         {
             handle_unclaimed(message);
             return;
@@ -138,8 +136,8 @@ protected:
         const auto& message =
             request.body().template get<network::rpc::request>().message;
 
-        // Defer methods not subscribed by this protocol.
-        if (!subscribed(message.method))
+        // Defer methods not defined by the interface.
+        if (!rpc_dispatcher::contains(message.method))
         {
             handle_unclaimed(message);
             return;
@@ -159,24 +157,17 @@ protected:
             stop(code);
     }
 
-    /// Invoked for a request to a method not subscribed by this protocol,
-    /// which the protocol attached last overrides to respond (others defer).
+    /// Invoked for a request not defined by the interface, which the protocol
+    /// attached last overrides to respond (all others defer by default).
     virtual void handle_unclaimed(
         const network::rpc::request_t&) NOEXCEPT
     {
     }
 
-    /// True if this protocol has subscribed the method (requires strand).
-    inline bool subscribed(const std::string& method) const NOEXCEPT
-    {
-        return std::ranges::find(subscribed_, method) != subscribed_.end();
-    }
-
-    /// Handler wiring (dispatcher subscription), records the method name.
+    /// Handler wiring (dispatcher subscription).
     template <class Derived, typename Method, typename... Args>
     inline void subscribe(Method&& method, Args&&... args) NOEXCEPT
     {
-        subscribed_.push_back(tag_t<Method>::name);
         rpc_dispatcher_.subscribe(BIND_SHARED(method, args));
     }
 
@@ -237,17 +228,11 @@ protected:
     }
 
 private:
-    // The interface method tag is the second handler parameter.
-    template <typename>
-    struct tag {};
-    template <typename R, typename C, typename Code, typename Tag,
-        typename... Rest>
-    struct tag<R(C::*)(Code, Tag, Rest...)> { using type = Tag; };
-    template <typename R, typename C, typename Code, typename Tag,
-        typename... Rest>
-    struct tag<R(C::*)(Code, Tag, Rest...) noexcept> { using type = Tag; };
-    template <typename Method>
-    using tag_t = typename tag<std::remove_cvref_t<Method>>::type;
+    // The implemented method names of the interface.
+    static constexpr auto name_data =
+        network::rpc::method_names<Interface::methods>();
+    static constexpr std::string_view names{ name_data.data(),
+        name_data.size() };
 
     inline network::result_handler default_handler() NOEXCEPT
     {
@@ -259,9 +244,8 @@ private:
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_rpc::ptr channel_;
 
-    // These are protected by strand.
+    // This is protected by strand.
     rpc_dispatcher rpc_dispatcher_{};
-    std::vector<std::string_view> subscribed_{};
 };
 
 /// Dispatcher subscription for the rpc interface of the CLASS.

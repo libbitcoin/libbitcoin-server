@@ -101,9 +101,10 @@ server::protocol → node::protocol
     │   ├── protocol_admin
     │   └── protocol_native
     ├── protocol_rpc<Interface> (universal json-rpc, dispatch by interface)
+    │   ╞══ protocol_rpc<electrum_handshake>
+    │   │   └── protocol_electrum_version (handshake, attached first)
     │   ╘══ protocol_rpc<electrum>
-    │       ├── protocol_electrum (terminal responder, attached last)
-    │       └── protocol_electrum_version (handshake, attached first)
+    │       └── protocol_electrum (terminal responder, attached last)
     └── protocol_bitcoind (common base and terminal default responder)
         ├── protocol_bitcoind_dispatch<Interface>
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_blockchain>

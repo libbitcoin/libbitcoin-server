@@ -198,11 +198,6 @@ protected:
         rpc_interface::server_ping, double pong_len,
         const std::string& data) NOEXCEPT;
 
-    /// See protocol_electrum_version.
-    ////void handle_server_version(const code& ec,
-    ////    rpc_interface::server_version, const std::string& client_name,
-    ////    const interface::value_t& protocol_version) NOEXCEPT;
-
     /// Handlers (mempool).
     void handle_mempool_get_fee_histogram(const code& ec,
         rpc_interface::mempool_get_fee_histogram) NOEXCEPT;
