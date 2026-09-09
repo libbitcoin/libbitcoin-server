@@ -34,11 +34,28 @@ struct electrum_setup_fixture
         bool address_index=true, const configurator& configure={});
     ~electrum_setup_fixture();
 
+    // json-rpc over the raw tcp stream (downgrades the connection).
     boost::json::value receive();
     int64_t get_error(const std::string& request);
     boost::json::value get(const std::string& request);
     bool handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id={});
+
+    // json-rpc over http POST to "/" (the connection remains http).
+    boost::json::value post(const std::string& request);
+    bool post_handshake(electrum::version version,
+        const std::string& name="test", network::rpc::code_t id={});
+
+    // Upgrade the connection to websocket (no further http requests).
+    network::boost_code ws_upgrade();
+
+    // json-rpc over the upgraded websocket connection.
+    boost::json::value ws_get(const std::string& request);
+    bool ws_handshake(electrum::version version,
+        const std::string& name="test", network::rpc::code_t id={});
+
+    // Read one unsolicited frame (notification) from the websocket.
+    boost::json::value ws_receive();
 
     // 0_32 vs {} for xcode variant issue.
     void notify(node::chase event_, node::event_value value=0_u32);
@@ -49,11 +66,19 @@ protected:
     test::query_t query_;
 
 private:
+    using websocket_stream = boost::beast::websocket::stream<
+        boost::asio::ip::tcp::socket&>;
+
+    // Verify the server.version response of any transport.
+    bool verify(const boost::json::value& response, electrum::version version,
+        network::rpc::code_t id) const;
+
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
     boost::asio::ip::tcp::socket socket_{ io };
     boost::asio::streambuf stream_{};
+    std::optional<websocket_stream> websocket_{};
 };
 
 struct electrum_ten_block_setup_fixture

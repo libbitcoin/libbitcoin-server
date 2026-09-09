@@ -58,8 +58,8 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
 
     btcd.binds = { { BTCD_ENDPOINT } };
 
-    // 2: the ws connection (websocket_/socket_) plus the plain http one
-    // (http_socket_) used by http_rpc().
+    // 2: the ws connection (websocket_/socket_) plus the plain one
+    // (http_socket_) used by http_rpc() or, by detection, tcp_rpc().
     btcd.connections = 2;
     btcd.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
@@ -181,6 +181,28 @@ boost::json::value btcd_setup_fixture::receive_notification()
     websocket_.read(buffer, ec);
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     return test::parse_json(buffers_to_string(buffer.data()));
+}
+
+// Raw json on the http socket, which the server detects and downgrades to a
+// newline-delimited json-rpc stream. Mutually exclusive with http_rpc(), as
+// the detection is latched on the first read of the connection.
+boost::json::value btcd_setup_fixture::tcp_rpc(std::string_view method,
+    std::string_view params)
+{
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":)" << http_request_id_++
+         << R"(,"method":")" << method
+         << R"(","params":)" << params << "}\n";
+
+    network::boost_code ec{};
+    const auto request = body.str();
+    net::write(http_socket_, net::buffer(request), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    std::string response{};
+    net::read_until(http_socket_, net::dynamic_buffer(response), '\n', ec);
+    return ec ? boost::json::parse(R"({"dropped":true})") :
+        test::parse_json(response);
 }
 
 boost::json::value btcd_setup_fixture::http_rpc(std::string_view method,

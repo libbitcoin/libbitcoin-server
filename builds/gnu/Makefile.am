@@ -328,6 +328,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/electrum/electrum_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_subscribe.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_transactions.cpp \
+    ${srcdir}/../../test/protocols/electrum/electrum_transports.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_version.cpp \
     ${srcdir}/../../test/protocols/native/native_address.cpp \
     ${srcdir}/../../test/protocols/native/native_block.cpp \

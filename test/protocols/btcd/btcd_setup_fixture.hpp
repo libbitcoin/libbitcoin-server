@@ -55,6 +55,11 @@ struct btcd_setup_fixture
 
     // JSON-RPC 2.0 over plain HTTP POST to "/" (a separate connection from
     // the ws one rpc() uses).
+    // JSON-RPC 2.0 over raw tcp (no http), which downgrades the connection.
+    // Returns the parsed json-rpc response object, or {"dropped":true}.
+    boost::json::value tcp_rpc(std::string_view method,
+        std::string_view params="[]");
+
     boost::json::value http_rpc(std::string_view method,
         std::string_view params = "[]");
 
