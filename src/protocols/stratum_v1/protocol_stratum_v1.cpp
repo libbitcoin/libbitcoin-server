@@ -20,7 +20,6 @@
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol_rpc.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -45,21 +44,21 @@ void protocol_stratum_v1::start() NOEXCEPT
         return;
 
     // Client requests.
-    SUBSCRIBE_RPC(handle_mining_subscribe, _1, _2, _3, _4);
-    SUBSCRIBE_RPC(handle_mining_authorize, _1, _2, _3, _4);
-    SUBSCRIBE_RPC(handle_mining_submit, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_RPC(handle_mining_extranonce_subscribe, _1, _2);
-    SUBSCRIBE_RPC(handle_mining_extranonce_unsubscribe, _1, _2, _3);
+    SUBSCRIBE_CHANNEL(void, handle_mining_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_CHANNEL(void, handle_mining_authorize, _1, _2, _3, _4);
+    SUBSCRIBE_CHANNEL(void, handle_mining_submit, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_CHANNEL(void, handle_mining_extranonce_subscribe, _1, _2);
+    SUBSCRIBE_CHANNEL(void, handle_mining_extranonce_unsubscribe, _1, _2, _3);
 
     // Server notifications.
-    SUBSCRIBE_RPC(handle_mining_configure, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_mining_set_difficulty, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_mining_notify, _1, _2, _3, _4, _5, _6, _7, _8, _9,
+    SUBSCRIBE_CHANNEL(void, handle_mining_configure, _1, _2, _3);
+    SUBSCRIBE_CHANNEL(void, handle_mining_set_difficulty, _1, _2, _3);
+    SUBSCRIBE_CHANNEL(void, handle_mining_notify, _1, _2, _3, _4, _5, _6, _7, _8, _9,
         _10, _11, _12, _13);
-    SUBSCRIBE_RPC(handle_client_reconnect, _1, _2, _3, _4, _5);
-    SUBSCRIBE_RPC(handle_client_hello, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_client_rejected, _1, _2, _3, _4);
-    protocol_rpc<channel_stratum_v1>::start();
+    SUBSCRIBE_CHANNEL(void, handle_client_reconnect, _1, _2, _3, _4, _5);
+    SUBSCRIBE_CHANNEL(void, handle_client_hello, _1, _2, _3);
+    SUBSCRIBE_CHANNEL(void, handle_client_rejected, _1, _2, _3, _4);
+    network::protocol_rpc<channel_stratum_v1>::start();
 }
 
 // Handlers (client requests).

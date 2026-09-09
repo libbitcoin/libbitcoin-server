@@ -311,13 +311,25 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_bitcoind.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_bitcoind_zmq.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_btcd.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_electrum.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_html.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_http.hpp">
+      <Filter>include\bitcoin\server\channels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_rpc.hpp">
       <Filter>include\bitcoin\server\channels</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\channels\channel_stratum_v1.hpp">

@@ -87,10 +87,12 @@ public:
         virtual bool enabled() const NOEXCEPT;
     };
 
+    /// Electrum is served over tcp/s (json-rpc downgrade), http/s and ws/s,
+    /// so the http settings apply only to the http/ws transports.
     struct electrum_server
-      : public network::settings::tls_server
+      : public network::settings::websocket_server
     {
-        using base = network::settings::tls_server;
+        using base = network::settings::websocket_server;
         using base::base;
 
         /// Maximum number of headers the server will return in single request.

@@ -28,7 +28,13 @@ namespace interface {
 
 struct electrum_methods
 {
-    /// Electrum protocol versions 1.0-1.6
+    /// Handshake methods (electrum protocol versions 1.0-1.7).
+    static constexpr std::tuple handshake
+    {
+        method<"server.version", optional<""_t>, optional<empty::value>>{ "client_name", "protocol_version" }
+    };
+
+    /// Methods (electrum protocol versions 1.0-1.7).
     static constexpr std::tuple methods
     {
         /// Blockchain methods.
@@ -80,7 +86,6 @@ struct electrum_methods
         method<"server.features">{},
         method<"server.peers.subscribe">{},
         method<"server.ping", optional<0.0>, optional<""_t>>{ "pong_len", "data" },
-        method<"server.version", optional<""_t>, optional<empty::value>>{ "client_name", "protocol_version" },
 
         /// Mempool methods.
         method<"mempool.get_fee_histogram">{},
@@ -92,6 +97,8 @@ struct electrum_methods
 
     template <size_t Index>
     using at = method_at<methods, Index>;
+
+    using server_version = method_at<handshake, 0>;
 
     using blockchain_number_of_blocks_subscribe = at<0>;
     using blockchain_block_get_chunk = at<1>;
@@ -140,10 +147,9 @@ struct electrum_methods
     using server_features = at<37>;
     using server_peers_subscribe = at<38>;
     using server_ping = at<39>;
-    using server_version = at<40>;
 
-    using mempool_get_fee_histogram = at<41>;
-    using mempool_get_info = at<42>;
+    using mempool_get_fee_histogram = at<40>;
+    using mempool_get_info = at<41>;
 };
 
 } // namespace interface

@@ -26,6 +26,18 @@ static const code wrong_version{ server::error::electrum::bad_request };
 static const code not_implemented{ server::error::electrum::method_not_found };
 static const code invalid_argument{ server::error::electrum::bad_request };
 
+// unknown method
+
+BOOST_AUTO_TEST_CASE(electrum__unknown_method__v1_0__method_not_found)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":399,"method":"server.bogus","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_implemented.value());
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 399);
+}
+
 // server.add_peer
 
 BOOST_AUTO_TEST_CASE(electrum__server_add_peer__insufficient_version__wrong_version)

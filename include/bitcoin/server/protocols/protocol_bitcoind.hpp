@@ -38,7 +38,7 @@ class BCS_API protocol_bitcoind
 {
 public:
     // Replace base class channel_t (json-rpc websocket reader body).
-    using channel_t = channel_http<network::rpc::request>;
+    using channel_t = channel_bitcoind;
 
     typedef std::shared_ptr<protocol_bitcoind> ptr;
 

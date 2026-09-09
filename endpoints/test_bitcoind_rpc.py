@@ -430,8 +430,26 @@ def test_verifytxoutset(bitcoind_rpc_config):
 # RAW TRANSACTION METHODS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def test_getrawtransaction_raw(bitcoind_rpc_config):
+
+@pytest.fixture(scope="module")
+def pruned(bitcoind_rpc_config) -> bool:
+    """
+    True when the node is pruned.
+
+    A pruned store archives no input script or witness data, so a served
+    transaction carries empty inputs and cannot hash to its own txid.
+    """
+    response = send_rpc(bitcoind_rpc_config, "getblockchaininfo")
+    return bool(response["result"].get("pruned", False))
+
+
+PRUNED_REASON = "pruned node: input script and witness data are not archived"
+
+def test_getrawtransaction_raw(bitcoind_rpc_config, pruned):
     """getrawtransaction verbosity=0 returns the serialized transaction hex."""
+    if pruned:
+        pytest.skip(PRUNED_REASON)
+
     # Block 170 transaction (first payment, non-segwit) round-trips to its txid.
     response = send_rpc(
         bitcoind_rpc_config,
@@ -466,8 +484,11 @@ def test_getrawtransaction_verbose(bitcoind_rpc_config):
     assert isinstance(result["confirmations"], int) and result["confirmations"] > 0
 
 
-def test_getrawtransaction_coinbase(bitcoind_rpc_config):
+def test_getrawtransaction_coinbase(bitcoind_rpc_config, pruned):
     """getrawtransaction serves coinbase transactions (block 1 coinbase)."""
+    if pruned:
+        pytest.skip(PRUNED_REASON)
+
     response = send_rpc(
         bitcoind_rpc_config,
         "getrawtransaction",
@@ -483,8 +504,11 @@ def test_getrawtransaction_coinbase(bitcoind_rpc_config):
         assert result["hash"] == result["txid"]
 
 
-def test_getrawtransaction_segwit(bitcoind_rpc_config):
+def test_getrawtransaction_segwit(bitcoind_rpc_config, pruned):
     """getrawtransaction handles segwit transactions (witness serialization)."""
+    if pruned:
+        pytest.skip(PRUNED_REASON)
+
     response = send_rpc(
         bitcoind_rpc_config,
         "getrawtransaction",

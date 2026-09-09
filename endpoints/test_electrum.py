@@ -21,6 +21,8 @@ For tests that wait for real push notifications see test_electrum_subscriptions.
     pytest test_electrum_subscriptions.py --subscription-timeout=120
 """
 
+from __future__ import annotations
+
 import json
 import os
 import select

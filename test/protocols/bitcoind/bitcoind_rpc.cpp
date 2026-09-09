@@ -1428,6 +1428,30 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__notification__ws_v2_missing_id__no_response)
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
+// downgrade (tcp)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__downgraded__nine)
+{
+    const auto response = tcp_rpc("getblockcount");
+    BOOST_REQUIRE(response.at("result").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getbestblockhash__downgraded__block9)
+{
+    const auto response = tcp_rpc("getbestblockhash");
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), block9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__downgraded_second__nine)
+{
+    BOOST_REQUIRE_EQUAL(tcp_rpc("getblockcount").at("result").as_int64(), 9);
+
+    // The downgrade is latched, so the connection remains tcp.
+    BOOST_REQUIRE_EQUAL(tcp_rpc("getblockcount").at("result").as_int64(), 9);
+}
+
 // websocket
 // ----------------------------------------------------------------------------
 

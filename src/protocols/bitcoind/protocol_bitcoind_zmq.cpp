@@ -45,8 +45,8 @@ void protocol_bitcoind_zmq::start() NOEXCEPT
     // Chaser subscription is asynchronous, events may be missed.
     subscribe_chase(BIND(handle_chase, _1, _2, _3));
 
-    SUBSCRIBE_RPC(handle_subscribe, _1, _2, _3);
-    protocol_rpc<channel_bitcoind_zmq>::start();
+    SUBSCRIBE_CHANNEL(void, handle_subscribe, _1, _2, _3);
+    network::protocol_rpc<channel_bitcoind_zmq>::start();
 }
 
 // Events unsubscription is asynchronous, race is ok.
@@ -54,7 +54,7 @@ void protocol_bitcoind_zmq::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     unsubscribe_chase();
-    protocol_rpc<channel_bitcoind_zmq>::stopping(ec);
+    network::protocol_rpc<channel_bitcoind_zmq>::stopping(ec);
 }
 
 // Handlers.

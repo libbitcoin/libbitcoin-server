@@ -108,12 +108,11 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_server_features, _1, _2);
     SUBSCRIBE_RPC(handle_server_peers_subscribe, _1, _2);
     SUBSCRIBE_RPC(handle_server_ping, _1, _2, _3, _4);
-    ////SUBSCRIBE_RPC(handle_server_version, _1, _2, _3, _4);
 
     // Mempool methods.
     SUBSCRIBE_RPC(handle_mempool_get_fee_histogram, _1, _2);
     SUBSCRIBE_RPC(handle_mempool_get_info, _1, _2);
-    protocol_rpc<channel_electrum>::start();
+    protocol_rpc<interface::electrum>::start();
 }
 
 // Events unsubscription is asynchronous, race is ok.
@@ -122,7 +121,14 @@ void protocol_electrum::stopping(const code& ec) NOEXCEPT
     BC_ASSERT(stranded());
     stopping_.store(true);
     unsubscribe_chase();
-    protocol_rpc<channel_electrum>::stopping(ec);
+    protocol_rpc<interface::electrum>::stopping(ec);
+}
+
+// No attached protocol subscribes the method (terminal responder).
+void protocol_electrum::handle_unclaimed(const request_t&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    send_code(error::electrum::method_not_found);
 }
 
 // Handlers (event subscription).
@@ -134,6 +140,11 @@ bool protocol_electrum::handle_chase(const code&, node::chase event_,
     // Do not pass ec to stopped as it is not a call status.
     if (stopped())
         return false;
+
+    // Notifications require a full duplex transport, so subscriptions on an
+    // http (post) connection are held but not computed until it is upgraded.
+    if (!channel_->websocket() && !channel_->downgraded())
+        return true;
 
     switch (event_)
     {
