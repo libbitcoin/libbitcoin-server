@@ -37,8 +37,8 @@ constexpr auto method_names() NOEXCEPT
     return network::rpc::method_names<Methods>();
 }
 template <typename Methods, network::rpc::grouping Mode =
-    network::rpc::grouping::either, const auto& Tuple = Methods::methods>
-using publish = network::rpc::publish<Methods, Mode, Tuple>;
+    network::rpc::grouping::either>
+using publish = network::rpc::publish<Methods, Mode>;
 
 template <typename Type>
 using nullable = network::rpc::nullable<Type>;
