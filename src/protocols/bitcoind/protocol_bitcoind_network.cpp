@@ -102,7 +102,7 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
         return false;
 
     // bitcoind's numeric version encoding (10'000 major, 100 minor, patch).
-    const auto& settings = server_settings().bitcoind;
+    const auto& settings = options();
     const auto& segments = settings.version.segments();
     const auto version = 10'000 * segments[0] + 100 * segments[1] + segments[2];
 

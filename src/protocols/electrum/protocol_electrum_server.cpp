@@ -138,7 +138,16 @@ void protocol_electrum::handle_server_features(const code& ec,
         value["hash_function"] = string_t{ "sha256" };
     }
 
+    // Derived services decorate the response (e.g. sparrow adds
+    // silent_payments), as it is the advertisement of what they serve.
+    add_features(value);
+
     send_result(std::move(value), 1024);
+}
+
+// Base is not a derived service, so it adds nothing.
+void protocol_electrum::add_features(object_t&) const NOEXCEPT
+{
 }
 
 // This is not actually a subscription method.

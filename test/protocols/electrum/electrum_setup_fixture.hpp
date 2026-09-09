@@ -21,8 +21,10 @@
 
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
+#include "../rpc_client.hpp"
 
 #define ELECTRUM_ENDPOINT "127.0.0.1:65002"
+#define SPARROW_ENDPOINT "127.0.0.1:65003"
 
 struct electrum_setup_fixture
 {
@@ -30,8 +32,12 @@ struct electrum_setup_fixture
 
     using initializer = std::function<bool(test::query_t&)>;
     using configurator = std::function<void(configuration&)>;
+    /// The service configured and exercised (each has its own binding).
+    enum class service { electrum, sparrow };
+
     explicit electrum_setup_fixture(const initializer& setup,
-        bool address_index=true, const configurator& configure={});
+        bool address_index=true, const configurator& configure={},
+        service which=service::electrum);
     ~electrum_setup_fixture();
 
     // json-rpc over the raw tcp stream (downgrades the connection).
@@ -66,19 +72,18 @@ protected:
     test::query_t query_;
 
 private:
-    using websocket_stream = boost::beast::websocket::stream<
-        boost::asio::ip::tcp::socket&>;
-
     // Verify the server.version response of any transport.
     bool verify(const boost::json::value& response, electrum::version version,
         network::rpc::code_t id) const;
 
+    // The settings of the configured service (electrum or sparrow).
+    const server::settings::electrum_server& options() const;
+
+    const service which_;
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
-    boost::asio::ip::tcp::socket socket_{ io };
-    boost::asio::streambuf stream_{};
-    std::optional<websocket_stream> websocket_{};
+    rpc_client client_{ io };
 };
 
 struct electrum_ten_block_setup_fixture
@@ -89,6 +94,20 @@ struct electrum_ten_block_setup_fixture
         {
             return test::setup_ten_block_store(query);
         })
+    {
+    }
+};
+
+/// The sparrow service, which reuses this harness (same transports, same
+/// handshake, same electrum interface).
+struct sparrow_ten_block_setup_fixture
+  : electrum_setup_fixture
+{
+    inline sparrow_ten_block_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, {}, service::sparrow)
     {
     }
 };

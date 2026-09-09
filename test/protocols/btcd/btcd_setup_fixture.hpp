@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BTCD_BTCD_SETUP_FIXTURE
 
 #include "../../test.hpp"
+#include "../rpc_client.hpp"
 #include "../../mocks/blocks.hpp"
 
 #define BTCD_ENDPOINT "127.0.0.1:65004"
@@ -78,15 +79,13 @@ protected:
     test::query_t query_;
 
 private:
-    using tcp_stream = boost::beast::tcp_stream;
-    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
-
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io_{};
-    tcp_stream socket_{ io_.get_executor() };
-    websocket_stream websocket_{ socket_ };
-    tcp_stream http_socket_{ io_.get_executor() };
+
+    // The ws connection, plus the plain one used by http_rpc or tcp_rpc.
+    rpc_client client_{ io_ };
+    rpc_client other_{ io_ };
     int http_request_id_{};
     int request_id_{};
 };

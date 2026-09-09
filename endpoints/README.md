@@ -21,7 +21,7 @@ This directory contains Python-based integration tests for all libbitcoin-server
 ### 1. Install Dependencies
 
 ```bash
-pip install pytest requests
+pip install pytest requests websocket-client
 ```
 
 ### 2. Running libbitcoin-server

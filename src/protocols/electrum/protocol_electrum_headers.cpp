@@ -226,7 +226,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
     // Recommended to be at least one difficulty retarget period, e.g. 2016.
     // The maximum number of headers the server will return in single request.
-    const auto maximum_headers = server_settings().electrum.maximum_headers;
+    const auto maximum_headers = options().maximum_headers;
 
     // Returned headers are assured to be contiguous despite intervening reorg.
     // No headers may be returned, which implies start > confirmed top block.

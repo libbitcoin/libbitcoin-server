@@ -57,8 +57,7 @@ using bitcoind_wallet        = publish<bitcoind_wallet_methods>;
 using bitcoind_zmq           = publish<bitcoind_zmq_methods>;
 using btcd                   = publish<btcd_methods>;
 using electrum               = publish<electrum_methods>;
-using electrum_handshake     = publish<electrum_methods,
-    network::rpc::grouping::either, electrum_methods::handshake>;
+using electrum_handshake     = publish<electrum_handshake_methods>;
 using native                 = publish<native_methods>;
 using sparrow                = publish<sparrow_methods>;
 using stratum_v1             = publish<stratum_v1_methods>;

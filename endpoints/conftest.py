@@ -116,6 +116,28 @@ def pytest_addoption(parser):
         )
     )
 
+    # Sparrow options (an independent service on its own binding, serving
+    # the electrum interface plus the sparrow methods).
+    parser.addoption(
+        "--sparrow-host",
+        action="store",
+        default="localhost",
+        help="Host for the sparrow interface (default: localhost)"
+    )
+    parser.addoption(
+        "--sparrow-port",
+        action="store",
+        default="50003",
+        help="Port for the sparrow interface (default: 50003)"
+    )
+
+    parser.addoption(
+        "--scan-timeout",
+        action="store",
+        default="1800",
+        help="Timeout in seconds for whole-set scans, e.g. gettxoutsetinfo "
+             "(default: 1800)"
+    )
     parser.addoption(
         "--subscription-timeout",
         action="store",
@@ -213,7 +235,8 @@ def bitcoind_rpc_config(request):
         "url": f"http://{host}:{port}/",
         "use_auth": request.config.getoption("--bitcoind-auth"),
         "cookie_path": request.config.getoption("--bitcoind-cookie"),
-        "timeout": float(request.config.getoption("--timeout"))
+        "timeout": float(request.config.getoption("--timeout")),
+        "scan_timeout": float(request.config.getoption("--scan-timeout"))
     }
 
     # Load authentication if requested
@@ -257,6 +280,23 @@ def btcd_config(request):
         "password": request.config.getoption("--btcd-password"),
         "timeout": float(request.config.getoption("--timeout")),
         "subscription_timeout": float(request.config.getoption("--subscription-timeout")),
+    }
+
+
+@pytest.fixture(scope="session")
+def sparrow_config(request):
+    """Configuration for sparrow interface tests."""
+    proto_str = request.config.getoption("--electrum-protocol")
+    if ":" in proto_str:
+        proto_min, proto_max = proto_str.split(":", 1)
+    else:
+        proto_min = proto_max = proto_str.strip()
+
+    return {
+        "host": request.config.getoption("--sparrow-host"),
+        "port": int(request.config.getoption("--sparrow-port")),
+        "timeout": float(request.config.getoption("--timeout")),
+        "protocol": [proto_min.strip(), proto_max.strip()],
     }
 
 

@@ -92,8 +92,8 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
     histories discard{};
     code ec{ error::success };
     const auto& query = archive();
-    const auto maximum = server_settings().btcd.maximum_filters;
-    const auto limit = server_settings().btcd.maximum_history;
+    const auto maximum = btcd_options().maximum_filters;
+    const auto limit = btcd_options().maximum_history;
 
     for (const auto& key: keys)
     {
@@ -377,7 +377,7 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
 
     histories history{};
     auto& query = archive();
-    const auto limit = server_settings().btcd.maximum_history;
+    const auto limit = btcd_options().maximum_history;
     for (const auto& key: keys)
     {
         histories part{};
@@ -593,7 +593,7 @@ code protocol_btcd::match_addresses(matches& out, address_watch& sub,
 {
     histories delta{};
     const auto& query = archive();
-    const auto limit = server_settings().btcd.maximum_history;
+    const auto limit = btcd_options().maximum_history;
     if (const auto ec = query.get_history(stopping_, sub.cursor, delta, key,
         limit, turbo_); ec)
         return ec;

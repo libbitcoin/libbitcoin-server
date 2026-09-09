@@ -28,13 +28,8 @@ namespace interface {
 
 struct electrum_methods
 {
-    /// Handshake methods (electrum protocol versions 1.0-1.7).
-    static constexpr std::tuple handshake
-    {
-        method<"server.version", optional<""_t>, optional<empty::value>>{ "client_name", "protocol_version" }
-    };
-
     /// Methods (electrum protocol versions 1.0-1.7).
+    /// The handshake (server.version) is published by electrum_handshake.
     static constexpr std::tuple methods
     {
         /// Blockchain methods.
@@ -98,8 +93,6 @@ struct electrum_methods
     template <size_t Index>
     using at = method_at<methods, Index>;
 
-    using server_version = method_at<handshake, 0>;
-
     using blockchain_number_of_blocks_subscribe = at<0>;
     using blockchain_block_get_chunk = at<1>;
     using blockchain_block_get_header = at<2>;
@@ -150,6 +143,21 @@ struct electrum_methods
 
     using mempool_get_fee_histogram = at<40>;
     using mempool_get_info = at<41>;
+};
+
+/// The electrum handshake, published separately as it is served by its own
+/// protocol (attached first), which claims server.version alone.
+struct electrum_handshake_methods
+{
+    static constexpr std::tuple methods
+    {
+        method<"server.version", optional<""_t>, optional<empty::value>>{ "client_name", "protocol_version" }
+    };
+
+    template <typename... Args>
+    using subscriber = network::subscriber<Args...>;
+
+    using server_version = method_at<methods, 0>;
 };
 
 } // namespace interface

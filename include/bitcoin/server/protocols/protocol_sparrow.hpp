@@ -19,74 +19,70 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_SPARROW_HPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_SPARROW_HPP
 
-#include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol_rpc.hpp>
-#include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/protocols/protocol_electrum.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// The sparrow interface, served in addition to electrum on the same channel.
-/// Attached after the version handshake and before protocol_electrum, which
-/// remains the terminal responder, so these three methods are claimed here
-/// and everything else falls through to electrum unchanged.
+/// The sparrow interface, added to the inherited electrum interface, as
+/// protocol_btcd adds the btcd interface to bitcoind.
 class BCS_API protocol_sparrow
-  : public protocol_rpc<interface::sparrow>,
+  : public server::protocol_electrum,
     protected network::tracker<protocol_sparrow>
 {
 public:
     typedef std::shared_ptr<protocol_sparrow> ptr;
-    using rpc_interface = interface::sparrow;
-    using channel_t = channel_electrum;
-    using options_t = settings::sparrow_server;
+    using sparrow_interface = interface::sparrow;
+    using sparrow_dispatcher = network::rpc::dispatcher<sparrow_interface>;
+
+    /// The silent payment (bip352) protocol version served (as frigate).
+    static constexpr uint32_t silent_payments_version{ 0 };
 
     inline protocol_sparrow(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_rpc<interface::sparrow>(session, channel, options),
-        options_(options),
-        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
+      : server::protocol_electrum(session, channel, options),
         network::tracker<protocol_sparrow>(session->log)
     {
     }
 
     void start() NOEXCEPT override;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// Dispatched from the electrum miss, so that interface is unaffected.
+    void handle_unclaimed(
+        const network::rpc::request_t& request) NOEXCEPT override;
+
+    /// Advertise the supported silent payment protocol versions (bip352).
+    void add_features(
+        network::rpc::object_t& features) const NOEXCEPT override;
+
     /// Handlers.
     void handle_blockchain_block_stats(const code& ec,
-        rpc_interface::blockchain_block_stats, double height) NOEXCEPT;
+        sparrow_interface::blockchain_block_stats, double height) NOEXCEPT;
     void handle_blockchain_silent_payments_subscribe(const code& ec,
-        rpc_interface::blockchain_silent_payments_subscribe,
+        sparrow_interface::blockchain_silent_payments_subscribe,
         const std::string& scan_private_key,
         const std::string& spend_public_key,
         const interface::value_t& start,
         const interface::array_t& labels) NOEXCEPT;
     void handle_blockchain_silent_payments_unsubscribe(const code& ec,
-        rpc_interface::blockchain_silent_payments_unsubscribe,
+        sparrow_interface::blockchain_silent_payments_unsubscribe,
         const std::string& scan_private_key,
         const std::string& spend_public_key) NOEXCEPT;
 
-    /// The negotiated electrum version is at least the specified level.
-    inline bool at_least(server::electrum::version version) const NOEXCEPT
-    {
-        return channel_->version() >= version;
-    }
-
-    /// Configuration options.
-    inline const options_t& options() const NOEXCEPT
-    {
-        return options_;
-    }
-
 private:
-    // This is thread safe.
-    const options_t& options_;
+    template <class Derived, typename Method, typename... Args>
+    inline void sparrow_subscribe(Method&& method, Args&&... args) NOEXCEPT
+    {
+        sparrow_dispatcher_.subscribe(BIND_SHARED(method, args));
+    }
 
-    // This is mostly thread safe, and used in a thread safe manner.
-    const channel_t::ptr channel_;
+    // This is protected by strand.
+    sparrow_dispatcher sparrow_dispatcher_{};
 };
 
 } // namespace server

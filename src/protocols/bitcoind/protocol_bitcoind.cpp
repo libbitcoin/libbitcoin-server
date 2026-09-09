@@ -63,7 +63,7 @@ void protocol_bitcoind::handle_receive_get(const code& ec,
 
 // Handled here for rpc and derived rest protocol.
 void protocol_bitcoind::handle_receive_options(const code& ec,
-    const options::cptr& options) NOEXCEPT
+    const options_verb::cptr& options) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

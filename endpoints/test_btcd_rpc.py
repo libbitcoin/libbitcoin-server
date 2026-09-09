@@ -1,6 +1,8 @@
 """
 Tests for libbitcoin-server btcd JSON-RPC/websocket compatibility interface.
 
+Requires websocket-client (pip install websocket-client).
+
 btcd speaks JSON-RPC 1.0 over a persistent websocket connection (preferred,
 required for the session/notification methods) or plain HTTP POST
 (same request/response shape as the bitcoind endpoint, for the bitcoind
@@ -24,170 +26,63 @@ Run with:
     pytest test_btcd_rpc.py -m xfail -rx       # see what's left to implement
 """
 
-import base64
-import hashlib
 import json
 import os
-import select
-import socket
-import struct
 import time
 import warnings
 from typing import Any, Optional
 
 import pytest
 import requests
+import websocket
 
 from utils import ReferenceData, TestConfig
 
-_WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-
-
-# ─── Minimal stdlib websocket client (RFC 6455, text frames only) ─────────────
-# No external websocket dependency is added here, matching the rest of this
-# suite's preference for hand-rolled wire protocol over a client library (see
-# ElectrumConnection in test_electrum_subscriptions.py for the same approach
-# applied to Electrum's newline-delimited TCP protocol).
+# ─── websocket client ────────────────────────────────────────────────────────
 
 class WebSocketConnection:
-    """Bare-bones RFC 6455 client: handshake + masked text frame I/O."""
+    """
+    Text frame websocket client, over websocket-client.
+
+    Wrapped to give recv_message() a timeout that returns None rather than
+    raising, as the notification tests wait on a server push that may not
+    arrive.
+    """
 
     def __init__(self, host: str, port: int, target: str = "/",
                  connect_timeout: float = 5.0):
-        self.sock = socket.create_connection((host, port), timeout=connect_timeout)
-        self.sock.settimeout(None)  # blocking; timeouts handled via select()
-        self._buf = b""
-        self._handshake(host, target)
-
-    def _handshake(self, host: str, target: str) -> None:
-        key = base64.b64encode(os.urandom(16)).decode()
-        request = (
-            f"GET {target} HTTP/1.1\r\n"
-            f"Host: {host}\r\n"
-            "Upgrade: websocket\r\n"
-            "Connection: Upgrade\r\n"
-            f"Sec-WebSocket-Key: {key}\r\n"
-            "Sec-WebSocket-Version: 13\r\n"
-            "\r\n"
-        )
-        self.sock.sendall(request.encode("ascii"))
-
-        headers = self._read_headers()
-        lines = headers.splitlines()
-        if not lines or " 101 " not in lines[0]:
-            raise ConnectionError(f"websocket upgrade rejected: {lines[:1]!r}")
-
-        expected = base64.b64encode(
-            hashlib.sha1((key + _WS_GUID).encode("ascii")).digest()
-        ).decode()
-        accept = None
-        for line in lines[1:]:
-            name, _, value = line.partition(":")
-            if name.strip().lower() == "sec-websocket-accept":
-                accept = value.strip()
-        if accept != expected:
-            raise ConnectionError("websocket handshake accept key mismatch")
-
-    def _read_headers(self) -> str:
-        while b"\r\n\r\n" not in self._buf:
-            chunk = self.sock.recv(4096)
-            if not chunk:
-                raise ConnectionError("connection closed during ws handshake")
-            self._buf += chunk
-        head, _, rest = self._buf.partition(b"\r\n\r\n")
-        self._buf = rest
-        return head.decode("iso-8859-1")
+        url = f"ws://{host}:{port}{target}"
+        self.ws = websocket.create_connection(url, timeout=connect_timeout)
 
     def close(self) -> None:
         try:
-            self.sock.close()
-        except OSError:
+            self.ws.close()
+        except Exception:
             pass
 
-    def _recv_exact(self, size: int, timeout_s: Optional[float]) -> Optional[bytes]:
-        while len(self._buf) < size:
-            if timeout_s is not None:
-                ready, _, _ = select.select([self.sock], [], [], timeout_s)
-                if not ready:
-                    return None
-            chunk = self.sock.recv(65536)
-            if not chunk:
-                return None
-            self._buf += chunk
-        data, self._buf = self._buf[:size], self._buf[size:]
-        return data
-
     def send_text(self, message: str) -> None:
-        payload = message.encode("utf-8")
-        length = len(payload)
-        mask_key = os.urandom(4)
-        masked = bytes(b ^ mask_key[i % 4] for i, b in enumerate(payload))
-
-        header = bytearray([0x80 | 0x1])  # FIN=1, opcode=text
-        if length < 126:
-            header.append(0x80 | length)
-        elif length < 65536:
-            header.append(0x80 | 126)
-            header += struct.pack(">H", length)
-        else:
-            header.append(0x80 | 127)
-            header += struct.pack(">Q", length)
-        header += mask_key
-
-        self.sock.sendall(bytes(header) + masked)
+        self.ws.send(message)
 
     def recv_message(self, timeout_s: Optional[float] = None) -> Optional[str]:
-        """Read one complete (possibly multi-frame) text message."""
-        parts: list[bytes] = []
-        deadline = time.monotonic() + timeout_s if timeout_s is not None else None
+        """One text message, or None on timeout or close."""
+        self.ws.settimeout(timeout_s)
 
-        while True:
-            remaining = None
-            if deadline is not None:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    return None
+        try:
+            message = self.ws.recv()
+        except websocket.WebSocketTimeoutException:
+            return None
+        except websocket.WebSocketConnectionClosedException:
+            return None
+        except OSError:
+            return None
 
-            head = self._recv_exact(2, remaining)
-            if head is None:
-                return None
+        if not message:
+            return None
 
-            fin = bool(head[0] & 0x80)
-            opcode = head[0] & 0x0F
-            masked = bool(head[1] & 0x80)
-            length = head[1] & 0x7F
+        if isinstance(message, bytes):
+            return message.decode("utf-8", errors="replace")
 
-            if length == 126:
-                ext = self._recv_exact(2, remaining)
-                if ext is None:
-                    return None
-                length = struct.unpack(">H", ext)[0]
-            elif length == 127:
-                ext = self._recv_exact(8, remaining)
-                if ext is None:
-                    return None
-                length = struct.unpack(">Q", ext)[0]
-
-            mask_key = b""
-            if masked:
-                mask_key = self._recv_exact(4, remaining)
-                if mask_key is None:
-                    return None
-
-            payload = self._recv_exact(length, remaining) if length else b""
-            if payload is None:
-                return None
-            if masked:
-                payload = bytes(b ^ mask_key[i % 4] for i, b in enumerate(payload))
-
-            if opcode == 0x8:  # close
-                return None
-            if opcode in (0x9, 0xA):  # ping/pong: not a message, keep reading
-                continue
-
-            parts.append(payload)
-            if fin:
-                return b"".join(parts).decode("utf-8", errors="replace")
+        return message
 
 
 # ─── btcd JSON-RPC 1.0 connection ──────────────────────────────────────────────
@@ -301,7 +196,7 @@ def conn(btcd_config: dict) -> BtcdConnection:
     timeout = btcd_config.get("timeout", TestConfig.DEFAULT_SOCKET_TIMEOUT)
     try:
         c = BtcdConnection(host, port, connect_timeout=timeout)
-    except (OSError, ConnectionError) as exc:
+    except (OSError, websocket.WebSocketException) as exc:
         pytest.skip(f"Cannot connect to btcd at {host}:{port}: {exc}")
 
     username = btcd_config.get("username")
@@ -358,7 +253,7 @@ def test_authenticate_wrong_password_rejected(btcd_config):
     timeout = btcd_config.get("timeout", TestConfig.DEFAULT_SOCKET_TIMEOUT)
     try:
         c = BtcdConnection(host, port, connect_timeout=timeout)
-    except (OSError, ConnectionError) as exc:
+    except (OSError, websocket.WebSocketException) as exc:
         pytest.skip(f"Cannot connect to btcd at {host}:{port}: {exc}")
 
     try:

@@ -39,6 +39,9 @@ public:
     // Replace base class channel_t (authenticate authorizes in-band).
     using channel_t = channel_btcd;
 
+    // Replace base class options_t (btcd settings derive bitcoind settings).
+    using options_t = settings::btcd_server;
+
     typedef std::shared_ptr<protocol_btcd> ptr;
     using btcd_interface = interface::btcd;
     using btcd_dispatcher = network::rpc::dispatcher<btcd_interface>;
@@ -48,7 +51,7 @@ public:
         const options_t& options) NOEXCEPT
       : server::protocol_bitcoind(session, channel, options),
         network::tracker<protocol_btcd>(session->log),
-        options_(options),
+        btcd_options_(options),
         turbo_(session->database_settings().turbo),
         notification_strand_(channel->service().get_executor())
     {
@@ -223,8 +226,14 @@ private:
             BIND_SAFE(BIND_SHARED(method, args)));
     }
 
+    /// Configuration options of the btcd service.
+    inline const options_t& btcd_options() const NOEXCEPT
+    {
+        return btcd_options_;
+    }
+
     // These are thread safe.
-    const options_t& options_;
+    const options_t& btcd_options_;
     const bool turbo_;
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_blocks_{};
