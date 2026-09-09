@@ -22,11 +22,13 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 #include "../rpc_client.hpp"
+#include "../rpc_setup_fixture.hpp"
 
 #define ELECTRUM_ENDPOINT "127.0.0.1:65002"
 #define SPARROW_ENDPOINT "127.0.0.1:65003"
 
 struct electrum_setup_fixture
+  : rpc_setup_fixture
 {
     DELETE_COPY_MOVE(electrum_setup_fixture);
 
@@ -63,14 +65,6 @@ struct electrum_setup_fixture
     // Read one unsolicited frame (notification) from the websocket.
     boost::json::value ws_receive();
 
-    // 0_32 vs {} for xcode variant issue.
-    void notify(node::chase event_, node::event_value value=0_u32);
-
-protected:
-    configuration config_;
-    test::store_t store_;
-    test::query_t query_;
-
 private:
     // Verify the server.version response of any transport.
     bool verify(const boost::json::value& response, electrum::version version,
@@ -80,10 +74,7 @@ private:
     const server::settings::electrum_server& options() const;
 
     const service which_;
-    network::logger log_;
-    server::server_node server_;
-    boost::asio::io_context io{};
-    rpc_client client_{ io };
+    rpc_client client_{ io_ };
 };
 
 struct electrum_ten_block_setup_fixture

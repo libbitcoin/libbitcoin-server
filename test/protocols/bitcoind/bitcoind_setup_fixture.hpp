@@ -21,6 +21,7 @@
 
 #include "../../test.hpp"
 #include "../rpc_client.hpp"
+#include "../rpc_setup_fixture.hpp"
 #include "../../mocks/blocks.hpp"
 
 #define BITCOIND_ENDPOINT "127.0.0.1:65003"
@@ -29,6 +30,7 @@
 #define BITCOIND_TEST_SCOPED_METHOD "getblockcount"
 
 struct bitcoind_setup_fixture
+  : rpc_setup_fixture
 {
     using status = boost::beast::http::status;
     using initializer = std::function<bool(test::query_t&)>;
@@ -84,16 +86,8 @@ struct bitcoind_setup_fixture
     std::string rest_text(std::string_view target);
     system::data_chunk rest_data(std::string_view target);
 
-protected:
-    configuration config_;
-    test::store_t store_;
-    test::query_t query_;
-
 private:
-    network::logger log_;
-    server::server_node server_;
-    boost::asio::io_context io{};
-    rpc_client client_{ io };
+    rpc_client client_{ io_ };
 };
 
 struct bitcoind_ten_block_setup_fixture

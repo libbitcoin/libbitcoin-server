@@ -29,83 +29,37 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
     bool address_index, const configurator& configure)
-  : config_
-    {
-        system::chain::selection::mainnet,
-        test::web_pages,
-        test::web_pages
-    },
-    store_
-    {
-        [&]() NOEXCEPT -> const database::settings&
+  : rpc_setup_fixture(setup,
+        [configure](configuration& config) NOEXCEPT
         {
-            if (!address_index)
-                config_.database.outs.buckets = 0;
+            auto& btcd = config.server.btcd;
+            btcd.binds = { { BTCD_ENDPOINT } };
 
-            config_.database.path = TEST_DIRECTORY;
-            return config_.database;
-        }()
-    },
-    query_{ store_ }, log_{},
-    server_{ query_, config_, log_ }
+            // 2: the ws connection, plus the plain one used by http_rpc or
+            // tcp_rpc.
+            btcd.connections = 2;
+
+            // Distinct from the [bitcoind] section default, so that a read
+            // of the wrong service section is visible.
+            btcd.subversion = "/libbitcoin:btcd/";
+            btcd.inactivity_minutes = 1;
+
+            if (configure)
+                configure(config);
+        }, address_index)
 {
-    test::clear(test::directory);
-
-    auto& database_settings = config_.database;
-    auto& network_settings = config_.network;
-    auto& node_settings = config_.node;
-    auto& btcd = config_.server.btcd;
-
-    btcd.binds = { { BTCD_ENDPOINT } };
-
-    // 2: the ws connection, plus the plain one used by http_rpc or tcp_rpc.
-    btcd.connections = 2;
-
-    // Distinct from the [bitcoind] section default, so that a read of the
-    // wrong service section is visible (see btcd_rpc__getnetworkinfo).
-    btcd.subversion = "/libbitcoin:btcd/";
-    btcd.inactivity_minutes = 1;
-    database_settings.interval_depth = 2;
-    node_settings.delay_inbound = false;
-    node_settings.minimum_fee_rate = 99.0;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-
-    // Apply test-specific configuration overrides.
-    if (configure)
-        configure(config_);
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    setup(query_);
-
-    // Run the server.
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
-    {
-        running.set_value(ec);
-    });
-
-    // Block until server is running.
-    ec = running.get_future().get();
+    const auto endpoint = config_.server.btcd.binds.back().to_endpoint();
+    client_.connect(endpoint);
+    const auto ec = client_.upgrade();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
 
-    client_.connect(btcd.binds.back().to_endpoint());
-    const auto wec = client_.upgrade();
-    BOOST_REQUIRE_MESSAGE(!wec, wec.message());
-
-    other_.connect(btcd.binds.back().to_endpoint());
+    other_.connect(endpoint);
 }
 
 btcd_setup_fixture::~btcd_setup_fixture()
 {
     client_.close();
     other_.close();
-    server_.close();
-    const auto ec = store_.close([](auto, auto){});
-    BOOST_WARN_MESSAGE(!ec, ec.message());
-    test::clear(test::directory);
 }
 
 BC_POP_WARNING()
@@ -177,7 +131,3 @@ boost::json::value btcd_setup_fixture::http_rpc(std::string_view method,
     return other_.post(body_of(http_request_id_++, method, params), "/", true);
 }
 
-void btcd_setup_fixture::notify(node::chase event_, node::event_value value)
-{
-    server_.notify(system::error::success, event_, value);
-}

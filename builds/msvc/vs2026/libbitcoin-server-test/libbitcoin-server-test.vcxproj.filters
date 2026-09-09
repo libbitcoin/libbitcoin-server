@@ -177,6 +177,9 @@
     <ClCompile Include="..\..\..\..\test\protocols\rpc_client.cpp">
       <Filter>src\protocols</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\rpc_setup_fixture.cpp">
+      <Filter>src\protocols</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\sparrow\sparrow.cpp">
       <Filter>src\protocols\sparrow</Filter>
     </ClCompile>
@@ -228,6 +231,9 @@
       <Filter>src\protocols\native</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\rpc_client.hpp">
+      <Filter>src\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\rpc_setup_fixture.hpp">
       <Filter>src\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.hpp">

@@ -313,6 +313,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \
     ${srcdir}/../../test/protocols/rpc_client.cpp \
+    ${srcdir}/../../test/protocols/rpc_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
     ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
