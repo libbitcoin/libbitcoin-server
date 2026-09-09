@@ -596,6 +596,25 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
+// tcp (downgrade)
+// ----------------------------------------------------------------------------
+// btcd is served over the same universal json-rpc channel as bitcoind, so raw
+// json on a connection downgrades it from http to a newline-delimited stream.
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__downgraded__nine)
+{
+    const auto response = tcp_rpc("getblockcount");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__downgraded_second__nine)
+{
+    BOOST_REQUIRE_EQUAL(tcp_rpc("getblockcount").at("result").as_int64(), 9);
+
+    // The downgrade is latched, so the connection remains tcp.
+    BOOST_REQUIRE_EQUAL(tcp_rpc("getblockcount").at("result").as_int64(), 9);
+}
+
 // response envelope
 // ----------------------------------------------------------------------------
 

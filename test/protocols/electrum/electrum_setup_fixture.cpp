@@ -160,15 +160,9 @@ void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
     server_.notify(error::success, event_, value);
 }
 
-bool electrum_setup_fixture::handshake(electrum::version version,
-    const std::string& name, network::rpc::code_t id)
+bool electrum_setup_fixture::verify(const boost::json::value& response,
+    electrum::version version, network::rpc::code_t id) const
 {
-    const auto request = boost_format
-    (
-        R"({"id":%1%,"method":"server.version","params":["%2%","%3%"]})" "\n"
-    ) % id % name % electrum::version_to_string(version);
-
-    const auto response = get(request.str());
     try
     {
         if (response.at("id").as_int64() != id)
@@ -186,4 +180,104 @@ bool electrum_setup_fixture::handshake(electrum::version version,
     {
         return false;
     }
+}
+
+// The handshake request, as issued over any of the three transports.
+static std::string version_request(electrum::version version,
+    const std::string& name, network::rpc::code_t id)
+{
+    return (boost_format
+    (
+        R"({"id":%1%,"method":"server.version","params":["%2%","%3%"]})"
+    ) % id % name % electrum::version_to_string(version)).str();
+}
+
+bool electrum_setup_fixture::handshake(electrum::version version,
+    const std::string& name, network::rpc::code_t id)
+{
+    // The tcp stream is newline delimited (the other transports are framed).
+    return verify(get(version_request(version, name, id) + "\n"), version, id);
+}
+
+// http POST (the connection remains http, notifications are not pushed).
+// ----------------------------------------------------------------------------
+
+boost::json::value electrum_setup_fixture::post(const std::string& request)
+{
+    namespace http = boost::beast::http;
+    http::request<http::string_body> out{ http::verb::post, "/",
+        network::http::version_1_1 };
+    out.set(http::field::host, "localhost");
+    out.set(http::field::content_type, "application/json");
+    out.body() = request;
+    out.prepare_payload();
+    out.keep_alive(true);
+
+    network::boost_code ec{};
+    http::write(socket_, out, ec);
+    if (ec)
+        return boost::json::parse(R"({"dropped":true})");
+
+    boost::beast::flat_buffer buffer{};
+    http::response<http::string_body> in{};
+    http::read(socket_, buffer, in, ec);
+    if (ec)
+        return boost::json::parse(R"({"dropped":true})");
+
+    return test::parse_json(in.body());
+}
+
+bool electrum_setup_fixture::post_handshake(electrum::version version,
+    const std::string& name, network::rpc::code_t id)
+{
+    return verify(post(version_request(version, name, id)), version, id);
+}
+
+// websocket (framed, full duplex, so notifications are pushed).
+// ----------------------------------------------------------------------------
+
+network::boost_code electrum_setup_fixture::ws_upgrade()
+{
+    network::boost_code ec{};
+    BOOST_CHECK(!websocket_.has_value());
+
+    websocket_.emplace(socket_);
+    websocket_.value().text(true);
+    websocket_.value().handshake("localhost", "/", ec);
+
+    // A refused upgrade leaves the connection in http (teardown as such).
+    if (ec)
+        websocket_.reset();
+
+    return ec;
+}
+
+boost::json::value electrum_setup_fixture::ws_receive()
+{
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+
+    boost::beast::flat_buffer buffer{};
+    websocket_.value().read(buffer, ec);
+    if (ec)
+        return boost::json::parse(R"({"dropped":true})");
+
+    return test::parse_json(boost::beast::buffers_to_string(buffer.data()));
+}
+
+boost::json::value electrum_setup_fixture::ws_get(const std::string& request)
+{
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+    websocket_.value().write(boost::asio::buffer(request), ec);
+    if (ec)
+        return boost::json::parse(R"({"dropped":true})");
+
+    return ws_receive();
+}
+
+bool electrum_setup_fixture::ws_handshake(electrum::version version,
+    const std::string& name, network::rpc::code_t id)
+{
+    return verify(ws_get(version_request(version, name, id)), version, id);
 }
