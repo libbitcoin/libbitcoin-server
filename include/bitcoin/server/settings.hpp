@@ -129,6 +129,22 @@ public:
         network::config::endpoints more_safes{};
     };
 
+    /// sparrow interface settings, served in addition to electrum (so it
+    /// derives the electrum options that the shared protocols bind).
+    struct sparrow_server
+      : public electrum_server
+    {
+        using base = electrum_server;
+        using base::base;
+
+        /// Maximum silent payment (bip352) subscriptions per channel.
+        uint32_t maximum_silent_payments{ 10 };
+
+        /// Silent payment protocol versions advertised by server.features.
+        /// Empty (the default) omits the field, disabling the service.
+        std::vector<uint32_t> silent_payments{};
+    };
+
     /// html (http/s) document server settings (has directory/default).
     /// This is for web servers that expose a local file system directory.
     struct html_server
@@ -227,6 +243,9 @@ public:
 
     /// electrum compat interface (tcp/s, json-rpc-v2)
     electrum_server electrum{ "electrum" };
+
+    /// sparrow interface (electrum plus block stats and silent payments)
+    sparrow_server sparrow{ "sparrow" };
 
     /// stratum v1 compat interface (tcp/s, json-rpc-v1, auth handshake)
     network::settings::tls_server stratum_v1{ "stratum_v1" };

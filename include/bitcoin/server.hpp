@@ -53,6 +53,7 @@
 #include <bitcoin/server/interfaces/electrum.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/interfaces/native.hpp>
+#include <bitcoin/server/interfaces/sparrow.hpp>
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
 #include <bitcoin/server/interfaces/stratum_v2.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
@@ -89,6 +90,7 @@
 #include <bitcoin/server/protocols/protocol_http.hpp>
 #include <bitcoin/server/protocols/protocol_native.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
+#include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
