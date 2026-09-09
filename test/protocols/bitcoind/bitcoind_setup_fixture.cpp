@@ -90,265 +90,101 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(bitcoind.binds.back().to_endpoint());
+    client_.connect(bitcoind.binds.back().to_endpoint());
 }
 
 bitcoind_setup_fixture::~bitcoind_setup_fixture()
 {
-    if (websocket_.has_value())
-    {
-        network::boost_code ec{};
-        websocket_.value().close(websocket::close_code::normal, ec);
-
-        // Expected and harmless during fixture teardown:
-        // beast::websocket::error::closed : normal (graceful handshake).
-        // asio::error::operation_aborted  : hard (invalid request test).
-        if (ec &&
-            ec != boost::beast::websocket::error::closed &&
-            ec != boost::asio::error::operation_aborted)
-        {
-            BOOST_WARN_MESSAGE(false, ec.message());
-        }
-    }
-    else
-    {
-        socket_.close();
-    }
-
+    client_.close();
     server_.close();
     const auto ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }
 
-bitcoind_setup_fixture::string_request
-bitcoind_setup_fixture::create_get(std::string_view target)
+static std::string body_of(std::string_view method, std::string_view params)
 {
-    string_request request{ http::verb::get, target,
-        network::http::version_1_1 };
-    request.set(http::field::host, "localhost");
-    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-    request.keep_alive(true);
-    return request;
-}
-
-bitcoind_setup_fixture::string_request
-bitcoind_setup_fixture::create_post(std::string_view target,
-    std::string_view body)
-{
-    string_request request{ http::verb::post, target,
-        network::http::version_1_1 };
-    request.set(http::field::host, "localhost");
-    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-    request.set(http::field::content_type, "application/json");
-    request.body() = std::string{ body };
-    request.prepare_payload();
-    request.keep_alive(true);
-    return request;
+    std::ostringstream body{};
+    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
+        << R"(","params":)" << params << "}";
+    return body.str();
 }
 
 boost::json::value bitcoind_setup_fixture::rpc(std::string_view method,
     std::string_view params)
 {
-    std::ostringstream body{};
-    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
-        << R"(","params":)" << params << "}";
-    http::write(socket_, create_post("/", body.str()));
-
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    return test::parse_json(response.body());
+    return client_.post(body_of(method, params), "/", true);
 }
 
 boost::json::value bitcoind_setup_fixture::tcp_rpc(std::string_view method,
     std::string_view params)
 {
-    std::ostringstream body{};
-    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
-        << R"(","params":)" << params << "}\n";
-
-    network::boost_code ec{};
-    const auto request = body.str();
-    net::write(socket_, net::buffer(request), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-
-    std::string response{};
-    net::read_until(socket_, net::dynamic_buffer(response), '\n', ec);
-    return ec ? boost::json::parse(R"({"dropped":true})") :
-        test::parse_json(response);
+    return client_.send(body_of(method, params) + "\n");
 }
 
 boost::json::value bitcoind_setup_fixture::rpc_body(std::string_view body)
 {
-    http::write(socket_, create_post("/", body));
-
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    return ec ? boost::json::parse(R"({"dropped":true})") :
-        test::parse_json(response.body());
+    return client_.post(std::string{ body });
 }
 
 bitcoind_setup_fixture::status
 bitcoind_setup_fixture::rpc_body_status(std::string_view body)
 {
-    http::write(socket_, create_post("/", body));
-
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    return response.result();
+    return client_.post_status(std::string{ body });
 }
 
 bitcoind_setup_fixture::status
 bitcoind_setup_fixture::rpc_status(std::string_view method,
     const std::string& username, const std::string& password)
 {
-    std::ostringstream body{};
-    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method << R"(","params":[]})";
-
-    const std::string plain{ username + ":" + password };
-    const auto credential = "Basic " + system::encode_base64(plain);
-    auto request = create_post("/", body.str());
-    request.set(http::field::authorization, credential);
-    http::write(socket_, request);
-
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    return response.result();
+    return client_.post_status_authorized(body_of(method, "[]"), username,
+        password);
 }
 
 network::boost_code bitcoind_setup_fixture::ws_upgrade()
 {
-    network::boost_code ec{};
-    BOOST_CHECK(!websocket_.has_value());
-
-    websocket_.emplace(socket_);
-    websocket_.value().text(true);
-    websocket_.value().handshake("localhost", "/", ec);
-
-    // A refused upgrade leaves the connection in http (teardown as such).
-    if (ec)
-        websocket_.reset();
-
-    return ec;
+    return client_.upgrade();
 }
 
 network::boost_code bitcoind_setup_fixture::ws_upgrade(
     const std::string& username, const std::string& password)
 {
-    network::boost_code ec{};
-    BOOST_CHECK(!websocket_.has_value());
-
-    const std::string plain{ username + ":" + password };
-    const auto credential = "Basic " + system::encode_base64(plain);
-
-    websocket_.emplace(socket_);
-    websocket_.value().text(true);
-    websocket_.value().set_option(websocket::stream_base::decorator(
-        [credential](websocket::request_type& request) NOEXCEPT
-        {
-            request.set(http::field::authorization, credential);
-        }));
-
-    websocket_.value().handshake("localhost", "/", ec);
-
-    // A refused upgrade leaves the connection in http (teardown as such).
-    if (ec)
-        websocket_.reset();
-
-    return ec;
+    return client_.upgrade(username, password);
 }
 
 boost::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
     std::string_view params)
 {
-    std::ostringstream body{};
-    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method
-        << R"(","params":)" << params << "}";
-
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
-    websocket_.value().write(net::buffer(body.str()), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-
-    flat_buffer buffer{};
-    websocket_.value().read(buffer, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    return test::parse_json(buffers_to_string(buffer.data()));
+    return client_.frame(body_of(method, params), true);
 }
 
 boost::json::value bitcoind_setup_fixture::ws_rpc_dropped(
     std::string_view method, std::string_view params)
 {
-    std::ostringstream body{};
-    body << R"({"jsonrpc":"2.0","id":0,"method":")" << method << R"(","params":)" << params << "}";
-
-    const auto frame = body.str();
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
-    websocket_.value().write(net::buffer(frame), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-
-    flat_buffer buffer{};
-    websocket_.value().read(buffer, ec);
-    return ec ? boost::json::parse(R"({"dropped":true})") :
-        test::parse_json(buffers_to_string(buffer.data()));
+    return client_.frame(body_of(method, params));
 }
 
 void bitcoind_setup_fixture::ws_notify(std::string_view body)
 {
-    const std::string frame{ body };
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
-    websocket_.value().write(net::buffer(frame), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    client_.write_frame(body);
 }
 
 bitcoind_setup_fixture::status
 bitcoind_setup_fixture::rest_status(std::string_view target)
 {
-    http::write(socket_, create_get(target));
-
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    return response.result();
+    return client_.get(target).result();
 }
 
 boost::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
 {
-    http::write(socket_, create_get(target));
-
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    const auto response = client_.get(target);
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
     return test::parse_json(response.body());
 }
 
 std::string bitcoind_setup_fixture::rest_text(std::string_view target)
 {
-    http::write(socket_, create_get(target));
-
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<network::http::string_body> response{};
-    http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    const auto response = client_.get(target);
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
 
     auto body = response.body();
@@ -356,14 +192,16 @@ std::string bitcoind_setup_fixture::rest_text(std::string_view target)
     return body;
 }
 
+// The rest chunk body is not a json-rpc transport, so it reads the stream.
 system::data_chunk bitcoind_setup_fixture::rest_data(std::string_view target)
 {
-    http::write(socket_, create_get(target));
+    auto& socket = client_.stream();
+    http::write(socket, rpc_client::create_get(target));
 
     flat_buffer buffer{};
     network::boost_code ec{};
     http::response<network::http::chunk_body> response{};
-    http::read(socket_, buffer, response, ec);
+    http::read(socket, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
     return system::to_chunk(response.body());

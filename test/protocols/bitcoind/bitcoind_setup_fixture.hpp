@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BITCOIND_BITCOIND_SETUP_FIXTURE
 
 #include "../../test.hpp"
+#include "../rpc_client.hpp"
 #include "../../mocks/blocks.hpp"
 
 #define BITCOIND_ENDPOINT "127.0.0.1:65003"
@@ -89,20 +90,10 @@ protected:
     test::query_t query_;
 
 private:
-    using string_body = network::http::string_body;
-    using string_request = boost::beast::http::request<string_body>;
-    static string_request create_get(std::string_view target);
-    static string_request create_post(std::string_view target,
-        std::string_view body);
-
-    using tcp_stream = boost::beast::tcp_stream;
-    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
-
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
-    tcp_stream socket_{ io.get_executor() };
-    std::optional<websocket_stream> websocket_{};
+    rpc_client client_{ io };
 };
 
 struct bitcoind_ten_block_setup_fixture

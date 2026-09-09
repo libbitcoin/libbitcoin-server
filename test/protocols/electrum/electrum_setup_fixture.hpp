@@ -21,6 +21,7 @@
 
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
+#include "../rpc_client.hpp"
 
 #define ELECTRUM_ENDPOINT "127.0.0.1:65002"
 #define SPARROW_ENDPOINT "127.0.0.1:65003"
@@ -71,9 +72,6 @@ protected:
     test::query_t query_;
 
 private:
-    using websocket_stream = boost::beast::websocket::stream<
-        boost::asio::ip::tcp::socket&>;
-
     // Verify the server.version response of any transport.
     bool verify(const boost::json::value& response, electrum::version version,
         network::rpc::code_t id) const;
@@ -85,9 +83,7 @@ private:
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
-    boost::asio::ip::tcp::socket socket_{ io };
-    boost::asio::streambuf stream_{};
-    std::optional<websocket_stream> websocket_{};
+    rpc_client client_{ io };
 };
 
 struct electrum_ten_block_setup_fixture

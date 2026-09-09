@@ -102,12 +102,12 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(electrum.binds.back().to_endpoint());
+    client_.connect(electrum.binds.back().to_endpoint());
 }
 
 electrum_setup_fixture::~electrum_setup_fixture()
 {
-    socket_.close();
+    client_.close();
     server_.close();
     const auto ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
@@ -130,34 +130,12 @@ int64_t electrum_setup_fixture::get_error(const std::string& request)
 
 boost::json::value electrum_setup_fixture::get(const std::string& request)
 {
-    socket_.send(boost::asio::buffer(request));
-    return receive();
+    return client_.send(request);
 }
 
 boost::json::value electrum_setup_fixture::receive()
 {
-    try
-    {
-        boost::asio::read_until(socket_, stream_, '\n');
-    }
-    catch (const boost::system::system_error&)
-    {
-        ////std::cout << "electrum::get -> dropped" << std::endl;
-        return boost::json::parse(R"({"dropped":true})");
-    }
-
-    try
-    {
-        std::string response{};
-        std::istream response_stream{ &stream_ };
-        std::getline(response_stream, response);
-        return boost::json::parse(response);
-    }
-    catch (const boost::system::system_error&)
-    {
-        ////std::cout << "electrum::parse -> " << e.what() << std::endl;
-        return {};
-    }
+    return client_.receive();
 }
 
 void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
@@ -216,27 +194,7 @@ bool electrum_setup_fixture::handshake(electrum::version version,
 
 boost::json::value electrum_setup_fixture::post(const std::string& request)
 {
-    namespace http = boost::beast::http;
-    http::request<http::string_body> out{ http::verb::post, "/",
-        network::http::version_1_1 };
-    out.set(http::field::host, "localhost");
-    out.set(http::field::content_type, "application/json");
-    out.body() = request;
-    out.prepare_payload();
-    out.keep_alive(true);
-
-    network::boost_code ec{};
-    http::write(socket_, out, ec);
-    if (ec)
-        return boost::json::parse(R"({"dropped":true})");
-
-    boost::beast::flat_buffer buffer{};
-    http::response<http::string_body> in{};
-    http::read(socket_, buffer, in, ec);
-    if (ec)
-        return boost::json::parse(R"({"dropped":true})");
-
-    return test::parse_json(in.body());
+    return client_.post(request);
 }
 
 bool electrum_setup_fixture::post_handshake(electrum::version version,
@@ -250,42 +208,17 @@ bool electrum_setup_fixture::post_handshake(electrum::version version,
 
 network::boost_code electrum_setup_fixture::ws_upgrade()
 {
-    network::boost_code ec{};
-    BOOST_CHECK(!websocket_.has_value());
-
-    websocket_.emplace(socket_);
-    websocket_.value().text(true);
-    websocket_.value().handshake("localhost", "/", ec);
-
-    // A refused upgrade leaves the connection in http (teardown as such).
-    if (ec)
-        websocket_.reset();
-
-    return ec;
+    return client_.upgrade();
 }
 
 boost::json::value electrum_setup_fixture::ws_receive()
 {
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
-
-    boost::beast::flat_buffer buffer{};
-    websocket_.value().read(buffer, ec);
-    if (ec)
-        return boost::json::parse(R"({"dropped":true})");
-
-    return test::parse_json(boost::beast::buffers_to_string(buffer.data()));
+    return client_.read_frame();
 }
 
 boost::json::value electrum_setup_fixture::ws_get(const std::string& request)
 {
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
-    websocket_.value().write(boost::asio::buffer(request), ec);
-    if (ec)
-        return boost::json::parse(R"({"dropped":true})");
-
-    return ws_receive();
+    return client_.frame(request);
 }
 
 bool electrum_setup_fixture::ws_handshake(electrum::version version,
