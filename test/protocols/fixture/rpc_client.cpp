@@ -107,7 +107,8 @@ boost::json::value rpc_client::receive(bool checked)
     if (ec)
         return dropped();
 
-    const auto line = buffer_.substr(zero, size);
+    // read_until includes the delimiter, which the parse must not see.
+    const auto line = buffer_.substr(zero, sub1(size));
     buffer_.erase(zero, size);
 
     try
