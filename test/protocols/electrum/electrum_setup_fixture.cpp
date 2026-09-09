@@ -52,7 +52,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     auto& node_settings = config_.node;
     auto& server_settings = config_.server;
 
-    // Only the configured service binds, so the other never starts.
+    // Only the configured service binds.
     const auto sparrow = (which == service::sparrow);
     auto& electrum = sparrow ?
         static_cast<server::settings::electrum_server&>(server_settings.sparrow) :
@@ -196,7 +196,6 @@ bool electrum_setup_fixture::verify(const boost::json::value& response,
     }
 }
 
-// The handshake request, as issued over any of the three transports.
 static std::string version_request(electrum::version version,
     const std::string& name, network::rpc::code_t id)
 {
@@ -209,11 +208,10 @@ static std::string version_request(electrum::version version,
 bool electrum_setup_fixture::handshake(electrum::version version,
     const std::string& name, network::rpc::code_t id)
 {
-    // The tcp stream is newline delimited (the other transports are framed).
     return verify(get(version_request(version, name, id) + "\n"), version, id);
 }
 
-// http POST (the connection remains http, notifications are not pushed).
+// http POST.
 // ----------------------------------------------------------------------------
 
 boost::json::value electrum_setup_fixture::post(const std::string& request)
@@ -247,7 +245,7 @@ bool electrum_setup_fixture::post_handshake(electrum::version version,
     return verify(post(version_request(version, name, id)), version, id);
 }
 
-// websocket (framed, full duplex, so notifications are pushed).
+// websocket.
 // ----------------------------------------------------------------------------
 
 network::boost_code electrum_setup_fixture::ws_upgrade()

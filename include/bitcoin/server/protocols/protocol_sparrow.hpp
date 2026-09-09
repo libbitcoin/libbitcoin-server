@@ -27,10 +27,7 @@ namespace libbitcoin {
 namespace server {
 
 /// The sparrow interface, added to the inherited electrum interface, as
-/// protocol_btcd adds the btcd interface to bitcoind. One protocol serves
-/// both: electrum methods dispatch through the inherited interface, the
-/// three methods sparrow adds through the dispatcher carried here, and the
-/// electrum responses sparrow extends (server.features) are overridden.
+/// protocol_btcd adds the btcd interface to bitcoind.
 class BCS_API protocol_sparrow
   : public server::protocol_electrum,
     protected network::tracker<protocol_sparrow>
@@ -55,8 +52,7 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    /// The sparrow interface is dispatched from the electrum miss, so that
-    /// the inherited interface is unaffected by the added methods.
+    /// Dispatched from the electrum miss, so that interface is unaffected.
     void handle_unclaimed(
         const network::rpc::request_t& request) NOEXCEPT override;
 

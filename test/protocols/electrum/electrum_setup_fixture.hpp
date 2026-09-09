@@ -31,8 +31,7 @@ struct electrum_setup_fixture
 
     using initializer = std::function<bool(test::query_t&)>;
     using configurator = std::function<void(configuration&)>;
-    /// Sparrow is an independent service on its own binding, serving the
-    /// electrum interface, so it is configured and exercised identically.
+    /// The service configured and exercised (each has its own binding).
     enum class service { electrum, sparrow };
 
     explicit electrum_setup_fixture(const initializer& setup,
@@ -103,9 +102,8 @@ struct electrum_ten_block_setup_fixture
     }
 };
 
-/// The sparrow service (electrum interface plus the sparrow methods), which
-/// reuses this harness rather than duplicating it, as the transports, the
-/// handshake and the electrum interface are identical.
+/// The sparrow service, which reuses this harness (same transports, same
+/// handshake, same electrum interface).
 struct sparrow_ten_block_setup_fixture
   : electrum_setup_fixture
 {

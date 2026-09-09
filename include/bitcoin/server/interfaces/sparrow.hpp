@@ -26,11 +26,9 @@ namespace libbitcoin {
 namespace server {
 namespace interface {
 
-/// Methods served in addition to the electrum interface, as implemented by
-/// frigate and consumed by sparrow. These are not electrum protocol methods
-/// and are not versioned by the electrum handshake. Silent payment support is
-/// advertised by the (integer version list) silent_payments field of the
-/// electrum server.features response.
+/// Methods served in addition to electrum, as implemented by frigate and
+/// consumed by sparrow. Not electrum protocol methods, so not versioned by
+/// the electrum handshake.
 struct sparrow_methods
 {
     static constexpr std::tuple methods

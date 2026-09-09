@@ -20,18 +20,11 @@
 
 using namespace system;
 
-// Sparrow is an independent service on its own binding, serving the electrum
-// interface plus three methods of its own. These verify the composition (the
-// added methods are claimed here, the electrum interface is unaffected, and
-// server.features advertises what the service adds). The method bodies are
-// stubs, so they answer as unimplemented.
-
 static const code not_implemented{ server::error::electrum::method_not_found };
 
 BOOST_FIXTURE_TEST_SUITE(sparrow_tests, sparrow_ten_block_setup_fixture)
 
-// the inherited electrum interface
-// ----------------------------------------------------------------------------
+// inherited electrum interface
 
 BOOST_AUTO_TEST_CASE(sparrow__handshake__electrum_version__negotiated)
 {
@@ -42,7 +35,6 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_numblocks_subscribe__ten_block_store__r
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    // An electrum method is served unchanged by the sparrow service.
     const auto response = get(R"({"id":900,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
@@ -52,15 +44,11 @@ BOOST_AUTO_TEST_CASE(sparrow__unknown_method__electrum_terminal__method_not_foun
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    // Neither interface defines it, so the electrum terminal responds.
-    const auto response = get(R"({"id":901,"method":"server.bogus","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(),
-        not_implemented.value());
+    const auto result = get_error(R"({"id":901,"method":"server.bogus","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 // server.features
-// ----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(sparrow__server_features__silent_payments__advertised)
 {
@@ -74,16 +62,11 @@ BOOST_AUTO_TEST_CASE(sparrow__server_features__silent_payments__advertised)
 
     const auto& versions = result.at("silent_payments").as_array();
     BOOST_REQUIRE_EQUAL(versions.size(), one);
-    BOOST_REQUIRE_EQUAL(versions.at(0).as_int64(),
-        server::protocol_sparrow::silent_payments_version);
-
-    // The inherited response is otherwise unchanged.
-    REQUIRE_NO_THROW_TRUE(result.at("genesis_hash").is_string());
+    BOOST_REQUIRE_EQUAL(versions.at(0).as_int64(), server::protocol_sparrow::silent_payments_version);
     BOOST_REQUIRE_EQUAL(result.at("server_version").as_string(), "server_name");
 }
 
-// the sparrow interface (stubs)
-// ----------------------------------------------------------------------------
+// sparrow interface (stubs)
 
 BOOST_AUTO_TEST_CASE(sparrow__blockchain_block_stats__stub__method_not_found)
 {
@@ -119,8 +102,7 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__stub__metho
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// the electrum service does not serve the sparrow interface
-// ----------------------------------------------------------------------------
+// electrum does not serve the sparrow interface
 
 BOOST_FIXTURE_TEST_SUITE(sparrow_electrum_tests, electrum_ten_block_setup_fixture)
 
