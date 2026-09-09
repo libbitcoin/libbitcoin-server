@@ -56,9 +56,9 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
     server_{ query_, config_, log_ }
 {
     test::clear(test::directory);
-
     auto ec = store_.create([](auto, auto) {});
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
     setup(query_);
 
     // The node (chasers and address pool), bypassed by default.
@@ -89,6 +89,7 @@ rpc_setup_fixture::~rpc_setup_fixture()
     server_.close();
     const auto ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
+
     test::clear(test::directory);
 }
 

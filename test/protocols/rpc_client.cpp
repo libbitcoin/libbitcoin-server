@@ -86,6 +86,7 @@ boost::json::value rpc_client::send(const std::string& text, bool checked)
     error_code ec{};
     net::write(socket_, net::buffer(text), ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
+
     if (ec)
         return dropped();
 
@@ -99,7 +100,9 @@ boost::json::value rpc_client::receive(bool checked)
         net::dynamic_buffer(buffer_), '\n', ec);
 
     if (checked)
+    {
         BOOST_CHECK_MESSAGE(!ec, ec.message());
+    }
 
     if (ec)
         return dropped();
@@ -158,6 +161,7 @@ http::response<http::string_body> rpc_client::get(std::string_view target)
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
+
     return response;
 }
 
@@ -194,6 +198,7 @@ rpc_client::status rpc_client::post_status(const std::string& body,
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
+
     return response.result();
 }
 
@@ -230,6 +235,7 @@ rpc_client::status rpc_client::post_status_authorized(const std::string& body,
     http::response<http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
+
     return response.result();
 }
 
@@ -261,9 +267,9 @@ rpc_client::error_code rpc_client::upgrade(const std::string& username,
     const std::string& password)
 {
     error_code ec{};
-    BOOST_CHECK(!websocket_.has_value());
     const auto credential = basic(username, password);
 
+    BOOST_CHECK(!websocket_.has_value());
     websocket_.emplace(socket_);
     websocket_.value().text(true);
     websocket_.value().set_option(websocket::stream_base::decorator(
@@ -284,6 +290,7 @@ void rpc_client::write_frame(std::string_view text)
 {
     error_code ec{};
     BOOST_CHECK(websocket_.has_value());
+
     websocket_.value().write(net::buffer(text), ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 }
@@ -296,7 +303,9 @@ boost::json::value rpc_client::read_frame(bool checked)
     flat_buffer buffer{};
     websocket_.value().read(buffer, ec);
     if (checked)
+    {
         BOOST_CHECK_MESSAGE(!ec, ec.message());
+    }
 
     if (ec)
         return dropped();
@@ -308,8 +317,10 @@ boost::json::value rpc_client::frame(const std::string& text, bool checked)
 {
     error_code ec{};
     BOOST_CHECK(websocket_.has_value());
+
     websocket_.value().write(net::buffer(text), ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
+
     if (ec)
         return dropped();
 

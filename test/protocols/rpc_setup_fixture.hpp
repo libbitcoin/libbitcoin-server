@@ -36,7 +36,7 @@ struct rpc_setup_fixture
 
     /// Synthesize a node chase event (e.g. a block organized after a direct
     /// query_.set/push_confirmed) without a live p2p sync.
-    void notify(node::chase event_, node::event_value value=0_u32);
+    void notify(node::chase event_, node::event_value value={});
 
 protected:
     /// Creates and populates the store, then starts (optionally) and runs
