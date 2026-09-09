@@ -129,20 +129,13 @@ public:
         network::config::endpoints more_safes{};
     };
 
-    /// sparrow interface settings, served in addition to electrum (so it
-    /// derives the electrum options that the shared protocols bind).
+    /// sparrow interface settings, independent of electrum. Sparrow adds no
+    /// settings to electrum, but derives them as it serves that interface.
     struct sparrow_server
       : public electrum_server
     {
         using base = electrum_server;
         using base::base;
-
-        /// Maximum silent payment (bip352) subscriptions per channel.
-        uint32_t maximum_silent_payments{ 10 };
-
-        /// Silent payment protocol versions advertised by server.features.
-        /// Empty (the default) omits the field, disabling the service.
-        std::vector<uint32_t> silent_payments{};
     };
 
     /// html (http/s) document server settings (has directory/default).
@@ -198,9 +191,9 @@ public:
     };
 
     struct btcd_server
-      : public network::settings::http_server
+      : public bitcoind_server
     {
-        using base = network::settings::http_server;
+        using base = bitcoind_server;
         using base::base;
 
         /// Maximum cumulative number of loadtxfilter watches per channel.

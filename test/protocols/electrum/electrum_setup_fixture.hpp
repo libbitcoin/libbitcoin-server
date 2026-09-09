@@ -23,6 +23,7 @@
 #include "../../mocks/blocks.hpp"
 
 #define ELECTRUM_ENDPOINT "127.0.0.1:65002"
+#define SPARROW_ENDPOINT "127.0.0.1:65003"
 
 struct electrum_setup_fixture
 {
@@ -30,8 +31,13 @@ struct electrum_setup_fixture
 
     using initializer = std::function<bool(test::query_t&)>;
     using configurator = std::function<void(configuration&)>;
+    /// Sparrow is an independent service on its own binding, serving the
+    /// electrum interface, so it is configured and exercised identically.
+    enum class service { electrum, sparrow };
+
     explicit electrum_setup_fixture(const initializer& setup,
-        bool address_index=true, const configurator& configure={});
+        bool address_index=true, const configurator& configure={},
+        service which=service::electrum);
     ~electrum_setup_fixture();
 
     // json-rpc over the raw tcp stream (downgrades the connection).
@@ -73,6 +79,10 @@ private:
     bool verify(const boost::json::value& response, electrum::version version,
         network::rpc::code_t id) const;
 
+    // The settings of the configured service (electrum or sparrow).
+    const server::settings::electrum_server& options() const;
+
+    const service which_;
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
@@ -89,6 +99,21 @@ struct electrum_ten_block_setup_fixture
         {
             return test::setup_ten_block_store(query);
         })
+    {
+    }
+};
+
+/// The sparrow service (electrum interface plus the sparrow methods), which
+/// reuses this harness rather than duplicating it, as the transports, the
+/// handshake and the electrum interface are identical.
+struct sparrow_ten_block_setup_fixture
+  : electrum_setup_fixture
+{
+    inline sparrow_ten_block_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, {}, service::sparrow)
     {
     }
 };

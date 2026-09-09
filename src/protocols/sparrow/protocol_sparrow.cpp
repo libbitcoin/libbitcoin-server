@@ -24,6 +24,8 @@ namespace libbitcoin {
 namespace server {
 
 #define CLASS protocol_sparrow
+#define SUBSCRIBE_SPARROW(method, ...) \
+    sparrow_subscribe<CLASS>(&CLASS::method, __VA_ARGS__)
 
 using namespace network::rpc;
 using namespace std::placeholders;
@@ -39,17 +41,61 @@ void protocol_sparrow::start() NOEXCEPT
     if (started())
         return;
 
-    SUBSCRIBE_RPC(handle_blockchain_block_stats, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_blockchain_silent_payments_subscribe, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_RPC(handle_blockchain_silent_payments_unsubscribe, _1, _2, _3, _4);
-    protocol_rpc<interface::sparrow>::start();
+    SUBSCRIBE_SPARROW(handle_blockchain_block_stats, _1, _2, _3);
+    SUBSCRIBE_SPARROW(handle_blockchain_silent_payments_subscribe, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_SPARROW(handle_blockchain_silent_payments_unsubscribe, _1, _2, _3, _4);
+
+    // Subscribes the inherited electrum interface and starts the protocol.
+    protocol_electrum::start();
+}
+
+void protocol_sparrow::stopping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    sparrow_dispatcher_.stop(ec);
+    protocol_electrum::stopping(ec);
+}
+
+// Dispatch.
+// ----------------------------------------------------------------------------
+
+// A method the electrum interface does not define, which is the sparrow
+// interface or (as the terminal responder) not served at all.
+void protocol_sparrow::handle_unclaimed(const request_t& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (!sparrow_dispatcher::contains(message.method))
+    {
+        protocol_electrum::handle_unclaimed(message);
+        return;
+    }
+
+    if (const auto ec = sparrow_dispatcher_.notify(message))
+        stop(ec);
+}
+
+// Features.
+// ----------------------------------------------------------------------------
+
+// Advertise the silent payment (bip352) protocol versions served, as the
+// integer version list of the electrum server.features response. This is a
+// property of the service, so it is not configured (electrum omits it).
+void protocol_sparrow::add_features(object_t& features) const NOEXCEPT
+{
+    features["silent_payments"] = array_t{ silent_payments_version };
 }
 
 // Handlers.
 // ----------------------------------------------------------------------------
+// These are stubs. The methods are claimed by this protocol (so they are not
+// answered as unknown by the electrum terminal responder), and answered as
+// unimplemented until the block statistics and silent payment scan queries
+// are bound to the store.
 
+// github.com/sparrowwallet/frigate ElectrumServerService.getBlockStats
 void protocol_sparrow::handle_blockchain_block_stats(const code& ec,
-    rpc_interface::blockchain_block_stats, double) NOEXCEPT
+    sparrow_interface::blockchain_block_stats, double) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (stopped(ec))
@@ -60,8 +106,11 @@ void protocol_sparrow::handle_blockchain_block_stats(const code& ec,
     send_code(error::electrum::method_not_found);
 }
 
+// The scan secret is sent by the client and the spend secret is not, so this
+// is a scan-only key pair (bip352). A secure transport is the operator's
+// policy (configured binds), and is not enforced here.
 void protocol_sparrow::handle_blockchain_silent_payments_subscribe(
-    const code& ec, rpc_interface::blockchain_silent_payments_subscribe,
+    const code& ec, sparrow_interface::blockchain_silent_payments_subscribe,
     const std::string&, const std::string&, const interface::value_t&,
     const interface::array_t&) NOEXCEPT
 {
@@ -70,13 +119,13 @@ void protocol_sparrow::handle_blockchain_silent_payments_subscribe(
         return;
 
     // TODO: validate the key pair (32 byte scan secret, 33 byte spend point),
-    // TODO: bound by options().maximum_silent_payments, scan from start, and
-    // TODO: notify progress/history on blockchain.silentpayments.subscribe.
+    // TODO: bound by the electrum maximum_subscriptions, scan from start,
+    // TODO: and notify progress/history on blockchain.silentpayments.subscribe.
     send_code(error::electrum::method_not_found);
 }
 
 void protocol_sparrow::handle_blockchain_silent_payments_unsubscribe(
-    const code& ec, rpc_interface::blockchain_silent_payments_unsubscribe,
+    const code& ec, sparrow_interface::blockchain_silent_payments_unsubscribe,
     const std::string&, const std::string&) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -89,6 +138,7 @@ void protocol_sparrow::handle_blockchain_silent_payments_unsubscribe(
 
 BC_POP_WARNING()
 
+#undef SUBSCRIBE_SPARROW
 #undef CLASS
 
 } // namespace server

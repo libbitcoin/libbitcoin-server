@@ -24,7 +24,7 @@
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
-    bool address_index, const configurator& configure)
+    bool address_index, const configurator& configure, service which)
   : config_
     {
       system::chain::selection::mainnet,
@@ -42,7 +42,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
             return config_.database;
         }()
     },
-    query_{ store_ }, log_{},
+    query_{ store_ }, which_{ which }, log_{},
     server_{ query_, config_, log_ }
 {
     test::clear(test::directory);
@@ -51,9 +51,14 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
     auto& server_settings = config_.server;
-    auto& electrum = server_settings.electrum;
 
-    electrum.binds = { { ELECTRUM_ENDPOINT } };
+    // Only the configured service binds, so the other never starts.
+    const auto sparrow = (which == service::sparrow);
+    auto& electrum = sparrow ?
+        static_cast<server::settings::electrum_server&>(server_settings.sparrow) :
+        server_settings.electrum;
+
+    electrum.binds = { { sparrow ? SPARROW_ENDPOINT : ELECTRUM_ENDPOINT } };
     electrum.server_name = "server_name";
     electrum.banner_message = "banner_message";
     electrum.donation_address = "donation_address";
@@ -160,6 +165,15 @@ void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
     server_.notify(error::success, event_, value);
 }
 
+const server::settings::electrum_server&
+electrum_setup_fixture::options() const
+{
+    return which_ == service::sparrow ?
+        static_cast<const server::settings::electrum_server&>(
+            config_.server.sparrow) :
+        config_.server.electrum;
+}
+
 bool electrum_setup_fixture::verify(const boost::json::value& response,
     electrum::version version, network::rpc::code_t id) const
 {
@@ -172,7 +186,7 @@ bool electrum_setup_fixture::verify(const boost::json::value& response,
         const auto& result = response.at("result").as_array();
         return (result.size() == two) &&
             (result.at(0).is_string() && result.at(1).is_string()) &&
-            (result.at(0).as_string() == config_.server.electrum.server_name) &&
+            (result.at(0).as_string() == options().server_name) &&
             (result.at(1).as_string() == electrum::version_to_string(version));
 
     }

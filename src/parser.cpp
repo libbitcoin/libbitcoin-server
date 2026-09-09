@@ -1509,17 +1509,6 @@ options_metadata parser::load_settings() THROWS
         value<network::config::endpoints>(&configured.server.sparrow.more_safes),
         "Advertised secure host:port at which another server can be reached (defaults to empty)."
     )
-    (
-        "sparrow.maximum_silent_payments",
-        value<uint32_t>(&configured.server.sparrow.maximum_silent_payments),
-        "The maximum number of silent payment subscriptions per channel, defaults to 10."
-    )
-    (
-        "sparrow.silent_payments",
-        value<std::vector<uint32_t>>(&configured.server.sparrow.silent_payments),
-        "Silent payment protocol version advertised by server.features, multiple allowed, defaults to empty (disabled)."
-    )
-
     /* [stratum_v1] */
     (
         "stratum_v1.bind",

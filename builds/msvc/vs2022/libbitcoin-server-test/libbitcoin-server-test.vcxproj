@@ -160,6 +160,7 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_output.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\sparrow\sparrow.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp" />

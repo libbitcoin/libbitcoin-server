@@ -65,6 +65,10 @@ protected:
     void handle_unclaimed(
         const network::rpc::request_t& request) NOEXCEPT override;
 
+    /// Override to decorate the server.features response (see sparrow).
+    virtual void add_features(
+        network::rpc::object_t& features) const NOEXCEPT;
+
     /// Event handlers.
     bool handle_chase(const code&, node::chase event_,
         node::event_value) NOEXCEPT;
@@ -205,6 +209,10 @@ protected:
         rpc_interface::mempool_get_info) NOEXCEPT;
 
 protected:
+    // Aliases (protected, as derived services build the same responses).
+    using array_t = network::rpc::array_t;
+    using object_t = network::rpc::object_t;
+
     using point = system::chain::point;
     using hash_digest = system::hash_digest;
     using history = database::history;
@@ -320,10 +328,6 @@ protected:
     }
 
 private:
-    // Aliases.
-    using array_t = network::rpc::array_t;
-    using object_t = network::rpc::object_t;
-
     // Post to notification strand.
     template <class Derived, typename Method, typename... Args>
     inline auto notify(Method&& method, Args&&... args) NOEXCEPT
