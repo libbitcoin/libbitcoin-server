@@ -92,6 +92,7 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":703,"method":"mempool.get_info","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();

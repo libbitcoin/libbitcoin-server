@@ -39,6 +39,7 @@ BOOST_AUTO_TEST_CASE(electrum__post__numblocks_subscribe__returns_9)
     BOOST_REQUIRE(post_handshake(electrum::version::v1_0));
 
     const auto response = post(R"({"id":700,"method":"blockchain.numblocks.subscribe","params":[]})");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 700);
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
@@ -63,7 +64,7 @@ BOOST_AUTO_TEST_CASE(electrum__post__subscribed_event__no_notification)
 
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    notify(node::chase::organized, { 10_u32 });
+    notify(node::chase::organized, node::header_t{ 10 });
 
     // The next response (not a notification) proves nothing was pushed.
     const auto next = post(R"({"id":703,"method":"blockchain.relayfee","params":[]})");
@@ -89,6 +90,7 @@ BOOST_AUTO_TEST_CASE(electrum__ws__numblocks_subscribe__returns_9)
     BOOST_REQUIRE(ws_handshake(electrum::version::v1_0));
 
     const auto response = ws_get(R"({"id":800,"method":"blockchain.numblocks.subscribe","params":[]})");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 800);
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
@@ -114,7 +116,7 @@ BOOST_AUTO_TEST_CASE(electrum__ws__subscribed_event__notified)
 
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    notify(node::chase::organized, { 10_u32 });
+    notify(node::chase::organized, node::header_t{ 10 });
 
     const auto notification = ws_receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());

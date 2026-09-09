@@ -30,6 +30,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__default__expected)
     const auto response = get(R"({"id":0,"method":"server.version","params":["foobar"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& result = response.at("result").as_array();
@@ -44,6 +45,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__minimum__expected)
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.0"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 42);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& result = response.at("result").as_array();
@@ -58,6 +60,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__maximum__expected)
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.7"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 42);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& result = response.at("result").as_array();
@@ -70,6 +73,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__maximum__expected)
 BOOST_AUTO_TEST_CASE(electrum__server_version__valid_range__expected)
 {
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.0","1.7"]]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.7");
 }
@@ -78,6 +82,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__future_range__negotiates_maximum)
 {
     // An undefined future maximum negotiates down to the defined maximum.
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.4","2.0"]]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.7");
 }
@@ -86,6 +91,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__undefined_minimum__negotiates_max
 {
     // An undefined past minimum negotiates up to the defined maximum.
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["0.7","1.7"]]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.7");
 }
@@ -94,6 +100,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__undefined_within_range__negotiate
 {
     // An undefined version within the range floors to a defined version.
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.4","1.5"]]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
 }
@@ -166,6 +173,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call__returns_negotiat
 
     const auto request = R"({"id":42,"method":"server.version","params":["newname","%1%"]})" "\n";
     const auto response = get((boost_format(request) % expected).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 2u);
     BOOST_REQUIRE(response.at("result").as_array().at(1).is_string());
@@ -179,6 +187,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call_with_invalid_para
     BOOST_REQUIRE(handshake(version));
 
     const auto response = get(R"({"id":57,"method":"server.version","params":["foobar","invalid"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 2u);
     BOOST_REQUIRE(response.at("result").as_array().at(1).is_string());
@@ -286,6 +295,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_default__floored_maxim
 {
     // The undefined configured maximum floors to the defined 1.4.2.
     const auto response = get(R"({"id":0,"method":"server.version","params":["foobar"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
 }
@@ -294,6 +304,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_range__floored_maximum
 {
     // The client range clamps to the configured maximum and floors.
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.0","1.7"]]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
 }
@@ -301,6 +312,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_range__floored_maximum
 BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_within_bounds__expected)
 {
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.4"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4");
 }
@@ -309,6 +321,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_minimum_range__configu
 {
     // The client range caps at the configured minimum.
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar",["1.0","1.2"]]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.2");
 }
@@ -334,6 +347,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__restricted__configured_bounds)
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":300,"method":"server.features","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();

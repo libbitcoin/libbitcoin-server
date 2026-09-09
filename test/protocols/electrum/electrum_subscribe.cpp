@@ -75,6 +75,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__bogus_p2pkh__null)
 
     const auto request = R"({"id":1101,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % bogus_address).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
@@ -101,6 +102,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__exp
 
     const auto request = R"({"id":1101,"method":"blockchain.address.subscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % found_address).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
 }
@@ -231,7 +233,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized);
+    notify(node::chase::organized, node::header_t{ 0 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -255,7 +257,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized);
+    notify(node::chase::organized, node::header_t{ 0 });
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -312,6 +314,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__bogus_scripthash
 
     const auto request = R"({"id":1101,"method":"blockchain.scripthash.subscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % bogus_scripthash).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
@@ -338,6 +341,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__initialization__
 
     const auto request = R"({"id":1101,"method":"blockchain.scripthash.subscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % found_scripthash).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
 }
@@ -468,7 +472,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized);
+    notify(node::chase::organized, node::header_t{ 0 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -492,7 +496,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized);
+    notify(node::chase::organized, node::header_t{ 0 });
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -549,6 +553,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__unsubscribed__
 
     const auto request = R"({"id":1101,"method":"blockchain.scripthash.unsubscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % bogus_scripthash).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
     BOOST_REQUIRE(!response.at("result").as_bool());
 }
@@ -608,6 +613,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__bogus_script__
 
     const auto request = R"({"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % bogus_script).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
@@ -634,6 +640,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__initialization
 
     const auto request = R"({"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % found_script).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
 }
@@ -764,7 +771,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized);
+    notify(node::chase::organized, node::header_t{ 0 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -788,7 +795,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized);
+    notify(node::chase::organized, node::header_t{ 0 });
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -845,6 +852,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__unsubscribed
 
     const auto request = R"({"id":1101,"method":"blockchain.scriptpubkey.unsubscribe","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % bogus_script).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
     BOOST_REQUIRE(!response.at("result").as_bool());
 }
@@ -891,8 +899,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_noti
 
     // Reorg resets the accumulator and clears the cursor; the following organized
     // event re-folds the unchanged history and must reproduce the same status.
-    notify(node::chase::reorganized);
-    notify(node::chase::organized);
+    notify(node::chase::reorganized, node::header_t{ 0 });
+    notify(node::chase::organized, node::header_t{ 0 });
 
     const auto notification = receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());

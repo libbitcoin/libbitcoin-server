@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
     BOOST_REQUIRE(header);
     const auto expected = to_chunk(reverse_copy(header->hash()));
 
-    notify(node::chase::organized, link);
+    notify(node::chase::organized, node::header_t{ link });
     const auto first = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(first.size(), 3u);
     BOOST_REQUIRE_EQUAL(first.at(0), to_chunk(std::string{ "hashblock" }));
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
     BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
 
     // The per-topic sequence increments after each publication.
-    notify(node::chase::organized, link);
+    notify(node::chase::organized, node::header_t{ link });
     const auto second = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(second.size(), 3u);
     BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(zmq__rawtx__organized__block_transaction_only_subscribed_to
     const auto expected = block->transactions_ptr()->front()->to_data(true);
 
     // hashblock/rawblock/sequence precede rawtx but are not subscribed.
-    notify(node::chase::organized, link);
+    notify(node::chase::organized, node::header_t{ link });
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label
     auto expected = to_chunk(reverse_copy(header->hash()));
     expected.push_back('C');
 
-    notify(node::chase::organized, link);
+    notify(node::chase::organized, node::header_t{ link });
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE(zmq__subscribe__empty_prefix__all_topics_published)
     peer_ping_pong(socket_);
 
     // The empty prefix matches every topic, published in this order.
-    notify(node::chase::organized, query_.to_confirmed(1));
+    notify(node::chase::organized, node::header_t{ query_.to_confirmed(1) });
     BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashtx"));
     BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
     BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashblock"));
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(zmq__rawtx__reorganized__block_transaction_published)
     BOOST_REQUIRE(block);
     const auto expected = block->transactions_ptr()->front()->to_data(true);
 
-    notify(node::chase::reorganized, link);
+    notify(node::chase::reorganized, node::header_t{ link });
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
@@ -452,7 +452,7 @@ BOOST_AUTO_TEST_CASE(zmq__sequence__reorganized__reversed_hash_and_disconnected_
     auto expected = to_chunk(reverse_copy(header->hash()));
     expected.push_back('D');
 
-    notify(node::chase::reorganized, link);
+    notify(node::chase::reorganized, node::header_t{ link });
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
@@ -483,7 +483,7 @@ BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__cancelled__subscription_release
     peer_ping_pong(socket_);
 
     // The cancelled topics precede hashblock but are no longer published.
-    notify(node::chase::organized, query_.to_confirmed(1));
+    notify(node::chase::organized, node::header_t{ query_.to_confirmed(1) });
     const auto message = peer_read_message(socket_);
     BOOST_REQUIRE_EQUAL(message.size(), 3u);
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));

@@ -117,7 +117,8 @@ boost::json::value rpc_client::receive(bool checked)
     }
     catch (const boost::system::system_error&)
     {
-        return {};
+        // Carry the text, as a bare {} reports nothing to a failed test.
+        return boost::json::value{ { "unparsed", line } };
     }
 }
 
