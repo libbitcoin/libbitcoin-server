@@ -146,6 +146,21 @@ void server_node::start_electrum(const code& ec,
     }
 
     attach_electrum_session()->start(
+        std::bind(&server_node::start_sparrow, this, _1, handler));
+}
+
+void server_node::start_sparrow(const code& ec,
+    const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    attach_sparrow_session()->start(
         std::bind(&server_node::start_stratum_v1, this, _1, handler));
 }
 
@@ -224,6 +239,12 @@ session_electrum::ptr server_node::attach_electrum_session() NOEXCEPT
 {
     return net::attach<session_electrum>(*this, config_,
         config_.server.electrum);
+}
+
+session_sparrow::ptr server_node::attach_sparrow_session() NOEXCEPT
+{
+    return net::attach<session_sparrow>(*this, config_,
+        config_.server.sparrow);
 }
 
 session_stratum_v1::ptr server_node::attach_stratum_v1_session() NOEXCEPT

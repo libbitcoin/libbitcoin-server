@@ -50,6 +50,8 @@ using session_stratum_v2 = session_server<protocol_stratum_v2>;
 using session_bitcoind_zmq = session_server<protocol_bitcoind_zmq>;
 using session_electrum = session_handshake<protocol_electrum_version,
     protocol_electrum>;
+using session_sparrow = session_handshake<protocol_electrum_version,
+    protocol_sparrow, protocol_electrum>;
 
 } // namespace server
 } // namespace libbitcoin
@@ -95,8 +97,11 @@ server::session → node::session
     ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
     ╞══ session_bitcoind_zmq = server::session_server<protocol_bitcoind_zmq>
     └── server::session_handshake<...Protocols>
-        ╘══ session_electrum = server::session_handshake<
-                protocol_electrum_version, protocol_electrum>
+        ╞══ session_electrum = server::session_handshake<
+        │       protocol_electrum_version, protocol_electrum>
+        ╘══ session_sparrow  = server::session_handshake<
+                protocol_electrum_version, protocol_sparrow,
+                protocol_electrum>
 
 The bitcoind interface subgroups (blockchain, control, mining, network,
 notifications, test, transaction, utility, wallet) are independent protocols,
@@ -104,5 +109,9 @@ each with its own interface dispatcher, attached to the same channel. A
 subgroup claims each request defined by its interface (via the channel latch);
 protocol_bitcoind is the terminal default responder, attached last, replying
 only to unclaimed requests. The first protocol supplies channel_t/options_t.
+
+The sparrow session is the electrum session plus protocol_sparrow, which
+claims the three methods sparrow adds to electrum. It is attached before
+protocol_electrum, which remains the terminal responder for that channel.
 
 */

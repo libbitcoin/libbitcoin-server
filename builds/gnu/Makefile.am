@@ -104,6 +104,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/native/protocol_native_input.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_output.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_tx.cpp \
+    ${srcdir}/../../src/protocols/sparrow/protocol_sparrow.cpp \
     ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp \
     ${srcdir}/../../src/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../src/serializers/bitcoind_coin.cpp \
@@ -187,6 +188,7 @@ include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/interfaces.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/native.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/sparrow.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/types.hpp
@@ -233,6 +235,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_http.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_native.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_rpc.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_sparrow.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocols.hpp
