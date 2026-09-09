@@ -21,6 +21,8 @@ Optional environment variables:
     ELECTRUM_DEBUG=1            Pretty-print all JSON-RPC messages
 """
 
+from __future__ import annotations
+
 import json
 import os
 import select
