@@ -61,6 +61,10 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
     // 2: the ws connection (websocket_/socket_) plus the plain one
     // (http_socket_) used by http_rpc() or, by detection, tcp_rpc().
     btcd.connections = 2;
+
+    // Distinct from the [bitcoind] section default, so that a read of the
+    // wrong service section is visible (see btcd_rpc__getnetworkinfo).
+    btcd.subversion = "/libbitcoin:btcd/";
     btcd.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;

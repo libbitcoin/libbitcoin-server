@@ -216,7 +216,7 @@ void protocol_bitcoind_control::send_openrpc() NOEXCEPT
     append_methods<bitcoind_utility_methods>(methods);
     append_methods<bitcoind_wallet_methods>(methods);
 
-    const auto& settings = server_settings().bitcoind;
+    const auto& settings = options();
     const auto size = 64 * methods.size();
     send_result(object_t
     {

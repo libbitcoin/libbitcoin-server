@@ -615,6 +615,19 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__downgraded_second__nine)
     BOOST_REQUIRE_EQUAL(tcp_rpc("getblockcount").at("result").as_int64(), 9);
 }
 
+// service settings
+// ----------------------------------------------------------------------------
+
+// btcd settings derive bitcoind settings, and btcd is an independent service,
+// so it reports its own configured section (not that of [bitcoind]).
+BOOST_AUTO_TEST_CASE(btcd_rpc__getnetworkinfo__derived_settings__btcd_section)
+{
+    const auto response = rpc("getnetworkinfo");
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("subversion").as_string(),
+        "/libbitcoin:btcd/");
+}
+
 // response envelope
 // ----------------------------------------------------------------------------
 

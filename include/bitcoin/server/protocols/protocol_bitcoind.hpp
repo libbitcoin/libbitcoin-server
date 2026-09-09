@@ -40,6 +40,10 @@ public:
     // Replace base class channel_t (json-rpc websocket reader body).
     using channel_t = channel_bitcoind;
 
+    // Replace base class options_t with the service settings, so a derived
+    // service (btcd) reports its own configured section (see sessions.hpp).
+    using options_t = settings::bitcoind_server;
+
     typedef std::shared_ptr<protocol_bitcoind> ptr;
 
     inline protocol_bitcoind(const auto& session,
@@ -47,6 +51,7 @@ public:
         const options_t& options) NOEXCEPT
       : server::protocol_http(session, channel, options),
         network::tracker<protocol_bitcoind>(session->log),
+        options_(options),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         flags_(session->system_settings().flags()),
@@ -56,7 +61,13 @@ public:
 
 protected:
     using post = network::http::method::post;
-    using options = network::http::method::options;
+    using options_verb = network::http::method::options;
+
+    /// Configuration options of the service (bitcoind or a derivation).
+    inline const options_t& options() const NOEXCEPT
+    {
+        return options_;
+    }
 
     /// Terminal dispatch (unclaimed requests only).
     void handle_receive_get(const code& ec,
@@ -114,6 +125,7 @@ private:
 
 protected:
     // These are thread safe.
+    const options_t& options_;
     const uint8_t p2kh_;
     const uint8_t p2sh_;
     const uint32_t flags_;
