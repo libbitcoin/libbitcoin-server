@@ -24,6 +24,7 @@ import socket
 
 import pytest
 import requests
+import websocket
 
 _TIMEOUT = 15.0
 
@@ -194,11 +195,6 @@ def test_electrum_http_post_request(electrum_config):
 
 def test_electrum_websocket_request(electrum_config):
     """server.version and a method are served over a websocket upgrade."""
-    websocket = pytest.importorskip(
-        "websocket",
-        reason="websocket-client is required for websocket transport tests"
-    )
-
     url = f"ws://{electrum_config['host']}:{electrum_config['port']}/"
     connection = websocket.create_connection(url, timeout=_TIMEOUT)
     try:

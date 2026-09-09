@@ -132,6 +132,13 @@ def pytest_addoption(parser):
     )
 
     parser.addoption(
+        "--scan-timeout",
+        action="store",
+        default="1800",
+        help="Timeout in seconds for whole-set scans, e.g. gettxoutsetinfo "
+             "(default: 1800)"
+    )
+    parser.addoption(
         "--subscription-timeout",
         action="store",
         default="60",
@@ -228,7 +235,8 @@ def bitcoind_rpc_config(request):
         "url": f"http://{host}:{port}/",
         "use_auth": request.config.getoption("--bitcoind-auth"),
         "cookie_path": request.config.getoption("--bitcoind-cookie"),
-        "timeout": float(request.config.getoption("--timeout"))
+        "timeout": float(request.config.getoption("--timeout")),
+        "scan_timeout": float(request.config.getoption("--scan-timeout"))
     }
 
     # Load authentication if requested
