@@ -34,23 +34,26 @@
     <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\fixture">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\sparrow">
+    <Filter Include="src\protocols\native">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\zmq">
+    <Filter Include="src\protocols\sparrow">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\pyzmq">
+    <Filter Include="src\protocols\zmq">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\serializers">
+    <Filter Include="src\pyzmq">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\utilities">
+    <Filter Include="src\serializers">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utilities">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000F}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +156,12 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_client.cpp">
+      <Filter>src\protocols\fixture</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.cpp">
+      <Filter>src\protocols\fixture</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\native\native_address.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>
@@ -173,12 +182,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp">
       <Filter>src\protocols\native</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\rpc_client.cpp">
-      <Filter>src\protocols</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\protocols\rpc_setup_fixture.cpp">
-      <Filter>src\protocols</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\sparrow\sparrow.cpp">
       <Filter>src\protocols\sparrow</Filter>
@@ -227,14 +230,14 @@
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp">
       <Filter>src\protocols\electrum</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_client.hpp">
+      <Filter>src\protocols\fixture</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.hpp">
+      <Filter>src\protocols\fixture</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp">
       <Filter>src\protocols\native</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\test\protocols\rpc_client.hpp">
-      <Filter>src\protocols</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\test\protocols\rpc_setup_fixture.hpp">
-      <Filter>src\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.hpp">
       <Filter>src\protocols\zmq</Filter>

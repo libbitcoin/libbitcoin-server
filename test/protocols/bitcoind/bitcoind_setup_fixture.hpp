@@ -20,8 +20,8 @@
 #define LIBBITCOIN_SERVER_TEST_PROTOCOLS_BITCOIND_BITCOIND_SETUP_FIXTURE
 
 #include "../../test.hpp"
-#include "../rpc_client.hpp"
-#include "../rpc_setup_fixture.hpp"
+#include "../fixture/rpc_client.hpp"
+#include "../fixture/rpc_setup_fixture.hpp"
 #include "../../mocks/blocks.hpp"
 
 #define BITCOIND_ENDPOINT "127.0.0.1:65003"

@@ -21,8 +21,8 @@
 
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
-#include "../rpc_client.hpp"
-#include "../rpc_setup_fixture.hpp"
+#include "../fixture/rpc_client.hpp"
+#include "../fixture/rpc_setup_fixture.hpp"
 
 #define ELECTRUM_ENDPOINT "127.0.0.1:65002"
 #define SPARROW_ENDPOINT "127.0.0.1:65003"

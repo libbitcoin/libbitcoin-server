@@ -16,11 +16,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_RPC_SETUP_FIXTURE_HPP
-#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_RPC_SETUP_FIXTURE_HPP
+#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_FIXTURE_RPC_SETUP_FIXTURE_HPP
+#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_FIXTURE_RPC_SETUP_FIXTURE_HPP
 
-#include "../test.hpp"
-#include "../mocks/blocks.hpp"
+#include "../../test.hpp"
+#include "../../mocks/blocks.hpp"
 
 /// The lifecycle common to the universal json-rpc service fixtures: a store,
 /// a node and a running server. A service supplies its own settings through
