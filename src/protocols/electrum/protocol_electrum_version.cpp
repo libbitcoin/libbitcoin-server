@@ -193,13 +193,11 @@ bool protocol_electrum_version::get_versions(system::config::version& min,
     // Optional value_t can be string_t or array_t of two string_t.
     const auto& value = version.value();
 
-    // Default version (null_t is the default of value_t).
+    // An omitted version is a 1.0 request (required from 1.1).
     if (std::holds_alternative<null_t>(value))
     {
-        // An interface default can't be set for optional<value_t>.
-        // An unspecified version accepts any, subject to configured limits.
-        min = {};
-        max = options().protocol_maximum;
+        min = { 1, 0 };
+        max = { 1, 0 };
         return true;
     }
 

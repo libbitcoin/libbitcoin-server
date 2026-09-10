@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__default__expected)
     BOOST_REQUIRE_EQUAL(result.size(), 2u);
     BOOST_REQUIRE(result.at(0).is_string());
     BOOST_REQUIRE_EQUAL(result.at(0).as_string(), "server_name");
-    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.7");
+    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.0");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__trailing_arguments__ignored)
@@ -302,13 +302,12 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(electrum_restricted_version_tests, electrum_restricted_version_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_default__floored_maximum)
+BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_default__rejected)
 {
-    // The undefined configured maximum floors to the defined 1.4.2.
+    // An omitted version is a 1.0 request, below the configured minimum.
     const auto response = get(R"({"id":0,"method":"server.version","params":["foobar"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_range__floored_maximum)
