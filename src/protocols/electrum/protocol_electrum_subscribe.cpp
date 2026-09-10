@@ -49,7 +49,8 @@ void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_1))
+    if (!at_least(electrum::version::v1_1) ||
+         at_least(electrum::version::v1_7))
     {
         send_code(error::electrum::bad_request);
         return;
@@ -141,7 +142,8 @@ void protocol_electrum::handle_blockchain_scripthash_unsubscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_4_2))
+    if (!at_least(electrum::version::v1_4_2) ||
+         at_least(electrum::version::v1_7))
     {
         send_code(error::electrum::bad_request);
         return;

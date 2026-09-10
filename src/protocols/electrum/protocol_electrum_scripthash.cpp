@@ -43,7 +43,8 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_1))
+    if (!at_least(electrum::version::v1_1) ||
+         at_least(electrum::version::v1_7))
     {
         send_code(error::electrum::bad_request);
         return;
@@ -117,7 +118,8 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_1))
+    if (!at_least(electrum::version::v1_1) ||
+         at_least(electrum::version::v1_7))
     {
         send_code(error::electrum::bad_request);
         return;
@@ -129,7 +131,8 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
 }
 
 // common
-void protocol_electrum::get_history(const system::hash_digest& hash) NOEXCEPT
+void protocol_electrum::get_history(const system::hash_digest& hash,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (hash == null_hash)
@@ -145,10 +148,11 @@ void protocol_electrum::get_history(const system::hash_digest& hash) NOEXCEPT
     }
 
     monitor(true);
-    PARALLEL(do_get_history, hash);
+    PARALLEL(do_get_history, hash, wrap);
 }
 
-void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
+void protocol_electrum::do_get_history(const hash_digest& hash,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     histories histories{};
@@ -157,11 +161,12 @@ void protocol_electrum::do_get_history(const hash_digest& hash) NOEXCEPT
     const auto ec = query.get_history(stopping_, cursor, histories, hash,
         options().maximum_history, turbo_);
 
-    POST(complete_get_history, ec, hash, std::move(histories));
+    POST(complete_get_history, ec, hash, std::move(histories), wrap);
 }
 
 void protocol_electrum::complete_get_history(const code& ec,
-    const hash_digest& scripthash, const histories& histories) NOEXCEPT
+    const hash_digest& scripthash, const histories& histories,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
     monitor(false);
@@ -178,7 +183,7 @@ void protocol_electrum::complete_get_history(const code& ec,
     const auto size = add1(histories.size()) * 128u;
     auto out = transform(histories);
     append_retained(out, scripthash);
-    send_result(std::move(out), size);
+    send_result(wrapped(std::move(out), "history", wrap), size);
 }
 
 // get_mempool
@@ -193,7 +198,8 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_1))
+    if (!at_least(electrum::version::v1_1) ||
+         at_least(electrum::version::v1_7))
     {
         send_code(error::electrum::bad_request);
         return;
@@ -205,7 +211,8 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
 }
 
 // common
-void protocol_electrum::get_mempool(const system::hash_digest& hash) NOEXCEPT
+void protocol_electrum::get_mempool(const system::hash_digest& hash,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (hash == null_hash)
@@ -221,10 +228,11 @@ void protocol_electrum::get_mempool(const system::hash_digest& hash) NOEXCEPT
     }
 
     monitor(true);
-    PARALLEL(do_get_mempool, hash);
+    PARALLEL(do_get_mempool, hash, wrap);
 }
 
-void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
+void protocol_electrum::do_get_mempool(const hash_digest& hash,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     histories histories{};
@@ -232,11 +240,12 @@ void protocol_electrum::do_get_mempool(const hash_digest& hash) NOEXCEPT
     auto ec = query.get_unconfirmed_history(stopping_, histories, hash,
         options().maximum_history, turbo_);
 
-    POST(complete_get_mempool, ec, hash, std::move(histories));
+    POST(complete_get_mempool, ec, hash, std::move(histories), wrap);
 }
 
 void protocol_electrum::complete_get_mempool(const code& ec,
-    const hash_digest& scripthash, const histories& histories) NOEXCEPT
+    const hash_digest& scripthash, const histories& histories,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
     monitor(false);
@@ -253,7 +262,7 @@ void protocol_electrum::complete_get_mempool(const code& ec,
     const auto size = add1(histories.size()) * 128u;
     auto out = transform(histories);
     append_retained(out, scripthash);
-    send_result(std::move(out), size);
+    send_result(wrapped(std::move(out), "history", wrap), size);
 }
 
 // list_unspent
@@ -267,7 +276,8 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
     if (stopped(ec))
         return;
 
-    if (!at_least(electrum::version::v1_1))
+    if (!at_least(electrum::version::v1_1) ||
+         at_least(electrum::version::v1_7))
     {
         send_code(error::electrum::bad_request);
         return;
@@ -279,7 +289,8 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
 }
 
 // common
-void protocol_electrum::list_unspent(const system::hash_digest& hash) NOEXCEPT
+void protocol_electrum::list_unspent(const system::hash_digest& hash,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (hash == null_hash)
@@ -295,20 +306,21 @@ void protocol_electrum::list_unspent(const system::hash_digest& hash) NOEXCEPT
     }
 
     monitor(true);
-    PARALLEL(do_list_unspent, hash);
+    PARALLEL(do_list_unspent, hash, wrap);
 }
 
-void protocol_electrum::do_list_unspent(const hash_digest& hash) NOEXCEPT
+void protocol_electrum::do_list_unspent(const hash_digest& hash,
+    bool wrap) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     unspent_outputs unspents{};
     const auto& query = archive();
     const auto ec = query.get_unspent(stopping_, unspents, hash, turbo_);
-    POST(complete_list_unspent, ec, std::move(unspents));
+    POST(complete_list_unspent, ec, std::move(unspents), wrap);
 }
 
 void protocol_electrum::complete_list_unspent(const code& ec,
-    const unspent_outputs& unspents) NOEXCEPT
+    const unspent_outputs& unspents, bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
     monitor(false);
@@ -323,12 +335,21 @@ void protocol_electrum::complete_list_unspent(const code& ec,
     }
 
     const auto size = add1(unspents.size()) * 128u;
-    send_result(transform(unspents), size);
+    send_result(wrapped(transform(unspents), "utxos", wrap), size);
 }
 
 // utilities
 // ----------------------------------------------------------------------------
 // private/static
+
+value_t protocol_electrum::wrapped(array_t&& out, const string_t& key,
+    bool wrap) NOEXCEPT
+{
+    if (!wrap)
+        return { std::move(out) };
+
+    return object_t{ { key, std::move(out) } };
+}
 
 // There is no tx pool, so a tx broadcast on this channel is reported to that
 // client as unconfirmed history until it is archived (or the channel drops).

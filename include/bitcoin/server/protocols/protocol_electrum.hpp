@@ -250,23 +250,23 @@ protected:
     /// -----------------------------------------------------------------------
 
     void get_balance(const hash_digest& hash) NOEXCEPT;
-    void get_history(const hash_digest& hash) NOEXCEPT;
-    void get_mempool(const hash_digest& hash) NOEXCEPT;
-    void list_unspent(const hash_digest& hash) NOEXCEPT;
+    void get_history(const hash_digest& hash, bool wrap=false) NOEXCEPT;
+    void get_mempool(const hash_digest& hash, bool wrap=false) NOEXCEPT;
+    void list_unspent(const hash_digest& hash, bool wrap=false) NOEXCEPT;
 
     void do_get_balance(const hash_digest& hash) NOEXCEPT;
-    void do_get_history(const hash_digest& hash) NOEXCEPT;
-    void do_get_mempool(const hash_digest& hash) NOEXCEPT;
-    void do_list_unspent(const hash_digest& hash) NOEXCEPT;
+    void do_get_history(const hash_digest& hash, bool wrap) NOEXCEPT;
+    void do_get_mempool(const hash_digest& hash, bool wrap) NOEXCEPT;
+    void do_list_unspent(const hash_digest& hash, bool wrap) NOEXCEPT;
 
     void complete_get_balance(const code& ec, uint64_t confirmed,
         int64_t unconfirmed) NOEXCEPT;
     void complete_get_history(const code& ec, const hash_digest& scripthash,
-        const histories& histories) NOEXCEPT;
+        const histories& histories, bool wrap) NOEXCEPT;
     void complete_get_mempool(const code& ec, const hash_digest& scripthash,
-        const histories& histories) NOEXCEPT;
+        const histories& histories, bool wrap) NOEXCEPT;
     void complete_list_unspent(const code& ec,
-        const unspent_outputs& unspents) NOEXCEPT;
+        const unspent_outputs& unspents, bool wrap) NOEXCEPT;
 
     void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
     void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
@@ -371,6 +371,8 @@ private:
         bool verbose) NOEXCEPT;
 
     // Append txs retained by this channel's broadcast to unconfirmed history.
+    static network::rpc::value_t wrapped(array_t&& out,
+        const network::rpc::string_t& key, bool wrap) NOEXCEPT;
     void append_retained(array_t& out,
         const hash_digest& scripthash) const NOEXCEPT;
     static bool touches(const system::chain::transaction& tx,
