@@ -252,6 +252,19 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verb
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_0_height__ignored)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto& coinbase = *test::genesis.transactions_ptr()->front();
+    const auto tx0_hash = encode_hash(coinbase.hash(false));
+    const auto request = R"({"id":84,"method":"blockchain.transaction.get","params":["%1%",123]})" "\n";
+    const auto response = get((boost_format(request) % tx0_hash).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_1_verbose__wrong_version)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));

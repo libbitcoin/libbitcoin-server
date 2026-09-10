@@ -47,6 +47,25 @@ bool electrum_handshake_request(request_t& out, const request_t& in) NOEXCEPT
     return true;
 }
 
+bool electrum_request(request_t& out, const request_t& in,
+    electrum::version version) NOEXCEPT
+{
+    using transaction_get = interface::electrum::blockchain_transaction_get;
+
+    if (version >= electrum::version::v1_1 ||
+        in.method != transaction_get::name || !in.params)
+        return false;
+
+    // A third argument remains an arity error, as it was.
+    const auto positional = std::get_if<array_t>(&(*in.params));
+    if (!positional || positional->size() != two)
+        return false;
+
+    out = in;
+    std::get<array_t>(*out.params).resize(one);
+    return true;
+}
+
 BC_POP_WARNING()
 
 } // namespace server

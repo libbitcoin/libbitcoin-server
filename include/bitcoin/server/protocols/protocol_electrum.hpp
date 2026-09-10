@@ -62,6 +62,9 @@ public:
 
 protected:
     /// Terminal responder (attached last) for unclaimed methods.
+    bool normalize(network::rpc::request_t& out,
+        const network::rpc::request_t& in) NOEXCEPT override;
+
     void handle_unclaimed(
         const network::rpc::request_t& request) NOEXCEPT override;
 

@@ -154,9 +154,6 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     if (stopped(ec))
         return;
 
-    // TODO: changed in version 1.1: ignored height argument removed.
-    // This implies an override to channel_rpc<electrum>::dispatch() to strip
-    // the height parameter in the case of negotiated v1.1.
     if ((!at_least(electrum::version::v1_0)) ||
         (!at_least(electrum::version::v1_2) && verbose))
     {
