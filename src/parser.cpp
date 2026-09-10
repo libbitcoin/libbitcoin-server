@@ -48,7 +48,7 @@ parser::parser(system::chain::selection context,
 
     configured.network.enable_relay = true;
     configured.network.enable_address = true;
-    configured.network.enable_not_found = true;
+    configured.network.enable_not_found = false;
     configured.network.enable_address_v2 = false;
     configured.network.enable_witness_tx = false;
     configured.network.enable_compact = false;
