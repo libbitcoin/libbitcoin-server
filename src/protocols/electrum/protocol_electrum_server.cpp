@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 
+#include <algorithm>
 #include <map>
 #include <optional>
 #include <bitcoin/server/define.hpp>
@@ -32,6 +33,9 @@ using namespace network::rpc;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
+// The protocol requires a pong length limit but does not specify one.
+constexpr size_t maximum_pong = 1024;
 
 void protocol_electrum::handle_server_add_peer(const code& ec,
     rpc_interface::server_add_peer, const interface::object_t&) NOEXCEPT
@@ -181,37 +185,26 @@ void protocol_electrum::handle_server_ping(const code& ec,
         return;
     }
 
-    // Default response of null_t.
-    value_t value{};
-    size_t size{ 42 };
-
+    // Arguments are accepted and ignored below 1.7, which has no response.
     if (!at_least(electrum::version::v1_7))
     {
-        if (!data.empty() || is_nonzero(pong_len))
-        {
-            send_code(error::electrum::bad_request);
-            return;
-        }
+        send_result(value_t{}, 42);
+        return;
     }
-    else
+
+    size_t length{};
+    if (!std::ranges::all_of(data, is_base16<char>) ||
+        !to_integer(length, pong_len))
     {
-        data_chunk unused{};
-
-        // Base16 encoding validation expects whole octets (even char count).
-        if (!to_integer(size, pong_len) || (size != data.length()) ||
-            !decode_base16(unused, data))
-        {
-            send_code(error::electrum::bad_request);
-            return;
-        }
-
-        // Treat empty as default (args look the same, may not be correct).
-        if (is_nonzero(size))
-            value = string_t(size, '0');
+        send_code(error::electrum::bad_request);
+        return;
     }
 
-    // Length is limited by maximum_request (DoS protection).
-    send_result(std::move(value), size);
+    length = std::min(length, maximum_pong);
+
+    object_t out{};
+    out["data"] = string_t(length, '0');
+    send_result(std::move(out), length + 42);
 }
 
 // utilities
