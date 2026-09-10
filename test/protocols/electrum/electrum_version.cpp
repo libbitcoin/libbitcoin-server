@@ -166,9 +166,10 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__non_string__invalid_argument)
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
+// Renegotiation below 1.4 is not implemented, a repeat returns the negotiated.
 BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call__returns_negotiated)
 {
-    const auto version = electrum::version::v1_4_2;
+    const auto version = electrum::version::v1_2;
     const auto expected = electrum::version_to_string(version);
     BOOST_REQUIRE(handshake(version));
 
@@ -181,18 +182,13 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call__returns_negotiat
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), expected);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call_with_invalid_params__success)
+BOOST_AUTO_TEST_CASE(electrum__server_version__repeat_from_1_4__rejected)
 {
-    const auto version = electrum::version::v1_4;
-    const auto expected = electrum::version_to_string(version);
-    BOOST_REQUIRE(handshake(version));
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto response = get(R"({"id":57,"method":"server.version","params":["foobar","invalid"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 2u);
-    BOOST_REQUIRE(response.at("result").as_array().at(1).is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), expected);
+    const auto response = get(R"({"id":43,"method":"server.version","params":["foobar","1.4"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__truncated)
@@ -210,8 +206,8 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__truncated)
 BOOST_AUTO_TEST_CASE(electrum__batch__two_requests__two_ordered_responses)
 {
     const auto response = get(
-        R"([{"jsonrpc":"2.0","id":1,"method":"server.version","params":["a","1.4"]},)"
-        R"({"jsonrpc":"2.0","id":2,"method":"server.version","params":["b","1.4"]}])" "\n");
+        R"([{"jsonrpc":"2.0","id":1,"method":"server.version","params":["a","1.2"]},)"
+        R"({"jsonrpc":"2.0","id":2,"method":"server.version","params":["b","1.2"]}])" "\n");
 
     BOOST_REQUIRE(response.is_array());
     const auto& batch = response.as_array();
@@ -221,8 +217,8 @@ BOOST_AUTO_TEST_CASE(electrum__batch__two_requests__two_ordered_responses)
     BOOST_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(batch.at(0).at("result").is_array());
     REQUIRE_NO_THROW_TRUE(batch.at(1).at("result").is_array());
-    BOOST_REQUIRE_EQUAL(batch.at(0).at("result").as_array().at(1).as_string(), "1.4");
-    BOOST_REQUIRE_EQUAL(batch.at(1).at("result").as_array().at(1).as_string(), "1.4");
+    BOOST_REQUIRE_EQUAL(batch.at(0).at("result").as_array().at(1).as_string(), "1.2");
+    BOOST_REQUIRE_EQUAL(batch.at(1).at("result").as_array().at(1).as_string(), "1.2");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__batch__single_element__array_of_one)

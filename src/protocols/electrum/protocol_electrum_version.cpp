@@ -103,6 +103,14 @@ void protocol_electrum_version::handle_server_version(const code& ec,
     if (handler_)
         pause();
 
+    // Only the first server.version is accepted from 1.4 (channel retained).
+    if (channel_->version() >= electrum::version::v1_4)
+    {
+        send_code(error::electrum::bad_request,
+            BIND(finished, _1, error::success));
+        return;
+    }
+
     // v0_0 implies version has not been set (first call).
     if ((channel_->version() == electrum::version::v0_0) &&
         (!set_client(client_name) || !set_version(protocol_version)))
