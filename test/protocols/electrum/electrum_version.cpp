@@ -31,13 +31,8 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__default__expected)
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 0);
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
-
-    const auto& result = response.at("result").as_array();
-    BOOST_REQUIRE_EQUAL(result.size(), 2u);
-    BOOST_REQUIRE(result.at(0).is_string());
-    BOOST_REQUIRE_EQUAL(result.at(0).as_string(), "server_name");
-    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.0");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "server_name");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__trailing_arguments__ignored)
@@ -57,13 +52,8 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__minimum__expected)
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 42);
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
-
-    const auto& result = response.at("result").as_array();
-    BOOST_REQUIRE_EQUAL(result.size(), 2u);
-    BOOST_REQUIRE(result.at(0).is_string());
-    BOOST_REQUIRE_EQUAL(result.at(0).as_string(), "server_name");
-    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.0");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "server_name");
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__maximum__expected)

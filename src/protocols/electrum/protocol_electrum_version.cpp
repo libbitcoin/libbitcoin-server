@@ -110,6 +110,12 @@ void protocol_electrum_version::handle_server_version(const code& ec,
         const auto reason = error::electrum::bad_request;
         send_code(reason, BIND(finished, _1, reason));
     }
+    else if (channel_->version() < electrum::version::v1_1)
+    {
+        // The 1.0 result is the server software string alone.
+        send_result(string_t{ server_name() }, 42,
+            BIND(finished, _1, error::success));
+    }
     else
     {
         send_result(array_t
