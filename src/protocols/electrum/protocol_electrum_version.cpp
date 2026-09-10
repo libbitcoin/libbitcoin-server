@@ -135,12 +135,9 @@ std::string_view protocol_electrum_version::client_name() const NOEXCEPT
 
 bool protocol_electrum_version::set_client(const std::string& name) NOEXCEPT
 {
-    // Avoid excess, empty name is allowed.
-    if (name.size() > max_client_name_length)
-        return false;
-
+    // Excess is truncated, not rejected (informational, empty allowed).
     // Do not put to log without escaping.
-    channel_->set_client(escape_client(name));
+    channel_->set_client(escape_client(name.substr(0, max_client_name_length)));
     return true;
 }
 

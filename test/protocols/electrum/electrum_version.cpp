@@ -205,13 +205,13 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call_with_invalid_para
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), expected);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__invalid_argument)
+BOOST_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__truncated)
 {
-    // Exceeds max_client_name_length (protected).
     const std::string name(1025, 'a');
     const auto response = get((boost_format(R"({"id":42,"method":"server.version","params":["%1%","1.4"]})" "\n") % name).str());
-    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4");
 }
 
 // batch
