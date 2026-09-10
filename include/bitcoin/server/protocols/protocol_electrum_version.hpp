@@ -56,6 +56,9 @@ public:
 protected:
     static constexpr size_t max_client_name_length = 1024;
 
+    bool normalize(network::rpc::request_t& out,
+        const network::rpc::request_t& in) NOEXCEPT override;
+
     void handle_server_version(const code& ec,
         rpc_interface::server_version, const std::string& client_name,
         const interface::value_t& protocol_version) NOEXCEPT;

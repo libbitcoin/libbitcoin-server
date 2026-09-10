@@ -16,19 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
-#define LIBBITCOIN_SERVER_PARSERS_PARSERS_HPP
+#ifndef LIBBITCOIN_SERVER_PARSERS_ELECTRUM_REQUEST_HPP
+#define LIBBITCOIN_SERVER_PARSERS_ELECTRUM_REQUEST_HPP
 
-#include <bitcoin/server/parsers/admin_query.hpp>
-#include <bitcoin/server/parsers/admin_target.hpp>
-#include <bitcoin/server/parsers/bitcoind_query.hpp>
-#include <bitcoin/server/parsers/bitcoind_scan.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
-#include <bitcoin/server/parsers/bitcoind_transaction.hpp>
-#include <bitcoin/server/parsers/bitcoind_target.hpp>
-#include <bitcoin/server/parsers/btcd_filter.hpp>
-#include <bitcoin/server/parsers/electrum_request.hpp>
-#include <bitcoin/server/parsers/native_query.hpp>
-#include <bitcoin/server/parsers/native_target.hpp>
+#include <bitcoin/server/define.hpp>
+
+namespace libbitcoin {
+namespace server {
+
+/// Discard extraneous server.version arguments, which the protocol requires
+/// to be tolerated and ignored. False if the request is unmodified.
+BCS_API bool electrum_handshake_request(network::rpc::request_t& out,
+    const network::rpc::request_t& in) NOEXCEPT;
+
+} // namespace server
+} // namespace libbitcoin
 
 #endif

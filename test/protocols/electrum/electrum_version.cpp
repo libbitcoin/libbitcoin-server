@@ -40,6 +40,17 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__default__expected)
     BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.7");
 }
 
+BOOST_AUTO_TEST_CASE(electrum__server_version__trailing_arguments__ignored)
+{
+    const auto response = get(R"({"id":1,"method":"server.version","params":["foobar","1.7",42,"extra"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& result = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(result.size(), 2u);
+    BOOST_REQUIRE_EQUAL(result.at(1).as_string(), "1.7");
+}
+
 BOOST_AUTO_TEST_CASE(electrum__server_version__minimum__expected)
 {
     const auto response = get(R"({"id":42,"method":"server.version","params":["foobar","1.0"]})" "\n");
