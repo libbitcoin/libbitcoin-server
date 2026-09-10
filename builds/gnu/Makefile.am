@@ -312,7 +312,6 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \
-    ${srcdir}/../../test/protocols/rpc_client.cpp \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
     ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
@@ -334,6 +333,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/electrum/electrum_transactions.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_transports.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_version.cpp \
+    ${srcdir}/../../test/protocols/fixture/rpc_client.cpp \
+    ${srcdir}/../../test/protocols/fixture/rpc_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_address.cpp \
     ${srcdir}/../../test/protocols/native/native_block.cpp \
     ${srcdir}/../../test/protocols/native/native_configuration.cpp \

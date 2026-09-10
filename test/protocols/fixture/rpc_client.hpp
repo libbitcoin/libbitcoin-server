@@ -16,11 +16,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_RPC_CLIENT_HPP
-#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_RPC_CLIENT_HPP
+#ifndef LIBBITCOIN_SERVER_TEST_PROTOCOLS_FIXTURE_RPC_CLIENT_HPP
+#define LIBBITCOIN_SERVER_TEST_PROTOCOLS_FIXTURE_RPC_CLIENT_HPP
 
-#include "../test.hpp"
-#include "../mocks/blocks.hpp"
+#include "../../test.hpp"
+#include "../../mocks/blocks.hpp"
 
 /// One client connection to a universal json-rpc service, over any of its
 /// three transports: raw tcp (which the server downgrades to a newline

@@ -42,6 +42,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__9_block_st
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1004,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
@@ -51,6 +52,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__notificati
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":82,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 
@@ -61,8 +63,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__notificati
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
 
     // Trigger node chaser events to electrum event subscriber.
-    notify(node::chase::organized, { 10_u32 });
-    notify(node::chase::organized, { 11_u32 });
+    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chase::organized, node::header_t{ 11 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -100,6 +102,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__above_top__empty)
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[1]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE(response.at("result").as_string().empty());
 }
@@ -114,6 +117,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__zero__first_ten_heade
         encode_base16(header7_data) + encode_base16(header8_data) + encode_base16(header9_data);
 
     const auto response = get(R"({"id":43,"method":"blockchain.block.get_chunk","params":[0]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
     const auto& result = response.at("result").as_string();
@@ -143,6 +147,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__above_top__null)
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[42]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
@@ -151,6 +156,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__five__expected_heade
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":43,"method":"blockchain.block.get_header","params":[5]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
     const auto& result = response.at("result").as_string();
@@ -173,6 +179,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_no_checkpoint__e
     BOOST_REQUIRE(handshake(electrum::version::v1_3));
 
     const auto response = get(R"({"id":43,"method":"blockchain.block.header","params":[0]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(test::header0_data));
 }
@@ -182,6 +189,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__block1_no_checkpoint__ex
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":44,"method":"blockchain.block.header","params":[1]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(test::header1_data));
 }
@@ -191,6 +199,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__genesis_zero_checkpoint_
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":45,"method":"blockchain.block.header","params":[0,0]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(test::header0_data));
 }
@@ -206,6 +215,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_self_block1__expec
     }));
 
     const auto response = get(R"({"id":46,"method":"blockchain.block.header","params":[1,1]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -248,6 +258,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_example__expected)
     };
 
     const auto response = get(R"({"id":50,"method":"blockchain.block.header","params":[5,8]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -336,6 +347,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_check
     BOOST_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":60,"method":"blockchain.block.headers","params":[0,1]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -354,6 +366,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__genesis_count1_no_check
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":60,"method":"blockchain.block.headers","params":[0,1]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -458,6 +471,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__proof_no_offset__expect
     };
 
     const auto response = get(R"({"id":64,"method":"blockchain.block.headers","params":[5,1,8]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -505,6 +519,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__proof_offset__expected)
     };
 
     const auto response = get(R"({"id":64,"method":"blockchain.block.headers","params":[5,3,8]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -619,6 +634,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__id_preserved__expec
     const auto response = get(R"({"id":123,"method":"blockchain.headers.subscribe","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 123);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 }
 
@@ -627,6 +643,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__empty_params__expec
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":82,"method":"blockchain.headers.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -639,6 +656,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expe
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":82,"method":"blockchain.headers.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     using namespace system;
@@ -653,8 +671,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expe
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
 
     // Trigger node chaser events to electrum event subscriber.
-    notify(node::chase::organized, { 10_u32 });
-    notify(node::chase::organized, { 11_u32 });
+    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chase::organized, node::header_t{ 11 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());

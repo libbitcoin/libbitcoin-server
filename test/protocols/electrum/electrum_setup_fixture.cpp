@@ -25,93 +25,42 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
     bool address_index, const configurator& configure, service which)
-  : config_
-    {
-      system::chain::selection::mainnet,
-      test::web_pages,
-      test::web_pages
-    },
-    store_
-    {
-        [&]() NOEXCEPT -> const database::settings&
+  : rpc_setup_fixture(setup,
+        [which, configure](configuration& config) NOEXCEPT
         {
-            if (!address_index)
-                config_.database.outs.buckets = 0;
+            // Only the configured service binds.
+            const auto sparrow = (which == service::sparrow);
+            auto& electrum = sparrow ?
+                static_cast<server::settings::electrum_server&>(
+                    config.server.sparrow) :
+                config.server.electrum;
 
-            config_.database.path = TEST_DIRECTORY;
-            return config_.database;
-        }()
-    },
-    query_{ store_ }, which_{ which }, log_{},
-    server_{ query_, config_, log_ }
+            electrum.binds =
+            {
+                { sparrow ? SPARROW_ENDPOINT : ELECTRUM_ENDPOINT }
+            };
+
+            electrum.server_name = "server_name";
+            electrum.banner_message = "banner_message";
+            electrum.donation_address = "donation_address";
+            electrum.maximum_subscriptions = 2;
+            electrum.maximum_history = 5;
+            electrum.maximum_headers = 5;
+            electrum.connections = 1;
+            electrum.inactivity_minutes = 1;
+            config.node.fee_estimate_horizon = 8;
+
+            if (configure)
+                configure(config);
+        }, address_index, true),
+    which_{ which }
 {
-    test::clear(test::directory);
-
-    auto& database_settings = config_.database;
-    auto& network_settings = config_.network;
-    auto& node_settings = config_.node;
-    auto& server_settings = config_.server;
-
-    // Only the configured service binds.
-    const auto sparrow = (which == service::sparrow);
-    auto& electrum = sparrow ?
-        static_cast<server::settings::electrum_server&>(server_settings.sparrow) :
-        server_settings.electrum;
-
-    electrum.binds = { { sparrow ? SPARROW_ENDPOINT : ELECTRUM_ENDPOINT } };
-    electrum.server_name = "server_name";
-    electrum.banner_message = "banner_message";
-    electrum.donation_address = "donation_address";
-    electrum.maximum_subscriptions = 2;
-    electrum.maximum_history = 5;
-    electrum.maximum_headers = 5;
-    electrum.connections = 1;
-    electrum.inactivity_minutes = 1;
-    database_settings.interval_depth = 2;
-    node_settings.delay_inbound = false;
-    node_settings.minimum_fee_rate = 99.0;
-    node_settings.fee_estimate_horizon = 8;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-
-    // Apply test-specific configuration overrides.
-    if (configure)
-        configure(config_);
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    setup(query_);
-
-    std::promise<code> started{};
-    server_.start([&](const code& ec) NOEXCEPT
-    {
-        started.set_value(ec);
-    });
-
-    // Block until server is started.
-    ec = started.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
-    {
-        running.set_value(ec);
-    });
-
-    // Block until server is running.
-    ec = running.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    client_.connect(electrum.binds.back().to_endpoint());
+    client_.connect(options().binds.back().to_endpoint());
 }
 
 electrum_setup_fixture::~electrum_setup_fixture()
 {
     client_.close();
-    server_.close();
-    const auto ec = store_.close([](auto, auto){});
-    BOOST_WARN_MESSAGE(!ec, ec.message());
-    test::clear(test::directory);
 }
 
 BC_POP_WARNING()
@@ -136,11 +85,6 @@ boost::json::value electrum_setup_fixture::get(const std::string& request)
 boost::json::value electrum_setup_fixture::receive()
 {
     return client_.receive();
-}
-
-void electrum_setup_fixture::notify(node::chase event_, node::event_value value)
-{
-    server_.notify(error::success, event_, value);
 }
 
 const server::settings::electrum_server&

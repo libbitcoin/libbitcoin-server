@@ -26,80 +26,23 @@ using namespace boost::beast;
 
 bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
     const configurator& configure, bool start)
-  : config_
-    {
-        system::chain::selection::mainnet,
-        test::web_pages,
-        test::web_pages
-    },
-    store_
-    {
-        [&]() NOEXCEPT -> const database::settings&
+  : rpc_setup_fixture(setup,
+        [configure](configuration& config) NOEXCEPT
         {
-            // The store snapshots database settings at construction.
-            config_.database.path = TEST_DIRECTORY;
-            config_.database.interval_depth = 2;
+            auto& bitcoind = config.server.bitcoind;
+            bitcoind.binds = { { BITCOIND_ENDPOINT } };
+            bitcoind.connections = 1;
+
             if (configure)
-                configure(config_);
-
-            return config_.database;
-        }()
-    },
-    query_{ store_ }, log_{},
-    server_{ query_, config_, log_ }
+                configure(config);
+        }, true, start)
 {
-    test::clear(test::directory);
-
-    auto& network_settings = config_.network;
-    auto& node_settings = config_.node;
-    auto& server_settings = config_.server;
-    auto& bitcoind = server_settings.bitcoind;
-
-    bitcoind.binds = { { BITCOIND_ENDPOINT } };
-    bitcoind.connections = 1;
-    node_settings.delay_inbound = false;
-    node_settings.minimum_fee_rate = 99.0;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    setup(query_);
-
-    // Start the node (chasers and address pool), bypassed by default.
-    if (start)
-    {
-        std::promise<code> started{};
-        server_.start([&](const code& ec) NOEXCEPT
-        {
-            started.set_value(ec);
-        });
-
-        ec = started.get_future().get();
-        BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    }
-
-    // Run the server.
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
-    {
-        running.set_value(ec);
-    });
-
-    // Block until server is running.
-    ec = running.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    client_.connect(bitcoind.binds.back().to_endpoint());
+    client_.connect(config_.server.bitcoind.binds.back().to_endpoint());
 }
 
 bitcoind_setup_fixture::~bitcoind_setup_fixture()
 {
     client_.close();
-    server_.close();
-    const auto ec = store_.close([](auto, auto){});
-    BOOST_WARN_MESSAGE(!ec, ec.message());
-    test::clear(test::directory);
 }
 
 static std::string body_of(std::string_view method, std::string_view params)

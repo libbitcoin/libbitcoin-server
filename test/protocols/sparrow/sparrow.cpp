@@ -36,6 +36,7 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_numblocks_subscribe__ten_block_store__r
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":900,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
@@ -55,6 +56,7 @@ BOOST_AUTO_TEST_CASE(sparrow__server_features__silent_payments__advertised)
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":902,"method":"server.features","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
@@ -119,6 +121,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__not_sparrow__no_silent_payments)
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":907,"method":"server.features","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BOOST_REQUIRE(!response.at("result").as_object().contains("silent_payments"));
 }

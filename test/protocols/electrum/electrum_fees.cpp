@@ -65,6 +65,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__uninitialized__negative_
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
@@ -74,9 +75,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
     // Trigger node chaser event to initialize fee estimator.
-    notify(node::chase::block, { 9_u32 });
+    notify(node::chase::block, node::header_t{ 9 });
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
 
     // None of the first 10 blocks have fees, so no estimate is obtained.
@@ -92,6 +94,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
 
     const auto response = get(R"({"id":90,"method":"blockchain.relayfee","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 90);
     BOOST_REQUIRE_EQUAL(response.at("result").as_double(), config_.node.minimum_fee_rate);
