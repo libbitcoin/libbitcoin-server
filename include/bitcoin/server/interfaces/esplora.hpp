@@ -40,11 +40,11 @@ struct esplora_methods
         method<"broadcast", uint8_t, string_t>{ "media", "transaction" },
         method<"broadcast_package", uint8_t, array_t>{ "media", "transactions" },
 
-        method<"address", uint8_t, system::hash_cptr, nullable<string_t>>{ "media", "hash", "address" },
-        method<"address_txs", uint8_t, system::hash_cptr>{ "media", "hash" },
-        method<"address_txs_chain", uint8_t, system::hash_cptr, nullable<system::hash_cptr>>{ "media", "hash", "last_seen" },
-        method<"address_txs_mempool", uint8_t, system::hash_cptr>{ "media", "hash" },
-        method<"address_utxo", uint8_t, system::hash_cptr>{ "media", "hash" },
+        method<"address", uint8_t, nullable<system::hash_cptr>, nullable<string_t>>{ "media", "hash", "address" },
+        method<"address_txs", uint8_t, nullable<system::hash_cptr>, nullable<string_t>>{ "media", "hash", "address" },
+        method<"address_txs_chain", uint8_t, nullable<system::hash_cptr>, nullable<string_t>, nullable<system::hash_cptr>>{ "media", "hash", "address", "last_seen" },
+        method<"address_txs_mempool", uint8_t, nullable<system::hash_cptr>, nullable<string_t>>{ "media", "hash", "address" },
+        method<"address_utxo", uint8_t, nullable<system::hash_cptr>, nullable<string_t>>{ "media", "hash", "address" },
 
         method<"block", uint8_t, system::hash_cptr>{ "media", "hash" },
         method<"block_header", uint8_t, system::hash_cptr>{ "media", "hash" },
