@@ -171,7 +171,39 @@ void protocol_electrum::handle_server_peers_subscribe(const code& ec,
     send_result(more_hosts(), 1024);
 }
 
-// Server does not send ping notifications (or perform other traffic shaping).
+// An unrequested ping is a notification, which http cannot carry.
+void protocol_electrum::start_ping() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto span = options().ping_interval_seconds;
+    if (stopped() || is_zero(span) || !at_least(electrum::version::v1_7) ||
+        !(websocket() || downgraded()))
+        return;
+
+    ping_timer_->start(BIND(handle_ping, _1), network::seconds(span));
+}
+
+void protocol_electrum::handle_ping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || ec == network::error::operation_canceled)
+        return;
+
+    if (ec)
+    {
+        stop(ec);
+        return;
+    }
+
+    const auto size = options().ping_size;
+    send_notification("server.ping", array_t{ string_t(size, '0') },
+        add1(size));
+
+    start_ping();
+}
+
 void protocol_electrum::handle_server_ping(const code& ec,
     rpc_interface::server_ping, double pong_len,
     const std::string& data) NOEXCEPT

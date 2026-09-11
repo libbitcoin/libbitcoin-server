@@ -33,6 +33,9 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+// The specification requires that at least 25 transactions are accepted.
+constexpr size_t maximum_test_txs = 25;
+
 // Electrum sends a single value param (invalid json-rpc). This is enabled via
 // the lax json-rpc body value !strict option, mapping the singleton to array.
 void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
@@ -145,6 +148,69 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
 
     success = errors.empty();
     send_result(result, 42 + size);
+}
+
+void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
+    const code& ec, rpc_interface::blockchain_transaction_testmempoolaccept,
+    const interface::value_t& raw_txs) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_7))
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    if (!std::holds_alternative<array_t>(raw_txs.value()))
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    const auto& txs_hex = std::get<array_t>(raw_txs.value());
+    if (txs_hex.empty() || txs_hex.size() > maximum_test_txs)
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    array_t out{};
+    out.reserve(txs_hex.size());
+
+    for (const auto& tx_hex: txs_hex)
+    {
+        if (!std::holds_alternative<string_t>(tx_hex.value()))
+        {
+            send_code(error::electrum::bad_request);
+            return;
+        }
+
+        read::base16::copy hexer{ std::get<string_t>(tx_hex.value()) };
+        const chain::transaction tx{ hexer, true };
+        if (!tx.is_valid() || !hexer.is_exhausted())
+        {
+            send_code(error::electrum::bad_request);
+            return;
+        }
+
+        // There is no tx pool, so acceptance is validation against the chain.
+        const auto fault = validate_tx(tx);
+        object_t value
+        {
+            { "txid", encode_hash(tx.hash(false)) },
+            { "wtxid", encode_hash(tx.hash(true)) },
+            { "allowed", !fault }
+        };
+
+        if (fault)
+            value.emplace("reason", fault.message());
+
+        out.emplace_back(std::move(value));
+    }
+
+    send_result(std::move(out), add1(out.size()) * 128u);
 }
 
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,

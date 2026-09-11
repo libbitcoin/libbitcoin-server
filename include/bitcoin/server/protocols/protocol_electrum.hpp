@@ -53,6 +53,8 @@ public:
         witness_(session->server_settings().wallet.witness_prefix),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         notification_strand_(channel_->service().get_executor()),
+        ping_timer_(std::make_shared<network::deadline>(session->log,
+            channel->strand())),
         network::tracker<protocol_electrum>(session->log)
     {
     }
@@ -61,6 +63,9 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    void start_ping() NOEXCEPT;
+    void handle_ping(const code& ec) NOEXCEPT;
+
     /// Terminal responder (attached last) for unclaimed methods.
     void handle_unclaimed(
         const network::rpc::request_t& request) NOEXCEPT override;
@@ -182,6 +187,9 @@ protected:
     void handle_blockchain_transaction_get_merkle(const code& ec,
         rpc_interface::blockchain_transaction_get_merkle,
         const std::string& tx_hash, double height) NOEXCEPT;
+    void handle_blockchain_transaction_testmempoolaccept(const code& ec,
+        rpc_interface::blockchain_transaction_testmempoolaccept,
+        const interface::value_t& raw_txs) NOEXCEPT;
     void handle_blockchain_transaction_id_from_position(const code& ec,
         rpc_interface::blockchain_transaction_id_from_position, double height,
         double tx_pos, bool merkle) NOEXCEPT;
@@ -205,6 +213,8 @@ protected:
     /// Handlers (mempool).
     void handle_mempool_get_fee_histogram(const code& ec,
         rpc_interface::mempool_get_fee_histogram) NOEXCEPT;
+    void handle_mempool_recent(const code& ec,
+        rpc_interface::mempool_recent) NOEXCEPT;
     void handle_mempool_get_info(const code& ec,
         rpc_interface::mempool_get_info) NOEXCEPT;
 
@@ -385,6 +395,7 @@ private:
     const uint8_t p2sh_;
     const uint32_t flags_;
     const std::string witness_;
+    network::deadline::ptr ping_timer_;
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};

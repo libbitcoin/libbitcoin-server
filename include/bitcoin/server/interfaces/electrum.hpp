@@ -73,6 +73,7 @@ struct electrum_methods
         method<"blockchain.transaction.get", string_t, optional<false>>{ "tx_hash", "verbose" },
         method<"blockchain.transaction.get_merkle", string_t, number_t>{ "tx_hash", "height" },
         method<"blockchain.transaction.id_from_pos", number_t, number_t, optional<false>>{ "height", "tx_pos", "merkle" },
+        method<"blockchain.transaction.testmempoolaccept", value_t>{ "raw_txs" },
 
         /// Server methods.
         method<"server.add_peer", object_t>{ "features" },
@@ -84,7 +85,8 @@ struct electrum_methods
 
         /// Mempool methods.
         method<"mempool.get_fee_histogram">{},
-        method<"mempool.get_info">{}
+        method<"mempool.get_info">{},
+        method<"mempool.recent">{}
     };
 
     template <typename... Args>
@@ -133,16 +135,18 @@ struct electrum_methods
     using blockchain_transaction_get = at<31>;
     using blockchain_transaction_get_merkle = at<32>;
     using blockchain_transaction_id_from_position = at<33>;
+    using blockchain_transaction_testmempoolaccept = at<34>;
 
-    using server_add_peer = at<34>;
-    using server_banner = at<35>;
-    using server_donation_address = at<36>;
-    using server_features = at<37>;
-    using server_peers_subscribe = at<38>;
-    using server_ping = at<39>;
+    using server_add_peer = at<35>;
+    using server_banner = at<36>;
+    using server_donation_address = at<37>;
+    using server_features = at<38>;
+    using server_peers_subscribe = at<39>;
+    using server_ping = at<40>;
 
-    using mempool_get_fee_histogram = at<40>;
-    using mempool_get_info = at<41>;
+    using mempool_get_fee_histogram = at<41>;
+    using mempool_get_info = at<42>;
+    using mempool_recent = at<43>;
 };
 
 /// The electrum handshake, published separately as it is served by its own

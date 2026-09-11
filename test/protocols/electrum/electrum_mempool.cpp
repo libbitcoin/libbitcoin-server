@@ -104,4 +104,31 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
     BOOST_REQUIRE_EQUAL(result.at("incrementalrelayfee").as_double(), config_.node.minimum_bump_rate);
 }
 
+// mempool.recent
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_recent__insufficient_version__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto result = get_error(R"({"id":710,"method":"mempool.recent","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_recent__extra_param__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":711,"method":"mempool.recent","params":[42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_recent__empty_params__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":712,"method":"mempool.recent","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
