@@ -120,14 +120,14 @@ parser::parser(system::chain::selection context,
     configured.database.tx.rate = 1;
 
     // ins (required)
-    configured.database.ins.expected = 3'363'467'253;
+    configured.database.ins.expected = 3'363'467'251;
     configured.database.ins.buckets = table::ins::derive_buckets(
         configured.database.ins.expected, contested, target);
     configured.database.ins.size = 1'749'002'971;
     configured.database.ins.rate = 1;
 
     // outs (optional, disabled by a configured bucket count of zero)
-    configured.database.outs.expected = 3'741'929'088;
+    configured.database.outs.expected = 3'741'929'086;
     configured.database.outs.buckets = table::outs::derive_buckets(
         configured.database.outs.expected, address_contested, address_target);
     configured.database.outs.size = 336'773'618;
