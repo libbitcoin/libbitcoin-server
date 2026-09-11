@@ -182,7 +182,13 @@ public:
 
         system::config::byte p2kh_prefix;
         system::config::byte p2sh_prefix;
+        system::config::byte wif_prefix;
         std::string witness_prefix;
+        uint32_t hd_private_prefix;
+        uint32_t hd_public_prefix;
+
+        /// The configured prefixes as a wallet context.
+        system::wallet::context to_context() const NOEXCEPT;
     };
 
     struct bitcoind_server

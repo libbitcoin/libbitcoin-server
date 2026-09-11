@@ -909,9 +909,24 @@ options_metadata parser::load_settings() THROWS
         "The pay-to-script-hash address prefix, defaults to '5' (use '196' for testnet)."
     )
     (
+        "wallet.wif_prefix",
+        value<config::byte>(&configured.server.wallet.wif_prefix),
+        "The wallet import format prefix, defaults to '128' (use '239' for testnet)."
+    )
+    (
         "wallet.witness_prefix",
         value<std::string>(&configured.server.wallet.witness_prefix),
         "The witness address prefix, defaults to 'bc' (use 'tb' for testnet)."
+    )
+    (
+        "wallet.hd_private_prefix",
+        value<uint32_t>(&configured.server.wallet.hd_private_prefix),
+        "The extended private key prefix, defaults to '76066276' (use '70615956' for testnet)."
+    )
+    (
+        "wallet.hd_public_prefix",
+        value<uint32_t>(&configured.server.wallet.hd_public_prefix),
+        "The extended public key prefix, defaults to '76067358' (use '71979618' for testnet)."
     )
 
     /* [admin] */
