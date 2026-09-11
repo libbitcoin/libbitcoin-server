@@ -79,13 +79,21 @@ void protocol_electrum_version::finished(const code& ec,
 // Handler.
 // ----------------------------------------------------------------------------
 
-// TODO: undocumented change in v1.1 (semantics and return).
-// TODO: undocumented change v1.2 (disallow version for ping).
-// TODO: undocumented change v1.4 (only the first message accepted).
-// TODO: change version v1.6 (must be first message sent).
-// TODO: change version v1.6 (server must tolerate and ignore extra args).
-// This implies an override to channel_rpc<electrum>::dispatch(). This must
-// be done for ALL versions, since it applies to the version negotiation.
+// A non-version opener is a pre-1.6 client. The handshake passes at the
+// minimum version, restricted until (unless) a server.version arrives.
+void protocol_electrum_version::handle_unclaimed(
+    const request_t&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (!handler_)
+        return;
+
+    pause();
+    channel_->set_restricted();
+    channel_->set_version(electrum::version_floor(options().protocol_minimum));
+    finished(error::success, error::success);
+}
+
 void protocol_electrum_version::handle_server_version(const code& ec,
     rpc_interface::server_version, const std::string& client_name,
     const value_t& protocol_version) NOEXCEPT
@@ -97,30 +105,32 @@ void protocol_electrum_version::handle_server_version(const code& ec,
     if (handler_)
         pause();
 
-    // v0_0 implies version has not been set (first call).
-    if ((channel_->version() == electrum::version::v0_0) &&
-        (!set_client(client_name) || !set_version(protocol_version)))
+    // Only the first server.version is accepted from 1.4 (channel retained).
+    if (channel_->negotiated() &&
+        channel_->version() >= electrum::version::v1_4)
+    {
+        send_code(error::electrum::bad_request,
+            BIND(finished, _1, error::success));
+        return;
+    }
+
+    if (!set_client(client_name) || !set_version(protocol_version))
     {
         const auto reason = error::electrum::bad_request;
-        send_code(reason, BIND(finished, _1, reason));
+        if (handler_)
+            send_code(reason, BIND(finished, _1, reason));
+        else
+            stop(reason);
+
+        return;
     }
-    else
-    {
-        send_result(array_t
-        {
-            { string_t{ server_name() } },
-            { string_t{ negotiated_version() } }
-        }, 70, BIND(finished, _1, error::success));
-    }
+
+    send_result(electrum::version_result(channel_->version(),
+        options().server_name), 70, BIND(finished, _1, error::success));
 }
 
 // Client/server names.
 // ----------------------------------------------------------------------------
-
-std::string_view protocol_electrum_version::server_name() const NOEXCEPT
-{
-    return options().server_name;
-}
 
 std::string_view protocol_electrum_version::client_name() const NOEXCEPT
 {
@@ -129,106 +139,37 @@ std::string_view protocol_electrum_version::client_name() const NOEXCEPT
 
 bool protocol_electrum_version::set_client(const std::string& name) NOEXCEPT
 {
-    // Avoid excess, empty name is allowed.
-    if (name.size() > max_client_name_length)
-        return false;
-
     // Do not put to log without escaping.
-    channel_->set_client(escape_client(name));
+    channel_->set_client(electrum::escape_client(
+        name.substr(zero, electrum::maximum_client_name)));
     return true;
-}
-
-std::string protocol_electrum_version::escape_client(
-    const std::string& in) NOEXCEPT
-{
-    std::string out(in.size(), '*');
-    std::transform(in.begin(), in.end(), out.begin(), [](char c) NOEXCEPT
-    {
-        using namespace system;
-        return is_ascii_character(c) && !is_ascii_whitespace(c) ? c : '*';
-    });
-
-    return out;
 }
 
 // Negotiated version.
 // ----------------------------------------------------------------------------
 
-std::string protocol_electrum_version::negotiated_version() const NOEXCEPT
-{
-    return electrum::version_to_string(channel_->version());
-}
-
 bool protocol_electrum_version::set_version(const value_t& version) NOEXCEPT
 {
-    system::config::version client_min{};
-    system::config::version client_max{};
-    if (!get_versions(client_min, client_max, version))
-        return false;
+    // A non-version opener restricts negotiation to below 1.6.
+    const auto minimum = options().protocol_minimum;
+    const auto maximum = channel_->restricted() ?
+        std::min(options().protocol_maximum,
+            electrum::version_to_number(electrum::restricted_maximum)) :
+        options().protocol_maximum;
 
-    // Clients may specify undefined (e.g. future) versions, negotiation is
-    // numeric and settles on the greatest defined version in the overlap.
-    const auto lower = std::max(client_min, options().protocol_minimum);
-    const auto upper = std::min(client_max, options().protocol_maximum);
-    const auto floor = electrum::version_floor(upper);
-    if (electrum::version_to_number(floor) < lower)
+    // Below 1.4 a repeat must agree with the negotiated version.
+    const auto floor = electrum::negotiate(version, minimum, maximum);
+
+    if (floor == electrum::version::v0_0 ||
+        (channel_->negotiated() && floor != channel_->version()))
         return false;
 
     LOGA("Electrum [" << opposite() << "] version ("
-        << client_max.to_string() << ") " << client_name());
+        << electrum::version_to_string(floor) << ") " << client_name());
 
     channel_->set_version(floor);
+    channel_->set_negotiated();
     return true;
-}
-
-bool protocol_electrum_version::get_versions(system::config::version& min,
-    system::config::version& max, const interface::value_t& version) NOEXCEPT
-{
-    // Optional value_t can be string_t or array_t of two string_t.
-    const auto& value = version.value();
-
-    // Default version (null_t is the default of value_t).
-    if (std::holds_alternative<null_t>(value))
-    {
-        // An interface default can't be set for optional<value_t>.
-        // An unspecified version accepts any, subject to configured limits.
-        min = {};
-        max = options().protocol_maximum;
-        return true;
-    }
-
-    // One version.
-    if (std::holds_alternative<string_t>(value))
-    {
-        // A single value implies minimum is the same as maximum.
-        if (!electrum::version_from_string(min, std::get<string_t>(value)))
-            return false;
-
-        max = min;
-        return true;
-    }
-
-    // Two versions.
-    if (std::holds_alternative<array_t>(value))
-    {
-        const auto& versions = std::get<array_t>(value);
-        if (versions.size() != two)
-            return false;
-
-        // First string is mimimum, second is maximum.
-        const auto& min_version = versions.at(0).value();
-        const auto& max_version = versions.at(1).value();
-        if (!std::holds_alternative<string_t>(min_version) ||
-            !std::holds_alternative<string_t>(max_version))
-            return false;
-
-        return electrum::version_from_string(min,
-                std::get<string_t>(min_version))
-            && electrum::version_from_string(max,
-                std::get<string_t>(max_version));
-    }
-
-    return false;
 }
 
 BC_POP_WARNING()

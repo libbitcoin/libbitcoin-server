@@ -90,7 +90,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_history(
         return;
     }
 
-    get_history(script.hash());
+    get_history(script.hash(), true);
 }
 
 void protocol_electrum::handle_blockchain_scriptpubkey_get_mempool(
@@ -120,7 +120,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_get_mempool(
         return;
     }
 
-    get_mempool(script.hash());
+    get_mempool(script.hash(), true);
 }
 
 void protocol_electrum::handle_blockchain_scriptpubkey_list_unspent(
@@ -150,7 +150,7 @@ void protocol_electrum::handle_blockchain_scriptpubkey_list_unspent(
         return;
     }
 
-    list_unspent(script.hash());
+    list_unspent(script.hash(), true);
 }
 
 void protocol_electrum::handle_blockchain_scriptpubkey_subscribe(

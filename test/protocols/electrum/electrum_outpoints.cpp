@@ -177,8 +177,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_unspent
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& history = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
-    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
+    REQUIRE_NO_THROW_TRUE(history.at("funder_height").is_int64());
+    BOOST_REQUIRE_EQUAL(history.at("funder_height").as_int64(), 1);
     BOOST_REQUIRE(!history.contains("spender_txhash"));
     BOOST_REQUIRE(!history.contains("spender_height"));
 }
@@ -198,10 +198,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_spent__
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& history = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(history.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(history.at("funder_height").as_int64(), 1);
     BOOST_REQUIRE_EQUAL(history.at("spender_height").as_int64(), 10);
     BOOST_REQUIRE_EQUAL(history.at("spender_txhash").as_string(), encode_hash(hash10));
 }
@@ -290,10 +290,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_unspent_
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& history = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(history.at("funder_height").is_int64());
     BOOST_REQUIRE(!history.contains("spender_txhash"));
     BOOST_REQUIRE(!history.contains("spender_height"));
-    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(history.at("funder_height").as_int64(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__one_spender__expected)
@@ -311,10 +311,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__one_spender__expec
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& history = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(history.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(history.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(history.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(history.at("funder_height").as_int64(), 1);
     BOOST_REQUIRE_EQUAL(history.at("spender_height").as_int64(), 10);
     BOOST_REQUIRE_EQUAL(history.at("spender_txhash").as_string(), encode_hash(hash10));
 }
@@ -354,10 +354,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__two_spenders__one_
     // spent by block2a tx0 input0 [confirmed 2]
     // spent by block3a tx0 input1 [unconfirmed]
     const auto& result = response.at("result").as_object();
-    REQUIRE_NO_THROW_TRUE(result.at("height").is_int64());
+    REQUIRE_NO_THROW_TRUE(result.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(result.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(result.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("funder_height").as_int64(), 1);
     BOOST_REQUIRE_EQUAL(result.at("spender_height").as_int64(), 2);
     BOOST_REQUIRE_EQUAL(result.at("spender_txhash").as_string(), hash2);
 
@@ -367,20 +367,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__two_spenders__one_
     BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.outpoint.subscribe");
     
     const auto& params = notification.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.size(), 2u);
-    BOOST_REQUIRE(params.at(0).is_array());
-    BOOST_REQUIRE(params.at(1).is_object());
-    
-    const auto& outpoint = params.at(0).as_array();
-    BOOST_REQUIRE_EQUAL(outpoint.size(), 2u);
-    BOOST_REQUIRE(outpoint.at(0).is_string());
-    BOOST_REQUIRE(outpoint.at(1).is_number());
-    
-    const auto& spender = params.at(1).as_object();
-    REQUIRE_NO_THROW_TRUE(spender.at("height").is_int64());
+    BOOST_REQUIRE_EQUAL(params.size(), 3u);
+    BOOST_REQUIRE(params.at(0).is_string());
+    BOOST_REQUIRE(params.at(1).is_number());
+    BOOST_REQUIRE(params.at(2).is_object());
+
+    const auto& spender = params.at(2).as_object();
+    REQUIRE_NO_THROW_TRUE(spender.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(spender.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(spender.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(spender.at("height").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(spender.at("funder_height").as_int64(), 1);
     BOOST_REQUIRE_EQUAL(spender.at("spender_height").as_int64(), 0); // unconfirmed rooted
     BOOST_REQUIRE_EQUAL(spender.at("spender_txhash").as_string(), hash3);
 }
@@ -431,22 +427,19 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
 
     // always same
     const auto& params1 = notification1.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params1.size(), 2u);
-    BOOST_REQUIRE(params1.at(0).is_array());
-    BOOST_REQUIRE(params1.at(1).is_object());
+    BOOST_REQUIRE_EQUAL(params1.size(), 3u);
+    BOOST_REQUIRE(params1.at(0).is_string());
+    BOOST_REQUIRE(params1.at(1).is_number());
+    BOOST_REQUIRE(params1.at(2).is_object());
 
     // always same
-    const auto& outpoint1 = params1.at(0).as_array();
-    BOOST_REQUIRE_EQUAL(outpoint1.size(), 2u);
-    BOOST_REQUIRE(outpoint1.at(0).is_string());
-    BOOST_REQUIRE(outpoint1.at(1).is_number());
-    BOOST_REQUIRE_EQUAL(outpoint1.at(0).as_string(), hash1);
-    BOOST_REQUIRE_EQUAL(outpoint1.at(1).as_int64(), tx1_index0);
+    BOOST_REQUIRE_EQUAL(params1.at(0).as_string(), hash1);
+    BOOST_REQUIRE_EQUAL(params1.at(1).as_int64(), tx1_index0);
 
     // Outpoint exists now, but unconfirmed and with no spender.
-    const auto& history1 = params1.at(1).as_object();
-    REQUIRE_NO_THROW_TRUE(history1.at("height").is_int64());
-    BOOST_REQUIRE_EQUAL(history1.at("height").as_int64(), -1); // outpoint unconfirmed
+    const auto& history1 = params1.at(2).as_object();
+    REQUIRE_NO_THROW_TRUE(history1.at("funder_height").is_int64());
+    BOOST_REQUIRE_EQUAL(history1.at("funder_height").as_int64(), -1); // outpoint unconfirmed
     BOOST_REQUIRE(!history1.contains("spender_txhash"));
     BOOST_REQUIRE(!history1.contains("spender_height"));
 
@@ -467,23 +460,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
 
     // always same
     const auto& params2 = notification2.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params2.size(), 2u);
-    BOOST_REQUIRE(params2.at(0).is_array());
-    BOOST_REQUIRE(params2.at(1).is_object());
+    BOOST_REQUIRE_EQUAL(params2.size(), 3u);
+    BOOST_REQUIRE(params2.at(0).is_string());
+    BOOST_REQUIRE(params2.at(1).is_number());
+    BOOST_REQUIRE(params2.at(2).is_object());
 
     // always same
-    const auto& outpoint2 = params2.at(0).as_array();
-    BOOST_REQUIRE_EQUAL(outpoint2.size(), 2u);
-    BOOST_REQUIRE(outpoint2.at(0).is_string());
-    BOOST_REQUIRE(outpoint2.at(1).is_number());
-    BOOST_REQUIRE_EQUAL(outpoint2.at(0).as_string(), hash1);
-    BOOST_REQUIRE_EQUAL(outpoint2.at(1).as_int64(), tx1_index0); // index
+    BOOST_REQUIRE_EQUAL(params2.at(0).as_string(), hash1);
+    BOOST_REQUIRE_EQUAL(params2.at(1).as_int64(), tx1_index0); // index
 
-    const auto& history2 = params2.at(1).as_object();
-    REQUIRE_NO_THROW_TRUE(history2.at("height").is_int64());
+    const auto& history2 = params2.at(2).as_object();
+    REQUIRE_NO_THROW_TRUE(history2.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history2.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history2.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(history2.at("height").as_int64(), 1); // outpoint confirmed at 1
+    BOOST_REQUIRE_EQUAL(history2.at("funder_height").as_int64(), 1); // outpoint confirmed at 1
     BOOST_REQUIRE_EQUAL(history2.at("spender_height").as_int64(), 0); // unconfirmed block2a spender
     BOOST_REQUIRE_EQUAL(history2.at("spender_txhash").as_string(), hash2);
 
@@ -509,23 +499,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
 
     // always same
     const auto& params3 = notification3.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params3.size(), 2u);
-    BOOST_REQUIRE(params3.at(0).is_array());
-    BOOST_REQUIRE(params3.at(1).is_object());
+    BOOST_REQUIRE_EQUAL(params3.size(), 3u);
+    BOOST_REQUIRE(params3.at(0).is_string());
+    BOOST_REQUIRE(params3.at(1).is_number());
+    BOOST_REQUIRE(params3.at(2).is_object());
 
     // always same
-    const auto& outpoint3 = params3.at(0).as_array();
-    BOOST_REQUIRE_EQUAL(outpoint3.size(), 2u);
-    BOOST_REQUIRE(outpoint3.at(0).is_string());
-    BOOST_REQUIRE(outpoint3.at(1).is_number());
-    BOOST_REQUIRE_EQUAL(outpoint3.at(0).as_string(), hash1);
-    BOOST_REQUIRE_EQUAL(outpoint3.at(1).as_int64(), tx1_index0);
+    BOOST_REQUIRE_EQUAL(params3.at(0).as_string(), hash1);
+    BOOST_REQUIRE_EQUAL(params3.at(1).as_int64(), tx1_index0);
 
-    const auto& history3 = params3.at(1).as_object();
-    REQUIRE_NO_THROW_TRUE(history3.at("height").is_int64());
+    const auto& history3 = params3.at(2).as_object();
+    REQUIRE_NO_THROW_TRUE(history3.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history3.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history3.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(history3.at("height").as_int64(), 1); // outpoint confirmed at 1
+    BOOST_REQUIRE_EQUAL(history3.at("funder_height").as_int64(), 1); // outpoint confirmed at 1
     BOOST_REQUIRE_EQUAL(history3.at("spender_height").as_int64(), 0); // rooted
     BOOST_REQUIRE_EQUAL(history3.at("spender_txhash").as_string(), hash4);
 
@@ -540,23 +527,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     
     // always same
     const auto& params4 = notification4.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params4.size(), 2u);
-    BOOST_REQUIRE(params4.at(0).is_array());
-    BOOST_REQUIRE(params4.at(1).is_object());
+    BOOST_REQUIRE_EQUAL(params4.size(), 3u);
+    BOOST_REQUIRE(params4.at(0).is_string());
+    BOOST_REQUIRE(params4.at(1).is_number());
+    BOOST_REQUIRE(params4.at(2).is_object());
     
     // always same
-    const auto& outpoint4 = params4.at(0).as_array();
-    BOOST_REQUIRE_EQUAL(outpoint4.size(), 2u);
-    BOOST_REQUIRE(outpoint4.at(0).is_string());
-    BOOST_REQUIRE(outpoint4.at(1).is_number());
-    BOOST_REQUIRE_EQUAL(outpoint4.at(0).as_string(), hash1);
-    BOOST_REQUIRE_EQUAL(outpoint4.at(1).as_int64(), tx1_index0);
+    BOOST_REQUIRE_EQUAL(params4.at(0).as_string(), hash1);
+    BOOST_REQUIRE_EQUAL(params4.at(1).as_int64(), tx1_index0);
 
-    const auto& history4 = params4.at(1).as_object();
-    REQUIRE_NO_THROW_TRUE(history4.at("height").is_int64());
+    const auto& history4 = params4.at(2).as_object();
+    REQUIRE_NO_THROW_TRUE(history4.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history4.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history4.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(history4.at("height").as_int64(), 1); // outpoint confirmed at 1
+    BOOST_REQUIRE_EQUAL(history4.at("funder_height").as_int64(), 1); // outpoint confirmed at 1
     BOOST_REQUIRE_EQUAL(history4.at("spender_height").as_int64(), 0); // rooted
     BOOST_REQUIRE_EQUAL(history4.at("spender_txhash").as_string(), hash3);
 
@@ -574,23 +558,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
 
     // always same
     const auto& params5 = notification5.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params5.size(), 2u);
-    BOOST_REQUIRE(params5.at(0).is_array());
-    BOOST_REQUIRE(params5.at(1).is_object());
+    BOOST_REQUIRE_EQUAL(params5.size(), 3u);
+    BOOST_REQUIRE(params5.at(0).is_string());
+    BOOST_REQUIRE(params5.at(1).is_number());
+    BOOST_REQUIRE(params5.at(2).is_object());
 
     // always same
-    const auto& outpoint5 = params5.at(0).as_array();
-    BOOST_REQUIRE_EQUAL(outpoint5.size(), 2u);
-    BOOST_REQUIRE(outpoint5.at(0).is_string());
-    BOOST_REQUIRE(outpoint5.at(1).is_number());
-    BOOST_REQUIRE_EQUAL(outpoint5.at(0).as_string(), hash1);
-    BOOST_REQUIRE_EQUAL(outpoint5.at(1).as_int64(), tx1_index0);
+    BOOST_REQUIRE_EQUAL(params5.at(0).as_string(), hash1);
+    BOOST_REQUIRE_EQUAL(params5.at(1).as_int64(), tx1_index0);
 
-    const auto& history5 = params5.at(1).as_object();
-    REQUIRE_NO_THROW_TRUE(history5.at("height").is_int64());
+    const auto& history5 = params5.at(2).as_object();
+    REQUIRE_NO_THROW_TRUE(history5.at("funder_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history5.at("spender_height").is_int64());
     REQUIRE_NO_THROW_TRUE(history5.at("spender_txhash").is_string());
-    BOOST_REQUIRE_EQUAL(history5.at("height").as_int64(), 1); // outpoint confirmed at 1
+    BOOST_REQUIRE_EQUAL(history5.at("funder_height").as_int64(), 1); // outpoint confirmed at 1
     BOOST_REQUIRE_EQUAL(history5.at("spender_height").as_int64(), 2); // block2a tx0 confirmed
     BOOST_REQUIRE_EQUAL(history5.at("spender_txhash").as_string(), hash2);
 }

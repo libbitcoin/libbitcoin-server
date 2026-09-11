@@ -104,6 +104,11 @@ bool electrum_setup_fixture::verify(const boost::json::value& response,
         if (response.at("id").as_int64() != id)
             return false;
 
+        // The 1.0 result is the server software string alone.
+        if (version == electrum::version::v1_0)
+            return response.at("result").is_string() &&
+                (response.at("result").as_string() == options().server_name);
+
         // Assumes server always accepts proposed version.
         const auto& result = response.at("result").as_array();
         return (result.size() == two) &&

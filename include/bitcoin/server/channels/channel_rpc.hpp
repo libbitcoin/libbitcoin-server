@@ -106,7 +106,7 @@ protected:
     /// Overridden to cache the json-rpc request context (version and
     /// identity) for the response, the dispatch itself is by verb.
     inline void dispatch(
-        const network::http::request_cptr& request) NOEXCEPT override
+        const network::http::request_ptr& request) NOEXCEPT override
     {
         BC_ASSERT(stranded());
 
