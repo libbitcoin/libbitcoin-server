@@ -136,6 +136,7 @@
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_transaction.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\electrum_request.cpp" />
+    <ClCompile Include="..\..\..\..\src\parsers\esplora_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\admin\protocol_admin.cpp" />
@@ -229,6 +230,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_zmq.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\electrum.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\esplora.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\interfaces.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\native.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\sparrow.hpp" />
@@ -245,6 +247,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\electrum_request.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\esplora_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp" />

@@ -44,9 +44,7 @@ std::optional<std::thread> executor::poller_thread_{};
 executor& executor::factory(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
 {
-    // Pack creation settings, stored at store create and read at load.
-    metadata.configured.database.envelope = database::envelope{
-        metadata.configured.bitcoin, metadata.configured.database };
+    metadata.configured.initialize();
 
     // Suppress configured batch cache sizing when batching cannot run.
     if (!system::batched::accelerated())

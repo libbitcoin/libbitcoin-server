@@ -1550,6 +1550,92 @@ options_metadata parser::load_settings() THROWS
         value<network::config::endpoints>(&configured.server.sparrow.more_safes),
         "Advertised secure host:port at which another server can be reached (defaults to empty)."
     )
+    /* [esplora] */
+    (
+        "esplora.bind",
+        value<network::config::authorities>(&configured.server.esplora.binds),
+        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "esplora.safe",
+        value<network::config::authorities>(&configured.server.esplora.safes),
+        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "esplora.cert_auth",
+        value<std::filesystem::path>(&configured.server.esplora.cert_auth),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
+        "esplora.cert_path",
+        value<std::filesystem::path>(&configured.server.esplora.cert_path),
+        "The path to the server certificate file (.PEM), defaults to unused."
+    )
+    (
+        "esplora.key_path",
+        value<std::filesystem::path>(&configured.server.esplora.key_path),
+        "The path to the server private key file (.PEM), defaults to unused."
+    )
+    (
+        "esplora.key_pass",
+        value<std::string>(&configured.server.esplora.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "esplora.connections",
+        value<uint16_t>(&configured.server.esplora.connections),
+        "The required maximum number of connections, defaults to '0'."
+    )
+    (
+        "esplora.inactivity_minutes",
+        value<uint32_t>(&configured.server.esplora.inactivity_minutes),
+        "The idle timeout (http keep-server), defaults to '60'."
+    )
+    (
+        "esplora.expiration_minutes",
+        value<uint32_t>(&configured.server.esplora.expiration_minutes),
+        "The idle timeout (http keep-alive), defaults to '60'."
+    )
+    (
+        "esplora.minimum_buffer",
+        value<uint32_t>(&configured.server.esplora.minimum_buffer),
+        "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "esplora.maximum_request",
+        value<uint32_t>(&configured.server.esplora.maximum_request),
+        "The maximum allowed request size, defaults to '4000000'."
+    )
+    (
+        "esplora.rate_limit",
+        value<uint32_t>(&configured.server.esplora.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
+    )
+    (
+        "esplora.server",
+        value<std::string>(&configured.server.esplora.server),
+        "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+    )
+    (
+        "esplora.maximum_history",
+        value<uint32_t>(&configured.server.esplora.maximum_history),
+        "The maximum number of address history entries, defaults to '1000000'."
+    )
+    (
+        "esplora.host",
+        value<network::config::endpoints>(&configured.server.esplora.hosts),
+        "The host name (http verification), multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "esplora.origin",
+        value<network::config::endpoints>(&configured.server.esplora.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
+    )
+    (
+        "esplora.allow_opaque_origin",
+        value<bool>(&configured.server.esplora.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
+    )
     /* [stratum_v1] */
     (
         "stratum_v1.bind",

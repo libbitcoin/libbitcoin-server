@@ -64,6 +64,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parsers/bitcoind_transaction.cpp \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
     ${srcdir}/../../src/parsers/electrum_request.cpp \
+    ${srcdir}/../../src/parsers/esplora_target.cpp \
     ${srcdir}/../../src/parsers/native_query.cpp \
     ${srcdir}/../../src/parsers/native_target.cpp \
     ${srcdir}/../../src/protocols/protocol.cpp \
@@ -187,6 +188,7 @@ include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/esplora.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/interfaces.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/native.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/sparrow.hpp \
@@ -207,6 +209,7 @@ include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/btcd_filter.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/electrum_request.hpp \
+    ${srcdir}/../../include/bitcoin/server/parsers/esplora_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/native_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/parsers.hpp
@@ -312,6 +315,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/parsers/admin_target.cpp \
     ${srcdir}/../../test/parsers/bitcoind_query.cpp \
     ${srcdir}/../../test/parsers/bitcoind_target.cpp \
+    ${srcdir}/../../test/parsers/esplora_target.cpp \
     ${srcdir}/../../test/parsers/native_query.cpp \
     ${srcdir}/../../test/parsers/native_target.cpp \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \

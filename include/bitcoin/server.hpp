@@ -51,6 +51,7 @@
 #include <bitcoin/server/interfaces/bitcoind_zmq.hpp>
 #include <bitcoin/server/interfaces/btcd.hpp>
 #include <bitcoin/server/interfaces/electrum.hpp>
+#include <bitcoin/server/interfaces/esplora.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/interfaces/native.hpp>
 #include <bitcoin/server/interfaces/sparrow.hpp>
@@ -66,6 +67,7 @@
 #include <bitcoin/server/parsers/bitcoind_transaction.hpp>
 #include <bitcoin/server/parsers/btcd_filter.hpp>
 #include <bitcoin/server/parsers/electrum_request.hpp>
+#include <bitcoin/server/parsers/esplora_target.hpp>
 #include <bitcoin/server/parsers/native_query.hpp>
 #include <bitcoin/server/parsers/native_target.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>

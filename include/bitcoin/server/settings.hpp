@@ -144,6 +144,16 @@ public:
         using base::base;
     };
 
+    struct esplora_server
+      : public network::settings::websocket_server
+    {
+        using base = network::settings::websocket_server;
+        using base::base;
+
+        /// Maximum number of address history entries upon one index walk.
+        uint32_t maximum_history{ 1'000'000 };
+    };
+
     /// html (http/s) document server settings (has directory/default).
     /// This is for web servers that expose a local file system directory.
     struct html_server
@@ -251,6 +261,9 @@ public:
 
     /// sparrow interface (electrum plus block stats and silent payments)
     sparrow_server sparrow{ "sparrow" };
+
+    /// esplora compat interface (http/s + websocket, RESTful json)
+    esplora_server esplora{ "esplora" };
 
     /// stratum v1 compat interface (tcp/s, json-rpc-v1, auth handshake)
     network::settings::tls_server stratum_v1{ "stratum_v1" };

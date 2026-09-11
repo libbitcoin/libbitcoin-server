@@ -128,6 +128,7 @@
     <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_target.cpp" />
+    <ClCompile Include="..\..\..\..\test\parsers\esplora_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\native_target.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\admin\admin_diagnostics.cpp" />
