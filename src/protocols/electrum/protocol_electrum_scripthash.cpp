@@ -51,7 +51,12 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
     }
 
     hash_digest hash{};
-    decode_hash(hash, scripthash);
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
     get_balance(hash);
 }
 
@@ -59,11 +64,6 @@ void protocol_electrum::handle_blockchain_scripthash_get_balance(const code& ec,
 void protocol_electrum::get_balance(const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (hash == null_hash)
-    {
-        send_code(error::electrum::bad_request);
-        return;
-    }
 
     if (!archive().address_enabled())
     {
@@ -126,7 +126,12 @@ void protocol_electrum::handle_blockchain_scripthash_get_history(const code& ec,
     }
 
     hash_digest hash{};
-    decode_hash(hash, scripthash);
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
     get_history(hash);
 }
 
@@ -135,11 +140,6 @@ void protocol_electrum::get_history(const system::hash_digest& hash,
     bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (hash == null_hash)
-    {
-        send_code(error::electrum::bad_request);
-        return;
-    }
 
     if (!archive().address_enabled())
     {
@@ -206,7 +206,12 @@ void protocol_electrum::handle_blockchain_scripthash_get_mempool(const code& ec,
     }
 
     hash_digest hash{};
-    decode_hash(hash, scripthash);
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
     get_mempool(hash);
 }
 
@@ -215,11 +220,6 @@ void protocol_electrum::get_mempool(const system::hash_digest& hash,
     bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (hash == null_hash)
-    {
-        send_code(error::electrum::bad_request);
-        return;
-    }
 
     if (!archive().address_enabled())
     {
@@ -284,7 +284,12 @@ void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec
     }
 
     hash_digest hash{};
-    decode_hash(hash, scripthash);
+    if (!decode_hash(hash, scripthash))
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
     list_unspent(hash);
 }
 
@@ -293,11 +298,6 @@ void protocol_electrum::list_unspent(const system::hash_digest& hash,
     bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (hash == null_hash)
-    {
-        send_code(error::electrum::bad_request);
-        return;
-    }
 
     if (!archive().address_enabled())
     {

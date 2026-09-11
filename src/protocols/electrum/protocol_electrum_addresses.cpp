@@ -47,7 +47,14 @@ void protocol_electrum::handle_blockchain_address_get_balance(const code& ec,
         return;
     }
 
-    get_balance(extract_scripthash(address));
+    const auto hash = extract_scripthash(address);
+    if (hash == null_hash)
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    get_balance(hash);
 }
 
 void protocol_electrum::handle_blockchain_address_get_history(const code& ec,
@@ -63,7 +70,14 @@ void protocol_electrum::handle_blockchain_address_get_history(const code& ec,
         return;
     }
 
-    get_history(extract_scripthash(address));
+    const auto hash = extract_scripthash(address);
+    if (hash == null_hash)
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    get_history(hash);
 }
 
 void protocol_electrum::handle_blockchain_address_get_mempool(const code& ec,
@@ -79,7 +93,14 @@ void protocol_electrum::handle_blockchain_address_get_mempool(const code& ec,
         return;
     }
 
-    get_mempool(extract_scripthash(address));
+    const auto hash = extract_scripthash(address);
+    if (hash == null_hash)
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    get_mempool(hash);
 }
 
 void protocol_electrum::handle_blockchain_address_list_unspent(const code& ec,
@@ -95,7 +116,14 @@ void protocol_electrum::handle_blockchain_address_list_unspent(const code& ec,
         return;
     }
 
-    list_unspent(extract_scripthash(address));
+    const auto hash = extract_scripthash(address);
+    if (hash == null_hash)
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    list_unspent(hash);
 }
 
 void protocol_electrum::handle_blockchain_address_subscribe(const code& ec,

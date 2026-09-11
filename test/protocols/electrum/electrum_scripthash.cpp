@@ -85,6 +85,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__not_found_addr
     BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
 }
 
+// A null scripthash is a valid query that matches nothing, not an error.
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__null_scripthash__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":905,"method":"blockchain.scripthash.get_balance","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x00);
+    BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__confirmed_and_unconfirmed_address__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
@@ -154,6 +168,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__not_found_addr
 
     const auto request = R"({"id":1005,"method":"blockchain.scripthash.get_history","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % bogus_scripthash).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+}
+
+// A null scripthash is a valid query that matches nothing, not an error.
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__null_scripthash__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":915,"method":"blockchain.scripthash.get_history","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
@@ -250,6 +274,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__not_found_addr
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
+// A null scripthash is a valid query that matches nothing, not an error.
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__null_scripthash__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":925,"method":"blockchain.scripthash.get_mempool","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__confirmed_and_unconfirmed_address__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
@@ -330,6 +364,16 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__not_found_add
 
     const auto request = R"({"id":1005,"method":"blockchain.scripthash.listunspent","params":["%1%"]})" "\n";
     const auto response = get((boost_format(request) % bogus_scripthash).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+}
+
+// A null scripthash is a valid query that matches nothing, not an error.
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__null_scripthash__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto response = get(R"({"id":935,"method":"blockchain.scripthash.listunspent","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
