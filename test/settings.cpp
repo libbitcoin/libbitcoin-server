@@ -23,6 +23,7 @@ BOOST_AUTO_TEST_SUITE(settings_tests)
 using namespace bc::network;
 using namespace bc::system::chain;
 using version = system::config::version;
+using namespace bc::system::wallet;
 
 // [log]
 
@@ -291,4 +292,79 @@ BOOST_AUTO_TEST_CASE(server__stratum_v2_server__defaults__expected)
     BOOST_REQUIRE(server.expiration() == minutes(60));
 }
 
+
+// [wallet]
+
+#define MAINNET_M "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"
+#define TESTNET_M "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5khqjWaWSFhN3YcCUUdiKH6isR4Pwy3U5y5egddBr16m"
+
+BOOST_AUTO_TEST_CASE(wallet__defaults__mainnet__expected)
+{
+    const server::settings::wallet_settings instance{ selection::mainnet };
+    BOOST_REQUIRE_EQUAL(instance.p2kh_prefix, prefix::p2kh::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::main::btc.prv);
+    BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::main::btc.pub);
+}
+
+BOOST_AUTO_TEST_CASE(wallet__defaults__testnet__expected)
+{
+    const server::settings::wallet_settings instance{ selection::testnet3 };
+    BOOST_REQUIRE_EQUAL(instance.p2kh_prefix, prefix::p2kh::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::test::btc.prv);
+    BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::test::btc.pub);
+}
+
+BOOST_AUTO_TEST_CASE(wallet__defaults__regtest__testnet_versions_with_regtest_witness)
+{
+    const server::settings::wallet_settings instance{ selection::regtest };
+    BOOST_REQUIRE_EQUAL(instance.p2kh_prefix, prefix::p2kh::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::regtest::btc);
+    BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::test::btc.prv);
+}
+
+BOOST_AUTO_TEST_CASE(wallet__to_context__mainnet__matches_predefined)
+{
+    const server::settings::wallet_settings instance{ selection::mainnet };
+    BOOST_REQUIRE_EQUAL(instance.to_context().hd_prefixes(), ctx::btc::main.hd_prefixes());
+    BOOST_REQUIRE_EQUAL(instance.to_context().versions(), ctx::btc::main.versions());
+    BOOST_REQUIRE_EQUAL(instance.to_context().p2w, ctx::btc::main.p2w);
+}
+
+BOOST_AUTO_TEST_CASE(wallet__to_context__regtest__matches_predefined)
+{
+    const server::settings::wallet_settings instance{ selection::regtest };
+    BOOST_REQUIRE_EQUAL(instance.to_context().hd_prefixes(), ctx::btc::regtest.hd_prefixes());
+    BOOST_REQUIRE_EQUAL(instance.to_context().versions(), ctx::btc::regtest.versions());
+    BOOST_REQUIRE_EQUAL(instance.to_context().p2w, ctx::btc::regtest.p2w);
+}
+
+BOOST_AUTO_TEST_CASE(wallet__to_context__testnet__parses_testnet_descriptor_only)
+{
+    const server::settings::wallet_settings instance{ selection::testnet3 };
+    BOOST_REQUIRE(descriptor("pkh(" TESTNET_M "/1/*)", instance.to_context()));
+    BOOST_REQUIRE(!descriptor("pkh(" MAINNET_M "/1/*)", instance.to_context()));
+}
+
+BOOST_AUTO_TEST_CASE(wallet__to_context__mainnet__parses_mainnet_descriptor_only)
+{
+    const server::settings::wallet_settings instance{ selection::mainnet };
+    BOOST_REQUIRE(descriptor("pkh(" MAINNET_M "/1/*)", instance.to_context()));
+    BOOST_REQUIRE(!descriptor("pkh(" TESTNET_M "/1/*)", instance.to_context()));
+}
+
+BOOST_AUTO_TEST_CASE(wallet__to_context__configured_prefixes__override_network)
+{
+    server::settings::wallet_settings instance{ selection::mainnet };
+    instance.hd_private_prefix = prefix::hd::test::btc.prv;
+    instance.hd_public_prefix = prefix::hd::test::btc.pub;
+    BOOST_REQUIRE(descriptor("pkh(" TESTNET_M "/1/*)", instance.to_context()));
+}
 BOOST_AUTO_TEST_SUITE_END()

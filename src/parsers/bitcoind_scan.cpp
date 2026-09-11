@@ -29,10 +29,11 @@ using namespace network::rpc;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 // A scan object is a descriptor string or { "desc", "range" } object.
-bool expand_scan_object(chain::scripts& out, const value_t& item) NOEXCEPT
+bool expand_scan_object(chain::scripts& out, const value_t& item,
+    const wallet::context& context) NOEXCEPT
 {
     wallet::descriptor::signing::list signings{};
-    if (!expand_scan_signings(signings, item))
+    if (!expand_scan_signings(signings, item, context))
         return false;
 
     out.reserve(out.size() + signings.size());
@@ -43,7 +44,7 @@ bool expand_scan_object(chain::scripts& out, const value_t& item) NOEXCEPT
 }
 
 bool expand_scan_signings(wallet::descriptor::signing::list& out,
-    const value_t& item) NOEXCEPT
+    const value_t& item, const wallet::context& context) NOEXCEPT
 {
     std::string expression{};
     uint32_t begin{};
@@ -78,7 +79,7 @@ bool expand_scan_signings(wallet::descriptor::signing::list& out,
         return false;
     }
 
-    const wallet::descriptor parsed{ expression };
+    const wallet::descriptor parsed{ expression, context };
     if (!parsed || to_bool(shift_right(end, 31u)) ||
         floored_subtract(end, begin) >= maximum_range)
         return false;

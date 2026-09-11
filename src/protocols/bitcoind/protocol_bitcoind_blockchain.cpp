@@ -831,7 +831,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
     chain::scripts scripts{};
     for (const auto& item: *objects)
     {
-        if (!expand_scan_object(scripts, item))
+        if (!expand_scan_object(scripts, item, context_))
         {
             POST(complete_scan, error::bitcoind::invalid_address_or_key,
                 std::move(result), zero);
@@ -1277,7 +1277,7 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
     chain::scripts derived{};
     for (const auto& item: scanobjects)
     {
-        if (!expand_scan_object(derived, item))
+        if (!expand_scan_object(derived, item, context_))
         {
             send_error(error::bitcoind::invalid_address_or_key);
             return true;
@@ -1446,7 +1446,7 @@ bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
     chain::scripts scripts{};
     for (const auto& item: scanobjects)
     {
-        if (!expand_scan_object(scripts, item))
+        if (!expand_scan_object(scripts, item, context_))
         {
             send_error(error::bitcoind::invalid_address_or_key);
             return true;

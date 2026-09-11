@@ -47,6 +47,22 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     ////send_code(error::not_implemented);
 }
 
+void protocol_electrum::handle_mempool_recent(const code& ec,
+    rpc_interface::mempool_recent) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (!at_least(electrum::version::v1_7))
+    {
+        send_code(error::electrum::bad_request);
+        return;
+    }
+
+    // There is no tx pool.
+    send_result(array_t{}, 42);
+}
+
 void protocol_electrum::handle_mempool_get_info(const code& ec,
     rpc_interface::mempool_get_info) NOEXCEPT
 {

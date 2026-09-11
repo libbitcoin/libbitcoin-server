@@ -105,6 +105,12 @@ public:
         /// Maximum cumulative number of address subscriptions per channel.
         uint32_t maximum_subscriptions{ 1'000'000 };
 
+        /// Interval between unrequested pings, zero disables (1.7, not http).
+        uint32_t ping_interval_seconds{ 0 };
+
+        /// Number of hex characters of data carried by an unrequested ping.
+        uint32_t ping_size{ 0 };
+
         /// Minimum protocol version.
         system::config::version protocol_minimum{ 1, 0, 0, 0 };
 
@@ -176,7 +182,13 @@ public:
 
         system::config::byte p2kh_prefix;
         system::config::byte p2sh_prefix;
+        system::config::byte wif_prefix;
         std::string witness_prefix;
+        uint32_t hd_private_prefix;
+        uint32_t hd_public_prefix;
+
+        /// The configured prefixes as a wallet context.
+        system::wallet::context to_context() const NOEXCEPT;
     };
 
     struct bitcoind_server

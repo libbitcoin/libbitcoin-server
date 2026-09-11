@@ -27,12 +27,14 @@ namespace server {
 /// Expand a scan object, a descriptor string or { "desc", "range" } object,
 /// to its derived output scripts (false if malformed or underivable).
 BCS_API bool expand_scan_object(system::chain::scripts& out,
-    const network::rpc::value_t& item) NOEXCEPT;
+    const network::rpc::value_t& item,
+    const system::wallet::context& context) NOEXCEPT;
 
 /// As expand_scan_object, retaining embedded scripts and key origins.
 BCS_API bool expand_scan_signings(
     system::wallet::descriptor::signing::list& out,
-    const network::rpc::value_t& item) NOEXCEPT;
+    const network::rpc::value_t& item,
+    const system::wallet::context& context) NOEXCEPT;
 
 /// Parse a derivation range, an end index or a [begin, end] pair.
 BCS_API bool parse_scan_range(uint32_t& begin, uint32_t& end,

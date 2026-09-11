@@ -100,6 +100,7 @@ void protocol_electrum::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_blockchain_transaction_get, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_get_merkle, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_blockchain_transaction_id_from_position, _1, _2, _3, _4, _5);
+    SUBSCRIBE_RPC(handle_blockchain_transaction_testmempoolaccept, _1, _2, _3);
 
     // Server methods.
     SUBSCRIBE_RPC(handle_server_add_peer, _1, _2, _3);
@@ -112,6 +113,9 @@ void protocol_electrum::start() NOEXCEPT
     // Mempool methods.
     SUBSCRIBE_RPC(handle_mempool_get_fee_histogram, _1, _2);
     SUBSCRIBE_RPC(handle_mempool_get_info, _1, _2);
+    SUBSCRIBE_RPC(handle_mempool_recent, _1, _2);
+
+    start_ping();
     protocol_rpc<interface::electrum>::start();
 }
 
@@ -121,6 +125,7 @@ void protocol_electrum::stopping(const code& ec) NOEXCEPT
     BC_ASSERT(stranded());
     stopping_.store(true);
     unsubscribe_chase();
+    ping_timer_->stop();
     protocol_rpc<interface::electrum>::stopping(ec);
 }
 

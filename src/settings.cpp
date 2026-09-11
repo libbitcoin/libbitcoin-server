@@ -82,9 +82,6 @@ namespace server {
 
 using namespace system::wallet;
 
-// witness_address defines mainnet/testnet prefixes only (bip173).
-constexpr auto regtest_witness_prefix = "bcrt";
-
 // settings::settings
 settings::settings(system::chain::selection context,
     const embedded_pages& native, const embedded_pages& admin) NOEXCEPT
@@ -100,37 +97,45 @@ settings::wallet_settings::wallet_settings() NOEXCEPT
 {
 }
 
-settings::wallet_settings::wallet_settings(
+static const context& to_wallet_context(
     system::chain::selection context) NOEXCEPT
-  : p2kh_prefix(payment_address::mainnet_p2kh),
-    p2sh_prefix(payment_address::mainnet_p2sh),
-    witness_prefix(witness_address::mainnet)
 {
-    // Testnet and regtest share base58 versions, regtest differs in bech32.
     switch (context)
     {
         case system::chain::selection::testnet3:
         case system::chain::selection::testnet4:
-        {
-            p2kh_prefix = payment_address::testnet_p2kh;
-            p2sh_prefix = payment_address::testnet_p2sh;
-            witness_prefix = witness_address::testnet;
-            break;
-        }
+            return ctx::btc::test;
         case system::chain::selection::regtest:
-        {
-            p2kh_prefix = payment_address::testnet_p2kh;
-            p2sh_prefix = payment_address::testnet_p2sh;
-            witness_prefix = regtest_witness_prefix;
-            break;
-        }
+            return ctx::btc::regtest;
         case system::chain::selection::mainnet:
         case system::chain::selection::none:
         default:
-        {
-            break;
-        }
+            return ctx::btc::main;
     }
+}
+
+settings::wallet_settings::wallet_settings(
+    system::chain::selection context) NOEXCEPT
+{
+    const auto& value = to_wallet_context(context);
+    p2kh_prefix = value.p2kh;
+    p2sh_prefix = value.p2sh;
+    wif_prefix = value.wif;
+    witness_prefix = value.p2w;
+    hd_private_prefix = value.hd.prv;
+    hd_public_prefix = value.hd.pub;
+}
+
+context settings::wallet_settings::to_context() const NOEXCEPT
+{
+    return
+    {
+        { hd_private_prefix, hd_public_prefix },
+        witness_prefix,
+        p2kh_prefix,
+        p2sh_prefix,
+        wif_prefix
+    };
 }
 
 // settings::embedded_pages

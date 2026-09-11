@@ -55,7 +55,8 @@ public:
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         flags_(session->system_settings().flags()),
-        witness_(session->server_settings().wallet.witness_prefix)
+        witness_(session->server_settings().wallet.witness_prefix),
+        context_(session->server_settings().wallet.to_context())
     {
     }
 
@@ -130,6 +131,7 @@ protected:
     const uint8_t p2sh_;
     const uint32_t flags_;
     const std::string witness_;
+    const system::wallet::context context_;
 };
 
 } // namespace server

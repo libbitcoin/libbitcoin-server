@@ -909,9 +909,24 @@ options_metadata parser::load_settings() THROWS
         "The pay-to-script-hash address prefix, defaults to '5' (use '196' for testnet)."
     )
     (
+        "wallet.wif_prefix",
+        value<config::byte>(&configured.server.wallet.wif_prefix),
+        "The wallet import format prefix, defaults to '128' (use '239' for testnet)."
+    )
+    (
         "wallet.witness_prefix",
         value<std::string>(&configured.server.wallet.witness_prefix),
         "The witness address prefix, defaults to 'bc' (use 'tb' for testnet)."
+    )
+    (
+        "wallet.hd_private_prefix",
+        value<uint32_t>(&configured.server.wallet.hd_private_prefix),
+        "The extended private key prefix, defaults to '76066276' (use '70615956' for testnet)."
+    )
+    (
+        "wallet.hd_public_prefix",
+        value<uint32_t>(&configured.server.wallet.hd_public_prefix),
+        "The extended public key prefix, defaults to '76067358' (use '71979618' for testnet)."
     )
 
     /* [admin] */
@@ -1359,6 +1374,16 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowed address subscriptions per channel, defaults to '1000000'."
     )
     (
+        "electrum.ping_interval_seconds",
+        value<uint32_t>(&configured.server.electrum.ping_interval_seconds),
+        "The seconds between unrequested pings, defaults to '0' (disabled)."
+    )
+    (
+        "electrum.ping_size",
+        value<uint32_t>(&configured.server.electrum.ping_size),
+        "The hex characters of unrequested ping data, defaults to '0'."
+    )
+    (
         "electrum.protocol_minimum",
         value<version>(&configured.server.electrum.protocol_minimum),
         "Minimum protocol version, defaults to '1.0'."
@@ -1469,6 +1494,16 @@ options_metadata parser::load_settings() THROWS
         "sparrow.maximum_subscriptions",
         value<uint32_t>(&configured.server.sparrow.maximum_subscriptions),
         "The maximum allowed address subscriptions per channel, defaults to '1000000'."
+    )
+    (
+        "sparrow.ping_interval_seconds",
+        value<uint32_t>(&configured.server.sparrow.ping_interval_seconds),
+        "The seconds between unrequested pings, defaults to '0' (disabled)."
+    )
+    (
+        "sparrow.ping_size",
+        value<uint32_t>(&configured.server.sparrow.ping_size),
+        "The hex characters of unrequested ping data, defaults to '0'."
     )
     (
         "sparrow.protocol_minimum",
