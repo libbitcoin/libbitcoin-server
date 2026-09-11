@@ -711,7 +711,7 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     descriptor::signing::list signings{};
     for (const auto& item: descriptors)
     {
-        if (!expand_scan_signings(signings, item))
+        if (!expand_scan_signings(signings, item, context_))
         {
             send_error(error::bitcoind::invalid_address_or_key);
             return true;

@@ -219,7 +219,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
     if (stopped(ec))
         return false;
 
-    const wallet::descriptor parsed{ expression };
+    const wallet::descriptor parsed{ expression, context_ };
     if (!parsed)
     {
         send_error(error::bitcoind::invalid_address_or_key);
@@ -277,7 +277,7 @@ bool protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    const wallet::descriptor parsed{ expression };
+    const wallet::descriptor parsed{ expression, context_ };
     if (!parsed)
     {
         send_error(error::bitcoind::invalid_address_or_key);
