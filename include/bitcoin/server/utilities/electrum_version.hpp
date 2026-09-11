@@ -39,6 +39,28 @@ bool version_from_string(system::config::version& out,
 /// The greatest defined version not exceeding value (v0_0 if none).
 version version_floor(const system::config::version& value) NOEXCEPT;
 
+/// Parse a requested version (string, or [min, max] array) to its range.
+bool version_range(system::config::version& min, system::config::version& max,
+    const network::rpc::value_t& value) NOEXCEPT;
+
+/// Negotiate the requested version within the configured range, v0_0 if none.
+version negotiate(const network::rpc::value_t& value,
+    const system::config::version& minimum,
+    const system::config::version& maximum) NOEXCEPT;
+
+/// The greatest version permitting a non-version opener (below 1.6).
+inline constexpr version restricted_maximum = version::v1_4_2;
+
+/// Client names are informational and truncated to this length.
+inline constexpr size_t maximum_client_name = 1024;
+
+/// Escape a client name for logging (ascii, no whitespace).
+std::string escape_client(const std::string& in) NOEXCEPT;
+
+/// The server.version result for the negotiated version.
+network::rpc::value_t version_result(version negotiated,
+    const std::string& server_name) NOEXCEPT;
+
 } // namespace electrum
 } // namespace server
 } // namespace libbitcoin

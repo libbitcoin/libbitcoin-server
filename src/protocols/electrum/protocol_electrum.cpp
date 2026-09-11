@@ -21,7 +21,6 @@
 #include <atomic>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/parsers/parsers.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 
 namespace libbitcoin {
@@ -126,12 +125,6 @@ void protocol_electrum::stopping(const code& ec) NOEXCEPT
 }
 
 // No attached protocol subscribes the method (terminal responder).
-bool protocol_electrum::normalize(request_t& out,
-    const request_t& in) NOEXCEPT
-{
-    return electrum_request(out, in, channel_->version());
-}
-
 void protocol_electrum::handle_unclaimed(const request_t&) NOEXCEPT
 {
     BC_ASSERT(stranded());

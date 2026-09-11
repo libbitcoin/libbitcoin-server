@@ -114,9 +114,7 @@ protected:
             return;
         }
 
-        network::rpc::request_t normalized{};
-        if (const auto code = rpc_dispatcher_.notify(
-            normalize(normalized, message) ? normalized : message))
+        if (const auto code = rpc_dispatcher_.notify(message))
             stop(code);
     }
 
@@ -155,19 +153,8 @@ protected:
             return;
         }
 
-        network::rpc::request_t normalized{};
-        if (const auto code = rpc_dispatcher_.notify(
-            normalize(normalized, message) ? normalized : message))
+        if (const auto code = rpc_dispatcher_.notify(message))
             stop(code);
-    }
-
-    /// Normalize a request before dispatch, returning true to dispatch the
-    /// normalized copy in place of the original. Overridden where protocol
-    /// evolution cannot be expressed by the interface.
-    virtual bool normalize(network::rpc::request_t&,
-        const network::rpc::request_t&) NOEXCEPT
-    {
-        return false;
     }
 
     /// Invoked for a request not defined by the interface, which the protocol

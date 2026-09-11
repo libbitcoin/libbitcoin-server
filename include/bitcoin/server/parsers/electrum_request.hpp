@@ -20,20 +20,15 @@
 #define LIBBITCOIN_SERVER_PARSERS_ELECTRUM_REQUEST_HPP
 
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/interfaces/electrum.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Discard extraneous server.version arguments, which the protocol requires
-/// to be tolerated and ignored. False if the request is unmodified.
-BCS_API bool electrum_handshake_request(network::rpc::request_t& out,
-    const network::rpc::request_t& in) NOEXCEPT;
-
-/// Discard the ignored blockchain.transaction.get height argument below 1.1,
-/// which occupies the slot of the 1.2 verbose argument. False if unmodified.
-BCS_API bool electrum_request(network::rpc::request_t& out,
-    const network::rpc::request_t& in, electrum::version version) NOEXCEPT;
+/// Normalize the request parameters for the protocol version.
+BCS_API void electrum_request(network::rpc::request_t& message,
+    electrum::version version, const system::config::version& minimum,
+    const system::config::version& maximum) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

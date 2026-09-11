@@ -85,11 +85,11 @@ namespace std::placeholders
 // configuration  : define settings
 // parser         : define configuration
 // session        : define                   [forward: server_node]
-// /parsers       : define
 // /serializers   : define
 // /interfaces    : define
 // /utilities     : define /interfaces
-// /channels      : define settings /interfaces
+// /parsers       : define /utilities
+// /channels      : define /parsers settings
 // /protocols     : define /channels         [session.hpp]
 // /sessions      : define /protocols        [forward: server_node]
 // server_node    : define /sessions

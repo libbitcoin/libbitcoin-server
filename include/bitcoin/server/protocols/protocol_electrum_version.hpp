@@ -54,25 +54,16 @@ public:
     virtual void finished(const code& ec, const code& shake) NOEXCEPT;
 
 protected:
-    static constexpr size_t max_client_name_length = 1024;
-
-    bool normalize(network::rpc::request_t& out,
-        const network::rpc::request_t& in) NOEXCEPT override;
+    void handle_unclaimed(
+        const network::rpc::request_t& message) NOEXCEPT override;
 
     void handle_server_version(const code& ec,
         rpc_interface::server_version, const std::string& client_name,
         const interface::value_t& protocol_version) NOEXCEPT;
 
-    std::string negotiated_version() const NOEXCEPT;
     bool set_version(const interface::value_t& version) NOEXCEPT;
-    bool get_versions(system::config::version& min,
-        system::config::version& max,
-        const interface::value_t& version) NOEXCEPT;
-
-    std::string_view server_name() const NOEXCEPT;
-    std::string_view client_name() const NOEXCEPT;
-    std::string escape_client(const std::string& in) NOEXCEPT;
     bool set_client(const std::string& name) NOEXCEPT;
+    std::string_view client_name() const NOEXCEPT;
 
     inline const options_t& options() const NOEXCEPT
     {
