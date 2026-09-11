@@ -187,6 +187,7 @@ include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/esplora.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/interfaces.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/native.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/sparrow.hpp \

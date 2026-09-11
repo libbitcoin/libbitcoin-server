@@ -229,6 +229,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_zmq.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\btcd.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\electrum.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\esplora.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\interfaces.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\native.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\sparrow.hpp" />
