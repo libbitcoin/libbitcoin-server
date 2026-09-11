@@ -117,13 +117,13 @@ static const context& to_wallet_context(
 settings::wallet_settings::wallet_settings(
     system::chain::selection context) NOEXCEPT
 {
-    const auto& wallet = to_wallet_context(context);
-    p2kh_prefix = wallet.p2kh;
-    p2sh_prefix = wallet.p2sh;
-    wif_prefix = wallet.wif;
-    witness_prefix = wallet.p2w;
-    hd_private_prefix = wallet.hd.prv;
-    hd_public_prefix = wallet.hd.pub;
+    const auto& value = to_wallet_context(context);
+    p2kh_prefix = value.p2kh;
+    p2sh_prefix = value.p2sh;
+    wif_prefix = value.wif;
+    witness_prefix = value.p2w;
+    hd_private_prefix = value.hd.prv;
+    hd_public_prefix = value.hd.pub;
 }
 
 context settings::wallet_settings::to_context() const NOEXCEPT
