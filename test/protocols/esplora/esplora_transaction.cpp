@@ -110,6 +110,22 @@ BOOST_AUTO_TEST_CASE(esplora__tx_outspends__unspent__expected)
     BOOST_REQUIRE(!response.as_array().front().as_object().at("spent").as_bool());
 }
 
+// tx/merkleblock-proof
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(esplora__tx_merkleblock_proof__single__block_header_prefixed)
+{
+    const auto body = get_text("/tx/" + block1_tx + "/merkleblock-proof");
+    const auto header = encode_base16(test::block1.header().to_data());
+    BOOST_REQUIRE(body.starts_with(header));
+    BOOST_REQUIRE_GT(body.size(), header.size());
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_merkleblock_proof__unknown__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(null_hash) + "/merkleblock-proof"), http::status::not_found);
+}
+
 // tx/merkle-proof
 // ----------------------------------------------------------------------------
 

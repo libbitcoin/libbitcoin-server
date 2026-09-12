@@ -20,6 +20,7 @@
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/serializers/bitcoind_json.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -243,6 +244,62 @@ bool protocol_esplora::handle_get_tx_status(const code& ec,
     }
 
     send_json(to_status(link), 256);
+    return true;
+}
+
+bool protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
+    interface::tx_merkleblock_proof, uint8_t media,
+    const hash_cptr& hash) NOEXCEPT
+{
+    using namespace network::messages::peer;
+
+    if (stopped(ec))
+        return false;
+
+    if (media != text)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    const auto& query = archive();
+    const auto link = query.find_confirmed_block(*hash);
+    if (!query.is_associated(link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto header = query.get_header(link);
+    const auto keys = query.get_tx_keys(link);
+    if (!header || keys.empty())
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    // The vector<bool> proxy iterator does not satisfy ranges algorithms.
+    std::vector<bool> match(keys.size());
+    std::transform(keys.begin(), keys.end(), match.begin(),
+        [&hash](const auto& key) NOEXCEPT
+        {
+            return key == *hash;
+        });
+
+    if (!is_one(to_unsigned(std::count(match.begin(), match.end(), true))))
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto count = possible_narrow_cast<uint32_t>(keys.size());
+    merkle_block merkle{ header, count, {}, {} };
+    build_partial_merkle(merkle.flags, merkle.hashes, keys, match);
+
+    const auto version = merkle_block::version_maximum;
+    data_chunk out(merkle.size(version));
+    merkle.serialize(version, out);
+    send_text(encode_base16(out));
     return true;
 }
 

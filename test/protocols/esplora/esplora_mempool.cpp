@@ -80,10 +80,9 @@ BOOST_AUTO_TEST_CASE(esplora__fee_estimates__extra_segment__not_found)
 // unimplemented
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__tx_merkleblock_proof__unsubscribed__not_implemented)
+BOOST_AUTO_TEST_CASE(esplora__broadcast_package__unsubscribed__not_implemented)
 {
-    const auto status = get_status("/tx/" + encode_hash(null_hash) + "/merkleblock-proof");
-    BOOST_REQUIRE_EQUAL(status, http::status::not_implemented);
+    BOOST_REQUIRE_EQUAL(get_status("/txs/package"), http::status::not_implemented);
 }
 
 BOOST_AUTO_TEST_CASE(esplora__invalid_target__not_found)

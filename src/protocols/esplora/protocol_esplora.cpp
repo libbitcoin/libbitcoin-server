@@ -58,6 +58,7 @@ void protocol_esplora::start() NOEXCEPT
     // Transaction methods.
     SUBSCRIBE_ESPLORA(handle_get_tx, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_get_tx_status, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_merkleblock_proof, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_get_tx_merkle_proof, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_get_tx_outspend, _1, _2, _3, _4, _5);
     SUBSCRIBE_ESPLORA(handle_get_tx_outspends, _1, _2, _3, _4);
@@ -101,6 +102,7 @@ bool protocol_esplora::is_implemented(const std::string& method) NOEXCEPT
         method == interface::address_utxo::name ||
         method == interface::tx::name ||
         method == interface::tx_status::name ||
+        method == interface::tx_merkleblock_proof::name ||
         method == interface::tx_merkle_proof::name ||
         method == interface::tx_outspend::name ||
         method == interface::tx_outspends::name ||

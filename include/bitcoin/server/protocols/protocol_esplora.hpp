@@ -113,6 +113,9 @@ protected:
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
     bool handle_get_tx_status(const code& ec, interface::tx_status,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_tx_merkleblock_proof(const code& ec,
+        interface::tx_merkleblock_proof, uint8_t media,
+        const system::hash_cptr& hash) NOEXCEPT;
     bool handle_get_tx_merkle_proof(const code& ec, interface::tx_merkle_proof,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
     bool handle_get_tx_outspend(const code& ec, interface::tx_outspend,
