@@ -75,6 +75,7 @@ private:
     void dump_collisions() const;
 
     // Warnings.
+    bool milestoned() const;
     void warn_hardware() const;
     void warn_memory() const;
     void warn_space() const;

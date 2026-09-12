@@ -36,9 +36,17 @@ constexpr auto validate_memory = 16_u64 * giga;
 
 constexpr auto recommend_memory = 32_u64 * giga;
 constexpr auto require_space = 1024_u64 * giga;
+constexpr auto limited_space = 512_u64 * giga;
+constexpr auto bypass_height = 950'000_size;
 
 // Warnings (emitted only when there is something to report).
 // ----------------------------------------------------------------------------
+
+// Limited blocks reduce storage only for blocks the milestone bypasses.
+bool executor::milestoned() const
+{
+    return metadata_.configured.bitcoin.milestone.height() >= bypass_height;
+}
 
 void executor::warn_hardware() const
 {
@@ -92,8 +100,13 @@ void executor::warn_space() const
     if (!database::file::space(available, metadata_.configured.database.path))
         return;
 
+    // Limited blocks drop witness and input scripts for bypassed blocks.
+    const auto limited = metadata_.configured.node.limited_blocks &&
+        milestoned();
+
+    const auto space = limited ? limited_space : require_space;
     const auto store = query_.store_size();
-    const auto require = require_space > store ? require_space - store : zero;
+    const auto require = space > store ? space - store : zero;
     if (available >= require)
         return;
 
