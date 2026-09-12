@@ -161,6 +161,21 @@ void server_node::start_sparrow(const code& ec,
     }
 
     attach_sparrow_session()->start(
+        std::bind(&server_node::start_esplora, this, _1, handler));
+}
+
+void server_node::start_esplora(const code& ec,
+    const result_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    attach_esplora_session()->start(
         std::bind(&server_node::start_stratum_v1, this, _1, handler));
 }
 
@@ -245,6 +260,12 @@ session_sparrow::ptr server_node::attach_sparrow_session() NOEXCEPT
 {
     return net::attach<session_sparrow>(*this, config_,
         config_.server.sparrow);
+}
+
+session_esplora::ptr server_node::attach_esplora_session() NOEXCEPT
+{
+    return net::attach<session_esplora>(*this, config_,
+        config_.server.esplora);
 }
 
 session_stratum_v1::ptr server_node::attach_stratum_v1_session() NOEXCEPT

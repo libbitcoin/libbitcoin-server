@@ -34,26 +34,29 @@
     <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\fixture">
+    <Filter Include="src\protocols\esplora">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\fixture">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\sparrow">
+    <Filter Include="src\protocols\native">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\zmq">
+    <Filter Include="src\protocols\sparrow">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\pyzmq">
+    <Filter Include="src\protocols\zmq">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\serializers">
+    <Filter Include="src\pyzmq">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\utilities">
+    <Filter Include="src\serializers">
       <UniqueIdentifier>{66A0E586-2E3A-448F-0000-00000000000F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utilities">
+      <UniqueIdentifier>{66A0E586-2E3A-448F-0000-000000000001}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -159,6 +162,12 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_mempool.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_client.cpp">
       <Filter>src\protocols\fixture</Filter>
     </ClCompile>
@@ -232,6 +241,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp">
       <Filter>src\protocols\electrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.hpp">
+      <Filter>src\protocols\esplora</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_client.hpp">
       <Filter>src\protocols\fixture</Filter>

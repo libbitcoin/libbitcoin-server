@@ -33,6 +33,7 @@ namespace server {
 /// terminal default responder and must be attached (subscribed) last.
 using session_admin = session_server<protocol_admin>;
 using session_native = session_server<protocol_native>;
+using session_esplora = session_server<protocol_esplora>;
 using session_bitcoind = session_server<protocol_bitcoind_rest,
     protocol_bitcoind_blockchain, protocol_bitcoind_control,
     protocol_bitcoind_mining, protocol_bitcoind_network,
@@ -89,6 +90,7 @@ server::session → node::session
 └── server::session_server<...Protocols> → network::session_server
     ╞══ session_admin      = server::session_server<protocol_admin>
     ╞══ session_native     = server::session_server<protocol_native>
+    ╞══ session_esplora    = server::session_server<protocol_esplora>
     ╞══ session_bitcoind   = server::session_server<protocol_bitcoind_rest,
             protocol_bitcoind_<subgroup>..., protocol_bitcoind>
     ╞══ session_btcd       = server::session_server<protocol_btcd,

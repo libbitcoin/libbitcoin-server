@@ -89,6 +89,7 @@
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
+#include <bitcoin/server/protocols/protocol_esplora.hpp>
 #include <bitcoin/server/protocols/protocol_html.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
 #include <bitcoin/server/protocols/protocol_native.hpp>

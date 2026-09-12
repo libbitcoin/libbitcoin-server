@@ -99,6 +99,8 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_subscribe.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_transactions.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_version.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_mempool.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_address.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_block.cpp \
@@ -236,6 +238,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum_version.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_esplora.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_html.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_http.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_native.hpp \
@@ -339,6 +342,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/electrum/electrum_transactions.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_transports.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_version.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_mempool.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_client.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_address.cpp \
