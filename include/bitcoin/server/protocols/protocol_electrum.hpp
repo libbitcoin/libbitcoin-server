@@ -78,6 +78,10 @@ protected:
     bool handle_chase(const code&, node::chase event_,
         node::event_value) NOEXCEPT;
 
+    bool handle_broadcast_transaction(const code& ec,
+        const network::messages::peer::transaction::cptr& message,
+        uint64_t sender) NOEXCEPT;
+
     /// Handlers (headers).
     void handle_blockchain_number_of_blocks_subscribe(const code& ec,
         rpc_interface::blockchain_number_of_blocks_subscribe) NOEXCEPT;
@@ -289,6 +293,9 @@ protected:
     void do_outpoint(node::header_t link) NOEXCEPT;
     void do_scripthash(node::header_t link) NOEXCEPT;
     void do_reorganized(node::header_t link) NOEXCEPT;
+    void do_broadcast_scripthash(
+        const system::chain::transaction::cptr& tx,
+        const retained_txs& retained_snapshot) NOEXCEPT;
 
     /// Address.
     /// -----------------------------------------------------------------------
@@ -306,7 +313,8 @@ protected:
         notify_t type) NOEXCEPT;
 
     code get_scripthash_history(address_subscription& sub,
-        const hash_digest& hash, size_t limit) NOEXCEPT;
+        const hash_digest& hash, size_t limit,
+        const retained_txs& extra={}) NOEXCEPT;
 
     /// Outpoint.
     /// -----------------------------------------------------------------------

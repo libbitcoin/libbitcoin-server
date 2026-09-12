@@ -194,6 +194,34 @@ void protocol_electrum::complete_scripthash_unsubscribe(bool found) NOEXCEPT
 // notify
 // ----------------------------------------------------------------------------
 
+bool protocol_electrum::handle_broadcast_transaction(const code& ec,
+    const network::messages::peer::transaction::cptr& message,
+    uint64_t) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return false;
+
+    // blockchain.transaction.get also depends on this (see broadcast_tx).
+    retain_tx(message->transaction_ptr);
+
+    // Notifications require a full duplex transport, as with handle_chase.
+    if (!channel_->websocket() && !channel_->downgraded())
+        return true;
+
+    if (subscribed_address_.load(relaxed))
+    {
+        BC_ASSERT(archive().address_enabled());
+
+        // retained() must be copied here, on the channel strand.
+        POST_NOTIFY(do_broadcast_scripthash, message->transaction_ptr,
+            retained());
+    }
+
+    return true;
+}
+
 // Notifier for blockchain_scripthash_subscribe events.
 void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
 {
@@ -216,6 +244,36 @@ void protocol_electrum::do_scripthash(node::header_t) NOEXCEPT
         {
             POST(scripthash_notify, sub.status, key, sub.type);
         }
+    }
+}
+
+// Recomputes and echoes status for the subscriptions the tx touches.
+void protocol_electrum::do_broadcast_scripthash(
+    const chain::transaction::cptr& tx,
+    const retained_txs& retained_snapshot) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    for (auto& [key, sub]: address_subscriptions_)
+    {
+        if (!touches(*tx, key))
+            continue;
+
+        const auto previous = sub.status;
+        if (const auto ec = get_scripthash_history(sub, key, max_size_t,
+            retained_snapshot))
+        {
+            if (ec != database::error::query_canceled &&
+                ec != error::not_found)
+            {
+                LOGF("Electrum::do_broadcast_scripthash, " << ec.message());
+            }
+
+            continue;
+        }
+
+        if (sub.status != previous)
+            POST(scripthash_notify, sub.status, key, sub.type);
     }
 }
 
@@ -261,8 +319,11 @@ void protocol_electrum::write_status(midstate& accumulator,
 }
 
 // protected
+// extra is a channel-strand snapshot of retained(), passed by the caller,
+// as this runs on notification_strand_ (see handle_broadcast_transaction).
 code protocol_electrum::get_scripthash_history(address_subscription& sub,
-    const hash_digest& hash, size_t limit) NOEXCEPT
+    const hash_digest& hash, size_t limit,
+    const retained_txs& extra) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -272,8 +333,25 @@ code protocol_electrum::get_scripthash_history(address_subscription& sub,
         limit, turbo_))
         return ec;
 
+    // Same criteria as append_retained.
+    for (const auto& [tx_hash, tx]: extra)
+    {
+        if (!query.to_tx(tx_hash).is_terminal() || !touches(*tx, hash))
+            continue;
+
+        history.push_back(database::history
+        {
+            { tx_hash, database::history::rooted_height },
+            tx->fee(),
+            database::history::unconfirmed_position
+        });
+    }
+
     if (history.empty())
         return error::success;
+
+    if (!extra.empty())
+        database::history::filter_sort_and_dedup(history);
 
     auto it = history.cbegin();
     while (it != history.cend() && it->confirmed())
