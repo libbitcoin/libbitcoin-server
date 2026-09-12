@@ -162,6 +162,9 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_address.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_block.cpp">
       <Filter>src\protocols\esplora</Filter>
     </ClCompile>

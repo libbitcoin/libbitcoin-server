@@ -48,6 +48,13 @@ void protocol_esplora::start() NOEXCEPT
     if (started())
         return;
 
+    // Address methods.
+    SUBSCRIBE_ESPLORA(handle_get_address, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_address_txs, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_address_txs_chain, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_ESPLORA(handle_get_address_txs_mempool, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_address_utxo, _1, _2, _3, _4, _5);
+
     // Transaction methods.
     SUBSCRIBE_ESPLORA(handle_get_tx, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_get_tx_status, _1, _2, _3, _4);
@@ -78,6 +85,7 @@ void protocol_esplora::start() NOEXCEPT
 void protocol_esplora::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    stopping_.store(true);
     dispatcher_.stop(ec);
     protocol_http::stopping(ec);
 }
@@ -86,6 +94,11 @@ void protocol_esplora::stopping(const code& ec) NOEXCEPT
 bool protocol_esplora::is_implemented(const std::string& method) NOEXCEPT
 {
     return
+        method == interface::address::name ||
+        method == interface::address_txs::name ||
+        method == interface::address_txs_chain::name ||
+        method == interface::address_txs_mempool::name ||
+        method == interface::address_utxo::name ||
         method == interface::tx::name ||
         method == interface::tx_status::name ||
         method == interface::tx_merkle_proof::name ||

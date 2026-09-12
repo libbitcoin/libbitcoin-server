@@ -240,6 +240,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora.cpp">
       <Filter>src\protocols\esplora</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_address.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_block.cpp">
       <Filter>src\protocols\esplora</Filter>
     </ClCompile>

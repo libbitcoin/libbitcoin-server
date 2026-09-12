@@ -44,6 +44,8 @@ public:
         const options_t& options) NOEXCEPT
       : server::protocol_http(session, channel, options),
         network::tracker<protocol_esplora>(session->log),
+        options_(options),
+        turbo_(session->database_settings().turbo),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         flags_(session->system_settings().flags()),
@@ -55,6 +57,12 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// The esplora service settings.
+    inline const options_t& options() const NOEXCEPT
+    {
+        return options_;
+    }
+
     template <class Derived, typename Method, typename... Args>
     inline void subscribe(Method&& method, Args&&... args) NOEXCEPT
     {
@@ -81,6 +89,25 @@ protected:
 
     /// Interface handlers.
     /// -----------------------------------------------------------------------
+
+    bool handle_get_address(const code& ec, interface::address,
+        uint8_t media, std::optional<system::hash_cptr> hash,
+        std::optional<std::string> address) NOEXCEPT;
+    bool handle_get_address_txs(const code& ec, interface::address_txs,
+        uint8_t media, std::optional<system::hash_cptr> hash,
+        std::optional<std::string> address) NOEXCEPT;
+    bool handle_get_address_txs_chain(const code& ec,
+        interface::address_txs_chain, uint8_t media,
+        std::optional<system::hash_cptr> hash,
+        std::optional<std::string> address,
+        std::optional<system::hash_cptr> last_seen) NOEXCEPT;
+    bool handle_get_address_txs_mempool(const code& ec,
+        interface::address_txs_mempool, uint8_t media,
+        std::optional<system::hash_cptr> hash,
+        std::optional<std::string> address) NOEXCEPT;
+    bool handle_get_address_utxo(const code& ec, interface::address_utxo,
+        uint8_t media, std::optional<system::hash_cptr> hash,
+        std::optional<std::string> address) NOEXCEPT;
 
     bool handle_get_tx(const code& ec, interface::tx,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
@@ -124,10 +151,28 @@ protected:
         uint8_t media) NOEXCEPT;
 
 private:
+    /// The confirmed funding and spending totals of an address.
+    struct address_stats
+    {
+        size_t funded_count{};
+        uint64_t funded_sum{};
+        size_t spent_count{};
+        uint64_t spent_sum{};
+        size_t tx_count{};
+    };
+
     using media_type = network::http::media_type;
     static constexpr uint8_t json = to_value(media_type::application_json);
 
     static bool is_implemented(const std::string& method) NOEXCEPT;
+
+    bool to_key(system::hash_digest& out,
+        const std::optional<system::hash_cptr>& hash,
+        const std::optional<std::string>& address) NOEXCEPT;
+    bool get_address_txs(uint8_t media,
+        const std::optional<system::hash_cptr>& hash,
+        const std::optional<std::string>& address,
+        const std::optional<system::hash_cptr>& last_seen) NOEXCEPT;
 
     // Serializers.
     // ------------------------------------------------------------------------
@@ -149,11 +194,30 @@ private:
     // Completion handlers (for asynchronous query).
     // ------------------------------------------------------------------------
 
+    void do_get_address(const system::hash_digest& key,
+        const std::optional<std::string>& address) NOEXCEPT;
+    void complete_get_address(const code& ec, const address_stats& stats,
+        const system::hash_digest& key,
+        const std::optional<std::string>& address) NOEXCEPT;
+
+    void do_get_address_txs(const system::hash_digest& key,
+        const std::optional<system::hash_cptr>& last_seen) NOEXCEPT;
+    void complete_get_address_txs(const code& ec,
+        const database::histories& history,
+        const std::optional<system::hash_cptr>& last_seen) NOEXCEPT;
+
+    void do_get_address_utxo(const system::hash_digest& key) NOEXCEPT;
+    void complete_get_address_utxo(const code& ec,
+        const database::unspent_outputs& unspent) NOEXCEPT;
+
     void next_estimate(size_t index) NOEXCEPT;
     void handle_estimate(const code& ec, uint64_t fee, size_t index) NOEXCEPT;
     void complete_estimate(const code& ec, uint64_t fee,
         size_t index) NOEXCEPT;
     // These are thread safe.
+    const options_t& options_;
+    const bool turbo_;
+    std::atomic_bool stopping_{};
     const uint8_t p2kh_;
     const uint8_t p2sh_;
     const uint32_t flags_;
