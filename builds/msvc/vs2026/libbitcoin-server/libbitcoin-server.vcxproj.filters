@@ -126,9 +126,6 @@
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_scan.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp">
-      <Filter>src\parsers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp">
       <Filter>src\parsers</Filter>
     </ClCompile>
@@ -315,19 +312,25 @@
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\address.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_combine.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\utilities\bitcoind_merkle.cpp">
-      <Filter>src\utilities</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_update.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\chain.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
   </ItemGroup>
@@ -468,9 +471,6 @@
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_scan.hpp">
-      <Filter>include\bitcoin\server\parsers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp">
@@ -620,19 +620,25 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\address.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_combine.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_descriptor.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_merkle.hpp">
-      <Filter>include\bitcoin\server\utilities</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_update.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\chain.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp">

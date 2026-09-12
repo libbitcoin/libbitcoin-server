@@ -19,7 +19,6 @@
 #include <bitcoin/server/protocols/protocol_esplora.hpp>
 
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/serializers/bitcoind_json.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {

@@ -59,7 +59,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parsers/admin_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_query.cpp \
     ${srcdir}/../../src/parsers/bitcoind_scan.cpp \
-    ${srcdir}/../../src/parsers/bitcoind_script.cpp \
     ${srcdir}/../../src/parsers/bitcoind_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_transaction.cpp \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
@@ -120,11 +119,13 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/serializers/bitcoind_psbt.cpp \
     ${srcdir}/../../src/serializers/btcd_json.cpp \
     ${srcdir}/../../src/sessions/session.cpp \
+    ${srcdir}/../../src/utilities/address.cpp \
     ${srcdir}/../../src/utilities/bitcoind_combine.cpp \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
-    ${srcdir}/../../src/utilities/bitcoind_merkle.cpp \
     ${srcdir}/../../src/utilities/bitcoind_update.cpp \
-    ${srcdir}/../../src/utilities/electrum_version.cpp
+    ${srcdir}/../../src/utilities/chain.cpp \
+    ${srcdir}/../../src/utilities/electrum_version.cpp \
+    ${srcdir}/../../src/utilities/merkle.cpp
 
 include_bitcoindir = \
     ${includedir}/bitcoin
@@ -209,7 +210,6 @@ include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/admin_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_scan.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_script.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/btcd_filter.hpp \
@@ -277,11 +277,13 @@ include_bitcoin_server_utilitiesdir = \
     ${includedir}/bitcoin/server/utilities
 
 include_bitcoin_server_utilities_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/utilities/address.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_combine.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_descriptor.hpp \
-    ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_update.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/chain.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
 
 # Tests.
@@ -365,8 +367,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../test/serializers/bitcoind_json.cpp \
     ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \
-    ${srcdir}/../../test/utilities/bitcoind_merkle.cpp \
-    ${srcdir}/../../test/utilities/electrum_version.cpp
+    ${srcdir}/../../test/utilities/electrum_version.cpp \
+    ${srcdir}/../../test/utilities/merkle.cpp
 
 TESTS = test_runner.sh
 

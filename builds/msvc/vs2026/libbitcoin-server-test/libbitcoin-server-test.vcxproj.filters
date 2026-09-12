@@ -228,10 +228,10 @@
     <ClCompile Include="..\..\..\..\test\utilities\bitcoind_descriptor.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\utilities\bitcoind_merkle.cpp">
+    <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
+    <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
   </ItemGroup>
