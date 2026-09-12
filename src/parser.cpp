@@ -1898,16 +1898,6 @@ options_metadata parser::load_settings() THROWS
         value<uint32_t>(&configured.node.currency_window_minutes),
         "Time from present that blocks are considered current, defaults to '1440' (0 disables)."
     )
-    (
-        "node.warn_dirty_background_ratio",
-        value<uint16_t>(&configured.node.warn_dirty_background_ratio),
-        "Warn on linux if 'vm.dirty_background_ratio' is below value, defaults to 90 (0 disables)."
-    )
-    (
-        "node.warn_dirty_ratio",
-        value<uint16_t>(&configured.node.warn_dirty_ratio),
-        "Warn on linux if 'vm.dirty_ratio' is below value, defaults to 90 (0 disables)."
-    )
     ////(
     ////    "node.snapshot_bytes",
     ////    value<uint64_t>(&configured.node.snapshot_bytes),

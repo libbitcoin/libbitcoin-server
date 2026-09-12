@@ -388,7 +388,6 @@ console_bs_SOURCES = \
     ${srcdir}/../../console/executor_events.cpp \
     ${srcdir}/../../console/executor_logging.cpp \
     ${srcdir}/../../console/executor_options.cpp \
-    ${srcdir}/../../console/executor_paging.cpp \
     ${srcdir}/../../console/executor_runner.cpp \
     ${srcdir}/../../console/executor_scans.cpp \
     ${srcdir}/../../console/executor_signals.cpp \
