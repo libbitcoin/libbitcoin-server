@@ -43,7 +43,11 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol_http(session, channel, options),
-        network::tracker<protocol_esplora>(session->log)
+        network::tracker<protocol_esplora>(session->log),
+        p2kh_(session->server_settings().wallet.p2kh_prefix),
+        p2sh_(session->server_settings().wallet.p2sh_prefix),
+        flags_(session->system_settings().flags()),
+        witness_(session->server_settings().wallet.witness_prefix)
     {
     }
 
@@ -78,8 +82,21 @@ protected:
     /// Interface handlers.
     /// -----------------------------------------------------------------------
 
+    bool handle_get_tx(const code& ec, interface::tx,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_tx_status(const code& ec, interface::tx_status,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_tx_merkle_proof(const code& ec, interface::tx_merkle_proof,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_tx_outspend(const code& ec, interface::tx_outspend,
+        uint8_t media, const system::hash_cptr& hash, uint32_t index) NOEXCEPT;
+    bool handle_get_tx_outspends(const code& ec, interface::tx_outspends,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+
     bool handle_get_block(const code& ec, interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_block_txs(const code& ec, interface::block_txs,
+        uint8_t media, const system::hash_cptr& hash, uint32_t start) NOEXCEPT;
     bool handle_get_block_header(const code& ec, interface::block_header,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
     bool handle_get_block_status(const code& ec, interface::block_status,
@@ -115,6 +132,17 @@ private:
     // Serializers.
     // ------------------------------------------------------------------------
 
+    static std::string to_script_type(
+        const system::chain::script& script) NOEXCEPT;
+    boost::json::object to_output(
+        const system::chain::output& output) NOEXCEPT;
+    boost::json::object to_input(const system::chain::input& input,
+        bool coinbase) NOEXCEPT;
+    boost::json::object to_status(const database::tx_link& link) NOEXCEPT;
+    bool to_tx(boost::json::object& out,
+        const database::tx_link& link) NOEXCEPT;
+    bool to_outspend(boost::json::object& out,
+        const system::hash_digest& hash, uint32_t index) NOEXCEPT;
     bool to_block(boost::json::object& out,
         const database::header_link& link) NOEXCEPT;
 
@@ -125,6 +153,12 @@ private:
     void handle_estimate(const code& ec, uint64_t fee, size_t index) NOEXCEPT;
     void complete_estimate(const code& ec, uint64_t fee,
         size_t index) NOEXCEPT;
+    // These are thread safe.
+    const uint8_t p2kh_;
+    const uint8_t p2sh_;
+    const uint32_t flags_;
+    const std::string witness_;
+
     // These are protected by strand.
     boost::json::object estimates_{};
     dispatcher dispatcher_{};

@@ -34,6 +34,9 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 // The number of blocks returned by a blocks request.
 constexpr size_t block_page = 10;
 
+// The number of transactions returned by a block txs request.
+constexpr size_t tx_page = 25;
+
 // Serializers.
 // ----------------------------------------------------------------------------
 
@@ -126,6 +129,53 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
     }
 
     send_json(std::move(out), 512);
+    return true;
+}
+
+bool protocol_esplora::handle_get_block_txs(const code& ec,
+    interface::block_txs, uint8_t media, const hash_cptr& hash,
+    uint32_t start) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (media != json)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    // The interface constrains the page to a fixed size and alignment.
+    if (!is_zero(start % tx_page))
+    {
+        send_bad_request();
+        return true;
+    }
+
+    const auto& query = archive();
+    const auto txs = query.to_transactions(query.to_header(*hash));
+    if (txs.empty() || start >= txs.size())
+    {
+        send_not_found();
+        return true;
+    }
+
+    const auto end = std::min(ceilinged_add<size_t>(start, tx_page),
+        txs.size());
+    boost::json::array out{};
+    for (auto index = start; index < end; ++index)
+    {
+        boost::json::object object{};
+        if (!to_tx(object, txs.at(index)))
+        {
+            send_internal_server_error(database::error::integrity);
+            return true;
+        }
+
+        out.emplace_back(std::move(object));
+    }
+
+    send_json(std::move(out), tx_page * 1024);
     return true;
 }
 

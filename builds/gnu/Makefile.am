@@ -102,6 +102,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/esplora/protocol_esplora.cpp \
     ${srcdir}/../../src/protocols/esplora/protocol_esplora_block.cpp \
     ${srcdir}/../../src/protocols/esplora/protocol_esplora_mempool.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_transaction.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_address.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_block.cpp \
@@ -346,6 +347,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/esplora/esplora_block.cpp \
     ${srcdir}/../../test/protocols/esplora/esplora_mempool.cpp \
     ${srcdir}/../../test/protocols/esplora/esplora_setup_fixture.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_transaction.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_client.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_address.cpp \

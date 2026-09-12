@@ -246,6 +246,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_mempool.cpp">
       <Filter>src\protocols\esplora</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_transaction.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native.cpp">
       <Filter>src\protocols\native</Filter>
     </ClCompile>

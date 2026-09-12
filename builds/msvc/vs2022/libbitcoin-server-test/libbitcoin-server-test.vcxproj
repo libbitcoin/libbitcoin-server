@@ -157,6 +157,7 @@
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_block.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_mempool.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_transaction.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_client.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_address.cpp" />

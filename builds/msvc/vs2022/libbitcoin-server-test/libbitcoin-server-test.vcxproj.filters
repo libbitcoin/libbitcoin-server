@@ -171,6 +171,9 @@
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.cpp">
       <Filter>src\protocols\esplora</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_transaction.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_client.cpp">
       <Filter>src\protocols\fixture</Filter>
     </ClCompile>

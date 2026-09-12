@@ -48,8 +48,16 @@ void protocol_esplora::start() NOEXCEPT
     if (started())
         return;
 
+    // Transaction methods.
+    SUBSCRIBE_ESPLORA(handle_get_tx, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_status, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_merkle_proof, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_outspend, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_tx_outspends, _1, _2, _3, _4);
+
     // Block methods.
     SUBSCRIBE_ESPLORA(handle_get_block, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_txs, _1, _2, _3, _4, _5);
     SUBSCRIBE_ESPLORA(handle_get_block_header, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_get_block_status, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_get_block_txids, _1, _2, _3, _4);
@@ -78,7 +86,13 @@ void protocol_esplora::stopping(const code& ec) NOEXCEPT
 bool protocol_esplora::is_implemented(const std::string& method) NOEXCEPT
 {
     return
+        method == interface::tx::name ||
+        method == interface::tx_status::name ||
+        method == interface::tx_merkle_proof::name ||
+        method == interface::tx_outspend::name ||
+        method == interface::tx_outspends::name ||
         method == interface::block::name ||
+        method == interface::block_txs::name ||
         method == interface::block_header::name ||
         method == interface::block_status::name ||
         method == interface::block_txids::name ||
