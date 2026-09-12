@@ -34,6 +34,8 @@ struct esplora_setup_fixture
     ~esplora_setup_fixture();
 
     status get_status(std::string_view target);
+    std::string get_text(std::string_view target);
+    system::data_chunk get_data(std::string_view target);
     boost::json::value get_json(std::string_view target);
 
 protected:

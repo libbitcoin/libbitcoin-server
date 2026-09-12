@@ -48,6 +48,17 @@ void protocol_esplora::start() NOEXCEPT
     if (started())
         return;
 
+    // Block methods.
+    SUBSCRIBE_ESPLORA(handle_get_block, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_header, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_status, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_txids, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_txid, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_block_height, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_blocks, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tip_height, _1, _2, _3);
+    SUBSCRIBE_ESPLORA(handle_get_tip_hash, _1, _2, _3);
+
     // Mempool methods.
     SUBSCRIBE_ESPLORA(handle_get_mempool, _1, _2, _3);
     SUBSCRIBE_ESPLORA(handle_get_mempool_txids, _1, _2, _3);
@@ -67,6 +78,15 @@ void protocol_esplora::stopping(const code& ec) NOEXCEPT
 bool protocol_esplora::is_implemented(const std::string& method) NOEXCEPT
 {
     return
+        method == interface::block::name ||
+        method == interface::block_header::name ||
+        method == interface::block_status::name ||
+        method == interface::block_txids::name ||
+        method == interface::block_txid::name ||
+        method == interface::block_height::name ||
+        method == interface::blocks::name ||
+        method == interface::tip_height::name ||
+        method == interface::tip_hash::name ||
         method == interface::mempool::name ||
         method == interface::mempool_txids::name ||
         method == interface::mempool_recent::name ||
@@ -185,6 +205,34 @@ void protocol_esplora::send_json(boost::json::value&& model, size_t size_hint,
         .model = std::move(model),
         .size_hint = size_hint
     };
+    response.prepare_payload();
+    SEND(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_esplora::send_text(std::string&& text,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    add_common_headers(response, request);
+    add_access_control_headers(response, request);
+    const auto plain = from_media_type(media_type::text_plain);
+    response.set(field::content_type, plain);
+    response.body() = std::move(text);
+    response.prepare_payload();
+    SEND(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_esplora::send_chunk(system::data_chunk&& bytes,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    add_common_headers(response, request);
+    add_access_control_headers(response, request);
+    const auto octets = from_media_type(media_type::application_octet_stream);
+    response.set(field::content_type, octets);
+    response.body() = std::move(bytes);
     response.prepare_payload();
     SEND(std::move(response), handle_complete, _1, error::success);
 }

@@ -110,6 +110,34 @@ http::status esplora_setup_fixture::get_status(std::string_view target)
     return response.result();
 }
 
+std::string esplora_setup_fixture::get_text(std::string_view target)
+{
+    http::write(socket_, create_request(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<network::http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+
+    return response.body();
+}
+
+system::data_chunk esplora_setup_fixture::get_data(std::string_view target)
+{
+    http::write(socket_, create_request(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<network::http::chunk_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+
+    return system::data_chunk(response.body().begin(), response.body().end());
+}
+
 // The network json body does not support reading a document consisting
 // of only a top-level primitive, because it supports streaming and non-
 // streaming. So instead just use a string buffer and parse explicitly.

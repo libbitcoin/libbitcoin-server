@@ -70,9 +70,32 @@ protected:
     /// Senders.
     virtual void send_json(boost::json::value&& model, size_t size_hint,
         const network::http::request& request={}) NOEXCEPT;
+    virtual void send_text(std::string&& text,
+        const network::http::request& request={}) NOEXCEPT;
+    virtual void send_chunk(system::data_chunk&& bytes,
+        const network::http::request& request={}) NOEXCEPT;
 
     /// Interface handlers.
     /// -----------------------------------------------------------------------
+
+    bool handle_get_block(const code& ec, interface::block,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_block_header(const code& ec, interface::block_header,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_block_status(const code& ec, interface::block_status,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_block_txids(const code& ec, interface::block_txids,
+        uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_get_block_txid(const code& ec, interface::block_txid,
+        uint8_t media, const system::hash_cptr& hash, uint32_t index) NOEXCEPT;
+    bool handle_get_block_height(const code& ec, interface::block_height,
+        uint8_t media, uint32_t height) NOEXCEPT;
+    bool handle_get_blocks(const code& ec, interface::blocks,
+        uint8_t media, std::optional<uint32_t> height) NOEXCEPT;
+    bool handle_get_tip_height(const code& ec, interface::tip_height,
+        uint8_t media) NOEXCEPT;
+    bool handle_get_tip_hash(const code& ec, interface::tip_hash,
+        uint8_t media) NOEXCEPT;
 
     bool handle_get_mempool(const code& ec, interface::mempool,
         uint8_t media) NOEXCEPT;
@@ -88,6 +111,12 @@ private:
     static constexpr uint8_t json = to_value(media_type::application_json);
 
     static bool is_implemented(const std::string& method) NOEXCEPT;
+
+    // Serializers.
+    // ------------------------------------------------------------------------
+
+    bool to_block(boost::json::object& out,
+        const database::header_link& link) NOEXCEPT;
 
     // Completion handlers (for asynchronous query).
     // ------------------------------------------------------------------------
