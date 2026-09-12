@@ -136,7 +136,7 @@ bool protocol_esplora::to_tx(boost::json::object& out,
     const database::tx_link& link) NOEXCEPT
 {
     auto& query = archive();
-    const auto tx = query.get_transaction(link);
+    const auto tx = query.get_transaction(link, true);
     if (!tx)
         return false;
 
@@ -202,7 +202,7 @@ bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
         return true;
     }
 
-    const auto tx = query.get_transaction(link);
+    const auto tx = query.get_transaction(link, true);
     if (!tx)
     {
         send_internal_server_error(database::error::integrity);
@@ -340,7 +340,7 @@ bool protocol_esplora::handle_get_tx_outspends(const code& ec,
 
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
-    const auto tx = query.get_transaction(link);
+    const auto tx = query.get_transaction(link, true);
     if (link.is_terminal() || !tx)
     {
         send_not_found();
@@ -384,15 +384,18 @@ bool protocol_esplora::to_outspend(boost::json::object& out,
 
     // The input index is the position of the point within the spending tx.
     const auto points = query.to_points(tx);
-    const auto position = std::ranges::find(points, spender);
-    if (position == points.end())
+    size_t position{};
+    while (position < points.size() && points.at(position) != spender)
+        ++position;
+
+    if (position == points.size())
         return false;
 
     out =
     {
         { "spent", true },
         { "txid", encode_hash(query.get_tx_key(tx)) },
-        { "vin", std::distance(points.begin(), position) },
+        { "vin", position },
         { "status", to_status(tx) }
     };
 

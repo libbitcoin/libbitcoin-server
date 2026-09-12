@@ -80,9 +80,9 @@ BOOST_AUTO_TEST_CASE(esplora__fee_estimates__extra_segment__not_found)
 // unimplemented
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__tip_height__unsubscribed__not_implemented)
+BOOST_AUTO_TEST_CASE(esplora__tx_merkleblock_proof__unsubscribed__not_implemented)
 {
-    const auto status = get_status("/blocks/tip/height");
+    const auto status = get_status("/tx/" + encode_hash(null_hash) + "/merkleblock-proof");
     BOOST_REQUIRE_EQUAL(status, http::status::not_implemented);
 }
 

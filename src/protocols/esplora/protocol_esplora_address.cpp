@@ -118,15 +118,12 @@ void protocol_esplora::do_get_address(const hash_digest& key,
         stats.spent_count = floored_subtract(funded.size(), unspent.size());
         stats.tx_count = history.size();
 
-        uint64_t value{};
         for (const auto& point: funded)
-            if (query.get_value(value, query.to_output(point)))
-                stats.funded_sum = ceilinged_add(stats.funded_sum, value);
+            stats.funded_sum = ceilinged_add(stats.funded_sum, point.value());
 
         uint64_t unspent_sum{};
         for (const auto& point: unspent)
-            if (query.get_value(value, query.to_output(point)))
-                unspent_sum = ceilinged_add(unspent_sum, value);
+            unspent_sum = ceilinged_add(unspent_sum, point.value());
 
         stats.spent_sum = floored_subtract(stats.funded_sum, unspent_sum);
     }
@@ -392,19 +389,13 @@ void protocol_esplora::complete_get_address_utxo(const code& ec,
     boost::json::array out{};
     for (const auto& item: unspent)
     {
-        uint64_t value{};
-        if (!query.get_value(value, query.to_output(item.out)))
-        {
-            send_internal_server_error(database::error::integrity);
-            return;
-        }
-
+        const auto& point = item.out.point();
         out.emplace_back(boost::json::object
         {
-            { "txid", encode_hash(item.out.hash()) },
-            { "vout", item.out.index() },
-            { "value", value },
-            { "status", to_status(query.to_tx(item.out.hash())) }
+            { "txid", encode_hash(point.hash()) },
+            { "vout", point.index() },
+            { "value", item.out.value() },
+            { "status", to_status(query.to_tx(point.hash())) }
         });
     }
 

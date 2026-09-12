@@ -162,7 +162,9 @@ private:
     };
 
     using media_type = network::http::media_type;
+    static constexpr uint8_t text = to_value(media_type::text_plain);
     static constexpr uint8_t json = to_value(media_type::application_json);
+    static constexpr uint8_t data = to_value(media_type::application_octet_stream);
 
     static bool is_implemented(const std::string& method) NOEXCEPT;
 
