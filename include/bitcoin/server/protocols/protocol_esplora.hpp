@@ -72,6 +72,8 @@ protected:
     /// Message handlers by http method.
     void handle_receive_get(const code& ec,
         const network::http::method::get::cptr& get) NOEXCEPT override;
+    void handle_receive_post(const code& ec,
+        const network::http::method::post::cptr& post) NOEXCEPT override;
 
     /// Dispatch.
     virtual bool try_dispatch_object(
@@ -85,6 +87,8 @@ protected:
     virtual void send_text(std::string&& text,
         const network::http::request& request={}) NOEXCEPT;
     virtual void send_chunk(system::data_chunk&& bytes,
+        const network::http::request& request={}) NOEXCEPT;
+    virtual void send_rejected(const code& reason,
         const network::http::request& request={}) NOEXCEPT;
 
     /// Interface handlers.
@@ -122,6 +126,8 @@ protected:
         uint8_t media, const system::hash_cptr& hash, uint32_t index) NOEXCEPT;
     bool handle_get_tx_outspends(const code& ec, interface::tx_outspends,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
+    bool handle_broadcast(const code& ec, interface::broadcast,
+        uint8_t media, const std::string& transaction) NOEXCEPT;
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
@@ -170,6 +176,12 @@ private:
     static constexpr uint8_t data = to_value(media_type::application_octet_stream);
 
     static bool is_implemented(const std::string& method) NOEXCEPT;
+    static bool takes_body(const std::string& method) NOEXCEPT;
+    static void set_body(network::rpc::request_t& model,
+        const std::string& body) NOEXCEPT;
+
+    code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
+    code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 
     bool to_key(system::hash_digest& out,
         const std::optional<system::hash_cptr>& hash,

@@ -110,6 +110,36 @@ BOOST_AUTO_TEST_CASE(esplora__tx_outspends__unspent__expected)
     BOOST_REQUIRE(!response.as_array().front().as_object().at("spent").as_bool());
 }
 
+// broadcast
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast__get__method_not_allowed)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx"), http::status::method_not_allowed);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast_package__get__method_not_allowed)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/txs/package"), http::status::method_not_allowed);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast__invalid_encoding__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/tx", "xxxx"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast__truncated__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/tx", "0100000001"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast__genesis_coinbase__rejected)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    BOOST_REQUIRE_EQUAL(post_status("/tx", tx0), http::status::bad_request);
+    BOOST_REQUIRE(!post_text("/tx", tx0).empty());
+}
+
 // tx/merkleblock-proof
 // ----------------------------------------------------------------------------
 

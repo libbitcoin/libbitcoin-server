@@ -155,4 +155,46 @@ boost::json::value esplora_setup_fixture::get_json(std::string_view target)
     return test::parse_json(response.body());
 }
 
+esplora_setup_fixture::string_request
+esplora_setup_fixture::create_post(std::string_view target,
+    std::string_view body)
+{
+    string_request request{ http::verb::post, target, network::http::version_1_1 };
+    request.set(http::field::host, "localhost");
+    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    request.set(http::field::content_type, "text/plain");
+    request.body() = std::string{ body };
+    request.prepare_payload();
+    request.keep_alive(true);
+    return request;
+}
+
+http::status esplora_setup_fixture::post_status(std::string_view target,
+    std::string_view body)
+{
+    http::write(socket_, create_post(target, body));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response.result();
+}
+
+std::string esplora_setup_fixture::post_text(std::string_view target,
+    std::string_view body)
+{
+    http::write(socket_, create_post(target, body));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response.body();
+}
+
 BC_POP_WARNING()

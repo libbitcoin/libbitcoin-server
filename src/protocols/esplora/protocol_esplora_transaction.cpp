@@ -421,6 +421,68 @@ bool protocol_esplora::handle_get_tx_outspends(const code& ec,
     return true;
 }
 
+// Broadcast.
+// ----------------------------------------------------------------------------
+
+code protocol_esplora::validate_tx(
+    const chain::transaction& tx) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto& settings = system_settings();
+    const auto link = query.to_confirmed(query.get_top_confirmed());
+    const auto key = query.get_header_key(link);
+    const auto state = query.get_confirmed_chain_state(settings, key);
+
+    // The store always has chain state for the confirmed top.
+    if (!state)
+        return database::error::integrity;
+
+    // The context of the next block, in which a pool tx would confirm.
+    const auto pool = chain::chain_state{ *state, settings }.context();
+    return node::validate_transaction(tx, query, pool);
+}
+
+code protocol_esplora::broadcast_tx(
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    if (const auto ec = validate_tx(*tx))
+        return ec;
+
+    BROADCAST(network::messages::peer::transaction,
+        to_shared<network::messages::peer::transaction>(tx));
+    return error::success;
+}
+
+bool protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
+    uint8_t media, const std::string& transaction) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (media != text)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    read::base16::copy hexer{ transaction };
+    const auto tx = to_shared<chain::transaction>(hexer, true);
+    if (!tx->is_valid() || !hexer.is_exhausted())
+    {
+        send_rejected(error::invalid_argument);
+        return true;
+    }
+
+    if (const auto fault = broadcast_tx(tx))
+    {
+        send_rejected(fault);
+        return true;
+    }
+
+    send_text(encode_hash(tx->hash(false)));
+    return true;
+}
+
 // The spending status of one output, false if the output does not exist.
 bool protocol_esplora::to_outspend(boost::json::object& out,
     const hash_digest& hash, uint32_t index) NOEXCEPT
