@@ -84,6 +84,9 @@
     <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_warnings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_window.cpp">
       <Filter>src</Filter>
     </ClCompile>

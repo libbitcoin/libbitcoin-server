@@ -303,6 +303,24 @@
 #define BS_HARDWARE_TABLE2 \
     "platform:%1% compiled:%2%."
 
+// warnings
+#define BS_HARDWARE_SUBOPTIMAL \
+    "Detected hardware acceleration is not compiled into this build."
+#define BS_HARDWARE_UNCONFIGURED \
+    "A signature batching device is present but batching is not configured."
+#define BS_MEMORY_BELOW_MINIMUM \
+    "Physical memory is below the minimum for initial block download."
+#define BS_MEMORY_BELOW_VALIDATION \
+    "Physical memory is below the minimum for full validation."
+#define BS_MEMORY_BELOW_RECOMMENDED \
+    "Physical memory is below the amount recommended for initial block download."
+#define BS_MEMORY_PHYSICAL \
+    "Physical memory: %1% GiB."
+#define BS_SPACE_BELOW_REQUIRED \
+    "Free disk space is below that required to complete initial block download."
+#define BS_SPACE_AVAILABLE \
+    "Free disk space: %1% GiB."
+
 #define BS_PAGING_TABLE \
     "Linux VM dirty page kernel settings...\n" \
     "control_mode              :%1%.\n" \

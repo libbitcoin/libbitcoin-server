@@ -165,6 +165,9 @@ bool executor::do_run()
     dump_hardware();
     dump_paging();
     dump_options();
+    warn_hardware();
+    warn_memory();
+    warn_space();
     logger(BS_NODE_INTERRUPT);
 
     // Create node.

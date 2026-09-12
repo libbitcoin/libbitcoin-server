@@ -395,6 +395,7 @@ console_bs_SOURCES = \
     ${srcdir}/../../console/executor_store.cpp \
     ${srcdir}/../../console/executor_test_reader.cpp \
     ${srcdir}/../../console/executor_test_writer.cpp \
+    ${srcdir}/../../console/executor_warnings.cpp \
     ${srcdir}/../../console/executor_window.cpp \
     ${srcdir}/../../console/main.cpp \
     ${srcdir}/../../console/stack_trace.cpp \

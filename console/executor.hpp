@@ -74,6 +74,11 @@ private:
     void dump_progress() const;
     void dump_collisions() const;
 
+    // Warnings.
+    void warn_hardware() const;
+    void warn_memory() const;
+    void warn_space() const;
+
     // Store functions.
     bool check_store_path(bool create=false) const;
     bool create_store(bool details = false);
