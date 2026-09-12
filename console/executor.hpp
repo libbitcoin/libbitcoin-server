@@ -79,6 +79,7 @@ private:
     void warn_hardware() const;
     void warn_memory() const;
     void warn_space() const;
+    void warn_storage() const;
 
     // Store functions.
     bool check_store_path(bool create=false) const;

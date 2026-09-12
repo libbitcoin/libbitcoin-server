@@ -114,5 +114,12 @@ void executor::warn_space() const
     logger(format(BS_SPACE_AVAILABLE) % (available / giga));
 }
 
+void executor::warn_storage() const
+{
+    const auto& path = metadata_.configured.database.path;
+    if (!database::solid_state(path) || !database::internal_storage(path))
+        logger(BS_STORAGE_NOT_INTERNAL);
+}
+
 } // namespace server
 } // namespace libbitcoin

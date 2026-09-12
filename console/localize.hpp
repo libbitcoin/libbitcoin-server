@@ -320,6 +320,8 @@
     "Free disk space is below that required to complete initial block download."
 #define BS_SPACE_AVAILABLE \
     "Free disk space: %1% GiB."
+#define BS_STORAGE_NOT_INTERNAL \
+    "The database is not on an internal solid state drive."
 
 #define BS_PAGING_TABLE \
     "Linux VM dirty page kernel settings...\n" \

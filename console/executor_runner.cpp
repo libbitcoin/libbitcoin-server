@@ -168,6 +168,7 @@ bool executor::do_run()
     warn_hardware();
     warn_memory();
     warn_space();
+    warn_storage();
     logger(BS_NODE_INTERRUPT);
 
     // Create node.
