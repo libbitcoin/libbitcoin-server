@@ -73,23 +73,26 @@
     <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\esplora">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\sparrow">
+    <Filter Include="src\protocols\native">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\stratum_v1">
+    <Filter Include="src\protocols\sparrow">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\serializers">
+    <Filter Include="src\protocols\stratum_v1">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000010}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\sessions">
+    <Filter Include="src\serializers">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000A1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\utilities">
+    <Filter Include="src\sessions">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utilities">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000C1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -233,6 +236,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_mempool.cpp">
+      <Filter>src\protocols\esplora</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native.cpp">
       <Filter>src\protocols\native</Filter>
@@ -531,6 +540,9 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_esplora.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_html.hpp">

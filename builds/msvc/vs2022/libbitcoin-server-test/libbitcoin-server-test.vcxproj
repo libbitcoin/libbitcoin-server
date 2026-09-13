@@ -154,6 +154,8 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_protocols_electrum_electrum_version.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_mempool.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_client.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_address.cpp" />
@@ -182,6 +184,7 @@
     <ClInclude Include="..\..\..\..\test\protocols\bitcoind\bitcoind_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\btcd\btcd_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\electrum\electrum_setup_fixture.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_client.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />

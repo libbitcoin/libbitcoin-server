@@ -44,6 +44,7 @@ bool executor::do_hardware()
 {
     log_.stop();
     dump_hardware();
+    warn_hardware();
     return true;
 }
 

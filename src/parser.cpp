@@ -120,14 +120,14 @@ parser::parser(system::chain::selection context,
     configured.database.tx.rate = 1;
 
     // ins (required)
-    configured.database.ins.expected = 3'363'467'253;
+    configured.database.ins.expected = 3'363'467'251;
     configured.database.ins.buckets = table::ins::derive_buckets(
         configured.database.ins.expected, contested, target);
     configured.database.ins.size = 1'749'002'971;
     configured.database.ins.rate = 1;
 
     // outs (optional, disabled by a configured bucket count of zero)
-    configured.database.outs.expected = 3'741'929'088;
+    configured.database.outs.expected = 3'741'929'086;
     configured.database.outs.buckets = table::outs::derive_buckets(
         configured.database.outs.expected, address_contested, address_target);
     configured.database.outs.size = 336'773'618;
@@ -1897,16 +1897,6 @@ options_metadata parser::load_settings() THROWS
         "node.currency_window_minutes",
         value<uint32_t>(&configured.node.currency_window_minutes),
         "Time from present that blocks are considered current, defaults to '1440' (0 disables)."
-    )
-    (
-        "node.warn_dirty_background_ratio",
-        value<uint16_t>(&configured.node.warn_dirty_background_ratio),
-        "Warn on linux if 'vm.dirty_background_ratio' is below value, defaults to 90 (0 disables)."
-    )
-    (
-        "node.warn_dirty_ratio",
-        value<uint16_t>(&configured.node.warn_dirty_ratio),
-        "Warn on linux if 'vm.dirty_ratio' is below value, defaults to 90 (0 disables)."
     )
     ////(
     ////    "node.snapshot_bytes",

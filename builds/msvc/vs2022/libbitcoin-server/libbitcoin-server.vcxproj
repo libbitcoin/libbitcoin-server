@@ -168,6 +168,8 @@
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_subscribe.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_transactions.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_version.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_mempool.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_address.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_block.cpp" />
@@ -269,6 +271,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_esplora.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_html.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_http.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_native.hpp" />

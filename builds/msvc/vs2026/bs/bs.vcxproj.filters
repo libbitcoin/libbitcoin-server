@@ -63,9 +63,6 @@
     <ClCompile Include="..\..\..\..\console\executor_options.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\console\executor_paging.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_runner.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -82,6 +79,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\console\executor_warnings.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\console\executor_window.cpp">

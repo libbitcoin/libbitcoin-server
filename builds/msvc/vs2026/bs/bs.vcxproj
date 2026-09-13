@@ -133,13 +133,13 @@
     <ClCompile Include="..\..\..\..\console\executor_events.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_logging.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_options.cpp" />
-    <ClCompile Include="..\..\..\..\console\executor_paging.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_runner.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_scans.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_signals.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_store.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_test_reader.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_test_writer.cpp" />
+    <ClCompile Include="..\..\..\..\console\executor_warnings.cpp" />
     <ClCompile Include="..\..\..\..\console\executor_window.cpp" />
     <ClCompile Include="..\..\..\..\console\main.cpp" />
     <ClCompile Include="..\..\..\..\console\stack_trace.cpp" />

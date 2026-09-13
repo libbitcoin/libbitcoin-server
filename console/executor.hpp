@@ -65,7 +65,6 @@ private:
     // Store dumps.
     void dump_version() const;
     void dump_hardware() const;
-    void dump_paging() const;
     void dump_options() const;
     void dump_configuration() const;
     void dump_body_sizes() const;
@@ -73,6 +72,13 @@ private:
     void dump_buckets() const;
     void dump_progress() const;
     void dump_collisions() const;
+
+    // Warnings.
+    bool milestoned() const;
+    void warn_hardware() const;
+    void warn_memory() const;
+    void warn_space() const;
+    void warn_storage() const;
 
     // Store functions.
     bool check_store_path(bool create=false) const;

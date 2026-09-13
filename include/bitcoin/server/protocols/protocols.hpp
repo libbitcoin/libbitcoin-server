@@ -36,6 +36,7 @@
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
+#include <bitcoin/server/protocols/protocol_esplora.hpp>
 #include <bitcoin/server/protocols/protocol_native.hpp>
 #include <bitcoin/server/protocols/protocol_html.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
@@ -98,6 +99,7 @@ server::protocol → node::protocol
 ├── protocol_stratum_v1                → network::protocol_rpc<channel_stratum_v1>
 ├── protocol_bitcoind_zmq              → network::protocol_rpc<channel_bitcoind_zmq>
 └── protocol_http                      → network::protocol_http
+    ├── protocol_esplora
     ├── protocol_html
     │   ├── protocol_admin
     │   └── protocol_native
