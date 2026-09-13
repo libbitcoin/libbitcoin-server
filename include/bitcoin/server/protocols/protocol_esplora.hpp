@@ -45,7 +45,6 @@ public:
       : server::protocol_http(session, channel, options),
         network::tracker<protocol_esplora>(session->log),
         options_(options),
-        turbo_(session->database_settings().turbo),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         flags_(session->system_settings().flags()),
@@ -128,6 +127,8 @@ protected:
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
     bool handle_broadcast(const code& ec, interface::broadcast,
         uint8_t media, const std::string& transaction) NOEXCEPT;
+    bool handle_broadcast_package(const code& ec,
+        interface::broadcast_package) NOEXCEPT;
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
@@ -175,7 +176,6 @@ private:
     static constexpr uint8_t json = to_value(media_type::application_json);
     static constexpr uint8_t data = to_value(media_type::application_octet_stream);
 
-    static bool is_implemented(const std::string& method) NOEXCEPT;
     static bool takes_body(const std::string& method) NOEXCEPT;
     static void set_body(network::rpc::request_t& model,
         const std::string& body) NOEXCEPT;
@@ -233,7 +233,6 @@ private:
         size_t index) NOEXCEPT;
     // These are thread safe.
     const options_t& options_;
-    const bool turbo_;
     std::atomic_bool stopping_{};
     const uint8_t p2kh_;
     const uint8_t p2sh_;

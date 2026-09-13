@@ -103,13 +103,12 @@ void protocol_esplora::do_get_address(const hash_digest& key,
     histories history{};
     height_link cursor{};
 
-    auto ec = query.get_address_outpoints(stopping_, funded, key, turbo_);
+    auto ec = query.get_address_outpoints(stopping_, funded, key, true);
     if (!ec)
-        ec = query.get_confirmed_unspent_outpoints(stopping_, unspent, key,
-            turbo_);
+        ec = query.get_confirmed_unspent_outpoints(stopping_, unspent, key, true);
     if (!ec)
         ec = query.get_confirmed_history(stopping_, cursor, history, key,
-            options().maximum_history, turbo_);
+            options().maximum_history, true);
 
     address_stats stats{};
     if (!ec)
@@ -265,7 +264,7 @@ void protocol_esplora::do_get_address_txs(const hash_digest& key,
     histories history{};
     height_link cursor{};
     const auto ec = archive().get_confirmed_history(stopping_, cursor,
-        history, key, options().maximum_history, turbo_);
+        history, key, options().maximum_history, true);
 
     POST(complete_get_address_txs, ec, std::move(history), last_seen);
 }
@@ -290,7 +289,7 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     auto first = history.rbegin();
     if (last_seen.has_value())
     {
-        const auto seen = std::ranges::find_if(first, history.rend(),
+        const auto seen = std::find_if(first, history.rend(),
             [&](const auto& item) NOEXCEPT
             {
                 return item.tx.hash() == *last_seen.value();
@@ -364,9 +363,7 @@ void protocol_esplora::do_get_address_utxo(const hash_digest& key) NOEXCEPT
     BC_ASSERT(!stranded());
 
     unspent_outputs unspent{};
-    const auto ec = archive().get_confirmed_unspent(stopping_, unspent, key,
-        turbo_);
-
+    const auto ec = archive().get_confirmed_unspent(stopping_, unspent, key, true);
     POST(complete_get_address_utxo, ec, std::move(unspent));
 }
 

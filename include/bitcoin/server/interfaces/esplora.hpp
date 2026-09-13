@@ -38,7 +38,7 @@ struct esplora_methods
         method<"tx_outspend", uint8_t, system::hash_cptr, uint32_t>{ "media", "hash", "index" },
         method<"tx_outspends", uint8_t, system::hash_cptr>{ "media", "hash" },
         method<"broadcast", uint8_t, string_t>{ "media", "transaction" },
-        method<"broadcast_package", uint8_t, array_t>{ "media", "transactions" },
+        method<"broadcast_package", uint8_t, array_t>{ unimplemented, "media", "transactions" },
 
         method<"address", uint8_t, nullable<system::hash_cptr>, nullable<string_t>>{ "media", "hash", "address" },
         method<"address_txs", uint8_t, nullable<system::hash_cptr>, nullable<string_t>>{ "media", "hash", "address" },

@@ -31,11 +31,11 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// The number of blocks returned by a blocks request.
-constexpr size_t block_page = 10;
-
 // The number of transactions returned by a block txs request.
 constexpr size_t tx_page = 25;
+
+// The number of blocks returned by a blocks request.
+constexpr size_t block_page = 10;
 
 // Serializers.
 // ----------------------------------------------------------------------------
@@ -70,8 +70,7 @@ bool protocol_esplora::to_block(boost::json::object& out,
 
     // Genesis has no previous block.
     if (header->previous_block_hash() != null_hash)
-        out["previousblockhash"] =
-            encode_hash(header->previous_block_hash());
+        out["previousblockhash"] = encode_hash(header->previous_block_hash());
 
     return true;
 }
@@ -160,8 +159,8 @@ bool protocol_esplora::handle_get_block_txs(const code& ec,
         return true;
     }
 
-    const auto end = std::min(ceilinged_add<size_t>(start, tx_page),
-        txs.size());
+    const auto position = ceilinged_add<size_t>(start, tx_page);
+    const auto end = std::min(position, txs.size());
     boost::json::array out{};
     for (auto index = start; index < end; ++index)
     {
@@ -233,8 +232,8 @@ bool protocol_esplora::handle_get_block_status(const code& ec,
     boost::json::object out{ { "in_best_chain", confirmed } };
 
     if (confirmed && height < query.get_top_confirmed())
-        out["next_best"] = encode_hash(
-            query.get_header_key(query.to_confirmed(add1(height))));
+        out["next_best"] = encode_hash(query.get_header_key(
+            query.to_confirmed(add1(height))));
 
     send_json(std::move(out), 128);
     return true;
@@ -261,8 +260,10 @@ bool protocol_esplora::handle_get_block_txids(const code& ec,
     }
 
     boost::json::array out(keys.size());
-    std::ranges::transform(keys, out.begin(),
-        [](const auto& key) { return encode_hash(key); });
+    std::ranges::transform(keys, out.begin(), [](const auto& key) NOEXCEPT
+    {
+        return encode_hash(key);
+    });
 
     send_json(std::move(out), two * keys.size() * hash_size);
     return true;

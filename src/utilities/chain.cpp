@@ -39,7 +39,7 @@ uint32_t median_time(const node::query& query,
     const auto key = query.get_header_key(link);
     const auto state = query.get_confirmed_chain_state(settings, key);
     if (!state)
-        return 0_u32;
+        return {};
 
     return chain::chain_state{ *state, settings }.context().median_time_past;
 }

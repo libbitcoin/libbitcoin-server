@@ -47,9 +47,8 @@ static hash_digest calc_hash(size_t height, size_t pos,
         return txids.at(pos);
 
     const auto left = calc_hash(sub1(height), pos * two, txids);
-    const auto right =
-        (pos * two + one) < tree_width(txids.size(), sub1(height)) ?
-            calc_hash(sub1(height), pos * two + one, txids) : left;
+    const auto right = add1(pos * two) < tree_width(txids.size(), sub1(height)) ?
+        calc_hash(sub1(height), add1(pos * two), txids) : left;
 
     return node_hash(left, right);
 }
@@ -63,9 +62,9 @@ static void traverse_build(size_t height, size_t pos, const hashes& txids,
     auto parent_of_match = false;
     const auto width = power2(height);
     const auto first = pos * width;
-    const auto past = std::min((pos + one) * width, txids.size());
+    const auto past = std::min(add1(pos) * width, txids.size());
     for (auto leaf = first; leaf < past; ++leaf)
-        parent_of_match = parent_of_match || match.at(leaf);
+        parent_of_match |= match.at(leaf);
 
     bits.push_back(parent_of_match);
     if (is_zero(height) || !parent_of_match)
@@ -77,8 +76,8 @@ static void traverse_build(size_t height, size_t pos, const hashes& txids,
 
     // Descend into both subtrees (the right may be a duplicate of the left).
     traverse_build(sub1(height), pos * two, txids, match, bits, branch);
-    if (pos * two + one < tree_width(txids.size(), sub1(height)))
-        traverse_build(sub1(height), pos * two + one, txids, match, bits,
+    if (add1(pos * two) < tree_width(txids.size(), sub1(height)))
+        traverse_build(sub1(height), add1(pos * two), txids, match, bits,
             branch);
 }
 
@@ -119,9 +118,9 @@ static hash_digest traverse_extract(size_t height, size_t pos, size_t txs,
         branch, bit, used, matched, positions, bad);
 
     hash_digest right{};
-    if (pos * two + one < tree_width(txs, sub1(height)))
+    if (add1(pos * two) < tree_width(txs, sub1(height)))
     {
-        right = traverse_extract(sub1(height), pos * two + one, txs, bits,
+        right = traverse_extract(sub1(height), add1(pos * two), txs, bits,
             branch, bit, used, matched, positions, bad);
 
         // Sibling subtrees cover disjoint txids, so cannot be identical.

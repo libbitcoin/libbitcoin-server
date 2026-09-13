@@ -25,14 +25,13 @@ namespace server {
 
 using namespace system;
 using namespace system::chain;
+using namespace system::wallet;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 code output_script(script& out, const std::string& text, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness) NOEXCEPT
 {
-    using namespace wallet;
-
     // The parsers accept any prefix, so the configured ones are checks.
     if (const payment_address payment{ text }; payment &&
         ((payment.prefix() == p2kh) || (payment.prefix() == p2sh)))
@@ -54,8 +53,6 @@ code output_script(script& out, const std::string& text, uint8_t p2kh,
 std::string to_address(const chain::script& script, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness) NOEXCEPT
 {
-    using namespace wallet;
-
     const auto version = script.version_value();
     if (version != to_value(chain::script_version::unversioned))
         return witness_address{ *script.witness_program(), version,

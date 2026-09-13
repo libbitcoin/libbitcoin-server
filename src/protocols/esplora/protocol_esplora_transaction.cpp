@@ -285,7 +285,7 @@ bool protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
             return key == *hash;
         });
 
-    if (!is_one(to_unsigned(std::count(match.begin(), match.end(), true))))
+    if (!is_one(to_unsigned(std::count(match.cbegin(), match.cend(), true))))
     {
         send_not_found();
         return true;
@@ -338,8 +338,10 @@ bool protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
     const auto proof = chain::block::merkle_branch(index, std::move(hashes));
 
     boost::json::array branch(proof.size());
-    std::ranges::transform(proof, branch.begin(),
-        [](const auto& item) { return encode_hash(item); });
+    std::ranges::transform(proof, branch.begin(), [](const auto& item) NOEXCEPT
+    {
+        return encode_hash(item);
+    });
 
     send_json(boost::json::object
     {
@@ -480,6 +482,16 @@ bool protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
     }
 
     send_text(encode_hash(tx->hash(false)));
+    return true;
+}
+
+bool protocol_esplora::handle_broadcast_package(const code& ec,
+    interface::broadcast_package) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    send_not_implemented();
     return true;
 }
 

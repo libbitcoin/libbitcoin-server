@@ -33,7 +33,7 @@ static const descriptor::signing* find_signing(
     const descriptor::signing::list& signings,
     const chain::script& script) NOEXCEPT
 {
-    const auto it = std::find_if(signings.begin(), signings.end(),
+    const auto it = std::ranges::find_if(signings,
         [&script](const auto& item) NOEXCEPT
         {
             return item.script == script;
