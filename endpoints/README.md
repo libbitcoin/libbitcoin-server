@@ -9,6 +9,7 @@ This directory contains Python-based integration tests for all libbitcoin-server
 | Interface | Protocol | Test File | Status |
 |-----------|----------|-----------|--------|
 | **Native REST** | HTTP/S + JSON | `test_native.py` | ✅ Active |
+| **Esplora REST** | HTTP/S + JSON | `test_esplora.py` | ✅ Active |
 | **bitcoind REST** | HTTP/S + JSON/Binary | `test_bitcoind_rest.py` | 🚧 Planned |
 | **bitcoind RPC** | HTTP/S + JSON-RPC 2.0 | `test_bitcoind_rpc.py` | ✅ Active |
 | **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | ✅ Active |
