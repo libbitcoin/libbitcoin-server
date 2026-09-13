@@ -42,12 +42,6 @@ constexpr auto bypass_height = 950'000_size;
 // Warnings (emitted only when there is something to report).
 // ----------------------------------------------------------------------------
 
-// Limited blocks reduce storage only for blocks the milestone bypasses.
-bool executor::milestoned() const
-{
-    return metadata_.configured.bitcoin.milestone.height() >= bypass_height;
-}
-
 void executor::warn_hardware(system::string_list& out) const
 {
     using namespace system;
@@ -107,7 +101,7 @@ void executor::warn_space(system::string_list& out) const
 
     // Limited blocks drop witness and input scripts for bypassed blocks.
     const auto limited = metadata_.configured.node.limited_blocks &&
-        milestoned();
+        metadata_.configured.bitcoin.milestone.height() >= bypass_height;
 
     const auto space = limited ? limited_space : require_space;
     const auto store = query_.store_size();

@@ -144,13 +144,6 @@ bool executor::do_run()
         return false;
     }
 
-    if (!prompt_milestone_store())
-    {
-        close_store();
-        stopper(BS_NODE_STOPPED);
-        return false;
-    }
-
     dump_body_sizes();
     dump_records();
     dump_buckets();
@@ -158,10 +151,17 @@ bool executor::do_run()
     ////dump_progress();
 
     dump_version();
-    dump_hardware();
     dump_options();
+    dump_hardware();
 
     if (!prompt_warnings())
+    {
+        close_store();
+        stopper(BS_NODE_STOPPED);
+        return false;
+    }
+
+    if (!prompt_milestone_store())
     {
         close_store();
         stopper(BS_NODE_STOPPED);

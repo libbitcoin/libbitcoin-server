@@ -708,6 +708,21 @@ bool executor::do_daemon()
 #endif
 }
 
+// Detection.
+// ----------------------------------------------------------------------------
+
+// True unless running as a service or daemon (prompts are then not awaited).
+bool executor::interactive()
+{
+#if defined(HAVE_MSC)
+    return !service_;
+#else
+    // A daemon is reparented to init or is its own session leader.
+    const auto daemon = (::getppid() == 1) || (::getsid(0) == ::getpid());
+    return !service_ && !daemon;
+#endif
+}
+
 BC_POP_WARNING()
 
 } // namespace server

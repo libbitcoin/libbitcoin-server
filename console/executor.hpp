@@ -74,7 +74,6 @@ private:
     void dump_collisions() const;
 
     // Warnings.
-    bool milestoned() const;
     void warn_hardware(system::string_list& out) const;
     void warn_memory(system::string_list& out) const;
     void warn_space(system::string_list& out) const;
