@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(esplora__block_raw__data__matches_size)
     const auto hash = encode_hash(test::block1.hash());
     const auto response = get_json("/block/" + hash);
     const auto body = get_data("/block/" + hash + "/raw");
-    BOOST_REQUIRE_EQUAL(body.size(), response.as_object().at("size").as_int64());
+    BOOST_REQUIRE_EQUAL(to_signed(body.size()), response.as_object().at("size").as_int64());
 }
 
 // block/header
