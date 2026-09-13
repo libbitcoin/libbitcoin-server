@@ -40,6 +40,12 @@ struct esplora_setup_fixture
     status post_status(std::string_view target, std::string_view body);
     std::string post_text(std::string_view target, std::string_view body);
 
+    network::boost_code ws_upgrade();
+    system::data_chunk ws_receive();
+    bool ws_dropped(std::string_view message);
+    std::string ws_get_text(std::string_view message);
+    boost::json::value ws_get_json(std::string_view message);
+
 protected:
     server::configuration config_;
     test::store_t store_;
@@ -52,10 +58,14 @@ private:
     static string_request create_post(std::string_view target,
         std::string_view body);
 
+    using tcp_stream = boost::beast::tcp_stream;
+    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
+
     network::logger log_;
     server::server_node server_;
     boost::asio::io_context io{};
     boost::beast::tcp_stream socket_{ io.get_executor() };
+    std::optional<websocket_stream> websocket_{};
 };
 
 struct esplora_ten_block_setup_fixture

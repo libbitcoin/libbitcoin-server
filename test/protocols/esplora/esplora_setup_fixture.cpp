@@ -80,9 +80,28 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup)
 
 esplora_setup_fixture::~esplora_setup_fixture()
 {
-    socket_.close();
+    network::boost_code ec{};
+    if (websocket_.has_value())
+    {
+        websocket_.value().close(websocket::close_code::normal, ec);
+
+        // Expected and harmless during fixture teardown:
+        // beast::websocket::error::closed : normal (graceful handshake).
+        // asio::error::operation_aborted  : hard (invalid request test).
+        if (ec &&
+            ec != boost::beast::websocket::error::closed &&
+            ec != boost::asio::error::operation_aborted)
+        {
+            BOOST_WARN_MESSAGE(false, ec.message());
+        }
+    }
+    else
+    {
+        socket_.close();
+    }
+
     server_.close();
-    const auto ec = store_.close([](auto, auto){});
+    ec = store_.close([](auto, auto){});
     BOOST_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }
@@ -195,6 +214,59 @@ std::string esplora_setup_fixture::post_text(std::string_view target,
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     return response.body();
+}
+
+network::boost_code esplora_setup_fixture::ws_upgrade()
+{
+    network::boost_code ec{};
+    BOOST_CHECK(!websocket_.has_value());
+
+    websocket_.emplace(socket_);
+    websocket_.value().text(true);
+    websocket_.value().handshake("localhost", "/", ec);
+    return ec;
+}
+
+data_chunk esplora_setup_fixture::ws_receive()
+{
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+
+    websocket_.value().read(buffer, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    const auto data = pointer_cast<uint8_t>(buffer.data().data());
+    return { data, std::next(data, buffer.data().size()) };
+}
+
+bool esplora_setup_fixture::ws_dropped(std::string_view message)
+{
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+
+    websocket_.value().write(net::buffer(message), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    flat_buffer buffer{};
+    websocket_.value().read(buffer, ec);
+    return ec == boost::asio::error::eof;
+}
+
+std::string esplora_setup_fixture::ws_get_text(std::string_view message)
+{
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+
+    websocket_.value().write(net::buffer(message), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return to_string(ws_receive());
+}
+
+boost::json::value esplora_setup_fixture::ws_get_json(std::string_view message)
+{
+    return test::parse_json(ws_get_text(message));
 }
 
 BC_POP_WARNING()

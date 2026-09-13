@@ -9,8 +9,10 @@ Run with:
     pytest test_esplora.py --esplora-host=192.168.1.100 --esplora-port=3000
 """
 
+import json
 import pytest
 import requests
+import websocket
 from typing import Any, Dict, List, Union
 
 from utils import ReferenceData, TestConfig, validate_hex_hash
@@ -436,3 +438,79 @@ def test_invalid_target(esplora_config):
 def test_invalid_component(esplora_config):
     """An unrecognized component of a valid target is not found."""
     assert get(esplora_config["base_url"], "mempool/bogus").status_code == 404
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WEBSOCKET
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def connect(esplora_config) -> websocket.WebSocket:
+    """Open a websocket to the esplora interface."""
+    url = f"ws://{esplora_config['host']}:{esplora_config['port']}/"
+    return websocket.create_connection(url, timeout=TIMEOUT)
+
+
+def test_websocket_text_target(esplora_config):
+    """A text target is served over a websocket upgrade."""
+    connection = connect(esplora_config)
+    try:
+        connection.send("/blocks/tip/height")
+        assert connection.recv().strip().isdigit()
+    finally:
+        connection.close()
+
+
+def test_websocket_json_target(esplora_config):
+    """A json target is served over a websocket upgrade."""
+    connection = connect(esplora_config)
+    try:
+        connection.send(f"/block/{ReferenceData.BLOCK1_HASH}")
+        block = json.loads(connection.recv())
+        assert block["id"] == ReferenceData.BLOCK1_HASH
+        assert block["height"] == ReferenceData.BLOCK1_HEIGHT
+    finally:
+        connection.close()
+
+
+def test_websocket_pipelined(esplora_config):
+    """Responses to pipelined requests return in order."""
+    connection = connect(esplora_config)
+    try:
+        connection.send("/blocks/tip/hash")
+        connection.send(f"/block-height/{ReferenceData.GENESIS_HEIGHT}")
+        assert validate_hex_hash(connection.recv().strip())
+        assert connection.recv().strip() == ReferenceData.GENESIS_HASH
+    finally:
+        connection.close()
+
+
+def test_websocket_body_frame(esplora_config):
+    """A body-bearing target carries its body after the first newline."""
+    connection = connect(esplora_config)
+    try:
+        connection.send("/tx\nxxxx")
+        assert connection.recv()
+    finally:
+        connection.close()
+
+
+def test_websocket_body_frame_missing_body(esplora_config):
+    """A body-bearing target without a body is refused."""
+    connection = connect(esplora_config)
+    try:
+        connection.send("/tx")
+        with pytest.raises(Exception):
+            connection.recv()
+    finally:
+        connection.close()
+
+
+def test_websocket_invalid_target(esplora_config):
+    """An unrecognized target is refused."""
+    connection = connect(esplora_config)
+    try:
+        connection.send("/bogus")
+        with pytest.raises(Exception):
+            connection.recv()
+    finally:
+        connection.close()

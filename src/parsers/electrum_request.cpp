@@ -31,8 +31,7 @@ using namespace network::rpc;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 void electrum_request(request_t& message, electrum::version version,
-    const system::config::version& minimum,
-    const system::config::version& maximum) NOEXCEPT
+    const config::version& minimum, const config::version& maximum) NOEXCEPT
 {
     using server_version = interface::electrum_handshake::server_version;
     using transaction_get = interface::electrum::blockchain_transaction_get;
@@ -89,9 +88,9 @@ void electrum_request(request_t& message, electrum::version version,
         }
         else if (named)
         {
-            std::erase_if(*named, [&names](const auto& pair) NOEXCEPT
+            std::erase_if(*named, [&](const auto& pair) NOEXCEPT
             {
-                return !system::contains(names, pair.first);
+                return !contains(names, pair.first);
             });
         }
 

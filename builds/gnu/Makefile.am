@@ -352,6 +352,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/esplora/esplora_mempool.cpp \
     ${srcdir}/../../test/protocols/esplora/esplora_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/esplora/esplora_transaction.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_websocket.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_client.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_address.cpp \
