@@ -48,7 +48,7 @@ bool executor::milestoned() const
     return metadata_.configured.bitcoin.milestone.height() >= bypass_height;
 }
 
-void executor::warn_hardware() const
+void executor::warn_hardware(system::string_list& out) const
 {
     using namespace system;
 
@@ -67,17 +67,17 @@ void executor::warn_hardware() const
 #endif
 
     if (suboptimal || (device && !batched::compiled()))
-        logger(BS_HARDWARE_SUBOPTIMAL);
+        out.emplace_back(BS_HARDWARE_SUBOPTIMAL);
 
     if (device && batched::compiled() && !batched::accelerated())
-        logger(BS_HARDWARE_UNSUPPORTED);
+        out.emplace_back(BS_HARDWARE_UNSUPPORTED);
 
     if (batched::accelerated() &&
         !metadata_.configured.node.batch_signatures_enabled())
-        logger(BS_HARDWARE_UNCONFIGURED);
+        out.emplace_back(BS_HARDWARE_UNCONFIGURED);
 }
 
-void executor::warn_memory() const
+void executor::warn_memory(system::string_list& out) const
 {
     const auto memory = database::system_memory();
     if (is_zero(memory))
@@ -88,18 +88,18 @@ void executor::warn_memory() const
         metadata_.configured.bitcoin.milestone.height());
 
     if (memory < minimum_memory)
-        logger(BS_MEMORY_BELOW_MINIMUM);
+        out.emplace_back(BS_MEMORY_BELOW_MINIMUM);
     else if (!milestone && memory < validate_memory)
-        logger(BS_MEMORY_BELOW_VALIDATION);
+        out.emplace_back(BS_MEMORY_BELOW_VALIDATION);
     else if (memory < recommend_memory)
-        logger(BS_MEMORY_BELOW_RECOMMENDED);
+        out.emplace_back(BS_MEMORY_BELOW_RECOMMENDED);
     else
         return;
 
-    logger(format(BS_MEMORY_PHYSICAL) % (memory / giga));
+    out.emplace_back((format(BS_MEMORY_PHYSICAL) % (memory / giga)).str());
 }
 
-void executor::warn_space() const
+void executor::warn_space(system::string_list& out) const
 {
     size_t available{};
     if (!database::file::space(available, metadata_.configured.database.path))
@@ -115,15 +115,59 @@ void executor::warn_space() const
     if (available >= require)
         return;
 
-    logger(BS_SPACE_BELOW_REQUIRED);
-    logger(format(BS_SPACE_AVAILABLE) % (available / giga));
+    out.emplace_back(BS_SPACE_BELOW_REQUIRED);
+    out.emplace_back((format(BS_SPACE_AVAILABLE) % (available / giga)).str());
 }
 
-void executor::warn_storage() const
+void executor::warn_storage(system::string_list& out) const
 {
     const auto& path = metadata_.configured.database.path;
     if (!database::solid_state(path) || !database::internal_storage(path))
-        logger(BS_STORAGE_NOT_INTERNAL);
+        out.emplace_back(BS_STORAGE_NOT_INTERNAL);
+}
+
+bool executor::prompt_warnings() const
+{
+    system::string_list warnings{};
+    warn_hardware(warnings);
+    warn_memory(warnings);
+    warn_space(warnings);
+    warn_storage(warnings);
+    if (warnings.empty())
+        return true;
+
+    logger(BS_PROMPT_SETOFF);
+    for (const auto& warning: warnings)
+        logger(warning);
+
+    if (service_ || metadata_.configured.accept)
+    {
+        logger(BS_PROMPT_SETOFF);
+        return true;
+    }
+
+    logger(BS_WARNINGS_CHOICE1);
+    logger(BS_WARNINGS_CHOICE2);
+    logger(BS_PROMPT_SETOFF);
+
+    std::string line{};
+    while (std::getline(input_, line) && !canceled())
+    {
+        system::trim(line);
+        if (line.empty())
+            return true;
+
+        if (line == "c")
+        {
+            logger(BS_WARNINGS_HALTED);
+            return false;
+        }
+
+        logger(BS_WARNINGS_CHOICE1);
+        logger(BS_WARNINGS_CHOICE2);
+    }
+
+    return false;
 }
 
 } // namespace server

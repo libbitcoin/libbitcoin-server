@@ -40,6 +40,7 @@ public:
     static constexpr auto hardware_variable = "hardware";
     static constexpr auto settings_variable = "settings";
     static constexpr auto version_variable = "version";
+    static constexpr auto accept_variable = "accept";
     static constexpr auto newstore_variable = "newstore";
     static constexpr auto backup_variable = "backup";
     static constexpr auto restore_variable = "restore";

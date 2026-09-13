@@ -75,10 +75,11 @@ private:
 
     // Warnings.
     bool milestoned() const;
-    void warn_hardware() const;
-    void warn_memory() const;
-    void warn_space() const;
-    void warn_storage() const;
+    void warn_hardware(system::string_list& out) const;
+    void warn_memory(system::string_list& out) const;
+    void warn_space(system::string_list& out) const;
+    void warn_storage(system::string_list& out) const;
+    bool prompt_warnings() const;
 
     // Store functions.
     bool check_store_path(bool create=false) const;

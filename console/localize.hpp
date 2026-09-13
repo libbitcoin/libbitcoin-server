@@ -36,9 +36,10 @@
 #define BS_OPERATION_CANCELED \
     "CTRL-C detected, canceling operation..."
 
-// bitcoin.milestone
-#define BS_MILESTONE_SETOFF \
+#define BS_PROMPT_SETOFF \
     "--------------------------------------------------------------------------"
+
+// bitcoin.milestone
 #define BS_MILESTONE_PROMPT1 \
     "If you have previously validated you may want to utilize a milestone."
 #define BS_MILESTONE_PROMPT2 \
@@ -55,6 +56,14 @@
     "Set a previously-validated milestone in your configuration file."
 #define BS_MILESTONE_HALTED2 \
     "Set to genesis-hash:0 if you have not validated previously."
+
+// startup warnings
+#define BS_WARNINGS_CHOICE1 \
+    "Press <enter> to continue despite the above warnings."
+#define BS_WARNINGS_CHOICE2 \
+    "Enter 'c' to stop so you can address them."
+#define BS_WARNINGS_HALTED \
+    "Address the warnings, or start with --accept to bypass this prompt."
 
 // --settings
 #define BS_SETTINGS_MESSAGE \

@@ -209,6 +209,13 @@ options_metadata parser::load_options() THROWS
         value<std::filesystem::path>(&configured.file),
         "Specify path to a configuration settings file."
     )
+    // Prompts.
+    (
+        alias(accept_variable, 'a').c_str(),
+        value<bool>(&configured.accept)->
+            default_value(false)->zero_tokens(),
+        "Accept startup prompts without interaction."
+    )
     // Information.
     (
         alias(help_variable, 'h').c_str(),
