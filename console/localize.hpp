@@ -296,13 +296,8 @@
 #define BS_CHANNEL_STOP_TARGET \
     "Stop target: %1%"
 
-#define BS_VERSION_MESSAGE \
-    "Version Information...\n" \
-    "libbitcoin-server:     %1%\n" \
-    "libbitcoin-node:       %2%\n" \
-    "libbitcoin-network:    %3%\n" \
-    "libbitcoin-database:   %4%\n" \
-    "libbitcoin-system:     %5%"
+#define BS_VERSION_HEADER \
+    "Version Information..."
 
 #define BS_HARDWARE_HEADER \
     "Hardware configuration..."
@@ -327,7 +322,7 @@
 #define BS_MEMORY_BELOW_RECOMMENDED \
     "Memory is below the amount recommended for initial block download."
 #define BS_MEMORY_PHYSICAL \
-    "Memory: %1% GiB."
+    "Physical memory: %1% GiB."
 #define BS_SPACE_BELOW_REQUIRED \
     "Free disk space is below that required to complete initial block download."
 #define BS_SPACE_AVAILABLE \

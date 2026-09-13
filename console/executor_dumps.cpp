@@ -32,24 +32,25 @@ constexpr double to_double(auto integer)
 // Store dumps.
 // ----------------------------------------------------------------------------
 
-// emit version information for libbitcoin libraries
+// version information for libbitcoin libraries
 void executor::dump_version() const
 {
-    logger(format(BS_VERSION_MESSAGE)
-        % LIBBITCOIN_SERVER_VERSION
-        % LIBBITCOIN_NODE_VERSION
-        % LIBBITCOIN_NETWORK_VERSION
-        % LIBBITCOIN_DATABASE_VERSION
-        % LIBBITCOIN_SYSTEM_VERSION);
+    logger(format(BS_VERSION_HEADER));
+    logger(format("libbitcoin-system..... %1%") % LIBBITCOIN_SYSTEM_VERSION);
+    logger(format("libbitcoin-database... %1%") % LIBBITCOIN_DATABASE_VERSION);
+    logger(format("libbitcoin-network.... %1%") % LIBBITCOIN_NETWORK_VERSION);
+    logger(format("libbitcoin-node....... %1%") % LIBBITCOIN_NODE_VERSION);
+    logger(format("libbitcoin-server..... %1%") % LIBBITCOIN_SERVER_VERSION);  
 }
 
 // The "try" functions are safe for instructions not compiled in.
 void executor::dump_hardware() const
 {
     using namespace system;
+    using namespace database;
 
-#if defined(HAVE_ARM)
     logger(BS_HARDWARE_HEADER);
+#if defined(HAVE_ARM)
     logger(format("arm..... " BS_HARDWARE_TABLE1) % have_arm);
     logger(format("neon.... " BS_HARDWARE_TABLE2) % try_neon()   % have_128);
     logger(format("crypto.. " BS_HARDWARE_TABLE2) % try_crypto() % have_sha);
@@ -61,12 +62,11 @@ void executor::dump_hardware() const
     logger(format("shani... " BS_HARDWARE_TABLE2) % try_shani()  % have_sha);
 #endif
 
-    // Support is determinable only when compiled.
-    const auto device = database::gpu_device();
     if (batched::compiled())
-        logger(format("gpu..... " BS_HARDWARE_TABLE3) % device % batched::compiled() % batched::accelerated());
+        logger(format("gpu..... " BS_HARDWARE_TABLE3) % gpu_device() % true %
+            batched::accelerated());
     else
-        logger(format("gpu..... " BS_HARDWARE_TABLE2) % device % batched::compiled());
+        logger(format("gpu..... " BS_HARDWARE_TABLE2) % gpu_device() % false);
 }
 
 // logging compilation and initial values.
