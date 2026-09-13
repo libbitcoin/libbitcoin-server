@@ -60,7 +60,13 @@ void executor::dump_hardware() const
     logger(format("sse41... " BS_HARDWARE_TABLE2) % try_sse41()  % have_128);
     logger(format("shani... " BS_HARDWARE_TABLE2) % try_shani()  % have_sha);
 #endif
-    logger(format("gpu..... " BS_HARDWARE_TABLE2) % batched::accelerated() % batched::compiled());
+
+    // Support is determinable only when compiled.
+    const auto device = database::gpu_device();
+    if (batched::compiled())
+        logger(format("gpu..... " BS_HARDWARE_TABLE3) % device % batched::compiled() % batched::accelerated());
+    else
+        logger(format("gpu..... " BS_HARDWARE_TABLE2) % device % batched::compiled());
 }
 
 // logging compilation and initial values.

@@ -302,10 +302,14 @@
     "platform:%1%."
 #define BS_HARDWARE_TABLE2 \
     "platform:%1% compiled:%2%."
+#define BS_HARDWARE_TABLE3 \
+    "platform:%1% compiled:%2% supported:%3%."
 
 // warnings
 #define BS_HARDWARE_SUBOPTIMAL \
     "Detected hardware acceleration is not compiled into this build."
+#define BS_HARDWARE_UNSUPPORTED \
+    "A gpu device is present but unsupported by the compiled acceleration."
 #define BS_HARDWARE_UNCONFIGURED \
     "A signature batching device is present but batching is not configured."
 #define BS_MEMORY_BELOW_MINIMUM \

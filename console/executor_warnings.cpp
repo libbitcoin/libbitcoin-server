@@ -52,6 +52,8 @@ void executor::warn_hardware() const
 {
     using namespace system;
 
+    const auto device = database::gpu_device();
+
 #if defined(HAVE_ARM)
     const auto suboptimal =
         (try_neon() && !have_128) ||
@@ -64,8 +66,11 @@ void executor::warn_hardware() const
         (try_shani() && !have_sha);
 #endif
 
-    if (suboptimal)
+    if (suboptimal || (device && !batched::compiled()))
         logger(BS_HARDWARE_SUBOPTIMAL);
+
+    if (device && batched::compiled() && !batched::accelerated())
+        logger(BS_HARDWARE_UNSUPPORTED);
 
     if (batched::accelerated() &&
         !metadata_.configured.node.batch_signatures_enabled())
