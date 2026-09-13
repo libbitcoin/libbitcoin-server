@@ -140,7 +140,7 @@ bool executor::prompt_warnings() const
     for (const auto& warning: warnings)
         logger(warning);
 
-    if (service_ || metadata_.configured.accept)
+    if (!interactive() || metadata_.configured.accept)
     {
         logger(BS_PROMPT_SETOFF);
         return true;

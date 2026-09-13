@@ -285,7 +285,7 @@ bool executor::prompt_milestone_store() const
     }
 
     const auto genesis_default = is_zero(milestone.height());
-    if (genesis_default || service_ || store_.is_dirty())
+    if (genesis_default || !interactive() || store_.is_dirty())
         return true;
 
     logger(BS_PROMPT_SETOFF);

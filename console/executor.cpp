@@ -21,8 +21,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <future>
 #include <optional>
+#if defined(HAVE_MSC)
+    #include <io.h>
+#else
+    #include <unistd.h>
+#endif
 
 namespace libbitcoin {
 namespace server {
@@ -133,6 +139,16 @@ void executor::stop(int signal)
 bool executor::canceled()
 {
     return signal_.load(std::memory_order_acquire) != unsignalled;
+}
+
+// Prompts await input only from a terminal (never a service, pipe or fifo).
+bool executor::interactive()
+{
+#if defined(HAVE_MSC)
+    return !service_ && !is_zero(::_isatty(::_fileno(stdin)));
+#else
+    return !service_ && !is_zero(::isatty(STDIN_FILENO));
+#endif
 }
 
 // Spinning must be used in signal handler, cannot wait on a promise.
