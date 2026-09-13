@@ -1248,7 +1248,7 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.credential",
         value<network::config::credentials>(&configured.server.btcd.credentials),
-        "The 'username:password[:method,...]' authorization (not secure), also used for the ws 'authenticate' method, multiple allowed."
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
         "btcd.connections",
@@ -1738,7 +1738,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind_zmq.cert",
         value<std::vector<config::base85>>(&configured.server.bitcoind_zmq.certs),
-        "The Z85 encoded CurveZMQ public key of an authorized client, multiple allowed, defaults to empty (any client)."
+        "The Z85 encoded public key of an authorized client, multiple allowed, defaults to empty (all)."
     )
     (
         "bitcoind_zmq.connections",
@@ -1941,7 +1941,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.buckets",
         value<uint32_t>(&configured.database.header.buckets),
-        "The number of buckets in the archive_header table head, derived from memory at store create by default."
+        "The number of buckets in the archive_header table head, dynamic default."
     )
     (
         "table.header.expected",
@@ -1987,7 +1987,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ins.buckets",
         value<uint32_t>(&configured.database.ins.buckets),
-        "The number of buckets in the archive_ins table head, derived from memory at store create by default."
+        "The number of buckets in the archive_ins table head, dynamic default."
     )
     (
         "table.ins.expected",
@@ -2009,7 +2009,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.buckets",
         value<uint32_t>(&configured.database.outs.buckets),
-        "The number of buckets in the archive_outs table head, derived from memory at store create by default (0 disables address index)."
+        "The number of buckets in the archive_outs table head, dynamic default (0 disables address index)."
     )
     (
         "table.outs.expected",
@@ -2031,7 +2031,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.tx.buckets",
         value<uint32_t>(&configured.database.tx.buckets),
-        "The number of buckets in the archive_tx table head, derived from memory at store create by default."
+        "The number of buckets in the archive_tx table head, dynamic default."
     )
     (
         "table.tx.expected",
@@ -2409,10 +2409,10 @@ void parser::derive_buckets() NOEXCEPT
     if (!configured.newstore)
         return;
 
-    constexpr uint32_t contested = 75;
     constexpr uint32_t target = 25;
-    constexpr uint32_t address_contested = 500;
+    constexpr uint32_t contested = 75;
     constexpr uint32_t address_target = 50;
+    constexpr uint32_t address_contested = 500;
     auto& database = configured.database;
 
     if (!is_configured("table.header.buckets"))
@@ -2427,6 +2427,7 @@ void parser::derive_buckets() NOEXCEPT
         database.ins.buckets = table::ins::derive_buckets(
             database.ins.expected, contested, target);
 
+    // If configured to zero, disables address index.
     if (!is_configured("table.outs.buckets"))
         database.outs.buckets = table::outs::derive_buckets(
             database.outs.expected, address_contested, address_target);

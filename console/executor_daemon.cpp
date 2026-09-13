@@ -595,24 +595,6 @@ void executor::notify_stopping()
 #endif
 }
 
-// Console session.
-// ----------------------------------------------------------------------------
-
-// True if standard input is a terminal (not redirected or a service).
-static bool terminal_input()
-{
-#if defined(HAVE_MSC)
-    return !is_zero(::_isatty(::_fileno(stdin)));
-#else
-    return !is_zero(::isatty(STDIN_FILENO));
-#endif
-}
-
-bool executor::interactive()
-{
-    return !service_ && terminal_input();
-}
-
 // Service dispatch.
 // ----------------------------------------------------------------------------
 

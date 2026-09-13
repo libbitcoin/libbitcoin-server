@@ -201,6 +201,7 @@ private:
         const std::filesystem::path& logs, const std::string& account,
         const std::string& password) NOEXCEPT;
 
+    static bool interactive();
     static void initialize_stop();
     static void uninitialize_stop();
     static void poll_for_stopping();
@@ -211,7 +212,6 @@ private:
     static void stop(int signal=signal_none);
     static void handle_stop(int code);
     static bool canceled();
-    static bool interactive();
 
 #if defined(HAVE_MSC)
     static HWND window_handle_;
