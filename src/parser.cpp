@@ -89,14 +89,11 @@ parser::parser(system::chain::selection context,
 
     configured.database.turbo = true;
 
-    // Hashmap buckets derive from expected and installed memory; a configured
-    // count governs, and zero disables an optional table.
+    // Hashmap buckets derive from expected and installed memory at store
+    // create (see derive_buckets); a configured count governs, zero disables
+    // an optional table, and the stored count governs at load.
     // expected are element counts @ 950K, deriving filter k at create.
     // sizes are set to 1% of measured pruned body @ 950K (tiny tables 100%).
-    constexpr uint32_t contested = 75;
-    constexpr uint32_t target = 25;
-    constexpr uint32_t address_contested = 500;
-    constexpr uint32_t address_target = 50;
 
     // Only used for electrum queries (255 is optimal otherwise).
     configured.database.interval_depth = 11;
@@ -104,8 +101,7 @@ parser::parser(system::chain::selection context,
     // archive
 
     configured.database.header.expected = 962'953;
-    configured.database.header.buckets = table::header::derive_buckets(
-        configured.database.header.expected, contested, target);
+    configured.database.header.buckets = 0;
     configured.database.header.size = 93'406'247;
     configured.database.header.rate = 1;
 
@@ -114,22 +110,19 @@ parser::parser(system::chain::selection context,
     configured.database.txs.rate = 1;
 
     configured.database.tx.expected = 1'359'871'695;
-    configured.database.tx.buckets = table::transaction::derive_buckets(
-        configured.database.tx.expected, contested, target);
+    configured.database.tx.buckets = 0;
     configured.database.tx.size = 870'317'885;
     configured.database.tx.rate = 1;
 
     // ins (required)
     configured.database.ins.expected = 3'363'467'251;
-    configured.database.ins.buckets = table::ins::derive_buckets(
-        configured.database.ins.expected, contested, target);
+    configured.database.ins.buckets = 0;
     configured.database.ins.size = 1'749'002'971;
     configured.database.ins.rate = 1;
 
     // outs (optional, disabled by a configured bucket count of zero)
     configured.database.outs.expected = 3'741'929'086;
-    configured.database.outs.buckets = table::outs::derive_buckets(
-        configured.database.outs.expected, address_contested, address_target);
+    configured.database.outs.buckets = 0;
     configured.database.outs.size = 336'773'618;
     configured.database.outs.rate = 1;
 
@@ -146,8 +139,7 @@ parser::parser(system::chain::selection context,
     configured.database.confirmed.rate = 1;
 
     configured.database.strong_tx.expected = 1'359'871'695;
-    configured.database.strong_tx.buckets = table::strong_tx::derive_buckets(
-        configured.database.strong_tx.expected, contested, target);
+    configured.database.strong_tx.buckets = 0;
     configured.database.strong_tx.size = 149'585'887;
     configured.database.strong_tx.rate = 1;
 
@@ -1949,7 +1941,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.buckets",
         value<uint32_t>(&configured.database.header.buckets),
-        "The number of buckets in the archive_header table head, defaults to '385181'."
+        "The number of buckets in the archive_header table head, derived from memory at store create by default."
     )
     (
         "table.header.expected",
@@ -1995,7 +1987,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ins.buckets",
         value<uint32_t>(&configured.database.ins.buckets),
-        "The number of buckets in the archive_ins table head, defaults to '1345386901'."
+        "The number of buckets in the archive_ins table head, derived from memory at store create by default."
     )
     (
         "table.ins.expected",
@@ -2017,7 +2009,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.buckets",
         value<uint32_t>(&configured.database.outs.buckets),
-        "The number of buckets in the archive_outs table head, defaults to '0' (0 disables address index)."
+        "The number of buckets in the archive_outs table head, derived from memory at store create by default (0 disables address index)."
     )
     (
         "table.outs.expected",
@@ -2039,7 +2031,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.tx.buckets",
         value<uint32_t>(&configured.database.tx.buckets),
-        "The number of buckets in the archive_tx table head, defaults to '543948678'."
+        "The number of buckets in the archive_tx table head, derived from memory at store create by default."
     )
     (
         "table.tx.expected",
@@ -2393,6 +2385,7 @@ BC_POP_WARNING()
 
         // Update bound variables in metadata.settings.
         notify(variables_);
+        derive_buckets();
 
         // Clear the config file path if it wasn't used.
         if (!file)
@@ -2406,6 +2399,41 @@ BC_POP_WARNING()
     }
 
     return true;
+}
+
+// Hashmap buckets derive from expected and installed memory only at store
+// create (a configured count governs); at load the stored count governs and
+// zero defers to it.
+void parser::derive_buckets() NOEXCEPT
+{
+    if (!configured.newstore)
+        return;
+
+    constexpr uint32_t contested = 75;
+    constexpr uint32_t target = 25;
+    constexpr uint32_t address_contested = 500;
+    constexpr uint32_t address_target = 50;
+    auto& database = configured.database;
+
+    if (!is_configured("table.header.buckets"))
+        database.header.buckets = table::header::derive_buckets(
+            database.header.expected, contested, target);
+
+    if (!is_configured("table.tx.buckets"))
+        database.tx.buckets = table::transaction::derive_buckets(
+            database.tx.expected, contested, target);
+
+    if (!is_configured("table.ins.buckets"))
+        database.ins.buckets = table::ins::derive_buckets(
+            database.ins.expected, contested, target);
+
+    if (!is_configured("table.outs.buckets"))
+        database.outs.buckets = table::outs::derive_buckets(
+            database.outs.expected, address_contested, address_target);
+
+    if (!is_configured("table.strong_tx.buckets"))
+        database.strong_tx.buckets = table::strong_tx::derive_buckets(
+            database.strong_tx.expected, contested, target);
 }
 
 } // namespace server

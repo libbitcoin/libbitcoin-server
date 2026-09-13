@@ -70,6 +70,9 @@ public:
     /// Load configuration file settings.
     virtual options_metadata load_settings() THROWS;
 
+    /// Derive unconfigured hashmap buckets from memory, at store create only.
+    void derive_buckets() NOEXCEPT;
+
     /// Parse all configuration into member settings.
     virtual bool parse(int argc, const char* argv[],
         std::ostream& error) THROWS;
