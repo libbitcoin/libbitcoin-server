@@ -25,6 +25,20 @@ def pytest_addoption(parser):
         help="Port for native/REST API (default: 8181)"
     )
 
+    # Esplora REST API options
+    parser.addoption(
+        "--esplora-host",
+        action="store",
+        default="localhost",
+        help="Host for esplora REST API (default: localhost)"
+    )
+    parser.addoption(
+        "--esplora-port",
+        action="store",
+        default="3000",
+        help="Port for esplora REST API (default: 3000)"
+    )
+
     # bitcoind RPC options
     parser.addoption(
         "--bitcoind-rpc-host",
@@ -220,6 +234,18 @@ def native_config(request):
         "host": request.config.getoption("--native-host"),
         "port": int(request.config.getoption("--native-port")),
         "base_url": f"http://{request.config.getoption('--native-host')}:{request.config.getoption('--native-port')}/v1"
+    }
+
+
+@pytest.fixture(scope="session")
+def esplora_config(request):
+    """Configuration for esplora REST API tests."""
+    host = request.config.getoption("--esplora-host")
+    port = int(request.config.getoption("--esplora-port"))
+    return {
+        "host": host,
+        "port": port,
+        "base_url": f"http://{host}:{port}"
     }
 
 

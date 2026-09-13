@@ -36,24 +36,6 @@ double progress(size_t blocks, size_t headers) NOEXCEPT
         std::min(1.0, to_floating(blocks) / headers);
 }
 
-// bitcoind's mtp window includes the block: the child's stored context mtp.
-uint32_t median_time(const node::query& query,
-    const system::settings& settings,
-    const database::header_link& link) NOEXCEPT
-{
-    database::context ctx{};
-    if (query.get_context(ctx, query.to_confirmed_child(link)))
-        return ctx.mtp;
-
-    // The top block has no child, its promoted chain state carries the value.
-    const auto key = query.get_header_key(link);
-    const auto state = query.get_confirmed_chain_state(settings, key);
-    if (!state)
-        return 0_u32;
-
-    return chain::chain_state{ *state, settings }.context().median_time_past;
-}
-
 // A getchainstates entry for candidate or confirmed at the link (top).
 network::rpc::object_t chain_states_entry(
     const node::query& query, const database::header_link& link,
@@ -165,20 +147,6 @@ void inject_tx_prevouts(boost::json::object& out,
 
         ++entry;
     });
-}
-
-std::string to_address(const chain::script& script, uint8_t p2kh,
-    uint8_t p2sh, const std::string& witness) NOEXCEPT
-{
-    using namespace wallet;
-
-    const auto version = script.version_value();
-    if (version != to_value(chain::script_version::unversioned))
-        return witness_address{ *script.witness_program(), version,
-            witness }.encoded();
-
-    const auto pay = payment_address::extract_output(script, p2kh, p2sh);
-    return pay ? pay.encoded() : std::string{};
 }
 
 void inject_script_context(boost::json::object& out,

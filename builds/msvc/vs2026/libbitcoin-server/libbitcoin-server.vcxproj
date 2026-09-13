@@ -131,7 +131,6 @@
     <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_scan.cpp" />
-    <ClCompile Include="..\..\..\..\src\parsers\bitcoind_script.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_target.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\bitcoind_transaction.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\btcd_filter.cpp" />
@@ -169,7 +168,10 @@
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_transactions.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\electrum\protocol_electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_address.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_block.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_mempool.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\esplora\protocol_esplora_transaction.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_address.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\native\protocol_native_block.cpp" />
@@ -191,11 +193,13 @@
     <ClCompile Include="..\..\..\..\src\server_node.cpp" />
     <ClCompile Include="..\..\..\..\src\sessions\session.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\address.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_combine.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp" />
-    <ClCompile Include="..\..\..\..\src\utilities\bitcoind_merkle.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_update.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\chain.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\builds\msvc\resource.h" />
@@ -244,7 +248,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\admin_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_scan.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_script.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\bitcoind_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\btcd_filter.hpp" />
@@ -294,11 +297,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\session_server.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\sessions\sessions.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\settings.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\address.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_combine.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_descriptor.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_merkle.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_update.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
   </ItemGroup>

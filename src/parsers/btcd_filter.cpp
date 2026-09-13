@@ -19,7 +19,7 @@
 #include <bitcoin/server/parsers/btcd_filter.hpp>
 
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
+#include <bitcoin/server/utilities/address.hpp>
 
 namespace libbitcoin {
 namespace server {

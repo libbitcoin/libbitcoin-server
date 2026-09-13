@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
+#include <bitcoin/server/utilities/chain.hpp>
 
 #include <bitcoin/server/define.hpp>
 
@@ -24,31 +24,24 @@ namespace libbitcoin {
 namespace server {
 
 using namespace system;
-using namespace system::chain;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-code output_script(script& out, const std::string& text, uint8_t p2kh,
-    uint8_t p2sh, const std::string& witness) NOEXCEPT
+uint32_t median_time(const node::query& query,
+    const system::settings& settings,
+    const database::header_link& link) NOEXCEPT
 {
-    using namespace wallet;
+    database::context ctx{};
+    if (query.get_context(ctx, query.to_confirmed_child(link)))
+        return ctx.mtp;
 
-    // The parsers accept any prefix, so the configured ones are checks.
-    if (const payment_address payment{ text }; payment &&
-        ((payment.prefix() == p2kh) || (payment.prefix() == p2sh)))
-    {
-        out = payment.output_script(p2kh, p2sh);
-        return error::success;
-    }
+    // The top block has no child, its promoted chain state carries the value.
+    const auto key = query.get_header_key(link);
+    const auto state = query.get_confirmed_chain_state(settings, key);
+    if (!state)
+        return {};
 
-    if (const witness_address payment{ text };
-        payment && payment.prefix() == witness)
-    {
-        out = payment.script();
-        return error::success;
-    }
-
-    return error::invalid_argument;
+    return chain::chain_state{ *state, settings }.context().median_time_past;
 }
 
 BC_POP_WARNING()

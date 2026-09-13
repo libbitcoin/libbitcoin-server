@@ -28,11 +28,6 @@ namespace server {
 /// Clamped ratio of validated blocks to chain height.
 BCS_API double progress(size_t blocks, size_t headers) NOEXCEPT;
 
-/// bitcoind's mediantime of the block (its window includes the block).
-BCS_API uint32_t median_time(const node::query& query,
-    const system::settings& settings,
-    const database::header_link& link) NOEXCEPT;
-
 /// A getchainstates entry for candidate or confirmed at the link (top).
 BCS_API network::rpc::object_t chain_states_entry(const node::query& query,
     const database::header_link& link, double progress,
@@ -53,10 +48,6 @@ BCS_API void inject_tx_prevouts(boost::json::object& out,
     const node::query& query, const system::chain::transaction& tx,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness,
     uint32_t flags) NOEXCEPT;
-
-/// The address of a singular output script (empty if unaddressable).
-BCS_API std::string to_address(const system::chain::script& script,
-    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT;
 
 /// The network context (desc, address) of a scriptPubKey object.
 BCS_API void inject_script_context(boost::json::object& out,

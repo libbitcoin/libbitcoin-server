@@ -48,6 +48,35 @@ void protocol_esplora::start() NOEXCEPT
     if (started())
         return;
 
+    // Address methods.
+    SUBSCRIBE_ESPLORA(handle_get_address, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_address_txs, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_address_txs_chain, _1, _2, _3, _4, _5, _6);
+    SUBSCRIBE_ESPLORA(handle_get_address_txs_mempool, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_address_utxo, _1, _2, _3, _4, _5);
+
+    // Transaction methods.
+    SUBSCRIBE_ESPLORA(handle_get_tx, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_status, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_merkleblock_proof, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_merkle_proof, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tx_outspend, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_tx_outspends, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_broadcast, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_broadcast_package, _1, _2);
+
+    // Block methods.
+    SUBSCRIBE_ESPLORA(handle_get_block, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_txs, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_block_header, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_status, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_txids, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_block_txid, _1, _2, _3, _4, _5);
+    SUBSCRIBE_ESPLORA(handle_get_block_height, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_blocks, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_get_tip_height, _1, _2, _3);
+    SUBSCRIBE_ESPLORA(handle_get_tip_hash, _1, _2, _3);
+
     // Mempool methods.
     SUBSCRIBE_ESPLORA(handle_get_mempool, _1, _2, _3);
     SUBSCRIBE_ESPLORA(handle_get_mempool_txids, _1, _2, _3);
@@ -59,18 +88,9 @@ void protocol_esplora::start() NOEXCEPT
 void protocol_esplora::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    stopping_.store(true);
     dispatcher_.stop(ec);
     protocol_http::stopping(ec);
-}
-
-// A parsed target with no subscriber would leave the request unanswered.
-bool protocol_esplora::is_implemented(const std::string& method) NOEXCEPT
-{
-    return
-        method == interface::mempool::name ||
-        method == interface::mempool_txids::name ||
-        method == interface::mempool_recent::name ||
-        method == interface::fee_estimates::name;
 }
 
 // Handle get method.
@@ -121,9 +141,9 @@ bool protocol_esplora::try_dispatch_object(const http::request& request) NOEXCEP
     if (esplora_target(model, target))
         return false;
 
-    if (!is_implemented(model.method))
+    if (takes_body(model.method))
     {
-        send_not_implemented(request);
+        send_method_not_allowed(request);
         return true;
     }
 
@@ -131,6 +151,57 @@ bool protocol_esplora::try_dispatch_object(const http::request& request) NOEXCEP
         send_internal_server_error(ec, request);
 
     return true;
+}
+
+void protocol_esplora::handle_receive_post(const code& ec,
+    const method::post::cptr& post) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return;
+
+    if (!is_origin_form(post->target()))
+    {
+        send_bad_target({}, *post);
+        return;
+    }
+
+    if (!is_allowed_origin(*post, post->version()))
+    {
+        send_forbidden(*post);
+        return;
+    }
+
+    if (!is_allowed_host(*post, post->version()))
+    {
+        send_bad_host(*post);
+        return;
+    }
+
+    rpc::request_t model{};
+    if (esplora_target(model, post->target()))
+    {
+        send_not_found(*post);
+        return;
+    }
+
+    if (!takes_body(model.method))
+    {
+        send_method_not_allowed(*post);
+        return;
+    }
+
+    if (!post->body().contains<http::string_value>())
+    {
+        send_bad_request(*post);
+        return;
+    }
+
+    set_body(model, post->body().get<http::string_value>());
+
+    if (const auto code = dispatcher_.notify(model))
+        send_internal_server_error(code, *post);
 }
 
 void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
@@ -149,23 +220,48 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
         return;
     }
 
-    const auto target = request.body().get<http::string_value>();
+    // A body-bearing target is delimited from its body by the first newline.
+    const auto frame = request.body().get<http::string_value>();
+    const auto split = frame.find('\n');
 
     rpc::request_t model{};
-    if (esplora_target(model, target))
+    if (esplora_target(model, frame.substr(zero, split)))
     {
         stop(network::error::bad_request);
         return;
     }
 
-    if (!is_implemented(model.method))
+    if (takes_body(model.method))
     {
-        stop(network::error::not_implemented);
-        return;
+        if (split == std::string::npos)
+        {
+            stop(network::error::bad_request);
+            return;
+        }
+
+        set_body(model, frame.substr(add1(split)));
     }
 
     if (dispatcher_.notify(model))
         stop(network::error::internal_server_error);
+}
+
+bool protocol_esplora::takes_body(const std::string& method) NOEXCEPT
+{
+    return
+        method == interface::broadcast::name ||
+        method == interface::broadcast_package::name;
+}
+
+void protocol_esplora::set_body(rpc::request_t& model,
+    const std::string& body) NOEXCEPT
+{
+    using object_t = network::rpc::object_t;
+    auto& params = std::get<object_t>(model.params.value());
+    if (model.method == interface::broadcast::name)
+        params["transaction"] = body;
+    else
+        params["transactions"] = network::rpc::array_t{};
 }
 
 // Senders.
@@ -178,13 +274,55 @@ void protocol_esplora::send_json(boost::json::value&& model, size_t size_hint,
     response response{ status::ok, request.version() };
     add_common_headers(response, request);
     add_access_control_headers(response, request);
-    const auto json = from_media_type(media_type::application_json);
-    response.set(field::content_type, json);
+    const auto media = from_media_type(media_type::application_json);
+    response.set(field::content_type, media);
     response.body() = json_value
     {
         .model = std::move(model),
         .size_hint = size_hint
     };
+    response.prepare_payload();
+    SEND(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_esplora::send_rejected(const code& reason,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::bad_request, request.version() };
+    add_common_headers(response, request);
+    add_access_control_headers(response, request);
+    const auto media = from_media_type(media_type::text_plain);
+    response.set(field::content_type, media);
+    response.body() = reason.message();
+    response.prepare_payload();
+    SEND(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_esplora::send_text(std::string&& value,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    add_common_headers(response, request);
+    add_access_control_headers(response, request);
+    const auto media = from_media_type(media_type::text_plain);
+    response.set(field::content_type, media);
+    response.body() = std::move(value);
+    response.prepare_payload();
+    SEND(std::move(response), handle_complete, _1, error::success);
+}
+
+void protocol_esplora::send_chunk(system::data_chunk&& bytes,
+    const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response response{ status::ok, request.version() };
+    add_common_headers(response, request);
+    add_access_control_headers(response, request);
+    const auto media = from_media_type(media_type::application_octet_stream);
+    response.set(field::content_type, media);
+    response.body() = std::move(bytes);
     response.prepare_payload();
     SEND(std::move(response), handle_complete, _1, error::success);
 }

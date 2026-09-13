@@ -80,10 +80,9 @@ BOOST_AUTO_TEST_CASE(esplora__fee_estimates__extra_segment__not_found)
 // unimplemented
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__tip_height__unsubscribed__not_implemented)
+BOOST_AUTO_TEST_CASE(esplora__broadcast_package__unsubscribed__not_implemented)
 {
-    const auto status = get_status("/blocks/tip/height");
-    BOOST_REQUIRE_EQUAL(status, http::status::not_implemented);
+    BOOST_REQUIRE_EQUAL(post_status("/txs/package", "[]"), http::status::not_implemented);
 }
 
 BOOST_AUTO_TEST_CASE(esplora__invalid_target__not_found)

@@ -26,6 +26,7 @@ namespace libbitcoin {
 namespace server {
 namespace electrum {
 
+using namespace system;
 using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
@@ -33,7 +34,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 // Defined versions with their numeric forms, in ascending order.
 static const auto& versions() NOEXCEPT
 {
-    static const std::array<std::pair<version, system::config::version>, 14>
+    static const std::array<std::pair<version, config::version>, 14>
     map
     {{
         { version::v0_0,   { 0, 0 } },
@@ -55,16 +56,15 @@ static const auto& versions() NOEXCEPT
     return map;
 }
 
-system::config::version version_to_number(version value) NOEXCEPT
+config::version version_to_number(version value) NOEXCEPT
 {
     const auto& map = versions();
-    const auto it = std::find_if(map.begin(), map.end(),
-        [=](const auto& entry) NOEXCEPT
-        {
-            return entry.first == value;
-        });
+    const auto it = std::ranges::find_if(map, [=](const auto& entry) NOEXCEPT
+    {
+        return entry.first == value;
+    });
 
-    return it != map.end() ? it->second : system::config::version{};
+    return it != map.end() ? it->second : config::version{};
 }
 
 std::string version_to_string(version value) NOEXCEPT
@@ -72,7 +72,7 @@ std::string version_to_string(version value) NOEXCEPT
     return version_to_number(value).to_string();
 }
 
-bool version_from_string(system::config::version& out,
+bool version_from_string(config::version& out,
     const std::string_view& value) NOEXCEPT
 {
     // Stream extraction tolerates sign, whitespace and trailing garbage, and
@@ -81,16 +81,16 @@ bool version_from_string(system::config::version& out,
         && value.front() != '.'
         && value.back() != '.'
         && value.find("..") == std::string_view::npos
-        && std::all_of(value.begin(), value.end(), [](char character) NOEXCEPT
+        && std::ranges::all_of(value, [](char character) NOEXCEPT
         {
-            return system::is_ascii_number(character) || character == '.';
+            return is_ascii_number(character) || character == '.';
         });
 
     if (result)
     {
         try
         {
-            out = system::config::version{ std::string{ value } };
+            out = config::version{ std::string{ value } };
         }
         catch (const std::exception&)
         {
@@ -101,7 +101,7 @@ bool version_from_string(system::config::version& out,
     return result;
 }
 
-version version_floor(const system::config::version& value) NOEXCEPT
+version version_floor(const config::version& value) NOEXCEPT
 {
     const auto& map = versions();
     const auto it = std::find_if(map.rbegin(), map.rend(),
@@ -113,8 +113,8 @@ version version_floor(const system::config::version& value) NOEXCEPT
     return it != map.rend() ? it->first : version::v0_0;
 }
 
-bool version_range(system::config::version& min,
-    system::config::version& max, const value_t& version) NOEXCEPT
+bool version_range(config::version& min, config::version& max,
+    const value_t& version) NOEXCEPT
 {
     const auto& value = version.value();
 
@@ -133,8 +133,8 @@ bool version_range(system::config::version& min,
         if (versions.size() != two)
             return false;
 
-        const auto& low = versions.at(0).value();
-        const auto& high = versions.at(1).value();
+        const auto& low = versions.at(zero).value();
+        const auto& high = versions.at(one).value();
         if (!std::holds_alternative<string_t>(low) ||
             !std::holds_alternative<string_t>(high))
             return false;
@@ -148,11 +148,10 @@ bool version_range(system::config::version& min,
 
 // Clients may specify undefined (e.g. future) versions, negotiation is
 // numeric and settles on the greatest defined version in the overlap.
-version negotiate(const value_t& value, const system::config::version& minimum,
-    const system::config::version& maximum) NOEXCEPT
+version negotiate(const value_t& value, const config::version& minimum,
+    const config::version& maximum) NOEXCEPT
 {
-    system::config::version min{};
-    system::config::version max{};
+    config::version min{}, max{};
     if (!version_range(min, max, value))
         return version::v0_0;
 
@@ -164,11 +163,11 @@ version negotiate(const value_t& value, const system::config::version& minimum,
 
 std::string escape_client(const std::string& in) NOEXCEPT
 {
+    using namespace system;
     std::string out(in.size(), '*');
     std::transform(in.begin(), in.end(), out.begin(), [](char c) NOEXCEPT
     {
-        return system::is_ascii_character(c) &&
-            !system::is_ascii_whitespace(c) ? c : '*';
+        return is_ascii_character(c) && !is_ascii_whitespace(c) ? c : '*';
     });
 
     return out;
