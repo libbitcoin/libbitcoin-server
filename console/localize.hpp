@@ -125,7 +125,6 @@
 #define BS_DAEMON_UNINSTALL_FAILURE \
     "Service removal failed with error %1%."
 
-// TODO: table names should be derived from database constants and sorted.
 // --information
 #define BS_INFORMATION_START \
     "Configuration...\n" \
@@ -316,19 +315,19 @@
 
 // warnings
 #define BS_HARDWARE_SUBOPTIMAL \
-    "Detected hardware acceleration is not compiled into this build."
+    "Available hardware acceleration is not compiled into this build."
 #define BS_HARDWARE_UNSUPPORTED \
     "A gpu device is present but unsupported by the compiled acceleration."
 #define BS_HARDWARE_UNCONFIGURED \
     "A signature batching device is present but batching is not configured."
 #define BS_MEMORY_BELOW_MINIMUM \
-    "Physical memory is below the minimum for initial block download."
+    "Memory is below the minimum recommended for initial block download."
 #define BS_MEMORY_BELOW_VALIDATION \
-    "Physical memory is below the minimum for full validation."
+    "Memory is below the minimum recommended for full validation."
 #define BS_MEMORY_BELOW_RECOMMENDED \
-    "Physical memory is below the amount recommended for initial block download."
+    "Memory is below the amount recommended for initial block download."
 #define BS_MEMORY_PHYSICAL \
-    "Physical memory: %1% GiB."
+    "Memory: %1% GiB."
 #define BS_SPACE_BELOW_REQUIRED \
     "Free disk space is below that required to complete initial block download."
 #define BS_SPACE_AVAILABLE \

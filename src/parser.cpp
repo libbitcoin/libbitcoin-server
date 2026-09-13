@@ -265,14 +265,14 @@ options_metadata parser::load_options() THROWS
         alias(daemon_variable, 'd').c_str(),
         value<bool>()->implicit_value(true)->
             notifier([&](bool value) { configured.daemon = value; }),
-        "Install ('true') or uninstall ('false') as a system service."
+        "Install ('true') or uninstall ('false') as a daemon."
     )
     (
         alias(user_variable, 'u').c_str(),
         value<network::config::credential>()->
             notifier([&](const network::config::credential& value)
                 { configured.user = value; }),
-        "The service logon credential, defaults to the system account."
+        "Daemon logon credential, defaults to the system account."
     )
     // Chain scans.
     (
@@ -291,7 +291,7 @@ options_metadata parser::load_options() THROWS
         alias(collisions_variable, 'l').c_str(),
         value<bool>(&configured.collisions)->
             default_value(false)->zero_tokens(),
-        "Scan and display hashmap collision stats (may exceed RAM and result in SIGKILL)."
+        "Scan and display hashmap collision stats (may SIGKILL)."
     )
     (
         alias(information_variable, 'i').c_str(),
@@ -1848,7 +1848,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.batch_signatures",
         value<uint64_t>(&configured.node.batch_signatures),
-        "Count of signatures to verify in a batch, defaults to '0' (0 disables)."
+        "Count of signatures to verify in each GPU batch (as available), defaults to '1000000' (0 disables)."
     )
     ////(
     ////    "node.headers_first",
