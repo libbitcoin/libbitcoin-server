@@ -22,12 +22,15 @@
 #include <filesystem>
 #include <iostream>
 #if defined(HAVE_MSC)
+    #include <io.h>
     #include <ntsecapi.h>
+#endif
+#if defined(HAVE_POSIX)
+    #include <unistd.h>
 #endif
 #if defined(HAVE_LINUX)
     #include <sys/socket.h>
     #include <sys/un.h>
-    #include <unistd.h>
 #endif
 #include "localize.hpp"
 

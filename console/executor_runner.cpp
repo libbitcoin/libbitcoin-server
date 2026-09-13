@@ -157,17 +157,21 @@ bool executor::do_run()
     ////logger(BS_INFORMATION_PROGRESS_START);
     ////dump_progress();
 
+    dump_version();
+    dump_hardware();
+    dump_options();
+
+    if (!prompt_warnings())
+    {
+        close_store();
+        stopper(BS_NODE_STOPPED);
+        return false;
+    }
+
     // Stopped by stopper.
     if (!service_)
         capture_.start();
 
-    dump_version();
-    dump_hardware();
-    dump_options();
-    warn_hardware();
-    warn_memory();
-    warn_space();
-    warn_storage();
     logger(BS_NODE_INTERRUPT);
 
     // Create node.

@@ -40,6 +40,7 @@ public:
     static constexpr auto hardware_variable = "hardware";
     static constexpr auto settings_variable = "settings";
     static constexpr auto version_variable = "version";
+    static constexpr auto accept_variable = "accept";
     static constexpr auto newstore_variable = "newstore";
     static constexpr auto backup_variable = "backup";
     static constexpr auto restore_variable = "restore";
@@ -68,6 +69,9 @@ public:
 
     /// Load configuration file settings.
     virtual options_metadata load_settings() THROWS;
+
+    /// Derive unconfigured hashmap buckets from memory, at store create only.
+    void derive_buckets() NOEXCEPT;
 
     /// Parse all configuration into member settings.
     virtual bool parse(int argc, const char* argv[],

@@ -277,24 +277,25 @@ bool executor::cold_backup_store(bool details)
 bool executor::prompt_milestone_store() const
 {
     const auto& milestone = metadata_.configured.bitcoin.milestone;
-    if (metadata_.is_configured(settings::milestone))
+    if (metadata_.is_configured(settings::milestone) ||
+        metadata_.configured.accept)
     {
         logger(format(BS_BITCOIN_MILESTONE) % milestone);
         return true;
     }
 
     const auto genesis_default = is_zero(milestone.height());
-    if (genesis_default || service_ || store_.is_dirty())
+    if (genesis_default || !interactive() || store_.is_dirty())
         return true;
 
-    logger(BS_MILESTONE_SETOFF);
+    logger(BS_PROMPT_SETOFF);
     logger(format(BS_MILESTONE_PROMPT1));
     logger(format(BS_MILESTONE_PROMPT2));
     logger(format(BS_MILESTONE_PROMPT3));
     logger(format(BS_BITCOIN_MILESTONE) % milestone);
     logger(BS_MILESTONE_CHOICE1);
     logger(BS_MILESTONE_CHOICE2);
-    logger(BS_MILESTONE_SETOFF);
+    logger(BS_PROMPT_SETOFF);
 
     std::string line{};
     while (std::getline(input_, line) && !canceled())

@@ -36,9 +36,10 @@
 #define BS_OPERATION_CANCELED \
     "CTRL-C detected, canceling operation..."
 
-// bitcoin.milestone
-#define BS_MILESTONE_SETOFF \
+#define BS_PROMPT_SETOFF \
     "--------------------------------------------------------------------------"
+
+// bitcoin.milestone
 #define BS_MILESTONE_PROMPT1 \
     "If you have previously validated you may want to utilize a milestone."
 #define BS_MILESTONE_PROMPT2 \
@@ -55,6 +56,14 @@
     "Set a previously-validated milestone in your configuration file."
 #define BS_MILESTONE_HALTED2 \
     "Set to genesis-hash:0 if you have not validated previously."
+
+// startup warnings
+#define BS_WARNINGS_CHOICE1 \
+    "Press <enter> to continue despite the above warnings."
+#define BS_WARNINGS_CHOICE2 \
+    "Enter 'c' to stop so you can address them."
+#define BS_WARNINGS_HALTED \
+    "Address the warnings, or start with --accept to bypass this prompt."
 
 // --settings
 #define BS_SETTINGS_MESSAGE \
@@ -116,7 +125,6 @@
 #define BS_DAEMON_UNINSTALL_FAILURE \
     "Service removal failed with error %1%."
 
-// TODO: table names should be derived from database constants and sorted.
 // --information
 #define BS_INFORMATION_START \
     "Configuration...\n" \
@@ -302,20 +310,24 @@
     "platform:%1%."
 #define BS_HARDWARE_TABLE2 \
     "platform:%1% compiled:%2%."
+#define BS_HARDWARE_TABLE3 \
+    "platform:%1% compiled:%2% supported:%3%."
 
 // warnings
 #define BS_HARDWARE_SUBOPTIMAL \
-    "Detected hardware acceleration is not compiled into this build."
+    "Available hardware acceleration is not compiled into this build."
+#define BS_HARDWARE_UNSUPPORTED \
+    "A gpu device is present but unsupported by the compiled acceleration."
 #define BS_HARDWARE_UNCONFIGURED \
     "A signature batching device is present but batching is not configured."
 #define BS_MEMORY_BELOW_MINIMUM \
-    "Physical memory is below the minimum for initial block download."
+    "Memory is below the minimum recommended for initial block download."
 #define BS_MEMORY_BELOW_VALIDATION \
-    "Physical memory is below the minimum for full validation."
+    "Memory is below the minimum recommended for full validation."
 #define BS_MEMORY_BELOW_RECOMMENDED \
-    "Physical memory is below the amount recommended for initial block download."
+    "Memory is below the amount recommended for initial block download."
 #define BS_MEMORY_PHYSICAL \
-    "Physical memory: %1% GiB."
+    "Memory: %1% GiB."
 #define BS_SPACE_BELOW_REQUIRED \
     "Free disk space is below that required to complete initial block download."
 #define BS_SPACE_AVAILABLE \

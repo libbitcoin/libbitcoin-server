@@ -44,6 +44,9 @@ public:
     bool settings{};
     bool version{};
 
+    /// Prompts.
+    bool accept{};
+
     /// Actions.
     bool newstore{};
     bool backup{};

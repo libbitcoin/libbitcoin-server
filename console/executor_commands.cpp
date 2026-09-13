@@ -44,7 +44,12 @@ bool executor::do_hardware()
 {
     log_.stop();
     dump_hardware();
-    warn_hardware();
+
+    system::string_list warnings{};
+    warn_hardware(warnings);
+    for (const auto& warning: warnings)
+        logger(warning);
+
     return true;
 }
 
