@@ -22,12 +22,15 @@
 #include <filesystem>
 #include <iostream>
 #if defined(HAVE_MSC)
+    #include <io.h>
     #include <ntsecapi.h>
+#endif
+#if defined(HAVE_POSIX)
+    #include <unistd.h>
 #endif
 #if defined(HAVE_LINUX)
     #include <sys/socket.h>
     #include <sys/un.h>
-    #include <unistd.h>
 #endif
 #include "localize.hpp"
 
@@ -590,6 +593,24 @@ void executor::notify_stopping()
 #elif defined(HAVE_LINUX)
     notify_manager("STOPPING=1\nEXTEND_TIMEOUT_USEC=30000000");
 #endif
+}
+
+// Console session.
+// ----------------------------------------------------------------------------
+
+// True if standard input is a terminal (not redirected or a service).
+static bool terminal_input()
+{
+#if defined(HAVE_MSC)
+    return !is_zero(::_isatty(::_fileno(stdin)));
+#else
+    return !is_zero(::isatty(STDIN_FILENO));
+#endif
+}
+
+bool executor::interactive()
+{
+    return !service_ && terminal_input();
 }
 
 // Service dispatch.

@@ -211,6 +211,7 @@ private:
     static void stop(int signal=signal_none);
     static void handle_stop(int code);
     static bool canceled();
+    static bool interactive();
 
 #if defined(HAVE_MSC)
     static HWND window_handle_;
