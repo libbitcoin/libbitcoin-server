@@ -59,7 +59,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/parsers/admin_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_query.cpp \
     ${srcdir}/../../src/parsers/bitcoind_scan.cpp \
-    ${srcdir}/../../src/parsers/bitcoind_script.cpp \
     ${srcdir}/../../src/parsers/bitcoind_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_transaction.cpp \
     ${srcdir}/../../src/parsers/btcd_filter.cpp \
@@ -100,7 +99,10 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_transactions.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_version.cpp \
     ${srcdir}/../../src/protocols/esplora/protocol_esplora.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_address.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_block.cpp \
     ${srcdir}/../../src/protocols/esplora/protocol_esplora_mempool.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_transaction.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_address.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_block.cpp \
@@ -117,11 +119,13 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/serializers/bitcoind_psbt.cpp \
     ${srcdir}/../../src/serializers/btcd_json.cpp \
     ${srcdir}/../../src/sessions/session.cpp \
+    ${srcdir}/../../src/utilities/address.cpp \
     ${srcdir}/../../src/utilities/bitcoind_combine.cpp \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
-    ${srcdir}/../../src/utilities/bitcoind_merkle.cpp \
     ${srcdir}/../../src/utilities/bitcoind_update.cpp \
-    ${srcdir}/../../src/utilities/electrum_version.cpp
+    ${srcdir}/../../src/utilities/chain.cpp \
+    ${srcdir}/../../src/utilities/electrum_version.cpp \
+    ${srcdir}/../../src/utilities/merkle.cpp
 
 include_bitcoindir = \
     ${includedir}/bitcoin
@@ -206,7 +210,6 @@ include_bitcoin_server_parsers_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parsers/admin_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_query.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_scan.hpp \
-    ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_script.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_target.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/parsers/btcd_filter.hpp \
@@ -274,11 +277,13 @@ include_bitcoin_server_utilitiesdir = \
     ${includedir}/bitcoin/server/utilities
 
 include_bitcoin_server_utilities_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/utilities/address.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_combine.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_descriptor.hpp \
-    ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_update.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/chain.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
 
 # Tests.
@@ -342,8 +347,11 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/electrum/electrum_transactions.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_transports.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_version.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_address.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_block.cpp \
     ${srcdir}/../../test/protocols/esplora/esplora_mempool.cpp \
     ${srcdir}/../../test/protocols/esplora/esplora_setup_fixture.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_transaction.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_client.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_address.cpp \
@@ -359,8 +367,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../test/serializers/bitcoind_json.cpp \
     ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \
-    ${srcdir}/../../test/utilities/bitcoind_merkle.cpp \
-    ${srcdir}/../../test/utilities/electrum_version.cpp
+    ${srcdir}/../../test/utilities/electrum_version.cpp \
+    ${srcdir}/../../test/utilities/merkle.cpp
 
 TESTS = test_runner.sh
 

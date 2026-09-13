@@ -162,10 +162,19 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <Filter>src\protocols\electrum</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_address.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_block.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_mempool.cpp">
       <Filter>src\protocols\esplora</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.cpp">
+      <Filter>src\protocols\esplora</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_transaction.cpp">
       <Filter>src\protocols\esplora</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_client.cpp">
@@ -219,10 +228,10 @@
     <ClCompile Include="..\..\..\..\test\utilities\bitcoind_descriptor.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\utilities\bitcoind_merkle.cpp">
+    <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
+    <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
   </ItemGroup>

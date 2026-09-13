@@ -62,7 +62,6 @@
 #include <bitcoin/server/parsers/admin_target.hpp>
 #include <bitcoin/server/parsers/bitcoind_query.hpp>
 #include <bitcoin/server/parsers/bitcoind_scan.hpp>
-#include <bitcoin/server/parsers/bitcoind_script.hpp>
 #include <bitcoin/server/parsers/bitcoind_target.hpp>
 #include <bitcoin/server/parsers/bitcoind_transaction.hpp>
 #include <bitcoin/server/parsers/btcd_filter.hpp>
@@ -110,11 +109,13 @@
 #include <bitcoin/server/sessions/session_handshake.hpp>
 #include <bitcoin/server/sessions/session_server.hpp>
 #include <bitcoin/server/sessions/sessions.hpp>
+#include <bitcoin/server/utilities/address.hpp>
 #include <bitcoin/server/utilities/bitcoind_combine.hpp>
 #include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
-#include <bitcoin/server/utilities/bitcoind_merkle.hpp>
 #include <bitcoin/server/utilities/bitcoind_update.hpp>
+#include <bitcoin/server/utilities/chain.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>
+#include <bitcoin/server/utilities/merkle.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 #endif

@@ -34,7 +34,11 @@ struct esplora_setup_fixture
     ~esplora_setup_fixture();
 
     status get_status(std::string_view target);
+    std::string get_text(std::string_view target);
+    system::data_chunk get_data(std::string_view target);
     boost::json::value get_json(std::string_view target);
+    status post_status(std::string_view target, std::string_view body);
+    std::string post_text(std::string_view target, std::string_view body);
 
 protected:
     server::configuration config_;
@@ -45,6 +49,8 @@ private:
     using string_body = network::http::string_body;
     using string_request = boost::beast::http::request<string_body>;
     static string_request create_request(std::string_view target);
+    static string_request create_post(std::string_view target,
+        std::string_view body);
 
     network::logger log_;
     server::server_node server_;

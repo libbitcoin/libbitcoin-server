@@ -16,20 +16,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCRIPT_HPP
-#define LIBBITCOIN_SERVER_PARSERS_BITCOIND_SCRIPT_HPP
+#ifndef LIBBITCOIN_SERVER_UTILITIES_CHAIN_HPP
+#define LIBBITCOIN_SERVER_UTILITIES_CHAIN_HPP
 
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-// TODO: move into bitcoind namespace (collides with json wrapper).
-
-/// Parse an address to its output script, prefixes are validated.
-BCS_API code output_script(system::chain::script& out,
-    const std::string& text, uint8_t p2kh, uint8_t p2sh,
-    const std::string& witness) NOEXCEPT;
+/// The mediantime of the block (its window includes the block).
+BCS_API uint32_t median_time(const node::query& query,
+    const system::settings& settings,
+    const database::header_link& link) NOEXCEPT;
 
 } // namespace server
 } // namespace libbitcoin

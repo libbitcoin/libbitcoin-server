@@ -154,8 +154,11 @@
     <ClCompile Include="..\..\..\..\test\protocols\electrum\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_protocols_electrum_electrum_version.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_address.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_block.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_mempool.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_setup_fixture.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\esplora\esplora_transaction.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_client.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_address.cpp" />
@@ -173,10 +176,10 @@
     <ClCompile Include="..\..\..\..\test\settings.cpp" />
     <ClCompile Include="..\..\..\..\test\test.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\bitcoind_descriptor.cpp" />
-    <ClCompile Include="..\..\..\..\test\utilities\bitcoind_merkle.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_utilities_electrum_version.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp" />
