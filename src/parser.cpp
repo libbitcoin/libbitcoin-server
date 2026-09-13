@@ -272,7 +272,7 @@ options_metadata parser::load_options() THROWS
         value<network::config::credential>()->
             notifier([&](const network::config::credential& value)
                 { configured.user = value; }),
-        "Daemon logon credential, defaults to the system account."
+        "Daemon logon credential, defaults to system account."
     )
     // Chain scans.
     (
@@ -291,7 +291,7 @@ options_metadata parser::load_options() THROWS
         alias(collisions_variable, 'l').c_str(),
         value<bool>(&configured.collisions)->
             default_value(false)->zero_tokens(),
-        "Scan and display hashmap collision stats (may SIGKILL)."
+        "Scan and show hashmap collision stats (may SIGKILL)."
     )
     (
         alias(information_variable, 'i').c_str(),
