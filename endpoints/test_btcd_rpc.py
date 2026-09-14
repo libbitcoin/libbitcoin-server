@@ -532,15 +532,6 @@ NOT_YET_IMPLEMENTED_STUBS = [
     ("stopnotifynewtransactions", []),
 ]
 
-# Deprecated upstream (superseded by loadtxfilter/rescanblocks) but still
-# wired -- included so a regression can't silently start "working" in a way
-# that contradicts the deliberate scope decision to leave these stubbed.
-DEPRECATED_STUBS = [
-    ("notifyreceived", [[]]),
-    ("stopnotifyreceived", [[]]),
-    ("notifyspent", [[]]),
-    ("stopnotifyspent", [[]]),
-]
 
 
 @pytest.mark.xfail(reason="wired stub, handler not yet implemented",
@@ -553,12 +544,38 @@ def test_stub_not_yet_implemented(conn, method, params):
     )
 
 
-@pytest.mark.parametrize("method,params", DEPRECATED_STUBS)
-def test_deprecated_method_stays_not_implemented(conn, method, params):
-    """Regression guard, not a development target: these are deliberately
-    never implemented (superseded upstream by loadtxfilter/rescanblocks)."""
-    data = conn.raw_rpc(method, params)
-    assert data.get("error") is not None
+def test_notifyreceived_valid_address_acknowledges(conn):
+    """Confirmed-only matching (no mempool in v4), reusing loadtxfilter's
+    cursor-based history matching -- see protocol_btcd_filter.cpp."""
+    response = conn.send_rpc("notifyreceived", [[ReferenceData.EXAMPLE_ADDRESS]])
+    assert response.get("error") is None
+
+
+def test_notifyreceived_invalid_address_rejected(conn):
+    response = conn.raw_rpc("notifyreceived", [["not-an-address"]])
+    assert response.get("error") is not None
+
+
+def test_stopnotifyreceived_acknowledges(conn):
+    response = conn.send_rpc("stopnotifyreceived", [[ReferenceData.EXAMPLE_ADDRESS]])
+    assert response.get("error") is None
+
+
+def test_notifyspent_valid_outpoint_acknowledges(conn):
+    response = conn.send_rpc("notifyspent",
+        [[{"hash": ReferenceData.GENESIS_TX_HASH, "index": 0}]])
+    assert response.get("error") is None
+
+
+def test_notifyspent_malformed_outpoint_rejected(conn):
+    response = conn.raw_rpc("notifyspent", [[{"hash": "00"}]])
+    assert response.get("error") is not None
+
+
+def test_stopnotifyspent_acknowledges(conn):
+    response = conn.send_rpc("stopnotifyspent",
+        [[{"hash": ReferenceData.GENESIS_TX_HASH, "index": 0}]])
+    assert response.get("error") is None
 
 
 def test_stop_always_not_implemented(conn):
