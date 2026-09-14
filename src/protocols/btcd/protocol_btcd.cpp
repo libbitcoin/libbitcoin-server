@@ -273,40 +273,9 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     return true;
 }
 
-// Handlers (deprecated, not_implemented).
+// Handlers (deprecated).
 // ----------------------------------------------------------------------------
-
-bool protocol_btcd::handle_notify_received(const code& ec,
-    btcd_interface::notify_received, const value_t&) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::btcd::unimplemented);
-    return true;
-}
-
-bool protocol_btcd::handle_stop_notify_received(const code& ec,
-    btcd_interface::stop_notify_received, const value_t&) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::btcd::unimplemented);
-    return true;
-}
-
-bool protocol_btcd::handle_notify_spent(const code& ec,
-    btcd_interface::notify_spent, const value_t&) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::btcd::unimplemented);
-    return true;
-}
-
-bool protocol_btcd::handle_stop_notify_spent(const code& ec,
-    btcd_interface::stop_notify_spent, const value_t&) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_error(error::btcd::unimplemented);
-    return true;
-}
+// notify_received/notify_spent bodies live in protocol_btcd_filter.cpp.
 
 // Implemented only for the empty addresses/outpoints case (as btcd).
 // This is the call btcwallet makes to bootstrap its sync starting point.
@@ -375,7 +344,7 @@ bool protocol_btcd::handle_chase(const code&, node::chase event_,
     {
         case node::chase::organized:
         {
-            if (subscribed_blocks_.load(relaxed))
+            if (subscribed_blocks_.load(relaxed) || watching_legacy_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST_NOTIFY(do_connected, std::get<node::header_t>(value));
@@ -384,7 +353,7 @@ bool protocol_btcd::handle_chase(const code&, node::chase event_,
         }
         case node::chase::reorganized:
         {
-            if (subscribed_blocks_.load(relaxed))
+            if (subscribed_blocks_.load(relaxed) || watching_legacy_.load(relaxed))
             {
                 BC_ASSERT(std::holds_alternative<node::header_t>(value));
                 POST_NOTIFY(do_disconnected, std::get<node::header_t>(value));

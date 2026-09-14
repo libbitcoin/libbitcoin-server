@@ -119,7 +119,7 @@ protected:
         btcd_interface::rescan_blocks,
         const network::rpc::value_t& blockhashes) NOEXCEPT;
 
-    /// Handlers (deprecated, not_implemented).
+    /// Handlers (deprecated).
     bool handle_notify_received(const code& ec,
         btcd_interface::notify_received,
         const network::rpc::value_t& addresses) NOEXCEPT;
@@ -155,6 +155,7 @@ protected:
     using header_cptr = system::chain::header::cptr;
     using hashes_ptr = std::shared_ptr<system::hashes>;
     using array_ptr = std::shared_ptr<network::rpc::array_t>;
+    using legacy_ptr = std::shared_ptr<std::vector<network::rpc::array_t>>;
     using history = database::history;
     using histories = database::histories;
     using cursor_t = database::height_link;
@@ -177,6 +178,14 @@ protected:
         const system::chain::points& points) NOEXCEPT;
     void complete_load_tx_filter(const code& ec) NOEXCEPT;
 
+    void do_notify_received(const system::hashes& keys) NOEXCEPT;
+    void complete_notify_received(const code& ec) NOEXCEPT;
+    void do_stop_notify_received(const system::hashes& keys) NOEXCEPT;
+
+    void do_notify_spent(const system::chain::points& points) NOEXCEPT;
+    void complete_notify_spent(const code& ec) NOEXCEPT;
+    void do_stop_notify_spent(const system::chain::points& points) NOEXCEPT;
+
     void do_rescan_blocks(const hashes_ptr& hashes) NOEXCEPT;
     void do_rescan_watches(const hashes_ptr& hashes,
         const system::hashes& keys, system::chain::points& points) NOEXCEPT;
@@ -195,7 +204,8 @@ protected:
     void do_connected(node::header_t link) NOEXCEPT;
     void do_disconnected(node::header_t link) NOEXCEPT;
     void notify_connected(const header_cptr& header, size_t height,
-        const array_ptr& txs) NOEXCEPT;
+        const array_ptr& txs, const legacy_ptr& received,
+        const legacy_ptr& redeemed) NOEXCEPT;
     void notify_disconnected(const header_cptr& header,
         size_t height) NOEXCEPT;
 
@@ -210,6 +220,21 @@ protected:
     void match_outpoints(matches& out, outpoint_watch& sub,
         const point& prevout, const sizes& heights) NOEXCEPT;
     network::rpc::array_t serialize_matches(const matched_txs& txs) NOEXCEPT;
+
+    /// Legacy (notifyreceived/notifyspent) individual notifications.
+    /// -----------------------------------------------------------------------
+
+    // Arms a one-shot spent-watch on the output a receive watch matched.
+    void arm_spent_watches(const system::chain::transaction& tx,
+        const hash_digest& hash) NOEXCEPT;
+
+    // Builds [txHex, blockDetails] params for a recvtx/redeemingtx.
+    network::rpc::array_t serialize_legacy(
+        const system::chain::transaction& tx, const header_cptr& header,
+        size_t height, size_t position) NOEXCEPT;
+
+    // Combined DoS budget across all watch-list maps.
+    size_t watch_count() const NOEXCEPT;
 
 private:
     template <class Derived, typename Method, typename... Args>
@@ -238,6 +263,10 @@ private:
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_blocks_{};
 
+    // Set once a legacy watch arms, so handle_chase posts do_connected
+    // even without notifyblocks (unlike loadtxfilter, not required here).
+    std::atomic_bool watching_legacy_{};
+
     // This is protected by strand.
     btcd_dispatcher btcd_dispatcher_{};
 
@@ -247,6 +276,11 @@ private:
     // These are protected by notification strand.
     std::map<point, outpoint_watch> outpoint_watches_{};
     std::map<hash_digest, address_watch> address_watches_{};
+
+    // Legacy (notifyreceived/notifyspent) watches: notifyspent (explicit or
+    // auto-armed) is one-shot, kept separate from loadtxfilter's permanent maps.
+    std::map<hash_digest, address_watch> receive_watches_{};
+    std::map<point, outpoint_watch> spent_watches_{};
 };
 
 } // namespace server

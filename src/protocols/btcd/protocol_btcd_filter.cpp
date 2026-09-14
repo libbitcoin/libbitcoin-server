@@ -100,8 +100,7 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
         if (stopping_)
             return;
 
-        if (ceilinged_add(address_watches_.size(), outpoint_watches_.size()) >=
-            maximum)
+        if (watch_count() >= maximum)
         {
             ec = error::btcd::misc_error;
             break;
@@ -126,8 +125,7 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
         if (ec)
             break;
 
-        if (ceilinged_add(address_watches_.size(), outpoint_watches_.size()) >=
-            maximum)
+        if (watch_count() >= maximum)
         {
             ec = error::btcd::misc_error;
             break;
@@ -162,6 +160,207 @@ void protocol_btcd::complete_load_tx_filter(const code& ec) NOEXCEPT
     }
 
     send_result({}, 4);
+}
+
+// Handlers (notifyreceived/notifyspent).
+// ----------------------------------------------------------------------------
+// Confirmed-block matching only (no tx pool in v4), reusing loadtxfilter's
+// cursor-based history matching.
+
+bool protocol_btcd::handle_notify_received(const code& ec,
+    btcd_interface::notify_received, const value_t& addresses) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    hashes keys{};
+    if (btcd::filter_keys(keys, addresses, p2kh_, p2sh_, witness_))
+    {
+        send_error(error::btcd::invalid_parameter);
+        return true;
+    }
+
+    if (!keys.empty() && !archive().address_enabled())
+    {
+        send_error(error::btcd::unimplemented);
+        return true;
+    }
+
+    monitor(true);
+    POST_NOTIFY(do_notify_received, std::move(keys));
+    return true;
+}
+
+void protocol_btcd::do_notify_received(const hashes& keys) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    histories discard{};
+    code ec{ error::success };
+    const auto& query = archive();
+    const auto limit = btcd_options().maximum_history;
+
+    for (const auto& key: keys)
+    {
+        if (stopping_)
+            return;
+
+        if (watch_count() >= btcd_options().maximum_filters)
+        {
+            ec = error::btcd::misc_error;
+            break;
+        }
+
+        // Prime the cursor to present, so matching reports new blocks only.
+        const auto at = receive_watches_.try_emplace(key, address_watch{});
+        if (at.second)
+        {
+            watching_legacy_.store(true, relaxed);
+            const auto fault = query.get_history(stopping_,
+                at.first->second.cursor, discard, key, limit, turbo_);
+            if (fault == database::error::query_canceled)
+                return;
+        }
+    }
+
+    POST_BTCD(complete_notify_received, ec);
+}
+
+void protocol_btcd::complete_notify_received(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        using namespace error::btcd;
+        send_error(translate(ec, internal_error));
+        return;
+    }
+
+    send_result({}, 4);
+}
+
+bool protocol_btcd::handle_stop_notify_received(const code& ec,
+    btcd_interface::stop_notify_received, const value_t& addresses) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    hashes keys{};
+    if (btcd::filter_keys(keys, addresses, p2kh_, p2sh_, witness_))
+    {
+        send_error(error::btcd::invalid_parameter);
+        return true;
+    }
+
+    POST_NOTIFY(do_stop_notify_received, std::move(keys));
+    send_result({}, 4);
+    return true;
+}
+
+void protocol_btcd::do_stop_notify_received(const hashes& keys) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    for (const auto& key: keys)
+        receive_watches_.erase(key);
+}
+
+bool protocol_btcd::handle_notify_spent(const code& ec,
+    btcd_interface::notify_spent, const value_t& outpoints) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    chain::points points{};
+    if (btcd::filter_points(points, outpoints))
+    {
+        send_error(error::btcd::invalid_parameter);
+        return true;
+    }
+
+    monitor(true);
+    POST_NOTIFY(do_notify_spent, std::move(points));
+    return true;
+}
+
+void protocol_btcd::do_notify_spent(const chain::points& points) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    code ec{ error::success };
+    const auto& query = archive();
+
+    for (const auto& prevout: points)
+    {
+        if (stopping_)
+            return;
+
+        if (watch_count() >= btcd_options().maximum_filters)
+        {
+            ec = error::btcd::misc_error;
+            break;
+        }
+
+        const auto at = spent_watches_.try_emplace(prevout, outpoint_watch{});
+        if (at.second)
+        {
+            watching_legacy_.store(true, relaxed);
+            auto& sub = at.first->second;
+            sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
+            sub.spenders = query.get_spenders_history(prevout);
+        }
+    }
+
+    POST_BTCD(complete_notify_spent, ec);
+}
+
+void protocol_btcd::complete_notify_spent(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    monitor(false);
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        using namespace error::btcd;
+        send_error(translate(ec, internal_error));
+        return;
+    }
+
+    send_result({}, 4);
+}
+
+bool protocol_btcd::handle_stop_notify_spent(const code& ec,
+    btcd_interface::stop_notify_spent, const value_t& outpoints) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    chain::points points{};
+    if (btcd::filter_points(points, outpoints))
+    {
+        send_error(error::btcd::invalid_parameter);
+        return true;
+    }
+
+    POST_NOTIFY(do_stop_notify_spent, std::move(points));
+    send_result({}, 4);
+    return true;
+}
+
+void protocol_btcd::do_stop_notify_spent(const chain::points& points) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    for (const auto& prevout: points)
+        spent_watches_.erase(prevout);
 }
 
 bool protocol_btcd::handle_rescan_blocks(const code& ec,
@@ -516,8 +715,57 @@ void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
     if (at != matched.end())
         txs = serialize_matches(at->second);
 
+    // Legacy (notifyreceived) individual notifications; auto-arms spent-watches.
+    matches received{};
+    for (auto& [key, sub]: receive_watches_)
+    {
+        if (stopping_)
+            return;
+
+        const auto fault = match_addresses(received, sub, key, heights);
+        if (fault == database::error::query_canceled)
+            return;
+    }
+
+    std::vector<array_t> receive_notifications{};
+    const auto receive_at = received.find(height);
+    if (receive_at != received.end())
+        for (const auto& [position, hash]: receive_at->second)
+            if (const auto tx = query.get_transaction(query.to_tx(hash), true); tx)
+            {
+                arm_spent_watches(*tx, hash);
+                receive_notifications.push_back(
+                    serialize_legacy(*tx, header, height, position));
+            }
+
+    // Legacy (notifyspent, including auto-armed) one-shot notifications.
+    std::vector<array_t> spent_notifications{};
+    for (auto it = spent_watches_.begin(); it != spent_watches_.end();)
+    {
+        if (stopping_)
+            return;
+
+        matches spent{};
+        match_outpoints(spent, it->second, it->first, heights);
+        const auto spent_at = spent.find(height);
+        if (spent_at == spent.end() || spent_at->second.empty())
+        {
+            ++it;
+            continue;
+        }
+
+        for (const auto& [position, hash]: spent_at->second)
+            if (const auto tx = query.get_transaction(query.to_tx(hash), true); tx)
+                spent_notifications.push_back(
+                    serialize_legacy(*tx, header, height, position));
+
+        it = spent_watches_.erase(it);
+    }
+
     POST_BTCD(notify_connected, header, height,
-        emplace_shared<array_t>(std::move(txs)));
+        emplace_shared<array_t>(std::move(txs)),
+        emplace_shared<std::vector<array_t>>(std::move(receive_notifications)),
+        emplace_shared<std::vector<array_t>>(std::move(spent_notifications)));
 }
 
 void protocol_btcd::do_disconnected(node::header_t link_value) NOEXCEPT
@@ -526,6 +774,9 @@ void protocol_btcd::do_disconnected(node::header_t link_value) NOEXCEPT
 
     // Reset watch cursors, disconnected blocks invalidate the walks.
     for (auto& [key, sub]: address_watches_)
+        sub.cursor = {};
+
+    for (auto& [key, sub]: receive_watches_)
         sub.cursor = {};
 
     const database::header_link link{ link_value };
@@ -543,25 +794,36 @@ void protocol_btcd::do_disconnected(node::header_t link_value) NOEXCEPT
 }
 
 void protocol_btcd::notify_connected(const header_cptr& header,
-    size_t height, const array_ptr& txs) NOEXCEPT
+    size_t height, const array_ptr& txs, const legacy_ptr& received,
+    const legacy_ptr& redeemed) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    if (stopped() || !subscribed_blocks_.load(relaxed))
+    if (stopped())
         return;
 
-    // Elements are moved, as a braced initializer list always copies.
-    array_t connected{};
-    connected.emplace_back(encode_hash(header->get_hash()));
-    connected.emplace_back(height);
-    connected.emplace_back(header->timestamp());
-    send_notification("blockconnected", std::move(connected), 256);
+    // recvtx/redeemingtx (below), unlike blockconnected, don't need notifyblocks.
+    if (subscribed_blocks_.load(relaxed))
+    {
+        // Elements are moved, as a braced initializer list always copies.
+        array_t connected{};
+        connected.emplace_back(encode_hash(header->get_hash()));
+        connected.emplace_back(height);
+        connected.emplace_back(header->timestamp());
+        send_notification("blockconnected", std::move(connected), 256);
 
-    array_t filtered{};
-    filtered.emplace_back(height);
-    filtered.emplace_back(to_text(*header, chain::header::serialized_size()));
-    filtered.emplace_back(std::move(*txs));
-    send_notification("filteredblockconnected", std::move(filtered), 256);
+        array_t filtered{};
+        filtered.emplace_back(height);
+        filtered.emplace_back(to_text(*header, chain::header::serialized_size()));
+        filtered.emplace_back(std::move(*txs));
+        send_notification("filteredblockconnected", std::move(filtered), 256);
+    }
+
+    for (auto& params: *received)
+        send_notification("recvtx", std::move(params), 256);
+
+    for (auto& params: *redeemed)
+        send_notification("redeemingtx", std::move(params), 256);
 }
 
 void protocol_btcd::notify_disconnected(const header_cptr& header,
@@ -637,6 +899,58 @@ array_t protocol_btcd::serialize_matches(const matched_txs& txs) NOEXCEPT
     }
 
     return out;
+}
+
+// Mirrors real btcd's auto-registration of a spent-watch on a match.
+void protocol_btcd::arm_spent_watches(const chain::transaction& tx,
+    const hash_digest& hash) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    const auto& query = archive();
+    uint32_t index{};
+    for (const auto& out: *tx.outputs_ptr())
+    {
+        if (receive_watches_.contains(out->script().hash()))
+        {
+            const point prevout{ hash, index };
+            const auto at = spent_watches_.try_emplace(prevout, outpoint_watch{});
+            if (at.second)
+            {
+                auto& sub = at.first->second;
+                sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
+                sub.spenders = query.get_spenders_history(prevout);
+            }
+        }
+
+        ++index;
+    }
+}
+
+// [txHex, blockDetails] wire shape of a real btcd recvtx/redeemingtx.
+array_t protocol_btcd::serialize_legacy(const chain::transaction& tx,
+    const header_cptr& header, size_t height, size_t position) NOEXCEPT
+{
+    constexpr auto witness = true;
+    return array_t
+    {
+        to_text(tx, tx.serialized_size(witness), witness),
+        object_t
+        {
+            { "height", height },
+            { "hash", encode_hash(header->get_hash()) },
+            { "index", position },
+            { "time", header->timestamp() }
+        }
+    };
+}
+
+// Combined DoS budget across all watch-list maps.
+size_t protocol_btcd::watch_count() const NOEXCEPT
+{
+    return ceilinged_add(ceilinged_add(ceilinged_add(
+        address_watches_.size(), outpoint_watches_.size()),
+        receive_watches_.size()), spent_watches_.size());
 }
 
 BC_POP_WARNING()
