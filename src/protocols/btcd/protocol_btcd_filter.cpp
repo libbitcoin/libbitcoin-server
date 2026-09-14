@@ -940,7 +940,6 @@ code protocol_btcd::arm_spent_watches(bool& paid, const chain::transaction& tx,
             {
                 auto& sub = at.first->second;
                 sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-                sub.spenders = query.get_spenders_history(prevout);
             }
         }
 
