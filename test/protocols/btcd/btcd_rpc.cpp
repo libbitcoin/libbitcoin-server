@@ -631,6 +631,24 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__recvtx__address_match__delivered_without_notifybl
     BOOST_REQUIRE_EQUAL(as_text(params[1].at("hash")), encode_hash(test::mock_block10.hash()));
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__spent_in_arming_block__delivered)
+{
+    // The receive match arms the spent watch, and the spender is in that block.
+    rpc("notifyreceived", (boost_format(R"([["%1%"]])") % found_address).str());
+
+    BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
+
+    notify(node::chase::organized, node::header_t{ 10 });
+
+    const auto recvtx = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
+
+    const auto redeemingtx = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(redeemingtx.at("method")), "redeemingtx");
+    BOOST_REQUIRE_EQUAL(redeemingtx.at("params").as_array()[1].at("height").as_int64(), 10);
+}
+
 BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__notified_outpoint_spent__delivered_once)
 {
     // The paying transaction in mock_block10 spends block1's coinbase.

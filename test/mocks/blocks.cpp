@@ -926,4 +926,92 @@ const transaction tx1c
     0x00            // locktime (not absolute locked)
 };
 
+// Pays found_address, spent by a later transaction in the same block.
+const transaction mock_tx13
+{
+    0x06,
+    inputs
+    {
+        input
+        {
+            point{ block3.transactions_ptr()->front()->hash(false), 0x00 },
+            script{},
+            witness{},
+            0x07
+        }
+    },
+    outputs
+    {
+        output
+        {
+            0x09,
+            // "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM"
+            script::to_pay_key_hash_pattern({ 0x02 })
+        }
+    },
+    0x0a
+};
+const block mock_block13
+{
+    header
+    {
+        0x31323334,
+        block9_hash,
+        hash_digest{ 0x13, 0xbb },
+        0x41424344,
+        0x51525354,
+        0x61626364
+    },
+    transactions
+    {
+        transaction
+        {
+            0x01,
+            inputs
+            {
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0x02
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x04,
+                    script::to_pay_key_hash_pattern({ 0x01 })
+                }
+            },
+            0x05
+        },
+        mock_tx13,
+        transaction
+        {
+            0x0b,
+            inputs
+            {
+                input
+                {
+                    point{ mock_tx13.hash(false), 0x00 },
+                    script{},
+                    witness{},
+                    0x0c
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x0e,
+                    script::to_pay_script_hash_pattern({ 0x04 })
+                }
+            },
+            0x0f
+        }
+    }
+};
+
 } // namespace test

@@ -315,7 +315,6 @@ void protocol_btcd::do_notify_spent(const chain::points& points) NOEXCEPT
             watching_legacy_.store(true, relaxed);
             auto& sub = at.first->second;
             sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-            sub.spenders = query.get_spenders_history(prevout);
         }
     }
 

@@ -88,6 +88,9 @@ extern const system::chain::block mock_block10;
 extern const system::chain::block mock_block11;
 extern const system::chain::block mock_block12;
 
+extern const system::chain::transaction mock_tx13;
+extern const system::chain::block mock_block13;
+
 extern const system::chain::block mock_block_a;
 extern const system::chain::block block1a;
 extern const system::chain::block block2a;
