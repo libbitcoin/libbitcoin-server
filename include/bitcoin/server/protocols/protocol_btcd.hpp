@@ -224,8 +224,8 @@ protected:
     /// Legacy (notifyreceived/notifyspent) individual notifications.
     /// -----------------------------------------------------------------------
 
-    // Arms a one-shot spent-watch on the output a receive watch matched.
-    code arm_spent_watches(const system::chain::transaction& tx,
+    // Arms a one-shot spent-watch on each output a receive watch matched.
+    code arm_spent_watches(bool& paid, const system::chain::transaction& tx,
         const hash_digest& hash) NOEXCEPT;
 
     // Drops the channel on auto-armed spent-watch overflow.
