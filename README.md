@@ -1,9 +1,10 @@
 [![Build Status](https://github.com/libbitcoin/libbitcoin-server/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/libbitcoin/libbitcoin-server/actions/workflows/ci.yml?branch=master)
-[![Coverage Status](https://coveralls.io/repos/github/libbitcoin/libbitcoin-server/badge.svg?branch=master)](https://coveralls.io/github/libbitcoin/libbitcoin-server?branch=master)
+
+[![Coverage Status](https://img.shields.io/coveralls/github/libbitcoin/libbitcoin-server/master)](https://coveralls.io/r/libbitcoin/libbitcoin-server)
 
 # libbitcoin-server
 
-*The high performance Bitcoin full node server based on [libbitcoin-node](https://github.com/libbitcoin/libbitcoin-node), [libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system), [libbitcoin-database](https://github.com/libbitcoin/libbitcoin-database), and [libbitcoin-network](https://github.com/libbitcoin/libbitcoin-network).*
+*The high performance Bitcoin full node server based on [libbitcoin-system](https://github.com/libbitcoin/libbitcoin-system), [libbitcoin-database](https://github.com/libbitcoin/libbitcoin-database), and [libbitcoin-network](https://github.com/libbitcoin/libbitcoin-network), and [libbitcoin-node](https://github.com/libbitcoin/libbitcoin-node).*
 
 <div align="center">
 
