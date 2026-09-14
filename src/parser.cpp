@@ -85,6 +85,10 @@ parser::parser(system::chain::selection context,
     ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
     ////configured.server.bitcoind_zmq.binds.emplace_back(asio::address{}, 8680_u16);
 
+    // node
+
+    configured.node.batch_signatures = 1'000'000;
+
     // database
 
     configured.database.turbo = true;
