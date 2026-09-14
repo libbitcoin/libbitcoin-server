@@ -51,7 +51,6 @@ std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT
         "ijklmnopqrstuvwxyzABCDEFGH`#\"\\ "
     };
 
-    // The checksum character set (as bech32).
     static const std::string checksum_charset
     {
         "qpzry9x8gf2tvdw0s3jn54khce6mua7l"

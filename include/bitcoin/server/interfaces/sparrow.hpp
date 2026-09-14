@@ -33,7 +33,7 @@ struct sparrow_methods
 {
     static constexpr std::tuple methods
     {
-        /// Block statistics (as the bitcoind getblockstats subset).
+        /// Block statistics.
         method<"blockchain.block.stats", number_t>{ "height" },
 
         /// Silent payment (bip352) scanning, one subscription per address.

@@ -124,8 +124,8 @@ void protocol_btcd::handle_receive_post(const code& ec,
 
     const auto& message = post->body().get<request>().message;
 
-    // authenticate is websocket-only (as btcd): excluded from the post
-    // surface, silently deferring to the terminal miss (method not found).
+    // authenticate is websocket-only: excluded from the post surface,
+    // silently deferring to the terminal miss (method not found).
     if (message.method == btcd_interface::authenticate::name)
         return;
 
@@ -277,7 +277,7 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
 // ----------------------------------------------------------------------------
 // notify_received/notify_spent bodies live in protocol_btcd_filter.cpp.
 
-// Implemented only for the empty addresses/outpoints case (as btcd).
+// Implemented only for the empty addresses/outpoints case.
 // This is the call btcwallet makes to bootstrap its sync starting point.
 bool protocol_btcd::handle_rescan(const code& ec,
     btcd_interface::rescan, const std::string& beginblock,

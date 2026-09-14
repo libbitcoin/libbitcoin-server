@@ -1138,8 +1138,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchainstates__ten_block_store__single_valid
     BOOST_REQUIRE(states.at(0).at("validated").as_bool());
 }
 
-// Empty until the zeromq service is introduced and configured (as bitcoind
-// with no publishers configured).
+// Empty until the zeromq service is introduced and configured.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getzmqnotifications__no_publishers__empty)
 {
     const auto response = rpc("getzmqnotifications");
@@ -1556,7 +1555,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__unknown_block__not_fou
 
 // scanblocks
 
-// The fixture runs with block filters disabled (as getblockfilter).
+// The fixture runs with block filters disabled.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__filters_disabled__error)
 {
     const auto response = rpc("scanblocks", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");

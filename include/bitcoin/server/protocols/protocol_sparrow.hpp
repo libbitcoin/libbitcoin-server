@@ -37,7 +37,7 @@ public:
     using sparrow_interface = interface::sparrow;
     using sparrow_dispatcher = network::rpc::dispatcher<sparrow_interface>;
 
-    /// The silent payment (bip352) protocol version served (as frigate).
+    /// The silent payment (bip352) protocol version served.
     static constexpr uint32_t silent_payments_version{ 0 };
 
     inline protocol_sparrow(const auto& session,

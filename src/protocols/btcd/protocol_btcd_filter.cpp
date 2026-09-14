@@ -671,7 +671,7 @@ void protocol_btcd::complete_search_raw_transactions(const code& ec,
 // TODO: the matchers query the store once per watch, so cost is O(watches)
 // TODO: per block, per channel, against a maximum_filters ceiling. Invert to
 // TODO: a scan of the block's scripts and points against the watch maps, for
-// TODO: O(block) independent of the watch count (as btcd).
+// TODO: O(block) independent of the watch count.
 void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());

@@ -963,9 +963,6 @@ bool protocol_bitcoind_blockchain::handle_load_tx_out_set(const code& ec,
     return true;
 }
 
-// The proof is a serialized merkle block (as the p2p merkleblock message and
-// bitcoind's gettxoutproof). The block defaults to that confirming the first
-// txid; libbitcoin archives all txs, so no txindex catch-up is needed.
 bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
     rpc_interface::get_tx_out_proof, const array_t& txids,
     const std::string& blockhash) NOEXCEPT
@@ -1316,7 +1313,7 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
             return true;
         }
 
-        // Confirmed spends are unconditional (as bitcoind, from undo data).
+        // Confirmed spends are unconditional.
         if (!query.populate_without_metadata(*block))
         {
             send_error(error::bitcoind::internal_error);

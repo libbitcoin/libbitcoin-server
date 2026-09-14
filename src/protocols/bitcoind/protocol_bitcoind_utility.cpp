@@ -369,7 +369,7 @@ bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
         return true;
     }
 
-    // "unset" selects the default mode (as bitcoind, case insensitive).
+    // "unset" selects the default mode.
     using mode_t = node::estimator::mode;
     const auto lower = ascii_to_lower(estimate_mode);
     const auto mode =

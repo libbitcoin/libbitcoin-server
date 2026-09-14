@@ -389,8 +389,8 @@ bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     return true;
 }
 
-// Byte counters are not tracked (as the btcd endpoint reports). There is no
-// upload target, which is the shape bitcoind reports for a disabled target.
+// Byte counters are not tracked. There is no upload target, which is the shape
+// bitcoind reports for a disabled target.
 bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     rpc_interface::get_net_totals) NOEXCEPT
 {

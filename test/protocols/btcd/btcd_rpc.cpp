@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__no_credential_configured__unauthori
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__method_not_found)
 {
-    // authenticate is websocket-only (as btcd): not part of the post surface.
+    // authenticate is websocket-only, not part of the post surface.
     const auto response = http_rpc("authenticate", R"(["user","pass"])");
     REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
     BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), method_not_found.value());
@@ -753,7 +753,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__method_not_found)
 {
     BOOST_REQUIRE_EQUAL(rpc_error("nosuchmethod"), method_not_found.value());
 
-    // The connection survives an unknown method (as btcd).
+    // The connection survives an unknown method.
     const auto follow_up = rpc("session");
     REQUIRE_NO_THROW_TRUE(follow_up.at("result").is_object());
 }
@@ -920,7 +920,7 @@ BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__already_authenticated__unauthorize
 {
     BOOST_REQUIRE(authenticate());
 
-    // authenticate is invalid once authorization is established (as btcd).
+    // authenticate is invalid once authorization is established.
     const auto request = R"(["%1%","%2%"])";
     const auto result = rpc_error("authenticate", (boost_format(request) % BTCD_TEST_USERNAME % BTCD_TEST_PASSWORD).str());
     BOOST_REQUIRE_EQUAL(result, unauthorized.value());
