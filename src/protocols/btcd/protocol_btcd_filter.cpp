@@ -134,11 +134,7 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
         // Prime the spender set to present, so matching reports new only.
         const auto at = outpoint_watches_.try_emplace(prevout, outpoint_watch{});
         if (at.second)
-        {
-            auto& sub = at.first->second;
-            sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-            sub.spenders = query.get_spenders_history(prevout);
-        }
+            at.first->second.spenders = query.get_spenders_history(prevout);
     }
 
     POST_BTCD(complete_load_tx_filter, ec);
@@ -296,7 +292,6 @@ void protocol_btcd::do_notify_spent(const chain::points& points) NOEXCEPT
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     code ec{ error::success };
-    const auto& query = archive();
 
     for (const auto& prevout: points)
     {
@@ -309,13 +304,8 @@ void protocol_btcd::do_notify_spent(const chain::points& points) NOEXCEPT
             break;
         }
 
-        const auto at = spent_watches_.try_emplace(prevout, outpoint_watch{});
-        if (at.second)
-        {
+        if (spent_watches_.try_emplace(prevout, outpoint_watch{}).second)
             watching_legacy_.store(true, relaxed);
-            auto& sub = at.first->second;
-            sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-        }
     }
 
     POST_BTCD(complete_notify_spent, ec);
@@ -924,9 +914,7 @@ void protocol_btcd::match_outpoints(matches& out, outpoint_watch& sub,
     const point& prevout, const sizes& heights) NOEXCEPT
 {
     outpoint_watch next{};
-    const auto& query = archive();
-    next.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-    next.spenders = query.get_spenders_history(prevout);
+    next.spenders = archive().get_spenders_history(prevout);
 
     for (const auto& spender: difference(next.spenders, sub.spenders))
         if (spender.confirmed() && heights.contains(spender.tx.height()))
@@ -960,7 +948,6 @@ code protocol_btcd::arm_spent_watches(bool& paid, const chain::transaction& tx,
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     paid = false;
-    const auto& query = archive();
     const auto maximum = btcd_options().maximum_filters;
     uint32_t index{};
     for (const auto& out: *tx.outputs_ptr())
@@ -972,13 +959,7 @@ code protocol_btcd::arm_spent_watches(bool& paid, const chain::transaction& tx,
             if (watch_count() >= maximum)
                 return error::btcd::misc_error;
 
-            const point prevout{ hash, index };
-            const auto at = spent_watches_.try_emplace(prevout, outpoint_watch{});
-            if (at.second)
-            {
-                auto& sub = at.first->second;
-                sub.outpoint = query.get_tx_history(query.to_tx(prevout.hash()));
-            }
+            spent_watches_.try_emplace(point{ hash, index }, outpoint_watch{});
         }
 
         ++index;

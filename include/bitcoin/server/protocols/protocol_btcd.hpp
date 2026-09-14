@@ -167,7 +167,6 @@ protected:
 
     struct outpoint_watch final
     {
-        database::history outpoint{};
         database::histories spenders{};
     };
 
