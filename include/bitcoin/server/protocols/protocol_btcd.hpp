@@ -215,6 +215,15 @@ protected:
     using matches = std::map<size_t, matched_txs>;
     using sizes = std::set<size_t>;
 
+    code match_filters(network::rpc::array_t& out, size_t height,
+        const sizes& heights) NOEXCEPT;
+    code match_receives(std::vector<network::rpc::array_t>& out,
+        const header_cptr& header, size_t height,
+        const sizes& heights) NOEXCEPT;
+    code match_spends(std::vector<network::rpc::array_t>& out,
+        const header_cptr& header, size_t height,
+        const sizes& heights) NOEXCEPT;
+
     code match_addresses(matches& out, address_watch& sub,
         const hash_digest& key, const sizes& heights) NOEXCEPT;
     void match_outpoints(matches& out, outpoint_watch& sub,

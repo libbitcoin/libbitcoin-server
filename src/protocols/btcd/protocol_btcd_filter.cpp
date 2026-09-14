@@ -693,92 +693,131 @@ void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
     if (!header)
         return;
 
-    // Match the watch-list against the connected block (cursored delta).
-    // Cursors advance here, so this stays on the notification strand.
-    matches matched{};
+    // Cursors advance in the matchers, so this stays on the notification
+    // strand, and receives are matched first, as each arms a spent-watch.
     const sizes heights{ height };
-    for (auto& [key, sub]: address_watches_)
-    {
-        if (stopping_)
-            return;
-
-        const auto fault = match_addresses(matched, sub, key, heights);
-        if (fault == database::error::query_canceled)
-            return;
-    }
-
-    for (auto& [prevout, sub]: outpoint_watches_)
-    {
-        if (stopping_)
-            return;
-
-        match_outpoints(matched, sub, prevout, heights);
-    }
-
     array_t txs{};
-    const auto at = matched.find(height);
-    if (at != matched.end())
-        txs = serialize_matches(at->second);
-
-    // Legacy (notifyreceived) individual notifications; auto-arms spent-watches.
-    matches received{};
-    for (auto& [key, sub]: receive_watches_)
-    {
-        if (stopping_)
-            return;
-
-        const auto fault = match_addresses(received, sub, key, heights);
-        if (fault == database::error::query_canceled)
-            return;
-    }
+    if (match_filters(txs, height, heights))
+        return;
 
     std::vector<array_t> receive_notifications{};
-    const auto receive_at = received.find(height);
-    if (receive_at != received.end())
-        for (const auto& [position, hash]: receive_at->second)
-            if (const auto tx = query.get_transaction(query.to_tx(hash), true); tx)
-            {
-                // The address walk matches spends, which are not receives.
-                bool paid{};
-                if (const auto fault = arm_spent_watches(paid, *tx, hash))
-                {
-                    POST_BTCD(complete_overflow, fault);
-                    return;
-                }
-
-                if (paid)
-                    receive_notifications.push_back(
-                        serialize_legacy(*tx, header, height, position));
-            }
-
-    // Legacy (notifyspent, including auto-armed) one-shot notifications.
-    std::vector<array_t> spent_notifications{};
-    for (auto it = spent_watches_.begin(); it != spent_watches_.end();)
+    if (const auto fault = match_receives(receive_notifications, header, height,
+        heights))
     {
-        if (stopping_)
-            return;
+        if (fault != database::error::query_canceled)
+            POST_BTCD(complete_overflow, fault);
 
-        matches spent{};
-        match_outpoints(spent, it->second, it->first, heights);
-        const auto spent_at = spent.find(height);
-        if (spent_at == spent.end() || spent_at->second.empty())
-        {
-            ++it;
-            continue;
-        }
-
-        for (const auto& [position, hash]: spent_at->second)
-            if (const auto tx = query.get_transaction(query.to_tx(hash), true); tx)
-                spent_notifications.push_back(
-                    serialize_legacy(*tx, header, height, position));
-
-        it = spent_watches_.erase(it);
+        return;
     }
+
+    std::vector<array_t> spent_notifications{};
+    if (match_spends(spent_notifications, header, height, heights))
+        return;
 
     POST_BTCD(notify_connected, header, height,
         emplace_shared<array_t>(std::move(txs)),
         emplace_shared<std::vector<array_t>>(std::move(receive_notifications)),
         emplace_shared<std::vector<array_t>>(std::move(spent_notifications)));
+}
+
+// Filter (loadtxfilter) block-level notification.
+code protocol_btcd::match_filters(array_t& out, size_t height,
+    const sizes& heights) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    matches matched{};
+    for (auto& [key, sub]: address_watches_)
+    {
+        if (stopping_)
+            return database::error::query_canceled;
+
+        const auto fault = match_addresses(matched, sub, key, heights);
+        if (fault == database::error::query_canceled)
+            return fault;
+    }
+
+    for (auto& [prevout, sub]: outpoint_watches_)
+    {
+        if (stopping_)
+            return database::error::query_canceled;
+
+        match_outpoints(matched, sub, prevout, heights);
+    }
+
+    const auto at = matched.find(height);
+    if (at != matched.end())
+        out = serialize_matches(at->second);
+
+    return error::success;
+}
+
+// Legacy (notifyreceived) individual notifications; auto-arms spent-watches.
+code protocol_btcd::match_receives(std::vector<array_t>& out,
+    const header_cptr& header, size_t height, const sizes& heights) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    matches received{};
+    for (auto& [key, sub]: receive_watches_)
+    {
+        if (stopping_)
+            return database::error::query_canceled;
+
+        const auto fault = match_addresses(received, sub, key, heights);
+        if (fault == database::error::query_canceled)
+            return fault;
+    }
+
+    const auto& query = archive();
+    const auto at = received.find(height);
+    if (at == received.end())
+        return error::success;
+
+    for (const auto& [position, hash]: at->second)
+        if (const auto tx = query.get_transaction(query.to_tx(hash), true); tx)
+        {
+            // The address walk matches spends, which are not receives.
+            bool paid{};
+            if (const auto fault = arm_spent_watches(paid, *tx, hash))
+                return fault;
+
+            if (paid)
+                out.push_back(serialize_legacy(*tx, header, height, position));
+        }
+
+    return error::success;
+}
+
+// Legacy (notifyspent, including auto-armed) one-shot notifications.
+code protocol_btcd::match_spends(std::vector<array_t>& out,
+    const header_cptr& header, size_t height, const sizes& heights) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    const auto& query = archive();
+    for (auto it = spent_watches_.begin(); it != spent_watches_.end();)
+    {
+        if (stopping_)
+            return database::error::query_canceled;
+
+        matches spent{};
+        match_outpoints(spent, it->second, it->first, heights);
+        const auto at = spent.find(height);
+        if (at == spent.end() || at->second.empty())
+        {
+            ++it;
+            continue;
+        }
+
+        for (const auto& [position, hash]: at->second)
+            if (const auto tx = query.get_transaction(query.to_tx(hash), true); tx)
+                out.push_back(serialize_legacy(*tx, header, height, position));
+
+        it = spent_watches_.erase(it);
+    }
+
+    return error::success;
 }
 
 void protocol_btcd::do_disconnected(node::header_t link_value) NOEXCEPT
