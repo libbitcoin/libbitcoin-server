@@ -668,6 +668,10 @@ void protocol_btcd::complete_search_raw_transactions(const code& ec,
 // Notification event handlers.
 // ----------------------------------------------------------------------------
 
+// TODO: the matchers query the store once per watch, so cost is O(watches)
+// TODO: per block, per channel, against a maximum_filters ceiling. Invert to
+// TODO: a scan of the block's scripts and points against the watch maps, for
+// TODO: O(block) independent of the watch count (as btcd).
 void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
@@ -910,6 +914,8 @@ code protocol_btcd::match_addresses(matches& out, address_watch& sub,
 }
 
 // Called from notification strand (live) and parallel (rescan).
+// TODO: uncursored, unlike match_addresses, so the full spender set is read
+// TODO: and sorted on each block.
 void protocol_btcd::match_outpoints(matches& out, outpoint_watch& sub,
     const point& prevout, const sizes& heights) NOEXCEPT
 {
