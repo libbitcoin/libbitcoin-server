@@ -268,6 +268,9 @@ void protocol_btcd::do_stop_notify_received(const hashes& keys) NOEXCEPT
 
     for (const auto& key: keys)
         receive_watches_.erase(key);
+
+    if (receive_watches_.empty() && spent_watches_.empty())
+        watching_legacy_.store(false, relaxed);
 }
 
 bool protocol_btcd::handle_notify_spent(const code& ec,
@@ -361,6 +364,9 @@ void protocol_btcd::do_stop_notify_spent(const chain::points& points) NOEXCEPT
 
     for (const auto& prevout: points)
         spent_watches_.erase(prevout);
+
+    if (receive_watches_.empty() && spent_watches_.empty())
+        watching_legacy_.store(false, relaxed);
 }
 
 bool protocol_btcd::handle_rescan_blocks(const code& ec,
