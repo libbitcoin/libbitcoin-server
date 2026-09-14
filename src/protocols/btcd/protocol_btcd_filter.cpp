@@ -733,7 +733,12 @@ void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
         for (const auto& [position, hash]: receive_at->second)
             if (const auto tx = query.get_transaction(query.to_tx(hash), true); tx)
             {
-                arm_spent_watches(*tx, hash);
+                if (const auto fault = arm_spent_watches(*tx, hash))
+                {
+                    POST_BTCD(complete_overflow, fault);
+                    return;
+                }
+
                 receive_notifications.push_back(
                     serialize_legacy(*tx, header, height, position));
             }
@@ -902,17 +907,21 @@ array_t protocol_btcd::serialize_matches(const matched_txs& txs) NOEXCEPT
 }
 
 // Mirrors real btcd's auto-registration of a spent-watch on a match.
-void protocol_btcd::arm_spent_watches(const chain::transaction& tx,
+code protocol_btcd::arm_spent_watches(const chain::transaction& tx,
     const hash_digest& hash) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
     const auto& query = archive();
+    const auto maximum = btcd_options().maximum_filters;
     uint32_t index{};
     for (const auto& out: *tx.outputs_ptr())
     {
         if (receive_watches_.contains(out->script().hash()))
         {
+            if (watch_count() >= maximum)
+                return error::btcd::misc_error;
+
             const point prevout{ hash, index };
             const auto at = spent_watches_.try_emplace(prevout, outpoint_watch{});
             if (at.second)
@@ -925,6 +934,14 @@ void protocol_btcd::arm_spent_watches(const chain::transaction& tx,
 
         ++index;
     }
+
+    return error::success;
+}
+
+void protocol_btcd::complete_overflow(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    stop(ec);
 }
 
 // [txHex, blockDetails] wire shape of a real btcd recvtx/redeemingtx.

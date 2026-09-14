@@ -225,8 +225,11 @@ protected:
     /// -----------------------------------------------------------------------
 
     // Arms a one-shot spent-watch on the output a receive watch matched.
-    void arm_spent_watches(const system::chain::transaction& tx,
+    code arm_spent_watches(const system::chain::transaction& tx,
         const hash_digest& hash) NOEXCEPT;
+
+    // Drops the channel on auto-armed spent-watch overflow.
+    void complete_overflow(const code& ec) NOEXCEPT;
 
     // Builds [txHex, blockDetails] params for a recvtx/redeemingtx.
     network::rpc::array_t serialize_legacy(
