@@ -51,12 +51,17 @@ constexpr bool btcd_unserved(const std::string_view& name) NOEXCEPT
 // -----------------------------------------------------------------------------
 
 // These are dispatchable but answer not_implemented (see protocol_btcd).
+// No mempool in v4, so unconfirmed-tx notification has no substitute.
 static_assert(btcd_unserved("notifynewtransactions"));
 static_assert(btcd_unserved("stopnotifynewtransactions"));
-static_assert(btcd_unserved("notifyreceived"));
-static_assert(btcd_unserved("stopnotifyreceived"));
-static_assert(btcd_unserved("notifyspent"));
-static_assert(btcd_unserved("stopnotifyspent"));
+
+// notifyreceived/notifyspent are served at confirmed-only fidelity (no
+// mempool in v4), reusing loadtxfilter's cursor-based matching -- see
+// protocol_btcd_filter.cpp.
+static_assert(btcd_served("notifyreceived"));
+static_assert(btcd_served("stopnotifyreceived"));
+static_assert(btcd_served("notifyspent"));
+static_assert(btcd_served("stopnotifyspent"));
 
 // rescan is served for the empty addresses/outpoints form (btcwallet sync
 // bootstrap), so it is published despite its group.
@@ -77,4 +82,5 @@ static_assert(btcd_methods::names ==
     "version "
     "notifyblocks stopnotifyblocks "
     "loadtxfilter rescanblocks "
+    "notifyreceived stopnotifyreceived notifyspent stopnotifyspent "
     "rescan");
