@@ -64,11 +64,11 @@ struct btcd_methods
         method<"loadtxfilter", boolean_t, value_t, value_t>{ "reload", "addresses", "outpoints" },
         method<"rescanblocks", value_t>{ "blockhashes" },
 
-        /// Deprecated.
-        method<"notifyreceived", value_t>{ unimplemented, "addresses" },
-        method<"stopnotifyreceived", value_t>{ unimplemented, "addresses" },
-        method<"notifyspent", value_t>{ unimplemented, "outpoints" },
-        method<"stopnotifyspent", value_t>{ unimplemented, "outpoints" },
+        /// Deprecated (confirmed matching only, no mempool in v4).
+        method<"notifyreceived", value_t>{ "addresses" },
+        method<"stopnotifyreceived", value_t>{ "addresses" },
+        method<"notifyspent", value_t>{ "outpoints" },
+        method<"stopnotifyspent", value_t>{ "outpoints" },
         method<"rescan", string_t, value_t, value_t, nullopt<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
     };
 
