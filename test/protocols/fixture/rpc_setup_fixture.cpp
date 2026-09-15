@@ -40,7 +40,7 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
                 config_.database.outs.buckets = 0;
 
             config_.node.delay_inbound = false;
-            config_.node.minimum_fee_rate = 99.0;
+            config_.node.minimum_fee_rate = 0.0;
             config_.network.inbound.connections = 0;
             config_.network.outbound.connections = 0;
 

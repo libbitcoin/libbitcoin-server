@@ -57,7 +57,7 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     esplora.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.delay_inbound = false;
-    node_settings.minimum_fee_rate = 99.0;
+    node_settings.minimum_fee_rate = 0.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
 
