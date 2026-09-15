@@ -59,8 +59,27 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
         return;
     }
 
-    const auto fault = broadcast_tx(tx);
-    if (!fault)
+    // A single tx is the minimal package.
+    constexpr auto test = false;
+    submit(to_shared(chain::transaction_cptrs{ tx }),
+        test, BIND(handle_submit_tx, _1, _2, tx));
+}
+
+void protocol_electrum::handle_submit_tx(const code& ec, size_t,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    POST(complete_submit_tx, ec, tx);
+}
+
+void protocol_electrum::complete_submit_tx(const code& ec,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (!ec)
     {
         send_result(encode_hash(tx->hash(false)), 42);
         return;
@@ -68,12 +87,12 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_result(fault.message(), 42);
+        send_result(ec.message(), 42);
         return;
     }
 
     using namespace error::electrum;
-    send_code(translate(fault, daemon_error));
+    send_code(translate(ec, daemon_error));
 }
 
 void protocol_electrum::handle_blockchain_transaction_broadcast_package(
@@ -111,10 +130,8 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
         return;
     }
 
-    size_t size{};
-    object_t result{ { "success", true }, { "errors", array_t{} } };
-    auto& success = std::get<bool>(result["success"].value());
-    auto& errors = std::get<array_t>(result["errors"].value());
+    chain::transaction_cptrs txs{};
+    txs.reserve(txs_hex.size());
 
     for (const auto& tx_hex: txs_hex)
     {
@@ -132,22 +149,12 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
             return;
         }
 
-        // TODO: this handles each transaction independently.
-        const auto fault = broadcast_tx(tx);
-        if (fault)
-        {
-            const auto message = fault.message();
-            size += message.size();
-            errors.push_back(object_t
-            {
-                { "txid", encode_hash(tx->hash(false)) },
-                { "error", message }
-            });
-        }
+        txs.push_back(tx);
     }
 
-    success = errors.empty();
-    send_result(result, 42 + size);
+    constexpr auto test = false;
+    const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
+    submit(package, test, BIND(handle_submit_package, _1, _2, package));
 }
 
 void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
@@ -176,8 +183,8 @@ void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
         return;
     }
 
-    array_t out{};
-    out.reserve(txs_hex.size());
+    chain::transaction_cptrs txs{};
+    txs.reserve(txs_hex.size());
 
     for (const auto& tx_hex: txs_hex)
     {
@@ -188,24 +195,50 @@ void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
         }
 
         read::base16::copy hexer{ std::get<string_t>(tx_hex.value()) };
-        const chain::transaction tx{ hexer, true };
-        if (!tx.is_valid() || !hexer.is_exhausted())
+        const auto tx = to_shared<chain::transaction>(hexer, true);
+        if (!tx->is_valid() || !hexer.is_exhausted())
         {
             send_code(error::electrum::bad_request);
             return;
         }
 
-        // There is no tx pool, so acceptance is validation against the chain.
-        const auto fault = validate_tx(tx);
+        txs.push_back(tx);
+    }
+
+    constexpr auto test = true;
+    const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
+    submit(package, test, BIND(handle_test_package, _1, _2, package));
+}
+
+void protocol_electrum::handle_test_package(const code& ec, size_t,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    POST(complete_test_package, ec, txs);
+}
+
+// The package is accepted as a whole, so its code applies to each of its txs.
+void protocol_electrum::complete_test_package(const code& ec,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    array_t out{};
+    out.reserve(txs->size());
+
+    for (const auto& tx: *txs)
+    {
         object_t value
         {
-            { "txid", encode_hash(tx.hash(false)) },
-            { "wtxid", encode_hash(tx.hash(true)) },
-            { "allowed", !fault }
+            { "txid", encode_hash(tx->hash(false)) },
+            { "wtxid", encode_hash(tx->hash(true)) },
+            { "allowed", !ec }
         };
 
-        if (fault)
-            value.emplace("reason", fault.message());
+        if (ec)
+            value.emplace("reason", ec.message());
 
         out.emplace_back(std::move(value));
     }
@@ -449,35 +482,41 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
 // utility
 // ----------------------------------------------------------------------------
 
-code protocol_electrum::validate_tx(
-    const chain::transaction& tx) const NOEXCEPT
+void protocol_electrum::handle_submit_package(const code& ec, size_t index,
+    const chain::transactions_cptr& txs) NOEXCEPT
 {
-    const auto& query = archive();
-    const auto& settings = system_settings();
-    const auto link = query.to_confirmed(query.get_top_confirmed());
-    const auto key = query.get_header_key(link);
-    const auto state = query.get_confirmed_chain_state(settings, key);
-
-    // The store always has chain state for the confirmed top.
-    if (!state)
-        return database::error::integrity;
-
-    // The context of the next block, in which a pool tx would confirm.
-    const auto pool = chain::chain_state{ *state, settings }.context();
-    return node::validate_transaction(tx, query, pool);
+    POST(complete_submit_package, ec, index, txs);
 }
 
-code protocol_electrum::broadcast_tx(
-    const chain::transaction::cptr& tx) NOEXCEPT
+// The package is accepted as a whole, so a failure is reported against the one
+// tx that caused it, and the others are neither accepted nor in error.
+void protocol_electrum::complete_submit_package(const code& ec, size_t index,
+    const chain::transactions_cptr& txs) NOEXCEPT
 {
-    if (const auto ec = validate_tx(*tx))
-        return ec;
+    BC_ASSERT(stranded());
 
-    BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
+    if (stopped())
+        return;
 
-    // There is no tx pool, so hold it for the client that broadcast it.
-    retain_tx(tx);
-    return error::success;
+    array_t errors{};
+    size_t size{};
+
+    if (ec)
+    {
+        auto message = ec.message();
+        size = message.size();
+        errors.push_back(object_t
+        {
+            { "txid", encode_hash(txs->at(index)->hash(false)) },
+            { "error", std::move(message) }
+        });
+    }
+
+    send_result(object_t
+    {
+        { "success", !ec },
+        { "errors", std::move(errors) }
+    }, 42 + size);
 }
 
 // A retained tx is unconfirmed, so carries no block context.

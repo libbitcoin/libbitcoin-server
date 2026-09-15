@@ -49,6 +49,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
             electrum.connections = 1;
             electrum.inactivity_minutes = 1;
             config.node.fee_estimate_horizon = 8;
+            config.node.currency_window_minutes = 0;
 
             if (configure)
                 configure(config);

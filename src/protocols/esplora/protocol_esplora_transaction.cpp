@@ -426,35 +426,6 @@ bool protocol_esplora::handle_get_tx_outspends(const code& ec,
 // Broadcast.
 // ----------------------------------------------------------------------------
 
-code protocol_esplora::validate_tx(
-    const chain::transaction& tx) const NOEXCEPT
-{
-    const auto& query = archive();
-    const auto& settings = system_settings();
-    const auto link = query.to_confirmed(query.get_top_confirmed());
-    const auto key = query.get_header_key(link);
-    const auto state = query.get_confirmed_chain_state(settings, key);
-
-    // The store always has chain state for the confirmed top.
-    if (!state)
-        return database::error::integrity;
-
-    // The context of the next block, in which a pool tx would confirm.
-    const auto pool = chain::chain_state{ *state, settings }.context();
-    return node::validate_transaction(tx, query, pool);
-}
-
-code protocol_esplora::broadcast_tx(
-    const chain::transaction::cptr& tx) NOEXCEPT
-{
-    if (const auto ec = validate_tx(*tx))
-        return ec;
-
-    BROADCAST(network::messages::peer::transaction,
-        to_shared<network::messages::peer::transaction>(tx));
-    return error::success;
-}
-
 bool protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
     uint8_t media, const std::string& transaction) NOEXCEPT
 {
@@ -475,14 +446,34 @@ bool protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
         return true;
     }
 
-    if (const auto fault = broadcast_tx(tx))
+    // A single tx is the minimal package.
+    constexpr auto test = false;
+    submit(to_shared(chain::transaction_cptrs{ tx }),
+        test, BIND(handle_submit_tx, _1, _2, tx));
+    return true;
+}
+
+void protocol_esplora::handle_submit_tx(const code& ec, size_t,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    POST(complete_submit_tx, ec, tx);
+}
+
+void protocol_esplora::complete_submit_tx(const code& ec,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec)
     {
-        send_rejected(fault);
-        return true;
+        send_rejected(ec);
+        return;
     }
 
     send_text(encode_hash(tx->hash(false)));
-    return true;
 }
 
 bool protocol_esplora::handle_broadcast_package(const code& ec,

@@ -28,9 +28,11 @@ struct esplora_setup_fixture
 {
     using status = boost::beast::http::status;
     using initializer = std::function<bool(test::query_t&)>;
+    using configurator = std::function<void(server::configuration&)>;
 
     DELETE_COPY_MOVE(esplora_setup_fixture);
-    explicit esplora_setup_fixture(const initializer& setup);
+    explicit esplora_setup_fixture(const initializer& setup,
+        const configurator& configure={}, bool start=false);
     ~esplora_setup_fixture();
 
     status get_status(std::string_view target);
@@ -66,6 +68,23 @@ private:
     boost::asio::io_context io{};
     boost::beast::tcp_stream socket_{ io.get_executor() };
     std::optional<websocket_stream> websocket_{};
+};
+
+// Configured with the chasers started and no currency window -- for tests of
+// transaction submission, which the tx chaser refuses unless the top is current.
+struct esplora_submit_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_submit_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.node.currency_window_minutes = 0;
+        }, true)
+    {
+    }
 };
 
 struct esplora_ten_block_setup_fixture

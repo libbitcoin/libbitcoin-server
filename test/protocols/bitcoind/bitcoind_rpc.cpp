@@ -442,16 +442,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_unspent__verify
     BOOST_REQUIRE_MESSAGE(has_code(response, -27), response);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error)
-{
-    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
-    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
-    const chain::transaction missing{ 1, { input }, { output }, 0 };
-    const auto hex = encode_base16(missing.to_data(true));
-    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
-    BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
-}
-
 // control, mining, rawtransactions, util (moved from btcd)
 // ----------------------------------------------------------------------------
 
@@ -858,40 +848,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__rpc_discover__default__openrpc_version)
 {
     const auto response = rpc("rpc.discover");
     BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("openrpc")), "1.2.6");
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
-{
-    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
-    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
-    const auto response = rpc("testmempoolaccept", "[[\"" + as_text(created.at("result")) + "\"]]");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
-    BOOST_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
-    BOOST_REQUIRE(response.at("result").at(0).as_object().contains("reject-reason"));
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__empty__error)
-{
-    const auto response = rpc("testmempoolaccept", "[[]]");
-    BOOST_REQUIRE(has_error(response));
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__coinbase__coinbase_token)
-{
-    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
-    const auto response = rpc("testmempoolaccept", "[[\"" + tx0 + "\"]]");
-    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "coinbase");
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unknown_inputs__missingorspent_token)
-{
-    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
-    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
-    const chain::transaction missing{ 1, { input }, { output }, 0 };
-    const auto hex = encode_base16(missing.to_data(true));
-    const auto response = rpc("testmempoolaccept", "[[\"" + hex + "\"]]");
-    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "bad-txns-inputs-missingorspent");
 }
 
 // network
@@ -2262,6 +2218,84 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__witness_tx__wtxid_differs)
 
     const auto weight = result.at("weight").as_int64();
     BOOST_REQUIRE_EQUAL(result.at("vsize").as_int64(), (weight + 3) / 4);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// submission
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_submit_tests, bitcoind_submit_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 0.001}]");
+    const auto response = rpc("testmempoolaccept", "[[\"" + as_text(created.at("result")) + "\"]]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
+    BOOST_REQUIRE(response.at("result").at(0).as_object().contains("reject-reason"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__empty__error)
+{
+    const auto response = rpc("testmempoolaccept", "[[]]");
+    BOOST_REQUIRE(has_error(response));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__coinbase__coinbase_token)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("testmempoolaccept", "[[\"" + tx0 + "\"]]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "coinbase");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unknown_inputs__missingorspent_token)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("testmempoolaccept", "[[\"" + hex + "\"]]");
+    BOOST_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "bad-txns-inputs-missingorspent");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// closed tx pool
+// ----------------------------------------------------------------------------
+// The tx chaser refuses submission and testing while the pool is closed.
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_closed_tests, bitcoind_closed_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__closed_pool__verify_rejected)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -26), response);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__closed_pool__not_allowed)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("testmempoolaccept", "[[\"" + tx0 + "\"]]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
+    BOOST_REQUIRE(response.at("result").at(0).as_object().contains("reject-reason"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

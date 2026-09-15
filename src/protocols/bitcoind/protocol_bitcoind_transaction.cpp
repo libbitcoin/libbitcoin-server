@@ -233,21 +233,41 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         }
     }
 
-    if (const auto fault = broadcast_tx(tx); fault)
+    // A single tx is the minimal package.
+    constexpr auto test = false;
+    submit(to_shared(chain::transaction_cptrs{ tx }),
+        test, BIND(handle_submit_tx, _1, _2, tx));
+    return true;
+}
+
+void protocol_bitcoind_transaction::handle_submit_tx(const code& ec, size_t,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    POST(complete_submit_tx, ec, tx);
+}
+
+void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec)
     {
         using namespace error::bitcoind;
 
         // Absent and confirmed-spent inputs are missing coins.
         const auto missing =
-            (fault == system::error::missing_previous_output) ||
-            (fault == system::error::confirmed_double_spend);
+            (ec == system::error::missing_previous_output) ||
+            (ec == system::error::confirmed_double_spend);
 
-        send_error(translate(fault, missing ? verify_error : verify_rejected));
-        return true;
+        send_error(translate(ec, missing ? verify_error : verify_rejected));
+        return;
     }
 
     send_result(encode_hash(tx->hash(false)), two * hash_size);
-    return true;
 }
 
 bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
@@ -263,8 +283,8 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
         return true;
     }
 
-    array_t results{};
-    results.reserve(rawtxs.size());
+    chain::transaction_cptrs txs{};
+    txs.reserve(rawtxs.size());
     for (const auto& item: rawtxs)
     {
         if (!std::holds_alternative<string_t>(item.value()))
@@ -274,30 +294,57 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
         }
 
         read::base16::copy hexer{ std::get<string_t>(item.value()) };
-        const chain::transaction tx{ hexer, true };
-        if (!tx.is_valid() || !hexer.is_exhausted())
+        const auto tx = to_shared<chain::transaction>(hexer, true);
+        if (!tx->is_valid() || !hexer.is_exhausted())
         {
             send_error(error::bitcoind::deserialization_error);
             return true;
         }
 
-        const auto fault = validate_tx(tx);
+        txs.push_back(tx);
+    }
+
+    constexpr auto test = true;
+    const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
+    submit(package, test, BIND(handle_test_package, _1, _2, package));
+    return true;
+}
+
+void protocol_bitcoind_transaction::handle_test_package(const code& ec, size_t,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    POST(complete_test_package, ec, txs);
+}
+
+// The package is accepted as a whole, so its code applies to each of its txs.
+void protocol_bitcoind_transaction::complete_test_package(const code& ec,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    array_t results{};
+    results.reserve(txs->size());
+
+    for (const auto& tx: *txs)
+    {
         object_t result
         {
-            { "txid", encode_hash(tx.hash(false)) },
-            { "wtxid", encode_hash(tx.hash(true)) },
-            { "allowed", !fault }
+            { "txid", encode_hash(tx->hash(false)) },
+            { "wtxid", encode_hash(tx->hash(true)) },
+            { "allowed", !ec }
         };
 
-        if (fault)
-            result.emplace("reject-reason", error::bitcoind::reject(fault));
+        if (ec)
+            result.emplace("reject-reason", error::bitcoind::reject(ec));
 
         results.emplace_back(std::move(result));
     }
 
     const auto size = 128 * results.size();
     send_result(std::move(results), size);
-    return true;
 }
 
 // PSBT methods.
