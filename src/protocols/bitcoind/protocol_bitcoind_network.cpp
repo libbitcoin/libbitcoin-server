@@ -240,11 +240,12 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
     return true;
 }
 
-// bitcoind's network name for each address type.
+// bitcoind's network name for each address type, indexed by network id.
+// Both tor versions are reported as onion, the unspecified network is unnamed.
 constexpr std::array<std::string_view, network::config::address_types>
 network_names
 {
-    "ipv4", "ipv6", "onion", "i2p", "cjdns"
+    "", "ipv4", "ipv6", "onion", "onion", "i2p", "cjdns"
 };
 
 // The pool has no tried table (by design), so all addresses report as new.
@@ -264,18 +265,23 @@ bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
     if (stopped(ec))
         return false;
 
+    using namespace network::messages::peer;
     const auto counts = address_counts();
+    const auto ipv4 = counts.at(ipv4_t::id);
+    const auto ipv6 = counts.at(ipv6_t::id);
+    const auto onion = counts.at(torv2_t::id) + counts.at(torv3_t::id);
+    const auto i2p = counts.at(i2p_t::id);
+    const auto cjdns = counts.at(cjdns_t::id);
 
-    size_t total{};
-    object_t out{};
-    for (size_t type{}; type < counts.size(); ++type)
+    send_result(object_t
     {
-        out.emplace(network_names.at(type), address_bucket(counts.at(type)));
-        total += counts.at(type);
-    }
-
-    out.emplace("all_networks", address_bucket(total));
-    send_result(std::move(out), 512);
+        { "ipv4", address_bucket(ipv4) },
+        { "ipv6", address_bucket(ipv6) },
+        { "onion", address_bucket(onion) },
+        { "i2p", address_bucket(i2p) },
+        { "cjdns", address_bucket(cjdns) },
+        { "all_networks", address_bucket(ipv4 + ipv6 + onion + i2p + cjdns) }
+    }, 512);
     return true;
 }
 
@@ -327,8 +333,7 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
             break;
 
         const network::config::address address{ item };
-        const auto name = network_names.at(
-            to_value(network::config::to_address_type(item.ip)));
+        const auto name = network_names.at(item.address.index());
         if (!node_network_.empty() && node_network_ != name)
             continue;
 
