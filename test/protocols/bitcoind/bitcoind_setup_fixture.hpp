@@ -222,4 +222,21 @@ struct bitcoind_hosts_setup_fixture
     }
 };
 
+// Configured with the chasers started and no currency window -- for tests of
+// transaction submission, which the tx chaser refuses unless the top is current.
+struct bitcoind_submit_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_submit_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.node.currency_window_minutes = 0;
+        }, true)
+    {
+    }
+};
+
 #endif

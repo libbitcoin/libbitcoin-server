@@ -148,6 +148,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__invalid
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
+// The package is accepted as a whole, so only the failing tx is in error.
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_transactions__unconfirmable_transaction)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
@@ -155,7 +156,6 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_tra
     const auto tx0_text = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
     const auto tx1_text = encode_base16(test::block1.transactions_ptr()->front()->to_data(true));
     const auto tx0_hash = encode_hash(test::genesis.transactions_ptr()->front()->hash(false));
-    const auto tx1_hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
     constexpr auto request = R"({"id":73,"method":"blockchain.transaction.broadcast_package","params":[["%1%","%2%"]]})" "\n";
     const auto response = get((boost_format(request) % tx0_text % tx1_text).str());
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
@@ -167,21 +167,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_tra
     BOOST_REQUIRE(!result.at("success").as_bool());
 
     const auto& errors = result.at("errors").as_array();
-    BOOST_REQUIRE_EQUAL(errors.size(), 2u);
+    BOOST_REQUIRE_EQUAL(errors.size(), 1u);
     BOOST_REQUIRE(errors.at(0).is_object());
-    BOOST_REQUIRE(errors.at(1).is_object());
 
     const auto& error1 = errors.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(error1.at("txid").is_string());
     REQUIRE_NO_THROW_TRUE(error1.at("error").is_string());
     BOOST_REQUIRE_EQUAL(error1.at("txid").as_string(), tx0_hash);
     BOOST_REQUIRE_EQUAL(error1.at("error").as_string(), coinbase_transaction.message());
-
-    const auto& error2 = errors.at(1).as_object();
-    REQUIRE_NO_THROW_TRUE(error2.at("txid").is_string());
-    REQUIRE_NO_THROW_TRUE(error2.at("error").is_string());
-    BOOST_REQUIRE_EQUAL(error2.at("txid").as_string(), tx1_hash);
-    BOOST_REQUIRE_EQUAL(error2.at("error").as_string(), coinbase_transaction.message());
 }
 
 // blockchain.transaction.get

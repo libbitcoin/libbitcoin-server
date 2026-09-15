@@ -98,6 +98,11 @@ protected:
         rpc_interface::utxo_update_psbt, const std::string& psbt,
         const network::rpc::array_t& descriptors) NOEXCEPT;
 
+    void handle_submit_tx(const code& ec, size_t link,
+        const system::chain::transaction::cptr& tx) NOEXCEPT;
+    void complete_submit_tx(const code& ec,
+        const system::chain::transaction::cptr& tx) NOEXCEPT;
+
     bool handle_abort_private_broadcast(const code& ec,
         rpc_interface::abort_private_broadcast) NOEXCEPT;
     bool handle_get_private_broadcast_info(const code& ec,

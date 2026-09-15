@@ -375,16 +375,6 @@ code protocol_bitcoind::validate_tx(
     return node::validate_transaction(tx, query, pool);
 }
 
-code protocol_bitcoind::broadcast_tx(
-    const chain::transaction::cptr& tx) NOEXCEPT
-{
-    if (const auto ec = validate_tx(*tx))
-        return ec;
-
-    BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
-    return error::success;
-}
-
 boost::json::value protocol_bitcoind::script_public_key(
     const chain::script& script) const NOEXCEPT
 {

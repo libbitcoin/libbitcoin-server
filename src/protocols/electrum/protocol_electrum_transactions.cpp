@@ -59,8 +59,26 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
         return;
     }
 
-    const auto fault = broadcast_tx(tx);
-    if (!fault)
+    // A single tx is the minimal package.
+    submit(to_shared(chain::transaction_cptrs{ tx }),
+        BIND(handle_submit_tx, _1, _2, tx));
+}
+
+void protocol_electrum::handle_submit_tx(const code& ec, size_t,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    POST(complete_submit_tx, ec, tx);
+}
+
+void protocol_electrum::complete_submit_tx(const code& ec,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (!ec)
     {
         send_result(encode_hash(tx->hash(false)), 42);
         return;
@@ -68,12 +86,12 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_result(fault.message(), 42);
+        send_result(ec.message(), 42);
         return;
     }
 
     using namespace error::electrum;
-    send_code(translate(fault, daemon_error));
+    send_code(translate(ec, daemon_error));
 }
 
 void protocol_electrum::handle_blockchain_transaction_broadcast_package(
@@ -111,10 +129,8 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
         return;
     }
 
-    size_t size{};
-    object_t result{ { "success", true }, { "errors", array_t{} } };
-    auto& success = std::get<bool>(result["success"].value());
-    auto& errors = std::get<array_t>(result["errors"].value());
+    chain::transaction_cptrs txs{};
+    txs.reserve(txs_hex.size());
 
     for (const auto& tx_hex: txs_hex)
     {
@@ -132,22 +148,11 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
             return;
         }
 
-        // TODO: this handles each transaction independently.
-        const auto fault = broadcast_tx(tx);
-        if (fault)
-        {
-            const auto message = fault.message();
-            size += message.size();
-            errors.push_back(object_t
-            {
-                { "txid", encode_hash(tx->hash(false)) },
-                { "error", message }
-            });
-        }
+        txs.push_back(tx);
     }
 
-    success = errors.empty();
-    send_result(result, 42 + size);
+    const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
+    submit(package, BIND(handle_submit_package, _1, _2, package));
 }
 
 void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
@@ -467,17 +472,41 @@ code protocol_electrum::validate_tx(
     return node::validate_transaction(tx, query, pool);
 }
 
-code protocol_electrum::broadcast_tx(
-    const chain::transaction::cptr& tx) NOEXCEPT
+void protocol_electrum::handle_submit_package(const code& ec, size_t index,
+    const chain::transactions_cptr& txs) NOEXCEPT
 {
-    if (const auto ec = validate_tx(*tx))
-        return ec;
+    POST(complete_submit_package, ec, index, txs);
+}
 
-    BROADCAST(peer::transaction, to_shared<peer::transaction>(tx));
+// The package is accepted as a whole, so a failure is reported against the one
+// tx that caused it, and the others are neither accepted nor in error.
+void protocol_electrum::complete_submit_package(const code& ec, size_t index,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    BC_ASSERT(stranded());
 
-    // There is no tx pool, so hold it for the client that broadcast it.
-    retain_tx(tx);
-    return error::success;
+    if (stopped())
+        return;
+
+    array_t errors{};
+    size_t size{};
+
+    if (ec)
+    {
+        auto message = ec.message();
+        size = message.size();
+        errors.push_back(object_t
+        {
+            { "txid", encode_hash(txs->at(index)->hash(false)) },
+            { "error", std::move(message) }
+        });
+    }
+
+    send_result(object_t
+    {
+        { "success", !ec },
+        { "errors", std::move(errors) }
+    }, 42 + size);
 }
 
 // A retained tx is unconfirmed, so carries no block context.

@@ -104,7 +104,6 @@ protected:
 
     /// Validate a transaction given next block context (node utility).
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
-    code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
 
     /// The bitcoind scriptPubKey object with network context.
     boost::json::value script_public_key(

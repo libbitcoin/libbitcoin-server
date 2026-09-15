@@ -233,21 +233,40 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         }
     }
 
-    if (const auto fault = broadcast_tx(tx); fault)
+    // A single tx is the minimal package.
+    submit(to_shared(chain::transaction_cptrs{ tx }),
+        BIND(handle_submit_tx, _1, _2, tx));
+    return true;
+}
+
+void protocol_bitcoind_transaction::handle_submit_tx(const code& ec, size_t,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    POST(complete_submit_tx, ec, tx);
+}
+
+void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
+    const chain::transaction::cptr& tx) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec)
     {
         using namespace error::bitcoind;
 
         // Absent and confirmed-spent inputs are missing coins.
         const auto missing =
-            (fault == system::error::missing_previous_output) ||
-            (fault == system::error::confirmed_double_spend);
+            (ec == system::error::missing_previous_output) ||
+            (ec == system::error::confirmed_double_spend);
 
-        send_error(translate(fault, missing ? verify_error : verify_rejected));
-        return true;
+        send_error(translate(ec, missing ? verify_error : verify_rejected));
+        return;
     }
 
     send_result(encode_hash(tx->hash(false)), two * hash_size);
-    return true;
 }
 
 bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,

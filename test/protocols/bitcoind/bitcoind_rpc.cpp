@@ -442,16 +442,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_unspent__verify
     BOOST_REQUIRE_MESSAGE(has_code(response, -27), response);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error)
-{
-    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
-    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
-    const chain::transaction missing{ 1, { input }, { output }, 0 };
-    const auto hex = encode_base16(missing.to_data(true));
-    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
-    BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
-}
-
 // control, mining, rawtransactions, util (moved from btcd)
 // ----------------------------------------------------------------------------
 
@@ -2262,6 +2252,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__witness_tx__wtxid_differs)
 
     const auto weight = result.at("weight").as_int64();
     BOOST_REQUIRE_EQUAL(result.at("vsize").as_int64(), (weight + 3) / 4);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// submission
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_submit_tests, bitcoind_submit_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error)
+{
+    const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
+    const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
+    const chain::transaction missing{ 1, { input }, { output }, 0 };
+    const auto hex = encode_base16(missing.to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

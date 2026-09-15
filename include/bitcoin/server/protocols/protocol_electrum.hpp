@@ -374,7 +374,17 @@ private:
 
     // Validate a transaction given next block context (node utility).
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
-    code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
+
+    // Submit a transaction to the tx chaser, which archives and relays it.
+    void handle_submit_tx(const code& ec, size_t link,
+        const system::chain::transaction::cptr& tx) NOEXCEPT;
+    void complete_submit_tx(const code& ec,
+        const system::chain::transaction::cptr& tx) NOEXCEPT;
+
+    void handle_submit_package(const code& ec, size_t index,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
+    void complete_submit_package(const code& ec, size_t index,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
 
     // Send a tx retained by this channel's broadcast (unconfirmed).
     void send_retained_tx(const system::chain::transaction& tx,

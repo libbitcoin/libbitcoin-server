@@ -181,7 +181,11 @@ private:
         const std::string& body) NOEXCEPT;
 
     code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
-    code broadcast_tx(const system::chain::transaction::cptr& tx) NOEXCEPT;
+
+    void handle_submit_tx(const code& ec, size_t link,
+        const system::chain::transaction::cptr& tx) NOEXCEPT;
+    void complete_submit_tx(const code& ec,
+        const system::chain::transaction::cptr& tx) NOEXCEPT;
 
     bool to_key(system::hash_digest& out,
         const std::optional<system::hash_cptr>& hash,
