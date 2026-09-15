@@ -26,7 +26,8 @@ using namespace boost::beast;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-esplora_setup_fixture::esplora_setup_fixture(const initializer& setup)
+esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
+    const configurator& configure, bool start)
   : config_
     {
         system::chain::selection::mainnet,
@@ -60,10 +61,26 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup)
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
 
+    if (configure)
+        configure(config_);
+
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     setup(query_);
+
+    // The node (chasers and address pool), bypassed by default.
+    if (start)
+    {
+        std::promise<code> started{};
+        server_.start([&](const code& ec) NOEXCEPT
+        {
+            started.set_value(ec);
+        });
+
+        ec = started.get_future().get();
+        BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    }
 
     // Run the server.
     std::promise<code> running{};

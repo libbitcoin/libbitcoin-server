@@ -133,11 +133,13 @@ BOOST_AUTO_TEST_CASE(esplora__broadcast__truncated__bad_request)
     BOOST_REQUIRE_EQUAL(post_status("/tx", "0100000001"), http::status::bad_request);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__broadcast__genesis_coinbase__rejected)
+// The tx chaser refuses submission while the pool is closed.
+BOOST_AUTO_TEST_CASE(esplora__broadcast__closed_pool__pooling_disabled)
 {
+    const code pooling_disabled{ node::error::pooling_disabled };
     const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
     BOOST_REQUIRE_EQUAL(post_status("/tx", tx0), http::status::bad_request);
-    BOOST_REQUIRE(!post_text("/tx", tx0).empty());
+    BOOST_REQUIRE_EQUAL(post_text("/tx", tx0), pooling_disabled.message());
 }
 
 // tx/merkleblock-proof
@@ -189,6 +191,21 @@ BOOST_AUTO_TEST_CASE(esplora__block_txs__unaligned_start__bad_request)
 BOOST_AUTO_TEST_CASE(esplora__block_txs__start_above_count__not_found)
 {
     BOOST_REQUIRE_EQUAL(get_status("/block/" + block1_hash + "/txs/25"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// open tx pool
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(esplora_submit_tests, esplora_submit_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast__genesis_coinbase__coinbase_transaction)
+{
+    const code coinbase_transaction{ system::error::coinbase_transaction };
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    BOOST_REQUIRE_EQUAL(post_status("/tx", tx0), http::status::bad_request);
+    BOOST_REQUIRE_EQUAL(post_text("/tx", tx0), coinbase_transaction.message());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

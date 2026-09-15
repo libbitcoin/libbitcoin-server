@@ -707,3 +707,71 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__broadcast__rec
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// closed tx pool
+// ----------------------------------------------------------------------------
+// The tx chaser refuses submission and testing while the pool is closed.
+
+BOOST_FIXTURE_TEST_SUITE(electrum_closed_tests, electrum_closed_setup_fixture)
+
+using namespace system;
+static const code daemon_error{ server::error::electrum::daemon_error };
+static const code pooling_disabled{ node::error::pooling_disabled };
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__closed_pool__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    constexpr auto request = R"({"id":3000,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % tx0).str());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__closed_pool_v1_0__pooling_disabled_message)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    constexpr auto request = R"({"id":3001,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % tx0).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), pooling_disabled.message());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__closed_pool__pooling_disabled_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto tx0_hash = encode_hash(test::genesis.transactions_ptr()->front()->hash(false));
+    constexpr auto request = R"({"id":3002,"method":"blockchain.transaction.broadcast_package","params":[["%1%"]]})" "\n";
+    const auto response = get((boost_format(request) % tx0).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE(!result.at("success").as_bool());
+
+    const auto& errors = result.at("errors").as_array();
+    BOOST_REQUIRE_EQUAL(errors.size(), 1u);
+    BOOST_REQUIRE_EQUAL(errors.at(0).as_object().at("txid").as_string(), tx0_hash);
+    BOOST_REQUIRE_EQUAL(errors.at(0).as_object().at("error").as_string(), pooling_disabled.message());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_testmempoolaccept__closed_pool__not_allowed)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    constexpr auto request = R"({"id":3003,"method":"blockchain.transaction.testmempoolaccept","params":[["%1%"]]})" "\n";
+    const auto response = get((boost_format(request) % tx0).str());
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& results = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(results.size(), 1u);
+    BOOST_REQUIRE(!results.at(0).as_object().at("allowed").as_bool());
+    BOOST_REQUIRE_EQUAL(results.at(0).as_object().at("reason").as_string(), pooling_disabled.message());
+}
+
+BOOST_AUTO_TEST_SUITE_END()

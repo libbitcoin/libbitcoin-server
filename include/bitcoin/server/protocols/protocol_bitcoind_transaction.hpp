@@ -98,6 +98,11 @@ protected:
         rpc_interface::utxo_update_psbt, const std::string& psbt,
         const network::rpc::array_t& descriptors) NOEXCEPT;
 
+    void handle_test_package(const code& ec, size_t index,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
+    void complete_test_package(const code& ec,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
+
     void handle_submit_tx(const code& ec, size_t link,
         const system::chain::transaction::cptr& tx) NOEXCEPT;
     void complete_submit_tx(const code& ec,

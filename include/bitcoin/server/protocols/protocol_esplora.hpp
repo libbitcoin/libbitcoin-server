@@ -180,8 +180,6 @@ private:
     static void set_body(network::rpc::request_t& model,
         const std::string& body) NOEXCEPT;
 
-    code validate_tx(const system::chain::transaction& tx) const NOEXCEPT;
-
     void handle_submit_tx(const code& ec, size_t link,
         const system::chain::transaction::cptr& tx) NOEXCEPT;
     void complete_submit_tx(const code& ec,

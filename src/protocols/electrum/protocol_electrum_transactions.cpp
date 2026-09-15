@@ -60,8 +60,9 @@ void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     }
 
     // A single tx is the minimal package.
+    constexpr auto test = false;
     submit(to_shared(chain::transaction_cptrs{ tx }),
-        BIND(handle_submit_tx, _1, _2, tx));
+        test, BIND(handle_submit_tx, _1, _2, tx));
 }
 
 void protocol_electrum::handle_submit_tx(const code& ec, size_t,
@@ -151,8 +152,9 @@ void protocol_electrum::handle_blockchain_transaction_broadcast_package(
         txs.push_back(tx);
     }
 
+    constexpr auto test = false;
     const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
-    submit(package, BIND(handle_submit_package, _1, _2, package));
+    submit(package, test, BIND(handle_submit_package, _1, _2, package));
 }
 
 void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
@@ -181,8 +183,8 @@ void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
         return;
     }
 
-    array_t out{};
-    out.reserve(txs_hex.size());
+    chain::transaction_cptrs txs{};
+    txs.reserve(txs_hex.size());
 
     for (const auto& tx_hex: txs_hex)
     {
@@ -193,24 +195,50 @@ void protocol_electrum::handle_blockchain_transaction_testmempoolaccept(
         }
 
         read::base16::copy hexer{ std::get<string_t>(tx_hex.value()) };
-        const chain::transaction tx{ hexer, true };
-        if (!tx.is_valid() || !hexer.is_exhausted())
+        const auto tx = to_shared<chain::transaction>(hexer, true);
+        if (!tx->is_valid() || !hexer.is_exhausted())
         {
             send_code(error::electrum::bad_request);
             return;
         }
 
-        // There is no tx pool, so acceptance is validation against the chain.
-        const auto fault = validate_tx(tx);
+        txs.push_back(tx);
+    }
+
+    constexpr auto test = true;
+    const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
+    submit(package, test, BIND(handle_test_package, _1, _2, package));
+}
+
+void protocol_electrum::handle_test_package(const code& ec, size_t,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    POST(complete_test_package, ec, txs);
+}
+
+// The package is accepted as a whole, so its code applies to each of its txs.
+void protocol_electrum::complete_test_package(const code& ec,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    array_t out{};
+    out.reserve(txs->size());
+
+    for (const auto& tx: *txs)
+    {
         object_t value
         {
-            { "txid", encode_hash(tx.hash(false)) },
-            { "wtxid", encode_hash(tx.hash(true)) },
-            { "allowed", !fault }
+            { "txid", encode_hash(tx->hash(false)) },
+            { "wtxid", encode_hash(tx->hash(true)) },
+            { "allowed", !ec }
         };
 
-        if (fault)
-            value.emplace("reason", fault.message());
+        if (ec)
+            value.emplace("reason", ec.message());
 
         out.emplace_back(std::move(value));
     }
@@ -453,24 +481,6 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
 
 // utility
 // ----------------------------------------------------------------------------
-
-code protocol_electrum::validate_tx(
-    const chain::transaction& tx) const NOEXCEPT
-{
-    const auto& query = archive();
-    const auto& settings = system_settings();
-    const auto link = query.to_confirmed(query.get_top_confirmed());
-    const auto key = query.get_header_key(link);
-    const auto state = query.get_confirmed_chain_state(settings, key);
-
-    // The store always has chain state for the confirmed top.
-    if (!state)
-        return database::error::integrity;
-
-    // The context of the next block, in which a pool tx would confirm.
-    const auto pool = chain::chain_state{ *state, settings }.context();
-    return node::validate_transaction(tx, query, pool);
-}
 
 void protocol_electrum::handle_submit_package(const code& ec, size_t index,
     const chain::transactions_cptr& txs) NOEXCEPT

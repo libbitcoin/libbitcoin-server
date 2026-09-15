@@ -115,6 +115,23 @@ struct electrum_three_block_confirmed_address_setup_fixture
     }
 };
 
+// Configured with a currency window -- the test store is historical, so the
+// tx pool is closed and the tx chaser refuses submission.
+struct electrum_closed_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_closed_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.node.currency_window_minutes = 1;
+        })
+    {
+    }
+};
+
 struct electrum_broadcast_setup_fixture
   : electrum_setup_fixture
 {
