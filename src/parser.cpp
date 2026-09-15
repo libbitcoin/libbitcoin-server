@@ -687,6 +687,26 @@ options_metadata parser::load_settings() THROWS
         "Validate the checksum of network messages, defaults to 'false'."
     )
     (
+        "peer.gossip_ipv4",
+        value<bool>(&configured.network.gossip_ipv4),
+        "Gossip internet protocol version 4 (IPv4) addresses, defaults to 'true'."
+    )
+    (
+        "peer.gossip_ipv6",
+        value<bool>(&configured.network.gossip_ipv6),
+        "Gossip internet protocol version 6 (IPv6) addresses, defaults to 'false'."
+    )
+    (
+        "peer.gossip_tor",
+        value<bool>(&configured.network.gossip_tor),
+        "Gossip tor (onion) addresses, defaults to 'false'."
+    )
+    (
+        "peer.gossip_i2p",
+        value<bool>(&configured.network.gossip_i2p),
+        "Gossip i2p addresses, defaults to 'false'."
+    )
+    (
         "peer.identifier",
         value<uint32_t>(&configured.network.identifier),
         "The magic number for message headers, defaults to '3652501241'."
@@ -752,11 +772,6 @@ options_metadata parser::load_settings() THROWS
         "outbound.rate_limit",
         value<uint32_t>(&configured.network.outbound.rate_limit),
         "The send rate limit in bytes per second, defaults to '0' (unlimited)."
-    )
-    (
-        "outbound.use_ipv6",
-        value<bool>(&configured.network.outbound.use_ipv6),
-        "Use internet protocol version 6 (IPv6) addresses, defaults to 'false'."
     )
     (
         "outbound.seed",
