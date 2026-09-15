@@ -32,6 +32,7 @@ static const code invalid_argument{ server::error::electrum::bad_request };
 static const code unsupported_argument{ server::error::electrum::bad_request };
 static const code unconfirmable_transaction{ server::error::electrum::daemon_error };
 static const code coinbase_transaction{ system::error::coinbase_transaction };
+static const code internal_double_spend{ system::error::block_internal_double_spend };
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__empty__invalid_argument)
 {
@@ -148,8 +149,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__invalid
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-// The package is accepted as a whole, so only the failing tx is in error.
-BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_transactions__unconfirmable_transaction)
+// Two coinbases spend the same null point, so the package is in conflict.
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_coinbases__internal_double_spend)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
@@ -174,7 +175,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast_package__two_tra
     REQUIRE_NO_THROW_TRUE(error1.at("txid").is_string());
     REQUIRE_NO_THROW_TRUE(error1.at("error").is_string());
     BOOST_REQUIRE_EQUAL(error1.at("txid").as_string(), tx0_hash);
-    BOOST_REQUIRE_EQUAL(error1.at("error").as_string(), coinbase_transaction.message());
+    BOOST_REQUIRE_EQUAL(error1.at("error").as_string(), internal_double_spend.message());
 }
 
 // blockchain.transaction.get
@@ -704,6 +705,40 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__broadcast__rec
     BOOST_REQUIRE_EQUAL(tx.at("height").as_int64(), 0);  // rooted
     BOOST_REQUIRE_EQUAL(tx.at("tx_hash").as_string(), tx1c_hash());
     BOOST_REQUIRE_EQUAL(tx.at("fee").as_int64(), tx1c_fee);
+}
+
+// The configured rate is btc/vkb, so derive it from the tx1c rate to pin the
+// conversion (an error of scale would break both directions).
+static double tx1c_rate(double factor) NOEXCEPT
+{
+    constexpr auto vbytes_per_vkbyte = 1'000.0;
+    constexpr auto satoshis_per_bitcoin = 100'000'000.0;
+    const auto satoshis_per_vkbyte =
+        (tx1c_fee * vbytes_per_vkbyte) / test::tx1c.virtual_size();
+
+    return (satoshis_per_vkbyte * factor) / satoshis_per_bitcoin;
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_fee_rate__daemon_error)
+{
+    config_.node.minimum_fee_rate = tx1c_rate(2.0);
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto request = R"({"id":2100,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % tx1c_text()).str());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), retain_daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__above_fee_rate__txid)
+{
+    config_.node.minimum_fee_rate = tx1c_rate(0.5);
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    constexpr auto request = R"({"id":2101,"method":"blockchain.transaction.broadcast","params":["%1%"]})" "\n";
+    const auto response = get((boost_format(request) % tx1c_text()).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), tx1c_hash());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
