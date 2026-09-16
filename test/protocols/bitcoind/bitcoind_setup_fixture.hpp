@@ -215,7 +215,7 @@ struct bitcoind_hosts_setup_fixture
         }, [](configuration& config)
         {
             config.network.path = TEST_DIRECTORY;
-            config.network.outbound.use_ipv6 = true;
+            config.network.gossip_ipv6 = true;
             config.network.outbound.host_pool_capacity = 42;
         }, true)
     {
