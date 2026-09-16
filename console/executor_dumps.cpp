@@ -41,6 +41,8 @@ void executor::dump_version() const
     logger(format("libbitcoin-network.... %1%") % LIBBITCOIN_NETWORK_VERSION);
     logger(format("libbitcoin-node....... %1%") % LIBBITCOIN_NODE_VERSION);
     logger(format("libbitcoin-server..... %1%") % LIBBITCOIN_SERVER_VERSION);  
+    logger(format("compiled schema....... %1%") % database::envelope::compiled);
+    logger(format("database schema....... %1%") % query_.envelope().schema);
 }
 
 // The "try" functions are safe for instructions not compiled in.
