@@ -48,8 +48,8 @@ parser::parser(system::chain::selection context,
 
     configured.network.enable_relay = true;
     configured.network.enable_address = true;
-    configured.network.enable_not_found = false;
-    configured.network.enable_address_v2 = false;
+    configured.network.enable_not_found = true;
+    configured.network.enable_address_v2 = true;
     configured.network.enable_witness_tx = false;
     configured.network.enable_compact = false;
     configured.network.outbound.host_pool_capacity = 10000;
@@ -639,12 +639,12 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.enable_address",
         value<bool>(&configured.network.enable_address),
-        "Enable address messages, defaults to 'true'."
+        "Enable address gossip, defaults to 'true'."
     )
     (
         "peer.enable_address_v2",
         value<bool>(&configured.network.enable_address_v2),
-        "Enable address v2 messages, defaults to 'false'."
+        "Enable privacy network (Tor and I2P) address gossip, defaults to 'true'."
     )
     (
         "peer.enable_witness_tx",
