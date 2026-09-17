@@ -677,11 +677,6 @@ options_metadata parser::load_settings() THROWS
         "Enable transaction relay, defaults to 'true'."
     )
     (
-        "peer.enable_privacy",
-        value<bool>(&configured.network.enable_privacy),
-        "Enable opportunistic connection encryption, defaults to 'false'."
-    )
-    (
         "peer.validate_checksum",
         value<bool>(&configured.network.validate_checksum),
         "Validate the checksum of network messages, defaults to 'false'."
@@ -1865,6 +1860,11 @@ options_metadata parser::load_settings() THROWS
         "Serve client filters to network connections, defaults to 'false'."
     )
     (
+        "node.provide_privacy",
+        value<bool>(&configured.node.provide_privacy),
+        "Provide opportunistic connection encryption, defaults to 'false'."
+    )
+    (
         "node.batch_signatures",
         value<uint64_t>(&configured.node.batch_signatures),
         "Count of signatures to verify in each GPU batch (as available), defaults to '1000000' (0 disables)."
@@ -2423,6 +2423,9 @@ BC_POP_WARNING()
         error << format_invalid_parameter(e.what()) << std::endl;
         return false;
     }
+
+    // The store latches this at creation, so it is passed to the envelope.
+    configured.database.envelope.node_limited = configured.node.limited_blocks;
 
     return true;
 }
