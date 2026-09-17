@@ -852,8 +852,8 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "inbound.self",
-        value<network::config::authorities>(&configured.network.inbound.selfs),
-        "IP address to advertise, multiple allowed."
+        value<network::config::addresses>(&configured.network.inbound.selfs),
+        "Address to advertise, multiple allowed."
     )
 
     /* [manual] */
