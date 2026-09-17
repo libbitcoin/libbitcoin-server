@@ -90,7 +90,7 @@ threads = 32
 thread_priority = true
 memory_priority = true
 
-# delay_inbound = true will reject inbound requests until node is current. Speeds up IBD.
+# delay_inbound = true will reject inbound requests, apart from admin and native, until node is current. Speeds up IBD.
 delay_inbound = true
 
 # Number of concurrent blocks 

@@ -1827,7 +1827,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.delay_inbound",
         value<bool>(&configured.node.delay_inbound),
-        "Delay accepting inbound connections until node is current, defaults to 'true'."
+        "Delay accepting inbound peer and client connections until node is current, excluding admin and native, defaults to 'true'."
     )
     (
         "node.provide_blocks",

@@ -37,6 +37,9 @@ class BCS_API protocol
 public:
     typedef std::shared_ptr<protocol> ptr;
 
+    /// Connections are dropped until the confirmed chain is current.
+    static constexpr bool delayed{ true };
+
     inline protocol(const auto& session,
         const network::channel::ptr& channel) NOEXCEPT
       : node::protocol(session, channel),
