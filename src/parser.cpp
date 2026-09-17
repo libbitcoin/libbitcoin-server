@@ -210,7 +210,7 @@ options_metadata parser::load_options() THROWS
     description.add_options()
     (
         alias(config_variable, 'c').c_str(),
-        value<std::filesystem::path>(&configured.file),
+        value<config::path>(&configured.file),
         "Specify path to a configuration settings file."
     )
     // Prompts.
@@ -335,7 +335,7 @@ options_metadata parser::load_environment() THROWS
         // The case must match the other declarations for it to compose.
         // This composes with the cmdline options and inits to default path.
         config_variable,
-        value<std::filesystem::path>(&configured.file)->composing()
+        value<config::path>(&configured.file)->composing()
             /*->default_value(config_default_path())*/,
         "The path to the configuration settings file."
     );
@@ -795,7 +795,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "outbound.password",
-        setting<std::string>(&configured.network.outbound.password),
+        secret<std::string>(&configured.network.outbound.password),
         "The socks5 proxy password (optional)."
     )
     (
@@ -929,7 +929,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "manual.password",
-        setting<std::string>(&configured.network.manual.password),
+        secret<std::string>(&configured.network.manual.password),
         "The socks5 proxy password (optional)."
     )
     (
@@ -998,7 +998,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "admin.key_pass",
-        setting<std::string>(&configured.server.admin.key_pass),
+        secret<std::string>(&configured.server.admin.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
@@ -1090,7 +1090,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "native.key_pass",
-        setting<std::string>(&configured.server.native.key_pass),
+        secret<std::string>(&configured.server.native.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
@@ -1187,12 +1187,12 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "bitcoind.key_pass",
-        setting<std::string>(&configured.server.bitcoind.key_pass),
+        secret<std::string>(&configured.server.bitcoind.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
         "bitcoind.credential",
-        setting<network::config::credentials>(&configured.server.bitcoind.credentials),
+        secret<network::config::credentials>(&configured.server.bitcoind.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
@@ -1284,12 +1284,12 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "btcd.key_pass",
-        setting<std::string>(&configured.server.btcd.key_pass),
+        secret<std::string>(&configured.server.btcd.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
         "btcd.credential",
-        setting<network::config::credentials>(&configured.server.btcd.credentials),
+        secret<network::config::credentials>(&configured.server.btcd.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
@@ -1619,7 +1619,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "esplora.key_pass",
-        setting<std::string>(&configured.server.esplora.key_pass),
+        secret<std::string>(&configured.server.esplora.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
@@ -1819,7 +1819,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "bitcoind_zmq.key",
-        setting<config::base85>(&configured.server.bitcoind_zmq.key),
+        secret<config::base85>(&configured.server.bitcoind_zmq.key),
         "The Z85 encoded CurveZMQ server secret key, defaults to none (unencrypted)."
     )
 
@@ -2399,7 +2399,7 @@ options_metadata parser::load_settings() THROWS
     (
         "log.symbols",
         setting<config::path>(&configured.log.symbols),
-        "Path to a directory containing windows symbols (.pdb) files."
+        "Path to a directory containing windows symbols (.pdb) files, defaults to empty."
     )
 #endif
     (
@@ -2434,7 +2434,7 @@ BC_POP_WARNING()
 
         // Clear the config file path if it wasn't used.
         if (!file)
-            configured.file.clear();
+            configured.file = {};
     }
     catch (const boost::program_options::error& e)
     {

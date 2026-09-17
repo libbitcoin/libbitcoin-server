@@ -36,7 +36,7 @@ public:
         const server::settings::embedded_pages& admin) NOEXCEPT;
 
     /// Environment.
-    std::filesystem::path file{};
+    system::config::path file{};
 
     /// Information.
     bool help{};
