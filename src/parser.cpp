@@ -2424,9 +2424,6 @@ BC_POP_WARNING()
         return false;
     }
 
-    // The store latches this at creation, so it is passed to the envelope.
-    configured.database.envelope.node_limited = configured.node.limited_blocks;
-
     return true;
 }
 
