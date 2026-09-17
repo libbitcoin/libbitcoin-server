@@ -57,7 +57,8 @@ bool executor::do_hardware()
 bool executor::do_settings()
 {
     log_.stop();
-    printer print(metadata_.load_settings(), name_, BS_SETTINGS_MESSAGE);
+    printer print(metadata_.load_settings(), metadata_.variables(), name_,
+        BS_SETTINGS_MESSAGE);
     print.initialize();
     print.settings(output_);
     return true;
