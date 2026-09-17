@@ -57,7 +57,7 @@ parser::parser(system::chain::selection context,
     configured.network.inbound.connections = 100;
     configured.network.maximum_skew_minutes = 120;
     configured.network.protocol_minimum = level::headers_protocol;
-    configured.network.protocol_maximum = level::bip130;
+    configured.network.protocol_maximum = level::maximum_protocol;
 
     // TODO: from bitcoind, revert to defaults when seeds are up.
     configured.network.outbound.seeds.clear();
@@ -624,7 +624,7 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.protocol_maximum",
         setting<uint32_t>(&configured.network.protocol_maximum),
-        "The maximum network protocol version, defaults to '70012'."
+        "The maximum network protocol version, defaults to '70016'."
     )
     (
         "peer.protocol_minimum",
