@@ -68,6 +68,12 @@ public:
         return session_->address_counts();
     }
 
+    /// The sam self address (unspecified if not bridged or transient).
+    inline network::config::address sam_self() const NOEXCEPT
+    {
+        return session_->sam_self();
+    }
+
     /// Get a randomized subset of pooled addresses.
     inline void dump_addresses(
         network::address_handler&& handler) const NOEXCEPT

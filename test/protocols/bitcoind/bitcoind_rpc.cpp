@@ -867,6 +867,42 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BOOST_REQUIRE(result.at("connections_out").is_int64());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__networks__bip155_networks)
+{
+    const auto response = rpc("getnetworkinfo");
+    const auto& networks = response.at("result").at("networks").as_array();
+    BOOST_REQUIRE_EQUAL(networks.size(), 5u);
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(0).at("name")), "ipv4");
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(1).at("name")), "ipv6");
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(2).at("name")), "onion");
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(3).at("name")), "i2p");
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(4).at("name")), "cjdns");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__unproxied__gossip_reachable)
+{
+    const auto response = rpc("getnetworkinfo");
+    const auto& networks = response.at("result").at("networks").as_array();
+    BOOST_REQUIRE(networks.at(0).at("reachable").as_bool());
+    BOOST_REQUIRE(!networks.at(0).at("limited").as_bool());
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(0).at("proxy")), "");
+    BOOST_REQUIRE(!networks.at(0).at("proxy_randomize_credentials").as_bool());
+    BOOST_REQUIRE(!networks.at(1).at("reachable").as_bool());
+    BOOST_REQUIRE(networks.at(1).at("limited").as_bool());
+    BOOST_REQUIRE(!networks.at(2).at("reachable").as_bool());
+    BOOST_REQUIRE(!networks.at(4).at("reachable").as_bool());
+}
+
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getnetworkinfo__proxied__onion_reachable, bitcoind_proxied_setup_fixture)
+{
+    const auto response = rpc("getnetworkinfo");
+    const auto& networks = response.at("result").at("networks").as_array();
+    BOOST_REQUIRE(networks.at(2).at("reachable").as_bool());
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(2).at("proxy")), "127.0.0.1:9050");
+    BOOST_REQUIRE_EQUAL(as_text(networks.at(0).at("proxy")), "127.0.0.1:9050");
+    BOOST_REQUIRE(!networks.at(3).at("reachable").as_bool());
+}
+
 // not implemented
 // ----------------------------------------------------------------------------
 
