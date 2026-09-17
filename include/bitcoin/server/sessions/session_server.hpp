@@ -69,12 +69,14 @@ protected:
     using socket_ptr = network::socket::ptr;
     using channel_ptr = network::channel::ptr;
 
-    /// Inbound connection attempts are dropped unless confirmed is current.
+    /// Inbound connection attempts are dropped unless confirmed is current,
+    /// for interfaces whose first protocol is delayed.
     /// Used instead of suspension because that has independent start/stop.
     inline bool enabled() const NOEXCEPT override
     {
         // Currently delay_inbound is the only reason to inherit node::session.
-        return !this->node_config().node.delay_inbound || this->is_recent();
+        return !(first::delayed && this->node_config().node.delay_inbound) ||
+            this->is_recent();
     }
 
     /// The ZeroMQ socket type is a property of a zmtp channel type.

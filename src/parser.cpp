@@ -48,8 +48,8 @@ parser::parser(system::chain::selection context,
 
     configured.network.enable_relay = true;
     configured.network.enable_address = true;
-    configured.network.enable_not_found = false;
-    configured.network.enable_address_v2 = false;
+    configured.network.enable_not_found = true;
+    configured.network.enable_address_v2 = true;
     configured.network.enable_witness_tx = false;
     configured.network.enable_compact = false;
     configured.network.outbound.host_pool_capacity = 10000;
@@ -639,12 +639,12 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.enable_address",
         value<bool>(&configured.network.enable_address),
-        "Enable address messages, defaults to 'true'."
+        "Enable address gossip, defaults to 'true'."
     )
     (
         "peer.enable_address_v2",
         value<bool>(&configured.network.enable_address_v2),
-        "Enable address v2 messages, defaults to 'false'."
+        "Enable privacy network (Tor and I2P) address gossip, defaults to 'true'."
     )
     (
         "peer.enable_witness_tx",
@@ -675,11 +675,6 @@ options_metadata parser::load_settings() THROWS
         "peer.enable_relay",
         value<bool>(&configured.network.enable_relay),
         "Enable transaction relay, defaults to 'true'."
-    )
-    (
-        "peer.enable_privacy",
-        value<bool>(&configured.network.enable_privacy),
-        "Enable opportunistic connection encryption, defaults to 'false'."
     )
     (
         "peer.validate_checksum",
@@ -857,8 +852,8 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "inbound.self",
-        value<network::config::authorities>(&configured.network.inbound.selfs),
-        "IP address to advertise, multiple allowed."
+        value<network::config::addresses>(&configured.network.inbound.selfs),
+        "Address to advertise, multiple allowed."
     )
 
     /* [manual] */
@@ -1832,7 +1827,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.delay_inbound",
         value<bool>(&configured.node.delay_inbound),
-        "Delay accepting inbound connections until node is current, defaults to 'true'."
+        "Block inbound peer/client (excluding admin/native) until current, defaults to 'true'."
     )
     (
         "node.provide_blocks",
@@ -1863,6 +1858,11 @@ options_metadata parser::load_settings() THROWS
         "node.provide_filters",
         value<bool>(&configured.node.provide_filters),
         "Serve client filters to network connections, defaults to 'false'."
+    )
+    (
+        "node.provide_privacy",
+        value<bool>(&configured.node.provide_privacy),
+        "Provide opportunistic connection encryption, defaults to 'false'."
     )
     (
         "node.batch_signatures",

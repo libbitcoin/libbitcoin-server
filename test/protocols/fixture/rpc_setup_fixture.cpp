@@ -41,6 +41,7 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
 
             config_.node.delay_inbound = false;
             config_.node.minimum_fee_rate = 0.0;
+            config_.network.enable_relay = true;
             config_.network.inbound.connections = 0;
             config_.network.outbound.connections = 0;
 

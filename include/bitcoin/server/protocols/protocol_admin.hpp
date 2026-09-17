@@ -33,6 +33,9 @@ class BCS_API protocol_admin
     protected network::tracker<protocol_admin>
 {
 public:
+    // Replace base class delayed (administration precedes chain currency).
+    static constexpr bool delayed{ false };
+
     typedef std::shared_ptr<protocol_admin> ptr;
     using interface = server::interface::admin;
     using dispatcher = network::rpc::dispatcher<interface>;

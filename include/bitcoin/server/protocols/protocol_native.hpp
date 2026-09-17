@@ -34,6 +34,9 @@ class BCS_API protocol_native
     protected network::tracker<protocol_native>
 {
 public:
+    // Replace base class delayed (the interface reports download progress).
+    static constexpr bool delayed{ false };
+
     typedef std::shared_ptr<protocol_native> ptr;
     using interface = server::interface::native;
     using dispatcher = network::rpc::dispatcher<interface>;
