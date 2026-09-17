@@ -855,6 +855,26 @@ options_metadata parser::load_settings() THROWS
         setting<network::config::addresses>(&configured.network.inbound.selfs),
         "Address to advertise, multiple allowed."
     )
+    (
+        "inbound.username",
+        setting<std::string>(&configured.network.inbound.username),
+        "The sam bridge username (optional)."
+    )
+    (
+        "inbound.password",
+        setting<std::string>(&configured.network.inbound.password),
+        "The sam bridge password (optional)."
+    )
+    (
+        "inbound.sam",
+        setting<config::endpoint>(&configured.network.inbound.bridge),
+        "The i2p sam bridge endpoint (port required)."
+    )
+    (
+        "inbound.key_path",
+        setting<std::filesystem::path>(&configured.network.inbound.key_path),
+        "The i2p destination private key file path, created if not existing."
+    )
 
     /* [manual] */
     ////(
