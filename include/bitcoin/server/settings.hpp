@@ -46,10 +46,10 @@ public:
     bool verbose;
 
     uint32_t maximum_size;
-    std::filesystem::path path;
+    system::config::path path;
 
 #if defined (HAVE_MSC)
-    std::filesystem::path symbols;
+    system::config::path symbols;
 #endif
 
     virtual std::filesystem::path log_file1() const NOEXCEPT;
@@ -173,7 +173,7 @@ public:
         bool websocket{ true };
 
         /// Directory to serve.
-        std::filesystem::path path{};
+        system::config::path path{};
 
         /// Default page for default URL (recommended).
         std::string default_{ "index.html" };

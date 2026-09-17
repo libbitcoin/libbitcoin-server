@@ -728,7 +728,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "peer.path",
-        setting<std::filesystem::path>(&configured.network.path),
+        setting<config::path>(&configured.network.path),
         "The peer address cache file directory, defaults to empty."
     )
 
@@ -872,7 +872,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "inbound.key_path",
-        setting<std::filesystem::path>(&configured.network.inbound.key_path),
+        setting<config::path>(&configured.network.inbound.key_path),
         "The i2p destination private key file path, created if not existing."
     )
 
@@ -983,17 +983,17 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "admin.cert_auth",
-        setting<std::filesystem::path>(&configured.server.admin.cert_auth),
+        setting<config::path>(&configured.server.admin.cert_auth),
         "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
         "admin.cert_path",
-        setting<std::filesystem::path>(&configured.server.admin.cert_path),
+        setting<config::path>(&configured.server.admin.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "admin.key_path",
-        setting<std::filesystem::path>(&configured.server.admin.key_path),
+        setting<config::path>(&configured.server.admin.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1053,7 +1053,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "admin.path",
-        setting<std::filesystem::path>(&configured.server.admin.path),
+        setting<config::path>(&configured.server.admin.path),
         "The required root path of source files to be served, defaults to empty."
     )
     (
@@ -1075,17 +1075,17 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "native.cert_auth",
-        setting<std::filesystem::path>(&configured.server.native.cert_auth),
+        setting<config::path>(&configured.server.native.cert_auth),
         "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
         "native.cert_path",
-        setting<std::filesystem::path>(&configured.server.native.cert_path),
+        setting<config::path>(&configured.server.native.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "native.key_path",
-        setting<std::filesystem::path>(&configured.server.native.key_path),
+        setting<config::path>(&configured.server.native.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1145,7 +1145,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "native.path",
-        setting<std::filesystem::path>(&configured.server.native.path),
+        setting<config::path>(&configured.server.native.path),
         "The required root path of source files to be served, defaults to empty."
     )
     (
@@ -1172,17 +1172,17 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "bitcoind.cert_auth",
-        setting<std::filesystem::path>(&configured.server.bitcoind.cert_auth),
+        setting<config::path>(&configured.server.bitcoind.cert_auth),
         "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
         "bitcoind.cert_path",
-        setting<std::filesystem::path>(&configured.server.bitcoind.cert_path),
+        setting<config::path>(&configured.server.bitcoind.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "bitcoind.key_path",
-        setting<std::filesystem::path>(&configured.server.bitcoind.key_path),
+        setting<config::path>(&configured.server.bitcoind.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1269,17 +1269,17 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "btcd.cert_auth",
-        setting<std::filesystem::path>(&configured.server.btcd.cert_auth),
+        setting<config::path>(&configured.server.btcd.cert_auth),
         "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
         "btcd.cert_path",
-        setting<std::filesystem::path>(&configured.server.btcd.cert_path),
+        setting<config::path>(&configured.server.btcd.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "btcd.key_path",
-        setting<std::filesystem::path>(&configured.server.btcd.key_path),
+        setting<config::path>(&configured.server.btcd.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1361,12 +1361,12 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "electrum.cert_path",
-        setting<std::filesystem::path>(&configured.server.electrum.cert_path),
+        setting<config::path>(&configured.server.electrum.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "electrum.key_path",
-        setting<std::filesystem::path>(&configured.server.electrum.key_path),
+        setting<config::path>(&configured.server.electrum.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1483,12 +1483,12 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "sparrow.cert_path",
-        setting<std::filesystem::path>(&configured.server.sparrow.cert_path),
+        setting<config::path>(&configured.server.sparrow.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "sparrow.key_path",
-        setting<std::filesystem::path>(&configured.server.sparrow.key_path),
+        setting<config::path>(&configured.server.sparrow.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1604,17 +1604,17 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "esplora.cert_auth",
-        setting<std::filesystem::path>(&configured.server.esplora.cert_auth),
+        setting<config::path>(&configured.server.esplora.cert_auth),
         "The certificate authority directory (*.PEM), enables client authentication."
     )
     (
         "esplora.cert_path",
-        setting<std::filesystem::path>(&configured.server.esplora.cert_path),
+        setting<config::path>(&configured.server.esplora.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "esplora.key_path",
-        setting<std::filesystem::path>(&configured.server.esplora.key_path),
+        setting<config::path>(&configured.server.esplora.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1690,12 +1690,12 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "stratum_v1.cert_path",
-        setting<std::filesystem::path>(&configured.server.stratum_v1.cert_path),
+        setting<config::path>(&configured.server.stratum_v1.cert_path),
         "The path to the server certificate file (.PEM), defaults to unused."
     )
     (
         "stratum_v1.key_path",
-        setting<std::filesystem::path>(&configured.server.stratum_v1.key_path),
+        setting<config::path>(&configured.server.stratum_v1.key_path),
         "The path to the server private key file (.PEM), defaults to unused."
     )
     (
@@ -1963,7 +1963,7 @@ options_metadata parser::load_settings() THROWS
     /* [database] */
     (
         "database.path",
-        setting<std::filesystem::path>(&configured.database.path),
+        setting<config::path>(&configured.database.path),
         "The blockchain database directory, defaults to 'blockchain'."
     )
     (
@@ -2398,13 +2398,13 @@ options_metadata parser::load_settings() THROWS
 #if defined (HAVE_MSC)
     (
         "log.symbols",
-        setting<std::filesystem::path>(&configured.log.symbols),
+        setting<config::path>(&configured.log.symbols),
         "Path to a directory containing windows symbols (.pdb) files."
     )
 #endif
     (
         "log.path",
-        setting<std::filesystem::path>(&configured.log.path),
+        setting<config::path>(&configured.log.path),
         "The log files directory, defaults to empty."
     );
 
