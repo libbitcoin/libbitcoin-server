@@ -396,22 +396,22 @@ console_bs_LDADD = \
 
 console_bs_SOURCES = \
     ${srcdir}/../../console/executor.cpp \
-    ${srcdir}/../../console/executor_events.cpp \
-    ${srcdir}/../../console/executor_logging.cpp \
-    ${srcdir}/../../console/executor_options.cpp \
-    ${srcdir}/../../console/executor_scans.cpp \
-    ${srcdir}/../../console/executor_signals.cpp \
-    ${srcdir}/../../console/executor_test_reader.cpp \
-    ${srcdir}/../../console/executor_test_writer.cpp \
-    ${srcdir}/../../console/executor_window.cpp \
-    ${srcdir}/../../console/main.cpp \
-    ${srcdir}/../../console/stack_trace.cpp \
     ${srcdir}/../../console/executor_commands.cpp \
     ${srcdir}/../../console/executor_daemon.cpp \
     ${srcdir}/../../console/executor_dumps.cpp \
+    ${srcdir}/../../console/executor_events.cpp \
+    ${srcdir}/../../console/executor_logging.cpp \
+    ${srcdir}/../../console/executor_options.cpp \
     ${srcdir}/../../console/executor_runner.cpp \
+    ${srcdir}/../../console/executor_scans.cpp \
+    ${srcdir}/../../console/executor_signals.cpp \
     ${srcdir}/../../console/executor_store.cpp \
+    ${srcdir}/../../console/executor_test_reader.cpp \
+    ${srcdir}/../../console/executor_test_writer.cpp \
     ${srcdir}/../../console/executor_warnings.cpp \
+    ${srcdir}/../../console/executor_window.cpp \
+    ${srcdir}/../../console/main.cpp \
+    ${srcdir}/../../console/stack_trace.cpp \
     ${srcdir}/../../console/embedded/admin_css.cpp \
     ${srcdir}/../../console/embedded/admin_ecma.cpp \
     ${srcdir}/../../console/embedded/admin_html.cpp \
