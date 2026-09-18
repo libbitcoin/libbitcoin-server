@@ -272,6 +272,13 @@ network_names
     "", "ipv4", "ipv6", "onion", "onion", "i2p", "cjdns"
 };
 
+static std::string to_network_name(
+    const network::config::address& address) NOEXCEPT
+{
+    const network::messages::peer::address_item& item = address;
+    return std::string{ network_names.at(item.address.index()) };
+}
+
 // The pool has no tried table (by design), so all addresses report as new.
 static object_t address_bucket(size_t count) NOEXCEPT
 {
@@ -527,24 +534,37 @@ void protocol_bitcoind_network::do_send_peer_info(
 
     array_t out{};
     for (const auto& row: captured->captured())
-        out.emplace_back(object_t
+    {
+        object_t info
         {
             { "id", row.identifier },
             { "addr", network::config::endpoint{ row.address }.to_string() },
+            { "addrbind", row.binding.to_string() },
+            { "network", to_network_name(row.address) },
             { "services", encode_base16(to_big_endian(row.services)) },
             { "servicesnames", to_service_names(row.services) },
+            { "relaytxes", row.relay },
             { "connection_type", to_connection_type(row.group) },
             { "inbound", row.group == network::diagnostics::target::inbound },
             { "version", row.version },
             { "subver", row.agent },
             { "startingheight", row.start_height },
             { "conntime", row.created },
+            { "timeoffset", row.time_offset },
             { "lastsend", row.last_write },
             { "lastrecv", row.last_read },
             { "bytessent", row.sent },
             { "bytesrecv", row.received },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
-        });
+        };
+
+        // The local address is unknown unless the peer has provided it.
+        if (row.local)
+            info.emplace("addrlocal",
+                network::config::endpoint{ row.local }.to_string());
+
+        out.emplace_back(std::move(info));
+    }
 
     const auto size = 256 * out.size();
     send_result(std::move(out), size);
