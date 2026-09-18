@@ -176,6 +176,25 @@ struct bitcoind_no_address_setup_fixture
     }
 };
 
+// Configured with peer rate limits -- for the effective upload target, which
+// is the most that the configured connections can send in the timeframe.
+struct bitcoind_limited_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_limited_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.network.rate_limit = 1'000;
+            config.network.inbound.connections = 2;
+            config.network.outbound.connections = 3;
+        })
+    {
+    }
+};
+
 // Configured with an outbound socks proxy and tor gossip -- for the network
 // reachability and proxy reporting of getnetworkinfo.
 struct bitcoind_proxied_setup_fixture

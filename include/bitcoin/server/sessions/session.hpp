@@ -61,6 +61,9 @@ public:
     /// Get a randomized subset of pooled addresses.
     void dump_addresses(network::address_handler&& handler) const NOEXCEPT;
 
+    /// Get the closed channel byte totals with the active identifiers.
+    void fetch_totals(network::net::totals_handler&& handler) const NOEXCEPT;
+
 private:
     // These are thread safe.
     const configuration& config_;

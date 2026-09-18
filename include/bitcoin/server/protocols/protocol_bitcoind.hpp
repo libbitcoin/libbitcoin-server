@@ -63,6 +63,8 @@ public:
 protected:
     using post = network::http::method::post;
     using options_verb = network::http::method::options;
+    using totals_handler = std::function<void(const code& ec, uint64_t sent,
+        uint64_t received)>;
 
     /// Configuration options of the service (bitcoind or a derivation).
     inline const options_t& options() const NOEXCEPT
@@ -83,8 +85,7 @@ protected:
     /// The method names reported by help (channel-registered on start).
     std::string help_names() const NOEXCEPT;
 
-    /// Senders. close_reason (if truthy) stops the channel only once the
-    /// write has completed, so the error reaches the client first.
+    /// Senders.
     void send_error(const code& ec) NOEXCEPT;
     void send_error(const code& ec, size_t size_hint) NOEXCEPT;
     void send_error(const code& ec, size_t size_hint,
@@ -95,20 +96,30 @@ protected:
     void send_result(network::rpc::value_option&& result,
         size_t size_hint) NOEXCEPT;
 
-    /// Cache rpc response context for serialization (requires strand). The
-    /// websocket overload has no http request to echo headers from.
+    /// Cache rpc response context for serialization (requires strand).
     void set_rpc_request(network::rpc::version version,
         const network::rpc::id_option& id,
         const network::http::request_cptr& request) NOEXCEPT;
     void set_rpc_request(const network::rpc::request_t& message) NOEXCEPT;
 
-    /// Validate a transaction given next block context (node utility).
-
-    /// The bitcoind scriptPubKey object with network context.
+    void capture_totals(totals_handler&& handler) NOEXCEPT;
     boost::json::value script_public_key(
         const system::chain::script& script) const NOEXCEPT;
 
 private:
+    // Totals capture.
+    void handle_captured_totals(const code& ec,
+        const network::diagnostics::sink::ptr& captured,
+        const totals_handler& handler) NOEXCEPT;
+    void handle_fetch_totals(const code& ec,
+        const network::net::totals& totals,
+        const network::diagnostics::sink::ptr& captured,
+        const totals_handler& handler) NOEXCEPT;
+    void do_invoke_totals(const code& ec,
+        const network::net::totals& totals,
+        const network::diagnostics::sink::ptr& captured,
+        const totals_handler& handler) NOEXCEPT;
+
     // Senders.
     void send_rpc(network::rpc::response_t&& model,
         size_t size_hint) NOEXCEPT;

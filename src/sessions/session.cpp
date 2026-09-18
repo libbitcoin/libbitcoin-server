@@ -35,5 +35,11 @@ void session::dump_addresses(
     node_.dump_addresses(std::move(handler));
 }
 
+void session::fetch_totals(
+    network::net::totals_handler&& handler) const NOEXCEPT
+{
+    node_.fetch_totals(std::move(handler));
+}
+
 } // namespace server
 } // namespace libbitcoin

@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__http_post__dispatched)
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().contains("blocks"));
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__getnettotals__untracked_counters__zero)
+BOOST_AUTO_TEST_CASE(btcd_rpc__getnettotals__no_channels__zero)
 {
     const auto response = rpc("getnettotals");
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));

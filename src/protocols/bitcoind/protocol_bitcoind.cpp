@@ -363,6 +363,68 @@ boost::json::value protocol_bitcoind::script_public_key(
     return to_script_public_key(script, p2kh_, p2sh_, witness_, flags_);
 }
 
+// Totals capture.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind::capture_totals(totals_handler&& handler) NOEXCEPT
+{
+    const auto captured = std::make_shared<diagnostics::sink>();
+    const auto complete = std::make_shared<diagnostics::race>(
+        BIND(handle_captured_totals, _1, captured, std::move(handler)));
+
+    BROADCAST(diagnostics, to_shared<const diagnostics>(complete, captured,
+        diagnostics::target::all));
+}
+
+void protocol_bitcoind::handle_captured_totals(const code&,
+    const diagnostics::sink::ptr& captured,
+    const totals_handler& handler) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    fetch_totals(BIND(handle_fetch_totals, _1, _2, captured, handler));
+}
+
+void protocol_bitcoind::handle_fetch_totals(const code& ec,
+    const net::totals& totals, const diagnostics::sink::ptr& captured,
+    const totals_handler& handler) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_invoke_totals, ec, totals, captured, handler);
+}
+
+// An active channel is counted by its captured row, a closed channel by the
+// accumulated totals, which are read with the active identifiers.
+void protocol_bitcoind::do_invoke_totals(const code& ec,
+    const net::totals& totals, const diagnostics::sink::ptr& captured,
+    const totals_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        handler(ec, zero, zero);
+        return;
+    }
+
+    auto sent = totals.sent;
+    auto received = totals.received;
+
+    for (const auto& row: captured->captured())
+    {
+        if (contains(totals.actives, row.identifier))
+        {
+            sent = ceilinged_add(sent, row.sent);
+            received = ceilinged_add(received, row.received);
+        }
+    }
+
+    handler(error::success, sent, received);
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()

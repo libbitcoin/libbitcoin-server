@@ -329,13 +329,27 @@ bool protocol_btcd::handle_get_net_totals(const code& ec,
     if (stopped(ec))
         return false;
 
+    capture_totals(BIND(do_send_net_totals, _1, _2, _3));
+    return true;
+}
+
+void protocol_btcd::do_send_net_totals(const code& ec, uint64_t sent,
+    uint64_t received) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        send_error(error::btcd::internal_error);
+        return;
+    }
+
     send_result(object_t
     {
-        { "totalbytesrecv", 0 },
-        { "totalbytessent", 0 },
+        { "totalbytesrecv", received },
+        { "totalbytessent", sent },
         { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 }
     }, 64);
-    return true;
 }
 
 bool protocol_btcd::handle_version(const code& ec,

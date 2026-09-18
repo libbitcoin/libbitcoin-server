@@ -418,32 +418,67 @@ bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     return true;
 }
 
-// Byte counters are not tracked. There is no upload target, which is the shape
-// bitcoind reports for a disabled target.
 bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     rpc_interface::get_net_totals) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
+    capture_totals(BIND(do_send_net_totals, _1, _2, _3));
+    return true;
+}
+
+void protocol_bitcoind_network::do_send_net_totals(const code& ec,
+    uint64_t sent, uint64_t received) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        send_error(error::bitcoind::misc_error);
+        return;
+    }
+
+    // Outbound is rate limited, so the target is the most that automatic
+    // connections can send in the timeframe. Manual connections are added by
+    // the operator and are not bounded by configuration. An unlimited rate
+    // on a connectable section is reported as no target (as bitcoind).
+    constexpr uint64_t timeframe = 24 * 60 * 60;
+    const auto& net_settings = network_settings();
+    const auto& in = net_settings.inbound;
+    const auto& out = net_settings.outbound;
+    const auto in_rate = net_settings.rate_limited(in);
+    const auto out_rate = net_settings.rate_limited(out);
+
+    const auto unlimited =
+        (to_bool(in.connections) && is_zero(in_rate)) ||
+        (to_bool(out.connections) && is_zero(out_rate));
+
+    const auto limit = ceilinged_add(
+        ceilinged_multiply<uint64_t>(in.connections, in_rate),
+        ceilinged_multiply<uint64_t>(out.connections, out_rate));
+
+    const auto bytes = unlimited ? zero :
+        ceilinged_multiply<uint64_t>(limit, timeframe);
+
+    // The rate bound does not deplete, so a full cycle always remains.
     object_t target
     {
-        { "timeframe", zero },
-        { "target", zero },
+        { "timeframe", timeframe },
+        { "target", bytes },
         { "target_reached", false },
         { "serve_historical_blocks", true },
-        { "bytes_left_in_cycle", zero },
-        { "time_left_in_cycle", zero }
+        { "bytes_left_in_cycle", bytes },
+        { "time_left_in_cycle", timeframe }
     };
 
     send_result(object_t
     {
-        { "totalbytesrecv", zero },
-        { "totalbytessent", zero },
+        { "totalbytesrecv", received },
+        { "totalbytessent", sent },
         { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 },
         { "uploadtarget", std::move(target) }
     }, 256);
-    return true;
 }
 
 // bitcoind's connection type name for each capture group.
@@ -503,7 +538,11 @@ void protocol_bitcoind_network::do_send_peer_info(
             { "version", row.version },
             { "subver", row.agent },
             { "startingheight", row.start_height },
+            { "conntime", row.created },
+            { "lastsend", row.last_write },
+            { "lastrecv", row.last_read },
             { "bytessent", row.sent },
+            { "bytesrecv", row.received },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
         });
 
