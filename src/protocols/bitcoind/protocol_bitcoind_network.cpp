@@ -418,46 +418,18 @@ bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     return true;
 }
 
-// Active channels are counted by their captured totals, closed channels by
-// the accumulated totals, which are read with the active identifiers.
 bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     rpc_interface::get_net_totals) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    const auto captured = std::make_shared<network::diagnostics::sink>();
-    const auto complete = std::make_shared<network::diagnostics::race>(
-        BIND(handle_captured_totals, _1, captured));
-
-    BROADCAST(network::diagnostics, to_shared<const network::diagnostics>(
-        complete, captured, network::diagnostics::target::all));
-
+    capture_totals(BIND(do_send_net_totals, _1, _2, _3));
     return true;
 }
 
-void protocol_bitcoind_network::handle_captured_totals(const code&,
-    const network::diagnostics::sink::ptr& captured) NOEXCEPT
-{
-    if (stopped())
-        return;
-
-    fetch_totals(BIND(handle_fetch_totals, _1, _2, captured));
-}
-
-void protocol_bitcoind_network::handle_fetch_totals(const code& ec,
-    const network::net::totals& totals,
-    const network::diagnostics::sink::ptr& captured) NOEXCEPT
-{
-    if (stopped())
-        return;
-
-    POST(do_send_net_totals, ec, totals, captured);
-}
-
 void protocol_bitcoind_network::do_send_net_totals(const code& ec,
-    const network::net::totals& totals,
-    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+    uint64_t sent, uint64_t received) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -465,18 +437,6 @@ void protocol_bitcoind_network::do_send_net_totals(const code& ec,
     {
         send_error(error::bitcoind::misc_error);
         return;
-    }
-
-    auto sent = totals.sent;
-    auto received = totals.received;
-
-    for (const auto& row: captured->captured())
-    {
-        if (contains(totals.actives, row.identifier))
-        {
-            sent = ceilinged_add(sent, row.sent);
-            received = ceilinged_add(received, row.received);
-        }
     }
 
     // There is no upload target, which is the shape bitcoind reports for a

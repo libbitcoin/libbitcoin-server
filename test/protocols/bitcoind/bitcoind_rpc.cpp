@@ -1209,8 +1209,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getconnectioncount__no_peers__zero)
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 0);
 }
 
-// Byte counters are untracked, and no upload target is configured.
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnettotals__untracked_counters__zero)
+// No peer channels, so the capture and accumulated totals are both empty.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnettotals__no_channels__zero)
 {
     const auto response = rpc("getnettotals");
     const auto& result = response.at("result");
