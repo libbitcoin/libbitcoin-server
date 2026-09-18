@@ -311,6 +311,26 @@ bool chain_info(network::rpc::object_t& out,
         { "warnings", network::rpc::array_t{} }
     };
 
+    // Softfork activation is configured, not assumable. Taproot is reported
+    // when configured active, with its configured activation height --
+    // lnd's backendSupportsTaproot requires the key's presence (not its
+    // field values) before treating any backend (btcd or bitcoind) as
+    // usable, and checks this field before falling back to getdeploymentinfo.
+    network::rpc::object_t soft_forks{};
+    if (settings.forks.bip341 && settings.forks.bip342)
+    {
+        soft_forks.emplace("taproot", network::rpc::object_t
+        {
+            { "status", std::string{ "active" } },
+            { "bit", 2 },
+            { "startTime", -1 },
+            { "timeout", -1 },
+            { "since", settings.bip9_bit2_active_checkpoint.height() },
+            { "min_activation_height", 0 }
+        });
+    }
+    out.emplace("bip9_softforks", std::move(soft_forks));
+
     return true;
 }
 

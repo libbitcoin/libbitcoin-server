@@ -64,8 +64,8 @@ struct bitcoind_blockchain_methods
         method<"getmempoolcluster", string_t>{ unimplemented, "txid" },
         method<"getmempooldescendants", string_t, nullopt<false>>{ unimplemented, "txid", "verbose" },
         method<"getmempoolentry", string_t>{ unimplemented, "txid" },
-        method<"getmempoolinfo">{ unimplemented },
-        method<"getrawmempool", nullopt<false>, nullopt<false>>{ unimplemented, "verbose", "mempool_sequence" },
+        method<"getmempoolinfo">{},
+        method<"getrawmempool", nullopt<false>, nullopt<false>>{ "verbose", "mempool_sequence" },
         method<"gettxspendingprevout", array_t, nullable<object_t>>{ unimplemented, "outputs", "options" },
         method<"importmempool", string_t, nullable<object_t>>{ unimplemented, "filepath", "options" }
     };

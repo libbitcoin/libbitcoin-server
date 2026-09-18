@@ -145,7 +145,8 @@ protected:
     bool handle_get_mempool_info(const code& ec,
         rpc_interface::get_mempool_info) NOEXCEPT;
     bool handle_get_raw_mempool(const code& ec,
-        rpc_interface::get_raw_mempool) NOEXCEPT;
+        rpc_interface::get_raw_mempool, bool verbose,
+        bool mempool_sequence) NOEXCEPT;
     bool handle_get_tx_spending_prevout(const code& ec,
         rpc_interface::get_tx_spending_prevout) NOEXCEPT;
     bool handle_import_mempool(const code& ec,
