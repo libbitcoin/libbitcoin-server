@@ -761,15 +761,15 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__method_not_found)
 
 // btcd overrides the bitcoind method (attached first, so it claims the
 // request). lnd's backendSupportsTaproot requires this key's presence to
-// treat any btcd backend as usable. The activation height is the configured
-// (mainnet) bip9 bit2 checkpoint.
-BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__present)
+// treat any btcd backend as usable. The store's top (9) is below mainnet's
+// taproot checkpoint (709632), so taproot must not yet report active (see
+// the dedicated btcd_taproot_active_tests suite for the active case).
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_active__absent)
 {
     const auto response = rpc("getblockchaininfo");
     const auto& result = response.at("result");
     BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
-    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
-    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+    BOOST_REQUIRE(!result.at("bip9_softforks").as_object().contains("taproot"));
 }
 
 // The override serves the base fields, and answers exactly once -- the
@@ -925,6 +925,24 @@ BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__already_authenticated__unauthorize
     const auto request = R"(["%1%","%2%"])";
     const auto result = rpc_error("authenticate", (boost_format(request) % BTCD_TEST_USERNAME % BTCD_TEST_PASSWORD).str());
     BOOST_REQUIRE_EQUAL(result, unauthorized.value());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// taproot active
+// ----------------------------------------------------------------------------
+// The checkpoint is configured below the store's top (9), so taproot is
+// active (see bitcoind_rpc's own copy of this test).
+
+BOOST_FIXTURE_TEST_SUITE(btcd_taproot_active_tests, btcd_taproot_active_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__active__present)
+{
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
+    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 5);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

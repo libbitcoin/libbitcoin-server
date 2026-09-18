@@ -164,4 +164,22 @@ struct btcd_no_index_setup_fixture
     }
 };
 
+// Configured with taproot's activation checkpoint below the store's top --
+// for tests of getblockchaininfo's bip9_softforks once taproot is active.
+struct btcd_taproot_active_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_taproot_active_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.bitcoin.bip9_bit2_active_checkpoint =
+                { system::null_hash, 5 };
+        })
+    {
+    }
+};
+
 #endif

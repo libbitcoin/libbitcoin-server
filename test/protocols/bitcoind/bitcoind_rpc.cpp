@@ -330,14 +330,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9__chainwork)
 
 // bip9_softforks is shared by chain_info() (see btcd_rpc's own copy of this
 // test) -- lnd's backendSupportsTaproot requires the key regardless of
-// backend. "softforks" (the older, pre-0.19 field) is still never served.
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__present)
+// backend. The store's top (9) is below mainnet's taproot checkpoint
+// (709632), so taproot must not yet report active (see the dedicated
+// bitcoind_taproot_active_tests suite for the active case). "softforks"
+// (the older, pre-0.19 field) is still never served.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_active__absent)
 {
     const auto response = rpc("getblockchaininfo");
     const auto& result = response.at("result");
     BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
-    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
-    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+    BOOST_REQUIRE(!result.at("bip9_softforks").as_object().contains("taproot"));
     BOOST_REQUIRE(!result.as_object().contains("softforks"));
 }
 
@@ -2414,6 +2416,25 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__closed_pool__not_allowed)
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BOOST_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
     BOOST_REQUIRE(response.at("result").at(0).as_object().contains("reject-reason"));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// taproot active
+// ----------------------------------------------------------------------------
+// The checkpoint is configured below the store's top (9), so taproot is
+// active (see btcd_rpc's own copy of this test).
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_taproot_active_tests,
+    bitcoind_taproot_active_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__active__present)
+{
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
+    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 5);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

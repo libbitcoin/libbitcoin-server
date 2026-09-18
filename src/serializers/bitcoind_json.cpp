@@ -311,13 +311,16 @@ bool chain_info(network::rpc::object_t& out,
         { "warnings", network::rpc::array_t{} }
     };
 
-    // Softfork activation is configured, not assumable. Taproot is reported
-    // when configured active, with its configured activation height --
+    // Taproot is configured (rules enabled), but activation is a height, not
+    // a setting -- reported only once the confirmed chain reaches it, per
+    // chain_state's own bip9_bit2_height gate (height >= activation_height).
     // lnd's backendSupportsTaproot requires the key's presence (not its
     // field values) before treating any backend (btcd or bitcoind) as
     // usable, and checks this field before falling back to getdeploymentinfo.
     network::rpc::object_t soft_forks{};
-    if (settings.forks.bip341 && settings.forks.bip342)
+    const auto taproot_height = settings.bip9_bit2_active_checkpoint.height();
+    if (settings.forks.bip341 && settings.forks.bip342 &&
+        blocks >= taproot_height)
     {
         soft_forks.emplace("taproot", network::rpc::object_t
         {
@@ -325,7 +328,7 @@ bool chain_info(network::rpc::object_t& out,
             { "bit", 2 },
             { "startTime", -1 },
             { "timeout", -1 },
-            { "since", settings.bip9_bit2_active_checkpoint.height() },
+            { "since", taproot_height },
             { "min_activation_height", 0 }
         });
     }
