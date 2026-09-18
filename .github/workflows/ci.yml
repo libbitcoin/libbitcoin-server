@@ -9,6 +9,10 @@ name: Continuous Integration
 
 on: [ pull_request, push, workflow_dispatch ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository_owner == 'libbitcoin' && (github.event.pull_request.number || github.run_id) || github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   gnu:
@@ -97,7 +101,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
       - name: Checkout repository [libbitcoin-database]
@@ -105,7 +109,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
       - name: Checkout repository [libbitcoin-network]
@@ -113,7 +117,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
       - name: Checkout repository [libbitcoin-node]
@@ -121,7 +125,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
       - name: Checkout repository [libbitcoin-server]
@@ -348,7 +352,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
       - name: Checkout repository [libbitcoin-database]
@@ -356,7 +360,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
       - name: Checkout repository [libbitcoin-network]
@@ -364,7 +368,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
       - name: Checkout repository [libbitcoin-node]
@@ -372,7 +376,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
       - name: Checkout repository [libbitcoin-server]
@@ -562,7 +566,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
       - name: Checkout repository [libbitcoin-database]
@@ -570,7 +574,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
       - name: Checkout repository [libbitcoin-network]
@@ -578,7 +582,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
       - name: Checkout repository [libbitcoin-node]
@@ -586,7 +590,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
       - name: Checkout repository [libbitcoin-server]
@@ -763,7 +767,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
       - name: Checkout repository [libbitcoin-database]
@@ -771,7 +775,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
       - name: Checkout repository [libbitcoin-network]
@@ -779,7 +783,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
       - name: Checkout repository [libbitcoin-node]
@@ -787,7 +791,7 @@ jobs:
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
-          ref: ${{ steps.get-branch.outputs.branch_name }}
+          ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
       - name: Checkout repository [libbitcoin-server]
