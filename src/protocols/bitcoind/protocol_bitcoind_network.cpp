@@ -446,12 +446,69 @@ bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     return true;
 }
 
+// bitcoind's connection type name for each capture group.
+static std::string to_connection_type(
+    network::diagnostics::target group) NOEXCEPT
+{
+    using target = network::diagnostics::target;
+    switch (group)
+    {
+        case target::inbound: return "inbound";
+        case target::manual: return "manual";
+        default: return "outbound-full-relay";
+    }
+}
+
+// The round completes when the last captured channel releases the message.
 bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     rpc_interface::get_peer_info) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::method_not_found);
+    if (stopped(ec))
+        return false;
+
+    const auto captured = std::make_shared<network::diagnostics::sink>();
+    const auto complete = std::make_shared<network::diagnostics::race>(
+        BIND(handle_captured, _1, captured));
+
+    BROADCAST(network::diagnostics, to_shared<const network::diagnostics>(
+        complete, captured, network::diagnostics::target::all));
+
     return true;
+}
+
+void protocol_bitcoind_network::handle_captured(const code&,
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_send_peer_info, captured);
+}
+
+void protocol_bitcoind_network::do_send_peer_info(
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    array_t out{};
+    for (const auto& row: captured->captured())
+        out.emplace_back(object_t
+        {
+            { "id", row.identifier },
+            { "addr", network::config::endpoint{ row.address }.to_string() },
+            { "services", encode_base16(to_big_endian(row.services)) },
+            { "servicesnames", to_service_names(row.services) },
+            { "connection_type", to_connection_type(row.group) },
+            { "inbound", row.group == network::diagnostics::target::inbound },
+            { "version", row.version },
+            { "subver", row.agent },
+            { "startingheight", row.start_height },
+            { "bytessent", row.sent },
+            { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
+        });
+
+    const auto size = 256 * out.size();
+    send_result(std::move(out), size);
 }
 
 BC_POP_WARNING()

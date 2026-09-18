@@ -867,6 +867,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BOOST_REQUIRE(result.at("connections_out").is_int64());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getpeerinfo__no_channels__empty)
+{
+    // The fixture runs no peer sessions, so the capture round is empty.
+    const auto response = rpc("getpeerinfo");
+    BOOST_REQUIRE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__networks__bip155_networks)
 {
     const auto response = rpc("getnetworkinfo");

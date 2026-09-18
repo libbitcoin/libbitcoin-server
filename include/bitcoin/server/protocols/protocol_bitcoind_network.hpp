@@ -93,6 +93,12 @@ private:
     void do_send_nodes(const code& ec,
         const network::address_cptr& message) NOEXCEPT;
 
+    /// Diagnostic capture completion (bounced to the channel strand).
+    void handle_captured(const code& ec,
+        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+    void do_send_peer_info(
+        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+
     // These are protected by strand.
     size_t node_count_{};
     std::string node_network_{};
