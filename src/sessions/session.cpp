@@ -29,11 +29,6 @@ network::config::address_counts session::address_counts() const NOEXCEPT
     return node_.address_counts();
 }
 
-network::config::address session::sam_self() const NOEXCEPT
-{
-    return node_.sam_self();
-}
-
 void session::dump_addresses(
     network::address_handler&& handler) const NOEXCEPT
 {

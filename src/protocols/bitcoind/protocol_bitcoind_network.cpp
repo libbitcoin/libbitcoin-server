@@ -89,7 +89,7 @@ static array_t to_service_names(uint64_t services) NOEXCEPT
 
     array_t out{};
     for (const auto& [bit, name]: names)
-        if (to_bool(services & bit))
+        if (to_bool(bit_and(services, bit)))
             out.emplace_back(name);
 
     return out;
@@ -142,8 +142,7 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
     for (const auto& self: net_settings.inbound.selfs)
         locals.emplace_back(local(self));
 
-    const auto sam = sam_self();
-    if (sam)
+    if (const auto& sam = net_settings.inbound.self)
         locals.emplace_back(local(sam));
 
     const auto services = node_settings().services_provided();

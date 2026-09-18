@@ -118,6 +118,13 @@ int bc::system::main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // Settings files are read and derived values packed, once, here.
+    if (const auto ec = metadata.configured.initialize())
+    {
+        cerr << ec.message() << std::endl;
+        return EXIT_FAILURE;
+    }
+
 #if defined(HAVE_MSC)
     symbols_path = metadata.configured.log.symbols;
 #endif

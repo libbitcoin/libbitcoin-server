@@ -34,5 +34,13 @@ configuration::configuration(system::chain::selection context,
 {
 }
 
+code configuration::initialize() NOEXCEPT
+{
+    if (const auto ec = node::configuration::initialize())
+        return ec;
+
+    return server.initialize();
+}
+
 } // namespace server
 } // namespace libbitcoin

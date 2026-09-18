@@ -44,8 +44,6 @@ std::optional<std::thread> executor::poller_thread_{};
 executor& executor::factory(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
 {
-    metadata.configured.initialize();
-
     // Suppress configured batch cache sizing when batching cannot run.
     if (!system::batched::accelerated())
     {

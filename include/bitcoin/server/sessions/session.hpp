@@ -58,9 +58,6 @@ public:
     /// The number of host pool addresses by address type.
     network::config::address_counts address_counts() const NOEXCEPT;
 
-    /// The sam self address (unspecified if not bridged or transient).
-    network::config::address sam_self() const NOEXCEPT;
-
     /// Get a randomized subset of pooled addresses.
     void dump_addresses(network::address_handler&& handler) const NOEXCEPT;
 

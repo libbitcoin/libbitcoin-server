@@ -68,6 +68,11 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
+    // Settings files are read and derived values packed, as by the executor.
+    ec = config_.initialize();
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+
     setup(query_);
 
     // The node (chasers and address pool), bypassed by default.
