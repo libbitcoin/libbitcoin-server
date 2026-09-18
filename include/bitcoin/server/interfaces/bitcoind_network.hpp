@@ -42,7 +42,7 @@ struct bitcoind_network_methods
         method<"getconnectioncount">{},
         method<"getnettotals">{},
         method<"getnodeaddresses", nullopt<1.0>, nullopt<""_t>>{ "count", "network" },
-        method<"getpeerinfo">{ unimplemented },
+        method<"getpeerinfo">{},
         method<"ping">{},
         method<"setnetworkactive", boolean_t>{ "state" }
     };
