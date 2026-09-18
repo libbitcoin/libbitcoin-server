@@ -35,6 +35,9 @@ public:
         const server::settings::embedded_pages& native,
         const server::settings::embedded_pages& admin) NOEXCEPT;
 
+    /// Read files and pack derived settings, must follow configuration parse.
+    code initialize() NOEXCEPT override;
+
     /// Environment.
     system::config::path file{};
 

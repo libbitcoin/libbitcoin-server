@@ -303,6 +303,10 @@ bool protocol_btcd::handle_get_info(const code& ec,
         10'000 * to_value(btcd::version::minor) +
         100 * to_value(btcd::version::patch);
 
+    const auto& outbound = network_settings().outbound;
+    const auto proxy = outbound.proxied() ? outbound.socks.to_string() :
+        std::string{};
+
     send_result(object_t
     {
         { "version", version },
@@ -310,7 +314,7 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "blocks", top },
         { "timeoffset", 0 },
         { "connections", channel_count() },
-        { "proxy", std::string{} },
+        { "proxy", proxy },
         { "difficulty", header->difficulty() },
         { "testnet", chain_name(query) != "main" },
         { "relayfee", node_settings().minimum_fee_rate },

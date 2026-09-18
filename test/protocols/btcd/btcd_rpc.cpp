@@ -212,6 +212,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__ten_block_store__nine)
     const auto& result = response.at("result").as_object();
     BOOST_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
     BOOST_REQUIRE_EQUAL(result.at("testnet").as_bool(), false);
+    BOOST_REQUIRE(result.at("proxy").as_string().empty());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__http_post__dispatched)

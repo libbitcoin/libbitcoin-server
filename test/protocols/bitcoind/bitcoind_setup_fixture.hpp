@@ -176,6 +176,24 @@ struct bitcoind_no_address_setup_fixture
     }
 };
 
+// Configured with an outbound socks proxy and tor gossip -- for the network
+// reachability and proxy reporting of getnetworkinfo.
+struct bitcoind_proxied_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_proxied_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.network.gossip_tor = true;
+            config.network.outbound.socks = { "127.0.0.1:9050" };
+        })
+    {
+    }
+};
+
 struct bitcoind_witness_setup_fixture
     : bitcoind_setup_fixture
 {

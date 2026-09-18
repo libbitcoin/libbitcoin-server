@@ -89,7 +89,7 @@ static array_t to_service_names(uint64_t services) NOEXCEPT
 
     array_t out{};
     for (const auto& [bit, name]: names)
-        if (to_bool(services & bit))
+        if (to_bool(bit_and(services, bit)))
             out.emplace_back(name);
 
     return out;
@@ -106,27 +106,44 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
     const auto& segments = settings.version.segments();
     const auto version = 10'000 * segments[0] + 100 * segments[1] + segments[2];
 
-    // Proxied networks are not configurable (onion/i2p/cjdns unreachable).
-    const auto network = [](const std::string& name) NOEXCEPT
+    // Proxy credentials are configured, so are never randomized.
+    const auto network = [](const std::string& name, bool reachable,
+        const std::string& proxy) NOEXCEPT
     {
         return object_t
         {
             { "name", name },
-            { "limited", false },
-            { "reachable", true },
-            { "proxy", std::string{} },
+            { "limited", !reachable },
+            { "reachable", reachable },
+            { "proxy", proxy },
             { "proxy_randomize_credentials", false }
         };
     };
 
-    array_t locals{};
-    for (const auto& self: network_settings().inbound.selfs)
-        locals.emplace_back(object_t
+    const auto local = [](const network::config::address& self) NOEXCEPT
+    {
+        return object_t
         {
             { "address", self.to_host() },
             { "port", self.port() },
             { "score", 1 }
-        });
+        };
+    };
+
+    const auto& net_settings = network_settings();
+    const auto proxied = net_settings.outbound.proxied();
+    const auto bridged = net_settings.inbound.bridged();
+    const auto proxy = proxied ? net_settings.outbound.socks.to_string() :
+        std::string{};
+    const auto bridge = bridged ? net_settings.inbound.bridge.to_string() :
+        proxy;
+
+    array_t locals{};
+    for (const auto& self: net_settings.inbound.selfs)
+        locals.emplace_back(local(self));
+
+    if (const auto& sam = net_settings.inbound.self)
+        locals.emplace_back(local(sam));
 
     const auto services = node_settings().services_provided();
     const auto connections = channel_count();
@@ -136,21 +153,28 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
     {
         { "version", version },
         { "subversion", settings.subversion },
-        { "protocolversion", network_settings().protocol_maximum },
+        { "protocolversion", net_settings.protocol_maximum },
         { "localservices", encode_base16(to_big_endian(services)) },
         { "localservicesnames", to_service_names(services) },
-        { "localrelay", network_settings().enable_relay },
+        { "localrelay", net_settings.enable_relay },
         { "timeoffset", 0 },
         { "connections", connections },
         { "connections_in", inbound },
         { "connections_out", floored_subtract(connections, inbound) },
         { "networkactive", !node::protocol::suspended() },
-        { "networks", array_t{ network("ipv4"), network("ipv6") } },
+        { "networks", array_t
+        {
+            network("ipv4", net_settings.gossip_ipv4, proxy),
+            network("ipv6", net_settings.gossip_ipv6, proxy),
+            network("onion", net_settings.gossip_tor && proxied, proxy),
+            network("i2p", net_settings.gossip_i2p && (proxied || bridged), bridge),
+            network("cjdns", net_settings.gossip_ipv6, proxy)
+        } },
         { "relayfee", node_settings().minimum_fee_rate },
         { "incrementalfee", node_settings().minimum_bump_rate },
         { "localaddresses", std::move(locals) },
         { "warnings", array_t{} }
-    }, 512);
+    }, 1024);
     return true;
 }
 
@@ -269,7 +293,7 @@ bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
     const auto counts = address_counts();
     const auto ipv4 = counts.at(ipv4_t::id);
     const auto ipv6 = counts.at(ipv6_t::id);
-    const auto onion = counts.at(torv2_t::id) + counts.at(torv3_t::id);
+    const auto onion = counts.at(torv3_t::id);
     const auto i2p = counts.at(i2p_t::id);
     const auto cjdns = counts.at(cjdns_t::id);
 

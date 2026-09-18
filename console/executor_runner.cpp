@@ -175,7 +175,6 @@ bool executor::do_run()
     logger(BS_NODE_INTERRUPT);
 
     // Create node.
-    metadata_.configured.network.manual.initialize();
     node_ = std::make_shared<server_node>(query_, metadata_.configured, log_);
 
     // Subscribe node.

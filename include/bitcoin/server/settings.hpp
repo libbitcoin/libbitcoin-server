@@ -241,6 +241,9 @@ public:
     settings(system::chain::selection context, const embedded_pages& native,
         const embedded_pages& admin) NOEXCEPT;
 
+    /// Initialize the service contexts (const thereafter).
+    virtual code initialize() NOEXCEPT;
+
     /// address encoding (coin/network identity)
     wallet_settings wallet;
 
