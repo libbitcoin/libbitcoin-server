@@ -1221,6 +1221,19 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnettotals__no_channels__zero)
     BOOST_REQUIRE(!result.at("uploadtarget").at("target_reached").as_bool());
 }
 
+// The fixture rate limits 2 inbound and 3 outbound at 1000 bytes/second.
+BOOST_FIXTURE_TEST_CASE(bitcoind_rpc__getnettotals__rate_limited__effective_target, bitcoind_limited_setup_fixture)
+{
+    const auto response = rpc("getnettotals");
+    const auto& target = response.at("result").at("uploadtarget");
+    BOOST_REQUIRE_EQUAL(target.at("timeframe").as_int64(), 86400);
+    BOOST_REQUIRE_EQUAL(target.at("target").as_int64(), 5 * 1000 * 86400);
+    BOOST_REQUIRE_EQUAL(target.at("bytes_left_in_cycle").as_int64(), 5 * 1000 * 86400);
+    BOOST_REQUIRE_EQUAL(target.at("time_left_in_cycle").as_int64(), 86400);
+    BOOST_REQUIRE(!target.at("target_reached").as_bool());
+    BOOST_REQUIRE(target.at("serve_historical_blocks").as_bool());
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrpcinfo__default__logpath_and_no_active)
 {
     const auto response = rpc("getrpcinfo");

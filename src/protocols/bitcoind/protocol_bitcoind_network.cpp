@@ -439,16 +439,37 @@ void protocol_bitcoind_network::do_send_net_totals(const code& ec,
         return;
     }
 
-    // There is no upload target, which is the shape bitcoind reports for a
-    // disabled target.
+    // Outbound is rate limited, so the target is the most that automatic
+    // connections can send in the timeframe. Manual connections are added by
+    // the operator and are not bounded by configuration. An unlimited rate
+    // on a connectable section is reported as no target (as bitcoind).
+    constexpr uint64_t timeframe = 24 * 60 * 60;
+    const auto& net_settings = network_settings();
+    const auto& in = net_settings.inbound;
+    const auto& out = net_settings.outbound;
+    const auto in_rate = net_settings.rate_limited(in);
+    const auto out_rate = net_settings.rate_limited(out);
+
+    const auto unlimited =
+        (to_bool(in.connections) && is_zero(in_rate)) ||
+        (to_bool(out.connections) && is_zero(out_rate));
+
+    const auto limit = ceilinged_add(
+        ceilinged_multiply<uint64_t>(in.connections, in_rate),
+        ceilinged_multiply<uint64_t>(out.connections, out_rate));
+
+    const auto bytes = unlimited ? zero :
+        ceilinged_multiply<uint64_t>(limit, timeframe);
+
+    // The rate bound does not deplete, so a full cycle always remains.
     object_t target
     {
-        { "timeframe", zero },
-        { "target", zero },
+        { "timeframe", timeframe },
+        { "target", bytes },
         { "target_reached", false },
         { "serve_historical_blocks", true },
-        { "bytes_left_in_cycle", zero },
-        { "time_left_in_cycle", zero }
+        { "bytes_left_in_cycle", bytes },
+        { "time_left_in_cycle", timeframe }
     };
 
     send_result(object_t
