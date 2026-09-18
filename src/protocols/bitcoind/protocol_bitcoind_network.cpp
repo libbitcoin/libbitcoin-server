@@ -501,6 +501,14 @@ static std::string to_connection_type(
     }
 }
 
+// bitcoind reports ping times in seconds, at microsecond resolution.
+static double to_ping_seconds(
+    const network::steady_clock::duration& span) NOEXCEPT
+{
+    return std::chrono::duration_cast<network::microseconds>(span).count() /
+        1'000'000.0;
+}
+
 // The round completes when the last captured channel releases the message.
 bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     rpc_interface::get_peer_info) NOEXCEPT
@@ -562,6 +570,16 @@ void protocol_bitcoind_network::do_send_peer_info(
         if (row.local)
             info.emplace("addrlocal",
                 network::config::endpoint{ row.local }.to_string());
+
+        // Ping times are unknown until the first ping/pong is completed.
+        if (is_nonzero(row.ping_time.count()))
+        {
+            info.emplace("pingtime", to_ping_seconds(row.ping_time));
+            info.emplace("minping", to_ping_seconds(row.minimum_ping_time));
+        }
+
+        if (is_nonzero(row.pending_ping_time.count()))
+            info.emplace("pingwait", to_ping_seconds(row.pending_ping_time));
 
         out.emplace_back(std::move(info));
     }
