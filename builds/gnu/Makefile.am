@@ -98,6 +98,11 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_subscribe.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_transactions.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum_version.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_address.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_block.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_mempool.cpp \
+    ${srcdir}/../../src/protocols/esplora/protocol_esplora_transaction.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_address.cpp \
     ${srcdir}/../../src/protocols/native/protocol_native_block.cpp \
@@ -107,11 +112,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/native/protocol_native_tx.cpp \
     ${srcdir}/../../src/protocols/sparrow/protocol_sparrow.cpp \
     ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp \
-    ${srcdir}/../../src/protocols/esplora/protocol_esplora.cpp \
-    ${srcdir}/../../src/protocols/esplora/protocol_esplora_address.cpp \
-    ${srcdir}/../../src/protocols/esplora/protocol_esplora_block.cpp \
-    ${srcdir}/../../src/protocols/esplora/protocol_esplora_mempool.cpp \
-    ${srcdir}/../../src/protocols/esplora/protocol_esplora_transaction.cpp \
     ${srcdir}/../../src/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../src/serializers/bitcoind_coin.cpp \
     ${srcdir}/../../src/serializers/bitcoind_deployments.cpp \
@@ -329,8 +329,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/admin/admin_diagnostics.cpp \
     ${srcdir}/../../test/protocols/admin/admin_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rest.cpp \
-    ${srcdir}/../../test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/bitcoind/bitcoind_rpc.cpp \
+    ${srcdir}/../../test/protocols/bitcoind/bitcoind_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/btcd/btcd_rpc.cpp \
     ${srcdir}/../../test/protocols/btcd/btcd_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_addresses.cpp \
@@ -347,6 +347,12 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/electrum/electrum_transactions.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_transports.cpp \
     ${srcdir}/../../test/protocols/electrum/electrum_version.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_address.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_block.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_mempool.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_setup_fixture.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_transaction.cpp \
+    ${srcdir}/../../test/protocols/esplora/esplora_websocket.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_client.cpp \
     ${srcdir}/../../test/protocols/fixture/rpc_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_address.cpp \
@@ -359,12 +365,6 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/sparrow/sparrow.cpp \
     ${srcdir}/../../test/protocols/zmq/zmq.cpp \
     ${srcdir}/../../test/protocols/zmq/zmq_setup_fixture.cpp \
-    ${srcdir}/../../test/protocols/esplora/esplora_address.cpp \
-    ${srcdir}/../../test/protocols/esplora/esplora_block.cpp \
-    ${srcdir}/../../test/protocols/esplora/esplora_mempool.cpp \
-    ${srcdir}/../../test/protocols/esplora/esplora_setup_fixture.cpp \
-    ${srcdir}/../../test/protocols/esplora/esplora_transaction.cpp \
-    ${srcdir}/../../test/protocols/esplora/esplora_websocket.cpp \
     ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../test/serializers/bitcoind_json.cpp \
     ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \
