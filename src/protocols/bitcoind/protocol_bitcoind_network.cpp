@@ -538,6 +538,9 @@ void protocol_bitcoind_network::do_send_peer_info(
             { "version", row.version },
             { "subver", row.agent },
             { "startingheight", row.start_height },
+            { "conntime", row.created },
+            { "lastsend", row.last_write },
+            { "lastrecv", row.last_read },
             { "bytessent", row.sent },
             { "bytesrecv", row.received },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
