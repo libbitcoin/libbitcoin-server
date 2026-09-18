@@ -75,6 +75,13 @@ public:
         session_->dump_addresses(std::move(handler));
     }
 
+    /// Get the closed channel byte totals with the active identifiers.
+    inline void fetch_totals(
+        network::net::totals_handler&& handler) const NOEXCEPT
+    {
+        session_->fetch_totals(std::move(handler));
+    }
+
 protected:
     /// A tx broadcast on this channel, with its identifier.
     using retained_t = std::pair<system::hash_digest,

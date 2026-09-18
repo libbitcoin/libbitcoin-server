@@ -418,14 +418,69 @@ bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     return true;
 }
 
-// Byte counters are not tracked. There is no upload target, which is the shape
-// bitcoind reports for a disabled target.
+// Active channels are counted by their captured totals, closed channels by
+// the accumulated totals, which are read with the active identifiers.
 bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     rpc_interface::get_net_totals) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
+    const auto captured = std::make_shared<network::diagnostics::sink>();
+    const auto complete = std::make_shared<network::diagnostics::race>(
+        BIND(handle_captured_totals, _1, captured));
+
+    BROADCAST(network::diagnostics, to_shared<const network::diagnostics>(
+        complete, captured, network::diagnostics::target::all));
+
+    return true;
+}
+
+void protocol_bitcoind_network::handle_captured_totals(const code&,
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    fetch_totals(BIND(handle_fetch_totals, _1, _2, captured));
+}
+
+void protocol_bitcoind_network::handle_fetch_totals(const code& ec,
+    const network::net::totals& totals,
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_send_net_totals, ec, totals, captured);
+}
+
+void protocol_bitcoind_network::do_send_net_totals(const code& ec,
+    const network::net::totals& totals,
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+    {
+        send_error(error::bitcoind::misc_error);
+        return;
+    }
+
+    auto sent = totals.sent;
+    auto received = totals.received;
+
+    for (const auto& row: captured->captured())
+    {
+        if (contains(totals.actives, row.identifier))
+        {
+            sent = ceilinged_add(sent, row.sent);
+            received = ceilinged_add(received, row.received);
+        }
+    }
+
+    // There is no upload target, which is the shape bitcoind reports for a
+    // disabled target.
     object_t target
     {
         { "timeframe", zero },
@@ -438,12 +493,11 @@ bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
 
     send_result(object_t
     {
-        { "totalbytesrecv", zero },
-        { "totalbytessent", zero },
+        { "totalbytesrecv", received },
+        { "totalbytessent", sent },
         { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 },
         { "uploadtarget", std::move(target) }
     }, 256);
-    return true;
 }
 
 // bitcoind's connection type name for each capture group.
@@ -504,6 +558,7 @@ void protocol_bitcoind_network::do_send_peer_info(
             { "subver", row.agent },
             { "startingheight", row.start_height },
             { "bytessent", row.sent },
+            { "bytesrecv", row.received },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
         });
 

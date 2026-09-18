@@ -99,6 +99,16 @@ private:
     void do_send_peer_info(
         const network::diagnostics::sink::ptr& captured) NOEXCEPT;
 
+    /// Diagnostic capture reconciled against the net totals.
+    void handle_captured_totals(const code& ec,
+        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+    void handle_fetch_totals(const code& ec,
+        const network::net::totals& totals,
+        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+    void do_send_net_totals(const code& ec,
+        const network::net::totals& totals,
+        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+
     // These are protected by strand.
     size_t node_count_{};
     std::string node_network_{};
