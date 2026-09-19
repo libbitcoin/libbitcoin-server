@@ -273,6 +273,21 @@ struct bitcoind_closed_setup_fixture
     }
 };
 
+// Configured with taproot flagged in the top header context.
+struct bitcoind_taproot_active_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_taproot_active_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query,
+                system::chain::flags::bip341_rule |
+                system::chain::flags::bip342_rule);
+        })
+    {
+    }
+};
+
 // Configured with the chasers started and no currency window -- for tests of
 // transaction submission, which the tx chaser refuses unless the top is current.
 struct bitcoind_submit_setup_fixture

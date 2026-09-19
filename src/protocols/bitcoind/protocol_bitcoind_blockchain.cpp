@@ -109,7 +109,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_entry, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_info, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
     SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
     subscribe_chase(BIND(handle_chase, _1, _2, _3));
@@ -1575,19 +1575,60 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
     return true;
 }
 
+// No mempool in v4, but bitcoind never errors here, so report empty. The
+// minimum fee is that sent to peers (feefilter).
 bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     rpc_interface::get_mempool_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+
+    const auto& settings = node_settings();
+    const auto minimum = to_floating(minimum_fee_rate()) /
+        chain::satoshi_per_bitcoin;
+
+    send_result(object_t
+    {
+        { "loaded", true },
+        { "size", 0 },
+        { "bytes", 0 },
+        { "usage", 0 },
+        { "total_fee", 0 },
+        { "maxmempool", 0 },
+        { "mempoolminfee", minimum },
+        { "minrelaytxfee", minimum },
+        { "incrementalrelayfee", settings.minimum_bump_rate },
+        { "unbroadcastcount", 0 },
+        { "fullrbf", false }
+    }, 256);
     return true;
 }
 
+// No mempool in v4, but bitcoind never errors here, so report empty.
 bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
-    rpc_interface::get_raw_mempool) NOEXCEPT
+    rpc_interface::get_raw_mempool, bool verbose, bool mempool_sequence) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+
+    if (verbose && mempool_sequence)
+    {
+        send_error(error::bitcoind::invalid_params);
+        return true;
+    }
+
+    if (mempool_sequence)
+    {
+        send_result(object_t{ { "txids", array_t{} },
+            { "mempool_sequence", 0 } }, 32);
+        return true;
+    }
+
+    if (verbose)
+    {
+        send_result(object_t{}, 4);
+        return true;
+    }
+
+    send_result(array_t{}, 4);
     return true;
 }
 
