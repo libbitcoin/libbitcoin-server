@@ -202,6 +202,15 @@ bool protocol_bitcoind_network::handle_set_ban(const code& ec,
     return true;
 }
 
+// Retains a connected channel, and does not reconnect upon failure or stop.
+static network::channel_notifier to_once() NOEXCEPT
+{
+    return [](const code&, const network::channel::ptr& channel) NOEXCEPT
+    {
+        return !is_null(channel);
+    };
+}
+
 // The transport is determined by the outbound p2ps configuration.
 bool protocol_bitcoind_network::handle_add_node(const code& ec,
     rpc_interface::add_node, const std::string& node,
@@ -240,7 +249,11 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
             return true;
         }
 
-        connect(network::config::endpoint{ node });
+        // A one try connection is not retained, so is not reconnected.
+        if (command == "onetry")
+            connect(network::config::endpoint{ node }, to_once());
+        else
+            connect(network::config::endpoint{ node });
     }
     catch (const std::exception&)
     {
