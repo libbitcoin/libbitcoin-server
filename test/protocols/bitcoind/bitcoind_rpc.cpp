@@ -328,12 +328,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9__chainwork)
     BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
 }
 
-// bip9_softforks is shared by chain_info() (see btcd_rpc's own copy of this
-// test) -- lnd's backendSupportsTaproot requires the key regardless of
-// backend. The store's top (9) is below mainnet's taproot checkpoint
-// (709632), so taproot must not yet report active (see the dedicated
-// bitcoind_taproot_active_tests suite for the active case). "softforks"
-// (the older, pre-0.19 field) is still never served.
+// The store's top (9) is below the mainnet taproot checkpoint (709632).
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_active__absent)
 {
     const auto response = rpc("getblockchaininfo");
@@ -991,6 +986,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__default__empty_pool)
     BOOST_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
     BOOST_REQUIRE_EQUAL(result.at("usage").as_int64(), 0);
     BOOST_REQUIRE_EQUAL(result.at("unbroadcastcount").as_int64(), 0);
+    BOOST_REQUIRE(!result.at("fullrbf").as_bool());
+}
+
+// The test store is historical, so the node is not pooling txs.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__not_current__max_money_minimum)
+{
+    const auto response = rpc("getmempoolinfo", "[]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), 20999999.9769);
+    BOOST_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), 20999999.9769);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__default__empty_array)
@@ -2422,8 +2427,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 // taproot active
 // ----------------------------------------------------------------------------
-// The checkpoint is configured below the store's top (9), so taproot is
-// active (see btcd_rpc's own copy of this test).
+// The checkpoint is configured below the store's top (9).
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_taproot_active_tests,
     bitcoind_taproot_active_setup_fixture)

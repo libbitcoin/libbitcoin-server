@@ -75,8 +75,7 @@ BCS_API void inject_activity(network::rpc::array_t& out,
 /// The bitcoind chain name, resolved from the genesis block.
 BCS_API std::string chain_name(const node::query& query) NOEXCEPT;
 
-/// The getblockchaininfo result, including bip9_softforks (real bitcoind
-/// and btcd both report it; lnd requires the key regardless of backend).
+/// The getblockchaininfo result, including bip9_softforks (required by lnd).
 /// False if the store is inconsistent, the caller sends the error.
 BCS_API bool chain_info(network::rpc::object_t& out,
     const node::query& query, const system::settings& settings,

@@ -1575,14 +1575,17 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
     return true;
 }
 
-// No mempool in v4, but real bitcoind never errors on this call -- report
-// the only honest content (empty), fee fields from the real relay policy.
+// No mempool in v4, but bitcoind never errors here, so report empty. The
+// minimum fee is max_money (as sent to peers) when not pooling txs.
 bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     rpc_interface::get_mempool_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
 
     const auto& settings = node_settings();
+    const auto minimum = is_current_chain(true) ? settings.minimum_fee_rate :
+        to_floating(system_settings().max_money()) / chain::satoshi_per_bitcoin;
+
     send_result(object_t
     {
         { "loaded", true },
@@ -1591,17 +1594,16 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
         { "usage", 0 },
         { "total_fee", 0 },
         { "maxmempool", 0 },
-        { "mempoolminfee", settings.minimum_fee_rate },
-        { "minrelaytxfee", settings.minimum_fee_rate },
+        { "mempoolminfee", minimum },
+        { "minrelaytxfee", minimum },
         { "incrementalrelayfee", settings.minimum_bump_rate },
         { "unbroadcastcount", 0 },
-        { "fullrbf", true }
+        { "fullrbf", false }
     }, 256);
     return true;
 }
 
-// No mempool in v4, but real bitcoind never errors on this call -- report
-// the only honest content (empty), in whichever shape was requested.
+// No mempool in v4, but bitcoind never errors here, so report empty.
 bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
     rpc_interface::get_raw_mempool, bool verbose, bool mempool_sequence) NOEXCEPT
 {

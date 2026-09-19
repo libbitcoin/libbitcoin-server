@@ -759,11 +759,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__method_not_found)
     REQUIRE_NO_THROW_TRUE(follow_up.at("result").is_object());
 }
 
-// btcd overrides the bitcoind method (attached first, so it claims the
-// request). lnd's backendSupportsTaproot requires this key's presence to
-// treat any btcd backend as usable. The store's top (9) is below mainnet's
-// taproot checkpoint (709632), so taproot must not yet report active (see
-// the dedicated btcd_taproot_active_tests suite for the active case).
+// The store's top (9) is below the mainnet taproot checkpoint (709632).
 BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_active__absent)
 {
     const auto response = rpc("getblockchaininfo");
@@ -931,8 +927,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 // taproot active
 // ----------------------------------------------------------------------------
-// The checkpoint is configured below the store's top (9), so taproot is
-// active (see bitcoind_rpc's own copy of this test).
+// The checkpoint is configured below the store's top (9).
 
 BOOST_FIXTURE_TEST_SUITE(btcd_taproot_active_tests, btcd_taproot_active_setup_fixture)
 

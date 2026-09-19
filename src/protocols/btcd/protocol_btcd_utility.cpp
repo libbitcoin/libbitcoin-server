@@ -117,11 +117,7 @@ bool protocol_btcd::handle_get_best_block(const code& ec,
 }
 
 // Overrides the bitcoind method (btcd is attached first, so it claims the
-// request). chain_info() now adds bip9_softforks for every caller, so this
-// override is functionally identical to the base handler -- kept only
-// because btcd's own dispatcher requires an explicit subscriber per method
-// (an unsubscribed method silently drops the request rather than falling
-// back to the inherited bitcoind handler).
+// request). Required, an unsubscribed method drops the request.
 bool protocol_btcd::handle_get_block_chain_info(const code& ec,
     btcd_interface::get_block_chain_info) NOEXCEPT
 {

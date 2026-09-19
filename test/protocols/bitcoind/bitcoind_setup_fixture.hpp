@@ -273,8 +273,7 @@ struct bitcoind_closed_setup_fixture
     }
 };
 
-// Configured with taproot's activation checkpoint below the store's top --
-// for tests of getblockchaininfo's bip9_softforks once taproot is active.
+// Configured with the taproot checkpoint below the store's top.
 struct bitcoind_taproot_active_setup_fixture
   : bitcoind_setup_fixture
 {
