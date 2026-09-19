@@ -1575,8 +1575,9 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
     return true;
 }
 
-// No mempool in v4, but bitcoind never errors here, so report empty. The
-// minimum fee is that sent to peers (feefilter).
+// Pooled txs are not indexed, so they cannot be enumerated or counted, and
+// bitcoind never errors here, so report empty. The minimum is that sent to
+// peers (feefilter), while the relay minimum is the configured rate.
 bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     rpc_interface::get_mempool_info) NOEXCEPT
 {
@@ -1584,6 +1585,8 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
 
     const auto& settings = node_settings();
     const auto minimum = to_floating(minimum_fee_rate()) /
+        chain::satoshi_per_bitcoin;
+    const auto relay = to_floating(settings.minimum_fee_rate_()) /
         chain::satoshi_per_bitcoin;
 
     send_result(object_t
@@ -1595,7 +1598,7 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
         { "total_fee", 0 },
         { "maxmempool", 0 },
         { "mempoolminfee", minimum },
-        { "minrelaytxfee", minimum },
+        { "minrelaytxfee", relay },
         { "incrementalrelayfee", settings.minimum_bump_rate },
         { "unbroadcastcount", 0 },
         { "fullrbf", false }
@@ -1603,7 +1606,8 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     return true;
 }
 
-// No mempool in v4, but bitcoind never errors here, so report empty.
+// Pooled txs are not indexed, so they cannot be enumerated, and bitcoind
+// never errors here, so report empty.
 bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
     rpc_interface::get_raw_mempool, bool verbose, bool mempool_sequence) NOEXCEPT
 {
@@ -1618,7 +1622,7 @@ bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
     if (mempool_sequence)
     {
         send_result(object_t{ { "txids", array_t{} },
-            { "mempool_sequence", 0 } }, 32);
+            { "mempool_sequence", 1 } }, 32);
         return true;
     }
 

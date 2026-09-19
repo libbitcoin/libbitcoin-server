@@ -990,13 +990,13 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__default__empty_pool)
     BOOST_REQUIRE(!result.at("fullrbf").as_bool());
 }
 
-// The test store is historical, so the node is not pooling txs.
+// The test store is historical, so the node is not current.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__not_current__max_money_minimum)
 {
     const auto response = rpc("getmempoolinfo", "[]");
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), 20999999.9769);
-    BOOST_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), 20999999.9769);
+    BOOST_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__default__empty_array)
@@ -1020,7 +1020,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__mempool_sequence__empty_with_s
 
     const auto& result = response.at("result");
     REQUIRE_NO_THROW_TRUE(result.at("txids").is_array() && result.at("txids").as_array().empty());
-    BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__verbose_and_sequence__invalid_params)
