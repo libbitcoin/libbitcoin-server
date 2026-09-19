@@ -650,6 +650,18 @@ static double to_ping_seconds(const steady_clock::duration& span) NOEXCEPT
     return duration_cast<microseconds>(span).count() / 1'000'000.0;
 }
 
+// bitcoind reports only those messages with a nonzero byte count.
+static object_t to_message_bytes(const diagnostics::counters& counts) NOEXCEPT
+{
+    object_t out{};
+    const auto& commands = peer::registry::commands();
+    for (size_t index{}; index < counts.size(); ++index)
+        if (is_nonzero(counts.at(index)))
+            out.emplace(string_t{ commands.at(index) }, counts.at(index));
+
+    return out;
+}
+
 // The round completes when the last captured channel releases the message.
 bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     rpc_interface::get_peer_info) NOEXCEPT
@@ -709,6 +721,10 @@ void protocol_bitcoind_network::do_send_peer_info(
             { "lastrecv", row.last_read },
             { "bytessent", row.bytes_sent },
             { "bytesrecv", row.bytes_received },
+            { "bytessent_per_msg",
+                to_message_bytes(row.bytes_sent_by_message) },
+            { "bytesrecv_per_msg",
+                to_message_bytes(row.bytes_received_by_message) },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
         };
 
@@ -730,7 +746,7 @@ void protocol_bitcoind_network::do_send_peer_info(
         out.emplace_back(std::move(info));
     }
 
-    const auto size = 256 * out.size();
+    const auto size = 1024 * out.size();
     send_result(std::move(out), size);
 }
 
