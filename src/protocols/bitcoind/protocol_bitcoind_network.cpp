@@ -223,7 +223,7 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
         return true;
     }
 
-    // The endpoint parse throws on malformed input.
+    // The address and endpoint parses throw on malformed input.
     try
     {
         // The drop code stops the channel and ends its reconnect cycle.
