@@ -164,4 +164,19 @@ struct btcd_no_index_setup_fixture
     }
 };
 
+// Configured with taproot flagged in the top header context.
+struct btcd_taproot_active_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_taproot_active_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query,
+                system::chain::flags::bip341_rule |
+                system::chain::flags::bip342_rule);
+        })
+    {
+    }
+};
+
 #endif

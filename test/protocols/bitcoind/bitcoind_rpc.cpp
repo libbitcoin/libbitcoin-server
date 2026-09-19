@@ -161,8 +161,6 @@ const std::vector<method_code> pending_methods
     { "getmempoolcluster", R"([""])", -33 },
     { "getmempooldescendants", R"([""])", -33 },
     { "getmempoolentry", R"([""])", -33 },
-    { "getmempoolinfo", "[]", -33 },
-    { "getrawmempool", "[]", -33 },
     { "gettxspendingprevout", R"([[]])", -33 },
     { "importmempool", R"([""])", -33 },
     { "abortprivatebroadcast", R"([""])", -32601 },
@@ -325,13 +323,13 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9__chainwork)
     BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
 }
 
-// bip9_softforks is a btcd-endpoint field (see btcd_rpc tests).
-// Removed from bitcoind's getblockchaininfo in 0.19 and absent from the fork.
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__softforks__absent)
+// The top header context has no taproot flags.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_active__absent)
 {
     const auto response = rpc("getblockchaininfo");
     const auto& result = response.at("result");
-    BOOST_REQUIRE(!result.as_object().contains("bip9_softforks"));
+    BOOST_REQUIRE(result.as_object().contains("bip9_softforks"));
+    BOOST_REQUIRE(!result.at("bip9_softforks").as_object().contains("taproot"));
     BOOST_REQUIRE(!result.as_object().contains("softforks"));
 }
 
@@ -976,6 +974,58 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__expected_code)
     {
         BOOST_REQUIRE_MESSAGE(has_code(rpc(method, params), code), method);
     }
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__default__empty_pool)
+{
+    const auto response = rpc("getmempoolinfo", "[]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    REQUIRE_NO_THROW_TRUE(result.at("loaded").as_bool());
+    BOOST_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("usage").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("unbroadcastcount").as_int64(), 0);
+    BOOST_REQUIRE(!result.at("fullrbf").as_bool());
+}
+
+// The test store is historical, so the node is not current.
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__not_current__max_money_minimum)
+{
+    const auto response = rpc("getmempoolinfo", "[]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), 20999999.9769);
+    BOOST_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__default__empty_array)
+{
+    const auto response = rpc("getrawmempool", "[]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array() && response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__verbose__empty_object)
+{
+    const auto response = rpc("getrawmempool", "[true]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object() && response.at("result").as_object().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__mempool_sequence__empty_with_sequence)
+{
+    const auto response = rpc("getrawmempool", "[false,true]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    REQUIRE_NO_THROW_TRUE(result.at("txids").is_array() && result.at("txids").as_array().empty());
+    BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__verbose_and_sequence__invalid_params)
+{
+    BOOST_REQUIRE(has_code(rpc("getrawmempool", "[true,true]"), -32602));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__core_shaped_params__expected_code)
@@ -2373,6 +2423,23 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__closed_pool__not_allowed)
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BOOST_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
     BOOST_REQUIRE(response.at("result").at(0).as_object().contains("reject-reason"));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// taproot active
+// ----------------------------------------------------------------------------
+// Taproot is flagged in the top header context.
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_taproot_active_tests, bitcoind_taproot_active_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__active__present)
+{
+    const auto response = rpc("getblockchaininfo");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
+    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
