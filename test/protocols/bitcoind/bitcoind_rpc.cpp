@@ -70,8 +70,7 @@ const std::vector<method_code> rejected_methods
 
 const std::vector<method_code> wip_methods
 {
-    { "getblockfrompeer", R"(["",0])", -32601 },
-    { "getaddednodeinfo", "[]", -24 }
+    { "getblockfrompeer", R"(["",0])", -32601 }
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -872,6 +871,19 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getpeerinfo__no_channels__empty)
     const auto response = rpc("getpeerinfo");
     BOOST_REQUIRE(response.at("result").is_array());
     BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getaddednodeinfo__no_channels__empty)
+{
+    // The fixture runs no manual sessions, so the capture round is empty.
+    const auto response = rpc("getaddednodeinfo", "[]");
+    BOOST_REQUIRE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getaddednodeinfo__node__node_not_added)
+{
+    BOOST_REQUIRE(has_code(rpc("getaddednodeinfo", R"(["1.2.3.4:8333"])"), -24));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__no_parameter__invalid_parameter)

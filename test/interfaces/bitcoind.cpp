@@ -126,9 +126,9 @@ static_assert(bitcoind_control_methods::names ==
 static_assert(bitcoind_mining_methods::names ==
     "getnetworkhashps getmininginfo submitblock submitheader");
 static_assert(bitcoind_network_methods::names ==
-    "getnetworkinfo addnode disconnectnode exportasmap getaddrmaninfo "
-    "getconnectioncount getnettotals getnodeaddresses getpeerinfo ping "
-    "setnetworkactive");
+    "getnetworkinfo addnode disconnectnode exportasmap getaddednodeinfo "
+    "getaddrmaninfo getconnectioncount getnettotals getnodeaddresses "
+    "getpeerinfo ping setnetworkactive");
 static_assert(bitcoind_notifications_methods::names == "getzmqnotifications");
 static_assert(bitcoind_test_methods::names == "");
 static_assert(bitcoind_transaction_methods::names ==

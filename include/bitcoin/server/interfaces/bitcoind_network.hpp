@@ -37,7 +37,7 @@ struct bitcoind_network_methods
         method<"addnode", string_t, string_t, nullopt<false>>{ "node", "command", "v2transport" },
         method<"disconnectnode", nullable<string_t>, nullable<number_t>>{ "address", "nodeid" },
         method<"exportasmap", string_t>{ "path" },
-        method<"getaddednodeinfo", nullable<string_t>>{ unimplemented, "node" },
+        method<"getaddednodeinfo", nullable<string_t>>{ "node" },
         method<"getaddrmaninfo">{},
         method<"getconnectioncount">{},
         method<"getnettotals">{},

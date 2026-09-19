@@ -59,7 +59,7 @@ void protocol_bitcoind_network::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_add_node, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_disconnect_node, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_export_asmap, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_get_added_node_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_added_node_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_addrman_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_connection_count, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_net_totals, _1, _2);
@@ -202,8 +202,7 @@ bool protocol_bitcoind_network::handle_set_ban(const code& ec,
     return true;
 }
 
-// Removal requires manual session deregistration (not supported), and the
-// transport is determined by the outbound p2ps configuration.
+// The transport is determined by the outbound p2ps configuration.
 bool protocol_bitcoind_network::handle_add_node(const code& ec,
     rpc_interface::add_node, const std::string& node,
     const std::string& command, bool v2transport) NOEXCEPT
@@ -218,16 +217,29 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
         return true;
     }
 
-    if (command != "add" && command != "onetry")
+    if (command != "add" && command != "onetry" && command != "remove")
     {
-        send_error(command == "remove" ? error::bitcoind::client_node_not_added :
-            error::bitcoind::misc_error);
+        send_error(error::bitcoind::misc_error);
         return true;
     }
 
     // The endpoint parse throws on malformed input.
     try
     {
+        // The drop code stops the channel and ends its reconnect cycle.
+        if (command == "remove")
+        {
+            const auto complete = emplace_shared<terminator::race>(
+                BIND(handle_stopped, _1,
+                    error::bitcoind::client_node_not_added));
+
+            BROADCAST(terminator, to_shared<terminator>(complete,
+                network::error::channel_dropped, zero,
+                network::config::address{ node }));
+
+            return true;
+        }
+
         connect(network::config::endpoint{ node });
     }
     catch (const std::exception&)
@@ -277,7 +289,8 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     }
 
     const auto complete = emplace_shared<terminator::race>(
-        BIND(handle_stopped, _1));
+        BIND(handle_stopped, _1,
+            error::bitcoind::client_node_not_connected));
 
     BROADCAST(terminator, to_shared<terminator>(complete,
         network::error::channel_stopped, identifier, peer));
@@ -285,20 +298,22 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     return true;
 }
 
-void protocol_bitcoind_network::handle_stopped(const code& ec) NOEXCEPT
+void protocol_bitcoind_network::handle_stopped(const code& ec,
+    error::bitcoind::error_t absent) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_stopped, ec);
+    POST(do_send_stopped, ec, absent);
 }
 
-void protocol_bitcoind_network::do_send_stopped(const code& ec) NOEXCEPT
+void protocol_bitcoind_network::do_send_stopped(const code& ec,
+    error::bitcoind::error_t absent) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (ec)
-        send_error(error::bitcoind::client_node_not_connected);
+        send_error(absent);
     else
         send_result(null_t{}, 8);
 }
@@ -311,12 +326,92 @@ bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
     return true;
 }
 
+// Manual nodes are not retained, so only connected nodes are reported.
 bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
-    rpc_interface::get_added_node_info) NOEXCEPT
+    rpc_interface::get_added_node_info,
+    const std::optional<std::string>& node) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_node_not_added);
+    if (stopped(ec))
+        return false;
+
+    node_address_ = node.value_or(std::string{});
+
+    const auto captured = to_shared<diagnostics::sink>();
+    const auto complete = emplace_shared<diagnostics::race>(
+        BIND(handle_captured_manual, _1, captured));
+
+    BROADCAST(diagnostics, to_shared<diagnostics>(complete, captured,
+        diagnostics::target::manual));
+
     return true;
+}
+
+void protocol_bitcoind_network::handle_captured_manual(const code&,
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_send_added_node_info, captured);
+}
+
+void protocol_bitcoind_network::do_send_added_node_info(
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto& rows = captured->captured();
+    const auto entry = [&](const network::config::address& peer) NOEXCEPT
+    {
+        const auto node = network::config::endpoint{ peer }.to_string();
+        const auto live = std::any_of(rows.begin(), rows.end(),
+            [&peer](const auto& row) NOEXCEPT
+            {
+                return row.address == peer;
+            });
+
+        // bitcoind reports the resolved addresses of a connected node.
+        array_t addresses{};
+        if (live)
+            addresses.emplace_back(object_t
+            {
+                { "address", node },
+                { "connected", "outbound" }
+            });
+
+        return object_t
+        {
+            { "addednode", node },
+            { "connected", live },
+            { "addresses", std::move(addresses) }
+        };
+    };
+
+    // Configured nodes may be disconnected, others are connected by rpc.
+    auto peers = network_settings().manual.friends;
+    for (const auto& row: rows)
+        if (!contains(peers, row.address))
+            peers.push_back(row.address);
+
+    array_t out{};
+    for (const auto& peer: peers)
+    {
+        if (!node_address_.empty() &&
+            node_address_ != network::config::endpoint{ peer }.to_string())
+            continue;
+
+        out.emplace_back(entry(peer));
+    }
+
+    // bitcoind fails the request for a node that has not been added.
+    if (!node_address_.empty() && out.empty())
+    {
+        send_error(error::bitcoind::client_node_not_added);
+        return;
+    }
+
+    const auto size = 128 * out.size();
+    send_result(std::move(out), size);
 }
 
 // bitcoind's network name for each address type, indexed by network id.
