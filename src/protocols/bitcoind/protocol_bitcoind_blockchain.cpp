@@ -1576,15 +1576,15 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
 }
 
 // No mempool in v4, but bitcoind never errors here, so report empty. The
-// minimum fee is max_money (as sent to peers) when not pooling txs.
+// minimum fee is that sent to peers (feefilter).
 bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     rpc_interface::get_mempool_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
 
     const auto& settings = node_settings();
-    const auto minimum = is_current_chain(true) ? settings.minimum_fee_rate :
-        to_floating(system_settings().max_money()) / chain::satoshi_per_bitcoin;
+    const auto minimum = to_floating(minimum_fee_rate()) /
+        chain::satoshi_per_bitcoin;
 
     send_result(object_t
     {
