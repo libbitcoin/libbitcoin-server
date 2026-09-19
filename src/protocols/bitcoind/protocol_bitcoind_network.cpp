@@ -558,6 +558,12 @@ static std::string to_connection_type(diagnostics::target group) NOEXCEPT
     }
 }
 
+// bitcoind reports fee rates in coins, the fee filter is in satoshis (bip133).
+static double to_fee_rate(uint64_t satoshis_per_kilobyte) NOEXCEPT
+{
+    return satoshis_per_kilobyte / 100'000'000.0;
+}
+
 // bitcoind reports ping times in seconds, at microsecond resolution.
 static double to_ping_seconds(const steady_clock::duration& span) NOEXCEPT
 {
@@ -608,6 +614,7 @@ void protocol_bitcoind_network::do_send_peer_info(
             { "services", encode_base16(to_big_endian(row.services)) },
             { "servicesnames", to_service_names(row.services) },
             { "relaytxes", row.relay },
+            { "minfeefilter", to_fee_rate(row.minimum_fee) },
             { "connection_type", to_connection_type(row.group) },
             { "inbound", row.group == diagnostics::target::inbound },
             { "version", row.version },
