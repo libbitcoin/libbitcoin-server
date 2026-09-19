@@ -759,7 +759,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__unknown_method__default__method_not_found)
     REQUIRE_NO_THROW_TRUE(follow_up.at("result").is_object());
 }
 
-// The store's top (9) is below the mainnet taproot checkpoint (709632).
+// The top header context has no taproot flags.
 BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_active__absent)
 {
     const auto response = rpc("getblockchaininfo");
@@ -927,7 +927,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 // taproot active
 // ----------------------------------------------------------------------------
-// The checkpoint is configured below the store's top (9).
+// Taproot is flagged in the top header context.
 
 BOOST_FIXTURE_TEST_SUITE(btcd_taproot_active_tests, btcd_taproot_active_setup_fixture)
 
@@ -937,7 +937,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__active
     const auto& result = response.at("result");
     BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
     BOOST_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
-    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

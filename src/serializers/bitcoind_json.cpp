@@ -287,7 +287,9 @@ bool chain_info(network::rpc::object_t& out,
     const auto header = query.get_header(link);
 
     uint256_t work{};
-    if (!header || !query.get_branch_work(work, link))
+    database::context context{};
+    if (!header || !query.get_branch_work(work, link) ||
+        !query.get_context(context, link))
         return false;
 
     const auto bits = header->bits();
@@ -311,11 +313,10 @@ bool chain_info(network::rpc::object_t& out,
         { "warnings", network::rpc::array_t{} }
     };
 
-    // Taproot is active by height (not configuration), as in chain_state.
+    // Taproot is active if flagged in the top confirmed header context.
     network::rpc::object_t soft_forks{};
-    const auto taproot_height = settings.bip9_bit2_active_checkpoint.height();
-    if (settings.forks.bip341 && settings.forks.bip342 &&
-        blocks >= taproot_height)
+    if (context.is_enabled(chain::flags::bip341_rule) &&
+        context.is_enabled(chain::flags::bip342_rule))
     {
         soft_forks.emplace("taproot", network::rpc::object_t
         {
@@ -323,10 +324,11 @@ bool chain_info(network::rpc::object_t& out,
             { "bit", 2 },
             { "startTime", -1 },
             { "timeout", -1 },
-            { "since", taproot_height },
+            { "since", settings.bip9_bit2_active_checkpoint.height() },
             { "min_activation_height", 0 }
         });
     }
+
     out.emplace("bip9_softforks", std::move(soft_forks));
 
     return true;

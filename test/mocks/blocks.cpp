@@ -94,7 +94,7 @@ boost::json::value parse_json(std::string_view value) NOEXCEPT
     }
 }
 
-bool setup_ten_block_store(query_t& query) NOEXCEPT
+bool setup_ten_block_store(query_t& query, uint32_t top_flags) NOEXCEPT
 {
     return query.initialize(genesis) &&
         query.set(block1, database::context{ 0, 1, 1231006505 }, false, false) &&
@@ -105,7 +105,7 @@ bool setup_ten_block_store(query_t& query) NOEXCEPT
         query.set(block6, database::context{ 0, 6, 1231470173 }, false, false) &&
         query.set(block7, database::context{ 0, 7, 1231470173 }, false, false) &&
         query.set(block8, database::context{ 0, 8, 1231470988 }, false, false) &&
-        query.set(block9, database::context{ 0, 9, 1231470988 }, false, false) &&
+        query.set(block9, database::context{ top_flags, 9, 1231470988 }, false, false) &&
         query.push_confirmed(query.to_header(block1_hash), true) &&
         query.push_confirmed(query.to_header(block2_hash), true) &&
         query.push_confirmed(query.to_header(block3_hash), true) &&

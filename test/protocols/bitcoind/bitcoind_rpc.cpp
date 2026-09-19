@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9__chainwork)
     BOOST_REQUIRE_EQUAL(as_text(result.at("chainwork")), "0000000000000000000000000000000000000000000000000000000a000a000a");
 }
 
-// The store's top (9) is below the mainnet taproot checkpoint (709632).
+// The top header context has no taproot flags.
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_active__absent)
 {
     const auto response = rpc("getblockchaininfo");
@@ -980,6 +980,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__default__empty_pool)
 {
     const auto response = rpc("getmempoolinfo", "[]");
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
     const auto& result = response.at("result");
     REQUIRE_NO_THROW_TRUE(result.at("loaded").as_bool());
     BOOST_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
@@ -1016,6 +1017,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__mempool_sequence__empty_with_s
 {
     const auto response = rpc("getrawmempool", "[false,true]");
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
     const auto& result = response.at("result");
     REQUIRE_NO_THROW_TRUE(result.at("txids").is_array() && result.at("txids").as_array().empty());
     BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 0);
@@ -2427,10 +2429,9 @@ BOOST_AUTO_TEST_SUITE_END()
 
 // taproot active
 // ----------------------------------------------------------------------------
-// The checkpoint is configured below the store's top (9).
+// Taproot is flagged in the top header context.
 
-BOOST_FIXTURE_TEST_SUITE(bitcoind_taproot_active_tests,
-    bitcoind_taproot_active_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(bitcoind_taproot_active_tests, bitcoind_taproot_active_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__active__present)
 {
@@ -2438,7 +2439,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__ac
     const auto& result = response.at("result");
     BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
     BOOST_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
-    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 5);
+    BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
