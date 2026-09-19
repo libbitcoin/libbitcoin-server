@@ -57,6 +57,7 @@ using method_params = std::pair<std::string, std::string>;
 
 const std::vector<method_code> rejected_methods
 {
+    { "getblockfrompeer", R"(["",0])", -32601 },
     { "dumptxoutset", R"([""])", -32601 },
     { "loadtxoutset", R"([""])", -32601 },
     { "clearbanned", "[]", -20 },
@@ -66,12 +67,6 @@ const std::vector<method_code> rejected_methods
     { "descriptorprocesspsbt", R"(["",[]])", -32601 },
     { "signrawtransactionwithkey", R"(["",[]])", -32601 },
     { "signmessagewithprivkey", R"(["",""])", -32601 }
-};
-
-const std::vector<method_code> wip_methods
-{
-    { "getblockfrompeer", R"(["",0])", -32601 },
-    { "getaddednodeinfo", "[]", -24 }
 };
 
 std::string as_text(const boost::json::value& value) NOEXCEPT
@@ -874,6 +869,19 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getpeerinfo__no_channels__empty)
     BOOST_REQUIRE(response.at("result").as_array().empty());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getaddednodeinfo__no_channels__empty)
+{
+    // The fixture runs no manual sessions, so the capture round is empty.
+    const auto response = rpc("getaddednodeinfo", "[]");
+    BOOST_REQUIRE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getaddednodeinfo__node__node_not_added)
+{
+    BOOST_REQUIRE(has_code(rpc("getaddednodeinfo", R"(["1.2.3.4:8333"])"), -24));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__no_parameter__invalid_parameter)
 {
     BOOST_REQUIRE(has_code(rpc("disconnectnode", "[]"), -8));
@@ -949,14 +957,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__rejected__expected_code)
 {
     for (const auto& [method, params, code]: rejected_methods)
-    {
-        BOOST_REQUIRE_MESSAGE(has_code(rpc(method, params), code), method);
-    }
-}
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__wip__expected_code)
-{
-    for (const auto& [method, params, code]: wip_methods)
     {
         BOOST_REQUIRE_MESSAGE(has_code(rpc(method, params), code), method);
     }
@@ -1895,10 +1895,10 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__range_pair__two_addresses)
 
 // network group
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__remove__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__remove_no_channels__node_not_added)
 {
-    const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"remove\"]");
-    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+    // The fixture runs no peer sessions, so the terminator identifies none.
+    BOOST_REQUIRE(has_code(rpc("addnode", R"(["127.0.0.1:8333","remove"])"), -24));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__bad_command__invalid)

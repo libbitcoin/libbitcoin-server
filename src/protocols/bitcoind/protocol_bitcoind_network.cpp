@@ -59,7 +59,7 @@ void protocol_bitcoind_network::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_add_node, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_disconnect_node, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_export_asmap, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_get_added_node_info, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_added_node_info, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_addrman_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_connection_count, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_net_totals, _1, _2);
@@ -202,8 +202,7 @@ bool protocol_bitcoind_network::handle_set_ban(const code& ec,
     return true;
 }
 
-// Removal requires manual session deregistration (not supported), and the
-// transport is determined by the outbound p2ps configuration.
+// The transport is determined by the outbound p2ps configuration.
 bool protocol_bitcoind_network::handle_add_node(const code& ec,
     rpc_interface::add_node, const std::string& node,
     const std::string& command, bool v2transport) NOEXCEPT
@@ -218,17 +217,34 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
         return true;
     }
 
-    if (command != "add" && command != "onetry")
+    if (command != "add" && command != "onetry" && command != "remove")
     {
-        send_error(command == "remove" ? error::bitcoind::client_node_not_added :
-            error::bitcoind::misc_error);
+        send_error(error::bitcoind::misc_error);
         return true;
     }
 
-    // The endpoint parse throws on malformed input.
+    // The address and endpoint parses throw on malformed input.
     try
     {
-        connect(network::config::endpoint{ node });
+        // The drop code stops the channel and ends its reconnect cycle.
+        if (command == "remove")
+        {
+            const auto complete = emplace_shared<terminator::race>(
+                BIND(handle_stopped, _1,
+                    error::bitcoind::client_node_not_added));
+
+            BROADCAST(terminator, to_shared<terminator>(complete,
+                network::error::channel_dropped, zero,
+                network::config::endpoint{ node }));
+
+            return true;
+        }
+
+        // A one try connection is not retained, so is not reconnected.
+        if (command == "onetry")
+            connect(network::config::endpoint{ node }, to_once());
+        else
+            connect(network::config::endpoint{ node });
     }
     catch (const std::exception&)
     {
@@ -256,7 +272,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     }
 
     uint64_t identifier{};
-    network::config::address peer{};
+    network::config::endpoint peer{};
 
     // The address parse throws on malformed input.
     try
@@ -268,7 +284,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
         }
 
         if (address)
-            peer = network::config::address{ address.value() };
+            peer = network::config::endpoint{ address.value() };
     }
     catch (const std::exception&)
     {
@@ -277,7 +293,8 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     }
 
     const auto complete = emplace_shared<terminator::race>(
-        BIND(handle_stopped, _1));
+        BIND(handle_stopped, _1,
+            error::bitcoind::client_node_not_connected));
 
     BROADCAST(terminator, to_shared<terminator>(complete,
         network::error::channel_stopped, identifier, peer));
@@ -285,20 +302,22 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     return true;
 }
 
-void protocol_bitcoind_network::handle_stopped(const code& ec) NOEXCEPT
+void protocol_bitcoind_network::handle_stopped(const code& ec,
+    error::bitcoind::error_t absent) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_stopped, ec);
+    POST(do_send_stopped, ec, absent);
 }
 
-void protocol_bitcoind_network::do_send_stopped(const code& ec) NOEXCEPT
+void protocol_bitcoind_network::do_send_stopped(const code& ec,
+    error::bitcoind::error_t absent) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (ec)
-        send_error(error::bitcoind::client_node_not_connected);
+        send_error(absent);
     else
         send_result(null_t{}, 8);
 }
@@ -311,12 +330,72 @@ bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
     return true;
 }
 
+// Manual nodes are not retained, so only connected nodes are reported.
 bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
-    rpc_interface::get_added_node_info) NOEXCEPT
+    rpc_interface::get_added_node_info,
+    const std::optional<std::string>& node) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_node_not_added);
+    if (stopped(ec))
+        return false;
+
+    node_address_ = node.value_or(std::string{});
+
+    const auto captured = to_shared<diagnostics::sink>();
+    const auto complete = emplace_shared<diagnostics::race>(
+        BIND(handle_captured_manual, _1, captured));
+
+    BROADCAST(diagnostics, to_shared<diagnostics>(complete, captured,
+        diagnostics::target::manual));
+
     return true;
+}
+
+void protocol_bitcoind_network::handle_captured_manual(const code&,
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_send_added_node_info, captured);
+}
+
+void protocol_bitcoind_network::do_send_added_node_info(
+    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    array_t out{};
+    for (const auto& row: captured->captured())
+    {
+        const auto node = row.endpoint.to_string();
+        if (!node_address_.empty() && node_address_ != node)
+            continue;
+
+        // bitcoind reports the resolved addresses of a connected node.
+        out.emplace_back(object_t
+        {
+            { "addednode", node },
+            { "connected", true },
+            { "addresses", array_t
+            {
+                object_t
+                {
+                    { "address", node },
+                    { "connected", "outbound" }
+                }
+            } }
+        });
+    }
+
+    // bitcoind fails the request for a node that has not been added.
+    if (!node_address_.empty() && out.empty())
+    {
+        send_error(error::bitcoind::client_node_not_added);
+        return;
+    }
+
+    const auto size = 128 * out.size();
+    send_result(std::move(out), size);
 }
 
 // bitcoind's network name for each address type, indexed by network id.
@@ -571,6 +650,18 @@ static double to_ping_seconds(const steady_clock::duration& span) NOEXCEPT
     return duration_cast<microseconds>(span).count() / 1'000'000.0;
 }
 
+// bitcoind reports only those messages with a nonzero byte count.
+static object_t to_message_bytes(const diagnostics::counters& counts) NOEXCEPT
+{
+    object_t out{};
+    const auto& commands = peer::registry::commands();
+    for (size_t index{}; index < counts.size(); ++index)
+        if (is_nonzero(counts.at(index)))
+            out.emplace(string_t{ commands.at(index) }, counts.at(index));
+
+    return out;
+}
+
 // The round completes when the last captured channel releases the message.
 bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     rpc_interface::get_peer_info) NOEXCEPT
@@ -605,27 +696,35 @@ void protocol_bitcoind_network::do_send_peer_info(
     array_t out{};
     for (const auto& row: captured->captured())
     {
+        // A proxied connection is unresolved, so reports its intended target.
+        const auto peer = row.address ? network::config::endpoint{ row.address } :
+            row.endpoint;
+
         object_t info
         {
             { "id", row.identifier },
-            { "addr", network::config::endpoint{ row.address }.to_string() },
+            { "addr", peer.to_string() },
             { "addrbind", row.binding.to_string() },
-            { "network", to_network_name(row.address) },
-            { "services", encode_base16(to_big_endian(row.services)) },
-            { "servicesnames", to_service_names(row.services) },
-            { "relaytxes", row.relay },
-            { "minfeefilter", to_fee_rate(row.minimum_fee) },
+            { "network", to_network_name(network::config::address{ peer }) },
+            { "services", encode_base16(to_big_endian(row.peer_services)) },
+            { "servicesnames", to_service_names(row.peer_services) },
+            { "relaytxes", row.peer_relay },
+            { "minfeefilter", to_fee_rate(row.peer_minimum_fee) },
             { "connection_type", to_connection_type(row.group) },
             { "inbound", row.group == diagnostics::target::inbound },
-            { "version", row.version },
-            { "subver", row.agent },
-            { "startingheight", row.start_height },
+            { "version", row.peer_version },
+            { "subver", row.peer_user_agent },
+            { "startingheight", row.peer_start_height },
             { "conntime", row.created },
             { "timeoffset", row.time_offset },
             { "lastsend", row.last_write },
             { "lastrecv", row.last_read },
-            { "bytessent", row.sent },
-            { "bytesrecv", row.received },
+            { "bytessent", row.bytes_sent },
+            { "bytesrecv", row.bytes_received },
+            { "bytessent_per_msg",
+                to_message_bytes(row.bytes_sent_by_message) },
+            { "bytesrecv_per_msg",
+                to_message_bytes(row.bytes_received_by_message) },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
         };
 
@@ -647,7 +746,7 @@ void protocol_bitcoind_network::do_send_peer_info(
         out.emplace_back(std::move(info));
     }
 
-    const auto size = 256 * out.size();
+    const auto size = 1024 * out.size();
     send_result(std::move(out), size);
 }
 

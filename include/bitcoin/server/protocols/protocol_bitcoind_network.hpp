@@ -72,7 +72,8 @@ protected:
     bool handle_export_asmap(const code& ec,
         rpc_interface::export_asmap, const std::string&) NOEXCEPT;
     bool handle_get_added_node_info(const code& ec,
-        rpc_interface::get_added_node_info) NOEXCEPT;
+        rpc_interface::get_added_node_info,
+        const std::optional<std::string>& node) NOEXCEPT;
     bool handle_get_addrman_info(const code& ec,
         rpc_interface::get_addrman_info) NOEXCEPT;
     bool handle_get_node_addresses(const code& ec,
@@ -102,8 +103,16 @@ private:
         const network::diagnostics::sink::ptr& captured) NOEXCEPT;
 
     /// Channel stop completion (bounced to the channel strand).
-    void handle_stopped(const code& ec) NOEXCEPT;
-    void do_send_stopped(const code& ec) NOEXCEPT;
+    void handle_stopped(const code& ec,
+        error::bitcoind::error_t absent) NOEXCEPT;
+    void do_send_stopped(const code& ec,
+        error::bitcoind::error_t absent) NOEXCEPT;
+
+    /// Manual capture completion (bounced to the channel strand).
+    void handle_captured_manual(const code& ec,
+        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+    void do_send_added_node_info(
+        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
 
     /// Peer byte totals completion (invoked on the channel strand).
     void do_send_net_totals(const code& ec, uint64_t sent,
@@ -112,6 +121,7 @@ private:
     // These are protected by strand.
     size_t node_count_{};
     std::string node_network_{};
+    std::string node_address_{};
 };
 
 } // namespace server
