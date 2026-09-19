@@ -71,7 +71,6 @@ const std::vector<method_code> rejected_methods
 const std::vector<method_code> wip_methods
 {
     { "getblockfrompeer", R"(["",0])", -32601 },
-    { "disconnectnode", "[]", -32601 },
     { "getaddednodeinfo", "[]", -24 }
 };
 
@@ -873,6 +872,27 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getpeerinfo__no_channels__empty)
     const auto response = rpc("getpeerinfo");
     BOOST_REQUIRE(response.at("result").is_array());
     BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__no_parameter__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", "[]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__both_parameters__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", R"(["1.2.3.4:8333",42])"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__nodeid__node_not_connected)
+{
+    // The fixture runs no peer sessions, so the capture identifies no channel.
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", "[null,42]"), -29));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__address__node_not_connected)
+{
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", R"(["1.2.3.4:8333"])"), -29));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__networks__bip155_networks)
