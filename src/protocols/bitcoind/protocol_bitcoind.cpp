@@ -366,6 +366,14 @@ boost::json::value protocol_bitcoind::script_public_key(
 // Totals capture.
 // ----------------------------------------------------------------------------
 
+network::net::channel_notifier protocol_bitcoind::to_once() NOEXCEPT
+{
+    return [](const code&, const network::channel::ptr& channel) NOEXCEPT
+    {
+        return !is_null(channel);
+    };
+}
+
 void protocol_bitcoind::capture_totals(totals_handler&& handler) NOEXCEPT
 {
     const auto captured = to_shared<diagnostics::sink>();

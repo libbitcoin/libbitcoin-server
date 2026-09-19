@@ -352,6 +352,88 @@ void protocol_btcd::do_send_net_totals(const code& ec, uint64_t sent,
     }, 64);
 }
 
+// A numeric target is a channel identifier, otherwise it is an endpoint.
+bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
+    const std::string& subcmd, const std::string& target,
+    const std::string& connectsubcmd) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    uint64_t identifier{};
+    const auto numeric = deserialize(identifier, target);
+
+    // The endpoint parse throws on malformed input.
+    try
+    {
+        if (subcmd == "connect")
+        {
+            // btcd connects temporarily or permanently (the default).
+            if (connectsubcmd != "temp" && connectsubcmd != "perm" &&
+                !connectsubcmd.empty())
+            {
+                send_error(error::btcd::invalid_parameter);
+                return true;
+            }
+
+            if (connectsubcmd == "temp")
+                connect(network::config::endpoint{ target }, to_once());
+            else
+                connect(network::config::endpoint{ target });
+
+            send_result(null_t{}, 8);
+            return true;
+        }
+
+        if (subcmd != "remove" && subcmd != "disconnect")
+        {
+            send_error(error::btcd::invalid_parameter);
+            return true;
+        }
+
+        // Remove ends the reconnect cycle, disconnect allows reconnection.
+        const auto drop = (subcmd == "remove");
+        const auto reason = drop ? network::error::channel_dropped :
+            network::error::channel_stopped;
+        const auto absent = drop ? error::btcd::client_node_not_added :
+            error::btcd::client_node_not_connected;
+
+        const auto complete = emplace_shared<terminator::race>(
+            BIND(handle_stopped, _1, absent));
+
+        BROADCAST(terminator, to_shared<terminator>(complete, reason,
+            numeric ? identifier : zero, numeric ?
+                network::config::endpoint{} :
+                network::config::endpoint{ target }));
+    }
+    catch (const std::exception&)
+    {
+        send_error(error::btcd::invalid_parameter);
+    }
+
+    return true;
+}
+
+void protocol_btcd::handle_stopped(const code& ec,
+    error::btcd::error_t absent) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST_BTCD(do_send_stopped, ec, absent);
+}
+
+void protocol_btcd::do_send_stopped(const code& ec,
+    error::btcd::error_t absent) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+        send_error(absent);
+    else
+        send_result(null_t{}, 8);
+}
+
 bool protocol_btcd::handle_version(const code& ec,
     btcd_interface::version) NOEXCEPT
 {

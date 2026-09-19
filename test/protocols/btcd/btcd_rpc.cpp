@@ -37,6 +37,8 @@ static const code misc_error{ server::error::btcd::misc_error };
 static const code invalid_parameter{ server::error::btcd::invalid_parameter };
 static const code invalid_params{ server::error::btcd::invalid_params };
 static const code block_not_found{ server::error::btcd::invalid_address_or_key };
+static const code node_not_added{ server::error::btcd::client_node_not_added };
+static const code node_not_connected{ server::error::btcd::client_node_not_connected };
 
 // mock_block10 chains onto block9 and pays found_address from its second
 // transaction only (its other outputs pay distinct key/script hashes), so a
@@ -102,6 +104,27 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__session__default__returns_id)
 BOOST_AUTO_TEST_CASE(btcd_rpc__stop__default__method_not_found)
 {
     BOOST_REQUIRE_EQUAL(rpc_error("stop"), method_not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__node__unknown_subcommand__invalid_parameter)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("node", R"(["restart","1.2.3.4:8333"])"), invalid_parameter.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__node__unknown_connect_subcommand__invalid_parameter)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("node", R"(["connect","1.2.3.4:8333","forever"])"), invalid_parameter.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__node__disconnect_no_channels__node_not_connected)
+{
+    // The fixture runs no peer sessions, so the terminator identifies none.
+    BOOST_REQUIRE_EQUAL(rpc_error("node", R"(["disconnect","1.2.3.4:8333"])"), node_not_connected.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__node__remove_no_channels__node_not_added)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("node", R"(["remove","42"])"), node_not_added.value());
 }
 
 // getters

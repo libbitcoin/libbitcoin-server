@@ -65,6 +65,7 @@ void protocol_btcd::start() NOEXCEPT
     SUBSCRIBE_BTCD(handle_get_headers, _1, _2, _3, _4);
     SUBSCRIBE_BTCD(handle_get_info, _1, _2);
     SUBSCRIBE_BTCD(handle_get_net_totals, _1, _2);
+    SUBSCRIBE_BTCD(handle_node, _1, _2, _3, _4, _5);
     SUBSCRIBE_BTCD(handle_search_raw_transactions, _1, _2, _3, _4, _5, _6, _7, _8, _9);
     SUBSCRIBE_BTCD(handle_version, _1, _2);
 

@@ -106,6 +106,9 @@ protected:
     boost::json::value script_public_key(
         const system::chain::script& script) const NOEXCEPT;
 
+    /// Retains a connected channel, and does not reconnect upon stop.
+    static network::net::channel_notifier to_once() NOEXCEPT;
+
 private:
     // Totals capture.
     void handle_captured_totals(const code& ec,

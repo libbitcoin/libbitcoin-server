@@ -1907,10 +1907,10 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__range_pair__two_addresses)
 
 // network group
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__remove__not_implemented)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__remove_no_channels__node_not_added)
 {
-    const auto response = rpc("addnode", "[\"127.0.0.1:8333\", \"remove\"]");
-    REQUIRE_NO_THROW_TRUE(response.as_object().contains("error"));
+    // The fixture runs no peer sessions, so the terminator identifies none.
+    BOOST_REQUIRE(has_code(rpc("addnode", R"(["127.0.0.1:8333","remove"])"), -24));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__bad_command__invalid)

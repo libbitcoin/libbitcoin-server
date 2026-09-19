@@ -96,6 +96,13 @@ protected:
         btcd_interface::get_net_totals) NOEXCEPT;
     void do_send_net_totals(const code& ec, uint64_t sent,
         uint64_t received) NOEXCEPT;
+    bool handle_node(const code& ec, btcd_interface::node,
+        const std::string& subcmd, const std::string& target,
+        const std::string& connectsubcmd) NOEXCEPT;
+    void handle_stopped(const code& ec,
+        error::btcd::error_t absent) NOEXCEPT;
+    void do_send_stopped(const code& ec,
+        error::btcd::error_t absent) NOEXCEPT;
     bool handle_search_raw_transactions(const code& ec,
         btcd_interface::search_raw_transactions, const std::string& address,
         double verbose, double skip, double count, double prevouts,
