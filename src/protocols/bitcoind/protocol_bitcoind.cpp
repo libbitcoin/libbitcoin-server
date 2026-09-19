@@ -417,8 +417,8 @@ void protocol_bitcoind::do_invoke_totals(const code& ec,
     {
         if (contains(totals.actives, row.identifier))
         {
-            sent = ceilinged_add(sent, row.sent);
-            received = ceilinged_add(received, row.received);
+            sent = ceilinged_add(sent, row.bytes_sent);
+            received = ceilinged_add(received, row.bytes_received);
         }
     }
 

@@ -235,7 +235,7 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
 
             BROADCAST(terminator, to_shared<terminator>(complete,
                 network::error::channel_dropped, zero,
-                network::config::address{ node }));
+                network::config::endpoint{ node }));
 
             return true;
         }
@@ -268,7 +268,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     }
 
     uint64_t identifier{};
-    network::config::address peer{};
+    network::config::endpoint peer{};
 
     // The address parse throws on malformed input.
     try
@@ -280,7 +280,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
         }
 
         if (address)
-            peer = network::config::address{ address.value() };
+            peer = network::config::endpoint{ address.value() };
     }
     catch (const std::exception&)
     {
@@ -700,27 +700,31 @@ void protocol_bitcoind_network::do_send_peer_info(
     array_t out{};
     for (const auto& row: captured->captured())
     {
+        // A proxied connection is unresolved, so reports its intended target.
+        const auto peer = row.address ? network::config::endpoint{ row.address } :
+            row.endpoint;
+
         object_t info
         {
             { "id", row.identifier },
-            { "addr", network::config::endpoint{ row.address }.to_string() },
+            { "addr", peer.to_string() },
             { "addrbind", row.binding.to_string() },
-            { "network", to_network_name(row.address) },
-            { "services", encode_base16(to_big_endian(row.services)) },
-            { "servicesnames", to_service_names(row.services) },
-            { "relaytxes", row.relay },
-            { "minfeefilter", to_fee_rate(row.minimum_fee) },
+            { "network", to_network_name(network::config::address{ peer }) },
+            { "services", encode_base16(to_big_endian(row.peer_services)) },
+            { "servicesnames", to_service_names(row.peer_services) },
+            { "relaytxes", row.peer_relay },
+            { "minfeefilter", to_fee_rate(row.peer_minimum_fee) },
             { "connection_type", to_connection_type(row.group) },
             { "inbound", row.group == diagnostics::target::inbound },
-            { "version", row.version },
-            { "subver", row.agent },
-            { "startingheight", row.start_height },
+            { "version", row.peer_version },
+            { "subver", row.peer_user_agent },
+            { "startingheight", row.peer_start_height },
             { "conntime", row.created },
             { "timeoffset", row.time_offset },
             { "lastsend", row.last_write },
             { "lastrecv", row.last_read },
-            { "bytessent", row.sent },
-            { "bytesrecv", row.received },
+            { "bytessent", row.bytes_sent },
+            { "bytesrecv", row.bytes_received },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
         };
 
