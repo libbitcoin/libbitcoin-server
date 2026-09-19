@@ -81,13 +81,13 @@ void protocol_electrum::complete_submit_tx(const code& ec,
 
     if (!ec)
     {
-        send_result(encode_hash(tx->hash(false)), 42);
+        send_result(encode_hash(tx->hash(false)));
         return;
     }
 
     if (!at_least(electrum::version::v1_1))
     {
-        send_result(ec.message(), 42);
+        send_result(ec.message());
         return;
     }
 
@@ -243,7 +243,7 @@ void protocol_electrum::complete_test_package(const code& ec,
         out.emplace_back(std::move(value));
     }
 
-    send_result(std::move(out), add1(out.size()) * 128u);
+    send_result(std::move(out));
 }
 
 void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
@@ -344,7 +344,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         }
     }
 
-    send_result(std::move(value), size);
+    send_result(std::move(value));
 }
 
 void protocol_electrum::handle_blockchain_transaction_get_merkle(
@@ -404,7 +404,7 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(
         { "merkle", std::move(branch) },
         { "block_height", block_height },
         { "pos", position }
-    }, two * hash_size * add1(branch.size()));
+    });
 }
 
 void protocol_electrum::handle_blockchain_transaction_id_from_position(
@@ -448,7 +448,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
 
     if (!merkle)
     {
-        send_result(encode_hash(hash), two * hash_size);
+        send_result(encode_hash(hash));
         return;
     }
 
@@ -476,7 +476,7 @@ void protocol_electrum::handle_blockchain_transaction_id_from_position(
     {
         { "tx_hash", encode_hash(hash) },
         { "merkle", std::move(branch) }
-    }, two * hash_size * add1(branch.size()));
+    });
 }
 
 // utility
@@ -516,7 +516,7 @@ void protocol_electrum::complete_submit_package(const code& ec, size_t index,
     {
         { "success", !ec },
         { "errors", std::move(errors) }
-    }, 42 + size);
+    });
 }
 
 // A retained tx is unconfirmed, so carries no block context.
@@ -526,7 +526,7 @@ void protocol_electrum::send_retained_tx(const chain::transaction& tx,
     if (!verbose)
     {
         const auto data = tx.to_data(true);
-        send_result(encode_base16(data), two * data.size());
+        send_result(encode_base16(data));
         return;
     }
 
@@ -538,7 +538,7 @@ void protocol_electrum::send_retained_tx(const chain::transaction& tx,
     }
 
     inject_tx_scripts(value.as_object(), tx, p2kh_, p2sh_, witness_);
-    send_result(std::move(value), two * tx.serialized_size(true));
+    send_result(std::move(value));
 }
 
 BC_POP_WARNING()

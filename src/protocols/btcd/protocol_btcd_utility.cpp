@@ -97,7 +97,7 @@ void protocol_btcd::complete_estimate(const code& ec, uint64_t fee) NOEXCEPT
 
     // sats/vbyte to btc/kvbyte.
     constexpr double fee_scale = 100'000.0;
-    send_result(fee / fee_scale, 20);
+    send_result(fee / fee_scale);
 }
 
 // Required by btcwallet during wallet chain-sync bootstrap.
@@ -112,7 +112,7 @@ bool protocol_btcd::handle_get_best_block(const code& ec,
     {
         { "hash", encode_hash(query.get_top_confirmed_hash()) },
         { "height", query.get_top_confirmed() }
-    }, 96);
+    });
     return true;
 }
 
@@ -132,7 +132,7 @@ bool protocol_btcd::handle_get_block_chain_info(const code& ec,
         return true;
     }
 
-    send_result(std::move(out), 512);
+    send_result(std::move(out));
     return true;
 }
 
@@ -161,7 +161,7 @@ bool protocol_btcd::handle_get_cfilter(const code& ec,
         return true;
     }
 
-    send_result(encode_base16(filter), two * filter.size());
+    send_result(encode_base16(filter));
     return true;
 }
 
@@ -190,7 +190,7 @@ bool protocol_btcd::handle_get_cfilter_header(const code& ec,
         return true;
     }
 
-    send_result(encode_hash(head), two * hash_size);
+    send_result(encode_hash(head));
     return true;
 }
 
@@ -201,7 +201,7 @@ bool protocol_btcd::handle_get_current_net(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(network_settings().identifier, 20);
+    send_result(network_settings().identifier);
     return true;
 }
 
@@ -220,7 +220,7 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
         return true;
     }
 
-    send_result(header->difficulty(), 20);
+    send_result(header->difficulty());
     return true;
 }
 
@@ -260,7 +260,7 @@ bool protocol_btcd::handle_get_headers(const code& ec,
     for (const auto& header: headers)
         out.emplace_back(encode_base16(header->to_data()));
 
-    send_result(std::move(out), add1(headers.size()) * 164);
+    send_result(std::move(out));
     return true;
 }
 
@@ -300,7 +300,7 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "testnet", chain_name(query) != "main" },
         { "relayfee", node_settings().minimum_fee_rate },
         { "errors", std::string{} }
-    }, 256);
+    });
     return true;
 }
 
@@ -330,7 +330,7 @@ void protocol_btcd::do_send_net_totals(const code& ec, uint64_t sent,
         { "totalbytesrecv", received },
         { "totalbytessent", sent },
         { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 }
-    }, 64);
+    });
 }
 
 // A numeric target is a channel identifier, otherwise it is an endpoint.
@@ -362,7 +362,7 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
             else
                 connect(network::config::endpoint{ target });
 
-            send_result(null_t{}, 8);
+            send_result(null_t{});
             return true;
         }
 
@@ -412,7 +412,7 @@ void protocol_btcd::do_send_stopped(const code& ec,
     if (ec)
         send_error(absent);
     else
-        send_result(null_t{}, 8);
+        send_result(null_t{});
 }
 
 bool protocol_btcd::handle_version(const code& ec,
@@ -432,7 +432,7 @@ bool protocol_btcd::handle_version(const code& ec,
                 { "prerelease", std::string{} },
                 { "buildmetadata", std::string{} }
             } }
-    }, 160);
+    });
     return true;
 }
 

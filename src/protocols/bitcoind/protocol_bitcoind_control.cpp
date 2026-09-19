@@ -103,8 +103,7 @@ bool protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
     if (command.empty())
     {
         auto names = help_names();
-        const auto size = two * names.size();
-        send_result(std::move(names), size);
+        send_result(std::move(names));
         return true;
     }
 
@@ -124,7 +123,7 @@ bool protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
     if (usage.empty())
         usage = "help: unknown command: " + command;
 
-    send_result(std::move(usage), 128);
+    send_result(std::move(usage));
     return true;
 }
 
@@ -163,7 +162,7 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
     send_result(object_t
     {
         { "locked", std::move(locked) }
-    }, 192);
+    });
     return true;
 }
 
@@ -217,7 +216,6 @@ void protocol_bitcoind_control::send_openrpc() NOEXCEPT
     append_methods<bitcoind_wallet_methods>(methods);
 
     const auto& settings = options();
-    const auto size = 64 * methods.size();
     send_result(object_t
     {
         { "openrpc", std::string{ "1.2.6" } },
@@ -227,7 +225,7 @@ void protocol_bitcoind_control::send_openrpc() NOEXCEPT
             { "version", settings.version.to_string() }
         } },
         { "methods", std::move(methods) }
-    }, size);
+    });
 }
 
 bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
@@ -262,7 +260,7 @@ bool protocol_bitcoind_control::handle_get_rpc_info(const code& ec,
     {
         { "active_commands", array_t{} },
         { "logpath", server_config().log.log_file1().string() }
-    }, 128);
+    });
     return true;
 }
 
@@ -293,7 +291,7 @@ bool protocol_bitcoind_control::handle_logging(const code& ec,
         { "quitting", quitting_defined && out.quitting },
         { "objects", objects_defined && out.objects },
         { "verbose", verbose_defined && out.verbose }
-    }, 256);
+    });
     return true;
 }
 
@@ -304,7 +302,7 @@ bool protocol_bitcoind_control::handle_uptime(const code& ec,
         return false;
 
     send_result(floored_subtract(to_unsigned(zulu_time()),
-        to_unsigned(start_time())), 20);
+        to_unsigned(start_time())));
     return true;
 }
 

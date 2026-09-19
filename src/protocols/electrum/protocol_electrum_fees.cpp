@@ -111,11 +111,11 @@ void protocol_electrum::complete_estimate_fee(const code& ec,
 
     if (disabled)
     {
-        send_result(no_fee_estimate, 42);
+        send_result(no_fee_estimate);
         return;
     }
 
-    send_result(fee / sats_per_vbyte_to_btc_per_vkbyte, 42);
+    send_result(fee / sats_per_vbyte_to_btc_per_vkbyte);
 }
 
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
@@ -133,7 +133,7 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
         return;
     }
 
-    send_result(node_settings().minimum_fee_rate, 42);
+    send_result(node_settings().minimum_fee_rate);
 }
 
 BC_POP_WARNING()

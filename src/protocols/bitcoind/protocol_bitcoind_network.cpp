@@ -174,7 +174,7 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
         { "incrementalfee", node_settings().minimum_bump_rate },
         { "localaddresses", std::move(locals) },
         { "warnings", array_t{} }
-    }, 1024);
+    });
     return true;
 }
 
@@ -252,7 +252,7 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
         return true;
     }
 
-    send_result(null_t{}, 8);
+    send_result(null_t{});
     return true;
 }
 
@@ -319,7 +319,7 @@ void protocol_bitcoind_network::do_send_stopped(const code& ec,
     if (ec)
         send_error(absent);
     else
-        send_result(null_t{}, 8);
+        send_result(null_t{});
 }
 
 bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
@@ -394,8 +394,7 @@ void protocol_bitcoind_network::do_send_added_node_info(
         return;
     }
 
-    const auto size = 128 * out.size();
-    send_result(std::move(out), size);
+    send_result(std::move(out));
 }
 
 // bitcoind's network name for each address type, indexed by network id.
@@ -446,7 +445,7 @@ bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
         { "i2p", address_bucket(i2p) },
         { "cjdns", address_bucket(cjdns) },
         { "all_networks", address_bucket(ipv4 + ipv6 + onion + i2p + cjdns) }
-    }, 512);
+    });
     return true;
 }
 
@@ -486,7 +485,7 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
     // An empty or unavailable pool is reported as empty.
     if (ec || !message)
     {
-        send_result(array_t{}, 16);
+        send_result(array_t{});
         return;
     }
 
@@ -512,8 +511,7 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
         });
     }
 
-    const auto size = 128 * out.size();
-    send_result(std::move(out), size);
+    send_result(std::move(out));
 }
 
 // An injected ping would violate channel pong correlation (no-op).
@@ -523,7 +521,7 @@ bool protocol_bitcoind_network::handle_ping(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(null_t{}, 8);
+    send_result(null_t{});
     return true;
 }
 
@@ -544,7 +542,7 @@ bool protocol_bitcoind_network::handle_set_network_active(const code& ec,
         node::protocol::suspend(network::error::service_suspended);
     }
 
-    send_result(active, 8);
+    send_result(active);
     return true;
 }
 
@@ -555,7 +553,7 @@ bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(channel_count(), 20);
+    send_result(channel_count());
     return true;
 }
 
@@ -619,7 +617,7 @@ void protocol_bitcoind_network::do_send_net_totals(const code& ec,
         { "totalbytessent", sent },
         { "timemillis", possible_wide_cast<int64_t>(zulu_time()) * 1'000 },
         { "uploadtarget", std::move(target) }
-    }, 256);
+    });
 }
 
 // bitcoind's connection type name for each capture group.
@@ -746,8 +744,7 @@ void protocol_bitcoind_network::do_send_peer_info(
         out.emplace_back(std::move(info));
     }
 
-    const auto size = 1024 * out.size();
-    send_result(std::move(out), size);
+    send_result(std::move(out));
 }
 
 BC_POP_WARNING()

@@ -173,8 +173,8 @@ private:
     void do_get_tx_out_set_info(set_hash type, size_t height) NOEXCEPT;
     void do_scan_tx_out_set(
         const std::shared_ptr<network::rpc::array_t>& objects) NOEXCEPT;
-    void complete_scan(const code& ec, network::rpc::object_t& result,
-        size_t size) NOEXCEPT;
+    void complete_scan(const code& ec,
+        network::rpc::object_t& result) NOEXCEPT;
 
     // This is thread safe.
     std::atomic_bool stopping_{};

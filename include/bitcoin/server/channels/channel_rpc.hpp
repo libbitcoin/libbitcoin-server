@@ -54,16 +54,15 @@ public:
         network::result_handler&& handler) NOEXCEPT
     {
         BC_ASSERT(stranded());
-        const auto hint = 2u * error.message.size();
         send_response(
         {
             .jsonrpc = version_,
             .id = identity_,
             .error = std::move(error)
-        }, hint, std::move(handler));
+        }, std::move(handler));
     }
 
-    inline void send_result(network::rpc::value_t&& result, size_t size_hint,
+    inline void send_result(network::rpc::value_t&& result,
         network::result_handler&& handler) NOEXCEPT
     {
         BC_ASSERT(stranded());
@@ -72,12 +71,12 @@ public:
             .jsonrpc = version_,
             .id = identity_,
             .result = std::move(result)
-        }, size_hint, std::move(handler));
+        }, std::move(handler));
     }
 
     /// A notification requires a full duplex transport (ws or downgrade).
     inline void send_notification(network::rpc::string_t&& method,
-        network::rpc::params_t&& params, size_t size_hint,
+        network::rpc::params_t&& params,
         network::result_handler&& handler) NOEXCEPT
     {
         BC_ASSERT(stranded());
@@ -93,7 +92,7 @@ public:
             .jsonrpc = version_,
             .method = std::move(method),
             .params = std::move(params)
-        }, size_hint, std::move(handler));
+        }, std::move(handler));
     }
 
 protected:
@@ -125,30 +124,24 @@ private:
     // The socket writes the body alone on a full duplex transport (ws frame
     // or downgraded stream), and the full http response otherwise.
     inline void send_response(network::rpc::response_t&& model,
-        size_t size_hint, network::result_handler&& handler) NOEXCEPT
+        network::result_handler&& handler) NOEXCEPT
     {
         using namespace network::http;
         response message{ status::ok, version_1_1 };
         message.set(field::content_type,
             from_media_type(media_type::application_json));
-        message.body() = network::rpc::response
-        {
-            { .size_hint = size_hint }, std::move(model)
-        };
+        message.body() = network::rpc::response{ {}, std::move(model) };
 
         message.prepare_payload();
         send(std::move(message), std::move(handler));
     }
 
-    inline void send_request(network::rpc::request_t&& model, size_t size_hint,
+    inline void send_request(network::rpc::request_t&& model,
         network::result_handler&& handler) NOEXCEPT
     {
         using namespace network::http;
         response message{ status::ok, version_1_1 };
-        message.body() = network::rpc::request
-        {
-            { .size_hint = size_hint }, std::move(model)
-        };
+        message.body() = network::rpc::request{ {}, std::move(model) };
 
         notify(std::move(message), std::move(handler));
     }

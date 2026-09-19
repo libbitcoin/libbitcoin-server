@@ -156,7 +156,7 @@ protected:
 
     /// Sender (server push, no id).
     void send_notification(const std::string& method,
-        network::rpc::array_t&& params, size_t size_hint) NOEXCEPT;
+        network::rpc::array_t&& params) NOEXCEPT;
 
 protected:
     using point = system::chain::point;

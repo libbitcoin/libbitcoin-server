@@ -76,7 +76,7 @@ bool block_info(network::rpc::object_t& out, const node::query& query,
     return true;
 }
 
-network::rpc::object_t scan_result(size_t& size,
+network::rpc::object_t scan_result(
     database::unspent_coins& coins, const node::query& query,
     const chain::scripts& scripts, size_t top, uint64_t txouts, bool bip30,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT
@@ -140,7 +140,6 @@ network::rpc::object_t scan_result(size_t& size,
         amount += coin.out.value();
     }
 
-    size = add1(unspents.size()) * 384u;
     return object_t
     {
         { "success", true },

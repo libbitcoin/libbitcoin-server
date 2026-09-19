@@ -34,7 +34,7 @@ BCS_API bool block_info(network::rpc::object_t& out, const node::query& query,
     size_t height) NOEXCEPT;
 
 /// The scantxoutset result from the matched coins (canonical order).
-BCS_API network::rpc::object_t scan_result(size_t& size,
+BCS_API network::rpc::object_t scan_result(
     database::unspent_coins& coins, const node::query& query,
     const system::chain::scripts& scripts, size_t top, uint64_t txouts,
     bool bip30, uint8_t p2kh, uint8_t p2sh,
