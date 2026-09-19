@@ -422,6 +422,7 @@ jobs:
           fi
 
       - name: Checkout repository [libbitcoin-system]
+        id: checkout-libbitcoin-system
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -430,7 +431,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
+      - name: Checkout repository [libbitcoin-system] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-system.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-system
+
+
       - name: Checkout repository [libbitcoin-database]
+        id: checkout-libbitcoin-database
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -439,7 +449,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
+      - name: Checkout repository [libbitcoin-database] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-database.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-database
+
+
       - name: Checkout repository [libbitcoin-network]
+        id: checkout-libbitcoin-network
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -448,7 +467,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
+      - name: Checkout repository [libbitcoin-network] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-network.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-network
+
+
       - name: Checkout repository [libbitcoin-node]
+        id: checkout-libbitcoin-node
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -457,12 +485,22 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
+      - name: Checkout repository [libbitcoin-node] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-node.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-node
+
+
       - name: Checkout repository [libbitcoin-server]
+        id: checkout-libbitcoin-server
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
           path: 'libbitcoin-server'
           repository: ${{ github.repository }}
+
 
       - name: Prepare toolchain [linux]
         if: ${{ startsWith(matrix.image, 'ubuntu') }}
@@ -984,6 +1022,7 @@ jobs:
           fi
 
       - name: Checkout repository [libbitcoin-system]
+        id: checkout-libbitcoin-system
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -992,7 +1031,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
+      - name: Checkout repository [libbitcoin-system] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-system.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-system
+
+
       - name: Checkout repository [libbitcoin-database]
+        id: checkout-libbitcoin-database
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1001,7 +1049,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
+      - name: Checkout repository [libbitcoin-database] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-database.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-database
+
+
       - name: Checkout repository [libbitcoin-network]
+        id: checkout-libbitcoin-network
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1010,7 +1067,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
+      - name: Checkout repository [libbitcoin-network] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-network.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-network
+
+
       - name: Checkout repository [libbitcoin-node]
+        id: checkout-libbitcoin-node
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1019,12 +1085,22 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
+      - name: Checkout repository [libbitcoin-node] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-node.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-node
+
+
       - name: Checkout repository [libbitcoin-server]
+        id: checkout-libbitcoin-server
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
           path: 'libbitcoin-server'
           repository: ${{ github.repository }}
+
 
       - name: Prepare toolchain [linux]
         if: ${{ startsWith(matrix.image, 'ubuntu') }}
@@ -1474,6 +1550,7 @@ jobs:
           fi
 
       - name: Checkout repository [libbitcoin-system]
+        id: checkout-libbitcoin-system
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1482,7 +1559,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
+      - name: Checkout repository [libbitcoin-system] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-system.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-system
+
+
       - name: Checkout repository [libbitcoin-database]
+        id: checkout-libbitcoin-database
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1491,7 +1577,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
+      - name: Checkout repository [libbitcoin-database] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-database.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-database
+
+
       - name: Checkout repository [libbitcoin-network]
+        id: checkout-libbitcoin-network
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1500,7 +1595,16 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
+      - name: Checkout repository [libbitcoin-network] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-network.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-network
+
+
       - name: Checkout repository [libbitcoin-node]
+        id: checkout-libbitcoin-node
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1509,12 +1613,22 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
+      - name: Checkout repository [libbitcoin-node] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-node.outcome == 'failure'
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/libbitcoin-node
+
+
       - name: Checkout repository [libbitcoin-server]
+        id: checkout-libbitcoin-server
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
           path: 'libbitcoin-server'
           repository: ${{ github.repository }}
+
 
       - name: Prepare toolchain [linux]
         if: ${{ startsWith(matrix.image, 'ubuntu') }}
@@ -1691,6 +1805,7 @@ jobs:
           msbuild-architecture: x64
 
       - name: Checkout repository [libbitcoin-system]
+        id: checkout-libbitcoin-system
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1699,7 +1814,15 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
+      - name: Checkout repository [libbitcoin-system] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-system.outcome == 'failure'
+        shell: powershell
+        run: |
+          Remove-Item -Path ${{ github.workspace }}\libbitcoin-system -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Checkout repository [libbitcoin-database]
+        id: checkout-libbitcoin-database
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1708,7 +1831,15 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
+      - name: Checkout repository [libbitcoin-database] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-database.outcome == 'failure'
+        shell: powershell
+        run: |
+          Remove-Item -Path ${{ github.workspace }}\libbitcoin-database -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Checkout repository [libbitcoin-network]
+        id: checkout-libbitcoin-network
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1717,7 +1848,15 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
+      - name: Checkout repository [libbitcoin-network] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-network.outcome == 'failure'
+        shell: powershell
+        run: |
+          Remove-Item -Path ${{ github.workspace }}\libbitcoin-network -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Checkout repository [libbitcoin-node]
+        id: checkout-libbitcoin-node
         continue-on-error: true
         uses: actions/checkout@v6
         with:
@@ -1726,7 +1865,15 @@ jobs:
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
+      - name: Checkout repository [libbitcoin-node] cleanup on failure
+        continue-on-error: true
+        if: steps.checkout-libbitcoin-node.outcome == 'failure'
+        shell: powershell
+        run: |
+          Remove-Item -Path ${{ github.workspace }}\libbitcoin-node -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Checkout repository [libbitcoin-server]
+        id: checkout-libbitcoin-server
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
