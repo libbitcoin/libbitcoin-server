@@ -66,7 +66,9 @@ protected:
         rpc_interface::add_node, const std::string& node,
         const std::string& command, bool v2transport) NOEXCEPT;
     bool handle_disconnect_node(const code& ec,
-        rpc_interface::disconnect_node) NOEXCEPT;
+        rpc_interface::disconnect_node,
+        const std::optional<std::string>& address,
+        const std::optional<double>& nodeid) NOEXCEPT;
     bool handle_export_asmap(const code& ec,
         rpc_interface::export_asmap, const std::string&) NOEXCEPT;
     bool handle_get_added_node_info(const code& ec,
@@ -98,6 +100,10 @@ private:
         const network::diagnostics::sink::ptr& captured) NOEXCEPT;
     void do_send_peer_info(
         const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+
+    /// Channel stop completion (bounced to the channel strand).
+    void handle_stopped(const code& ec) NOEXCEPT;
+    void do_send_stopped(const code& ec) NOEXCEPT;
 
     /// Peer byte totals completion (invoked on the channel strand).
     void do_send_net_totals(const code& ec, uint64_t sent,

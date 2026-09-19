@@ -368,11 +368,11 @@ boost::json::value protocol_bitcoind::script_public_key(
 
 void protocol_bitcoind::capture_totals(totals_handler&& handler) NOEXCEPT
 {
-    const auto captured = std::make_shared<diagnostics::sink>();
-    const auto complete = std::make_shared<diagnostics::race>(
+    const auto captured = to_shared<diagnostics::sink>();
+    const auto complete = emplace_shared<diagnostics::race>(
         BIND(handle_captured_totals, _1, captured, std::move(handler)));
 
-    BROADCAST(diagnostics, to_shared<const diagnostics>(complete, captured,
+    BROADCAST(diagnostics, to_shared<diagnostics>(complete, captured,
         diagnostics::target::all));
 }
 

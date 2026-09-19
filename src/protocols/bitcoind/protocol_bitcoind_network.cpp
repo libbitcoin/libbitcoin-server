@@ -57,7 +57,7 @@ void protocol_bitcoind_network::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_list_banned, _1, _2);
     SUBSCRIBE_BITCOIND(handle_set_ban, _1, _2);
     SUBSCRIBE_BITCOIND(handle_add_node, _1, _2, _3, _4, _5);
-    SUBSCRIBE_BITCOIND(handle_disconnect_node, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_disconnect_node, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_export_asmap, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_added_node_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_addrman_info, _1, _2);
@@ -240,12 +240,67 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
     return true;
 }
 
+// Manual channels reconnect, as the stop code is not a drop.
 bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
-    rpc_interface::disconnect_node) NOEXCEPT
+    rpc_interface::disconnect_node, const std::optional<std::string>& address,
+    const std::optional<double>& nodeid) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::method_not_found);
+    if (stopped(ec))
+        return false;
+
+    // bitcoind requires exactly one of the two identifying parameters.
+    if (address.has_value() == nodeid.has_value())
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    uint64_t identifier{};
+    network::config::address peer{};
+
+    // The address parse throws on malformed input.
+    try
+    {
+        if (nodeid && !to_integer(identifier, nodeid.value()))
+        {
+            send_error(error::bitcoind::invalid_parameter);
+            return true;
+        }
+
+        if (address)
+            peer = network::config::address{ address.value() };
+    }
+    catch (const std::exception&)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    const auto complete = emplace_shared<terminator::race>(
+        BIND(handle_stopped, _1));
+
+    BROADCAST(terminator, to_shared<terminator>(complete,
+        network::error::channel_stopped, identifier, peer));
+
     return true;
+}
+
+void protocol_bitcoind_network::handle_stopped(const code& ec) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_send_stopped, ec);
+}
+
+void protocol_bitcoind_network::do_send_stopped(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (ec)
+        send_error(error::bitcoind::client_node_not_connected);
+    else
+        send_result(null_t{}, 8);
 }
 
 bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
@@ -272,6 +327,13 @@ network_names
     "", "ipv4", "ipv6", "onion", "onion", "i2p", "cjdns"
 };
 
+static std::string to_network_name(
+    const network::config::address& address) NOEXCEPT
+{
+    const messages::peer::address_item& item = address;
+    return std::string{ network_names.at(item.address.index()) };
+}
+
 // The pool has no tried table (by design), so all addresses report as new.
 static object_t address_bucket(size_t count) NOEXCEPT
 {
@@ -289,7 +351,7 @@ bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    using namespace network::messages::peer;
+    using namespace messages::peer;
     const auto counts = address_counts();
     const auto ipv4 = counts.at(ipv4_t::id);
     const auto ipv6 = counts.at(ipv6_t::id);
@@ -329,7 +391,7 @@ bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
 }
 
 void protocol_bitcoind_network::handle_dump_nodes(const code& ec,
-    const network::address_cptr& message) NOEXCEPT
+    const address_cptr& message) NOEXCEPT
 {
     if (stopped())
         return;
@@ -338,7 +400,7 @@ void protocol_bitcoind_network::handle_dump_nodes(const code& ec,
 }
 
 void protocol_bitcoind_network::do_send_nodes(const code& ec,
-    const network::address_cptr& message) NOEXCEPT
+    const address_cptr& message) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -482,16 +544,31 @@ void protocol_bitcoind_network::do_send_net_totals(const code& ec,
 }
 
 // bitcoind's connection type name for each capture group.
-static std::string to_connection_type(
-    network::diagnostics::target group) NOEXCEPT
+static std::string to_connection_type(diagnostics::target group) NOEXCEPT
 {
-    using target = network::diagnostics::target;
+    using target = diagnostics::target;
     switch (group)
     {
-        case target::inbound: return "inbound";
-        case target::manual: return "manual";
-        default: return "outbound-full-relay";
+        case target::inbound:
+            return "inbound";
+        case target::manual:
+            return "manual";
+        default:
+            return "outbound-full-relay";
     }
+}
+
+// bitcoind reports fee rates in coins, the fee filter is in satoshis (bip133).
+static double to_fee_rate(uint64_t satoshis_per_kilobyte) NOEXCEPT
+{
+    return satoshis_per_kilobyte / 100'000'000.0;
+}
+
+// bitcoind reports ping times in seconds, at microsecond resolution.
+static double to_ping_seconds(const steady_clock::duration& span) NOEXCEPT
+{
+    using namespace std::chrono;
+    return duration_cast<microseconds>(span).count() / 1'000'000.0;
 }
 
 // The round completes when the last captured channel releases the message.
@@ -501,18 +578,18 @@ bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    const auto captured = std::make_shared<network::diagnostics::sink>();
-    const auto complete = std::make_shared<network::diagnostics::race>(
+    const auto captured = to_shared<diagnostics::sink>();
+    const auto complete = emplace_shared<diagnostics::race>(
         BIND(handle_captured, _1, captured));
 
-    BROADCAST(network::diagnostics, to_shared<const network::diagnostics>(
-        complete, captured, network::diagnostics::target::all));
+    BROADCAST(diagnostics, to_shared<diagnostics>(complete, captured,
+        diagnostics::target::all));
 
     return true;
 }
 
 void protocol_bitcoind_network::handle_captured(const code&,
-    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+    const diagnostics::sink::ptr& captured) NOEXCEPT
 {
     if (stopped())
         return;
@@ -521,30 +598,54 @@ void protocol_bitcoind_network::handle_captured(const code&,
 }
 
 void protocol_bitcoind_network::do_send_peer_info(
-    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+    const diagnostics::sink::ptr& captured) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     array_t out{};
     for (const auto& row: captured->captured())
-        out.emplace_back(object_t
+    {
+        object_t info
         {
             { "id", row.identifier },
             { "addr", network::config::endpoint{ row.address }.to_string() },
+            { "addrbind", row.binding.to_string() },
+            { "network", to_network_name(row.address) },
             { "services", encode_base16(to_big_endian(row.services)) },
             { "servicesnames", to_service_names(row.services) },
+            { "relaytxes", row.relay },
+            { "minfeefilter", to_fee_rate(row.minimum_fee) },
             { "connection_type", to_connection_type(row.group) },
-            { "inbound", row.group == network::diagnostics::target::inbound },
+            { "inbound", row.group == diagnostics::target::inbound },
             { "version", row.version },
             { "subver", row.agent },
             { "startingheight", row.start_height },
             { "conntime", row.created },
+            { "timeoffset", row.time_offset },
             { "lastsend", row.last_write },
             { "lastrecv", row.last_read },
             { "bytessent", row.sent },
             { "bytesrecv", row.received },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
-        });
+        };
+
+        // The local address is unknown unless the peer has provided it.
+        if (row.local)
+            info.emplace("addrlocal",
+                network::config::endpoint{ row.local }.to_string());
+
+        // Ping times are unknown until the first ping/pong is completed.
+        if (is_nonzero(row.ping_time.count()))
+        {
+            info.emplace("pingtime", to_ping_seconds(row.ping_time));
+            info.emplace("minping", to_ping_seconds(row.minimum_ping_time));
+        }
+
+        if (is_nonzero(row.pending_ping_time.count()))
+            info.emplace("pingwait", to_ping_seconds(row.pending_ping_time));
+
+        out.emplace_back(std::move(info));
+    }
 
     const auto size = 256 * out.size();
     send_result(std::move(out), size);
