@@ -434,7 +434,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
 
         const auto& name = std::get<string_t>(stat.value());
         const auto it = result.find(name);
-        if (it == result.end())
+        if (it == result.cend())
         {
             send_error(error::bitcoind::invalid_parameter);
             return true;
@@ -987,7 +987,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
     }
 
     const auto& query = archive();
-    auto link = query.find_confirmed_block(*targets.begin());
+    auto link = query.find_confirmed_block(*targets.cbegin());
 
     // The block may be specified, otherwise the first txid determines it.
     if (!blockhash.empty())
@@ -1026,7 +1026,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
             return targets.contains(key);
         });
 
-    if (to_unsigned(std::count(match.begin(), match.end(), true)) !=
+    if (to_unsigned(std::count(match.cbegin(), match.cend(), true)) !=
         targets.size())
     {
         send_error(error::bitcoind::invalid_address_or_key);
@@ -1198,7 +1198,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
         const auto candidate_link = query.to_candidate(candidate);
         if (query.get_ancestry(branch, candidate_link, branchlen))
         {
-            const auto present = std::all_of(branch.begin(), branch.end(),
+            const auto present = std::all_of(branch.cbegin(), branch.cend(),
                 [&query](const auto& link) NOEXCEPT
                 {
                     return query.is_associated(link);
@@ -1452,7 +1452,7 @@ bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
     }
 
     array_t relevant{};
-    for (auto it = branch.rbegin(); it != branch.rend(); ++it)
+    for (auto it = branch.crbegin(); it != branch.crend(); ++it)
     {
         const auto hash = query.get_header_key(*it);
         neutrino::block_filter filter{ hash, {} };

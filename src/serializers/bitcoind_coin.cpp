@@ -114,7 +114,7 @@ network::rpc::object_t scan_result(
     {
         const auto found = needles.find(accumulator<sha256>::hash(
             coin.script));
-        if (found == needles.end())
+        if (found == needles.cend())
             continue;
 
         // bitcoind retains duplicated coinbases at the overwriting heights.

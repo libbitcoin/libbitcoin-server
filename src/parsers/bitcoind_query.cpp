@@ -57,7 +57,7 @@ bool bitcoind_query(rpc::request_t& out, const std::string& target) NOEXCEPT
     // Decimal parameters, defaulted or required by the target interface.
     for (const auto& name: { "count", "offset", "size" })
     {
-        if (const auto it = query.find(name); it != query.end())
+        if (const auto it = query.find(name); it != query.cend())
         {
             uint32_t value{};
             if (!to_number(value, it->second))

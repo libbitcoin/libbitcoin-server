@@ -318,7 +318,7 @@ bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
     }
 
     message_signature signature_bytes{};
-    std::copy_n(decoded.begin(), signature_bytes.size(),
+    std::copy_n(decoded.cbegin(), signature_bytes.size(),
         signature_bytes.begin());
 
     const auto verified = verify_message(message, payment, signature_bytes);

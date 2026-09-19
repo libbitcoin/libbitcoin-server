@@ -472,7 +472,7 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
             return;
 
         const auto at = matched.find(height);
-        if (at != matched.end() && !at->second.empty())
+        if (at != matched.cend() && !at->second.empty())
         {
             discovered.emplace_back(object_t
             {
@@ -587,7 +587,7 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
             return;
         }
 
-        history.insert(history.end(), part.begin(), part.end());
+        history.insert(history.end(), part.cbegin(), part.cend());
     }
 
     // A transaction can pay more than one of the searched scripts.
@@ -740,7 +740,7 @@ code protocol_btcd::match_filters(array_t& out, size_t height,
     }
 
     const auto at = matched.find(height);
-    if (at != matched.end())
+    if (at != matched.cend())
         out = serialize_matches(at->second);
 
     return error::success;
@@ -765,7 +765,7 @@ code protocol_btcd::match_receives(std::vector<array_t>& out,
 
     const auto& query = archive();
     const auto at = received.find(height);
-    if (at == received.end())
+    if (at == received.cend())
         return error::success;
 
     for (const auto& [position, hash]: at->second)
@@ -798,7 +798,7 @@ code protocol_btcd::match_spends(std::vector<array_t>& out,
         matches spent{};
         match_outpoints(spent, it->second, it->first, heights);
         const auto at = spent.find(height);
-        if (at == spent.end() || at->second.empty())
+        if (at == spent.cend() || at->second.empty())
         {
             ++it;
             continue;
