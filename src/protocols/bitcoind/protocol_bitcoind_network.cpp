@@ -364,47 +364,27 @@ void protocol_bitcoind_network::do_send_added_node_info(
 {
     BC_ASSERT(stranded());
 
-    const auto& rows = captured->captured();
-    const auto entry = [&](const network::config::address& peer) NOEXCEPT
-    {
-        const auto node = network::config::endpoint{ peer }.to_string();
-        const auto live = std::any_of(rows.begin(), rows.end(),
-            [&peer](const auto& row) NOEXCEPT
-            {
-                return row.address == peer;
-            });
-
-        // bitcoind reports the resolved addresses of a connected node.
-        array_t addresses{};
-        if (live)
-            addresses.emplace_back(object_t
-            {
-                { "address", node },
-                { "connected", "outbound" }
-            });
-
-        return object_t
-        {
-            { "addednode", node },
-            { "connected", live },
-            { "addresses", std::move(addresses) }
-        };
-    };
-
-    // Configured nodes may be disconnected, others are connected by rpc.
-    auto peers = network_settings().manual.friends;
-    for (const auto& row: rows)
-        if (!contains(peers, row.address))
-            peers.push_back(row.address);
-
     array_t out{};
-    for (const auto& peer: peers)
+    for (const auto& row: captured->captured())
     {
-        if (!node_address_.empty() &&
-            node_address_ != network::config::endpoint{ peer }.to_string())
+        const auto node = row.endpoint.to_string();
+        if (!node_address_.empty() && node_address_ != node)
             continue;
 
-        out.emplace_back(entry(peer));
+        // bitcoind reports the resolved addresses of a connected node.
+        out.emplace_back(object_t
+        {
+            { "addednode", node },
+            { "connected", true },
+            { "addresses", array_t
+            {
+                object_t
+                {
+                    { "address", node },
+                    { "connected", "outbound" }
+                }
+            } }
+        });
     }
 
     // bitcoind fails the request for a node that has not been added.
