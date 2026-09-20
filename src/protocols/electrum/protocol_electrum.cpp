@@ -154,6 +154,22 @@ bool protocol_electrum::handle_chase(const code&, node::chase event_,
     switch (event_)
     {
         case node::chase::transaction:
+        {
+            if (subscribed_outpoint_.load(relaxed))
+            {
+                BC_ASSERT(std::holds_alternative<node::transaction_t>(value));
+                POST_NOTIFY(do_outpoint, std::get<node::transaction_t>(value));
+            }
+
+            if (subscribed_address_.load(relaxed))
+            {
+                BC_ASSERT(archive().address_enabled());
+                BC_ASSERT(std::holds_alternative<node::transaction_t>(value));
+                POST_NOTIFY(do_scripthash, std::get<node::transaction_t>(value));
+            }
+
+            break;
+        }
         case node::chase::organized:
         {
             if (subscribed_height_.load(relaxed))
