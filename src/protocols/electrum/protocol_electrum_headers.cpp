@@ -201,24 +201,16 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     size_t quantity, size_t waypoint, bool single) NOEXCEPT
 {
     const auto prove = !is_zero(quantity) && !is_zero(waypoint);
-    const auto target = starting + sub1(quantity);
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     using namespace system;
 
-    // The documented requirement: `start_height + (count - 1) <= cp_height` is
-    // ambiguous at count = 0 so guard must be applied to both args and prover.
     if (is_add_overflow(starting, quantity))
     {
         send_code(error::electrum::bad_request);
         return;
     }
     else if ((starting > top) || (prove && waypoint > top))
-    {
-        send_code(error::electrum::bad_request);
-        return;
-    }
-    else if (prove && target > waypoint)
     {
         send_code(error::electrum::bad_request);
         return;
@@ -232,11 +224,21 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     // No headers may be returned, which implies start > confirmed top block.
     const auto count = limit(quantity, maximum_headers);
     const auto links = query.get_confirmed_headers(starting, count);
-    auto size = two * chain::header::serialized_size() * links.size();
 
     if (single && !is_one(links.size()))
     {
         send_code(error::electrum::daemon_error);
+        return;
+    }
+
+    // The proof is over the last returned header, which is the last requested
+    // header only when the returned count is not reduced.
+    const auto proving = prove && !is_zero(links.size());
+    const auto proof_height = proving ? starting + sub1(links.size()) : zero;
+
+    if (proving && proof_height > waypoint)
+    {
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -288,6 +290,8 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         else
         {
             // Stream headers into single buffer.
+            const auto size = two * chain::header::serialized_size() *
+                links.size();
             std::string headers(size, '\0');
             stream::out::fast sink{ headers };
             write::base16::fast writer{ sink };
@@ -312,7 +316,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             }
         }
 
-        if (prove)
+        if (proving)
         {
             // A very slim chance of inconsistency given an intervening reorg
             // because of get_merkle_root_and_proof() and height-based calcs.
@@ -320,7 +324,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             hashes proof{};
             hash_digest root{};
             if (const auto code = query.get_merkle_root_and_proof(root, proof,
-                target, waypoint))
+                proof_height, waypoint))
             {
                 using namespace error::electrum;
                 send_code(translate(code, daemon_error));
@@ -333,7 +337,6 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
             result["branch"] = std::move(branch);
             result["root"] = encode_hash(root);
-            size += two * hash_size * add1(proof.size());
         }
 
         value = std::move(result);
@@ -379,7 +382,6 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    size_t size{};
     boost::json::value value{};
     if (raw)
     {
@@ -390,7 +392,6 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
             return;
         }
 
-        size = two * chain::header::serialized_size();
         value =
         {
             { "height", top },
@@ -414,7 +415,6 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
             return;
         }
 
-        size = 256;
         auto& object = value.as_object();
         object["block_height"] = top;
     }
