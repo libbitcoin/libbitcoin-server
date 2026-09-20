@@ -201,24 +201,16 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     size_t quantity, size_t waypoint, bool single) NOEXCEPT
 {
     const auto prove = !is_zero(quantity) && !is_zero(waypoint);
-    const auto target = starting + sub1(quantity);
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
     using namespace system;
 
-    // The documented requirement: `start_height + (count - 1) <= cp_height` is
-    // ambiguous at count = 0 so guard must be applied to both args and prover.
     if (is_add_overflow(starting, quantity))
     {
         send_code(error::electrum::bad_request);
         return;
     }
     else if ((starting > top) || (prove && waypoint > top))
-    {
-        send_code(error::electrum::bad_request);
-        return;
-    }
-    else if (prove && target > waypoint)
     {
         send_code(error::electrum::bad_request);
         return;
@@ -236,6 +228,17 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     if (single && !is_one(links.size()))
     {
         send_code(error::electrum::daemon_error);
+        return;
+    }
+
+    // The proof is over the last returned header, which is the last requested
+    // header only when the returned count is not reduced.
+    const auto proving = prove && !is_zero(links.size());
+    const auto proof_height = proving ? starting + sub1(links.size()) : zero;
+
+    if (proving && proof_height > waypoint)
+    {
+        send_code(error::electrum::bad_request);
         return;
     }
 
@@ -313,17 +316,13 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             }
         }
 
-        if (prove && !is_zero(links.size()))
+        if (proving)
         {
             // A very slim chance of inconsistency given an intervening reorg
             // because of get_merkle_root_and_proof() and height-based calcs.
             // This is acceptable as must be verified by caller in any case.
             hashes proof{};
             hash_digest root{};
-
-            // The branch proves the last returned header, which is not the
-            // last requested header when the request exceeds maximum_headers.
-            const auto proof_height = starting + sub1(links.size());
             if (const auto code = query.get_merkle_root_and_proof(root, proof,
                 proof_height, waypoint))
             {
