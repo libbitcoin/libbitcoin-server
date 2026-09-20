@@ -232,7 +232,6 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     // No headers may be returned, which implies start > confirmed top block.
     const auto count = limit(quantity, maximum_headers);
     const auto links = query.get_confirmed_headers(starting, count);
-    auto size = two * chain::header::serialized_size() * links.size();
 
     if (single && !is_one(links.size()))
     {
@@ -288,6 +287,8 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         else
         {
             // Stream headers into single buffer.
+            const auto size = two * chain::header::serialized_size() *
+                links.size();
             std::string headers(size, '\0');
             stream::out::fast sink{ headers };
             write::base16::fast writer{ sink };
@@ -337,7 +338,6 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
             result["branch"] = std::move(branch);
             result["root"] = encode_hash(root);
-            size += two * hash_size * add1(proof.size());
         }
 
         value = std::move(result);
@@ -383,7 +383,6 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    size_t size{};
     boost::json::value value{};
     if (raw)
     {
@@ -394,7 +393,6 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
             return;
         }
 
-        size = two * chain::header::serialized_size();
         value =
         {
             { "height", top },
@@ -418,7 +416,6 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
             return;
         }
 
-        size = 256;
         auto& object = value.as_object();
         object["block_height"] = top;
     }
