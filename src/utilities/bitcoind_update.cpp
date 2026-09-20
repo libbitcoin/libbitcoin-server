@@ -55,8 +55,8 @@ static void update_entry(Entry& entry,
         entry.witness_script = found.witness;
 
     for (const auto& derived: found.derivations)
-        if (std::find(entry.derivations.begin(), entry.derivations.end(),
-            derived) == entry.derivations.end())
+        if (std::find(entry.derivations.cbegin(), entry.derivations.cend(),
+            derived) == entry.derivations.cend())
             entry.derivations.push_back(derived);
 }
 

@@ -177,7 +177,7 @@ system::data_chunk esplora_setup_fixture::get_data(std::string_view target)
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
 
-    return system::data_chunk(response.body().begin(), response.body().end());
+    return system::data_chunk(response.body().cbegin(), response.body().cend());
 }
 
 // The network json body does not support reading a document consisting

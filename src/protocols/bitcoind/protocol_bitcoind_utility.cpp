@@ -95,7 +95,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         const auto body = "raw(" + encode_base16(data) + ")";
         result["desc"] = body + "#" + descriptor_checksum(body);
         result.erase("address");
-        send_result(std::move(model), 512);
+        send_result(std::move(model));
         return true;
     }
 
@@ -117,7 +117,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         result.emplace("segwit", std::move(segwit));
     }
 
-    send_result(std::move(model), 512);
+    send_result(std::move(model));
     return true;
 }
 
@@ -139,7 +139,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
                 p2sh_).to_data(false)) },
             { "isscript", base58.prefix() == p2sh_ },
             { "iswitness", false }
-        }, 128);
+        });
         return true;
     }
 
@@ -158,11 +158,11 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
             { "iswitness", true },
             { "witness_version", witness.version() },
             { "witness_program", encode_base16(witness.program()) }
-        }, 128);
+        });
         return true;
     }
 
-    send_result(object_t{ { "isvalid", false } }, 32);
+    send_result(object_t{ { "isvalid", false } });
     return true;
 }
 
@@ -208,7 +208,7 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
         return true;
     }
 
-    send_result(std::move(result), 256);
+    send_result(std::move(result));
     return true;
 }
 
@@ -265,8 +265,7 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         out.emplace_back(std::move(address));
     }
 
-    const auto size = 64 * out.size();
-    send_result(std::move(out), size);
+    send_result(std::move(out));
     return true;
 }
 
@@ -291,7 +290,7 @@ bool protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
         { "isrange", parsed.ranged() },
         { "issolvable", parsed.solvable() },
         { "hasprivatekeys", parsed.has_private_keys() }
-    }, 256);
+    });
     return true;
 }
 
@@ -319,11 +318,11 @@ bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
     }
 
     message_signature signature_bytes{};
-    std::copy_n(decoded.begin(), signature_bytes.size(),
+    std::copy_n(decoded.cbegin(), signature_bytes.size(),
         signature_bytes.begin());
 
     const auto verified = verify_message(message, payment, signature_bytes);
-    send_result(value{ verified }, 8);
+    send_result(value{ verified });
     return true;
 }
 
@@ -350,7 +349,7 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
         (index_name.empty() || index_name == "basic block filter index"))
         result.emplace("basic block filter index", status);
 
-    send_result(std::move(result), 128);
+    send_result(std::move(result));
     return true;
 }
 
@@ -424,7 +423,7 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
             { "errors", array_t{ std::string{
                 "Insufficient data or no feerate found" } } },
             { "blocks", target }
-        }, 96);
+        });
         return;
     }
 
@@ -432,7 +431,7 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
     {
         { "feerate", fee / fee_scale },
         { "blocks", target }
-    }, 64);
+    });
 }
 
 // Signing is a wallet function, keys never transit the server.

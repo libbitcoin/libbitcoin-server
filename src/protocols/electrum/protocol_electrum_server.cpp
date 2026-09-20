@@ -66,7 +66,7 @@ void protocol_electrum::handle_server_banner(const code& ec,
         return;
     }
 
-    send_result(options().banner_message, 42);
+    send_result(options().banner_message);
 }
 
 void protocol_electrum::handle_server_donation_address(const code& ec,
@@ -81,7 +81,7 @@ void protocol_electrum::handle_server_donation_address(const code& ec,
         return;
     }
 
-    send_result(options().donation_address, 42);
+    send_result(options().donation_address);
 }
 
 void protocol_electrum::handle_server_features(const code& ec,
@@ -146,7 +146,7 @@ void protocol_electrum::handle_server_features(const code& ec,
     // silent_payments), as it is the advertisement of what they serve.
     add_features(value);
 
-    send_result(std::move(value), 1024);
+    send_result(std::move(value));
 }
 
 // Base is not a derived service, so it adds nothing.
@@ -168,7 +168,7 @@ void protocol_electrum::handle_server_peers_subscribe(const code& ec,
     }
 
     // Only supports configured servers.
-    send_result(more_hosts(), 1024);
+    send_result(more_hosts());
 }
 
 // An unrequested ping is a notification, which http cannot carry.
@@ -198,8 +198,7 @@ void protocol_electrum::handle_ping(const code& ec) NOEXCEPT
     }
 
     const auto size = options().ping_size;
-    send_notification("server.ping", array_t{ string_t(size, '0') },
-        add1(size));
+    send_notification("server.ping", array_t{ string_t(size, '0') });
 
     start_ping();
 }
@@ -220,7 +219,7 @@ void protocol_electrum::handle_server_ping(const code& ec,
     // Arguments are accepted and ignored below 1.7, which has no response.
     if (!at_least(electrum::version::v1_7))
     {
-        send_result(value_t{}, 42);
+        send_result(value_t{});
         return;
     }
 
@@ -236,7 +235,7 @@ void protocol_electrum::handle_server_ping(const code& ec,
 
     object_t out{};
     out["data"] = string_t(length, '0');
-    send_result(std::move(out), length + 42);
+    send_result(std::move(out));
 }
 
 // utilities

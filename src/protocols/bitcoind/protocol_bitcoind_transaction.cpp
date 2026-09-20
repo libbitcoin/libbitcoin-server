@@ -95,7 +95,7 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
     }
 
     constexpr auto witness = false;
-    send_result(to_text(tx, tx.serialized_size(witness), witness), 400);
+    send_result(to_text(tx, tx.serialized_size(witness), witness));
     return true;
 }
 
@@ -127,7 +127,7 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
 
     auto model = value_from(bitcoind(tx, flags_));
     inject_tx_scripts(model.as_object(), tx, p2kh_, p2sh_, witness_);
-    send_result(std::move(model), two * tx.serialized_size(true));
+    send_result(std::move(model));
     return true;
 }
 
@@ -152,7 +152,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     const auto tx = query.get_transaction(link, witness);
     if (!tx)
     {
-        send_error(error::bitcoind::invalid_address_or_key, txid, txid.size());
+        send_error(error::bitcoind::invalid_address_or_key, txid);
         return true;
     }
 
@@ -190,7 +190,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         object["fee"] = tx->fee() / to_floating(chain::satoshi_per_bitcoin);
     }
 
-    send_result(std::move(model), two * tx->serialized_size(witness));
+    send_result(std::move(model));
     return true;
 }
 
@@ -267,7 +267,7 @@ void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
         return;
     }
 
-    send_result(encode_hash(tx->hash(false)), two * hash_size);
+    send_result(encode_hash(tx->hash(false)));
 }
 
 bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
@@ -343,8 +343,7 @@ void protocol_bitcoind_transaction::complete_test_package(const code& ec,
         results.emplace_back(std::move(result));
     }
 
-    const auto size = 128 * results.size();
-    send_result(std::move(results), size);
+    send_result(std::move(results));
 }
 
 // PSBT methods.
@@ -430,7 +429,7 @@ bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
         result.emplace("next", std::string{ missing_utxo ? "updater" : "signer" });
     }
 
-    send_result(std::move(result), 1024);
+    send_result(std::move(result));
     return true;
 }
 
@@ -472,7 +471,7 @@ bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
         return true;
     }
 
-    send_result(combined.encoded(), 1024);
+    send_result(combined.encoded());
     return true;
 }
 
@@ -540,7 +539,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
         return true;
     }
 
-    send_result(doc.encoded(), 1024);
+    send_result(doc.encoded());
     return true;
 }
 
@@ -575,7 +574,7 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
         return true;
     }
 
-    send_result(doc.encoded(), 1024);
+    send_result(doc.encoded());
     return true;
 }
 
@@ -661,7 +660,7 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
         result.emplace("fee", fee.value() /
             to_floating(chain::satoshi_per_bitcoin));
 
-    send_result(std::move(result), 2048);
+    send_result(std::move(result));
     return true;
 }
 
@@ -693,7 +692,7 @@ bool protocol_bitcoind_transaction::handle_finalize_psbt(const code& ec,
     }
 
     result.emplace("complete", complete);
-    send_result(std::move(result), 1024);
+    send_result(std::move(result));
     return true;
 }
 
@@ -735,7 +734,7 @@ bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
             joined = std::move(doc);
     }
 
-    send_result(joined.encoded(), 1024);
+    send_result(joined.encoded());
     return true;
 }
 
@@ -773,7 +772,7 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     }
 
     update_psbt(doc, archive(), signings);
-    send_result(doc.encoded(), 1024);
+    send_result(doc.encoded());
     return true;
 }
 
@@ -858,7 +857,7 @@ bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
     constexpr auto witness = true;
     const auto outs = base.outputs_ptr();
     const transaction merged{ base.version(), ins, outs, base.locktime() };
-    send_result(to_text(merged, merged.serialized_size(witness), witness), 400);
+    send_result(to_text(merged, merged.serialized_size(witness), witness));
     return true;
 }
 

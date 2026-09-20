@@ -196,16 +196,10 @@ std::string protocol_bitcoind::help_names() const NOEXCEPT
 
 void protocol_bitcoind::send_error(const code& ec) NOEXCEPT
 {
-    send_error(ec, two * ec.message().size());
+    send_error(ec, value_option{});
 }
 
 void protocol_bitcoind::send_error(const code& ec,
-    size_t size_hint) NOEXCEPT
-{
-    send_error(ec, {}, size_hint);
-}
-
-void protocol_bitcoind::send_error(const code& ec, size_t size_hint,
     const code& close_reason) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -218,11 +212,11 @@ void protocol_bitcoind::send_error(const code& ec, size_t size_hint,
             .code = ec.value(),
             .message = ec.message()
         }
-    }, size_hint, close_reason);
+    }, close_reason);
 }
 
 void protocol_bitcoind::send_error(const code& ec,
-    value_option&& error, size_t size_hint) NOEXCEPT
+    value_option&& error) NOEXCEPT
 {
     BC_ASSERT(stranded());
     send_rpc(
@@ -235,17 +229,16 @@ void protocol_bitcoind::send_error(const code& ec,
             .message = ec.message(),
             .data = std::move(error)
         }
-    }, size_hint);
+    });
 }
 
 void protocol_bitcoind::send_text(std::string&& hexidecimal) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    send_result(hexidecimal, hexidecimal.size());
+    send_result(hexidecimal);
 }
 
-void protocol_bitcoind::send_result(value_option&& result,
-    size_t size_hint) NOEXCEPT
+void protocol_bitcoind::send_result(value_option&& result) NOEXCEPT
 {
     BC_ASSERT(stranded());
     send_rpc(
@@ -253,17 +246,16 @@ void protocol_bitcoind::send_result(value_option&& result,
         .jsonrpc = version_,
         .id = id_,
         .result = std::move(result)
-    }, size_hint);
+    });
 }
 
 // private
-void protocol_bitcoind::send_rpc(response_t&& model,
-    size_t size_hint) NOEXCEPT
+void protocol_bitcoind::send_rpc(response_t&& model) NOEXCEPT
 {
-    send_rpc(std::move(model), size_hint, error::success);
+    send_rpc(std::move(model), error::success);
 }
 
-void protocol_bitcoind::send_rpc(response_t&& model, size_t size_hint,
+void protocol_bitcoind::send_rpc(response_t&& model,
     const code& close_reason) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -293,10 +285,7 @@ void protocol_bitcoind::send_rpc(response_t&& model, size_t size_hint,
 
         http::response message{ status::ok, 11 };
         message.set(field::content_type, json);
-        message.body() = rpc::response
-        {
-            { .size_hint = size_hint }, std::move(model),
-        };
+        message.body() = rpc::response{ {}, std::move(model) };
         message.prepare_payload();
         SEND(std::move(message), handle_complete, _1, close_reason);
         return;
@@ -319,10 +308,7 @@ void protocol_bitcoind::send_rpc(response_t&& model, size_t size_hint,
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
     message.set(field::content_type, json);
-    message.body() = rpc::response
-    {
-        { .size_hint = size_hint }, std::move(model),
-    };
+    message.body() = rpc::response{ {}, std::move(model) };
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, close_reason);
 }

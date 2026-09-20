@@ -103,7 +103,7 @@ void protocol_electrum::complete_get_balance(const code& ec,
     {
         { "confirmed", confirmed },
         { "unconfirmed", unconfirmed }
-    }, 42);
+    });
 }
 
 // get_history
@@ -180,10 +180,9 @@ void protocol_electrum::complete_get_history(const code& ec,
         return;
     }
 
-    const auto size = add1(histories.size()) * 128u;
     auto out = transform(histories);
     append_retained(out, scripthash);
-    send_result(wrapped(std::move(out), "history", wrap), size);
+    send_result(wrapped(std::move(out), "history", wrap));
 }
 
 // get_mempool
@@ -259,10 +258,9 @@ void protocol_electrum::complete_get_mempool(const code& ec,
         return;
     }
 
-    const auto size = add1(histories.size()) * 128u;
     auto out = transform(histories);
     append_retained(out, scripthash);
-    send_result(wrapped(std::move(out), "history", wrap), size);
+    send_result(wrapped(std::move(out), "history", wrap));
 }
 
 // list_unspent
@@ -334,8 +332,7 @@ void protocol_electrum::complete_list_unspent(const code& ec,
         return;
     }
 
-    const auto size = add1(unspents.size()) * 128u;
-    send_result(wrapped(transform(unspents), "utxos", wrap), size);
+    send_result(wrapped(transform(unspents), "utxos", wrap));
 }
 
 // utilities

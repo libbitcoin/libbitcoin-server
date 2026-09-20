@@ -72,7 +72,7 @@ bool admin_query(rpc::request_t& out, const std::string& target,
 
     // Filter is required by admin methods but not html (page) requests.
     // Omission for dispatched (non-html) requests is rejected by dispatch.
-    if (const auto filter = query.find(token::filter); filter != query.end())
+    if (const auto filter = query.find(token::filter); filter != query.cend())
     {
         uint64_t value{};
         if (!to_number(value, filter->second) || value > maximum_filter)
@@ -108,7 +108,7 @@ media_type strip_media(rpc::request_t& model) NOEXCEPT
     {
         auto& params = std::get<rpc::object_t>(model.params.value());
         const auto& media = params.find("media");
-        if (media != params.end() && std::holds_alternative<uint8_t>(
+        if (media != params.cend() && std::holds_alternative<uint8_t>(
             media->second.value()))
         {
             switch (const auto value = static_cast<media_type>(

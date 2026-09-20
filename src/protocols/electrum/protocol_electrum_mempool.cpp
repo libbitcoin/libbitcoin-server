@@ -43,7 +43,7 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     }
 
     // TODO: could be simulated with block fees.
-    send_result(array_t{}, 42);
+    send_result(array_t{});
     ////send_code(error::not_implemented);
 }
 
@@ -60,7 +60,7 @@ void protocol_electrum::handle_mempool_recent(const code& ec,
     }
 
     // There is no tx pool.
-    send_result(array_t{}, 42);
+    send_result(array_t{});
 }
 
 void protocol_electrum::handle_mempool_get_info(const code& ec,
@@ -83,7 +83,7 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
         { "mempoolminfee", settings.minimum_fee_rate },
         { "minrelaytxfee", settings.minimum_fee_rate },
         { "incrementalrelayfee", settings.minimum_bump_rate }
-    }, 128);
+    });
 }
 
 BC_POP_WARNING()

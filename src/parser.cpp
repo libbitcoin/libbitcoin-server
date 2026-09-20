@@ -1022,6 +1022,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "admin.maximum_buffer",
+        setting<uint32_t>(&configured.server.admin.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
+    )
+    (
         "admin.maximum_request",
         setting<uint32_t>(&configured.server.admin.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
@@ -1112,6 +1117,11 @@ options_metadata parser::load_settings() THROWS
         "native.minimum_buffer",
         setting<uint32_t>(&configured.server.native.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "native.maximum_buffer",
+        setting<uint32_t>(&configured.server.native.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
     )
     (
         "native.maximum_request",
@@ -1216,6 +1226,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "bitcoind.maximum_buffer",
+        setting<uint32_t>(&configured.server.bitcoind.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
+    )
+    (
         "bitcoind.maximum_request",
         setting<uint32_t>(&configured.server.bitcoind.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
@@ -1313,6 +1328,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "btcd.maximum_buffer",
+        setting<uint32_t>(&configured.server.btcd.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
+    )
+    (
         "btcd.maximum_request",
         setting<uint32_t>(&configured.server.btcd.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
@@ -1388,6 +1408,11 @@ options_metadata parser::load_settings() THROWS
         "electrum.minimum_buffer",
         setting<uint32_t>(&configured.server.electrum.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "electrum.maximum_buffer",
+        setting<uint32_t>(&configured.server.electrum.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
     )
     (
         "electrum.maximum_request",
@@ -1510,6 +1535,11 @@ options_metadata parser::load_settings() THROWS
         "sparrow.minimum_buffer",
         setting<uint32_t>(&configured.server.sparrow.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "sparrow.maximum_buffer",
+        setting<uint32_t>(&configured.server.sparrow.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
     )
     (
         "sparrow.maximum_request",
@@ -1643,6 +1673,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "esplora.maximum_buffer",
+        setting<uint32_t>(&configured.server.esplora.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
+    )
+    (
         "esplora.maximum_request",
         setting<uint32_t>(&configured.server.esplora.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
@@ -1717,6 +1752,11 @@ options_metadata parser::load_settings() THROWS
         "stratum_v1.minimum_buffer",
         setting<uint32_t>(&configured.server.stratum_v1.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "stratum_v1.maximum_buffer",
+        setting<uint32_t>(&configured.server.stratum_v1.maximum_buffer),
+        "The maximum json response buffer size, defaults to '65536'."
     )
     (
         "stratum_v1.maximum_request",

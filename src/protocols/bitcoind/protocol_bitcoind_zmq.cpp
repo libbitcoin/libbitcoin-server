@@ -241,12 +241,11 @@ void protocol_bitcoind_zmq::publish(const std::string_view& topic,
 {
     BC_ASSERT(stranded());
 
-    const auto size = topic.size() + body.size() + sizeof(uint32_t);
     send_notification(rpc::string_t{ topic }, rpc::array_t
         {
             rpc::any_t{ to_shared(std::move(body)) },
             rpc::value_t{ sequence }
-        }, size);
+        });
 }
 
 // Utilities (static).

@@ -211,14 +211,13 @@ bool protocol_btcd::handle_authenticate(const code& ec,
 
     if (authorized())
     {
-        send_result({}, 4);
+        send_result({});
         return true;
     }
 
     // Failed authentication ends session once error has reached caller.
     const code unauthorized{ network::error::unauthorized };
-    const auto size = two * unauthorized.message().size();
-    send_error(unauthorized, size, unauthorized);
+    send_error(unauthorized, unauthorized);
     return true;
 }
 
@@ -230,7 +229,7 @@ bool protocol_btcd::handle_session(const code& ec,
 
     object_t result{};
     result.emplace("id", identifier());
-    send_result(std::move(result), 32);
+    send_result(std::move(result));
     return true;
 }
 
@@ -244,7 +243,7 @@ bool protocol_btcd::handle_notify_blocks(const code& ec,
         return false;
 
     subscribed_blocks_.store(true, relaxed);
-    send_result({}, 4);
+    send_result({});
     return true;
 }
 
@@ -255,7 +254,7 @@ bool protocol_btcd::handle_stop_notify_blocks(const code& ec,
         return false;
 
     subscribed_blocks_.store(false, relaxed);
-    send_result({}, 4);
+    send_result({});
     return true;
 }
 
@@ -291,14 +290,14 @@ bool protocol_btcd::handle_rescan(const code& ec,
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
-        send_error(error::btcd::invalid_address_or_key, two * beginblock.size());
+        send_error(error::btcd::invalid_address_or_key);
         return true;
     }
 
     const auto& query = archive();
     if (query.to_header(begin_hash).is_terminal())
     {
-        send_error(error::btcd::invalid_address_or_key, two * beginblock.size());
+        send_error(error::btcd::invalid_address_or_key);
         return true;
     }
 
@@ -322,13 +321,13 @@ bool protocol_btcd::handle_rescan(const code& ec,
         return true;
     }
 
-    send_result({}, 4);
+    send_result({});
     send_notification("rescanfinished", array_t
     {
         encode_hash(header->hash()),
         top,
         header->timestamp()
-    }, 256);
+    });
     return true;
 }
 
@@ -375,13 +374,13 @@ bool protocol_btcd::handle_chase(const code&, node::chase event_,
 // ----------------------------------------------------------------------------
 
 void protocol_btcd::send_notification(const std::string& method,
-    array_t&& params, size_t size_hint) NOEXCEPT
+    array_t&& params) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     using namespace network::http;
     static const auto json = from_media_type(media_type::application_json);
-    rpc::request notification{ { .size_hint = size_hint } };
+    rpc::request notification{};
     notification.message.jsonrpc = version::v1;
     notification.message.method = method;
     notification.message.params = params_t{ std::move(params) };

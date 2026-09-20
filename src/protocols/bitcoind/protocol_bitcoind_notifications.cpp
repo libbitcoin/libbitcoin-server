@@ -98,8 +98,7 @@ bool protocol_bitcoind_notifications::handle_get_zmq_notifications(
     const auto& zmq = server_settings().bitcoind_zmq;
     add_zmq_notifications(notifications, zmq.binds);
     add_zmq_notifications(notifications, zmq.safes);
-    const auto size = notifications.size() * 100;
-    send_result(std::move(notifications), size);
+    send_result(std::move(notifications));
     return true;
 }
 

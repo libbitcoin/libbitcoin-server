@@ -87,14 +87,11 @@ protected:
 
     /// Senders.
     void send_error(const code& ec) NOEXCEPT;
-    void send_error(const code& ec, size_t size_hint) NOEXCEPT;
-    void send_error(const code& ec, size_t size_hint,
-        const code& close_reason) NOEXCEPT;
-    void send_error(const code& ec, network::rpc::value_option&& error,
-        size_t size_hint) NOEXCEPT;
+    void send_error(const code& ec, const code& close_reason) NOEXCEPT;
+    void send_error(const code& ec,
+        network::rpc::value_option&& error) NOEXCEPT;
     void send_text(std::string&& hexidecimal) NOEXCEPT;
-    void send_result(network::rpc::value_option&& result,
-        size_t size_hint) NOEXCEPT;
+    void send_result(network::rpc::value_option&& result) NOEXCEPT;
 
     /// Cache rpc response context for serialization (requires strand).
     void set_rpc_request(network::rpc::version version,
@@ -124,9 +121,8 @@ private:
         const totals_handler& handler) NOEXCEPT;
 
     // Senders.
+    void send_rpc(network::rpc::response_t&& model) NOEXCEPT;
     void send_rpc(network::rpc::response_t&& model,
-        size_t size_hint) NOEXCEPT;
-    void send_rpc(network::rpc::response_t&& model, size_t size_hint,
         const code& close_reason) NOEXCEPT;
 
     // Obtain cached request and clear cache (requires strand).

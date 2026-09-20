@@ -184,16 +184,15 @@ protected:
         send_error(std::move(error), default_handler());
     }
 
-    inline void send_result(network::rpc::value_t&& result,
-        size_t size_hint) NOEXCEPT
+    inline void send_result(network::rpc::value_t&& result) NOEXCEPT
     {
-        send_result(std::move(result), size_hint, default_handler());
+        send_result(std::move(result), default_handler());
     }
 
     inline void send_notification(network::rpc::string_t&& method,
-        network::rpc::params_t&& params, size_t size_hint) NOEXCEPT
+        network::rpc::params_t&& params) NOEXCEPT
     {
-        send_notification(std::move(method), std::move(params), size_hint,
+        send_notification(std::move(method), std::move(params),
             default_handler());
     }
 
@@ -212,19 +211,18 @@ protected:
         channel_->send_error(std::move(error), std::move(handler));
     }
 
-    inline void send_result(network::rpc::value_t&& result, size_t size_hint,
+    inline void send_result(network::rpc::value_t&& result,
         network::result_handler&& handler) NOEXCEPT
     {
-        channel_->send_result(std::move(result), size_hint,
-            std::move(handler));
+        channel_->send_result(std::move(result), std::move(handler));
     }
 
     inline void send_notification(network::rpc::string_t&& method,
-        network::rpc::params_t&& params, size_t size_hint,
+        network::rpc::params_t&& params,
         network::result_handler&& handler) NOEXCEPT
     {
         channel_->send_notification(std::move(method), std::move(params),
-            size_hint, std::move(handler));
+            std::move(handler));
     }
 
 private:

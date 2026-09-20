@@ -155,7 +155,7 @@ void protocol_btcd::complete_load_tx_filter(const code& ec) NOEXCEPT
         return;
     }
 
-    send_result({}, 4);
+    send_result({});
 }
 
 // Handlers (notifyreceived/notifyspent).
@@ -237,7 +237,7 @@ void protocol_btcd::complete_notify_received(const code& ec) NOEXCEPT
         return;
     }
 
-    send_result({}, 4);
+    send_result({});
 }
 
 bool protocol_btcd::handle_stop_notify_received(const code& ec,
@@ -254,7 +254,7 @@ bool protocol_btcd::handle_stop_notify_received(const code& ec,
     }
 
     POST_NOTIFY(do_stop_notify_received, std::move(keys));
-    send_result({}, 4);
+    send_result({});
     return true;
 }
 
@@ -326,7 +326,7 @@ void protocol_btcd::complete_notify_spent(const code& ec) NOEXCEPT
         return;
     }
 
-    send_result({}, 4);
+    send_result({});
 }
 
 bool protocol_btcd::handle_stop_notify_spent(const code& ec,
@@ -343,7 +343,7 @@ bool protocol_btcd::handle_stop_notify_spent(const code& ec,
     }
 
     POST_NOTIFY(do_stop_notify_spent, std::move(points));
-    send_result({}, 4);
+    send_result({});
     return true;
 }
 
@@ -472,7 +472,7 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
             return;
 
         const auto at = matched.find(height);
-        if (at != matched.end() && !at->second.empty())
+        if (at != matched.cend() && !at->second.empty())
         {
             discovered.emplace_back(object_t
             {
@@ -502,7 +502,7 @@ void protocol_btcd::complete_rescan_blocks(const code& ec,
         return;
     }
 
-    send_result(std::move(*discovered), 256);
+    send_result(std::move(*discovered));
 }
 
 // Handlers (transactions).
@@ -539,7 +539,7 @@ bool protocol_btcd::handle_search_raw_transactions(const code& ec,
 
     if (is_zero(requested))
     {
-        send_result(null_t{}, 5);
+        send_result(null_t{});
         return true;
     }
 
@@ -587,7 +587,7 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
             return;
         }
 
-        history.insert(history.end(), part.begin(), part.end());
+        history.insert(history.end(), part.cbegin(), part.cend());
     }
 
     // A transaction can pay more than one of the searched scripts.
@@ -662,7 +662,7 @@ void protocol_btcd::complete_search_raw_transactions(const code& ec,
         return;
     }
 
-    send_result(std::move(*found), add1(found->size()) * 512);
+    send_result(std::move(*found));
 }
 
 // Notification event handlers.
@@ -740,7 +740,7 @@ code protocol_btcd::match_filters(array_t& out, size_t height,
     }
 
     const auto at = matched.find(height);
-    if (at != matched.end())
+    if (at != matched.cend())
         out = serialize_matches(at->second);
 
     return error::success;
@@ -765,7 +765,7 @@ code protocol_btcd::match_receives(std::vector<array_t>& out,
 
     const auto& query = archive();
     const auto at = received.find(height);
-    if (at == received.end())
+    if (at == received.cend())
         return error::success;
 
     for (const auto& [position, hash]: at->second)
@@ -798,7 +798,7 @@ code protocol_btcd::match_spends(std::vector<array_t>& out,
         matches spent{};
         match_outpoints(spent, it->second, it->first, heights);
         const auto at = spent.find(height);
-        if (at == spent.end() || at->second.empty())
+        if (at == spent.cend() || at->second.empty())
         {
             ++it;
             continue;
@@ -856,20 +856,20 @@ void protocol_btcd::notify_connected(const header_cptr& header,
         connected.emplace_back(encode_hash(header->get_hash()));
         connected.emplace_back(height);
         connected.emplace_back(header->timestamp());
-        send_notification("blockconnected", std::move(connected), 256);
+        send_notification("blockconnected", std::move(connected));
 
         array_t filtered{};
         filtered.emplace_back(height);
         filtered.emplace_back(to_text(*header, chain::header::serialized_size()));
         filtered.emplace_back(std::move(*txs));
-        send_notification("filteredblockconnected", std::move(filtered), 256);
+        send_notification("filteredblockconnected", std::move(filtered));
     }
 
     for (auto& params: *received)
-        send_notification("recvtx", std::move(params), 256);
+        send_notification("recvtx", std::move(params));
 
     for (auto& params: *redeemed)
-        send_notification("redeemingtx", std::move(params), 256);
+        send_notification("redeemingtx", std::move(params));
 }
 
 void protocol_btcd::notify_disconnected(const header_cptr& header,
@@ -884,12 +884,12 @@ void protocol_btcd::notify_disconnected(const header_cptr& header,
     disconnected.emplace_back(encode_hash(header->get_hash()));
     disconnected.emplace_back(height);
     disconnected.emplace_back(header->timestamp());
-    send_notification("blockdisconnected", std::move(disconnected), 256);
+    send_notification("blockdisconnected", std::move(disconnected));
 
     array_t filtered{};
     filtered.emplace_back(height);
     filtered.emplace_back(to_text(*header, chain::header::serialized_size()));
-    send_notification("filteredblockdisconnected", std::move(filtered), 256);
+    send_notification("filteredblockdisconnected", std::move(filtered));
 }
 
 // Utilities.

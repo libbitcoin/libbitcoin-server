@@ -126,7 +126,7 @@ void protocol_electrum_version::handle_server_version(const code& ec,
     }
 
     send_result(electrum::version_result(channel_->version(),
-        options().server_name), 70, BIND(finished, _1, error::success));
+        options().server_name), BIND(finished, _1, error::success));
 }
 
 // Client/server names.

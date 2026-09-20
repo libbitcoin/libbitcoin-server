@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(parsers__strip_media__json__json_and_erased)
     BOOST_REQUIRE_EQUAL(strip_media(model), media_type::application_json);
 
     // The media param is stripped from the model (undeclared in interface).
-    BOOST_REQUIRE(params.find("media") == params.end());
+    BOOST_REQUIRE(params.find("media") == params.cend());
     BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
 }
 
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(parsers__strip_media__html__html_and_erased)
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::text_html) };
     BOOST_REQUIRE_EQUAL(strip_media(model), media_type::text_html);
-    BOOST_REQUIRE(params.find("media") == params.end());
+    BOOST_REQUIRE(params.find("media") == params.cend());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__strip_media__unsupported_value__unknown_not_erased)
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(parsers__strip_media__unsupported_value__unknown_not_erased
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::text_plain) };
     BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
-    BOOST_REQUIRE(params.find("media") != params.end());
+    BOOST_REQUIRE(params.find("media") != params.cend());
 }
 
 BOOST_AUTO_TEST_CASE(parsers__strip_media__unknown_value__unknown)

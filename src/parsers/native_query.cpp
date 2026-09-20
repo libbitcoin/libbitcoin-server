@@ -73,7 +73,7 @@ bool native_query(rpc::request_t& out, const std::string& target,
     auto& params = std::get<rpc::object_t>(out.params.value());
 
     // Witness is optional<true> (where applicable), so only set if false.
-    if (const auto witness = query.find(token::witness); witness != query.end())
+    if (const auto witness = query.find(token::witness); witness != query.cend())
     {
         if (is_false(witness->second))
             params[token::witness] = false;
@@ -82,7 +82,7 @@ bool native_query(rpc::request_t& out, const std::string& target,
     }
 
     // Turbo is optional<true> (where applicable), so only set if false.
-    if (const auto turbo = query.find(token::turbo); turbo != query.end())
+    if (const auto turbo = query.find(token::turbo); turbo != query.cend())
     {
         if (is_false(turbo->second))
             params[token::turbo] = false;
@@ -91,7 +91,7 @@ bool native_query(rpc::request_t& out, const std::string& target,
     }
 
     // Stop is optional<false> (where applicable), so only set if true.
-    if (const auto stop = query.find(token::stop); stop != query.end())
+    if (const auto stop = query.find(token::stop); stop != query.cend())
     {
         if (is_true(stop->second))
             params[token::stop] = true;

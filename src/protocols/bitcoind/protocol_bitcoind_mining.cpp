@@ -106,7 +106,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     window = std::min(window, target);
     if (is_zero(window))
     {
-        send_result(zero, 20);
+        send_result(zero);
         return true;
     }
 
@@ -136,7 +136,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
 
     if (minimum == maximum)
     {
-        send_result(zero, 20);
+        send_result(zero);
         return true;
     }
 
@@ -150,7 +150,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     }
 
     const auto work = (end_work - start_work).convert_to<double>();
-    send_result(work / (maximum - minimum), 20);
+    send_result(work / (maximum - minimum));
     return true;
 }
 
@@ -211,7 +211,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
         { "chain", chain_name(query) },
         { "next", std::move(next_block) },
         { "warnings", array_t{} }
-    }, 512);
+    });
     return true;
 }
 
@@ -250,7 +250,7 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
 
     if (!archive().to_header(header->hash()).is_terminal())
     {
-        send_result(null_t{}, 8);
+        send_result(null_t{});
         return true;
     }
 
@@ -274,7 +274,7 @@ void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT
     if (ec)
         send_error(translate(ec, verify_error));
     else
-        send_result(null_t{}, 8);
+        send_result(null_t{});
 }
 
 bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
