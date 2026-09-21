@@ -264,19 +264,26 @@ protected:
     void get_mempool(const hash_digest& hash, bool wrap=false) NOEXCEPT;
     void list_unspent(const hash_digest& hash, bool wrap=false) NOEXCEPT;
 
-    void do_get_balance(const hash_digest& hash) NOEXCEPT;
-    void do_get_history(const hash_digest& hash, bool wrap) NOEXCEPT;
-    void do_get_mempool(const hash_digest& hash, bool wrap) NOEXCEPT;
-    void do_list_unspent(const hash_digest& hash, bool wrap) NOEXCEPT;
+    void do_get_balance(const hash_digest& hash,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_history(const hash_digest& hash, bool wrap,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_mempool(const hash_digest& hash, bool wrap,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_list_unspent(const hash_digest& hash, bool wrap,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void complete_get_balance(const code& ec, uint64_t confirmed,
-        int64_t unconfirmed) NOEXCEPT;
+        int64_t unconfirmed, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_history(const code& ec, const hash_digest& scripthash,
-        const histories& histories, bool wrap) NOEXCEPT;
+        const histories& histories, bool wrap,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_mempool(const code& ec, const hash_digest& scripthash,
-        const histories& histories, bool wrap) NOEXCEPT;
+        const histories& histories, bool wrap,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_list_unspent(const code& ec,
-        const unspent_outputs& unspents, bool wrap) NOEXCEPT;
+        const unspent_outputs& unspents, bool wrap,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
     void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
@@ -295,10 +302,10 @@ protected:
 
     void scripthash_subscribe(const hash_digest& hash,
         notify_t type) NOEXCEPT;
-    void do_scripthash_subscribe(const hash_digest& hash,
-        notify_t type) NOEXCEPT;
+    void do_scripthash_subscribe(const hash_digest& hash, notify_t type,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_scripthash_subscribe(const code& ec,
-        const hash_digest& status) NOEXCEPT;
+        const hash_digest& status, const gate_t::ptr& gate) NOEXCEPT;
     void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
     void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
@@ -311,9 +318,11 @@ protected:
     /// Outpoint.
     /// -----------------------------------------------------------------------
 
-    void do_outpoint_subscribe(const point& prevout) NOEXCEPT;
+    void do_outpoint_subscribe(const point& prevout,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_outpoint_subscribe(const code& ec,
-        const outpoint_subscription& sub, const point& prevout) NOEXCEPT;
+        const outpoint_subscription& sub, const point& prevout,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_outpoint_unsubscribe(const point& prevout) NOEXCEPT;
     void complete_outpoint_unsubscribe(bool found) NOEXCEPT;
     void outpoint_notify(const std::unique_ptr<interface::object_t>& status,

@@ -47,33 +47,27 @@ bool protocol_native::handle_get_address(const code& ec, interface::address,
         return true;
     }
 
-    // Monitor socket for close.
-    gate_ = gate();
-
-    PARALLEL(do_get_address, media, turbo && turbo_, hash);
+    PARALLEL(do_get_address, media, turbo && turbo_, hash, gate());
     return true;
 }
 
 // private
 void protocol_native::do_get_address(uint8_t media, bool turbo,
-    const hash_cptr& hash) NOEXCEPT
+    const hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     database::outpoints set{};
     const auto& query = archive();
     const auto ec = query.get_address_outpoints(stopping_, set, *hash, turbo);
-    POST(complete_get_address, ec, media, std::move(set));
+    POST(complete_get_address, ec, media, std::move(set), gate);
 }
 
 // This is shared by the three get_address... methods.
 void protocol_native::complete_get_address(const code& ec, uint8_t media,
-    const database::outpoints& set) NOEXCEPT
+    const database::outpoints& set, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
-    // Stop monitoring socket.
-    gate_.reset();
 
     if (stopped())
         return;
@@ -125,16 +119,13 @@ bool protocol_native::handle_get_address_confirmed(const code& ec,
         return true;
     }
 
-    // Monitor socket for close.
-    gate_ = gate();
-
-    PARALLEL(do_get_address_confirmed, media, turbo && turbo_, hash);
+    PARALLEL(do_get_address_confirmed, media, turbo && turbo_, hash, gate());
     return true;
 }
 
 // private
 void protocol_native::do_get_address_confirmed(uint8_t media, bool turbo,
-    const hash_cptr& hash) NOEXCEPT
+    const hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -142,7 +133,7 @@ void protocol_native::do_get_address_confirmed(uint8_t media, bool turbo,
     const auto& query = archive();
     auto ec = query.get_confirmed_unspent_outpoints(stopping_, set, *hash,
         turbo);
-    POST(complete_get_address, ec, media, std::move(set));
+    POST(complete_get_address, ec, media, std::move(set), gate);
 }
 
 // handle_get_address_unconfirmed
@@ -181,31 +172,25 @@ bool protocol_native::handle_get_address_balance(const code& ec,
         return true;
     }
 
-    // Monitor socket for close.
-    gate_ = gate();
-
-    PARALLEL(do_get_address_balance, media, turbo && turbo_, hash);
+    PARALLEL(do_get_address_balance, media, turbo && turbo_, hash, gate());
     return true;
 }
 
 void protocol_native::do_get_address_balance(uint8_t media, bool turbo,
-    const hash_cptr& hash) NOEXCEPT
+    const hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     uint64_t balance{};
     const auto& query = archive();
     auto ec = query.get_confirmed_balance(stopping_, balance, *hash, turbo);
-    POST(complete_get_address_balance, ec, media, balance);
+    POST(complete_get_address_balance, ec, media, balance, gate);
 }
 
 void protocol_native::complete_get_address_balance(const code& ec,
-    uint8_t media, uint64_t balance) NOEXCEPT
+    uint8_t media, uint64_t balance, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
-    // Stop monitoring socket.
-    gate_.reset();
 
     // Suppresses cancelation error response.
     if (stopped())

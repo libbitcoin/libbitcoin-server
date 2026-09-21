@@ -157,12 +157,26 @@ protected:
         node::event_value value) NOEXCEPT;
 
 private:
-    enum class wait : uint8_t { none, new_block, block, height };
+    enum class wait : uint8_t { new_block, block, height };
+    using wait_race = network::race_any<const code&>;
 
-    void arm_wait(double timeout) NOEXCEPT;
+    struct waiter
+    {
+        typedef std::shared_ptr<waiter> ptr;
+
+        wait type;
+        size_t height;
+        system::hash_digest hash;
+        gate_t::ptr gate;
+        wait_race::ptr race;
+    };
+
+    void arm_wait(waiter&& waiting, double timeout) NOEXCEPT;
     void do_wait_event() NOEXCEPT;
-    void handle_wait_timeout(const code& ec) NOEXCEPT;
-    bool wait_done() const NOEXCEPT;
+    void handle_wait_timeout(const code& ec,
+        const waiter::ptr& waiting) NOEXCEPT;
+    void complete_wait(const code& ec) NOEXCEPT;
+    bool wait_done(const waiter& waiting) const NOEXCEPT;
     void send_top() NOEXCEPT;
 
     void handle_prioritize(const code& ec, size_t height) NOEXCEPT;
@@ -170,20 +184,20 @@ private:
 
     enum class set_hash : uint8_t { none, muhash, serialized };
 
-    void do_get_tx_out_set_info(set_hash type, size_t height) NOEXCEPT;
+    void do_get_tx_out_set_info(set_hash type, size_t height,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_scan_tx_out_set(
-        const std::shared_ptr<network::rpc::array_t>& objects) NOEXCEPT;
-    void complete_scan(const code& ec,
-        network::rpc::object_t& result) NOEXCEPT;
+        const std::shared_ptr<network::rpc::array_t>& objects,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_scan(const code& ec, network::rpc::object_t& result,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     // This is thread safe.
     std::atomic_bool stopping_{};
 
     // These are protected by strand.
-    wait wait_{ wait::none };
-    size_t wait_height_{};
-    system::hash_digest wait_hash_{};
     network::deadline::ptr wait_timer_;
+    waiter::ptr waiter_{};
 };
 
 } // namespace server

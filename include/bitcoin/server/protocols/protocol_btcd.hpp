@@ -183,28 +183,37 @@ protected:
     /// -----------------------------------------------------------------------
 
     void do_load_tx_filter(bool reload, const system::hashes& keys,
-        const system::chain::points& points) NOEXCEPT;
-    void complete_load_tx_filter(const code& ec) NOEXCEPT;
+        const system::chain::points& points,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_load_tx_filter(const code& ec,
+        const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_notify_received(const system::hashes& keys) NOEXCEPT;
-    void complete_notify_received(const code& ec) NOEXCEPT;
+    void do_notify_received(const system::hashes& keys,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_notify_received(const code& ec,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_stop_notify_received(const system::hashes& keys) NOEXCEPT;
 
-    void do_notify_spent(const system::chain::points& points) NOEXCEPT;
-    void complete_notify_spent(const code& ec) NOEXCEPT;
+    void do_notify_spent(const system::chain::points& points,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_notify_spent(const code& ec,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_stop_notify_spent(const system::chain::points& points) NOEXCEPT;
 
-    void do_rescan_blocks(const hashes_ptr& hashes) NOEXCEPT;
+    void do_rescan_blocks(const hashes_ptr& hashes,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_rescan_watches(const hashes_ptr& hashes,
-        const system::hashes& keys, system::chain::points& points) NOEXCEPT;
+        const system::hashes& keys, system::chain::points& points,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_rescan_blocks(const code& ec,
-        const array_ptr& discovered) NOEXCEPT;
+        const array_ptr& discovered, const gate_t::ptr& gate) NOEXCEPT;
 
     void do_search_raw_transactions(const system::hashes& keys, bool verbose,
         size_t skip, size_t count, bool prevouts, bool reverse,
-        const std::set<std::string>& filter) NOEXCEPT;
+        const std::set<std::string>& filter,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_search_raw_transactions(const code& ec,
-        const array_ptr& found) NOEXCEPT;
+        const array_ptr& found, const gate_t::ptr& gate) NOEXCEPT;
 
     /// Notification event handlers.
     /// -----------------------------------------------------------------------
