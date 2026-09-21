@@ -73,6 +73,9 @@ parser::parser(system::chain::selection context,
 
     // server
 
+    // Admin may accumulate a large amount of log backlog.
+    configured.server.admin.maximum_backlog = 10 * network::megabyte;
+
     // The largest btcd notification is a filtered block.
     configured.server.btcd.maximum_backlog = 20 * network::megabyte;
 
