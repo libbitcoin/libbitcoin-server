@@ -37,6 +37,7 @@ lib_LTLIBRARIES = src/libbitcoin-server.la
 src_libbitcoin_server_la_LIBS = src/libbitcoin-server.la
 
 src_libbitcoin_server_la_CPPFLAGS = \
+    -I${top_builddir}/include \
     -I${srcdir}/../../include \
     ${libbitcoin_node_BUILD_CPPFLAGS}
 
@@ -142,7 +143,7 @@ include_bitcoin_server_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/parser.hpp \
     ${srcdir}/../../include/bitcoin/server/server_node.hpp \
     ${srcdir}/../../include/bitcoin/server/settings.hpp \
-    ${srcdir}/../../include/bitcoin/server/version.hpp
+    include/bitcoin/server/version.hpp
 
 include_bitcoin_server_channelsdir = \
     ${includedir}/bitcoin/server/channels
@@ -384,6 +385,7 @@ if WITH_CONSOLE
 bin_PROGRAMS = console/bs
 
 console_bs_CPPFLAGS = \
+    -I${top_builddir}/console \
     -I${srcdir}/../../console \
     ${src_libbitcoin_server_la_CPPFLAGS}
 

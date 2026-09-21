@@ -288,6 +288,7 @@ AS_IF([(test "x${with_tests}" != "xno")],
 AC_CONFIG_FILES([
     Makefile
     libbitcoin-server.pc
+    include/bitcoin/server/version.hpp:${repository_root_dir}/include/bitcoin/server/version.hpp.in
   ])
 
 AC_OUTPUT
