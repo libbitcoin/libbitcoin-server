@@ -88,9 +88,6 @@ bool protocol_bitcoind_zmq::handle_subscribe(const code& ec,
     set_subscription(subscribed_hash_tx_, topic::hash_tx, text, cancel);
     set_subscription(subscribed_raw_tx_, topic::raw_tx, text, cancel);
     set_subscription(subscribed_sequence_, topic::sequence, text, cancel);
-
-    // A subscription has no response, so the next read is armed once handled.
-    read_next();
     return true;
 }
 

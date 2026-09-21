@@ -78,7 +78,7 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
         return;
     }
 
-    monitor(true);
+    gate_ = gate();
     POST_NOTIFY(do_scripthash_subscribe, hash, type);
 }
 
@@ -115,7 +115,7 @@ void protocol_electrum::complete_scripthash_subscribe(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 

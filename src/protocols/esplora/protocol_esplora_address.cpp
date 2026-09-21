@@ -88,7 +88,7 @@ bool protocol_esplora::handle_get_address(const code& ec, interface::address,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_get_address, key, address);
     return true;
 }
@@ -135,7 +135,7 @@ void protocol_esplora::complete_get_address(const code& ec,
     const std::optional<std::string>& address) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
 
     if (stopped())
         return;
@@ -251,7 +251,7 @@ bool protocol_esplora::get_address_txs(uint8_t media,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_get_address_txs, key, last_seen);
     return true;
 }
@@ -274,7 +274,7 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     const std::optional<hash_cptr>& last_seen) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
 
     if (stopped())
         return;
@@ -353,7 +353,7 @@ bool protocol_esplora::handle_get_address_utxo(const code& ec,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_get_address_utxo, key);
     return true;
 }
@@ -371,7 +371,7 @@ void protocol_esplora::complete_get_address_utxo(const code& ec,
     const unspent_outputs& unspent) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
 
     if (stopped())
         return;

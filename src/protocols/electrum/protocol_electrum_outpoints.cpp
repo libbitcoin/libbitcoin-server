@@ -143,7 +143,7 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
         return;
     }
 
-    monitor(true);
+    gate_ = gate();
     POST_NOTIFY(do_outpoint_subscribe, point{ hash, index });
 }
 
@@ -171,7 +171,7 @@ void protocol_electrum::complete_outpoint_subscribe(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 

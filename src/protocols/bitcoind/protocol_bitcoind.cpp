@@ -272,13 +272,10 @@ void protocol_bitcoind::send_rpc(response_t&& model,
         id_.reset();
         version_ = version::undefined;
 
-        // An unsent response does not restart the read cycle, so resume it.
         if (notification)
         {
             if (close_reason)
                 stop(close_reason);
-            else
-                read_next();
 
             return;
         }

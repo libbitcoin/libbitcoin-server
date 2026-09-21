@@ -83,6 +83,9 @@ public:
     }
 
 protected:
+    // Retained across dispatched work, releasing the reader (see gate()).
+    network::channel::gate_t::ptr gate_{};
+
     /// A tx broadcast on this channel, with its identifier.
     using retained_t = std::pair<system::hash_digest,
         system::chain::transaction::cptr>;
