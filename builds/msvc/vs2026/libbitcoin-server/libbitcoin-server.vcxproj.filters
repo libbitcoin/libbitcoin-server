@@ -644,13 +644,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
-      <Filter>include\bitcoin\server</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp">
       <Filter>include\bitcoin\server\impl\protocols</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in">
+      <Filter>include\bitcoin\server</Filter>
     </None>
     <None Include="packages.config" />
   </ItemGroup>

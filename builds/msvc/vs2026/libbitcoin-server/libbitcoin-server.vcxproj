@@ -305,10 +305,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp" />
+    <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

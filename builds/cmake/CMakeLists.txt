@@ -169,6 +169,15 @@ endif()
 include(CheckLinkerFlag)
 
 #------------------------------------------------------------------------------
+# Configurable file(s).
+#------------------------------------------------------------------------------
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/bitcoin/server/version.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bitcoin/server/version.hpp
+  @ONLY )
+
+#------------------------------------------------------------------------------
 # libbitcoin-server library
 #------------------------------------------------------------------------------
 add_library( libbitcoin-server )
@@ -209,6 +218,10 @@ target_sources( libbitcoin-server
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
     FILES
       ${libbitcoin_server_HEADERS}
+    FILE_SET HEADERS
+    BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/include"
+    FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/include/bitcoin/server/version.hpp"
   PRIVATE
     ${libbitcoin_server_SOURCES}
 )
