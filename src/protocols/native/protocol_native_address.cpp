@@ -48,7 +48,7 @@ bool protocol_native::handle_get_address(const code& ec, interface::address,
     }
 
     // Monitor socket for close.
-    monitor(true);
+    gate_ = gate();
 
     PARALLEL(do_get_address, media, turbo && turbo_, hash);
     return true;
@@ -73,7 +73,7 @@ void protocol_native::complete_get_address(const code& ec, uint8_t media,
     BC_ASSERT(stranded());
 
     // Stop monitoring socket.
-    monitor(false);
+    gate_.reset();
 
     if (stopped())
         return;
@@ -126,7 +126,7 @@ bool protocol_native::handle_get_address_confirmed(const code& ec,
     }
 
     // Monitor socket for close.
-    monitor(true);
+    gate_ = gate();
 
     PARALLEL(do_get_address_confirmed, media, turbo && turbo_, hash);
     return true;
@@ -182,7 +182,7 @@ bool protocol_native::handle_get_address_balance(const code& ec,
     }
 
     // Monitor socket for close.
-    monitor(true);
+    gate_ = gate();
 
     PARALLEL(do_get_address_balance, media, turbo && turbo_, hash);
     return true;
@@ -205,7 +205,7 @@ void protocol_native::complete_get_address_balance(const code& ec,
     BC_ASSERT(stranded());
 
     // Stop monitoring socket.
-    monitor(false);
+    gate_.reset();
 
     // Suppresses cancelation error response.
     if (stopped())

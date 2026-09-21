@@ -681,7 +681,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
         }
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_get_tx_out_set_info, type, height);
     return true;
 }
@@ -813,7 +813,7 @@ bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_scan_tx_out_set, std::make_shared<array_t>(scanobjects));
     return true;
 }
@@ -921,7 +921,7 @@ void protocol_bitcoind_blockchain::complete_scan(const code& ec,
     object_t& result) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 

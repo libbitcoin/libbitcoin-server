@@ -73,7 +73,7 @@ bool protocol_btcd::handle_load_tx_filter(const code& ec,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     POST_NOTIFY(do_load_tx_filter, reload, std::move(keys), std::move(points));
     return true;
 }
@@ -144,7 +144,7 @@ void protocol_btcd::complete_load_tx_filter(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
@@ -182,7 +182,7 @@ bool protocol_btcd::handle_notify_received(const code& ec,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     POST_NOTIFY(do_notify_received, std::move(keys));
     return true;
 }
@@ -226,7 +226,7 @@ void protocol_btcd::complete_notify_received(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
@@ -282,7 +282,7 @@ bool protocol_btcd::handle_notify_spent(const code& ec,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     POST_NOTIFY(do_notify_spent, std::move(points));
     return true;
 }
@@ -315,7 +315,7 @@ void protocol_btcd::complete_notify_spent(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
@@ -391,7 +391,7 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
         return true;
     }
 
-    monitor(true);
+    gate_ = gate();
     POST_NOTIFY(do_rescan_blocks, emplace_shared<hashes>(
         std::move(block_hashes)));
     return true;
@@ -491,7 +491,7 @@ void protocol_btcd::complete_rescan_blocks(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
@@ -555,7 +555,7 @@ bool protocol_btcd::handle_search_raw_transactions(const code& ec,
         filter.emplace(std::get<string_t>(item.value()));
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_search_raw_transactions, std::move(keys), !is_zero(level),
         limit<size_t>(first, zero, max_size_t),
         limit<size_t>(requested, one, max_size_t), !is_zero(extra), reverse,
@@ -644,7 +644,7 @@ void protocol_btcd::complete_search_raw_transactions(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 

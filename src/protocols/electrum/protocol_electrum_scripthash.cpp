@@ -71,7 +71,7 @@ void protocol_electrum::get_balance(const hash_digest& hash) NOEXCEPT
         return;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_get_balance, hash);
 }
 
@@ -88,7 +88,7 @@ void protocol_electrum::complete_get_balance(const code& ec,
     uint64_t confirmed, int64_t unconfirmed) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
@@ -147,7 +147,7 @@ void protocol_electrum::get_history(const system::hash_digest& hash,
         return;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_get_history, hash, wrap);
 }
 
@@ -169,7 +169,7 @@ void protocol_electrum::complete_get_history(const code& ec,
     bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
@@ -226,7 +226,7 @@ void protocol_electrum::get_mempool(const system::hash_digest& hash,
         return;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_get_mempool, hash, wrap);
 }
 
@@ -247,7 +247,7 @@ void protocol_electrum::complete_get_mempool(const code& ec,
     bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
@@ -303,7 +303,7 @@ void protocol_electrum::list_unspent(const system::hash_digest& hash,
         return;
     }
 
-    monitor(true);
+    gate_ = gate();
     PARALLEL(do_list_unspent, hash, wrap);
 }
 
@@ -321,7 +321,7 @@ void protocol_electrum::complete_list_unspent(const code& ec,
     const unspent_outputs& unspents, bool wrap) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    monitor(false);
+    gate_.reset();
     if (stopped())
         return;
 
