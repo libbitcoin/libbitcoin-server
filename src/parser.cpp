@@ -73,13 +73,20 @@ parser::parser(system::chain::selection context,
 
     // server
 
-    // A verbose block response is the largest message of these interfaces.
-    configured.server.bitcoind.maximum_backlog = 20 * network::megabyte;
+    // The largest btcd notification is a filtered block.
     configured.server.btcd.maximum_backlog = 20 * network::megabyte;
+
+    // Raw block publications drop beyond the bound, eight blocks deep.
+    configured.server.bitcoind_zmq.maximum_backlog = 32 * network::megabyte;
 
     // A submitted block is base16 encoded within a json envelope.
     configured.server.bitcoind.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
     configured.server.btcd.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
+
+    // A broadcast transaction package is base16 encoded within a json envelope.
+    configured.server.electrum.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
+    configured.server.sparrow.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
+    configured.server.esplora.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
 
     ////configured.server.admin.binds.emplace_back(asio::address{}, 8080_u16);
     ////configured.server.admin.safes.emplace_back(asio::address{}, 8043_u16);
