@@ -72,6 +72,15 @@ parser::parser(system::chain::selection context,
     configured.network.outbound.seeds.emplace_back("seed.mainnet.achownodes.xyz", 8333_u16);
 
     // server
+
+    // A verbose block response is the largest message of these interfaces.
+    configured.server.bitcoind.maximum_backlog = 20 * network::megabyte;
+    configured.server.btcd.maximum_backlog = 20 * network::megabyte;
+
+    // A submitted block is base16 encoded within a json envelope.
+    configured.server.bitcoind.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
+    configured.server.btcd.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
+
     ////configured.server.admin.binds.emplace_back(asio::address{}, 8080_u16);
     ////configured.server.admin.safes.emplace_back(asio::address{}, 8043_u16);
     ////configured.server.native.binds.emplace_back(asio::address{}, 8180_u16);
@@ -744,6 +753,16 @@ options_metadata parser::load_settings() THROWS
         "The target number of outgoing network connections, defaults to '100'."
     )
     (
+        "outbound.rate_limit",
+        setting<uint32_t>(&configured.network.outbound.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "outbound.connect_timeout_seconds",
+        setting<uint32_t>(&configured.network.outbound.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "outbound.inactivity_minutes",
         setting<uint32_t>(&configured.network.outbound.inactivity_minutes),
         "The inactivity time limit for any connection, defaults to '10'."
@@ -759,14 +778,14 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "outbound.maximum_backlog",
+        setting<uint32_t>(&configured.network.outbound.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "outbound.maximum_request",
         setting<uint32_t>(&configured.network.outbound.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "outbound.rate_limit",
-        setting<uint32_t>(&configured.network.outbound.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "outbound.seed",
@@ -821,6 +840,16 @@ options_metadata parser::load_settings() THROWS
         "The target number of incoming network connections, defaults to '100'."
     )
     (
+        "inbound.rate_limit",
+        setting<uint32_t>(&configured.network.inbound.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "inbound.connect_timeout_seconds",
+        setting<uint32_t>(&configured.network.inbound.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "inbound.inactivity_minutes",
         setting<uint32_t>(&configured.network.inbound.inactivity_minutes),
         "The inactivity time limit for any connection, defaults to '10'."
@@ -836,14 +865,14 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "inbound.maximum_backlog",
+        setting<uint32_t>(&configured.network.inbound.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "inbound.maximum_request",
         setting<uint32_t>(&configured.network.inbound.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "inbound.rate_limit",
-        setting<uint32_t>(&configured.network.inbound.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "inbound.enable_loopback",
@@ -893,6 +922,16 @@ options_metadata parser::load_settings() THROWS
     ////    "The target number of outgoing manual connections (not implemented)."
     ////)
     (
+        "manual.rate_limit",
+        setting<uint32_t>(&configured.network.manual.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "manual.connect_timeout_seconds",
+        setting<uint32_t>(&configured.network.manual.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "manual.inactivity_minutes",
         setting<uint32_t>(&configured.network.manual.inactivity_minutes),
         "The inactivity time limit for any connection, defaults to '10' (will attempt reconnect)."
@@ -908,14 +947,14 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "manual.maximum_backlog",
+        setting<uint32_t>(&configured.network.manual.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "manual.maximum_request",
         setting<uint32_t>(&configured.network.manual.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "manual.rate_limit",
-        setting<uint32_t>(&configured.network.manual.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "manual.peer",
@@ -1007,6 +1046,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "admin.rate_limit",
+        setting<uint32_t>(&configured.server.admin.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "admin.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.admin.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "admin.inactivity_minutes",
         setting<uint32_t>(&configured.server.admin.inactivity_minutes),
         "The idle timeout (http keep-alive), defaults to '10'."
@@ -1022,6 +1071,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "admin.maximum_backlog",
+        setting<uint32_t>(&configured.server.admin.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "admin.maximum_buffer",
         setting<uint32_t>(&configured.server.admin.maximum_buffer),
         "The maximum json response buffer size, defaults to '65536'."
@@ -1030,11 +1084,6 @@ options_metadata parser::load_settings() THROWS
         "admin.maximum_request",
         setting<uint32_t>(&configured.server.admin.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "admin.rate_limit",
-        setting<uint32_t>(&configured.server.admin.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "admin.server",
@@ -1104,6 +1153,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "native.rate_limit",
+        setting<uint32_t>(&configured.server.native.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "native.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.native.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "native.inactivity_minutes",
         setting<uint32_t>(&configured.server.native.inactivity_minutes),
         "The idle timeout (http keep-server), defaults to '60'."
@@ -1119,6 +1178,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "native.maximum_backlog",
+        setting<uint32_t>(&configured.server.native.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "native.maximum_buffer",
         setting<uint32_t>(&configured.server.native.maximum_buffer),
         "The maximum json response buffer size, defaults to '65536'."
@@ -1127,11 +1191,6 @@ options_metadata parser::load_settings() THROWS
         "native.maximum_request",
         setting<uint32_t>(&configured.server.native.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "native.rate_limit",
-        setting<uint32_t>(&configured.server.native.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "native.server",
@@ -1211,6 +1270,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "bitcoind.rate_limit",
+        setting<uint32_t>(&configured.server.bitcoind.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "bitcoind.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.bitcoind.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "bitcoind.inactivity_minutes",
         setting<uint32_t>(&configured.server.bitcoind.inactivity_minutes),
         "The idle timeout (http keep-alive), defaults to '10'."
@@ -1226,6 +1295,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "bitcoind.maximum_backlog",
+        setting<uint32_t>(&configured.server.bitcoind.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '20971520'."
+    )
+    (
         "bitcoind.maximum_buffer",
         setting<uint32_t>(&configured.server.bitcoind.maximum_buffer),
         "The maximum json response buffer size, defaults to '65536'."
@@ -1234,11 +1308,6 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.maximum_request",
         setting<uint32_t>(&configured.server.bitcoind.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "bitcoind.rate_limit",
-        setting<uint32_t>(&configured.server.bitcoind.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "bitcoind.server",
@@ -1313,6 +1382,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "btcd.rate_limit",
+        setting<uint32_t>(&configured.server.btcd.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "btcd.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.btcd.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "btcd.inactivity_minutes",
         setting<uint32_t>(&configured.server.btcd.inactivity_minutes),
         "The idle timeout (http/ws keep-alive), defaults to '10'."
@@ -1326,6 +1405,11 @@ options_metadata parser::load_settings() THROWS
         "btcd.minimum_buffer",
         setting<uint32_t>(&configured.server.btcd.minimum_buffer),
         "The minimum retained read buffer size, defaults to '4000000'."
+    )
+    (
+        "btcd.maximum_backlog",
+        setting<uint32_t>(&configured.server.btcd.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '20971520'."
     )
     (
         "btcd.maximum_buffer",
@@ -1395,6 +1479,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "electrum.rate_limit",
+        setting<uint32_t>(&configured.server.electrum.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "electrum.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.electrum.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "electrum.inactivity_minutes",
         setting<uint32_t>(&configured.server.electrum.inactivity_minutes),
         "The idle timeout (http keep-alive), defaults to '10'."
@@ -1410,6 +1504,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "electrum.maximum_backlog",
+        setting<uint32_t>(&configured.server.electrum.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "electrum.maximum_buffer",
         setting<uint32_t>(&configured.server.electrum.maximum_buffer),
         "The maximum json response buffer size, defaults to '65536'."
@@ -1418,11 +1517,6 @@ options_metadata parser::load_settings() THROWS
         "electrum.maximum_request",
         setting<uint32_t>(&configured.server.electrum.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "electrum.rate_limit",
-        setting<uint32_t>(&configured.server.electrum.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "electrum.maximum_headers",
@@ -1522,6 +1616,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "sparrow.rate_limit",
+        setting<uint32_t>(&configured.server.sparrow.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "sparrow.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.sparrow.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "sparrow.inactivity_minutes",
         setting<uint32_t>(&configured.server.sparrow.inactivity_minutes),
         "The idle timeout (http keep-alive), defaults to '10'."
@@ -1537,6 +1641,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "sparrow.maximum_backlog",
+        setting<uint32_t>(&configured.server.sparrow.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "sparrow.maximum_buffer",
         setting<uint32_t>(&configured.server.sparrow.maximum_buffer),
         "The maximum json response buffer size, defaults to '65536'."
@@ -1545,11 +1654,6 @@ options_metadata parser::load_settings() THROWS
         "sparrow.maximum_request",
         setting<uint32_t>(&configured.server.sparrow.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "sparrow.rate_limit",
-        setting<uint32_t>(&configured.server.sparrow.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "sparrow.maximum_headers",
@@ -1658,6 +1762,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "esplora.rate_limit",
+        setting<uint32_t>(&configured.server.esplora.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "esplora.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.esplora.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "esplora.inactivity_minutes",
         setting<uint32_t>(&configured.server.esplora.inactivity_minutes),
         "The idle timeout (http keep-server), defaults to '60'."
@@ -1673,6 +1787,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "esplora.maximum_backlog",
+        setting<uint32_t>(&configured.server.esplora.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "esplora.maximum_buffer",
         setting<uint32_t>(&configured.server.esplora.maximum_buffer),
         "The maximum json response buffer size, defaults to '65536'."
@@ -1681,11 +1800,6 @@ options_metadata parser::load_settings() THROWS
         "esplora.maximum_request",
         setting<uint32_t>(&configured.server.esplora.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "esplora.rate_limit",
-        setting<uint32_t>(&configured.server.esplora.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "esplora.server",
@@ -1739,6 +1853,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "stratum_v1.rate_limit",
+        setting<uint32_t>(&configured.server.stratum_v1.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "stratum_v1.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.stratum_v1.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "stratum_v1.inactivity_minutes",
         setting<uint32_t>(&configured.server.stratum_v1.inactivity_minutes),
         "The idle timeout (http keep-alive), defaults to '10'."
@@ -1754,6 +1878,11 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "stratum_v1.maximum_backlog",
+        setting<uint32_t>(&configured.server.stratum_v1.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "stratum_v1.maximum_buffer",
         setting<uint32_t>(&configured.server.stratum_v1.maximum_buffer),
         "The maximum json response buffer size, defaults to '65536'."
@@ -1762,11 +1891,6 @@ options_metadata parser::load_settings() THROWS
         "stratum_v1.maximum_request",
         setting<uint32_t>(&configured.server.stratum_v1.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "stratum_v1.rate_limit",
-        setting<uint32_t>(&configured.server.stratum_v1.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
 
     /* [stratum_v2] */
@@ -1779,6 +1903,16 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.connections",
         setting<uint16_t>(&configured.server.stratum_v2.connections),
         "The required maximum number of connections, defaults to '0'."
+    )
+    (
+        "stratum_v2.rate_limit",
+        setting<uint32_t>(&configured.server.stratum_v2.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "stratum_v2.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.stratum_v2.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
     )
     (
         "stratum_v2.inactivity_minutes",
@@ -1796,14 +1930,14 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "stratum_v2.maximum_backlog",
+        setting<uint32_t>(&configured.server.stratum_v2.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "stratum_v2.maximum_request",
         setting<uint32_t>(&configured.server.stratum_v2.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "stratum_v2.rate_limit",
-        setting<uint32_t>(&configured.server.stratum_v2.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
 
     /* [bitcoind_zmq] */
@@ -1828,6 +1962,16 @@ options_metadata parser::load_settings() THROWS
         "The required maximum number of connections, defaults to '0'."
     )
     (
+        "bitcoind_zmq.rate_limit",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.rate_limit),
+        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+    )
+    (
+        "bitcoind_zmq.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to '0' (network controls)."
+    )
+    (
         "bitcoind_zmq.inactivity_minutes",
         setting<uint32_t>(&configured.server.bitcoind_zmq.inactivity_minutes),
         "The idle timeout, defaults to '10'."
@@ -1843,14 +1987,14 @@ options_metadata parser::load_settings() THROWS
         "The minimum retained read buffer size, defaults to '4000000'."
     )
     (
+        "bitcoind_zmq.maximum_backlog",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to '10485760'."
+    )
+    (
         "bitcoind_zmq.maximum_request",
         setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_request),
         "The maximum allowed request size, defaults to '4000000'."
-    )
-    (
-        "bitcoind_zmq.rate_limit",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (unlimited)."
     )
     (
         "bitcoind_zmq.maximum_subscriptions",
