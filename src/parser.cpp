@@ -2024,11 +2024,6 @@ options_metadata parser::load_settings() THROWS
         "Set the process to high memory priority, defaults to 'true'."
     )
     (
-        "node.allow_overlapped",
-        setting<bool>(&configured.node.allow_overlapped),
-        "Allow overlapped block requests, defaults to 'true'."
-    )
-    (
         "node.delay_inbound",
         setting<bool>(&configured.node.delay_inbound),
         "Block inbound peer/client (excluding admin/native) until current, defaults to 'true'."
