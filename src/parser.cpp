@@ -763,6 +763,11 @@ options_metadata parser::load_settings() THROWS
         "The target number of outgoing network connections, defaults to '100'."
     )
     (
+        "outbound.current_connections",
+        setting<uint16_t>(&configured.node.current_connections),
+        "The target number of outgoing connections when current, defaults to '10' (0 disables)."
+    )
+    (
         "outbound.rate_limit",
         setting<uint32_t>(&configured.network.outbound.rate_limit),
         "The send rate limit in bytes per second, defaults to '0' (network controls)."
