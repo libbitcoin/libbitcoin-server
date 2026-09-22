@@ -228,18 +228,18 @@ private:
     // ------------------------------------------------------------------------
 
     void do_get_address(uint8_t media, bool turbo,
-        const system::hash_cptr& hash) NOEXCEPT;
+        const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
     void do_get_address_confirmed(uint8_t media, bool turbo,
-        const system::hash_cptr& hash) NOEXCEPT;
+        const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
     ////void do_get_address_unconfirmed(uint8_t media, bool turbo,
     ////    const system::hash_cptr& hash) NOEXCEPT;
     void complete_get_address(const code& ec, uint8_t media,
-        const database::outpoints& set) NOEXCEPT;
+        const database::outpoints& set, const gate_t::ptr& gate) NOEXCEPT;
 
     void do_get_address_balance(uint8_t media, bool turbo,
-        const system::hash_cptr& hash) NOEXCEPT;
+        const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address_balance(const code& ec, uint8_t media,
-        const uint64_t balance) NOEXCEPT;
+        const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
 
     // Utilities.
     // ------------------------------------------------------------------------

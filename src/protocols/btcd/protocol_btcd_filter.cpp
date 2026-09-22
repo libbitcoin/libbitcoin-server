@@ -73,13 +73,13 @@ bool protocol_btcd::handle_load_tx_filter(const code& ec,
         return true;
     }
 
-    gate_ = gate();
-    POST_NOTIFY(do_load_tx_filter, reload, std::move(keys), std::move(points));
+    POST_NOTIFY(do_load_tx_filter, reload, std::move(keys), std::move(points),
+        gate());
     return true;
 }
 
 void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
-    const chain::points& points) NOEXCEPT
+    const chain::points& points, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -137,14 +137,14 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
             at.first->second.spenders = query.get_spenders_history(prevout);
     }
 
-    POST_BTCD(complete_load_tx_filter, ec);
+    POST_BTCD(complete_load_tx_filter, ec, gate);
 }
 
-void protocol_btcd::complete_load_tx_filter(const code& ec) NOEXCEPT
+void protocol_btcd::complete_load_tx_filter(const code& ec,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    gate_.reset();
     if (stopped())
         return;
 
@@ -182,12 +182,12 @@ bool protocol_btcd::handle_notify_received(const code& ec,
         return true;
     }
 
-    gate_ = gate();
-    POST_NOTIFY(do_notify_received, std::move(keys));
+    POST_NOTIFY(do_notify_received, std::move(keys), gate());
     return true;
 }
 
-void protocol_btcd::do_notify_received(const hashes& keys) NOEXCEPT
+void protocol_btcd::do_notify_received(const hashes& keys,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -219,14 +219,14 @@ void protocol_btcd::do_notify_received(const hashes& keys) NOEXCEPT
         }
     }
 
-    POST_BTCD(complete_notify_received, ec);
+    POST_BTCD(complete_notify_received, ec, gate);
 }
 
-void protocol_btcd::complete_notify_received(const code& ec) NOEXCEPT
+void protocol_btcd::complete_notify_received(const code& ec,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    gate_.reset();
     if (stopped())
         return;
 
@@ -282,12 +282,12 @@ bool protocol_btcd::handle_notify_spent(const code& ec,
         return true;
     }
 
-    gate_ = gate();
-    POST_NOTIFY(do_notify_spent, std::move(points));
+    POST_NOTIFY(do_notify_spent, std::move(points), gate());
     return true;
 }
 
-void protocol_btcd::do_notify_spent(const chain::points& points) NOEXCEPT
+void protocol_btcd::do_notify_spent(const chain::points& points,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -308,14 +308,14 @@ void protocol_btcd::do_notify_spent(const chain::points& points) NOEXCEPT
             watching_legacy_.store(true, relaxed);
     }
 
-    POST_BTCD(complete_notify_spent, ec);
+    POST_BTCD(complete_notify_spent, ec, gate);
 }
 
-void protocol_btcd::complete_notify_spent(const code& ec) NOEXCEPT
+void protocol_btcd::complete_notify_spent(const code& ec,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    gate_.reset();
     if (stopped())
         return;
 
@@ -391,14 +391,14 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
         return true;
     }
 
-    gate_ = gate();
     POST_NOTIFY(do_rescan_blocks, emplace_shared<hashes>(
-        std::move(block_hashes)));
+        std::move(block_hashes)), gate());
     return true;
 }
 
 // Snapshot the watch-list, so the query runs parallel (not on the strand).
-void protocol_btcd::do_rescan_blocks(const hashes_ptr& block_hashes) NOEXCEPT
+void protocol_btcd::do_rescan_blocks(const hashes_ptr& block_hashes,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -413,11 +413,11 @@ void protocol_btcd::do_rescan_blocks(const hashes_ptr& block_hashes) NOEXCEPT
         points.push_back(watch.first);
 
     PARALLEL(do_rescan_watches, block_hashes, std::move(keys),
-        std::move(points));
+        std::move(points), gate);
 }
 
 void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
-    const hashes& keys, chain::points& points) NOEXCEPT
+    const hashes& keys, chain::points& points, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -435,7 +435,7 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
         if (!query.get_height(height, query.to_header(hash)))
         {
             POST_BTCD(complete_rescan_blocks, error::btcd::invalid_address_or_key,
-                to_shared<array_t>());
+                to_shared<array_t>(), gate);
             return;
         }
 
@@ -483,15 +483,14 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
     }
 
     POST_BTCD(complete_rescan_blocks, error::success,
-        emplace_shared<array_t>(std::move(discovered)));
+        emplace_shared<array_t>(std::move(discovered)), gate);
 }
 
 void protocol_btcd::complete_rescan_blocks(const code& ec,
-    const array_ptr& discovered) NOEXCEPT
+    const array_ptr& discovered, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    gate_.reset();
     if (stopped())
         return;
 
@@ -555,17 +554,16 @@ bool protocol_btcd::handle_search_raw_transactions(const code& ec,
         filter.emplace(std::get<string_t>(item.value()));
     }
 
-    gate_ = gate();
     PARALLEL(do_search_raw_transactions, std::move(keys), !is_zero(level),
         limit<size_t>(first, zero, max_size_t),
         limit<size_t>(requested, one, max_size_t), !is_zero(extra), reverse,
-        std::move(filter));
+        std::move(filter), gate());
     return true;
 }
 
 void protocol_btcd::do_search_raw_transactions(const hashes& keys,
     bool verbose, size_t skip, size_t count, bool prevouts, bool reverse,
-    const std::set<std::string>& filter) NOEXCEPT
+    const std::set<std::string>& filter, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -583,7 +581,7 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
                 return;
 
             POST_BTCD(complete_search_raw_transactions, fault,
-                to_shared<array_t>());
+                to_shared<array_t>(), gate);
             return;
         }
 
@@ -619,7 +617,7 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
         if (!tx)
         {
             POST_BTCD(complete_search_raw_transactions,
-                error::btcd::internal_error, to_shared<array_t>());
+                error::btcd::internal_error, to_shared<array_t>(), gate);
             return;
         }
 
@@ -636,15 +634,14 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
     }
 
     POST_BTCD(complete_search_raw_transactions, error::success,
-        emplace_shared<array_t>(std::move(found)));
+        emplace_shared<array_t>(std::move(found)), gate);
 }
 
 void protocol_btcd::complete_search_raw_transactions(const code& ec,
-    const array_ptr& found) NOEXCEPT
+    const array_ptr& found, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    gate_.reset();
     if (stopped())
         return;
 

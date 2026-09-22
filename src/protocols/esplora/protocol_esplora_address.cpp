@@ -88,13 +88,13 @@ bool protocol_esplora::handle_get_address(const code& ec, interface::address,
         return true;
     }
 
-    gate_ = gate();
-    PARALLEL(do_get_address, key, address);
+    PARALLEL(do_get_address, key, address, gate());
     return true;
 }
 
 void protocol_esplora::do_get_address(const hash_digest& key,
-    const std::optional<std::string>& address) NOEXCEPT
+    const std::optional<std::string>& address,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -127,15 +127,14 @@ void protocol_esplora::do_get_address(const hash_digest& key,
         stats.spent_sum = floored_subtract(stats.funded_sum, unspent_sum);
     }
 
-    POST(complete_get_address, ec, stats, key, address);
+    POST(complete_get_address, ec, stats, key, address, gate);
 }
 
 void protocol_esplora::complete_get_address(const code& ec,
     const address_stats& stats, const hash_digest& key,
-    const std::optional<std::string>& address) NOEXCEPT
+    const std::optional<std::string>& address, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
 
     if (stopped())
         return;
@@ -251,13 +250,13 @@ bool protocol_esplora::get_address_txs(uint8_t media,
         return true;
     }
 
-    gate_ = gate();
-    PARALLEL(do_get_address_txs, key, last_seen);
+    PARALLEL(do_get_address_txs, key, last_seen, gate());
     return true;
 }
 
 void protocol_esplora::do_get_address_txs(const hash_digest& key,
-    const std::optional<hash_cptr>& last_seen) NOEXCEPT
+    const std::optional<hash_cptr>& last_seen,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -266,15 +265,14 @@ void protocol_esplora::do_get_address_txs(const hash_digest& key,
     const auto ec = archive().get_confirmed_history(stopping_, cursor,
         history, key, options().maximum_history, true);
 
-    POST(complete_get_address_txs, ec, std::move(history), last_seen);
+    POST(complete_get_address_txs, ec, std::move(history), last_seen, gate);
 }
 
 void protocol_esplora::complete_get_address_txs(const code& ec,
-    const histories& history,
-    const std::optional<hash_cptr>& last_seen) NOEXCEPT
+    const histories& history, const std::optional<hash_cptr>& last_seen,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
 
     if (stopped())
         return;
@@ -353,25 +351,24 @@ bool protocol_esplora::handle_get_address_utxo(const code& ec,
         return true;
     }
 
-    gate_ = gate();
-    PARALLEL(do_get_address_utxo, key);
+    PARALLEL(do_get_address_utxo, key, gate());
     return true;
 }
 
-void protocol_esplora::do_get_address_utxo(const hash_digest& key) NOEXCEPT
+void protocol_esplora::do_get_address_utxo(const hash_digest& key,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     unspent_outputs unspent{};
     const auto ec = archive().get_confirmed_unspent(stopping_, unspent, key, true);
-    POST(complete_get_address_utxo, ec, std::move(unspent));
+    POST(complete_get_address_utxo, ec, std::move(unspent), gate);
 }
 
 void protocol_esplora::complete_get_address_utxo(const code& ec,
-    const unspent_outputs& unspent) NOEXCEPT
+    const unspent_outputs& unspent, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
 
     if (stopped())
         return;

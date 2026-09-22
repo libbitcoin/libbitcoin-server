@@ -143,12 +143,12 @@ void protocol_electrum::handle_blockchain_outpoint_subscribe(const code& ec,
         return;
     }
 
-    gate_ = gate();
-    POST_NOTIFY(do_outpoint_subscribe, point{ hash, index });
+    POST_NOTIFY(do_outpoint_subscribe, point{ hash, index }, gate());
 }
 
 // Subscription response is idempotent.
-void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
+void protocol_electrum::do_outpoint_subscribe(const point& prevout,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -163,15 +163,15 @@ void protocol_electrum::do_outpoint_subscribe(const point& prevout) NOEXCEPT
     }
 
     // All current subscribers are cached and forwarded.
-    POST(complete_outpoint_subscribe, ec, std::move(sub), prevout);
+    POST(complete_outpoint_subscribe, ec, std::move(sub), prevout, gate);
 }
 
 void protocol_electrum::complete_outpoint_subscribe(const code& ec,
-    const outpoint_subscription& sub, const point& prevout) NOEXCEPT
+    const outpoint_subscription& sub, const point& prevout,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    gate_.reset();
     if (stopped())
         return;
 

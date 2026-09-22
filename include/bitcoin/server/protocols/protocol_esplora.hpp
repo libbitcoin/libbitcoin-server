@@ -214,20 +214,26 @@ private:
     // ------------------------------------------------------------------------
 
     void do_get_address(const system::hash_digest& key,
-        const std::optional<std::string>& address) NOEXCEPT;
+        const std::optional<std::string>& address,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address(const code& ec, const address_stats& stats,
         const system::hash_digest& key,
-        const std::optional<std::string>& address) NOEXCEPT;
+        const std::optional<std::string>& address,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void do_get_address_txs(const system::hash_digest& key,
-        const std::optional<system::hash_cptr>& last_seen) NOEXCEPT;
+        const std::optional<system::hash_cptr>& last_seen,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address_txs(const code& ec,
         const database::histories& history,
-        const std::optional<system::hash_cptr>& last_seen) NOEXCEPT;
+        const std::optional<system::hash_cptr>& last_seen,
+        const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_address_utxo(const system::hash_digest& key) NOEXCEPT;
+    void do_get_address_utxo(const system::hash_digest& key,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address_utxo(const code& ec,
-        const database::unspent_outputs& unspent) NOEXCEPT;
+        const database::unspent_outputs& unspent,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void next_estimate(size_t index) NOEXCEPT;
     void handle_estimate(const code& ec, uint64_t fee, size_t index) NOEXCEPT;

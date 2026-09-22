@@ -71,24 +71,23 @@ void protocol_electrum::get_balance(const hash_digest& hash) NOEXCEPT
         return;
     }
 
-    gate_ = gate();
-    PARALLEL(do_get_balance, hash);
+    PARALLEL(do_get_balance, hash, gate());
 }
 
-void protocol_electrum::do_get_balance(const hash_digest& hash) NOEXCEPT
+void protocol_electrum::do_get_balance(const hash_digest& hash,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     const auto& query = archive();
     uint64_t confirmed{}, unconfirmed{};
     auto ec = query.get_balance(stopping_, confirmed, unconfirmed, hash);
-    POST(complete_get_balance, ec, confirmed, unconfirmed);
+    POST(complete_get_balance, ec, confirmed, unconfirmed, gate);
 }
 
 void protocol_electrum::complete_get_balance(const code& ec,
-    uint64_t confirmed, int64_t unconfirmed) NOEXCEPT
+    uint64_t confirmed, int64_t unconfirmed, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
     if (stopped())
         return;
 
@@ -147,12 +146,11 @@ void protocol_electrum::get_history(const system::hash_digest& hash,
         return;
     }
 
-    gate_ = gate();
-    PARALLEL(do_get_history, hash, wrap);
+    PARALLEL(do_get_history, hash, wrap, gate());
 }
 
 void protocol_electrum::do_get_history(const hash_digest& hash,
-    bool wrap) NOEXCEPT
+    bool wrap, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     histories histories{};
@@ -161,15 +159,14 @@ void protocol_electrum::do_get_history(const hash_digest& hash,
     const auto ec = query.get_history(stopping_, cursor, histories, hash,
         options().maximum_history, turbo_);
 
-    POST(complete_get_history, ec, hash, std::move(histories), wrap);
+    POST(complete_get_history, ec, hash, std::move(histories), wrap, gate);
 }
 
 void protocol_electrum::complete_get_history(const code& ec,
     const hash_digest& scripthash, const histories& histories,
-    bool wrap) NOEXCEPT
+    bool wrap, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
     if (stopped())
         return;
 
@@ -226,12 +223,11 @@ void protocol_electrum::get_mempool(const system::hash_digest& hash,
         return;
     }
 
-    gate_ = gate();
-    PARALLEL(do_get_mempool, hash, wrap);
+    PARALLEL(do_get_mempool, hash, wrap, gate());
 }
 
 void protocol_electrum::do_get_mempool(const hash_digest& hash,
-    bool wrap) NOEXCEPT
+    bool wrap, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     histories histories{};
@@ -239,15 +235,14 @@ void protocol_electrum::do_get_mempool(const hash_digest& hash,
     auto ec = query.get_unconfirmed_history(stopping_, histories, hash,
         options().maximum_history, turbo_);
 
-    POST(complete_get_mempool, ec, hash, std::move(histories), wrap);
+    POST(complete_get_mempool, ec, hash, std::move(histories), wrap, gate);
 }
 
 void protocol_electrum::complete_get_mempool(const code& ec,
     const hash_digest& scripthash, const histories& histories,
-    bool wrap) NOEXCEPT
+    bool wrap, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
     if (stopped())
         return;
 
@@ -303,25 +298,23 @@ void protocol_electrum::list_unspent(const system::hash_digest& hash,
         return;
     }
 
-    gate_ = gate();
-    PARALLEL(do_list_unspent, hash, wrap);
+    PARALLEL(do_list_unspent, hash, wrap, gate());
 }
 
 void protocol_electrum::do_list_unspent(const hash_digest& hash,
-    bool wrap) NOEXCEPT
+    bool wrap, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
     unspent_outputs unspents{};
     const auto& query = archive();
     const auto ec = query.get_unspent(stopping_, unspents, hash, turbo_);
-    POST(complete_list_unspent, ec, std::move(unspents), wrap);
+    POST(complete_list_unspent, ec, std::move(unspents), wrap, gate);
 }
 
 void protocol_electrum::complete_list_unspent(const code& ec,
-    const unspent_outputs& unspents, bool wrap) NOEXCEPT
+    const unspent_outputs& unspents, bool wrap, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
     if (stopped())
         return;
 

@@ -121,7 +121,7 @@ void protocol_bitcoind_blockchain::stopping(const code& ec) NOEXCEPT
     BC_ASSERT(stranded());
     stopping_.store(true);
     unsubscribe_chase();
-    wait_timer_->stop();
+    waiter_.reset();
     protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
 }
 
@@ -681,13 +681,12 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
         }
     }
 
-    gate_ = gate();
-    PARALLEL(do_get_tx_out_set_info, type, height);
+    PARALLEL(do_get_tx_out_set_info, type, height, gate());
     return true;
 }
 
 void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
-    size_t height) NOEXCEPT
+    size_t height, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -700,7 +699,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     if (!query.get_ancestry(branch, link, height))
     {
         POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result));
+            std::move(result), gate);
         return;
     }
 
@@ -720,7 +719,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     if (ec)
     {
         POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result));
+            std::move(result), gate);
         return;
     }
 
@@ -728,7 +727,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     if (!query.is_confirmed_block(link))
     {
         POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result));
+            std::move(result), gate);
         return;
     }
 
@@ -765,7 +764,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     if (type == set_hash::muhash)
         result.emplace("muhash", encode_hash(digest));
 
-    POST(complete_scan, code{}, std::move(result));
+    POST(complete_scan, code{}, std::move(result), gate);
 }
 
 bool protocol_bitcoind_blockchain::handle_prune_block_chain(const code& ec,
@@ -813,13 +812,12 @@ bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
         return true;
     }
 
-    gate_ = gate();
-    PARALLEL(do_scan_tx_out_set, std::make_shared<array_t>(scanobjects));
+    PARALLEL(do_scan_tx_out_set, emplace_shared<array_t>(scanobjects), gate());
     return true;
 }
 
 void protocol_bitcoind_blockchain::do_scan_tx_out_set(
-    const std::shared_ptr<array_t>& objects) NOEXCEPT
+    const std::shared_ptr<array_t>& objects, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -830,7 +828,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         if (!expand_scan_object(scripts, item, context_))
         {
             POST(complete_scan, error::bitcoind::invalid_address_or_key,
-                std::move(result));
+                std::move(result), gate);
             return;
         }
     }
@@ -900,7 +898,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
     if (ec)
     {
         POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result));
+            std::move(result), gate);
         return;
     }
 
@@ -908,20 +906,19 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
     if (!query.is_confirmed_block(link))
     {
         POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result));
+            std::move(result), gate);
         return;
     }
 
     result = scan_result(coins, query, scripts, top, txouts, bip30,
         p2kh_, p2sh_, witness_);
-    POST(complete_scan, code{}, std::move(result));
+    POST(complete_scan, code{}, std::move(result), gate);
 }
 
 void protocol_bitcoind_blockchain::complete_scan(const code& ec,
-    object_t& result) NOEXCEPT
+    object_t& result, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    gate_.reset();
     if (stopped())
         return;
 
@@ -1485,14 +1482,14 @@ bool protocol_bitcoind_blockchain::handle_wait_for_block(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (!decode_hash(wait_hash_, blockhash))
+    hash_digest hash{};
+    if (!decode_hash(hash, blockhash))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
-    wait_ = wait::block;
-    arm_wait(timeout);
+    arm_wait({ wait::block, {}, hash }, timeout);
     return true;
 }
 
@@ -1503,14 +1500,14 @@ bool protocol_bitcoind_blockchain::handle_wait_for_block_height(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (!to_integer(wait_height_, height))
+    size_t target{};
+    if (!to_integer(target, height))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
-    wait_ = wait::height;
-    arm_wait(timeout);
+    arm_wait({ wait::height, target, {} }, timeout);
     return true;
 }
 
@@ -1530,9 +1527,8 @@ bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
         return true;
     }
 
-    wait_ = wait::new_block;
-    wait_height_ = add1(archive().get_top_confirmed());
-    arm_wait(timeout);
+    const auto next = add1(archive().get_top_confirmed());
+    arm_wait({ wait::new_block, next, {} }, timeout);
     return true;
 }
 
@@ -1673,11 +1669,11 @@ bool protocol_bitcoind_blockchain::handle_chase(const code&,
 // Wait machinery (strand).
 // ----------------------------------------------------------------------------
 
-void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
+void protocol_bitcoind_blockchain::arm_wait(waiter&& waiting,
+    double timeout) NOEXCEPT
 {
-    if (wait_done())
+    if (wait_done(waiting))
     {
-        wait_ = wait::none;
         send_top();
         return;
     }
@@ -1686,49 +1682,66 @@ void protocol_bitcoind_blockchain::arm_wait(double timeout) NOEXCEPT
     uint64_t span{};
     if (!to_integer(span, timeout))
     {
-        wait_ = wait::none;
         send_error(error::bitcoind::misc_error);
         return;
     }
 
+    waiting.gate = gate();
+    waiting.race = emplace_shared<wait_race>(BIND(complete_wait, _1));
+    waiter_ = move_shared(std::move(waiting));
+
     if (!is_zero(span))
-        wait_timer_->start(BIND(handle_wait_timeout, _1),
+        wait_timer_->start(BIND(handle_wait_timeout, _1, waiter_),
             network::milliseconds(span));
 }
 
 void protocol_bitcoind_blockchain::do_wait_event() NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (wait_ == wait::none || !wait_done())
+    if (!waiter_ || !wait_done(*waiter_))
         return;
 
-    wait_ = wait::none;
-    wait_timer_->stop();
-    send_top();
+    const auto waiting = std::move(waiter_);
+    waiting->race->finish(error::success);
 }
 
-void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec) NOEXCEPT
+void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec,
+    const waiter::ptr& waiting) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (stopped() || ec == network::error::operation_canceled ||
-        wait_ == wait::none)
+
+    // A stale expiry or cancel follows a completed wait.
+    if (waiting != waiter_)
         return;
 
-    wait_ = wait::none;
+    waiter_.reset();
+    waiting->race->finish(ec);
+}
+
+// The race is released without a winner when the channel stops.
+void protocol_bitcoind_blockchain::complete_wait(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    wait_timer_->stop();
+
+    if (stopped() || ec == network::error::operation_failed)
+        return;
+
     send_top();
 }
 
-bool protocol_bitcoind_blockchain::wait_done() const NOEXCEPT
+bool protocol_bitcoind_blockchain::wait_done(
+    const waiter& waiting) const NOEXCEPT
 {
     const auto& query = archive();
-    switch (wait_)
+    switch (waiting.type)
     {
         case wait::new_block:
         case wait::height:
-            return query.get_top_confirmed() >= wait_height_;
+            return query.get_top_confirmed() >= waiting.height;
         case wait::block:
         {
-            const auto link = query.to_header(wait_hash_);
+            const auto link = query.to_header(waiting.hash);
             return !link.is_terminal() && query.is_confirmed_block(link);
         }
         default:

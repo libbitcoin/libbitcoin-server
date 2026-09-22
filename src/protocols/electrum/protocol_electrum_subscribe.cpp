@@ -78,12 +78,11 @@ void protocol_electrum::scripthash_subscribe(const hash_digest& hash,
         return;
     }
 
-    gate_ = gate();
-    POST_NOTIFY(do_scripthash_subscribe, hash, type);
+    POST_NOTIFY(do_scripthash_subscribe, hash, type, gate());
 }
 
 void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
-    notify_t type) NOEXCEPT
+    notify_t type, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -107,15 +106,14 @@ void protocol_electrum::do_scripthash_subscribe(const hash_digest& hash,
         }
     }
 
-    POST(complete_scripthash_subscribe, ec, std::move(status));
+    POST(complete_scripthash_subscribe, ec, std::move(status), gate);
 }
 
 void protocol_electrum::complete_scripthash_subscribe(const code& ec,
-    const hash_digest& status) NOEXCEPT
+    const hash_digest& status, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    gate_.reset();
     if (stopped())
         return;
 
