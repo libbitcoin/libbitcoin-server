@@ -901,7 +901,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "inbound.password",
-        setting<std::string>(&configured.network.inbound.password),
+        secret<std::string>(&configured.network.inbound.password),
         "The sam bridge password (optional)."
     )
     (
