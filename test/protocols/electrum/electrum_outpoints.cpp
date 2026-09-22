@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     BOOST_REQUIRE(query_.set(test::block1a, database::context{ 0, 1, 0 }, false, false));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     // always same
     const auto notification1 = receive();
@@ -450,7 +450,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::block1a.hash()), true));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     // always same
     const auto notification2 = receive();
@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     BOOST_REQUIRE(query_.set(test::tx4));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     // tx4 reports before block1a.tx0 (both rooted) due to text hash sort.
     BOOST_REQUIRE_LT(hash4, hash2);
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::block2a.hash()), true));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     // always same
     const auto notification5 = receive();

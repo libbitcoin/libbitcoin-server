@@ -153,8 +153,7 @@ protected:
         rpc_interface::import_mempool) NOEXCEPT;
 
     /// Chase events (block wait long polling).
-    bool handle_chase(const code& ec, node::chase event_,
-        node::event_value value) NOEXCEPT;
+    bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
 
 private:
     enum class wait : uint8_t { new_block, block, height };

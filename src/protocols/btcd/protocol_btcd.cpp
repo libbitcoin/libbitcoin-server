@@ -48,7 +48,7 @@ void protocol_btcd::start() NOEXCEPT
     if (started())
         return;
 
-    subscribe_chase(BIND(handle_chase, _1, _2, _3));
+    subscribe_chase(BIND(handle_chase, _1, _2));
 
     // Administrative methods.
     SUBSCRIBE_BTCD(handle_authenticate, _1, _2, _3, _4);
@@ -334,31 +334,32 @@ bool protocol_btcd::handle_rescan(const code& ec,
 // Chase events.
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd::handle_chase(const code&, node::chase event_,
-    node::event_value value) NOEXCEPT
+bool protocol_btcd::handle_chase(const code&, node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped, it is not a call status.
     if (stopped())
         return false;
 
-    switch (event_)
+    switch (node::to_chase(value))
     {
         case node::chase::organized:
         {
             if (subscribed_blocks_.load(relaxed) || watching_legacy_.load(relaxed))
             {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST_NOTIFY(do_connected, std::get<node::header_t>(value));
+                POST_NOTIFY(do_connected,
+                    node::to_payload<node::chase::organized>(value).link);
             }
+
             break;
         }
         case node::chase::reorganized:
         {
             if (subscribed_blocks_.load(relaxed) || watching_legacy_.load(relaxed))
             {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST_NOTIFY(do_disconnected, std::get<node::header_t>(value));
+                POST_NOTIFY(do_disconnected,
+                    node::to_payload<node::chase::reorganized>(value).link);
             }
+
             break;
         }
         default:

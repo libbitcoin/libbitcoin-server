@@ -46,7 +46,7 @@ void protocol_native::start() NOEXCEPT
         return;
 
     // Chaser subscription is asynchronous, events may be missed.
-    subscribe_chase(BIND(handle_chase, _1, _2, _3));
+    subscribe_chase(BIND(handle_chase, _1, _2));
 
     // Configuration methods.
     SUBSCRIBE_NATIVE(handle_get_configuration, _1, _2, _3, _4);
@@ -196,7 +196,7 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
 // Event handlers.
 // ----------------------------------------------------------------------------
 
-bool protocol_native::handle_chase(const code&, node::chase event_,
+bool protocol_native::handle_chase(const code&,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
@@ -206,36 +206,37 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
     if (!websocket())
         return true;
 
-    switch (event_)
+    switch (node::to_chase(value))
     {
         case node::chase::block:
         {
+            const auto block = node::to_payload<node::chase::block>(value);
+
+            // Increments height above a fork point (start/reorg).
             auto media = top_subscribe_.load(relaxed);
             if (media != media_type::unknown)
             {
-                // Increments height above a fork point (start/reorg).
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_top, std::get<node::header_t>(value), media);
+                POST(do_top, block.link, media);
             }
 
+            // No block emission for a fork point (start/reorg).
             media = block_subscribe_.load(relaxed);
             if (media != media_type::unknown)
             {
-                // No block emission for a fork point (start/reorg).
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_block, std::get<node::header_t>(value), media);
+                POST(do_block, block.link, media);
             }
 
             break;
         }
         case node::chase::reorganized:
         {
+            // Resets subscriber height to the fork point.
             const auto media = top_subscribe_.load(relaxed);
             if (media != media_type::unknown)
             {
-                // Resets subscriber height to the fork point.
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_top, std::get<node::header_t>(value), media);
+                POST(do_top,
+                    node::to_payload<node::chase::reorganized>(value).link,
+                    media);
             }
 
             break;
@@ -245,8 +246,9 @@ bool protocol_native::handle_chase(const code&, node::chase event_,
             const auto media = tx_subscribe_.load(relaxed);
             if (media != media_type::unknown)
             {
-                BC_ASSERT(std::holds_alternative<node::transaction_t>(value));
-                POST(do_transaction, std::get<node::transaction_t>(value), media);
+                POST(do_transaction,
+                    node::to_payload<node::chase::transaction>(value).link,
+                    media);
             }
 
             break;

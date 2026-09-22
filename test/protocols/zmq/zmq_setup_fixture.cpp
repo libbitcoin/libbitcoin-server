@@ -111,8 +111,7 @@ zmq_setup_fixture::~zmq_setup_fixture()
 
 BC_POP_WARNING()
 
-void zmq_setup_fixture::notify(node::chase event_,
-    node::event_value value)
+void zmq_setup_fixture::notify(node::event_value value)
 {
-    server_.notify(error::success, event_, value);
+    server_.notify(error::success, value);
 }

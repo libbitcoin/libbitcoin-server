@@ -37,7 +37,7 @@ struct zmq_setup_fixture
     ~zmq_setup_fixture();
 
     // 0_32 vs {} for xcode variant issue.
-    void notify(node::chase event_, node::event_value value);
+    void notify(node::event_value value);
 
 protected:
     configuration config_;

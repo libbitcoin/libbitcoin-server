@@ -51,7 +51,7 @@ void protocol_electrum::start() NOEXCEPT
         return;
 
     // Chaser subscription is asynchronous, events may be missed.
-    subscribe_chase(BIND(handle_chase, _1, _2, _3));
+    subscribe_chase(BIND(handle_chase, _1, _2));
 
     // Header methods.
     SUBSCRIBE_RPC(handle_blockchain_number_of_blocks_subscribe, _1, _2);
@@ -139,7 +139,7 @@ void protocol_electrum::handle_unclaimed(const request_t&) NOEXCEPT
 // Handlers (event subscription).
 // ----------------------------------------------------------------------------
 
-bool protocol_electrum::handle_chase(const code&, node::chase event_,
+bool protocol_electrum::handle_chase(const code&,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
@@ -151,59 +151,56 @@ bool protocol_electrum::handle_chase(const code&, node::chase event_,
     if (!channel_->websocket() && !channel_->downgraded())
         return true;
 
-    switch (event_)
+    switch (node::to_chase(value))
     {
         case node::chase::transaction:
         {
+            const auto tx = node::to_payload<node::chase::transaction>(value);
+
             if (subscribed_outpoint_.load(relaxed))
             {
-                BC_ASSERT(std::holds_alternative<node::transaction_t>(value));
-                POST_NOTIFY(do_outpoint, std::get<node::transaction_t>(value));
+                POST_NOTIFY(do_outpoint, tx.link);
             }
 
             if (subscribed_address_.load(relaxed))
             {
                 BC_ASSERT(archive().address_enabled());
-                BC_ASSERT(std::holds_alternative<node::transaction_t>(value));
-                POST_NOTIFY(do_scripthash, std::get<node::transaction_t>(value));
+                POST_NOTIFY(do_scripthash, tx.link);
             }
 
             break;
         }
         case node::chase::organized:
         {
+            const auto top = node::to_payload<node::chase::organized>(value);
+
             if (subscribed_height_.load(relaxed))
             {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_height, std::get<node::header_t>(value));
+                POST(do_height, top.link);
             }
 
             if (subscribed_header_.load(relaxed))
             {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_header, std::get<node::header_t>(value));
+                POST(do_header, top.link);
             }
 
             if (subscribed_outpoint_.load(relaxed))
             {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST_NOTIFY(do_outpoint, std::get<node::header_t>(value));
+                POST_NOTIFY(do_outpoint, top.link);
             }
 
             if (subscribed_address_.load(relaxed))
             {
                 BC_ASSERT(archive().address_enabled());
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST_NOTIFY(do_scripthash, std::get<node::header_t>(value));
+                POST_NOTIFY(do_scripthash, top.link);
             }
 
             break;
         }
         case node::chase::reorganized:
         {
-            // Value is regression branch_point.
-            BC_ASSERT(std::holds_alternative<node::header_t>(value));
-            POST_NOTIFY(do_reorganized, std::get<node::header_t>(value));
+            POST_NOTIFY(do_reorganized,
+                node::to_payload<node::chase::reorganized>(value).link);
             break;
         }
         default:

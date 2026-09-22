@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chases::organized{ 10 });
 
     const auto blockconnected = receive_notification();
     BOOST_REQUIRE_EQUAL(as_text(blockconnected.at("method")), "blockconnected");
@@ -643,7 +643,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__recvtx__address_match__delivered_without_notifybl
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chases::organized{ 10 });
 
     const auto recvtx = receive_notification();
     BOOST_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__spent_in_arming_block__delivered)
     BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
 
-    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chases::organized{ 10 });
 
     const auto recvtx = receive_notification();
     BOOST_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
@@ -682,7 +682,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__notified_outpoint_spent__delivered_o
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chases::organized{ 10 });
 
     const auto redeemingtx = receive_notification();
     BOOST_REQUIRE_EQUAL(as_text(redeemingtx.at("method")), "redeemingtx");
