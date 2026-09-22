@@ -43,6 +43,14 @@ static hash_cptr to_hash(const std::string_view& token) NOEXCEPT
         emplace_shared<const hash_digest>(std::move(out)) : hash_cptr{};
 }
 
+// esplora scripthash is in natural byte order, unlike tx and block hashes.
+static hash_cptr to_scripthash(const std::string_view& token) NOEXCEPT
+{
+    hash_digest out{};
+    return decode_base16(out, token) ?
+        emplace_shared<const hash_digest>(std::move(out)) : hash_cptr{};
+}
+
 static void set_media(network::rpc::object_t& params,
     network::http::media_type media) NOEXCEPT
 {
@@ -171,7 +179,7 @@ code esplora_target(request_t& out, const std::string_view& path) NOEXCEPT
         const auto key = segments[segment++];
         if (target == "scripthash")
         {
-            const auto hash = to_hash(key);
+            const auto hash = to_scripthash(key);
             if (!hash) return error::invalid_hash;
 
             params["hash"] = hash;
