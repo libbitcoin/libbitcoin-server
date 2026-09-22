@@ -43,7 +43,7 @@ void protocol_bitcoind_zmq::start() NOEXCEPT
         return;
 
     // Chaser subscription is asynchronous, events may be missed.
-    subscribe_chase(BIND(handle_chase, _1, _2, _3));
+    subscribe_chase(BIND(handle_chase, _1, _2));
 
     SUBSCRIBE_CHANNEL(void, handle_subscribe, _1, _2, _3);
     network::protocol_rpc<channel_bitcoind_zmq>::start();
@@ -95,20 +95,20 @@ bool protocol_bitcoind_zmq::handle_subscribe(const code& ec,
 // ----------------------------------------------------------------------------
 
 bool protocol_bitcoind_zmq::handle_chase(const code&,
-    node::chase event_, node::event_value value) NOEXCEPT
+    node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
     if (stopped())
         return false;
 
-    switch (event_)
+    switch (node::to_chase(value))
     {
         case node::chase::organized:
         {
             if (blocks() || transactions())
             {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_organized, std::get<node::header_t>(value));
+                POST(do_organized,
+                    node::to_payload<node::chase::organized>(value).link);
             }
 
             break;
@@ -117,8 +117,8 @@ bool protocol_bitcoind_zmq::handle_chase(const code&,
         {
             if (transactions() || sequences())
             {
-                BC_ASSERT(std::holds_alternative<node::transaction_t>(value));
-                POST(do_transaction, std::get<node::transaction_t>(value));
+                POST(do_transaction,
+                    node::to_payload<node::chase::transaction>(value).link);
             }
 
             break;
@@ -127,8 +127,8 @@ bool protocol_bitcoind_zmq::handle_chase(const code&,
         {
             if (blocks() || transactions())
             {
-                BC_ASSERT(std::holds_alternative<node::header_t>(value));
-                POST(do_reorganized, std::get<node::header_t>(value));
+                POST(do_reorganized,
+                    node::to_payload<node::chase::reorganized>(value).link);
             }
 
             break;

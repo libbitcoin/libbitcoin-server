@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -496,7 +496,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -771,7 +771,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     ));
 
     // Trigger node chaser event to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::organized{ 0 });
 
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
@@ -899,8 +899,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_noti
 
     // Reorg resets the accumulator and clears the cursor; the following organized
     // event re-folds the unchanged history and must reproduce the same status.
-    notify(node::chase::reorganized, node::header_t{ 0 });
-    notify(node::chase::organized, node::header_t{ 0 });
+    notify(node::chases::reorganized{ 0 });
+    notify(node::chases::organized{ 0 });
 
     const auto notification = receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());

@@ -209,7 +209,7 @@ void executor::do_report_work()
     }
 
     logger(format(BS_NODE_REPORT_WORK) % sequence_);
-    node_->notify(error::success, chase::report, sequence_++);
+    node_->notify(error::success, chases::report{ sequence_++ });
 }
 
 // [z]eroize

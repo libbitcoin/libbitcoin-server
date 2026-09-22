@@ -71,8 +71,7 @@ protected:
     /// Event handlers.
     /// -----------------------------------------------------------------------
 
-    bool handle_chase(const code&, node::chase event_,
-        node::event_value) NOEXCEPT;
+    bool handle_chase(const code&, node::event_value) NOEXCEPT;
 
     /// Interface handlers.
     /// -----------------------------------------------------------------------

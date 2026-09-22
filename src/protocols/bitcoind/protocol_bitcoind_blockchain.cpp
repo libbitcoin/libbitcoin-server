@@ -112,7 +112,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
     SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
-    subscribe_chase(BIND(handle_chase, _1, _2, _3));
+    subscribe_chase(BIND(handle_chase, _1, _2));
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
@@ -1645,13 +1645,13 @@ bool protocol_bitcoind_blockchain::handle_import_mempool(const code& ec,
 // ----------------------------------------------------------------------------
 
 bool protocol_bitcoind_blockchain::handle_chase(const code&,
-    node::chase event_, node::event_value) NOEXCEPT
+    node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped, it is not a call status.
     if (stopped())
         return false;
 
-    switch (event_)
+    switch (node::to_chase(value))
     {
         case node::chase::organized:
         case node::chase::reorganized:

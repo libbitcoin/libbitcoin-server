@@ -258,7 +258,7 @@ data_chunk native_setup_fixture::ws_get_data(std::string_view message)
     return ws_receive();
 }
 
-void native_setup_fixture::notify(node::chase event_, node::event_value value)
+void native_setup_fixture::notify(node::event_value value)
 {
-    server_.notify(node::error::success, event_, value);
+    server_.notify(node::error::success, value);
 }

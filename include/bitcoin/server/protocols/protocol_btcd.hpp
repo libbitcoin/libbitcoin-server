@@ -147,8 +147,7 @@ protected:
         const std::string& endblock) NOEXCEPT;
 
     /// Event handlers.
-    bool handle_chase(const code& ec, node::chase event_,
-        node::event_value value) NOEXCEPT;
+    bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
 
     /// Estimate completion (node strand to channel strand).
     void handle_estimate(const code& ec, uint64_t fee) NOEXCEPT;

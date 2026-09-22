@@ -98,9 +98,9 @@ rpc_setup_fixture::~rpc_setup_fixture()
     test::clear(test::directory);
 }
 
-void rpc_setup_fixture::notify(node::chase event_, node::event_value value)
+void rpc_setup_fixture::notify(node::event_value value)
 {
-    server_.notify(system::error::success, event_, value);
+    server_.notify(system::error::success, value);
 }
 
 BC_POP_WARNING()

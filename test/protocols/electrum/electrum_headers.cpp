@@ -63,8 +63,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__notificati
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
 
     // Trigger node chaser events to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 10 });
-    notify(node::chase::organized, node::header_t{ 11 });
+    notify(node::chases::organized{ 10 });
+    notify(node::chases::organized{ 11 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
@@ -887,8 +887,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expe
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
 
     // Trigger node chaser events to electrum event subscriber.
-    notify(node::chase::organized, node::header_t{ 10 });
-    notify(node::chase::organized, node::header_t{ 11 });
+    notify(node::chases::organized{ 10 });
+    notify(node::chases::organized{ 11 });
 
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());

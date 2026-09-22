@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(electrum__post__subscribed_event__no_notification)
 
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chases::organized{ 10 });
 
     // The next response (not a notification) proves nothing was pushed.
     const auto next = post(R"({"id":703,"method":"blockchain.relayfee","params":[]})");
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(electrum__ws__subscribed_event__notified)
 
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    notify(node::chase::organized, node::header_t{ 10 });
+    notify(node::chases::organized{ 10 });
 
     const auto notification = ws_receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());

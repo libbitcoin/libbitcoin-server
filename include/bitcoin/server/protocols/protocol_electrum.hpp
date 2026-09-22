@@ -75,8 +75,7 @@ protected:
         network::rpc::object_t& features) const NOEXCEPT;
 
     /// Event handlers.
-    bool handle_chase(const code&, node::chase event_,
-        node::event_value) NOEXCEPT;
+    bool handle_chase(const code&, node::event_value) NOEXCEPT;
 
     /// Handlers (headers).
     void handle_blockchain_number_of_blocks_subscribe(const code& ec,
