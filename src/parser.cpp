@@ -752,11 +752,11 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [outbound] */
-    ////(
-    ////    "outbound.bind",
-    ////    setting<network::config::authorities>(&configured.network.outbound.binds),
-    ////    "IP address to bind for load balancing, multiple allowed (not implemented)."
-    ////)
+    (
+        "outbound.bind",
+        setting<network::config::authorities>(&configured.network.outbound.binds),
+        "IP address to bind outbound connections, multiple allowed, defaults to none."
+    )
     (
         "outbound.connections",
         setting<uint16_t>(&configured.network.outbound.connections),
@@ -921,11 +921,11 @@ options_metadata parser::load_settings() THROWS
     ////    setting<bool>(&configured.network.manual.secure),
     ////    "Require transport layer security, defaults to 'false' (not implemented)."
     ////)
-    ////(
-    ////    "manual.bind",
-    ////    setting<network::config::authorities>(&configured.network.manual.binds),
-    ////    "IP address to bind for load balancing, multiple allowed (not implemented)."
-    ////)
+    (
+        "manual.bind",
+        setting<network::config::authorities>(&configured.network.manual.binds),
+        "IP address to bind manual connections, multiple allowed, defaults to none."
+    )
     ////(
     ////    "manual.connections",
     ////    setting<uint16_t>(&configured.network.manual.connections),
