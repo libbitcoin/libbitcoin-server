@@ -653,7 +653,7 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.invalid_services",
         setting<uint64_t>(&configured.network.invalid_services),
-        "The advertised services that cause a peer to be dropped, defaults to '176'."
+        "The advertised services that cause a peer to be dropped, defaults to '268435632'."
     )
     (
         "peer.enable_address",
@@ -785,12 +785,12 @@ options_metadata parser::load_settings() THROWS
     (
         "outbound.minimum_buffer",
         setting<uint32_t>(&configured.network.outbound.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "outbound.maximum_backlog",
         setting<uint32_t>(&configured.network.outbound.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "outbound.maximum_request",
@@ -872,12 +872,12 @@ options_metadata parser::load_settings() THROWS
     (
         "inbound.minimum_buffer",
         setting<uint32_t>(&configured.network.inbound.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "inbound.maximum_backlog",
         setting<uint32_t>(&configured.network.inbound.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "inbound.maximum_request",
@@ -901,7 +901,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "inbound.password",
-        setting<std::string>(&configured.network.inbound.password),
+        secret<std::string>(&configured.network.inbound.password),
         "The sam bridge password (optional)."
     )
     (
@@ -954,12 +954,12 @@ options_metadata parser::load_settings() THROWS
     (
         "manual.minimum_buffer",
         setting<uint32_t>(&configured.network.manual.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "manual.maximum_backlog",
         setting<uint32_t>(&configured.network.manual.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "manual.maximum_request",
@@ -1078,7 +1078,7 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.minimum_buffer",
         setting<uint32_t>(&configured.server.admin.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "admin.maximum_backlog",
@@ -1185,12 +1185,12 @@ options_metadata parser::load_settings() THROWS
     (
         "native.minimum_buffer",
         setting<uint32_t>(&configured.server.native.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "native.maximum_backlog",
         setting<uint32_t>(&configured.server.native.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "native.maximum_buffer",
@@ -1302,12 +1302,12 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.minimum_buffer",
         setting<uint32_t>(&configured.server.bitcoind.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "bitcoind.maximum_backlog",
         setting<uint32_t>(&configured.server.bitcoind.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '20971520'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "bitcoind.maximum_buffer",
@@ -1317,7 +1317,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.maximum_request",
         setting<uint32_t>(&configured.server.bitcoind.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to '8004096'."
     )
     (
         "bitcoind.server",
@@ -1414,7 +1414,7 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.minimum_buffer",
         setting<uint32_t>(&configured.server.btcd.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "btcd.maximum_backlog",
@@ -1429,7 +1429,7 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.maximum_request",
         setting<uint32_t>(&configured.server.btcd.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to '8004096'."
     )
     (
         "btcd.server",
@@ -1511,12 +1511,12 @@ options_metadata parser::load_settings() THROWS
     (
         "electrum.minimum_buffer",
         setting<uint32_t>(&configured.server.electrum.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "electrum.maximum_backlog",
         setting<uint32_t>(&configured.server.electrum.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "electrum.maximum_buffer",
@@ -1526,7 +1526,7 @@ options_metadata parser::load_settings() THROWS
     (
         "electrum.maximum_request",
         setting<uint32_t>(&configured.server.electrum.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to '8004096'."
     )
     (
         "electrum.maximum_headers",
@@ -1648,12 +1648,12 @@ options_metadata parser::load_settings() THROWS
     (
         "sparrow.minimum_buffer",
         setting<uint32_t>(&configured.server.sparrow.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "sparrow.maximum_backlog",
         setting<uint32_t>(&configured.server.sparrow.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "sparrow.maximum_buffer",
@@ -1663,7 +1663,7 @@ options_metadata parser::load_settings() THROWS
     (
         "sparrow.maximum_request",
         setting<uint32_t>(&configured.server.sparrow.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to '8004096'."
     )
     (
         "sparrow.maximum_headers",
@@ -1794,12 +1794,12 @@ options_metadata parser::load_settings() THROWS
     (
         "esplora.minimum_buffer",
         setting<uint32_t>(&configured.server.esplora.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "esplora.maximum_backlog",
         setting<uint32_t>(&configured.server.esplora.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "esplora.maximum_buffer",
@@ -1809,7 +1809,7 @@ options_metadata parser::load_settings() THROWS
     (
         "esplora.maximum_request",
         setting<uint32_t>(&configured.server.esplora.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to '8004096'."
     )
     (
         "esplora.server",
@@ -1885,12 +1885,12 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v1.minimum_buffer",
         setting<uint32_t>(&configured.server.stratum_v1.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "stratum_v1.maximum_backlog",
         setting<uint32_t>(&configured.server.stratum_v1.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "stratum_v1.maximum_buffer",
@@ -1937,12 +1937,12 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v2.minimum_buffer",
         setting<uint32_t>(&configured.server.stratum_v2.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "stratum_v2.maximum_backlog",
         setting<uint32_t>(&configured.server.stratum_v2.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '1048576'."
     )
     (
         "stratum_v2.maximum_request",
@@ -1994,12 +1994,12 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind_zmq.minimum_buffer",
         setting<uint32_t>(&configured.server.bitcoind_zmq.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4000000'."
+        "The minimum retained read buffer size, defaults to '4096'."
     )
     (
         "bitcoind_zmq.maximum_backlog",
         setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to '33554432'."
     )
     (
         "bitcoind_zmq.maximum_request",
@@ -2153,7 +2153,7 @@ options_metadata parser::load_settings() THROWS
     (
         "database.path",
         setting<config::path>(&configured.database.path),
-        "The blockchain database directory, defaults to 'blockchain'."
+        "The blockchain database directory, defaults to 'bitcoin'."
     )
     (
         "database.turbo",
@@ -2228,7 +2228,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ins.expected",
         setting<uint64_t>(&configured.database.ins.expected),
-        "The expected element count of the archive_ins table, defaults to '3363467253'."
+        "The expected element count of the archive_ins table, defaults to '3363467251'."
     )
     (
         "table.ins.size",
@@ -2250,7 +2250,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.expected",
         setting<uint64_t>(&configured.database.outs.expected),
-        "The expected element count of the archive_outs table, defaults to '3741929088'."
+        "The expected element count of the archive_outs table, defaults to '3741929086'."
     )
     (
         "table.outs.size",
