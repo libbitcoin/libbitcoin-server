@@ -265,9 +265,9 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
     }
 
     const auto state = to_shared<chain::chain_state>(*parent, *header, settings);
-    if (const auto ec = validate(*header, *state))
+    if (const auto result = validate(*header, *state))
     {
-        do_submit_header(ec);
+        do_submit_header(result);
         return true;
     }
 
