@@ -2083,11 +2083,6 @@ options_metadata parser::load_settings() THROWS
         setting<uint64_t>(&configured.node.batch_signatures),
         "Count of signatures to verify in each GPU batch (as available), defaults to '1000000' (0 disables)."
     )
-    ////(
-    ////    "node.headers_first",
-    ////    setting<bool>(&configured.node.headers_first),
-    ////    "Obtain current header chain before obtaining associated blocks, defaults to 'true'."
-    ////)
     (
         "node.fee_estimate_horizon",
         setting<uint16_t>(&configured.node.fee_estimate_horizon),
