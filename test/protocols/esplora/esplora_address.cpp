@@ -27,8 +27,8 @@ BOOST_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
 
 static const auto& coinbase1 = *test::block1.transactions_ptr()->front();
 static const std::string block1_tx = encode_hash(coinbase1.hash(false));
-static const std::string scripthash = encode_hash(null_hash);
-static const std::string funded_scripthash = encode_hash(sha256_hash(coinbase1.outputs_ptr()->front()->script().to_data(false)));
+static const std::string scripthash = encode_base16(null_hash);
+static const std::string funded_scripthash = encode_base16(sha256_hash(coinbase1.outputs_ptr()->front()->script().to_data(false)));
 
 // key resolution
 // ----------------------------------------------------------------------------

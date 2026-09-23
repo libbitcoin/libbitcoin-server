@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(parsers__esplora_target__address_invalid_component__invalid
 
 BOOST_AUTO_TEST_CASE(parsers__esplora_target__scripthash_valid__expected)
 {
-    const std::string path = "/scripthash/0000000000000000000000000000000000000000000000000000000000000042";
+    const std::string path = "/scripthash/4200000000000000000000000000000000000000000000000000000000000000";
 
     request_t request{};
     BOOST_REQUIRE(!esplora_target(request, path));

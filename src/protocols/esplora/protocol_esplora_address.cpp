@@ -149,7 +149,7 @@ void protocol_esplora::complete_get_address(const code& ec,
     if (address.has_value())
         out["address"] = address.value();
     else
-        out["scripthash"] = encode_hash(key);
+        out["scripthash"] = encode_base16(key);
 
     out["chain_stats"] = boost::json::object
     {
