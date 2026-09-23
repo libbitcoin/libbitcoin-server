@@ -82,7 +82,6 @@ node::protocol
 └── protocol_peer → network::protocol_peer
     ├── protocol_observer
     ├── protocol_filter_out_70015
-    ├── protocol_block_in_106
     ├── protocol_performer
     │   └── protocol_block_in_31800
     ├── protocol_block_out_106

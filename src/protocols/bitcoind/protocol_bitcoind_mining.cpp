@@ -254,7 +254,24 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
         return true;
     }
 
-    organize(header, BIND(handle_organize_header, _1, _2));
+    // The organizer trusts protocols to validate against the stored parent.
+    const auto& settings = system_settings();
+    const auto& previous = header->previous_block_hash();
+    const auto parent = archive().get_confirmed_chain_state(settings, previous);
+    if (!parent)
+    {
+        do_submit_header(node::error::orphan_header);
+        return true;
+    }
+
+    const auto state = to_shared<chain::chain_state>(*parent, *header, settings);
+    if (const auto ec = validate(*header, *state))
+    {
+        do_submit_header(ec);
+        return true;
+    }
+
+    organize(header, false, BIND(handle_organize_header, _1, _2));
     return true;
 }
 
