@@ -46,53 +46,50 @@
     <Filter Include="include\bitcoin\server\utilities">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="resource">
+    <Filter Include="src">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src">
+    <Filter Include="src\error">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\error">
+    <Filter Include="src\parsers">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-00000000000F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\parsers">
+    <Filter Include="src\protocols">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols">
+    <Filter Include="src\protocols\admin">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000002}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\admin">
+    <Filter Include="src\protocols\bitcoind">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\bitcoind">
+    <Filter Include="src\protocols\btcd">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\btcd">
+    <Filter Include="src\protocols\electrum">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\electrum">
+    <Filter Include="src\protocols\esplora">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\esplora">
+    <Filter Include="src\protocols\native">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\native">
+    <Filter Include="src\protocols\sparrow">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\sparrow">
+    <Filter Include="src\protocols\stratum_v1">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\stratum_v1">
+    <Filter Include="src\serializers">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000010}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\serializers">
+    <Filter Include="src\sessions">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000A1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\sessions">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000B1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\utilities">
-      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000C1}</UniqueIdentifier>
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000B1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -335,9 +332,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\builds\msvc\resource.h">
-      <Filter>resource</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp">
       <Filter>include\bitcoin</Filter>
     </ClInclude>
@@ -644,7 +638,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\version.hpp">
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\build\include\bitcoin\server\version.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
   </ItemGroup>
@@ -652,14 +648,12 @@
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp">
       <Filter>include\bitcoin\server\impl\protocols</Filter>
     </None>
+    <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in">
+      <Filter>include\bitcoin\server</Filter>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\debug.natvis" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\..\..\builds\msvc\resource.rc">
-      <Filter>resource</Filter>
-    </ResourceCompile>
   </ItemGroup>
 </Project>

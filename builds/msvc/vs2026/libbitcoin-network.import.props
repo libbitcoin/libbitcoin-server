@@ -28,6 +28,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-network\build\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 
       <!-- Prevent boost from seeing ssl includes when ssl is deselected  (requires external headers). -->
       <AdditionalIncludeDirectories Condition="'$(Option-ssl)' == 'true'">$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\bitcoin\network\ssl\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

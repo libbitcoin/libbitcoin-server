@@ -18,6 +18,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(RepoRoot)build\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
