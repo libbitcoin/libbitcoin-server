@@ -11,7 +11,7 @@ find_package(Git QUIET)
 set( GIT_COMMIT_HASH "unknown" )
 set( GIT_COMMIT_HEIGHT 0 )
 set( GIT_DIRTY 0 )
-set( GIT_ORIGIN_URL "https://github.com/libbitcoin/libbitcoin-server" )
+set( GIT_ORIGIN_URL "unknown" )
 
 if ( GIT_EXECUTABLE )
     execute_process(
@@ -20,6 +20,10 @@ if ( GIT_EXECUTABLE )
         OUTPUT_VARIABLE GIT_COMMIT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET )
+
+    if ( NOT GIT_COMMIT_HASH )
+        set( GIT_COMMIT_HASH "unknown" )
+    endif()
 
     execute_process(
         COMMAND ${GIT_EXECUTABLE} rev-list --count HEAD
@@ -33,11 +37,15 @@ if ( GIT_EXECUTABLE )
     endif()
 
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} remote get-url origin
+        COMMAND ${GIT_EXECUTABLE} ls-remote --get-url
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE GIT_ORIGIN_URL
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET )
+
+    if ( NOT GIT_ORIGIN_URL MATCHES "://|@" )
+        set( GIT_ORIGIN_URL "unknown" )
+    endif()
 
     execute_process(
         COMMAND ${GIT_EXECUTABLE} status --porcelain
@@ -169,6 +177,15 @@ endif()
 include(CheckLinkerFlag)
 
 #------------------------------------------------------------------------------
+# Configurable file(s).
+#------------------------------------------------------------------------------
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/bitcoin/server/version.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bitcoin/server/version.hpp
+  @ONLY )
+
+#------------------------------------------------------------------------------
 # libbitcoin-server library
 #------------------------------------------------------------------------------
 add_library( libbitcoin-server )
@@ -209,6 +226,10 @@ target_sources( libbitcoin-server
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
     FILES
       ${libbitcoin_server_HEADERS}
+    FILE_SET HEADERS
+    BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/include"
+    FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/include/bitcoin/server/version.hpp"
   PRIVATE
     ${libbitcoin_server_SOURCES}
 )
