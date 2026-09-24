@@ -276,7 +276,7 @@ Example build with all extensions enabled (GNU):
 
 ### Windows
 
-Windows builds use the provided Visual Studio 2022 project files in `builds/msvc/vs2022/`.
+Windows builds use the provided Visual Studio 2026 project files in `builds/msvc/vs2026/`.
 
 Detailed instructions are **TBD**.
 
