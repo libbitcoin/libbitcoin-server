@@ -106,6 +106,7 @@ parser::parser(system::chain::selection context,
 
     // node
 
+    configured.node.minimum_fee_rate = 0.000001;
     configured.node.batch_signatures = 1'000'000;
 
     // database
@@ -2094,7 +2095,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.minimum_fee_rate",
         setting<double>(&configured.node.minimum_fee_rate),
-        "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.0'."
+        "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.000001'."
     )
     (
         "node.minimum_bump_rate",
