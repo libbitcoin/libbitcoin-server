@@ -198,11 +198,14 @@ parser::parser(system::chain::selection context,
     configured.database.validated_bk.size = 0;
     configured.database.validated_bk.rate = 1;
 
-    // unused in v4
-    configured.database.validated_tx.buckets = 0;
-    configured.database.validated_tx.expected = 0;
+    // validated_tx and spends (pool cache, disabled by zero buckets)
+    configured.database.validated_tx.expected = 10'000'000;
+    configured.database.validated_tx.buckets = table::validated_tx::derive_buckets(
+        configured.database.validated_tx.expected, contested, target);
     configured.database.validated_tx.size = 0;
     configured.database.validated_tx.rate = 1;
+    configured.database.spends.size = 0;
+    configured.database.spends.rate = 1;
 
     // optional
 
@@ -815,7 +818,7 @@ options_metadata parser::load_settings() THROWS
     (
         "outbound.host_pool_capacity",
         setting<uint32_t>(&configured.network.outbound.host_pool_capacity),
-        "The maximum number of peer hosts in the pool, defaults to '10000'."
+        "The maximum number of peer hosts in the pool, defaults to '10000000'."
     )
     (
         "outbound.seeding_timeout_seconds",
@@ -2456,12 +2459,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.validated_tx.buckets",
         setting<uint32_t>(&configured.database.validated_tx.buckets),
-        "The number of buckets in the validated_tx table head, defaults to '0' (0 disables)."
+        "The number of buckets in the validated_tx table head, dynamic default (0 disables)."
     )
     (
         "table.validated_tx.expected",
         setting<uint64_t>(&configured.database.validated_tx.expected),
-        "The expected element count of the validated_tx table, defaults to '0'."
+        "The expected element count of the validated_tx table, defaults to '10000000'."
     )
     (
         "table.validated_tx.size",
@@ -2472,6 +2475,18 @@ options_metadata parser::load_settings() THROWS
         "table.validated_tx.rate",
         setting<uint16_t>(&configured.database.validated_tx.rate),
         "The percentage expansion of the validated_tx table body, defaults to '1'."
+    )
+
+    /* table.spends */
+    (
+        "table.spends.size",
+        setting<uint64_t>(&configured.database.spends.size),
+        "The minimum allocation of the spends table body, defaults to '0'."
+    )
+    (
+        "table.spends.rate",
+        setting<uint16_t>(&configured.database.spends.rate),
+        "The percentage expansion of the spends table body, defaults to '1'."
     )
 
     /* table.filter_bk */
