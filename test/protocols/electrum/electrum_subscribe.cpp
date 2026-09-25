@@ -85,9 +85,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__exp
 
     // This validates the hash accumulator copy in get_scripthash_history() and incorporates
     // confirmed, rooted and unrooted transactions, duplicates, and sort.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -112,9 +112,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__repeat_call__idempo
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -149,9 +149,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
@@ -202,9 +202,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
@@ -324,9 +324,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__initialization__
 
     // This validates the hash accumulator copy in get_scripthash_history() and incorporates
     // confirmed, rooted and unrooted transactions, duplicates, and sort.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -351,9 +351,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__repeat_call__ide
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -388,9 +388,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
@@ -441,9 +441,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
@@ -623,9 +623,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__initialization
 
     // This validates the hash accumulator copy in get_scripthash_history() and incorporates
     // confirmed, rooted and unrooted transactions, duplicates, and sort.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -650,9 +650,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__repeat_call__i
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -687,9 +687,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
@@ -740,9 +740,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
@@ -874,9 +874,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_noti
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);

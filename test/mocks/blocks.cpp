@@ -96,16 +96,18 @@ boost::json::value parse_json(std::string_view value) NOEXCEPT
 
 bool setup_ten_block_store(query_t& query, uint32_t top_flags) NOEXCEPT
 {
+    // All ten headers share bits, so cumulative work is height+1 proofs.
+    const auto proof = genesis.header().proof();
     return query.initialize(genesis) &&
-        query.set(block1, database::context{ 0, 1, 1231006505 }, false, false) &&
-        query.set(block2, database::context{ 0, 2, 1231469665 }, false, false) &&
-        query.set(block3, database::context{ 0, 3, 1231469665 }, false, false) &&
-        query.set(block4, database::context{ 0, 4, 1231469744 }, false, false) &&
-        query.set(block5, database::context{ 0, 5, 1231469744 }, false, false) &&
-        query.set(block6, database::context{ 0, 6, 1231470173 }, false, false) &&
-        query.set(block7, database::context{ 0, 7, 1231470173 }, false, false) &&
-        query.set(block8, database::context{ 0, 8, 1231470988 }, false, false) &&
-        query.set(block9, database::context{ top_flags, 9, 1231470988 }, false, false) &&
+        query.set(block1, database::context{ 0, 1, 1231006505 }, proof * 2u, false, false) &&
+        query.set(block2, database::context{ 0, 2, 1231469665 }, proof * 3u, false, false) &&
+        query.set(block3, database::context{ 0, 3, 1231469665 }, proof * 4u, false, false) &&
+        query.set(block4, database::context{ 0, 4, 1231469744 }, proof * 5u, false, false) &&
+        query.set(block5, database::context{ 0, 5, 1231469744 }, proof * 6u, false, false) &&
+        query.set(block6, database::context{ 0, 6, 1231470173 }, proof * 7u, false, false) &&
+        query.set(block7, database::context{ 0, 7, 1231470173 }, proof * 8u, false, false) &&
+        query.set(block8, database::context{ 0, 8, 1231470988 }, proof * 9u, false, false) &&
+        query.set(block9, database::context{ top_flags, 9, 1231470988 }, proof * 10u, false, false) &&
         query.push_confirmed(query.to_header(block1_hash), true) &&
         query.push_confirmed(query.to_header(block2_hash), true) &&
         query.push_confirmed(query.to_header(block3_hash), true) &&
@@ -120,8 +122,8 @@ bool setup_ten_block_store(query_t& query, uint32_t top_flags) NOEXCEPT
 bool setup_three_block_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&
-        query.set(block1, database::context{ 0, 1, 0 }, false, false) &&
-        query.set(block2, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(block1, database::context{ 0, 1, 0 }, {}, false, false) &&
+        query.set(block2, database::context{ 0, 2, 0 }, {}, false, false) &&
         query.push_confirmed(query.to_header(block1_hash), true) &&
         query.push_confirmed(query.to_header(block2_hash), true);
 }
@@ -129,8 +131,8 @@ bool setup_three_block_store(query_t& query) NOEXCEPT
 bool setup_three_block_witness_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&
-        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
-        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, {}, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, {}, false, false) &&
         query.push_confirmed(query.to_header(block1a.hash()), true) &&
         query.push_confirmed(query.to_header(block2a.hash()), true);
 }
@@ -138,13 +140,13 @@ bool setup_three_block_witness_store(query_t& query) NOEXCEPT
 bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&
-        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
-        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, {}, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, {}, false, false) &&
         query.set(test::tx4) &&
         query.set(test::tx5) &&
-        query.set(block3a, database::context{ 0, 3, 0 }, false, false) &&
-        query.set(block1b, database::context{ 0, 1, 0 }, false, false) &&
-        query.set(block2b, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(block3a, database::context{ 0, 3, 0 }, {}, false, false) &&
+        query.set(block1b, database::context{ 0, 1, 0 }, {}, false, false) &&
+        query.set(block2b, database::context{ 0, 2, 0 }, {}, false, false) &&
         query.push_confirmed(query.to_header(block1a.hash()), true) &&
         query.push_confirmed(query.to_header(block2a.hash()), true) &&
         query.push_confirmed(query.to_header(block3a.hash()), true);
@@ -154,18 +156,18 @@ bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT
 bool setup_broadcast_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&
-        query.set(block1c, database::context{ 0, 1, 0 }, false, false) &&
+        query.set(block1c, database::context{ 0, 1, 0 }, {}, false, false) &&
         query.push_confirmed(query.to_header(block1c.hash()), true);
 }
 
 bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&
-        query.set(block1a, database::context{ 0, 1, 0 }, false, false) &&
-        query.set(block2a, database::context{ 0, 2, 0 }, false, false) &&
+        query.set(block1a, database::context{ 0, 1, 0 }, {}, false, false) &&
+        query.set(block2a, database::context{ 0, 2, 0 }, {}, false, false) &&
         query.set(test::tx4) &&
         query.set(test::tx5) &&
-        query.set(block3a, database::context{ 0, 3, 0 }, false, false);
+        query.set(block3a, database::context{ 0, 3, 0 }, {}, false, false);
 }
 
 const block mock_block10
