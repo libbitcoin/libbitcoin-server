@@ -150,8 +150,9 @@
     "   strong_tx :%16%\n" \
     "   valid_bk  :%17%\n" \
     "   valid_tx  :%18%\n" \
-    "   filter_bk :%19%\n" \
-    "   filter_tx :%20%"
+    "   spends    :%19%\n" \
+    "   filter_bk :%20%\n" \
+    "   filter_tx :%21%"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
     "   header    :%1%\n" \
@@ -166,7 +167,10 @@
     "   prevalid  :%10%\n" \
     "   duplicate :%11%\n" \
     "   strong_tx :%12%\n" \
-    "   filter_bk :%13%"
+    "   valid_bk  :%13%\n" \
+    "   valid_tx  :%14%\n" \
+    "   spends    :%15%\n" \
+    "   filter_bk :%16%"
 #define BS_INFORMATION_BUCKETS \
     "Head buckets...\n" \
     "   header    :%1%\n" \
@@ -187,8 +191,15 @@
     "   tx        :%2%\n" \
     "   ins       :%3%\n" \
     "   strong_tx :%4%\n" \
-    "   valid_tx  :%5%\n" \
-    "   outs      :%6%"
+    "   valid_tx  :%5%"
+#define BS_INFORMATION_COLLISION_RATES_ADDRESS \
+    "Collision rates...\n" \
+    "   header    :%1%\n" \
+    "   tx        :%2%\n" \
+    "   ins       :%3%\n" \
+    "   outs      :%4%\n" \
+    "   strong_tx :%5%\n" \
+    "   valid_tx  :%6%"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
 #define BS_INFORMATION_PROGRESS \
