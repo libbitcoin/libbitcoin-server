@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(electrum__post__subscribed_event__no_notification)
     const auto response = post(R"({"id":702,"method":"blockchain.numblocks.subscribe","params":[]})");
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     notify(node::chases::organized{ 10 });
 
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(electrum__ws__subscribed_event__notified)
     const auto response = ws_get(R"({"id":802,"method":"blockchain.numblocks.subscribe","params":[]})");
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     notify(node::chases::organized{ 10 });
 

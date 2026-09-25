@@ -245,8 +245,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__block9_verbosity3__tx_objects)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__spend_verbosity2__fee)
 {
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
 
     const auto response = rpc("getblock", hash_param(test::mock_block11.hash(), "2"));
     const auto& tx = response.at("result").at("tx");
@@ -256,8 +256,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__spend_verbosity2__fee)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__spend_verbose__prevout)
 {
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
 
     const auto txid = test::mock_block11.transactions_ptr()->front()->hash(false);
     const auto response = rpc("getrawtransaction", hash_param(txid, "2"));
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unspent_coinbase__output)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__archived_unconfirmed__null)
 {
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
 
     const auto txid = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto response = rpc("gettxout", hash_param(txid, "0"));
@@ -537,7 +537,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__unknown_input__verify_
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__key_hash_variants__endorsing_candidate)
 {
     using namespace chain;
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     // The found_address p2kh output of mock_block10's second transaction.
@@ -578,7 +578,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__multisig_partials__mer
         transactions{ transaction{ 1, inputs{ input{ point{}, script{}, witness{}, 0x01 } }, outputs{ output{ value, multisig } }, 0 } }
     };
 
-    BOOST_REQUIRE(query_.set(block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10.hash()), true));
 
     // A spend of the multisig output, endorsed separately by two keys.

@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2kh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), false));
 
     const auto hash = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
     // Add a confirmed p2sh/p2kh block.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), false));
 
     const auto hash = test::mock_block10.transactions_ptr()->at(1)->hash(false);
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_spent__
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__one_spender__expec
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
@@ -336,9 +336,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__two_spenders__one_
     query_.pop_confirmed(); // 1
     BOOST_REQUIRE_EQUAL(query_.get_top_confirmed(), 0u);
 
-    BOOST_REQUIRE(query_.set(test::block1a, database::context{ 0, 1, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::block2a, database::context{ 0, 2, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::block3a, database::context{ 0, 3, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::block1a, database::context{ 0, 1, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::block2a, database::context{ 0, 2, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::block3a, database::context{ 0, 3, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::block1a.hash()), true));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::block2a.hash()), true));
     const auto hash1 = encode_hash(test::block1a.transactions_ptr()->at(0)->hash(false));
@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().empty());
 
     // block1a tx0 output0 [unconfirmed]
-    BOOST_REQUIRE(query_.set(test::block1a, database::context{ 0, 1, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::block1a, database::context{ 0, 1, 0 }, {}, false, false));
 
     // Trigger node chaser event to electrum event subscriber.
     notify(node::chases::organized{ 0 });
@@ -444,7 +444,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     BOOST_REQUIRE(!history1.contains("spender_height"));
 
     // spend by block2a tx0 input0 [unconfirmed]
-    BOOST_REQUIRE(query_.set(test::block2a, database::context{ 0, 2, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::block2a, database::context{ 0, 2, 0 }, {}, false, false));
 
     // confirm outpoint block1a tx0 input0 [confirmed]
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::block1a.hash()), true));
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     BOOST_REQUIRE_EQUAL(history2.at("spender_txhash").as_string(), hash2);
 
     // spent by block3a tx0 input1 [unconfirmed]
-    BOOST_REQUIRE(query_.set(test::block3a, database::context{ 0, 3, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::block3a, database::context{ 0, 3, 0 }, {}, false, false));
 
     // spent by tx4 input0 [unconfirmed]
     BOOST_REQUIRE(query_.set(test::tx4));

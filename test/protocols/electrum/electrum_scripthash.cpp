@@ -104,8 +104,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__confirmed_and_
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":905,"method":"blockchain.scripthash.get_balance","params":["%1%"]})" "\n";
@@ -187,9 +187,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__confirmed_and_
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.scripthash.get_history","params":["%1%"]})" "\n";
@@ -289,9 +289,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__confirmed_and_
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.scripthash.get_mempool","params":["%1%"]})" "\n";
@@ -383,9 +383,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__confirmed_and
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto request = R"({"id":1006,"method":"blockchain.scripthash.listunspent","params":["%1%"]})" "\n";
