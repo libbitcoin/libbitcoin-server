@@ -467,7 +467,7 @@ void protocol_esplora::complete_submit_tx(const code& ec,
     if (stopped())
         return;
 
-    if (ec)
+    if (ec && ec != node::error::duplicate_transaction)
     {
         send_rejected(ec);
         return;
