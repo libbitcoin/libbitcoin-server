@@ -35,12 +35,22 @@ constexpr double to_double(auto integer)
 // version information for libbitcoin libraries
 void executor::dump_version() const
 {
+    const auto thumb = [](std::string_view hash, bool dirty)
+    {
+        return std::string{ hash.substr(0, 8) } + (dirty ? "-dirty" : "");
+    };
+
     logger(format(BS_VERSION_HEADER));
-    logger(format("libbitcoin-system..... %1%") % LIBBITCOIN_SYSTEM_VERSION);
-    logger(format("libbitcoin-database... %1%") % LIBBITCOIN_DATABASE_VERSION);
-    logger(format("libbitcoin-network.... %1%") % LIBBITCOIN_NETWORK_VERSION);
-    logger(format("libbitcoin-node....... %1%") % LIBBITCOIN_NODE_VERSION);
-    logger(format("libbitcoin-server..... %1%") % LIBBITCOIN_SERVER_VERSION);  
+    logger(format("libbitcoin-system..... %1% %2%") % LIBBITCOIN_SYSTEM_VERSION %
+        thumb(LIBBITCOIN_SYSTEM_COMMIT_HASH, LIBBITCOIN_SYSTEM_IS_DIRTY));
+    logger(format("libbitcoin-database... %1% %2%") % LIBBITCOIN_DATABASE_VERSION %
+        thumb(LIBBITCOIN_DATABASE_COMMIT_HASH, LIBBITCOIN_DATABASE_IS_DIRTY));
+    logger(format("libbitcoin-network.... %1% %2%") % LIBBITCOIN_NETWORK_VERSION %
+        thumb(LIBBITCOIN_NETWORK_COMMIT_HASH, LIBBITCOIN_NETWORK_IS_DIRTY));
+    logger(format("libbitcoin-node....... %1% %2%") % LIBBITCOIN_NODE_VERSION %
+        thumb(LIBBITCOIN_NODE_COMMIT_HASH, LIBBITCOIN_NODE_IS_DIRTY));
+    logger(format("libbitcoin-server..... %1% %2%") % LIBBITCOIN_SERVER_VERSION %
+        thumb(LIBBITCOIN_SERVER_COMMIT_HASH, LIBBITCOIN_SERVER_IS_DIRTY));
     logger(format("compiled schema....... %1%") % database::envelope::compiled);
     logger(format("database schema....... %1%") % query_.envelope().schema);
 }
