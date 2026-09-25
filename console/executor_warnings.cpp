@@ -73,7 +73,7 @@ void executor::warn_hardware(system::string_list& out) const
 
 void executor::warn_memory(system::string_list& out) const
 {
-    const auto memory = database::system_memory();
+    const auto memory = database::physical_memory();
     if (is_zero(memory))
         return;
 
