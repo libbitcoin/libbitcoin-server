@@ -128,6 +128,7 @@ void executor::dump_body_sizes() const
         query_.strong_tx_body_size() %
         query_.validated_bk_body_size() %
         query_.validated_tx_body_size() %
+        query_.spends_body_size() %
         query_.filter_bk_body_size() %
         query_.filter_tx_body_size());
 }
@@ -147,6 +148,9 @@ void executor::dump_records() const
         query_.prevalid_records() %
         query_.duplicate_records() %
         query_.strong_tx_records() %
+        query_.validated_bk_records() %
+        query_.validated_tx_records() %
+        query_.spends_records() %
         query_.filter_bk_records());
 }
 
@@ -169,14 +173,29 @@ void executor::dump_buckets() const
 
 void executor::dump_collisions() const
 {
+    const auto rate = [](size_t records, size_t buckets)
+    {
+        return is_zero(buckets) ? 0.0 : to_double(records) / buckets;
+    };
+
+    const auto header = rate(query_.header_records(), query_.header_buckets());
+    const auto tx = rate(query_.tx_records(), query_.tx_buckets());
+    const auto ins = rate(query_.ins_records(), query_.ins_buckets());
+    const auto strong_tx = rate(query_.strong_tx_records(),
+        query_.strong_tx_buckets());
+    const auto validated_tx = rate(query_.validated_tx_records(),
+        query_.validated_tx_buckets());
+
+    if (query_.address_enabled())
+    {
+        const auto outs = rate(query_.outs_records(), query_.outs_buckets());
+        logger(format(BS_INFORMATION_COLLISION_RATES_ADDRESS) %
+            header % tx % ins % outs % strong_tx % validated_tx);
+        return;
+    }
+
     logger(format(BS_INFORMATION_COLLISION_RATES) %
-        (to_double(query_.header_records()) / query_.header_buckets()) %
-        (to_double(query_.tx_records()) / query_.tx_buckets()) %
-        (to_double(query_.ins_records()) / query_.ins_buckets()) %
-        (to_double(query_.strong_tx_records()) / query_.strong_tx_buckets()) %
-        (to_double(query_.tx_records()) / query_.validated_tx_buckets()) %
-        (query_.address_enabled() ? (to_double(query_.outs_records()) /
-            query_.outs_buckets()) : zero));
+        header % tx % ins % strong_tx % validated_tx);
 }
 
 void executor::dump_progress() const
