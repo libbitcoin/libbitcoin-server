@@ -181,7 +181,7 @@ void executor::scan_collisions() const
 
     logger(BS_OPERATION_INTERRUPT);
 
-    // header & txs (txs is a proxy for validated_bk)
+    // header & txs (txs is a proxy for state)
     // ------------------------------------------------------------------------
 
     auto index = max_size_t;
@@ -237,7 +237,7 @@ void executor::scan_collisions() const
     txs.clear();
     txs.shrink_to_fit();
 
-    // tx & strong_tx (strong_tx is a proxy for validated_tx)
+    // tx & strong_tx (strong_tx is a proxy for pool)
     // ------------------------------------------------------------------------
 
     index = max_size_t;

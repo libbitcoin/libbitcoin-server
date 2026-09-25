@@ -126,8 +126,8 @@ void executor::dump_body_sizes() const
         query_.prevout_body_size() %
         query_.duplicate_body_size() %
         query_.strong_tx_body_size() %
-        query_.validated_bk_body_size() %
-        query_.validated_tx_body_size() %
+        query_.state_body_size() %
+        query_.pool_body_size() %
         query_.spends_body_size() %
         query_.filter_bk_body_size() %
         query_.filter_tx_body_size());
@@ -148,8 +148,8 @@ void executor::dump_records() const
         query_.prevalid_records() %
         query_.duplicate_records() %
         query_.strong_tx_records() %
-        query_.validated_bk_records() %
-        query_.validated_tx_records() %
+        query_.state_records() %
+        query_.pool_records() %
         query_.spends_records() %
         query_.filter_bk_records());
 }
@@ -165,8 +165,8 @@ void executor::dump_buckets() const
         query_.prevout_buckets() %
         query_.duplicate_buckets() %
         query_.strong_tx_buckets() %
-        query_.validated_bk_buckets() %
-        query_.validated_tx_buckets() %
+        query_.state_buckets() %
+        query_.pool_buckets() %
         query_.filter_bk_buckets() %
         query_.filter_tx_buckets());
 }
@@ -183,19 +183,19 @@ void executor::dump_collisions() const
     const auto ins = rate(query_.ins_records(), query_.ins_buckets());
     const auto strong_tx = rate(query_.strong_tx_records(),
         query_.strong_tx_buckets());
-    const auto validated_tx = rate(query_.validated_tx_records(),
-        query_.validated_tx_buckets());
+    const auto pool = rate(query_.pool_records(),
+        query_.pool_buckets());
 
     if (query_.address_enabled())
     {
         const auto outs = rate(query_.outs_records(), query_.outs_buckets());
         logger(format(BS_INFORMATION_COLLISION_RATES_ADDRESS) %
-            header % tx % ins % outs % strong_tx % validated_tx);
+            header % tx % ins % outs % strong_tx % pool);
         return;
     }
 
     logger(format(BS_INFORMATION_COLLISION_RATES) %
-        header % tx % ins % strong_tx % validated_tx);
+        header % tx % ins % strong_tx % pool);
 }
 
 void executor::dump_progress() const
