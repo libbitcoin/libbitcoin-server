@@ -86,6 +86,9 @@ struct bitcoind_setup_fixture
     std::string rest_text(std::string_view target);
     system::data_chunk rest_data(std::string_view target);
 
+    // http OPTIONS (preflight), returning only the http status.
+    status options_status(std::string_view target);
+
 private:
     rpc_client client_{ io_ };
 };

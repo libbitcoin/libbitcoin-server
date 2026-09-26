@@ -445,6 +445,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_over_limit__bad_request)
     BOOST_REQUIRE_EQUAL(rest_status("/rest/getutxos/" + items + unknown_hash + "-1.json"), status::bad_request);
 }
 
+// options and post
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__options__allowed__ok)
+{
+    BOOST_REQUIRE_EQUAL(options_status("/"), status::ok);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_host_tests, bitcoind_hosted_setup_fixture)
@@ -452,6 +460,16 @@ BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_host_tests, bitcoind_hosted_setup_fixture
 BOOST_AUTO_TEST_CASE(bitcoind_rest__disallowed_host__bad_request)
 {
     BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json"), status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__options_disallowed_host__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(options_status("/"), status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__post_disallowed_host__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(rpc_body_status(R"({"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]})"), status::bad_request);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

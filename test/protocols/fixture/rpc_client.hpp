@@ -66,6 +66,9 @@ public:
     boost::beast::http::response<boost::beast::http::string_body> get(
         std::string_view target);
 
+    /// http OPTIONS (returns only the http status).
+    status options_status(std::string_view target);
+
     /// Upgrade to websocket, optionally with basic authorization.
     error_code upgrade();
     error_code upgrade(const std::string& username,
