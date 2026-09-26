@@ -561,7 +561,7 @@ jobs:
         working-directory: 'libbitcoin-server'
         run: |
           lcov --ignore-errors version,gcov,mismatch,mismatch --directory . --capture --output-file coverage.info
-          lcov --ignore-errors unused --remove coverage.info "${{ github.workspace }}/prefix/*" "${{ github.workspace }}/libbitcoin-server/examples/*" "${{ github.workspace }}/libbitcoin-server/test/*"  --output-file coverage.info
+          lcov --ignore-errors unused --extract coverage.info "${{ github.workspace }}/libbitcoin-server/include/*" "${{ github.workspace }}/libbitcoin-server/src/*" --output-file coverage.info
 
       - name: Coveralls.io upload
         if: ${{ matrix.coverage == 'lcov' }}
@@ -1163,7 +1163,7 @@ jobs:
         working-directory: 'libbitcoin-server'
         run: |
           lcov --ignore-errors version,gcov,mismatch,mismatch --directory . --capture --output-file coverage.info
-          lcov --ignore-errors unused --remove coverage.info "${{ github.workspace }}/prefix/*" "${{ github.workspace }}/libbitcoin-server/examples/*" "${{ github.workspace }}/libbitcoin-server/test/*"  --output-file coverage.info
+          lcov --ignore-errors unused --extract coverage.info "${{ github.workspace }}/libbitcoin-server/include/*" "${{ github.workspace }}/libbitcoin-server/src/*" --output-file coverage.info
 
       - name: Coveralls.io upload
         if: ${{ matrix.coverage == 'lcov' }}
@@ -1688,7 +1688,7 @@ jobs:
         working-directory: 'libbitcoin-server'
         run: |
           lcov --ignore-errors version,gcov,mismatch,mismatch --directory . --capture --output-file coverage.info
-          lcov --ignore-errors unused --remove coverage.info "${{ github.workspace }}/prefix/*" "${{ github.workspace }}/libbitcoin-server/examples/*" "${{ github.workspace }}/libbitcoin-server/test/*"  --output-file coverage.info
+          lcov --ignore-errors unused --extract coverage.info "${{ github.workspace }}/libbitcoin-server/include/*" "${{ github.workspace }}/libbitcoin-server/src/*" --output-file coverage.info
 
       - name: Coveralls.io upload
         if: ${{ matrix.coverage == 'lcov' }}
