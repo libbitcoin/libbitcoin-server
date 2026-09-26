@@ -613,6 +613,31 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__genesis_height__zero_window
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__nine_block_window__work_over_timespan)
+{
+    const auto work = (test::genesis.header().proof() * 9u).convert_to<double>();
+    const auto span = test::block9.header().timestamp() - test::genesis.header().timestamp();
+    const auto response = rpc("getnetworkhashps", "[9, 9]");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), work / span);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__since_retarget__clamped_to_height)
+{
+    const auto window = rpc("getnetworkhashps", "[9, 9]");
+    const auto retarget = rpc("getnetworkhashps", "[0]");
+    BOOST_REQUIRE_EQUAL(retarget.at("result").as_double(), window.at("result").as_double());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__fractional_height__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getnetworkhashps", "[9, 1.5]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__fractional_window__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getnetworkhashps", "[1.5]"), -8));
+}
+
 // currentblockweight/currentblocktx omitted (no block ever assembled).
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__ten_block_store__expected)
 {
@@ -2275,6 +2300,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__existing_header__null)
     BOOST_REQUIRE(response.at("result").is_null());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__not_hex__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("submitheader", "[\"zz\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__truncated__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("submitheader", "[\"00\"]"), -22));
+}
+
 // waitfor (all conditions immediately met or timing out on the fixture)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__at_top__immediate_top)
@@ -2671,6 +2706,12 @@ BOOST_AUTO_TEST_SUITE_END()
 // ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_submit_tests, bitcoind_submit_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__unacceptable_header__error)
+{
+    const auto header = encode_base16(test::mock_block10.header().to_data());
+    BOOST_REQUIRE(has_error(rpc("submitheader", "[\"" + header + "\"]")));
+}
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
 {
