@@ -213,6 +213,22 @@ struct bitcoind_proxied_setup_fixture
     }
 };
 
+// Configured with an allowed host that the test client does not send.
+struct bitcoind_hosted_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_hosted_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind.hosts = { { "example.com" } };
+        })
+    {
+    }
+};
+
 struct bitcoind_witness_setup_fixture
     : bitcoind_setup_fixture
 {
