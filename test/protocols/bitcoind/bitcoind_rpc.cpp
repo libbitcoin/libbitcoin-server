@@ -361,6 +361,123 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__archived_unconfirmed__null)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unknown__null)
+{
+    const auto response = rpc("gettxout", hash_param(null_hash, "0"));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxout", "[\"nothex\", 0]"), -8));
+}
+
+// blockchain validation
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblock", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__fractional_verbosity__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblock", hash_param(test::block9_hash, "1.5")), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__unknown__invalid_address)
+{
+    const std::string unknown(64, '1');
+    BOOST_REQUIRE(has_code(rpc("getblock", "[\"" + unknown + "\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__genesis__chained_header)
+{
+    const auto response = rpc("getblockfilter", hash_param(test::block0_hash, "\"basic\""));
+    const auto& result = response.at("result");
+
+    data_chunk filter{};
+    BOOST_REQUIRE(decode_base16(filter, as_text(result.at("filter"))));
+    BOOST_REQUIRE(!filter.empty());
+
+    const auto expected = bitcoin_hash(splice(bitcoin_hash(filter), null_hash));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("header")), encode_hash(expected));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__unknown_type__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockfilter", hash_param(test::block0_hash, "\"extended\"")), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockfilter", "[\"nothex\", \"basic\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__negative__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockhash", "[-1]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__above_top__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockhash", "[10]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__not_verbose__hex)
+{
+    const auto response = rpc("getblockheader", hash_param(test::block9_hash, "false"));
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), encode_base16(test::header9_data));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockheader", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__unknown__invalid_address)
+{
+    const std::string unknown(64, '1');
+    BOOST_REQUIRE(has_code(rpc("getblockheader", "[\"" + unknown + "\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__negative_height__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[-1]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__boolean__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[true]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__above_top__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[10]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__numeric_stat__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[1, [1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getchaintxstats", "[1, \"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__unknown__invalid_address)
+{
+    const std::string unknown(64, '1');
+    BOOST_REQUIRE(has_code(rpc("getchaintxstats", "[1, \"" + unknown + "\"]"), -5));
+}
+
 // rawtransactions
 // ----------------------------------------------------------------------------
 
