@@ -35,8 +35,6 @@
       <Optimization>MaxSpeed</Optimization>
 
       <!-- Literal (not macro) values retain property page presentation text. -->
-      <EnableEnhancedInstructionSet Condition="'$(Option-arch)' == 'NotSet'">NotSet</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Option-arch)' == 'NoExtensions'">NoExtensions</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Option-arch)' == 'StreamingSIMDExtensions'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Option-arch)' == 'StreamingSIMDExtensions2'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Option-arch)' == 'AdvancedVectorExtensions'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
