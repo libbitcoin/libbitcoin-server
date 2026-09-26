@@ -1493,6 +1493,46 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__garbage__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__not_hex__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("verifytxoutproof", "[\"zz\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__wrong_merkle_root__empty)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto proof = rpc("gettxoutproof", "[[\"" + txid + "\"], \"" + block1 + "\"]");
+    auto tampered = as_text(proof.at("result"));
+    BOOST_REQUIRE_EQUAL(tampered.substr(72, 2), "98");
+
+    tampered.replace(72, 2, "00");
+    const auto verified = rpc("verifytxoutproof", "[\"" + tampered + "\"]");
+    BOOST_REQUIRE(verified.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__not_hash_txid__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"nothex\"]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__duplicate_txid__invalid_parameter)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"" + txid + "\", \"" + txid + "\"]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__not_hash_block__invalid_parameter)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"" + txid + "\"], \"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__txid_not_in_block__invalid_address)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"" + txid + "\"], \"" + block5 + "\"]"), -5));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_frozen)
 {
     const auto response = rpc("getdeploymentinfo");
@@ -1872,6 +1912,26 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__no_index_at_height__invalid)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", \"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__fractional_height__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", 1.5]"), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__boolean_height__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", true]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__above_top__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", 10]"), -5));
+}
+
 // preciousblock
 
 // Only a cached (tied) branch is prioritizable, an organized one is not.
@@ -1895,6 +1955,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__preciousblock__not_hash__invalid_parameter)
 }
 
 // scantxoutset
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__unknown_action__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("scantxoutset", "[\"bogus\"]"), -8));
+}
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__status__null)
 {
