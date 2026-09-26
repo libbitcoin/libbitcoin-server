@@ -2482,6 +2482,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__data_output__decodes)
     const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"data\": \"deadbeef\"}]");
     const auto response = rpc("decodepsbt", "[\"" + as_text(created.at("result")) + "\"]");
     const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("inputs").at(0).at("previous_txid")), txid);
+    BOOST_REQUIRE_EQUAL(result.at("inputs").at(0).at("output_index").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("outputs").at(0).at("script").at("hex")), "6a04deadbeef");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__version_0__decodes_unsigned_tx)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"data\": \"deadbeef\"}, 0, true, 2, 0]");
+    const auto response = rpc("decodepsbt", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 0);
     const auto& out = result.at("tx").at("vout").at(0);
     BOOST_REQUIRE_EQUAL(as_text(out.at("scriptPubKey").at("hex")), "6a04deadbeef");
@@ -2573,15 +2585,28 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__signed__deserialization_error)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__signed_permitted__stripped)
 {
     const auto hex = encode_base16(test::block1.transactions_ptr()->front()->to_data(true));
-    const auto response = rpc("converttopsbt", "[\"" + hex + "\", true]");
+    const auto response = rpc("converttopsbt", "[\"" + hex + "\", true, null, 0]");
     const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
     const auto& input = decoded.at("result").at("tx").at("vin").at(0);
     BOOST_REQUIRE_EQUAL(as_text(input.at("coinbase")), "");
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__version_zero__invalid_parameter)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__version_one__invalid_parameter)
 {
-    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"00\", false, null, 0]"), -8));
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"00\", false, null, 1]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__default__version_2)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0,\"sequence\":7}], {\"data\": \"deadbeef\"}, 42]");
+    const auto response = rpc("converttopsbt", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
+    const auto& result = decoded.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(result.at("fallback_locktime").as_int64(), 42);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("inputs").at(0).at("previous_txid")), txid);
+    BOOST_REQUIRE_EQUAL(result.at("inputs").at(0).at("sequence").as_int64(), 7);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__not_hex__deserialization_error)
@@ -2594,9 +2619,9 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__not_transaction__deserializati
     BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"0000\"]"), -22));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__version_zero__invalid_parameter)
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__version_one__invalid_parameter)
 {
-    BOOST_REQUIRE(has_code(rpc("createpsbt", "[[], {}, 0, true, 2, 0]"), -8));
+    BOOST_REQUIRE(has_code(rpc("createpsbt", "[[], {}, 0, true, 2, 1]"), -8));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__invalid_input__error)
