@@ -60,6 +60,7 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
     { events::ecdsa_secs,           "ecdsa_secs.........." },
     { events::schnorr_secs,         "schnorr_secs........" },
     { events::silent_secs,          "silent_secs........." },
+    { events::validate_usecs,       "validate_usecs......" },
 
     { events::unknown,              "unknown............." }
 };

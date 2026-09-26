@@ -79,7 +79,7 @@ void protocol_electrum::complete_submit_tx(const code& ec,
     if (stopped())
         return;
 
-    if (!ec)
+    if (!ec || ec == node::error::duplicate_transaction)
     {
         send_result(encode_hash(tx->hash(false)));
         return;
@@ -501,7 +501,8 @@ void protocol_electrum::complete_submit_package(const code& ec, size_t index,
     array_t errors{};
     size_t size{};
 
-    if (ec)
+    const auto failed = ec && ec != node::error::duplicate_transaction;
+    if (failed)
     {
         auto message = ec.message();
         size = message.size();
@@ -514,7 +515,7 @@ void protocol_electrum::complete_submit_package(const code& ec, size_t index,
 
     send_result(object_t
     {
-        { "success", !ec },
+        { "success", !failed },
         { "errors", std::move(errors) }
     });
 }
