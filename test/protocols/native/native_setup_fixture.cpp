@@ -26,7 +26,8 @@ using namespace boost::beast;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-native_setup_fixture::native_setup_fixture(const initializer& setup)
+native_setup_fixture::native_setup_fixture(const initializer& setup,
+    const configurator& configure)
   : config_
     {
         system::chain::selection::mainnet,
@@ -59,6 +60,9 @@ native_setup_fixture::native_setup_fixture(const initializer& setup)
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
+
+    if (configure)
+        configure(config_);
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});

@@ -30,9 +30,11 @@ struct native_setup_fixture
 {
     using status = boost::beast::http::status;
     using initializer = std::function<bool(test::query_t&)>;
+    using configurator = std::function<void(server::configuration&)>;
 
     DELETE_COPY_MOVE(native_setup_fixture);
-    explicit native_setup_fixture(const initializer& setup);
+    explicit native_setup_fixture(const initializer& setup,
+        const configurator& configure={});
     ~native_setup_fixture();
 
     bool expect_dropped(std::string_view target);
@@ -79,6 +81,45 @@ struct native_ten_block_setup_fixture
       : native_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
+        })
+    {
+    }
+};
+
+struct native_witness_setup_fixture
+  : native_setup_fixture
+{
+    inline native_witness_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_witness_store(query);
+        })
+    {
+    }
+};
+
+struct native_address_setup_fixture
+  : native_setup_fixture
+{
+    inline native_address_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_confirmed_address_store(query);
+        })
+    {
+    }
+};
+
+struct native_no_address_setup_fixture
+  : native_setup_fixture
+{
+    inline native_no_address_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.database.outs.buckets = 0;
         })
     {
     }
