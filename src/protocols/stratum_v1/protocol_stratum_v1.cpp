@@ -32,6 +32,7 @@ using namespace std::placeholders;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
+LCOV_EXCL_START("Stratum is not implemented.")
 
 // Start.
 // ----------------------------------------------------------------------------
@@ -167,6 +168,7 @@ bool protocol_stratum_v1::handle_client_rejected(const code& ec,
     return true;
 }
 
+LCOV_EXCL_STOP()
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()
