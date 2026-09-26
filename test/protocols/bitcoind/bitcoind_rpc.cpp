@@ -2624,6 +2624,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__version_one__invalid_parameter)
     BOOST_REQUIRE(has_code(rpc("createpsbt", "[[], {}, 0, true, 2, 1]"), -8));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__fractional_version__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("createpsbt", "[[], {}, 0, true, 2, 1.5]"), -8));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__invalid_input__error)
 {
     BOOST_REQUIRE(has_error(rpc("createpsbt", "[[{\"txid\":\"nothex\",\"vout\":0}], {}]")));
