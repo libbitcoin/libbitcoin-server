@@ -532,6 +532,37 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__unknown_txid__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getrawtransaction", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__fractional_verbose__misc_error)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    BOOST_REQUIRE(has_code(rpc("getrawtransaction", hash_param(txid, "1.5")), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("decoderawtransaction", "[\"0000\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__numeric__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("testmempoolaccept", "[[1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"]]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("combinerawtransaction", "[[\"0000\"]]"), -22));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__invalid_hex__error)
 {
     const auto response = rpc("sendrawtransaction", "[\"nothex\"]");
@@ -2357,6 +2388,91 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__created_raw__psbt)
     const auto response = rpc("converttopsbt", "[\"" + as_text(created.at("result")) + "\"]");
     const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
     BOOST_REQUIRE_EQUAL(decoded.at("result").at("inputs").as_array().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__signed__deserialization_error)
+{
+    const auto hex = encode_base16(test::block1.transactions_ptr()->front()->to_data(true));
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"" + hex + "\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__signed_permitted__stripped)
+{
+    const auto hex = encode_base16(test::block1.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("converttopsbt", "[\"" + hex + "\", true]");
+    const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
+    const auto& input = decoded.at("result").at("tx").at("vin").at(0);
+    BOOST_REQUIRE_EQUAL(as_text(input.at("coinbase")), "");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__version_zero__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"00\", false, null, 0]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__not_hex__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"zz\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"0000\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__version_zero__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("createpsbt", "[[], {}, 0, true, 2, 0]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__invalid_input__error)
+{
+    BOOST_REQUIRE(has_error(rpc("createpsbt", "[[{\"txid\":\"nothex\",\"vout\":0}], {}]")));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__analyzepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("analyzepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("decodepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__finalizepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("finalizepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("utxoupdatepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__numeric__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("combinepsbt", "[[1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("combinepsbt", "[[\"garbage\"]]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__empty__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("combinepsbt", "[[]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__joinpsbts__numeric__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("joinpsbts", "[[1, 1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__joinpsbts__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("joinpsbts", "[[\"garbage\", \"garbage\"]]"), -22));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__invalid_descriptor__invalid_address)
