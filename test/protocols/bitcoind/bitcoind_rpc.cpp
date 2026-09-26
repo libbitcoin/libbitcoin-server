@@ -1049,6 +1049,26 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__address__node_not_connected)
     BOOST_REQUIRE(has_code(rpc("disconnectnode", R"(["1.2.3.4:8333"])"), -29));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__fractional_nodeid__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", "[null,1.5]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__malformed_address__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", R"(["1.2.3.4:99999"])"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__v2transport__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("addnode", R"(["127.0.0.1:8333","add",true])"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__malformed_node__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("addnode", R"(["1.2.3.4:99999","onetry"])"), -8));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__networks__bip155_networks)
 {
     const auto response = rpc("getnetworkinfo");
