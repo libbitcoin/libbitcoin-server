@@ -43,7 +43,7 @@ jobs:
       - name: checkout server
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-server'
           ref: ${{ github.event.inputs.tag-server }}
           repository: ${{ github.repository }}
@@ -51,7 +51,7 @@ jobs:
       - name: checkout node
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-node'
           ref: ${{ github.event.inputs.tag-node }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
@@ -59,7 +59,7 @@ jobs:
       - name: checkout network
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-network'
           ref: ${{ github.event.inputs.tag-network }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
@@ -67,7 +67,7 @@ jobs:
       - name: checkout database
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-database'
           ref: ${{ github.event.inputs.tag-database }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
@@ -75,7 +75,7 @@ jobs:
       - name: checkout system
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-system'
           ref: ${{ github.event.inputs.tag-system }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
@@ -254,7 +254,7 @@ jobs:
       - name: checkout server
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-server'
           ref: ${{ github.event.inputs.tag-server }}
           repository: ${{ github.repository }}
@@ -262,7 +262,7 @@ jobs:
       - name: checkout node
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-node'
           ref: ${{ github.event.inputs.tag-node }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
@@ -270,7 +270,7 @@ jobs:
       - name: checkout network
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-network'
           ref: ${{ github.event.inputs.tag-network }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
@@ -278,7 +278,7 @@ jobs:
       - name: checkout database
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-database'
           ref: ${{ github.event.inputs.tag-database }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
@@ -286,7 +286,7 @@ jobs:
       - name: checkout system
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           path: 'libbitcoin-system'
           ref: ${{ github.event.inputs.tag-system }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
