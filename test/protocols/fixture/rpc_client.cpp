@@ -190,6 +190,24 @@ boost::json::value rpc_client::post(const std::string& body,
     return test::parse_json(response.body());
 }
 
+rpc_client::status rpc_client::options_status(std::string_view target)
+{
+    request out{ http::verb::options, target, network::http::version_1_1 };
+    out.set(http::field::host, "localhost");
+    out.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    out.keep_alive(true);
+
+    error_code ec{};
+    http::write(socket_, out, ec);
+
+    flat_buffer buffer{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response.result();
+}
+
 rpc_client::status rpc_client::post_status(const std::string& body,
     const std::string& target)
 {

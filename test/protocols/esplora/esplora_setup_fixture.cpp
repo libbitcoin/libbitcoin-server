@@ -38,7 +38,19 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            auto& esplora = config_.server.esplora;
+            esplora.binds = { { ESPLORA_ENDPOINT } };
+            esplora.connections = 1;
+            esplora.inactivity_minutes = 1;
+            config_.node.delay_inbound = false;
+            config_.node.minimum_fee_rate = 0.0;
+            config_.network.enable_relay = true;
+            config_.network.inbound.connections = 0;
+            config_.network.outbound.connections = 0;
             config_.database.path = TEST_DIRECTORY;
+            if (configure)
+                configure(config_);
+
             return config_.database;
         }()
     },
@@ -46,24 +58,8 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     server_{ query_, config_, log_ }
 {
     test::clear(test::directory);
-    auto& database_settings = config_.database;
-    auto& network_settings = config_.network;
-    auto& node_settings = config_.node;
-    auto& server_settings = config_.server;
-    auto& esplora = server_settings.esplora;
-
-    esplora.binds = { { ESPLORA_ENDPOINT } };
-    esplora.connections = 1;
-    esplora.inactivity_minutes = 1;
-    database_settings.interval_depth = 2;
-    node_settings.delay_inbound = false;
-    node_settings.minimum_fee_rate = 0.0;
-    network_settings.enable_relay = true;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-
-    if (configure)
-        configure(config_);
+    config_.database.interval_depth = 2;
+    const auto& esplora = config_.server.esplora;
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});

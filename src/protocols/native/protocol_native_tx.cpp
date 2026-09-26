@@ -201,7 +201,7 @@ void protocol_native::do_transaction(node::transaction_t link,
             notify_text(encode_base16(hash));
             return;
         case json:
-            notify_json(value_from(encode_base16(hash)), two * hash_size);
+            notify_json(value_from(encode_hash(hash)), two * hash_size);
             return;
     }
 }

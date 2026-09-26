@@ -183,4 +183,27 @@ BOOST_AUTO_TEST_CASE(esplora__blocks__above_top__not_found)
     BOOST_REQUIRE_EQUAL(get_status("/blocks/10"), http::status::not_found);
 }
 
+// unknown block
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(esplora__block_raw__unknown_hash__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/raw"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__block_header__unknown_hash__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/header"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__block_status__unknown_hash__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/status"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__block_txids__unknown_hash__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/txids"), http::status::not_found);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

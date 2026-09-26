@@ -118,6 +118,12 @@ bitcoind_setup_fixture::rest_status(std::string_view target)
     return client_.get(target).result();
 }
 
+bitcoind_setup_fixture::status
+bitcoind_setup_fixture::options_status(std::string_view target)
+{
+    return client_.options_status(target);
+}
+
 boost::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
 {
     const auto response = client_.get(target);

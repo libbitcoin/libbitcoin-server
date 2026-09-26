@@ -38,6 +38,7 @@ public:
     using options_t = channel_t::options_t;
     using rpc_interface = interface::stratum_v1;
 
+    LCOV_EXCL_START("Stratum is not implemented.")
     inline protocol_stratum_v1(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
@@ -46,6 +47,7 @@ public:
         network::tracker<protocol_stratum_v1>(session->log)
     {
     }
+    LCOV_EXCL_STOP()
 
     void start() NOEXCEPT override;
 

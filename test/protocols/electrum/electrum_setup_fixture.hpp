@@ -173,4 +173,21 @@ struct electrum_restricted_version_setup_fixture
     }
 };
 
+// Configured with a server ping interval (v1.7 websocket and downgraded tcp).
+struct electrum_ping_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_ping_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.electrum.ping_interval_seconds = 1;
+            config.server.electrum.ping_size = 4;
+        })
+    {
+    }
+};
+
 #endif

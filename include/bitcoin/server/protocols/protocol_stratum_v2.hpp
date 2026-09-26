@@ -38,6 +38,7 @@ public:
     // HACK: so this can use network::session_server.
     using options_t = network::settings::tls_server;
 
+    LCOV_EXCL_START("Stratum is not implemented.")
     inline protocol_stratum_v2(const auto& session,
         const network::channel::ptr& channel, const options_t&) NOEXCEPT
       : server::protocol(session, channel),
@@ -51,6 +52,7 @@ public:
     {
         network::protocol::start();
     }
+    LCOV_EXCL_STOP()
 };
 
 } // namespace server

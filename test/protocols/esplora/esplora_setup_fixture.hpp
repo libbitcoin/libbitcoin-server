@@ -99,4 +99,31 @@ struct esplora_ten_block_setup_fixture
     }
 };
 
+struct esplora_witness_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_witness_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_witness_store(query);
+        })
+    {
+    }
+};
+
+struct esplora_no_address_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_no_address_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.database.outs.buckets = 0;
+        })
+    {
+    }
+};
+
 #endif

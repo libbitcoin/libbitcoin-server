@@ -229,8 +229,8 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
     // The "state" element implies transactions are associated.
     if (query.is_associated(link))
     {
-        size_t size{}, weight{};
-        if (!query.get_block_sizes(size, weight, link))
+        size_t nominal{}, maximal{};
+        if (!query.get_block_sizes(nominal, maximal, link))
         {
             send_internal_server_error(database::error::integrity);
             return true;
@@ -241,8 +241,8 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
 
         object["state"] = boost::json::object
         {
-            { "size", size },
-            { "weight", weight },
+            { "size", nominal },
+            { "weight", chain::weighted_size(nominal, maximal) },
             { "count", query.get_tx_count(link) },
             { "validated", bypass || query.is_validated(link) },
             { "confirmed", check || query.is_confirmed_block(link) },
@@ -576,7 +576,7 @@ void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
             notify_text(encode_base16(hash));
             return;
         case json:
-            notify_json(value_from(encode_base16(hash)), two * hash_size);
+            notify_json(value_from(encode_hash(hash)), two * hash_size);
             return;
     }
 }

@@ -361,6 +361,123 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__archived_unconfirmed__null)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__unknown__null)
+{
+    const auto response = rpc("gettxout", hash_param(null_hash, "0"));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxout", "[\"nothex\", 0]"), -8));
+}
+
+// blockchain validation
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblock", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__fractional_verbosity__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblock", hash_param(test::block9_hash, "1.5")), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblock__unknown__invalid_address)
+{
+    const std::string unknown(64, '1');
+    BOOST_REQUIRE(has_code(rpc("getblock", "[\"" + unknown + "\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__genesis__chained_header)
+{
+    const auto response = rpc("getblockfilter", hash_param(test::block0_hash, "\"basic\""));
+    const auto& result = response.at("result");
+
+    data_chunk filter{};
+    BOOST_REQUIRE(decode_base16(filter, as_text(result.at("filter"))));
+    BOOST_REQUIRE(!filter.empty());
+
+    const auto expected = bitcoin_hash(splice(bitcoin_hash(filter), null_hash));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("header")), encode_hash(expected));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__unknown_type__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockfilter", hash_param(test::block0_hash, "\"extended\"")), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockfilter", "[\"nothex\", \"basic\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__negative__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockhash", "[-1]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__above_top__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockhash", "[10]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__not_verbose__hex)
+{
+    const auto response = rpc("getblockheader", hash_param(test::block9_hash, "false"));
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), encode_base16(test::header9_data));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockheader", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockheader__unknown__invalid_address)
+{
+    const std::string unknown(64, '1');
+    BOOST_REQUIRE(has_code(rpc("getblockheader", "[\"" + unknown + "\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__negative_height__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[-1]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__boolean__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[true]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__above_top__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[10]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__numeric_stat__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[1, [1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getchaintxstats", "[1, \"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintxstats__unknown__invalid_address)
+{
+    const std::string unknown(64, '1');
+    BOOST_REQUIRE(has_code(rpc("getchaintxstats", "[1, \"" + unknown + "\"]"), -5));
+}
+
 // rawtransactions
 // ----------------------------------------------------------------------------
 
@@ -415,6 +532,37 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__unknown_txid__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getrawtransaction", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__fractional_verbose__misc_error)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    BOOST_REQUIRE(has_code(rpc("getrawtransaction", hash_param(txid, "1.5")), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("decoderawtransaction", "[\"0000\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__numeric__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("testmempoolaccept", "[[1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"]]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("combinerawtransaction", "[[\"0000\"]]"), -22));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__invalid_hex__error)
 {
     const auto response = rpc("sendrawtransaction", "[\"nothex\"]");
@@ -463,6 +611,31 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__genesis_height__zero_window
 {
     const auto response = rpc("getnetworkhashps", "[120, 0]");
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__nine_block_window__work_over_timespan)
+{
+    const auto work = (test::genesis.header().proof() * 9u).convert_to<double>();
+    const auto span = test::block9.header().timestamp() - test::genesis.header().timestamp();
+    const auto response = rpc("getnetworkhashps", "[9, 9]");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), work / span);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__since_retarget__clamped_to_height)
+{
+    const auto window = rpc("getnetworkhashps", "[9, 9]");
+    const auto retarget = rpc("getnetworkhashps", "[0]");
+    BOOST_REQUIRE_EQUAL(retarget.at("result").as_double(), window.at("result").as_double());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__fractional_height__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getnetworkhashps", "[9, 1.5]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__fractional_window__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getnetworkhashps", "[1.5]"), -8));
 }
 
 // currentblockweight/currentblocktx omitted (no block ever assembled).
@@ -612,6 +785,125 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__multisig_partials__mer
     BOOST_REQUIRE_EQUAL(ops.size(), 3u);
     BOOST_REQUIRE(ops.at(1).data() == endorse1);
     BOOST_REQUIRE(ops.at(2).data() == endorse2);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__script_hash_multisig_partials__merged_with_redeem_script)
+{
+    using namespace chain;
+    const ec_secret secret1{ { 0x01 } };
+    const ec_secret secret2{ { 0x02 } };
+    const ec_secret secret3{ { 0x03 } };
+    ec_compressed point1{};
+    ec_compressed point2{};
+    ec_compressed point3{};
+    BOOST_REQUIRE(secret_to_public(point1, secret1));
+    BOOST_REQUIRE(secret_to_public(point2, secret2));
+    BOOST_REQUIRE(secret_to_public(point3, secret3));
+
+    // A block paying p2sh of 2-of-3 multisig of the derived keys, confirmed at 10.
+    constexpr uint64_t value = 100'000'000;
+    const script multisig{ script::to_pay_multisig_pattern(2, ec_compresseds{ point1, point2, point3 }) };
+    const auto redeem = multisig.to_data(false);
+    const script pay{ script::to_pay_script_hash_pattern(bitcoin_short_hash(redeem)) };
+    const block block10
+    {
+        header{ 0x31323334, test::block9_hash, hash_digest{ 0x10, 0xdd }, 0x41424344, 0x51525354, 0x61626364 },
+        transactions{ transaction{ 1, inputs{ input{ point{}, script{}, witness{}, 0x01 } }, outputs{ output{ value, pay } }, 0 } }
+    };
+
+    BOOST_REQUIRE(query_.set(block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10.hash()), true));
+
+    const point prevout{ block10.transactions_ptr()->front()->hash(false), 0 };
+    const output out{ 1, script{ script::to_pay_key_hash_pattern(short_hash{}) } };
+    const transaction spend{ 1, inputs{ input{ prevout, script{}, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    endorsement endorse1{};
+    endorsement endorse2{};
+    BOOST_REQUIRE(spend.create_endorsement(endorse1, secret1, multisig, 0, value, coverage::hash_all, script_version::unversioned, flags::no_rules));
+    BOOST_REQUIRE(spend.create_endorsement(endorse2, secret2, multisig, 0, value, coverage::hash_all, script_version::unversioned, flags::no_rules));
+
+    const script partial1{ operations{ { opcode::push_size_0 }, { data_chunk{ endorse1 }, false }, { redeem, false } } };
+    const script partial2{ operations{ { opcode::push_size_0 }, { data_chunk{ endorse2 }, false }, { redeem, false } } };
+    const transaction variant1{ 1, inputs{ input{ prevout, partial1, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+    const transaction variant2{ 1, inputs{ input{ prevout, partial2, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    const auto params = R"([[")" + encode_base16(variant2.to_data(true)) + R"(",")" + encode_base16(variant1.to_data(true)) + R"("]])";
+    const auto response = rpc("combinerawtransaction", params);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    data_chunk data{};
+    BOOST_REQUIRE(decode_base16(data, as_text(response.at("result"))));
+
+    const transaction merged{ data, true };
+    BOOST_REQUIRE(merged.is_valid());
+
+    const auto& ops = merged.inputs_ptr()->front()->script().ops();
+    BOOST_REQUIRE_EQUAL(ops.size(), 4u);
+    BOOST_REQUIRE(ops.at(1).data() == endorse1);
+    BOOST_REQUIRE(ops.at(2).data() == endorse2);
+    BOOST_REQUIRE(ops.at(3).data() == redeem);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__witness_script_hash_multisig_partials__merged_stack)
+{
+    using namespace chain;
+    const ec_secret secret1{ { 0x01 } };
+    const ec_secret secret2{ { 0x02 } };
+    const ec_secret secret3{ { 0x03 } };
+    ec_compressed point1{};
+    ec_compressed point2{};
+    ec_compressed point3{};
+    BOOST_REQUIRE(secret_to_public(point1, secret1));
+    BOOST_REQUIRE(secret_to_public(point2, secret2));
+    BOOST_REQUIRE(secret_to_public(point3, secret3));
+
+    // A block paying p2wsh of 2-of-3 multisig of the derived keys, confirmed at 10.
+    constexpr uint64_t value = 100'000'000;
+    const script multisig{ script::to_pay_multisig_pattern(2, ec_compresseds{ point1, point2, point3 }) };
+    const auto witness_script = multisig.to_data(false);
+    const script pay{ script::to_pay_witness_script_hash_pattern(sha256_hash(witness_script)) };
+    const block block10
+    {
+        header{ 0x31323334, test::block9_hash, hash_digest{ 0x10, 0xee }, 0x41424344, 0x51525354, 0x61626364 },
+        transactions{ transaction{ 1, inputs{ input{ point{}, script{}, witness{}, 0x01 } }, outputs{ output{ value, pay } }, 0 } }
+    };
+
+    BOOST_REQUIRE(query_.set(block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10.hash()), true));
+
+    const point prevout{ block10.transactions_ptr()->front()->hash(false), 0 };
+    const output out{ 1, script{ script::to_pay_key_hash_pattern(short_hash{}) } };
+    const transaction spend{ 1, inputs{ input{ prevout, script{}, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    endorsement endorse1{};
+    endorsement endorse2{};
+    BOOST_REQUIRE(spend.create_endorsement(endorse1, secret1, multisig, 0, value, coverage::hash_all, script_version::segwit, flags::bip143_rule));
+    BOOST_REQUIRE(spend.create_endorsement(endorse2, secret2, multisig, 0, value, coverage::hash_all, script_version::segwit, flags::bip143_rule));
+
+    const witness partial1{ chunk_cptrs{ to_shared<data_chunk>(), to_shared<data_chunk>(endorse1), to_shared<data_chunk>(witness_script) } };
+    const witness partial2{ chunk_cptrs{ to_shared<data_chunk>(), to_shared<data_chunk>(endorse2), to_shared<data_chunk>(witness_script) } };
+    const transaction variant1{ 1, inputs{ input{ prevout, script{}, partial1, 0xffffffff } }, outputs{ out }, 0 };
+    const transaction variant2{ 1, inputs{ input{ prevout, script{}, partial2, 0xffffffff } }, outputs{ out }, 0 };
+
+    const auto params = R"([[")" + encode_base16(variant2.to_data(true)) + R"(",")" + encode_base16(variant1.to_data(true)) + R"("]])";
+    const auto response = rpc("combinerawtransaction", params);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    data_chunk data{};
+    BOOST_REQUIRE(decode_base16(data, as_text(response.at("result"))));
+
+    const transaction merged{ data, true };
+    BOOST_REQUIRE(merged.is_valid());
+
+    const auto& stack = merged.inputs_ptr()->front()->witness().stack();
+    BOOST_REQUIRE_EQUAL(stack.size(), 4u);
+    BOOST_REQUIRE(stack.at(0)->empty());
+    BOOST_REQUIRE(*stack.at(1) == endorse1);
+    BOOST_REQUIRE(*stack.at(2) == endorse2);
+    BOOST_REQUIRE(*stack.at(3) == witness_script);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__iswitness_false__round_trips)
@@ -899,6 +1191,26 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__nodeid__node_not_connected)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__address__node_not_connected)
 {
     BOOST_REQUIRE(has_code(rpc("disconnectnode", R"(["1.2.3.4:8333"])"), -29));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__fractional_nodeid__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", "[null,1.5]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__disconnectnode__malformed_address__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("disconnectnode", R"(["1.2.3.4:99999"])"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__v2transport__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("addnode", R"(["127.0.0.1:8333","add",true])"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__malformed_node__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("addnode", R"(["1.2.3.4:99999","onetry"])"), -8));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__networks__bip155_networks)
@@ -1376,6 +1688,46 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__garbage__error)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__not_hex__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("verifytxoutproof", "[\"zz\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__wrong_merkle_root__empty)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto proof = rpc("gettxoutproof", "[[\"" + txid + "\"], \"" + block1 + "\"]");
+    auto tampered = as_text(proof.at("result"));
+    BOOST_REQUIRE_EQUAL(tampered.substr(72, 2), "98");
+
+    tampered.replace(72, 2, "00");
+    const auto verified = rpc("verifytxoutproof", "[\"" + tampered + "\"]");
+    BOOST_REQUIRE(verified.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__not_hash_txid__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"nothex\"]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__duplicate_txid__invalid_parameter)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"" + txid + "\", \"" + txid + "\"]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__not_hash_block__invalid_parameter)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"" + txid + "\"], \"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__txid_not_in_block__invalid_address)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BOOST_REQUIRE(has_code(rpc("gettxoutproof", "[[\"" + txid + "\"], \"" + block5 + "\"]"), -5));
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_frozen)
 {
     const auto response = rpc("getdeploymentinfo");
@@ -1755,6 +2107,26 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__no_index_at_height__invalid)
     BOOST_REQUIRE(has_error(response));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", \"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__fractional_height__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", 1.5]"), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__boolean_height__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", true]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__above_top__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo", "[\"none\", 10]"), -5));
+}
+
 // preciousblock
 
 // Only a cached (tied) branch is prioritizable, an organized one is not.
@@ -1778,6 +2150,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__preciousblock__not_hash__invalid_parameter)
 }
 
 // scantxoutset
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__unknown_action__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("scantxoutset", "[\"bogus\"]"), -8));
+}
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__status__null)
 {
@@ -2042,6 +2419,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__existing_header__null)
     BOOST_REQUIRE(response.at("result").is_null());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__not_hex__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("submitheader", "[\"zz\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__truncated__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("submitheader", "[\"00\"]"), -22));
+}
+
 // waitfor (all conditions immediately met or timing out on the fixture)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__at_top__immediate_top)
@@ -2093,6 +2480,18 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__data_output__decodes)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
     const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"data\": \"deadbeef\"}]");
+    const auto response = rpc("decodepsbt", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("inputs").at(0).at("previous_txid")), txid);
+    BOOST_REQUIRE_EQUAL(result.at("inputs").at(0).at("output_index").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("outputs").at(0).at("script").at("hex")), "6a04deadbeef");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__version_0__decodes_unsigned_tx)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createpsbt", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"data\": \"deadbeef\"}, 0, true, 2, 0]");
     const auto response = rpc("decodepsbt", "[\"" + as_text(created.at("result")) + "\"]");
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 0);
@@ -2175,6 +2574,104 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__created_raw__psbt)
     const auto response = rpc("converttopsbt", "[\"" + as_text(created.at("result")) + "\"]");
     const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
     BOOST_REQUIRE_EQUAL(decoded.at("result").at("inputs").as_array().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__signed__deserialization_error)
+{
+    const auto hex = encode_base16(test::block1.transactions_ptr()->front()->to_data(true));
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"" + hex + "\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__signed_permitted__stripped)
+{
+    const auto hex = encode_base16(test::block1.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("converttopsbt", "[\"" + hex + "\", true, null, 0]");
+    const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
+    const auto& input = decoded.at("result").at("tx").at("vin").at(0);
+    BOOST_REQUIRE_EQUAL(as_text(input.at("coinbase")), "");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__version_one__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"00\", false, null, 1]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__default__version_2)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0,\"sequence\":7}], {\"data\": \"deadbeef\"}, 42]");
+    const auto response = rpc("converttopsbt", "[\"" + as_text(created.at("result")) + "\"]");
+    const auto decoded = rpc("decodepsbt", "[\"" + as_text(response.at("result")) + "\"]");
+    const auto& result = decoded.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(result.at("fallback_locktime").as_int64(), 42);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("inputs").at(0).at("previous_txid")), txid);
+    BOOST_REQUIRE_EQUAL(result.at("inputs").at(0).at("sequence").as_int64(), 7);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__not_hex__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"zz\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__converttopsbt__not_transaction__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("converttopsbt", "[\"0000\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__version_one__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("createpsbt", "[[], {}, 0, true, 2, 1]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createpsbt__invalid_input__error)
+{
+    BOOST_REQUIRE(has_error(rpc("createpsbt", "[[{\"txid\":\"nothex\",\"vout\":0}], {}]")));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__analyzepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("analyzepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("decodepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__finalizepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("finalizepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("utxoupdatepsbt", "[\"garbage\"]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__numeric__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("combinepsbt", "[[1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("combinepsbt", "[[\"garbage\"]]"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__empty__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("combinepsbt", "[[]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__joinpsbts__numeric__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("joinpsbts", "[[1, 1]]"), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__joinpsbts__garbage__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("joinpsbts", "[[\"garbage\", \"garbage\"]]"), -22));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__invalid_descriptor__invalid_address)
@@ -2353,6 +2850,12 @@ BOOST_AUTO_TEST_SUITE_END()
 // ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(bitcoind_submit_tests, bitcoind_submit_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__unacceptable_header__error)
+{
+    const auto header = encode_base16(test::mock_block10.header().to_data());
+    BOOST_REQUIRE(has_error(rpc("submitheader", "[\"" + header + "\"]")));
+}
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
 {

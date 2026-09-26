@@ -311,6 +311,14 @@ BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__configured_peers__expecte
 
 // server.ping
 
+BOOST_AUTO_TEST_CASE(electrum__server_ping__v1_1__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto result = get_error(R"({"id":199,"method":"server.ping","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__server_ping__jsonrpc_unspecified_no_params__dropped)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_2));

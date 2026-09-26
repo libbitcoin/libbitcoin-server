@@ -86,6 +86,9 @@ struct bitcoind_setup_fixture
     std::string rest_text(std::string_view target);
     system::data_chunk rest_data(std::string_view target);
 
+    // http OPTIONS (preflight), returning only the http status.
+    status options_status(std::string_view target);
+
 private:
     rpc_client client_{ io_ };
 };
@@ -208,6 +211,22 @@ struct bitcoind_proxied_setup_fixture
         {
             config.network.gossip_tor = true;
             config.network.outbound.socks = { "127.0.0.1:9050" };
+        })
+    {
+    }
+};
+
+// Configured with an allowed host that the test client does not send.
+struct bitcoind_hosted_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_hosted_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind.hosts = { { "example.com" } };
         })
     {
     }

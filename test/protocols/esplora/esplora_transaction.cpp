@@ -193,6 +193,71 @@ BOOST_AUTO_TEST_CASE(esplora__block_txs__start_above_count__not_found)
     BOOST_REQUIRE_EQUAL(get_status("/block/" + block1_hash + "/txs/25"), http::status::not_found);
 }
 
+// unknown tx
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(esplora__tx_status__unknown__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(null_hash) + "/status"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_merkle_proof__unknown__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(null_hash) + "/merkle-proof"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_outspend__unknown__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(null_hash) + "/outspend/0"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_outspend__index_above_count__unspent)
+{
+    const auto response = get_json("/tx/" + block1_tx + "/outspend/5");
+    BOOST_REQUIRE(response.is_object());
+    BOOST_REQUIRE_EQUAL(response.as_object().size(), 1u);
+    BOOST_REQUIRE(!response.as_object().at("spent").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_outspends__unknown__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(null_hash) + "/outspends"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// spent outputs
+// ----------------------------------------------------------------------------
+
+static const std::string tx1 = encode_hash(test::block1a.transactions_ptr()->front()->hash(false));
+static const std::string tx2 = encode_hash(test::block2a.transactions_ptr()->front()->hash(false));
+
+BOOST_FIXTURE_TEST_SUITE(esplora_witness_tests, esplora_witness_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__tx_outspend__spent__expected)
+{
+    const auto response = get_json("/tx/" + tx1 + "/outspend/1");
+    BOOST_REQUIRE(response.is_object());
+
+    const auto& object = response.as_object();
+    BOOST_REQUIRE(object.at("spent").as_bool());
+    BOOST_REQUIRE_EQUAL(object.at("txid").as_string(), tx2);
+    BOOST_REQUIRE_EQUAL(object.at("vin").as_int64(), 1);
+    BOOST_REQUIRE(object.at("status").as_object().at("confirmed").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_outspends__spent__expected)
+{
+    const auto response = get_json("/tx/" + tx1 + "/outspends");
+    BOOST_REQUIRE(response.is_array());
+    BOOST_REQUIRE_EQUAL(response.as_array().size(), 2u);
+
+    const auto& spend0 = response.as_array().at(0).as_object();
+    BOOST_REQUIRE(spend0.at("spent").as_bool());
+    BOOST_REQUIRE_EQUAL(spend0.at("txid").as_string(), tx2);
+    BOOST_REQUIRE_EQUAL(spend0.at("vin").as_int64(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // open tx pool
