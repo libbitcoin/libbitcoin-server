@@ -24,20 +24,68 @@
 using namespace system;
 using namespace boost::beast;
 
+BC_PUSH_WARNING(NO_CONST_CAST)
+BC_PUSH_WARNING(NO_REINTERPRET_CAST)
+
+static server::span_value to_span(const std::string_view& text) NOEXCEPT
+{
+    return
+    {
+        const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(text.data())),
+        text.size()
+    };
+}
+
+BC_POP_WARNING()
+BC_POP_WARNING()
+
+server::span_value native_pages::css() const NOEXCEPT
+{
+    return to_span("body{}");
+}
+
+server::span_value native_pages::html() const NOEXCEPT
+{
+    return to_span("<html></html>");
+}
+
+server::span_value native_pages::ecma() const NOEXCEPT
+{
+    return to_span("var x;");
+}
+
+server::span_value native_pages::font() const NOEXCEPT
+{
+    return to_span("font");
+}
+
+server::span_value native_pages::icon() const NOEXCEPT
+{
+    return to_span("icon");
+}
+
+const native_pages test_pages{};
+
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 native_setup_fixture::native_setup_fixture(const initializer& setup,
-    const configurator& configure)
+    const configurator& configure,
+    const server::settings::embedded_pages& pages)
   : config_
     {
         system::chain::selection::mainnet,
-        test::web_pages,
+        pages,
         test::web_pages
     },
     store_
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            auto& native = config_.server.native;
+            native.binds = { { NATIVE_ENDPOINT } };
+            native.connections = 1;
+            native.path = "unused";
+            native.inactivity_minutes = 1;
             config_.database.path = TEST_DIRECTORY;
             if (configure)
                 configure(config_);
@@ -52,13 +100,8 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
     auto& database_settings = config_.database;
     auto& network_settings = config_.network;
     auto& node_settings = config_.node;
-    auto& server_settings = config_.server;
-    auto& native = server_settings.native;
+    const auto& native = config_.server.native;
 
-    native.binds = { { NATIVE_ENDPOINT } };
-    native.connections = 1;
-    native.path = "unused";
-    native.inactivity_minutes = 1;
     database_settings.interval_depth = 2;
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;

@@ -593,3 +593,72 @@ BOOST_AUTO_TEST_CASE(native__ws_block_subscribe__notify_json__expected)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// embedded site
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(native_embedded_tests, native_embedded_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(native__embedded__root__html)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/"), "<html></html>");
+}
+
+BOOST_AUTO_TEST_CASE(native__embedded__css__css)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/style.css"), "body{}");
+}
+
+BOOST_AUTO_TEST_CASE(native__embedded__js__ecma)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/app.js"), "var x;");
+}
+
+BOOST_AUTO_TEST_CASE(native__embedded__woff__font)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/font.woff"), "font");
+}
+
+BOOST_AUTO_TEST_CASE(native__embedded__png__icon)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/icon.png"), "icon");
+}
+
+BOOST_AUTO_TEST_CASE(native__embedded__unknown_type__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/readme.txt"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(native__embedded__api__expected)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/v1/top?format=text"), "09");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// file site
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(native_file_tests, native_file_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(native__file__root__default_page)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/"), "<p>index</p>");
+}
+
+BOOST_AUTO_TEST_CASE(native__file__extensionless__default_page)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/some/route"), "<p>index</p>");
+}
+
+BOOST_AUTO_TEST_CASE(native__file__named__expected)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/page.css"), "p{}");
+}
+
+BOOST_AUTO_TEST_CASE(native__file__missing__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/missing.css"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

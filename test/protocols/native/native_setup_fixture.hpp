@@ -34,7 +34,8 @@ struct native_setup_fixture
 
     DELETE_COPY_MOVE(native_setup_fixture);
     explicit native_setup_fixture(const initializer& setup,
-        const configurator& configure={});
+        const configurator& configure={},
+        const server::settings::embedded_pages& pages=test::web_pages);
     ~native_setup_fixture();
 
     bool expect_dropped(std::string_view target);
@@ -120,6 +121,51 @@ struct native_no_address_setup_fixture
         }, [](server::configuration& config)
         {
             config.database.outs.buckets = 0;
+        })
+    {
+    }
+};
+
+struct native_pages
+  : server::settings::embedded_pages
+{
+    server::span_value css() const NOEXCEPT override;
+    server::span_value html() const NOEXCEPT override;
+    server::span_value ecma() const NOEXCEPT override;
+    server::span_value font() const NOEXCEPT override;
+    server::span_value icon() const NOEXCEPT override;
+};
+
+extern const native_pages test_pages;
+
+struct native_embedded_setup_fixture
+  : native_setup_fixture
+{
+    inline native_embedded_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.native.path = {};
+        }, test_pages)
+    {
+    }
+};
+
+struct native_file_setup_fixture
+  : native_setup_fixture
+{
+    inline native_file_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            std::ofstream{ TEST_DIRECTORY + "/index.html" } << "<p>index</p>";
+            std::ofstream{ TEST_DIRECTORY + "/page.css" } << "p{}";
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            const auto path = std::filesystem::absolute(TEST_DIRECTORY);
+            config.server.native.path = path;
         })
     {
     }
