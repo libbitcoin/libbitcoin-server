@@ -202,10 +202,10 @@ BOOST_AUTO_TEST_CASE(native__tx_details__unconfirmed_witness__expected)
     const auto& object = response.as_object();
     BOOST_REQUIRE(object.at("segregated").as_bool());
     BOOST_REQUIRE(!object.at("coinbase").as_bool());
-    BOOST_REQUIRE_EQUAL(object.at("nominal").as_int64(), test::tx4.serialized_size(false));
-    BOOST_REQUIRE_EQUAL(object.at("maximal").as_int64(), test::tx4.serialized_size(true));
-    BOOST_REQUIRE_EQUAL(object.at("weight").as_int64(), test::tx4.weight());
-    BOOST_REQUIRE_EQUAL(object.at("virtual").as_int64(), test::tx4.virtual_size());
+    BOOST_REQUIRE_EQUAL(object.at("nominal").as_int64(), to_signed(test::tx4.serialized_size(false)));
+    BOOST_REQUIRE_EQUAL(object.at("maximal").as_int64(), to_signed(test::tx4.serialized_size(true)));
+    BOOST_REQUIRE_EQUAL(object.at("weight").as_int64(), to_signed(test::tx4.weight()));
+    BOOST_REQUIRE_EQUAL(object.at("virtual").as_int64(), to_signed(test::tx4.virtual_size()));
     BOOST_REQUIRE_EQUAL(object.at("value").as_int64(), 0x18 + 0x2a);
     BOOST_REQUIRE_EQUAL(object.at("spend").as_int64(), 0x08);
     BOOST_REQUIRE_EQUAL(object.at("fee").as_int64(), 0x18 + 0x2a - 0x08);
