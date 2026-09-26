@@ -99,4 +99,16 @@ struct esplora_ten_block_setup_fixture
     }
 };
 
+struct esplora_witness_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_witness_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_witness_store(query);
+        })
+    {
+    }
+};
+
 #endif
