@@ -787,6 +787,125 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__multisig_partials__mer
     BOOST_REQUIRE(ops.at(2).data() == endorse2);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__script_hash_multisig_partials__merged_with_redeem_script)
+{
+    using namespace chain;
+    const ec_secret secret1{ { 0x01 } };
+    const ec_secret secret2{ { 0x02 } };
+    const ec_secret secret3{ { 0x03 } };
+    ec_compressed point1{};
+    ec_compressed point2{};
+    ec_compressed point3{};
+    BOOST_REQUIRE(secret_to_public(point1, secret1));
+    BOOST_REQUIRE(secret_to_public(point2, secret2));
+    BOOST_REQUIRE(secret_to_public(point3, secret3));
+
+    // A block paying p2sh of 2-of-3 multisig of the derived keys, confirmed at 10.
+    constexpr uint64_t value = 100'000'000;
+    const script multisig{ script::to_pay_multisig_pattern(2, ec_compresseds{ point1, point2, point3 }) };
+    const auto redeem = multisig.to_data(false);
+    const script pay{ script::to_pay_script_hash_pattern(bitcoin_short_hash(redeem)) };
+    const block block10
+    {
+        header{ 0x31323334, test::block9_hash, hash_digest{ 0x10, 0xdd }, 0x41424344, 0x51525354, 0x61626364 },
+        transactions{ transaction{ 1, inputs{ input{ point{}, script{}, witness{}, 0x01 } }, outputs{ output{ value, pay } }, 0 } }
+    };
+
+    BOOST_REQUIRE(query_.set(block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10.hash()), true));
+
+    const point prevout{ block10.transactions_ptr()->front()->hash(false), 0 };
+    const output out{ 1, script{ script::to_pay_key_hash_pattern(short_hash{}) } };
+    const transaction spend{ 1, inputs{ input{ prevout, script{}, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    endorsement endorse1{};
+    endorsement endorse2{};
+    BOOST_REQUIRE(spend.create_endorsement(endorse1, secret1, multisig, 0, value, coverage::hash_all, script_version::unversioned, flags::no_rules));
+    BOOST_REQUIRE(spend.create_endorsement(endorse2, secret2, multisig, 0, value, coverage::hash_all, script_version::unversioned, flags::no_rules));
+
+    const script partial1{ operations{ { opcode::push_size_0 }, { data_chunk{ endorse1 }, false }, { redeem, false } } };
+    const script partial2{ operations{ { opcode::push_size_0 }, { data_chunk{ endorse2 }, false }, { redeem, false } } };
+    const transaction variant1{ 1, inputs{ input{ prevout, partial1, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+    const transaction variant2{ 1, inputs{ input{ prevout, partial2, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    const auto params = R"([[")" + encode_base16(variant2.to_data(true)) + R"(",")" + encode_base16(variant1.to_data(true)) + R"("]])";
+    const auto response = rpc("combinerawtransaction", params);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    data_chunk data{};
+    BOOST_REQUIRE(decode_base16(data, as_text(response.at("result"))));
+
+    const transaction merged{ data, true };
+    BOOST_REQUIRE(merged.is_valid());
+
+    const auto& ops = merged.inputs_ptr()->front()->script().ops();
+    BOOST_REQUIRE_EQUAL(ops.size(), 4u);
+    BOOST_REQUIRE(ops.at(1).data() == endorse1);
+    BOOST_REQUIRE(ops.at(2).data() == endorse2);
+    BOOST_REQUIRE(ops.at(3).data() == redeem);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__witness_script_hash_multisig_partials__merged_stack)
+{
+    using namespace chain;
+    const ec_secret secret1{ { 0x01 } };
+    const ec_secret secret2{ { 0x02 } };
+    const ec_secret secret3{ { 0x03 } };
+    ec_compressed point1{};
+    ec_compressed point2{};
+    ec_compressed point3{};
+    BOOST_REQUIRE(secret_to_public(point1, secret1));
+    BOOST_REQUIRE(secret_to_public(point2, secret2));
+    BOOST_REQUIRE(secret_to_public(point3, secret3));
+
+    // A block paying p2wsh of 2-of-3 multisig of the derived keys, confirmed at 10.
+    constexpr uint64_t value = 100'000'000;
+    const script multisig{ script::to_pay_multisig_pattern(2, ec_compresseds{ point1, point2, point3 }) };
+    const auto witness_script = multisig.to_data(false);
+    const script pay{ script::to_pay_witness_script_hash_pattern(sha256_hash(witness_script)) };
+    const block block10
+    {
+        header{ 0x31323334, test::block9_hash, hash_digest{ 0x10, 0xee }, 0x41424344, 0x51525354, 0x61626364 },
+        transactions{ transaction{ 1, inputs{ input{ point{}, script{}, witness{}, 0x01 } }, outputs{ output{ value, pay } }, 0 } }
+    };
+
+    BOOST_REQUIRE(query_.set(block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(block10.hash()), true));
+
+    const point prevout{ block10.transactions_ptr()->front()->hash(false), 0 };
+    const output out{ 1, script{ script::to_pay_key_hash_pattern(short_hash{}) } };
+    const transaction spend{ 1, inputs{ input{ prevout, script{}, witness{}, 0xffffffff } }, outputs{ out }, 0 };
+
+    endorsement endorse1{};
+    endorsement endorse2{};
+    BOOST_REQUIRE(spend.create_endorsement(endorse1, secret1, multisig, 0, value, coverage::hash_all, script_version::segwit, flags::bip143_rule));
+    BOOST_REQUIRE(spend.create_endorsement(endorse2, secret2, multisig, 0, value, coverage::hash_all, script_version::segwit, flags::bip143_rule));
+
+    const witness partial1{ chunk_cptrs{ to_shared<data_chunk>(), to_shared<data_chunk>(endorse1), to_shared<data_chunk>(witness_script) } };
+    const witness partial2{ chunk_cptrs{ to_shared<data_chunk>(), to_shared<data_chunk>(endorse2), to_shared<data_chunk>(witness_script) } };
+    const transaction variant1{ 1, inputs{ input{ prevout, script{}, partial1, 0xffffffff } }, outputs{ out }, 0 };
+    const transaction variant2{ 1, inputs{ input{ prevout, script{}, partial2, 0xffffffff } }, outputs{ out }, 0 };
+
+    const auto params = R"([[")" + encode_base16(variant2.to_data(true)) + R"(",")" + encode_base16(variant1.to_data(true)) + R"("]])";
+    const auto response = rpc("combinerawtransaction", params);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+
+    data_chunk data{};
+    BOOST_REQUIRE(decode_base16(data, as_text(response.at("result"))));
+
+    const transaction merged{ data, true };
+    BOOST_REQUIRE(merged.is_valid());
+
+    const auto& stack = merged.inputs_ptr()->front()->witness().stack();
+    BOOST_REQUIRE_EQUAL(stack.size(), 4u);
+    BOOST_REQUIRE(stack.at(0)->empty());
+    BOOST_REQUIRE(*stack.at(1) == endorse1);
+    BOOST_REQUIRE(*stack.at(2) == endorse2);
+    BOOST_REQUIRE(*stack.at(3) == witness_script);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__iswitness_false__round_trips)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
