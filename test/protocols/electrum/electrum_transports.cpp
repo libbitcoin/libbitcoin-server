@@ -125,3 +125,30 @@ BOOST_AUTO_TEST_CASE(electrum__ws__subscribed_event__notified)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// server ping
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(electrum_ping_tests, electrum_ping_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(electrum__ws__ping_interval__server_ping_notified)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(ws_handshake(electrum::version::v1_7));
+
+    const auto notification = ws_receive();
+    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "server.ping");
+    BOOST_REQUIRE_EQUAL(notification.at("params").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(notification.at("params").at(0).as_string(), "0000");
+}
+
+BOOST_AUTO_TEST_CASE(electrum__tcp__ping_interval__server_ping_notified)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto notification = receive();
+    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "server.ping");
+    BOOST_REQUIRE_EQUAL(notification.at("params").at(0).as_string(), "0000");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
