@@ -471,6 +471,29 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
     BOOST_REQUIRE_EQUAL(params[2].as_array().size(), 1u);
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__blockdisconnected__reorganized__delivered)
+{
+    rpc("notifyblocks");
+    notify(node::chases::reorganized{ 9 });
+
+    const auto disconnected = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(disconnected.at("method")), "blockdisconnected");
+
+    const auto& params = disconnected.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 3u);
+    BOOST_REQUIRE_EQUAL(as_text(params[0]), block9);
+    BOOST_REQUIRE_EQUAL(params[1].as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(params[2].as_int64(), test::block9.header().timestamp());
+
+    const auto filtered = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(filtered.at("method")), "filteredblockdisconnected");
+
+    const auto& filtered_params = filtered.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(filtered_params.size(), 2u);
+    BOOST_REQUIRE_EQUAL(filtered_params[0].as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(filtered_params[1]), encode_base16(test::header9_data));
+}
+
 // transactions
 // ----------------------------------------------------------------------------
 // found_address is paid only by mock_block10's second transaction (see above),
@@ -816,6 +839,54 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__help__overridden_method__listed_once)
     BOOST_REQUIRE_EQUAL(names.find("getblockchaininfo", add1(first)), std::string::npos);
 }
 
+// validation
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyreceived__bogus_address__invalid_parameter)
+{
+    const auto result = rpc_error("stopnotifyreceived", (boost_format(R"([["%1%"]])") % bogus_address).str());
+    BOOST_REQUIRE_EQUAL(result, invalid_parameter.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyspent__bogus_outpoint__invalid_parameter)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifyspent", R"([[{"hash":"00"}]])"), invalid_parameter.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__not_array__invalid_params)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("rescanblocks", R"(["x"])"), invalid_params.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__not_hash__internal_error)
+{
+    const code internal_error{ server::error::btcd::internal_error };
+    BOOST_REQUIRE_EQUAL(rpc_error("rescanblocks", R"([["not-a-hash"]])"), internal_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__fractional_verbose__invalid_params)
+{
+    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%",1.5])") % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, invalid_params.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__numeric_filteraddr__invalid_params)
+{
+    const auto request = (boost_format(R"(["%1%",1,0,100,0,false,[1]])") % found_address).str();
+    BOOST_REQUIRE_EQUAL(rpc_error("searchrawtransactions", request), invalid_params.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__reverse__found)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",1,0,100,0,true])") % found_address).str());
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 1u);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Filter limit (btcd.maximum_filters): loadtxfilter watches are bounded per
@@ -867,6 +938,12 @@ BOOST_AUTO_TEST_CASE(btcd_no_index__searchrawtransactions__any__misc_error)
 {
     const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%"])") % found_address).str());
     BOOST_REQUIRE_EQUAL(result, misc_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_no_index__notifyreceived__address__not_implemented)
+{
+    const auto result = rpc_error("notifyreceived", (boost_format(R"([["%1%"]])") % found_address).str());
+    BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
