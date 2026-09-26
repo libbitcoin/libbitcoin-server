@@ -115,4 +115,64 @@ BOOST_AUTO_TEST_CASE(esplora__address_utxo__unfunded__empty)
     BOOST_REQUIRE(response.as_array().empty());
 }
 
+// address/txs/chain
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(esplora__address_txs_chain__funded__expected)
+{
+    const auto response = get_json("/scripthash/" + funded_scripthash + "/txs/chain");
+    BOOST_REQUIRE(response.is_array());
+    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(response.as_array().front().as_object().at("txid").as_string(), block1_tx);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__address_txs_chain__last_seen__empty)
+{
+    const auto response = get_json("/scripthash/" + funded_scripthash + "/txs/chain/" + block1_tx);
+    BOOST_REQUIRE(response.is_array());
+    BOOST_REQUIRE(response.as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(esplora__address_txs_chain__unknown_last_seen__not_found)
+{
+    const auto target = "/scripthash/" + funded_scripthash + "/txs/chain/" + encode_hash(null_hash);
+    BOOST_REQUIRE_EQUAL(get_status(target), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__address_txs_mempool__undecodable__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/address/notanaddress/txs/mempool"), http::status::bad_request);
+}
+
+// address (payment address)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(esplora__address__payment_address__echoed_unfunded)
+{
+    const std::string address{ "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" };
+    const auto response = get_json("/address/" + address);
+    BOOST_REQUIRE(response.is_object());
+    BOOST_REQUIRE_EQUAL(response.as_object().at("address").as_string(), address);
+    BOOST_REQUIRE_EQUAL(response.as_object().at("chain_stats").as_object().at("tx_count").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(esplora_no_address_tests, esplora_no_address_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__address__disabled__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash), http::status::not_implemented);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__address_txs__disabled__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash + "/txs"), http::status::not_implemented);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__address_utxo__disabled__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash + "/utxo"), http::status::not_implemented);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
