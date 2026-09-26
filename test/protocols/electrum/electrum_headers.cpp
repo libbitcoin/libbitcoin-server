@@ -921,4 +921,50 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__notifications__expe
     BOOST_CHECK_EQUAL(header2.at("hex").as_string(), encode_base16(test::mock_block11.header().to_data()));
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__v1_0__electrumx_header)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":90,"method":"blockchain.headers.subscribe","params":[]})" "\n");
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("block_height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("timestamp").as_int64(), test::block9.header().timestamp());
+    BOOST_REQUIRE_EQUAL(result.at("nonce").as_int64(), test::block9.header().nonce());
+    BOOST_REQUIRE_EQUAL(result.at("prev_block_hash").as_string(), encode_hash(test::block8_hash));
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__raw_v1_2__raw_header)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":91,"method":"blockchain.headers.subscribe","params":[true]})" "\n");
+    const auto& result = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(result.at("hex").as_string(), encode_base16(test::header9_data));
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__raw_v1_1__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    const auto result = get_error(R"({"id":92,"method":"blockchain.headers.subscribe","params":[true]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__raw_v1_4__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto result = get_error(R"({"id":93,"method":"blockchain.headers.subscribe","params":[true]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__checkpoint_v1_2__wrong_version)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto result = get_error(R"({"id":94,"method":"blockchain.block.headers","params":[0,1,5]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
