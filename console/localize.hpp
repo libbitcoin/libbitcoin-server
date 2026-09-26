@@ -148,8 +148,8 @@
     "   prevout   :%14%\n" \
     "   duplicate :%15%\n" \
     "   strong_tx :%16%\n" \
-    "   valid_bk  :%17%\n" \
-    "   valid_tx  :%18%\n" \
+    "   state     :%17%\n" \
+    "   pool      :%18%\n" \
     "   spends    :%19%\n" \
     "   filter_bk :%20%\n" \
     "   filter_tx :%21%"
@@ -167,8 +167,8 @@
     "   prevalid  :%10%\n" \
     "   duplicate :%11%\n" \
     "   strong_tx :%12%\n" \
-    "   valid_bk  :%13%\n" \
-    "   valid_tx  :%14%\n" \
+    "   state     :%13%\n" \
+    "   pool      :%14%\n" \
     "   spends    :%15%\n" \
     "   filter_bk :%16%"
 #define BS_INFORMATION_BUCKETS \
@@ -181,8 +181,8 @@
     "   prevout   :%6%\n" \
     "   duplicate :%7%\n" \
     "   strong_tx :%8%\n" \
-    "   valid_bk  :%9%\n" \
-    "   valid_tx  :%10%\n" \
+    "   state     :%9%\n" \
+    "   pool      :%10%\n" \
     "   filter_bk :%11%\n" \
     "   filter_tx :%12%"
 #define BS_INFORMATION_COLLISION_RATES \
@@ -191,7 +191,7 @@
     "   tx        :%2%\n" \
     "   ins       :%3%\n" \
     "   strong_tx :%4%\n" \
-    "   valid_tx  :%5%"
+    "   pool      :%5%"
 #define BS_INFORMATION_COLLISION_RATES_ADDRESS \
     "Collision rates...\n" \
     "   header    :%1%\n" \
@@ -199,7 +199,7 @@
     "   ins       :%3%\n" \
     "   outs      :%4%\n" \
     "   strong_tx :%5%\n" \
-    "   valid_tx  :%6%"
+    "   pool      :%6%"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
 #define BS_INFORMATION_PROGRESS \

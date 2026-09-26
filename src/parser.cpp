@@ -106,6 +106,7 @@ parser::parser(system::chain::selection context,
 
     // node
 
+    configured.node.minimum_fee_rate = 0.000001;
     configured.node.batch_signatures = 1'000'000;
 
     // database
@@ -194,16 +195,16 @@ parser::parser(system::chain::selection context,
     configured.database.duplicate.size = 0;
     configured.database.duplicate.rate = 1;
 
-    configured.database.validated_bk.buckets = 950'001;
-    configured.database.validated_bk.size = 0;
-    configured.database.validated_bk.rate = 1;
+    configured.database.state.buckets = 950'001;
+    configured.database.state.size = 0;
+    configured.database.state.rate = 1;
 
-    // validated_tx and spends (pool cache, disabled by zero buckets)
-    configured.database.validated_tx.expected = 10'000'000;
-    configured.database.validated_tx.buckets = table::validated_tx::derive_buckets(
-        configured.database.validated_tx.expected, contested, target);
-    configured.database.validated_tx.size = 0;
-    configured.database.validated_tx.rate = 1;
+    // pool and spends (disabled by zero buckets)
+    configured.database.pool.expected = 10'000'000;
+    configured.database.pool.buckets = table::pool::derive_buckets(
+        configured.database.pool.expected, contested, target);
+    configured.database.pool.size = 0;
+    configured.database.pool.rate = 1;
     configured.database.spends.size = 0;
     configured.database.spends.rate = 1;
 
@@ -2094,7 +2095,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.minimum_fee_rate",
         setting<double>(&configured.node.minimum_fee_rate),
-        "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.0'."
+        "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.000001'."
     )
     (
         "node.minimum_bump_rate",
@@ -2438,43 +2439,43 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the cache_duplicate table, defaults to '1'."
     )
 
-    /* table.validated_bk */
+    /* table.state */
     (
-        "table.validated_bk.buckets",
-        setting<uint32_t>(&configured.database.validated_bk.buckets),
-        "The number of buckets in the validated_bk table head, defaults to '950001'."
+        "table.state.buckets",
+        setting<uint32_t>(&configured.database.state.buckets),
+        "The number of buckets in the state table head, defaults to '950001'."
     )
     (
-        "table.validated_bk.size",
-        setting<uint64_t>(&configured.database.validated_bk.size),
-        "The minimum allocation of the validated_bk table body, defaults to '0'."
+        "table.state.size",
+        setting<uint64_t>(&configured.database.state.size),
+        "The minimum allocation of the state table body, defaults to '0'."
     )
     (
-        "table.validated_bk.rate",
-        setting<uint16_t>(&configured.database.validated_bk.rate),
-        "The percentage expansion of the validated_bk table body, defaults to '1'."
+        "table.state.rate",
+        setting<uint16_t>(&configured.database.state.rate),
+        "The percentage expansion of the state table body, defaults to '1'."
     )
 
-    /* table.validated_tx */
+    /* table.pool */
     (
-        "table.validated_tx.buckets",
-        setting<uint32_t>(&configured.database.validated_tx.buckets),
-        "The number of buckets in the validated_tx table head, dynamic default (0 disables)."
+        "table.pool.buckets",
+        setting<uint32_t>(&configured.database.pool.buckets),
+        "The number of buckets in the pool table head, dynamic default (0 disables)."
     )
     (
-        "table.validated_tx.expected",
-        setting<uint64_t>(&configured.database.validated_tx.expected),
-        "The expected element count of the validated_tx table, defaults to '10000000'."
+        "table.pool.expected",
+        setting<uint64_t>(&configured.database.pool.expected),
+        "The expected element count of the pool table, defaults to '10000000'."
     )
     (
-        "table.validated_tx.size",
-        setting<uint64_t>(&configured.database.validated_tx.size),
-        "The minimum allocation of the validated_tx table body, defaults to '0'."
+        "table.pool.size",
+        setting<uint64_t>(&configured.database.pool.size),
+        "The minimum allocation of the pool table body, defaults to '0'."
     )
     (
-        "table.validated_tx.rate",
-        setting<uint16_t>(&configured.database.validated_tx.rate),
-        "The percentage expansion of the validated_tx table body, defaults to '1'."
+        "table.pool.rate",
+        setting<uint16_t>(&configured.database.pool.rate),
+        "The percentage expansion of the pool table body, defaults to '1'."
     )
 
     /* table.spends */
