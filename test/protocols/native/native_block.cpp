@@ -327,6 +327,7 @@ BOOST_AUTO_TEST_CASE(native__block_header_context__json__expected)
 
     const auto& state = object.at("state").as_object();
     BOOST_REQUIRE_EQUAL(state.at("size").as_int64(), 215);
+    BOOST_REQUIRE_EQUAL(state.at("weight").as_int64(), 860);
     BOOST_REQUIRE_EQUAL(state.at("count").as_int64(), 1);
     BOOST_REQUIRE(state.at("validated").as_bool());
     BOOST_REQUIRE(state.at("confirmed").as_bool());
@@ -575,6 +576,20 @@ BOOST_AUTO_TEST_CASE(native__ws_block_subscribe__notify_data__expected)
     notify(node::chases::block{ link.value });
 
     BOOST_REQUIRE_EQUAL(ws_receive(), to_chunk(test::mock_block10.hash()));
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_block_subscribe__notify_json__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE_EQUAL(ws_get_json("/v1/block/subscribe?format=json").as_string(), encode_hash(test::block9_hash));
+
+    const auto link = query_.to_header(test::mock_block10.hash());
+    BOOST_REQUIRE(query_.push_confirmed(link, true));
+    notify(node::chases::block{ link.value });
+
+    const auto response = test::parse_json(to_string(ws_receive()));
+    BOOST_REQUIRE_EQUAL(response.as_string(), encode_hash(test::mock_block10.hash()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

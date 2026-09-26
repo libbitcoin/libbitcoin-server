@@ -150,6 +150,18 @@ BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__notify_data__expected)
     BOOST_REQUIRE_EQUAL(ws_receive(), to_chunk(coinbase1.hash(false)));
 }
 
+BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__notify_json__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(ws_get_text("/v1/tx/subscribe?format=json").empty());
+
+    const auto link = query_.to_tx(coinbase1.hash(false));
+    notify(node::chases::transaction{ link.value });
+
+    const auto response = test::parse_json(to_string(ws_receive()));
+    BOOST_REQUIRE_EQUAL(response.as_string(), coinbase1_hash);
+}
+
 BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__stop__empty)
 {
     BOOST_REQUIRE(!ws_upgrade());
