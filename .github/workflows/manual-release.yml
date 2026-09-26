@@ -202,21 +202,24 @@ jobs:
             toolchain: msbuild
             configuration: StaticDebug
             platform: "x64"
-            version: "vs2022"
+            toolset: "v145"
+            version: "vs2026"
             basename: "bs-win64-StaticDebug"
 
           - image: windows-latest
             toolchain: msbuild
             configuration: StaticRelease
             platform: "x64"
-            version: "vs2022"
+            toolset: "v145"
+            version: "vs2026"
             basename: "bs-win64-StaticRelease"
 
           - image: windows-latest
             toolchain: msbuild
             configuration: StaticDebug
             platform: "x64"
-            version: "vs2022"
+            toolset: "v145"
+            version: "vs2026"
             options: "--enable-shani"
             basename: "bs-win64-StaticDebug-shani"
 
@@ -224,8 +227,27 @@ jobs:
             toolchain: msbuild
             configuration: StaticRelease
             platform: "x64"
-            version: "vs2022"
+            toolset: "v145"
+            version: "vs2026"
             options: "--enable-shani"
+            basename: "bs-win64-StaticRelease-shani"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticDebug
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            options: "--enable-avx512"
+            basename: "bs-win64-StaticDebug-shani"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticRelease
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            options: "--enable-avx512"
             basename: "bs-win64-StaticRelease-shani"
 
     steps:
@@ -382,7 +404,7 @@ jobs:
                   echo "Configuration unexpected."
                   exit 1
               fi
-              CANDIDATE="libbitcoin-server/bin/x64/${CONFIG}/v143/static/bs.exe"
+              CANDIDATE="libbitcoin-server/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/bs.exe"
               CANONICAL="${{ matrix.basename }}.exe"
           else
               echo "\e[0;91mUnexpected toolchain provided.\e[0m"
