@@ -130,7 +130,7 @@ parser::parser(system::chain::selection context,
     configured.database.header.expected = 962'953;
     configured.database.header.buckets = table::header::derive_buckets(
         configured.database.header.expected, contested, target);
-    configured.database.header.size = 93'406'247;
+    configured.database.header.size = 124'220'679;
     configured.database.header.rate = 1;
 
     configured.database.txs.buckets = 950'001;
@@ -2191,7 +2191,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.size",
         setting<uint64_t>(&configured.database.header.size),
-        "The minimum allocation of the archive_header table body, defaults to '93406247'."
+        "The minimum allocation of the archive_header table body, defaults to '124220679'."
     )
     (
         "table.header.rate",
