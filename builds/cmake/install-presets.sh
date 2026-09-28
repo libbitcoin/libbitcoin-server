@@ -29,7 +29,7 @@
 # -Dwith-ultrafast=<ON/OFF>   Use shrec/UltrafastSecp256k1 library.
 #                               Default: OFF
 # -Dwith-secp256k1=<ON/OFF>   Use bitcoin-core/secp256k1 library.
-#                               Default: ON
+#                               Default: OFF
 # -Dwith-ssl=<ON/OFF>         Use embedded ssl library.
 #                               Default: ON
 # --build-boost               Build Boost libraries
@@ -1184,7 +1184,7 @@ help()
     msg "-Dwith-ultrafast=<ON/OFF>   Use shrec/UltrafastSecp256k1 library."
     msg "                              Default: OFF"
     msg "-Dwith-secp256k1=<ON/OFF>   Use bitcoin-core/secp256k1 library."
-    msg "                              Default: ON"
+    msg "                              Default: OFF"
     msg "-Dwith-ssl=<ON/OFF>         Use embedded ssl library."
     msg "                              Default: ON"
     msg "--build-boost               Build Boost libraries"
