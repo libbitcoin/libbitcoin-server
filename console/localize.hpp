@@ -310,14 +310,14 @@
 #define BS_VERSION_HEADER \
     "Version Information..."
 
-#define BS_HARDWARE_HEADER \
-    "Hardware configuration..."
+#define BS_HARDWARE_HEADER_ARM64 \
+    "Hardware configuration (arm64)..."
+#define BS_HARDWARE_HEADER_X64 \
+    "Hardware configuration (x64)..."
 #define BS_HARDWARE_PLATFORM \
     "platform:%1%."
 #define BS_HARDWARE_COMPILED \
     "platform:%1% compiled:%2%."
-#define BS_HARDWARE_THROTTLED \
-    "platform:%1% compiled:%2% (throttled)."
 #define BS_HARDWARE_INCOMPATIBLE \
     "platform:%1% compiled:%2% (unsupported)."
 

@@ -499,7 +499,9 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
         return false;
 
     // Construction is bip174 (version 0) or bip370 (version 2).
-    if (psbt_version != 0.0 && psbt_version != 2.0)
+    uint32_t document{};
+    if (!to_integer(document, psbt_version) ||
+        (document != psbt_tx::version_0 && document != psbt_tx::version_2))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
@@ -547,8 +549,6 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
         tx = { tx.version(), stripped, tx.outputs_ptr(), tx.locktime() };
     }
 
-    const auto document = psbt_version == 0.0 ? psbt_tx::version_0 :
-        psbt_tx::version_2;
     const psbt_tx doc(tx, document);
     if (!doc)
     {
@@ -569,7 +569,9 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
         return false;
 
     // Construction is bip174 (version 0) or bip370 (version 2).
-    if (psbt_version != 0.0 && psbt_version != 2.0)
+    uint32_t document{};
+    if (!to_integer(document, psbt_version) ||
+        (document != psbt_tx::version_0 && document != psbt_tx::version_2))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
@@ -584,8 +586,6 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
         return true;
     }
 
-    const auto document = psbt_version == 0.0 ? psbt_tx::version_0 :
-        psbt_tx::version_2;
     const psbt_tx doc(tx, document);
     if (!doc)
     {

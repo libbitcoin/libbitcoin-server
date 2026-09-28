@@ -54,7 +54,7 @@ void executor::warn_hardware(system::string_list& out) const
         (try_crypto() && !have_crypto);
 #else
     const auto suboptimal =
-        (try_avx512() && !try_avx512_throttled() && !have_avx512) ||
+        (try_avx512() && !have_avx512) ||
         (try_avx2() && !have_avx2) ||
         (try_sse41() && !have_sse41) ||
         (try_shani() && !have_shani) ||
