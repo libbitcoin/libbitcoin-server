@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getbestblock__ten_block_store__block9)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__filters_disabled__block_not_found)
 {
-    const auto result = rpc_error("getcfilter", (boost_format(R"(["%1%",0])") % block9).str());
+    const auto result = rpc_error("getcfilter", std::format(R"(["{}",0])", block9));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
@@ -165,13 +165,13 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__malformed_hash__deserialization)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__unsupported_type__block_not_found)
 {
-    const auto result = rpc_error("getcfilter", (boost_format(R"(["%1%",1])") % block9).str());
+    const auto result = rpc_error("getcfilter", std::format(R"(["{}",1])", block9));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilterheader__filters_disabled__block_not_found)
 {
-    const auto result = rpc_error("getcfilterheader", (boost_format(R"(["%1%",0])") % block9).str());
+    const auto result = rpc_error("getcfilterheader", std::format(R"(["{}",0])", block9));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__ten_block_store__number)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__block5_locator__headers_after_fork)
 {
-    const auto response = rpc("getheaders", (boost_format(R"([["%1%"],""])") % encode_hash(test::block5_hash)).str());
+    const auto response = rpc("getheaders", std::format(R"([["{}"],""])", encode_hash(test::block5_hash)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__block5_locator__headers_after_fork)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__hashstop__bounded)
 {
-    const auto request = (boost_format(R"([["%1%"],"%2%"])") % encode_hash(test::block5_hash) % encode_hash(test::block8_hash)).str();
+    const auto request = std::format(R"([["{}"],"{}"])", encode_hash(test::block5_hash), encode_hash(test::block8_hash));
     const auto response = rpc("getheaders", request);
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__hashstop__bounded)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__unknown_locator__headers_from_genesis)
 {
-    const auto response = rpc("getheaders", (boost_format(R"([["%1%"],""])") % encode_hash(system::one_hash)).str());
+    const auto response = rpc("getheaders", std::format(R"([["{}"],""])", encode_hash(system::one_hash)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 9u);
@@ -284,8 +284,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__version__default__api_semver)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__one_input_one_output__decodes)
 {
-    const auto request = R"([[{"txid":"%1%","vout":0}],{"%2%":0.01}])";
-    const auto response = rpc("createrawtransaction", (boost_format(request) % coinbase_txid(test::block1) % found_address).str());
+    constexpr auto request = R"([[{{"txid":"{}","vout":0}}],{{"{}":0.01}}])";
+    const auto response = rpc("createrawtransaction", std::format(request, coinbase_txid(test::block1), found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
@@ -301,8 +301,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__one_input_one_output__decod
 BOOST_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase__expected_txid)
 {
     const auto& coinbase = *test::block1.transactions_ptr()->front();
-    const auto request = R"(["%1%"])";
-    const auto response = rpc("decoderawtransaction", (boost_format(request) % encode_base16(coinbase.to_data(false))).str());
+    constexpr auto request = R"(["{}"])";
+    const auto response = rpc("decoderawtransaction", std::format(request, encode_base16(coinbase.to_data(false))));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BOOST_REQUIRE_EQUAL(as_text(response.at("result").at("txid")), encode_hash(coinbase.hash(false)));
@@ -318,8 +318,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__decodescript__pay_public_key__pubkey)
 {
     // block1's coinbase output is a p2pk script (early mainnet convention).
     const auto& script = test::block1.transactions_ptr()->front()->outputs_ptr()->front()->script();
-    const auto request = R"(["%1%"])";
-    const auto response = rpc("decodescript", (boost_format(request) % encode_base16(script.to_data(false))).str());
+    constexpr auto request = R"(["{}"])";
+    const auto response = rpc("decodescript", std::format(request, encode_base16(script.to_data(false))));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -331,8 +331,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__decodescript__pay_public_key__pubkey)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
 {
-    const auto request = R"(["%1%"])";
-    const auto response = rpc("validateaddress", (boost_format(request) % found_address).str());
+    constexpr auto request = R"(["{}"])";
+    const auto response = rpc("validateaddress", std::format(request, found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -344,8 +344,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__validateaddress__invalid_address__isvalid_false)
 {
-    const auto request = R"(["%1%"])";
-    const auto response = rpc("validateaddress", (boost_format(request) % bogus_address).str());
+    constexpr auto request = R"(["{}"])";
+    const auto response = rpc("validateaddress", std::format(request, bogus_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BOOST_REQUIRE_EQUAL(response.at("result").at("isvalid").as_bool(), false);
@@ -389,21 +389,21 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifynewtransactions__default__not_implement
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_address__null_result)
 {
-    const auto response = rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+    const auto response = rpc("loadtxfilter", std::format(R"([true,["{}"],[]])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__invalid_address__invalid_argument)
 {
-    const auto result = rpc_error("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % bogus_address).str());
+    const auto result = rpc_error("loadtxfilter", std::format(R"([true,["{}"],[]])", bogus_address));
     BOOST_REQUIRE_EQUAL(result, invalid_parameter.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_outpoint__null_result)
 {
-    const auto request = R"([true,[],[{"hash":"%1%","index":0}]])";
-    const auto response = rpc("loadtxfilter", (boost_format(request) % coinbase_txid(test::block1)).str());
+    constexpr auto request = R"([true,[],[{{"hash":"{}","index":0}}]])";
+    const auto response = rpc("loadtxfilter", std::format(request, coinbase_txid(test::block1)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
@@ -418,15 +418,15 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
 {
     // 'blockhashes' is one positional arg that is itself an array, so the
     // wire params need double-wrapping: [[...]], not [...].
-    const auto result = rpc_error("rescanblocks", (boost_format(R"([["%1%"]])") % encode_hash(null_hash)).str());
+    const auto result = rpc_error("rescanblocks", std::format(R"([["{}"]])", encode_hash(null_hash)));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__no_filter_match__empty_result)
 {
-    rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+    rpc("loadtxfilter", std::format(R"([true,["{}"],[]])", found_address));
 
-    const auto response = rpc("rescanblocks", (boost_format(R"([["%1%"]])") % encode_hash(test::block1_hash)).str());
+    const auto response = rpc("rescanblocks", std::format(R"([["{}"]])", encode_hash(test::block1_hash)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
@@ -437,9 +437,9 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__address_match__matched_transaction)
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+    rpc("loadtxfilter", std::format(R"([true,["{}"],[]])", found_address));
 
-    const auto response = rpc("rescanblocks", (boost_format(R"([["%1%"]])") % block10).str());
+    const auto response = rpc("rescanblocks", std::format(R"([["{}"]])", block10));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
@@ -452,7 +452,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__address_match__matched_transaction)
 BOOST_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
 {
     rpc("notifyblocks");
-    rpc("loadtxfilter", (boost_format(R"([true,["%1%"],[]])") % found_address).str());
+    rpc("loadtxfilter", std::format(R"([true,["{}"],[]])", found_address));
 
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
@@ -501,13 +501,13 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__blockdisconnected__reorganized__delivered)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__unused_address__no_tx_info)
 {
-    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%"])") % found_address).str());
+    const auto result = rpc_error("searchrawtransactions", std::format(R"(["{}"])", found_address));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__invalid_address__invalid_address)
 {
-    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%"])") % bogus_address).str());
+    const auto result = rpc_error("searchrawtransactions", std::format(R"(["{}"])", bogus_address));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__public_key__p2pk_transacti
     // A public key implies both the p2pk and derived p2pkh scripts.
     const auto& coinbase = *test::block1.transactions_ptr()->front();
     const auto& point = coinbase.outputs_ptr()->front()->script().ops().front().data();
-    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%"])") % encode_base16(point)).str());
+    const auto response = rpc("searchrawtransactions", std::format(R"(["{}"])", encode_base16(point)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__public_key__p2pk_transacti
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__zero_count__null_result)
 {
-    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",1,0,0])") % found_address).str());
+    const auto response = rpc("searchrawtransactions", std::format(R"(["{}",1,0,0])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__paid_address__verbose_tran
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto& paying = *test::mock_block10.transactions_ptr()->at(1);
-    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%"])") % found_address).str());
+    const auto response = rpc("searchrawtransactions", std::format(R"(["{}"])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
@@ -561,7 +561,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__not_verbose__serialized_tr
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto& paying = *test::mock_block10.transactions_ptr()->at(1);
-    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",0])") % found_address).str());
+    const auto response = rpc("searchrawtransactions", std::format(R"(["{}",0])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
@@ -575,7 +575,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__skip_past_history__no_tx_i
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%",1,1])") % found_address).str());
+    const auto result = rpc_error("searchrawtransactions", std::format(R"(["{}",1,1])", found_address));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
@@ -584,7 +584,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__vinextra__prevout_injected
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",1,0,100,1])") % found_address).str());
+    const auto response = rpc("searchrawtransactions", std::format(R"(["{}",1,0,100,1])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
@@ -601,7 +601,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__filteraddrs__filtered_vin_
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto request = (boost_format(R"(["%1%",1,0,100,0,false,["%1%"]])") % found_address).str();
+    const auto request = std::format(R"(["{0}",1,0,100,0,false,["{0}"]])", found_address);
     const auto response = rpc("searchrawtransactions", request);
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
@@ -618,20 +618,20 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__filteraddrs__filtered_vin_
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__notifyreceived__invalid_address__invalid_parameter)
 {
-    const auto result = rpc_error("notifyreceived", (boost_format(R"([["%1%"]])") % bogus_address).str());
+    const auto result = rpc_error("notifyreceived", std::format(R"([["{}"]])", bogus_address));
     BOOST_REQUIRE_EQUAL(result, invalid_parameter.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__notifyreceived__valid_address__null_result)
 {
-    const auto response = rpc("notifyreceived", (boost_format(R"([["%1%"]])") % found_address).str());
+    const auto response = rpc("notifyreceived", std::format(R"([["{}"]])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyreceived__default__null_result)
 {
-    const auto response = rpc("stopnotifyreceived", (boost_format(R"([["%1%"]])") % found_address).str());
+    const auto response = rpc("stopnotifyreceived", std::format(R"([["{}"]])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
@@ -644,16 +644,16 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__notifyspent__invalid_outpoint__invalid_parameter)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__notifyspent__valid_outpoint__null_result)
 {
-    const auto request = R"([[{"hash":"%1%","index":0}]])";
-    const auto response = rpc("notifyspent", (boost_format(request) % coinbase_txid(test::block1)).str());
+    constexpr auto request = R"([[{{"hash":"{}","index":0}}]])";
+    const auto response = rpc("notifyspent", std::format(request, coinbase_txid(test::block1)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyspent__default__null_result)
 {
-    const auto request = R"([[{"hash":"%1%","index":0}]])";
-    const auto response = rpc("stopnotifyspent", (boost_format(request) % coinbase_txid(test::block1)).str());
+    constexpr auto request = R"([[{{"hash":"{}","index":0}}]])";
+    const auto response = rpc("stopnotifyspent", std::format(request, coinbase_txid(test::block1)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyspent__default__null_result)
 BOOST_AUTO_TEST_CASE(btcd_rpc__recvtx__address_match__delivered_without_notifyblocks)
 {
     // recvtx does not require notifyblocks (unlike filteredblockconnected).
-    rpc("notifyreceived", (boost_format(R"([["%1%"]])") % found_address).str());
+    rpc("notifyreceived", std::format(R"([["{}"]])", found_address));
 
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__recvtx__address_match__delivered_without_notifybl
 BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__spent_in_arming_block__delivered)
 {
     // The receive match arms the spent watch, and the spender is in that block.
-    rpc("notifyreceived", (boost_format(R"([["%1%"]])") % found_address).str());
+    rpc("notifyreceived", std::format(R"([["{}"]])", found_address));
 
     BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
@@ -699,8 +699,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__spent_in_arming_block__delivered)
 BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__notified_outpoint_spent__delivered_once)
 {
     // The paying transaction in mock_block10 spends block1's coinbase.
-    const auto request = R"([[{"hash":"%1%","index":0}]])";
-    rpc("notifyspent", (boost_format(request) % coinbase_txid(test::block1)).str());
+    constexpr auto request = R"([[{{"hash":"{}","index":0}}]])";
+    rpc("notifyspent", std::format(request, coinbase_txid(test::block1)));
 
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
@@ -717,13 +717,13 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__redeemingtx__notified_outpoint_spent__delivered_o
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
 {
-    const auto result = rpc_error("rescan", (boost_format(R"(["%1%",[],[],""])") % encode_hash(null_hash)).str());
+    const auto result = rpc_error("rescan", std::format(R"(["{}",[],[],""])", encode_hash(null_hash)));
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finished)
 {
-    const auto response = rpc("rescan", (boost_format(R"(["%1%",[],[],""])") % block9).str());
+    const auto response = rpc("rescan", std::format(R"(["{}",[],[],""])", block9));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 
@@ -738,8 +738,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finishe
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
 {
-    const auto request = R"(["%1%",["%2%"],[],""])";
-    const auto result = rpc_error("rescan", (boost_format(request) % block9 % found_address).str());
+    constexpr auto request = R"(["{}",["{}"],[],""])";
+    const auto result = rpc_error("rescan", std::format(request, block9, found_address));
     BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
@@ -844,7 +844,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__help__overridden_method__listed_once)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyreceived__bogus_address__invalid_parameter)
 {
-    const auto result = rpc_error("stopnotifyreceived", (boost_format(R"([["%1%"]])") % bogus_address).str());
+    const auto result = rpc_error("stopnotifyreceived", std::format(R"([["{}"]])", bogus_address));
     BOOST_REQUIRE_EQUAL(result, invalid_parameter.value());
 }
 
@@ -866,13 +866,13 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescanblocks__not_hash__internal_error)
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__fractional_verbose__invalid_params)
 {
-    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%",1.5])") % found_address).str());
+    const auto result = rpc_error("searchrawtransactions", std::format(R"(["{}",1.5])", found_address));
     BOOST_REQUIRE_EQUAL(result, invalid_params.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__numeric_filteraddr__invalid_params)
 {
-    const auto request = (boost_format(R"(["%1%",1,0,100,0,false,[1]])") % found_address).str();
+    const auto request = std::format(R"(["{}",1,0,100,0,false,[1]])", found_address);
     BOOST_REQUIRE_EQUAL(rpc_error("searchrawtransactions", request), invalid_params.value());
 }
 
@@ -881,7 +881,7 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__reverse__found)
     BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto response = rpc("searchrawtransactions", (boost_format(R"(["%1%",1,0,100,0,true])") % found_address).str());
+    const auto response = rpc("searchrawtransactions", std::format(R"(["{}",1,0,100,0,true])", found_address));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 1u);
@@ -898,8 +898,8 @@ BOOST_FIXTURE_TEST_SUITE(btcd_limited_filter_tests, btcd_limited_filter_setup_fi
 BOOST_AUTO_TEST_CASE(btcd_limited_filter__loadtxfilter__over_limit__subscription_limit)
 {
     // The fixture allows one watch; the second address exceeds it.
-    const auto request = R"([true,["%1%","%2%"],[]])";
-    const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address % other_address).str());
+    constexpr auto request = R"([true,["{}","{}"],[]])";
+    const auto result = rpc_error("loadtxfilter", std::format(request, found_address, other_address));
     BOOST_REQUIRE_EQUAL(result, misc_error.value());
 }
 
@@ -913,36 +913,36 @@ BOOST_FIXTURE_TEST_SUITE(btcd_no_index_tests, btcd_no_index_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__address__not_implemented)
 {
-    const auto request = R"([true,["%1%"],[]])";
-    const auto result = rpc_error("loadtxfilter", (boost_format(request) % found_address).str());
+    constexpr auto request = R"([true,["{}"],[]])";
+    const auto result = rpc_error("loadtxfilter", std::format(request, found_address));
     BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_no_index__loadtxfilter__outpoint_only__null_result)
 {
     // Outpoint watching is spender lookup, not an address index query.
-    const auto request = R"([true,[],[{"hash":"%1%","index":0}]])";
-    const auto response = rpc("loadtxfilter", (boost_format(request) % coinbase_txid(test::block1)).str());
+    constexpr auto request = R"([true,[],[{{"hash":"{}","index":0}}]])";
+    const auto response = rpc("loadtxfilter", std::format(request, coinbase_txid(test::block1)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_no_index__rescanblocks__any__not_implemented)
 {
-    const auto request = R"([["%1%"]])";
-    const auto result = rpc_error("rescanblocks", (boost_format(request) % encode_hash(test::block1_hash)).str());
+    constexpr auto request = R"([["{}"]])";
+    const auto result = rpc_error("rescanblocks", std::format(request, encode_hash(test::block1_hash)));
     BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_no_index__searchrawtransactions__any__misc_error)
 {
-    const auto result = rpc_error("searchrawtransactions", (boost_format(R"(["%1%"])") % found_address).str());
+    const auto result = rpc_error("searchrawtransactions", std::format(R"(["{}"])", found_address));
     BOOST_REQUIRE_EQUAL(result, misc_error.value());
 }
 
 BOOST_AUTO_TEST_CASE(btcd_no_index__notifyreceived__address__not_implemented)
 {
-    const auto result = rpc_error("notifyreceived", (boost_format(R"([["%1%"]])") % found_address).str());
+    const auto result = rpc_error("notifyreceived", std::format(R"([["{}"]])", found_address));
     BOOST_REQUIRE_EQUAL(result, unimplemented.value());
 }
 
@@ -984,8 +984,8 @@ BOOST_FIXTURE_TEST_SUITE(btcd_auth_tests, btcd_credentialed_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__correct_credentials__null_result)
 {
-    const auto request = R"(["%1%","%2%"])";
-    const auto response = rpc("authenticate", (boost_format(request) % BTCD_TEST_USERNAME % BTCD_TEST_PASSWORD).str());
+    constexpr auto request = R"(["{}","{}"])";
+    const auto response = rpc("authenticate", std::format(request, BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
@@ -1001,8 +1001,8 @@ BOOST_AUTO_TEST_CASE(btcd_auth__session__authenticated__permitted)
 
 BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__wrong_password__unauthorized)
 {
-    const auto request = R"(["%1%","definitely-wrong"])";
-    const auto result = rpc_error("authenticate", (boost_format(request) % BTCD_TEST_USERNAME).str());
+    constexpr auto request = R"(["{}","definitely-wrong"])";
+    const auto result = rpc_error("authenticate", std::format(request, BTCD_TEST_USERNAME));
     BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 
@@ -1018,8 +1018,8 @@ BOOST_AUTO_TEST_CASE(btcd_auth__authenticate__already_authenticated__unauthorize
     BOOST_REQUIRE(authenticate());
 
     // authenticate is invalid once authorization is established.
-    const auto request = R"(["%1%","%2%"])";
-    const auto result = rpc_error("authenticate", (boost_format(request) % BTCD_TEST_USERNAME % BTCD_TEST_PASSWORD).str());
+    constexpr auto request = R"(["{}","{}"])";
+    const auto result = rpc_error("authenticate", std::format(request, BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD));
     BOOST_REQUIRE_EQUAL(result, unauthorized.value());
 }
 

@@ -34,8 +34,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__obsoleted_version__w
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_1));
 
-    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":901,"method":"blockchain.utxo.get_address","params":["{}",0]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -51,8 +51,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__invalid_index__inval
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":901,"method":"blockchain.utxo.get_address","params":["{}",-1]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -68,8 +68,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__tx_not_found__null)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":901,"method":"blockchain.utxo.get_address","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, bogus_hash));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2pk__null)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":901,"method":"blockchain.utxo.get_address","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, bogus_hash));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
@@ -93,8 +93,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2kh__expected)
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), false));
 
     const auto hash = test::mock_block10.transactions_ptr()->at(1)->hash(false);
-    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % encode_hash(hash)).str());
+    constexpr auto request = R"({{"id":901,"method":"blockchain.utxo.get_address","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, encode_hash(hash)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
@@ -111,8 +111,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2sh__expected)
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), false));
 
     const auto hash = test::mock_block10.transactions_ptr()->at(1)->hash(false);
-    const auto request = R"({"id":901,"method":"blockchain.utxo.get_address","params":["%1%",1]})" "\n";
-    const auto response = get((boost_format(request) % encode_hash(hash)).str());
+    constexpr auto request = R"({{"id":901,"method":"blockchain.utxo.get_address","params":["{}",1]}})" "\n";
+    const auto response = get(std::format(request, encode_hash(hash)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 
@@ -126,8 +126,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__insufficient_vers
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    const auto request = R"({"id":1101,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1101,"method":"blockchain.outpoint.get_status","params":["{}",0]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__invalid_index__in
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1104,"method":"blockchain.outpoint.get_status","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1104,"method":"blockchain.outpoint.get_status","params":["{}",-1]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -160,8 +160,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__tx_not_found__emp
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1105,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1105,"method":"blockchain.outpoint.get_status","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, bogus_hash));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().empty());
 }
@@ -171,8 +171,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_unspent
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto hash = test::block1.transactions_ptr()->at(0)->hash(false);
-    const auto request = R"({"id":1106,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % encode_hash(hash)).str());
+    constexpr auto request = R"({{"id":1106,"method":"blockchain.outpoint.get_status","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, encode_hash(hash)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -191,8 +191,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_get_status__confirmed_spent__
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
-    const auto request = R"({"id":1107,"method":"blockchain.outpoint.get_status","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % encode_hash(hash1)).str());
+    constexpr auto request = R"({{"id":1107,"method":"blockchain.outpoint.get_status","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, encode_hash(hash1)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -212,8 +212,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__insufficient_versi
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    const auto request = R"({"id":1101,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1101,"method":"blockchain.outpoint.subscribe","params":["{}",0]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -237,8 +237,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_index__inv
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1104,"method":"blockchain.outpoint.subscribe","params":["{}",-1]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -246,8 +246,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_hint_encod
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,"not_hex"]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1104,"method":"blockchain.outpoint.subscribe","params":["{}",-1,"not_hex"]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -255,8 +255,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__invalid_hint__inva
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,""]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1104,"method":"blockchain.outpoint.subscribe","params":["{}",-1,""]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -264,8 +264,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__extra_argument__dr
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1104,"method":"blockchain.outpoint.subscribe","params":["%1%",-1,"00",42]})" "\n";
-    const auto response = get((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1104,"method":"blockchain.outpoint.subscribe","params":["{}",-1,"00",42]}})" "\n";
+    const auto response = get(std::format(request, bogus_hash));
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -273,8 +273,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__tx_not_found__empt
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1105,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1105,"method":"blockchain.outpoint.subscribe","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, bogus_hash));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().empty());
 }
@@ -284,8 +284,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_unspent_
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto hash = test::block1.transactions_ptr()->at(0)->hash(false);
-    const auto request = R"({"id":1106,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % encode_hash(hash)).str());
+    constexpr auto request = R"({{"id":1106,"method":"blockchain.outpoint.subscribe","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, encode_hash(hash)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -304,8 +304,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__one_spender__expec
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash1 = test::block1.transactions_ptr()->at(0)->hash(false);
-    const auto request = R"({"id":1107,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % encode_hash(hash1)).str());
+    constexpr auto request = R"({{"id":1107,"method":"blockchain.outpoint.subscribe","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, encode_hash(hash1)));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -346,8 +346,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__two_spenders__one_
     const auto hash3 = encode_hash(test::block3a.transactions_ptr()->at(0)->hash(false));
 
     // block1a tx0 output0 [confirmed 1]
-    const auto request = R"({"id":1107,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % hash1).str());
+    constexpr auto request = R"({{"id":1107,"method":"blockchain.outpoint.subscribe","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, hash1));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -406,8 +406,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progress
     constexpr int64_t tx1_index0{};
 
     // block1a tx0 output0 [missing]
-    const auto request = R"({"id":1107,"method":"blockchain.outpoint.subscribe","params":["%1%",%2%]})" "\n";
-    const auto response = get((boost_format(request) % hash1 % tx1_index0).str());
+    constexpr auto request = R"({{"id":1107,"method":"blockchain.outpoint.subscribe","params":["{}",{}]}})" "\n";
+    const auto response = get(std::format(request, hash1, tx1_index0));
 
     // Not found.
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
@@ -582,8 +582,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__insufficient_ver
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
 
-    const auto request = R"({"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["%1%",0]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["{}",0]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
@@ -607,8 +607,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__invalid_index__i
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1]})" "\n";
-    const auto result = get_error((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["{}",-1]}})" "\n";
+    const auto result = get_error(std::format(request, bogus_hash));
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
@@ -616,8 +616,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__extra_argument__
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["%1%",-1,""]})" "\n";
-    const auto response = get((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1104,"method":"blockchain.outpoint.unsubscribe","params":["{}",-1,""]}})" "\n";
+    const auto response = get(std::format(request, bogus_hash));
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
@@ -625,8 +625,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__unsubscribed__fa
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["%1%",0]})" "\n";
-    const auto response = get((boost_format(request) % bogus_hash).str());
+    constexpr auto request = R"({{"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["{}",0]}})" "\n";
+    const auto response = get(std::format(request, bogus_hash));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
     BOOST_REQUIRE(!response.at("result").as_bool());
@@ -637,12 +637,12 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_unsubscribe__subscribed__true
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto hash1 = encode_hash(test::block1.transactions_ptr()->at(0)->hash(false));
-    const auto request1 = R"({"id":1107,"method":"blockchain.outpoint.subscribe","params":["%1%",0]})" "\n";
-    const auto response1 = get((boost_format(request1) % hash1).str());
+    constexpr auto request1 = R"({{"id":1107,"method":"blockchain.outpoint.subscribe","params":["{}",0]}})" "\n";
+    const auto response1 = get(std::format(request1, hash1));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_object());
 
-    const auto request2 = R"({"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["%1%",0]})" "\n";
-    const auto response2 = get((boost_format(request2) % hash1).str());
+    constexpr auto request2 = R"({{"id":1101,"method":"blockchain.outpoint.unsubscribe","params":["{}",0]}})" "\n";
+    const auto response2 = get(std::format(request2, hash1));
     REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
 }
 

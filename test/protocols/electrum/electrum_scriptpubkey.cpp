@@ -73,8 +73,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__not_found_ad
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":904,"method":"blockchain.scriptpubkey.get_balance","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % bogus_script).str());
+    constexpr auto request = R"({{"id":904,"method":"blockchain.scriptpubkey.get_balance","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, bogus_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -94,8 +94,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__confirmed_an
     BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto request = R"({"id":905,"method":"blockchain.scriptpubkey.get_balance","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % found_script).str());
+    constexpr auto request = R"({{"id":905,"method":"blockchain.scriptpubkey.get_balance","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, found_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
@@ -152,8 +152,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__not_found_ad
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1005,"method":"blockchain.scriptpubkey.get_history","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % bogus_script).str());
+    constexpr auto request = R"({{"id":1005,"method":"blockchain.scriptpubkey.get_history","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, bogus_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").at("history").as_array().empty());
 }
@@ -168,8 +168,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_an
     BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto request = R"({"id":1006,"method":"blockchain.scriptpubkey.get_history","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % found_script).str());
+    constexpr auto request = R"({{"id":1006,"method":"blockchain.scriptpubkey.get_history","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, found_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").at("history").is_array());
 
@@ -244,8 +244,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__not_found_ad
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1005,"method":"blockchain.scriptpubkey.get_mempool","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % bogus_script).str());
+    constexpr auto request = R"({{"id":1005,"method":"blockchain.scriptpubkey.get_mempool","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, bogus_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").at("history").as_array().empty());
 }
@@ -260,8 +260,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__confirmed_an
     BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto request = R"({"id":1006,"method":"blockchain.scriptpubkey.get_mempool","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % found_script).str());
+    constexpr auto request = R"({{"id":1006,"method":"blockchain.scriptpubkey.get_mempool","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, found_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").at("history").is_array());
 
@@ -327,8 +327,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__not_found_a
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
 
-    const auto request = R"({"id":1005,"method":"blockchain.scriptpubkey.listunspent","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % bogus_script).str());
+    constexpr auto request = R"({{"id":1005,"method":"blockchain.scriptpubkey.listunspent","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, bogus_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").at("utxos").as_array().empty());
 }
@@ -343,8 +343,8 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__confirmed_a
     BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
-    const auto request = R"({"id":1006,"method":"blockchain.scriptpubkey.listunspent","params":["%1%"]})" "\n";
-    const auto response = get((boost_format(request) % found_script).str());
+    constexpr auto request = R"({{"id":1006,"method":"blockchain.scriptpubkey.listunspent","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, found_script));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").at("utxos").is_array());
 

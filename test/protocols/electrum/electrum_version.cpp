@@ -195,8 +195,8 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__subsequent_call__returns_negotiat
     const auto expected = electrum::version_to_string(version);
     BOOST_REQUIRE(handshake(version));
 
-    const auto request = R"({"id":42,"method":"server.version","params":["newname","%1%"]})" "\n";
-    const auto response = get((boost_format(request) % expected).str());
+    constexpr auto request = R"({{"id":42,"method":"server.version","params":["newname","{}"]}})" "\n";
+    const auto response = get(std::format(request, expected));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().size(), 2u);
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__inconsistent_repeat_below_1_4__dr
 BOOST_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__truncated)
 {
     const std::string name(1025, 'a');
-    const auto response = get((boost_format(R"({"id":42,"method":"server.version","params":["%1%","1.4"]})" "\n") % name).str());
+    const auto response = get(std::format(R"({{"id":42,"method":"server.version","params":["{}","1.4"]}})" "\n", name));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4");
