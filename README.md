@@ -234,6 +234,11 @@ libbitcoin can be compiled with optional CPU acceleration. If your processor sup
 | SSE4.1 | `--enable-sse41` | `-Denable-sse41=ON` | SIMD integer ops |
 | AVX2 | `--enable-avx2` | `-Denable-avx2=ON` | 256-bit SIMD |
 | AVX-512 | `--enable-avx512` | `-Denable-avx512=ON` | 512-bit SIMD |
+| AVX-512 IFMA | `--enable-avx512ifma` | `-Denable-avx512ifma=ON` | 52-bit multiply-add (implies AVX-512 VL) |
+| AVX IFMA | `--enable-avxifma` | `-Denable-avxifma=ON` | 52-bit multiply-add (implies AVX2) |
+| AES-NI | `--enable-aesni` | `-Denable-aesni=ON` | AES and carry-less multiply |
+| VAES | `--enable-vaes` | `-Denable-vaes=ON` | Vector AES and carry-less multiply (implies AES-NI and AVX2) |
+| ARM Crypto | `--enable-crypto` | `-Denable-crypto=ON` | SHA and AES hardware instructions (ARM) |
 
 > **Important:** Enabling an extension your CPU does not support will compile successfully but crash at runtime. Always verify support first.
 
@@ -248,22 +253,30 @@ Example output on a supported system:
 
 ```
 Hardware configuration...
-arm..... platform:0.
-intel... platform:1.
-avx512.. platform:1 compiled:1.
-avx2.... platform:1 compiled:1.
-sse41... platform:1 compiled:1.
-shani... platform:1 compiled:1.
+intel...... platform:1.
+shani...... platform:1 compiled:1.
+sse41...... platform:1 compiled:1.
+avx2....... platform:1 compiled:1.
+avx512..... platform:1 compiled:1.
+avx512ifma. platform:1 compiled:0.
+avxifma.... platform:0 compiled:0.
+aesni...... platform:1 compiled:0.
+vaes....... platform:1 compiled:0.
+gpu........ platform:0 compiled:0.
 ```
 
 `platform:1 compiled:1` means the CPU supports it and it was compiled in.
+`(throttled)` follows avx512 where the CPU lowers its clock for any AVX-512 instruction
+(Intel Skylake-SP/X, Cascade Lake, Cooper Lake and Xeon Phi). There AVX-512
+speeds hashing (notably merkle roots without SHA-NI) but slows signature
+verification, so whether to compile it in is a tradeoff. `(unsupported)`
+follows gpu where a device is present but the compiled acceleration cannot use it.
 
 Example build with all extensions enabled (GNU):
 
 ```bash
 ./builds/gnu/install-gnu.sh \
   --prefix=$HOME/libbitcoin \
-  --build-secp256k1 \
   --build-boost \
   --build-config=release \
   --build-link=static \
