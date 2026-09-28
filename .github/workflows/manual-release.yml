@@ -151,7 +151,7 @@ jobs:
             configuration: debug
             link: static
             options: "--enable-avx2"
-            basename: "bs-nix-StaticDebug"
+            basename: "bs-nix-static-debug"
 
           - image: ubuntu-latest
             toolchain: cmake
@@ -160,7 +160,7 @@ jobs:
             configuration: release
             link: static
             options: "-Denable-avx2=ON"
-            basename: "bs-nix-StaticRelease"
+            basename: "bs-nix-static-release"
 
           - image: ubuntu-latest
             toolchain: cmake
@@ -169,7 +169,7 @@ jobs:
             configuration: debug
             link: static
             options: "-Denable-shani=ON"
-            basename: "bs-nix-StaticDebug-shani"
+            basename: "bs-nix-static-debug-shani"
 
           - image: ubuntu-latest
             toolchain: gnu
@@ -178,7 +178,7 @@ jobs:
             configuration: release
             link: static
             options: "--enable-shani"
-            basename: "bs-nix-StaticRelease-shani"
+            basename: "bs-nix-static-release-shani"
 
           - image: ubuntu-latest
             toolchain: gnu
@@ -187,7 +187,7 @@ jobs:
             configuration: debug
             link: static
             options: "--enable-avx512"
-            basename: "bs-nix-StaticDebug-avx512"
+            basename: "bs-nix-static-debug-avx512"
 
           - image: ubuntu-latest
             toolchain: cmake
@@ -196,7 +196,7 @@ jobs:
             configuration: release
             link: static
             options: "-Denable-avx512=ON"
-            basename: "bs-nix-StaticRelease-avx512"
+            basename: "bs-nix-static-release-avx512"
 
           - image: windows-latest
             toolchain: msbuild
@@ -204,7 +204,7 @@ jobs:
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
-            basename: "bs-win64-StaticDebug"
+            basename: "bs-win64-static-debug"
 
           - image: windows-latest
             toolchain: msbuild
@@ -212,7 +212,7 @@ jobs:
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
-            basename: "bs-win64-StaticRelease"
+            basename: "bs-win64-static-release"
 
           - image: windows-latest
             toolchain: msbuild
@@ -221,7 +221,7 @@ jobs:
             toolset: "v145"
             version: "vs2026"
             options: "--enable-shani"
-            basename: "bs-win64-StaticDebug-shani"
+            basename: "bs-win64-static-debug-shani"
 
           - image: windows-latest
             toolchain: msbuild
@@ -230,7 +230,7 @@ jobs:
             toolset: "v145"
             version: "vs2026"
             options: "--enable-shani"
-            basename: "bs-win64-StaticRelease-shani"
+            basename: "bs-win64-static-release-shani"
 
           - image: windows-latest
             toolchain: msbuild
@@ -239,7 +239,7 @@ jobs:
             toolset: "v145"
             version: "vs2026"
             options: "--enable-avx512"
-            basename: "bs-win64-StaticDebug-shani"
+            basename: "bs-win64-static-debug-shani"
 
           - image: windows-latest
             toolchain: msbuild
@@ -248,7 +248,7 @@ jobs:
             toolset: "v145"
             version: "vs2026"
             options: "--enable-avx512"
-            basename: "bs-win64-StaticRelease-shani"
+            basename: "bs-win64-static-release-shani"
 
     steps:
       - name: checkout server
@@ -423,11 +423,54 @@ jobs:
             \( -perm -111 -o -name "*.so" -o -name "*.dylib" \) \
             ! -path "*/.git/*" \
             ! -name "*.a" \
-            -exec sh -c '
-              file "{}" | grep -qE "ELF|Mach-O|PE32" &&
-              strip --strip-unneeded --preserve-dates "{}" &&
-              echo "Stripped: {}"
-              ' \; || true
+            -print0 | while IFS= read -r -d '' f; do
+              if file "$f" | grep -qE "ELF|Mach-O|PE32"; then
+                before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+                strip --strip-unneeded --preserve-dates "$f"
+                after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+                saved=$((before - after))
+                printf "Stripped: %s  (%'d → %'d bytes, saved %'d)\n" \
+                  "$f" "$before" "$after" "$saved"
+              fi
+            done || true
+
+      - name: Display linkage
+        if: ${{ matrix.toolchain != 'msbuild' }}
+        shell: bash
+        run: |
+          echo "Binary linkage information:"
+          find candidate -type f \
+            \( -perm -111 -o -name "*.so" -o -name "*.dylib" \) \
+            ! -path "*/.git/*" \
+            ! -name "*.a" \
+            -print0 | while IFS= read -r -d '' f; do
+              if ! file "$f" | grep -qE "ELF|Mach-O|PE32"; then
+                continue
+              fi
+              echo "========================================"
+              echo "File: $f"
+              file "$f"
+              case "$(uname -s)" in
+                Linux)
+                  if ldd "$f" 2>/dev/null | grep -q .; then
+                    echo "--- Dynamic dependencies (ldd) ---"
+                    ldd "$f" || true
+                  else
+                    echo "--- No dynamic dependencies (likely fully static) ---"
+                    ldd "$f" 2>&1 || true
+                  fi
+                  echo "--- ELF dynamic section (readelf -d) ---"
+                  readelf -d "$f" 2>/dev/null | grep -E 'NEEDED|RPATH|RUNPATH|SONAME' || echo "(none)"
+                  ;;
+                Darwin)
+                  echo "--- Linked libraries (otool -L) ---"
+                  otool -L "$f" || true
+                  ;;
+                *)
+                  echo "Unsupported platform for linkage display: $(uname -s)"
+                  ;;
+              esac
+            done || true
 
       - name: Inventory results
         working-directory: candidate
@@ -689,11 +732,11 @@ jobs:
             **libbitcoin-server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})**
 
             Built from:
-            - ${{ github.repository_owner }}/server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})
-            - ${{ github.repository_owner }}/node [${{ github.event.inputs.tag-node }}](https://github.com/${{ github.repository_owner }}/libbitcoin-node/tree/${{ github.event.inputs.tag-node }})
-            - ${{ github.repository_owner }}/network [${{ github.event.inputs.tag-network }}](https://github.com/${{ github.repository_owner }}/libbitcoin-network/tree/${{ github.event.inputs.tag-network }})
-            - ${{ github.repository_owner }}/database [${{ github.event.inputs.tag-database }}](https://github.com/${{ github.repository_owner }}/libbitcoin-database/tree/${{ github.event.inputs.tag-database }})
             - ${{ github.repository_owner }}/system [${{ github.event.inputs.tag-system }}](https://github.com/${{ github.repository_owner }}/libbitcoin-system/tree/${{ github.event.inputs.tag-system }})
+            - ${{ github.repository_owner }}/database [${{ github.event.inputs.tag-database }}](https://github.com/${{ github.repository_owner }}/libbitcoin-database/tree/${{ github.event.inputs.tag-database }})
+            - ${{ github.repository_owner }}/network [${{ github.event.inputs.tag-network }}](https://github.com/${{ github.repository_owner }}/libbitcoin-network/tree/${{ github.event.inputs.tag-network }})
+            - ${{ github.repository_owner }}/node [${{ github.event.inputs.tag-node }}](https://github.com/${{ github.repository_owner }}/libbitcoin-node/tree/${{ github.event.inputs.tag-node }})
+            - ${{ github.repository_owner }}/server [${{ github.event.inputs.tag-server }}](https://github.com/${{ github.repository_owner }}/libbitcoin-server/tree/${{ github.event.inputs.tag-server }})
 
             Signed with:
             ${{ vars.PUBLIC_KEY }}
