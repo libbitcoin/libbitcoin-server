@@ -24,7 +24,6 @@ namespace server {
 
 using namespace network;
 using namespace system;
-using format = boost_format;
 
 // arbitrary testing (non-const).
 void executor::write_test(const hash_digest&)
@@ -40,12 +39,12 @@ void executor::write_test(const system::hash_digest&)
     {
         if (!query_.set_block_unknown(link))
         {
-            logger(format("set_block_unknown fault [%1%].") % link.value);
+            logger(std::format("set_block_unknown fault [{}].", link.value));
             return;
         }
     }
 
-    logger(format("set_block_unknown complete."));
+    logger(std::format("set_block_unknown complete."));
 }
 
 void executor::write_test(const system::hash_digest&)
@@ -63,7 +62,7 @@ void executor::write_test(const system::hash_digest&)
         const auto block = query_.to_candidate(height);
         if (!query_.set_strong(block))
         {
-            logger(format("set_strong [%1%] fault.") % height);
+            logger(std::format("set_strong [{}] fault.", height));
             return;
         }
 
@@ -81,17 +80,17 @@ void executor::write_test(const system::hash_digest&)
 
         if (!query_.push_confirmed(block, true))
         {
-            logger(format("push_confirmed [%1%] fault.") % height);
+            logger(std::format("push_confirmed [{}] fault.", height));
             return;
         }
 
         if (is_zero(height % 1000_size))
-            logger(format("write_test [%1%].") % height);
+            logger(std::format("write_test [{}].", height));
     }
 
     const auto span = duration_cast<seconds>(fine_clock::now() - start);
-    logger(format("Set confirmation of %1% blocks in %2% secs.") % count %
-        span.count());
+    logger(std::format("Set confirmation of {} blocks in {} secs.", count,
+        span.count()));
 }
 
 void executor::write_test(const system::hash_digest&)
@@ -120,15 +119,15 @@ void executor::write_test(const system::hash_digest&)
         }
 
         if (is_zero(height % frequency))
-            logger(format("block" BS_WRITE_ROW) % height %
-                duration_cast<seconds>(fine_clock::now() - start).count());
+            logger(std::format("block" BS_WRITE_ROW, height,
+                duration_cast<seconds>(fine_clock::now() - start).count()));
     }
             
     if (cancel_)
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<seconds>(fine_clock::now() - start);
-    logger(format("block" BS_WRITE_ROW) % height % span.count());
+    logger(std::format("block" BS_WRITE_ROW, height, span.count()));
 }
 
 void executor::write_test(const system::hash_digest&)
@@ -157,7 +156,7 @@ void executor::write_test(const system::hash_digest&)
         else if ((ec = query_.block_confirmable(link)))
         {
             // must set_strong before each (no push, verifies non-use).
-            logger(format("Failure: block_confirmed, %1%") % ec.message());
+            logger(std::format("Failure: block_confirmed, {}", ec.message()));
             break;
         }
         ////if (!query_.set_txs_connected(link))
@@ -187,15 +186,15 @@ void executor::write_test(const system::hash_digest&)
         ////}
 
         if (is_zero(height % frequency))
-            logger(format("block" BS_WRITE_ROW) % height %
-                duration_cast<seconds>(fine_clock::now() - start).count());
+            logger(std::format("block" BS_WRITE_ROW, height,
+                duration_cast<seconds>(fine_clock::now() - start).count()));
     }
     
     if (cancel_)
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<seconds>(fine_clock::now() - start);
-    logger(format("block" BS_WRITE_ROW) % height % span.count());
+    logger(std::format("block" BS_WRITE_ROW, height, span.count()));
 }
 
 
@@ -205,15 +204,15 @@ void executor::write_test(const system::hash_digest& hash)
     const auto link = query_.to_header(hash);
     if (link.is_terminal())
     {
-        logger(format("Block [%1%] not found.") % id);
+        logger(std::format("Block [{}] not found.", id));
     }
     else if (query_.set_block_unknown(link))
     {
-        logger(format("Successfully reset block [%1%].") % id);
+        logger(std::format("Successfully reset block [{}].", id));
     }
     else
     {
-        logger(format("Failed to reset block [%1%].") % id);
+        logger(std::format("Failed to reset block [{}].", id));
     }
 }
 

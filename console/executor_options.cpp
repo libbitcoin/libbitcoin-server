@@ -26,7 +26,6 @@ namespace server {
 
 using namespace network;
 using namespace node;
-using format = boost_format;
 
 // local
 enum menu : uint8_t
@@ -129,12 +128,12 @@ void executor::do_report_condition() const
 {
     store_.report([&](const auto& ec, auto table)
     {
-        logger(format(BS_CONDITION) % server_node::store::tables.at(table) %
-            ec.message());
+        logger(std::format(BS_CONDITION, server_node::store::tables.at(table),
+            ec.message()));
     });
 
     if (query_.is_full())
-        logger(format(BS_RELOAD_SPACE) % query_.get_space());
+        logger(std::format(BS_RELOAD_SPACE, query_.get_space()));
 }
 
 // [h]old
@@ -187,10 +186,10 @@ void executor::do_info() const
 void executor::do_menu() const
 {
     for (const auto& toggle: toggles_menu_)
-        logger(format("Toggle: %1%") % toggle.second);
+        logger(std::format("Toggle: {}", toggle.second));
 
     for (const auto& option: options_menu_)
-        logger(format("Option: %1%") % option.second);
+        logger(std::format("Option: {}", option.second));
 }
 
 // [t]est
@@ -208,7 +207,7 @@ void executor::do_report_work()
         return;
     }
 
-    logger(format(BS_NODE_REPORT_WORK) % sequence_);
+    logger(std::format(BS_NODE_REPORT_WORK, sequence_));
     node_->notify(error::success, chases::report{ sequence_++ });
 }
 
@@ -264,14 +263,14 @@ void executor::subscribe_capture()
                 if (defined_.at(toggle))
                 {
                     toggle_.at(toggle) = !toggle_.at(toggle);
-                    logger(format("CONSOLE: toggle %1% logging (%2%).") %
-                        toggles_menu_.at(toggle) % 
-                        (toggle_.at(toggle) ? "+" : "-"));
+                    logger(std::format("CONSOLE: toggle {} logging ({}).",
+                        toggles_menu_.at(toggle), 
+                        (toggle_.at(toggle) ? "+" : "-")));
                 }
                 else
                 {
-                    logger(format("CONSOLE: %1% logging is not compiled.") %
-                        toggles_menu_.at(toggle));
+                    logger(std::format("CONSOLE: {} logging is not compiled.",
+                        toggles_menu_.at(toggle)));
                 }
 
                 return true;

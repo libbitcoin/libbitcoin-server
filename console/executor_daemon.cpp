@@ -39,7 +39,6 @@ namespace server {
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-using format = boost_format;
 
 // TODO: register a systemd unit (linux) and launchd plist (osx), and notify
 // TODO: readiness/stopping via sd_notify, in place of the manager below.
@@ -521,9 +520,9 @@ std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
         return {};
 
     return config.empty() ?
-        (format(R"("%1%")") % from_path(module)).str() :
-        (format(R"("%1%" --%2% "%3%")") % from_path(module) %
-            parser::config_variable % from_path(qualified_path(config))).str();
+        std::format(R"("{}")", from_path(module)) :
+        std::format(R"("{}" --{} "{}")", from_path(module),
+            parser::config_variable, from_path(qualified_path(config)));
 }
 
 #endif // HAVE_APPLE
@@ -697,8 +696,9 @@ bool executor::do_daemon()
 #endif
         default:
         {
-            logger(format(install ? BS_DAEMON_INSTALL_FAILURE :
-                BS_DAEMON_UNINSTALL_FAILURE) % result);
+            logger(install ?
+                std::format(BS_DAEMON_INSTALL_FAILURE, result) :
+                std::format(BS_DAEMON_UNINSTALL_FAILURE, result));
             return false;
         }
     }

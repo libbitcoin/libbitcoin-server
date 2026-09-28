@@ -20,6 +20,7 @@
 #define LIBBITCOIN_BS_EXECUTOR_HPP
 
 #include <atomic>
+#include <format>
 #include <future>
 #include <optional>
 #include <thread>
@@ -136,7 +137,6 @@ private:
     system::ofstream create_event_sink() const;
     void subscribe_log(std::ostream& sink);
     void subscribe_events(std::ostream& sink);
-    void logger(const boost_format& message) const;
     void logger(const std::string& message) const;
     void log_stopping();
 

@@ -29,7 +29,6 @@ namespace server {
 
 using namespace system;
 using namespace std::placeholders;
-using format = boost_format;
 
 // Construction.
 // ----------------------------------------------------------------------------
@@ -173,10 +172,10 @@ void executor::handle_started(const code& ec)
     if (ec)
     {
         if (ec == node::error::store_uninitialized)
-            logger(format(BS_UNINITIALIZED_CHAIN) %
-                metadata_.configured.database.path);
+            logger(std::format(BS_UNINITIALIZED_CHAIN,
+                from_path(metadata_.configured.database.path)));
         else
-            logger(format(BS_NODE_START_FAIL) % ec.message());
+            logger(std::format(BS_NODE_START_FAIL, ec.message()));
 
         result_.store(false);
         stop();
@@ -195,7 +194,7 @@ void executor::handle_subscribed(const code& ec, size_t)
 {
     if (ec)
     {
-        logger(format(BS_NODE_START_FAIL) % ec.message());
+        logger(std::format(BS_NODE_START_FAIL, ec.message()));
         result_.store(false);
         stop();
         return;
@@ -208,7 +207,7 @@ void executor::handle_running(const code& ec)
 {
     if (ec)
     {
-        logger(format(BS_NODE_START_FAIL) % ec.message());
+        logger(std::format(BS_NODE_START_FAIL, ec.message()));
         result_.store(false);
         stop();
         return;
@@ -223,7 +222,7 @@ bool executor::handle_stopped(const code& ec)
     if (ec && ec != network::error::service_stopped)
     {
         result_.store(false);
-        logger(format(BS_NODE_STOP_CODE) % ec.message());
+        logger(std::format(BS_NODE_STOP_CODE, ec.message()));
     }
 
     // Signal stop (simulates <ctrl-c>).
