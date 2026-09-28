@@ -94,6 +94,7 @@ else()
 endif()
 
 find_package( libbitcoin-node 4.0.0 REQUIRED )
+set( libbitcoin_node_VERSION ${libbitcoin-node_VERSION} )
 
 find_package( Boost 1.86.0 REQUIRED
   COMPONENTS
