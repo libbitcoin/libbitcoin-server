@@ -46,6 +46,9 @@ void executor::dump_version() const
     logger(format("libbitcoin-network.... %1% %2%") % LIBBITCOIN_NETWORK_VERSION  % thumb(LIBBITCOIN_NETWORK_COMMIT_HASH, LIBBITCOIN_NETWORK_IS_DIRTY));
     logger(format("libbitcoin-node....... %1% %2%") % LIBBITCOIN_NODE_VERSION     % thumb(LIBBITCOIN_NODE_COMMIT_HASH, LIBBITCOIN_NODE_IS_DIRTY));
     logger(format("libbitcoin-server..... %1% %2%") % LIBBITCOIN_SERVER_VERSION   % thumb(LIBBITCOIN_SERVER_COMMIT_HASH, LIBBITCOIN_SERVER_IS_DIRTY));
+    logger(format("boost................. %1%.%2%.%3%") % (BOOST_VERSION / 100000) % (BOOST_VERSION / 100 % 1000) % (BOOST_VERSION % 100));
+    logger(format("secp256k1............. %1%") % system::secp256k1_library());
+    logger(format("tls................... %1%") % network::tls_library());
     logger(format("compiled schema....... %1%") % database::envelope::compiled);
     logger(format("database schema....... %1%") % query_.envelope().schema);
 }
