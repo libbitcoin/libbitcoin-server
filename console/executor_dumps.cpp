@@ -41,16 +41,11 @@ void executor::dump_version() const
     };
 
     logger(format(BS_VERSION_HEADER));
-    logger(format("libbitcoin-system..... %1% %2%") % LIBBITCOIN_SYSTEM_VERSION %
-        thumb(LIBBITCOIN_SYSTEM_COMMIT_HASH, LIBBITCOIN_SYSTEM_IS_DIRTY));
-    logger(format("libbitcoin-database... %1% %2%") % LIBBITCOIN_DATABASE_VERSION %
-        thumb(LIBBITCOIN_DATABASE_COMMIT_HASH, LIBBITCOIN_DATABASE_IS_DIRTY));
-    logger(format("libbitcoin-network.... %1% %2%") % LIBBITCOIN_NETWORK_VERSION %
-        thumb(LIBBITCOIN_NETWORK_COMMIT_HASH, LIBBITCOIN_NETWORK_IS_DIRTY));
-    logger(format("libbitcoin-node....... %1% %2%") % LIBBITCOIN_NODE_VERSION %
-        thumb(LIBBITCOIN_NODE_COMMIT_HASH, LIBBITCOIN_NODE_IS_DIRTY));
-    logger(format("libbitcoin-server..... %1% %2%") % LIBBITCOIN_SERVER_VERSION %
-        thumb(LIBBITCOIN_SERVER_COMMIT_HASH, LIBBITCOIN_SERVER_IS_DIRTY));
+    logger(format("libbitcoin-system..... %1% %2%") % LIBBITCOIN_SYSTEM_VERSION   % thumb(LIBBITCOIN_SYSTEM_COMMIT_HASH, LIBBITCOIN_SYSTEM_IS_DIRTY));
+    logger(format("libbitcoin-database... %1% %2%") % LIBBITCOIN_DATABASE_VERSION % thumb(LIBBITCOIN_DATABASE_COMMIT_HASH, LIBBITCOIN_DATABASE_IS_DIRTY));
+    logger(format("libbitcoin-network.... %1% %2%") % LIBBITCOIN_NETWORK_VERSION  % thumb(LIBBITCOIN_NETWORK_COMMIT_HASH, LIBBITCOIN_NETWORK_IS_DIRTY));
+    logger(format("libbitcoin-node....... %1% %2%") % LIBBITCOIN_NODE_VERSION     % thumb(LIBBITCOIN_NODE_COMMIT_HASH, LIBBITCOIN_NODE_IS_DIRTY));
+    logger(format("libbitcoin-server..... %1% %2%") % LIBBITCOIN_SERVER_VERSION   % thumb(LIBBITCOIN_SERVER_COMMIT_HASH, LIBBITCOIN_SERVER_IS_DIRTY));
     logger(format("compiled schema....... %1%") % database::envelope::compiled);
     logger(format("database schema....... %1%") % query_.envelope().schema);
 }
@@ -63,22 +58,28 @@ void executor::dump_hardware() const
 
     logger(BS_HARDWARE_HEADER);
 #if defined(HAVE_ARM)
-    logger(format("arm..... " BS_HARDWARE_TABLE1) % have_arm);
-    logger(format("neon.... " BS_HARDWARE_TABLE2) % try_neon()   % have_128);
-    logger(format("crypto.. " BS_HARDWARE_TABLE2) % try_crypto() % have_sha);
+    logger(format("arm........ " BS_HARDWARE_PLATFORM)  % have_arm);
+    logger(format("crypto..... " BS_HARDWARE_COMPILED)  % try_crypto()     % have_crypto);
+    logger(format("neon....... " BS_HARDWARE_COMPILED)  % try_neon()       % have_neon);
 #else
-    logger(format("intel... " BS_HARDWARE_TABLE1) % have_xcpu);
-    logger(format("avx512.. " BS_HARDWARE_TABLE2) % try_avx512() % have_512);
-    logger(format("avx2.... " BS_HARDWARE_TABLE2) % try_avx2()   % have_256);
-    logger(format("sse41... " BS_HARDWARE_TABLE2) % try_sse41()  % have_128);
-    logger(format("shani... " BS_HARDWARE_TABLE2) % try_shani()  % have_sha);
+    logger(format("intel...... " BS_HARDWARE_PLATFORM)  % have_xcpu);
+    logger(format("shani...... " BS_HARDWARE_COMPILED)  % try_shani()      % have_shani);
+    logger(format("sse41...... " BS_HARDWARE_COMPILED)  % try_sse41()      % have_sse41);
+    logger(format("avx2....... " BS_HARDWARE_COMPILED)  % try_avx2()       % have_avx2);
+    logger(format(try_avx512_throttled() ?
+        "avx512..... " BS_HARDWARE_THROTTLED :
+        "avx512..... " BS_HARDWARE_COMPILED) % try_avx512() % have_avx512);
+    logger(format("avx512ifma. " BS_HARDWARE_COMPILED)  % try_avx512ifma() % have_avx512ifma);
+    logger(format("avxifma.... " BS_HARDWARE_COMPILED)  % try_avxifma()    % have_avxifma);
+    logger(format("aesni...... " BS_HARDWARE_COMPILED)  % try_aesni()      % have_aesni);
+    logger(format("vaes....... " BS_HARDWARE_COMPILED)  % try_vaes()       % have_vaes);
 #endif
 
-    if (batched::compiled())
-        logger(format("gpu..... " BS_HARDWARE_TABLE3) % gpu_device() % true %
-            batched::accelerated());
-    else
-        logger(format("gpu..... " BS_HARDWARE_TABLE2) % gpu_device() % false);
+    const auto device = gpu_device();
+    const auto compiled = batched::compiled();
+    logger(format(device && compiled && !batched::accelerated() ?
+        "gpu........ " BS_HARDWARE_INCOMPATIBLE :
+        "gpu........ " BS_HARDWARE_COMPILED) % device % compiled);
 }
 
 // logging compilation and initial values.

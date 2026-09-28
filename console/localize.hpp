@@ -312,12 +312,14 @@
 
 #define BS_HARDWARE_HEADER \
     "Hardware configuration..."
-#define BS_HARDWARE_TABLE1 \
+#define BS_HARDWARE_PLATFORM \
     "platform:%1%."
-#define BS_HARDWARE_TABLE2 \
+#define BS_HARDWARE_COMPILED \
     "platform:%1% compiled:%2%."
-#define BS_HARDWARE_TABLE3 \
-    "platform:%1% compiled:%2% supported:%3%."
+#define BS_HARDWARE_THROTTLED \
+    "platform:%1% compiled:%2% (throttled)."
+#define BS_HARDWARE_INCOMPATIBLE \
+    "platform:%1% compiled:%2% (unsupported)."
 
 // warnings
 #define BS_HARDWARE_SUBOPTIMAL \

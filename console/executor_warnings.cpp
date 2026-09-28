@@ -50,14 +50,18 @@ void executor::warn_hardware(system::string_list& out) const
 
 #if defined(HAVE_ARM)
     const auto suboptimal =
-        (try_neon() && !have_128) ||
-        (try_crypto() && !have_sha);
+        (try_neon() && !have_neon) ||
+        (try_crypto() && !have_crypto);
 #else
     const auto suboptimal =
-        (try_avx512() && !have_512) ||
-        (try_avx2() && !have_256) ||
-        (try_sse41() && !have_128) ||
-        (try_shani() && !have_sha);
+        (try_avx512() && !try_avx512_throttled() && !have_avx512) ||
+        (try_avx2() && !have_avx2) ||
+        (try_sse41() && !have_sse41) ||
+        (try_shani() && !have_shani) ||
+        (try_avx512ifma() && !have_avx512ifma) ||
+        (try_avxifma() && !have_avxifma && !have_avx512ifma) ||
+        (try_aesni() && !have_aesni) ||
+        (try_vaes() && !have_vaes);
 #endif
 
     if (suboptimal || (device && !batched::compiled()))
