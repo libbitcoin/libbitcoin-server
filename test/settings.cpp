@@ -367,4 +367,25 @@ BOOST_AUTO_TEST_CASE(wallet__to_context__configured_prefixes__override_network)
     instance.hd_public_prefix = prefix::hd::test::btc.pub;
     BOOST_REQUIRE(descriptor("pkh(" TESTNET_M "/1/*)", instance.to_context()));
 }
+
+BOOST_AUTO_TEST_CASE(wallet__default_construct__mainnet__expected)
+{
+    const server::settings::wallet_settings instance{};
+    BOOST_REQUIRE_EQUAL(instance.p2kh_prefix, prefix::p2kh::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::main::btc.prv);
+    BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::main::btc.pub);
+}
+
+BOOST_AUTO_TEST_CASE(wallet__copy_construct__testnet__expected)
+{
+    const server::settings::wallet_settings original{ selection::testnet3 };
+    const server::settings::wallet_settings instance{ original };
+    BOOST_REQUIRE_EQUAL(instance.p2kh_prefix, prefix::p2kh::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::test::btc.pub);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

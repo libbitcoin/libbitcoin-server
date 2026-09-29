@@ -204,6 +204,15 @@ network::boost_code admin_setup_fixture::ws_upgrade()
     return ec;
 }
 
+void admin_setup_fixture::ws_send(std::string_view message)
+{
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+
+    websocket_.value().write(net::buffer(message), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+}
+
 data_chunk admin_setup_fixture::ws_receive()
 {
     flat_buffer buffer{};

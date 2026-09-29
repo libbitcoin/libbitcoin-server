@@ -181,6 +181,30 @@ BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__reorganized__emits_top_height)
     BOOST_REQUIRE_EQUAL(to_string(ws_receive()), "0b");
 }
 
+BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__notify_data__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), base16_chunk("09"));
+
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    notify(node::chases::block{ 10 });
+
+    BOOST_REQUIRE_EQUAL(ws_receive(), base16_chunk("0a"));
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__notify_json__expected)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE_EQUAL(ws_get_json("/v1/top/subscribe?format=json").as_int64(), 9);
+
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    notify(node::chases::block{ 10 });
+
+    BOOST_REQUIRE_EQUAL(test::parse_json(to_string(ws_receive())).as_int64(), 10);
+}
+
 // dispatch
 // ----------------------------------------------------------------------------
 
@@ -213,6 +237,29 @@ BOOST_AUTO_TEST_CASE(native__ws_dispatch__html__error_eof)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/top?format=html"));
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__ignored)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    ws_send("/v1/bogus");
+    BOOST_REQUIRE_EQUAL(ws_get_text("/v1/top?format=text"), "09");
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_dispatch__unsupported_parameter__error_eof)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(ws_dropped("/v1/top?format=json&witness=false"));
+}
+
+BOOST_AUTO_TEST_CASE(native__dispatch__absolute_form_target__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(get_status("http://localhost/v1/top?format=json"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(native__dispatch__opaque_origin__forbidden)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "null"), http::status::forbidden);
 }
 
 // block
@@ -659,6 +706,32 @@ BOOST_AUTO_TEST_CASE(native__file__named__expected)
 BOOST_AUTO_TEST_CASE(native__file__missing__not_found)
 {
     BOOST_REQUIRE_EQUAL(get_status("/missing.css"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(native_no_default_tests, native_no_default_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(native__no_default__extensionless__not_implemented)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/some/route"), http::status::not_implemented);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// hosts
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(native_hosts_tests, native_hosts_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(native__hosts__unlisted_host__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/top?format=json"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(native__hosts__listed_host__expected)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::host, "example.com"), http::status::ok);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
