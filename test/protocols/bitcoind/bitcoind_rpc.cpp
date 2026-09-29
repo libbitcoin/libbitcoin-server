@@ -2876,6 +2876,153 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__organized__new_top)
     BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), encode_hash(test::mock_block10.hash()));
 }
 
+// psbt combine and join
+
+static std::string create_psbt_v0(const chain::block& block, const std::string& data) NOEXCEPT
+{
+    return "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"createpsbt\",\"params\":[[{\"txid\":\"" + encode_hash(block.transactions_ptr()->front()->hash(false)) + "\",\"vout\":0}], {\"data\": \"" + data + "\"}, 0, true, 2, 0]}";
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__combinepsbt__different_transactions__invalid_parameter)
+{
+    const auto created = rpc_body(create_psbt_v0(test::block1, "deadbeef"));
+    BOOST_REQUIRE(has_code(rpc("combinepsbt", "[[\"" PSBT_UPDATER "\", \"" + as_text(created.at("result")) + "\"]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__joinpsbts__distinct_inputs__all_inputs_and_outputs)
+{
+    const auto first = as_text(rpc_body(create_psbt_v0(test::block1, "deadbeef")).at("result"));
+    const auto second = as_text(rpc_body(create_psbt_v0(test::block2, "cafe")).at("result"));
+    const auto joined = rpc("joinpsbts", "[[\"" + first + "\", \"" + second + "\"]]");
+    const auto response = rpc("decodepsbt", "[\"" + as_text(joined.at("result")) + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("psbt_version").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("inputs").as_array().size(), 2u);
+    BOOST_REQUIRE_EQUAL(result.at("outputs").as_array().size(), 2u);
+    BOOST_REQUIRE_EQUAL(result.at("tx").at("vin").as_array().size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__joinpsbts__repeated_input__invalid_parameter)
+{
+    const auto created = as_text(rpc_body(create_psbt_v0(test::block1, "deadbeef")).at("result"));
+    BOOST_REQUIRE(has_code(rpc("joinpsbts", "[[\"" + created + "\", \"" + created + "\"]]"), -8));
+}
+
+// decodepsbt global xpubs (bitcoind test/functional/data/rpc_psbt.json)
+
+#define PSBT_GLOBAL_XPUBS "cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA"
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__global_xpubs__expected)
+{
+    const auto response = rpc("decodepsbt", "[\"" PSBT_GLOBAL_XPUBS "\"]");
+    const auto& xpubs = response.at("result").at("global_xpubs");
+    BOOST_REQUIRE_EQUAL(xpubs.as_array().size(), 2u);
+    BOOST_REQUIRE_EQUAL(as_text(xpubs.at(0).at("xpub")), "tpubDBkJeJo2X94Yq3RVz65DoUgyLUkaDrkfyrn2VcgyCRSKCRonvKvCF2FpYDGJWDkdRHBajXJGpc63GnumUt63ySvqCu2XaTRGVTKMYGuFk9H");
+    BOOST_REQUIRE_EQUAL(as_text(xpubs.at(0).at("master_fingerprint")), "d90c6a4f");
+    BOOST_REQUIRE_EQUAL(as_text(xpubs.at(1).at("xpub")), "tpubDBkJeJo2X94YsvtBEU1eKoibEWiNv51nW5iHhs6VZp59jsE6nen8KZMFyGHuGbCvqjRqirgeMcfpVBkttpUUT6brm4duzSGoZeTbhqCNUu6");
+    BOOST_REQUIRE_EQUAL(as_text(xpubs.at(1).at("master_fingerprint")), "d90c6a4f");
+}
+
+// utility
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__not_hex__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("decodescript", "[\"zz\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__unknown_address_type__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("createmultisig", "[1, [\"03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd\"], \"bogus\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__invalid_key__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("createmultisig", "[1, [\"00\"]]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptorinfo__invalid__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("getdescriptorinfo", "[\"bogus\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__invalid__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("deriveaddresses", "[\"bogus\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__no_address__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("deriveaddresses", "[\"raw(6a)#4mhr9ur5\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__begin_after_end__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("deriveaddresses", "[\"pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/*)#8nhtvxel\", [5, 1]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__deriveaddresses__range_too_large__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("deriveaddresses", "[\"pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/*)#8nhtvxel\", [0, 1000000]]"), -8));
+}
+
+// network
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__onetry__null)
+{
+    const auto response = rpc("addnode", R"(["127.0.0.1:1","onetry"])");
+    BOOST_REQUIRE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__addnode__add__null)
+{
+    const auto response = rpc("addnode", R"(["127.0.0.1:1","add"])");
+    BOOST_REQUIRE(response.at("result").is_null());
+}
+
+// origin policy (opaque origins are disallowed by default)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__options__opaque_origin__forbidden)
+{
+    BOOST_REQUIRE_EQUAL(options_origin_status("/", "null"), status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__post__opaque_origin__forbidden)
+{
+    BOOST_REQUIRE_EQUAL(rpc_origin_status("getblockcount", "null"), status::forbidden);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// advertised inbound addresses
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_selfs_tests, bitcoind_selfs_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__selfs__localaddresses)
+{
+    const auto response = rpc("getnetworkinfo");
+    const auto& locals = response.at("result").at("localaddresses");
+    BOOST_REQUIRE_EQUAL(locals.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(locals.at(0).at("address")), "1.2.3.4");
+    BOOST_REQUIRE_EQUAL(locals.at(0).at("port").as_int64(), 8333);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// zmq bindings
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_zmq_bound_tests, bitcoind_zmq_bound_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getzmqnotifications__one_binding__five_publishers)
+{
+    const auto response = rpc("getzmqnotifications");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 5u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at(0).at("type")), "pubhashblock");
+    BOOST_REQUIRE_EQUAL(as_text(result.at(0).at("address")), "tcp://127.0.0.1:28332");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // block filters disabled
@@ -3018,6 +3165,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unlisted_method__drop
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unknown_method__dropped)
+{
+    BOOST_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
+
+    const auto response = ws_rpc_dropped("nosuchmethod");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // witness
@@ -3100,6 +3255,33 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__unacceptable_header__error)
 {
     const auto header = encode_base16(test::mock_block10.header().to_data());
     BOOST_REQUIRE(has_error(rpc("submitheader", "[\"" + header + "\"]")));
+}
+
+// Mainnet block 10 header (000000002c05cc2e78923c34df87fd108b22221ac6076c18f3ade378a4d915e9).
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitheader__mainnet_block10__null)
+{
+    const auto response = rpc("submitheader", "[\"010000000508085c47cc849eb80ea905cc7800a3be674ffc57263cf210c59d8d00000000112ba175a1e04b14ba9e7ea5f76ab640affeef5ec98173ac9799a852fa39add320cd6649ffff001d1e2de565\"]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__archived_unconfirmed__txid)
+{
+    const auto& tx = *test::mock_block10.transactions_ptr()->at(1);
+    BOOST_REQUIRE(query_.set(tx));
+
+    const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(tx.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(tx.hash(false)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_spent__verify_error)
+{
+    BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
+
+    const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::mock_tx13.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
