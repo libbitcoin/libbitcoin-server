@@ -460,3 +460,32 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__confirmed_and
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// duplicate
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(electrum_duplicate_tests, electrum_duplicate_setup_fixture)
+
+static const code daemon_error{ server::error::electrum::daemon_error };
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__duplicate__daemon_error)
+{
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    constexpr auto request = R"({{"id":1102,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
+    const auto result = get_error(std::format(request, found_scripthash));
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__duplicate__daemon_error)
+{
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    constexpr auto request = R"({{"id":1103,"method":"blockchain.scripthash.listunspent","params":["{}"]}})" "\n";
+    const auto result = get_error(std::format(request, found_scripthash));
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_SUITE_END()

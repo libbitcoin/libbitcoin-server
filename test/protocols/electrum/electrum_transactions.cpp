@@ -836,3 +836,23 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_testmempoolaccept__closed_
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// unassociated
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(electrum_unassociated_tests, electrum_unassociated_setup_fixture)
+
+using namespace system;
+static const code daemon_error{ server::error::electrum::daemon_error };
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__unassociated__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto hash = encode_hash(test::block3.transactions_ptr()->front()->hash(false));
+    constexpr auto request = R"({{"id":4000,"method":"blockchain.transaction.get_merkle","params":["{}",3]}})" "\n";
+    const auto result = get_error(std::format(request, hash));
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
