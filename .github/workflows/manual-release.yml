@@ -510,6 +510,14 @@ jobs:
           cp -L -n ${CANDIDATE} candidate/${CANONICAL}
           echo "candidate_identifier=${CANONICAL}" >> "$GITHUB_OUTPUT"
 
+      - name: Execute binary
+        continue-on-error: true
+        shell: bash
+        working-directory: candidate
+        run: |
+          ./${{ steps.normalizer.outputs.candidate_identifier }} --version
+          ./${{ steps.normalizer.outputs.candidate_identifier }} --hardware
+
       - name: Strip symbols from binaries
         if: ${{ matrix.configuration != 'debug' && matrix.toolchain != 'msbuild' }}
         shell: bash
