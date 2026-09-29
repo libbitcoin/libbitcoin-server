@@ -561,3 +561,41 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__opaque_origin__forbidden)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_dangling_tests, bitcoind_dangling_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__chaininfo__dangling__not_found)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json"), status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__deploymentinfo__dangling__internal_server_error)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/deploymentinfo.json"), status::internal_server_error);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_bin__dangling__internal_server_error)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/headers/2/" + encode_hash(test::block2_hash) + ".bin"), status::internal_server_error);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_hex__dangling__internal_server_error)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/headers/2/" + encode_hash(test::block2_hash) + ".hex"), status::internal_server_error);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_json__dangling__internal_server_error)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/headers/2/" + encode_hash(test::block2_hash) + ".json"), status::internal_server_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_witness_tests, bitcoind_witness_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts__missing_prevouts__internal_server_error)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/spenttxouts/" + encode_hash(test::block2a.hash()) + ".bin"), status::internal_server_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

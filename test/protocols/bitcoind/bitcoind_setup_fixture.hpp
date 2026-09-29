@@ -403,6 +403,76 @@ struct bitcoind_candidate_header_setup_fixture
     }
 };
 
+// The three block store with a confirmed block 3 header timestamped as block 2.
+bool setup_simultaneous_store(test::query_t& query) NOEXCEPT;
+bool setup_unrooted_store(test::query_t& query) NOEXCEPT;
+bool setup_misplaced_store(test::query_t& query) NOEXCEPT;
+bool setup_dangling_candidate_store(test::query_t& query) NOEXCEPT;
+
+struct bitcoind_simultaneous_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_simultaneous_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_simultaneous_store(query);
+        })
+    {
+    }
+};
+
+struct bitcoind_unrooted_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_unrooted_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_unrooted_store(query);
+        })
+    {
+    }
+};
+
+struct bitcoind_misplaced_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_misplaced_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_misplaced_store(query);
+        })
+    {
+    }
+};
+
+struct bitcoind_dangling_candidate_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_dangling_candidate_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_dangling_candidate_store(query);
+        })
+    {
+    }
+};
+
+// Configured with no address index -- for the utxo set scan path.
+struct bitcoind_dangling_no_address_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_dangling_no_address_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_dangling_store(query);
+        }, [](configuration& config)
+        {
+            config.database.outs.buckets = 0;
+        })
+    {
+    }
+};
+
 // Configured with advertised inbound addresses.
 struct bitcoind_selfs_setup_fixture
   : bitcoind_setup_fixture
