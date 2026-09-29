@@ -2813,6 +2813,15 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__repeated_script__one_unspent)
     BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 50.0);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__unspendable_script__empty)
+{
+    const auto response = rpc("scantxoutset", "[\"start\", [\"raw(6a)\"]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("success").as_bool());
+    BOOST_REQUIRE(result.at("unspents").as_array().empty());
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 0.0);
+}
+
 // verifytxoutproof
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__unknown_block__invalid_address)
@@ -2934,6 +2943,43 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__unknown_global__unknown)
     BOOST_REQUIRE_EQUAL(as_text(unknown.at("0a")), "01");
 }
 
+// The bip174 updater vector with sighash types (0x82, 0x03), output 0 redeem and
+// witness scripts (OP_1), and an unknown key (0x3f) of value 0x01 in input 0 and output 0.
+#define PSBT_ANNOTATED "cHNidP8BAJoCAAAAAljoeiG1ba8MI76OcHBFbDNvfLqlyHV5JPVFiHuyq911AAAAAAD/////g40EJ9DsZQpoqka7CwmK6kQiwHGyyng1Kgd5WdB86h0BAAAAAP////8CcKrwCAAAAAAWABTYXCtx0AYLCcmIauuBXlCZHdoSTQDh9QUAAAAAFgAUAK6pouXw+HaliN9VRuh0LR2HAI8AAAAAAAEDBIIAAAABPwEBAQC7AgAAAAGq1zkxAYvSX4SuQAtohIvgnbcG6sKsGCmLq+5xq2VviwAAAABIRzBEAiBY9vx8ajPhsxVI1IHIJsAVvTATWq1CzWd5Datm0q0kOwIgShztJgTGc1tjk+W0FpHdeLAPDFlC+591GFb6qTgVfboB/v///wKA8PoCAAAAABepFA+5RjQhaWuCyDOvJBx4wX3b3kk0h9DyCicBAAAAF6kUKcp0+KCPgZmUKBhcl7XYUuQGP2GHZQAAAAEER1IhApWDvzmuCmCXR60Zmt3WNPphCFWdbFzTm0whg/GrluB/IQLath/0mhTban0CsM0fu3j8SxgxK1tOVNrk26L7/vU211KuIgYClYO/Oa4KYJdHrRma3dY0+mEIVZ1sXNObTCGD8auW4H8Q2QxqTwAAAIAAAACAAAAAgCIGAtq2H/SaFNtqfQKwzR+7ePxLGDErW05U2uTbovv+9TbXENkMak8AAACAAAAAgAEAAIAAAQMEAwAAAAEBIADC6wsAAAAAF6kUt/X69A49QKWkWbHbNTXyty+pIeiHAQQiACCMI1MXN0O1ld+0oHtyuo5C43l9p06H/n2ddJfjsgKJAwEFR1IhAwidwQx6xttU+RMpr2FzM9s4jOrQwjH3IzedG5kDCwLcIQI63ZBPPW3PWd25BrDe4jUpt/+57VDl6GFRkmhgIh8Oc1KuIgYCOt2QTz1tz1nduQaw3uI1Kbf/ue1Q5ehhUZJoYCIfDnMQ2QxqTwAAAIAAAACAAwAAgCIGAwidwQx6xttU+RMpr2FzM9s4jOrQwjH3IzedG5kDCwLcENkMak8AAACAAAAAgAIAAIAAAQABUQEBAVEBPwEBIgIDqaTDf1mW06ol26xrVwrwZQOUSSlCRgs1R1Ptnuylh3EQ2QxqTwAAAIAAAACABAAAgAAiAgJ/Y5l1fS7/VaE2rQLGhLGDi2VW5fG2s0KCqUtrUAUQlhDZDGpPAAAAgAAAAIAFAACAAA=="
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__annotated__expected)
+{
+    const auto response = rpc("decodepsbt", "[\"" PSBT_ANNOTATED "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("inputs").at(0).at("sighash")), "NONE|ANYONECANPAY");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("inputs").at(1).at("sighash")), "SINGLE");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("inputs").at(0).at("unknown").at("3f")), "01");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("outputs").at(0).at("redeem_script").at("hex")), "51");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("outputs").at(0).at("witness_script").at("hex")), "51");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("outputs").at(0).at("unknown").at("3f")), "01");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__finalized__final_scripts)
+{
+    const chain::transaction tx{ base16_chunk(PSBT_EXTRACTED_TX), true };
+    const auto response = rpc("decodepsbt", "[\"" PSBT_FINALIZED "\"]");
+    const auto& inputs = response.at("result").at("inputs");
+    BOOST_REQUIRE_EQUAL(as_text(inputs.at(0).at("final_scriptSig").at("hex")), encode_base16(tx.inputs_ptr()->at(0)->script().to_data(false)));
+    BOOST_REQUIRE_EQUAL(inputs.at(1).at("final_scriptwitness").as_array().size(), 4u);
+    BOOST_REQUIRE_EQUAL(as_text(inputs.at(1).at("final_scriptwitness").at(0)), "");
+    BOOST_REQUIRE_EQUAL(as_text(inputs.at(1).at("final_scriptwitness").at(3)), encode_base16(*tx.inputs_ptr()->at(1)->witness().stack().at(3)));
+}
+
+// bitcoind test/functional/data/rpc_psbt.json valid[37] (psbt v2 required locktimes).
+#define PSBT_REQUIRED_LOCKTIMES "cHNidP8BAgQCAAAAAQMEAAAAAAEEAQEBBQECAfsEAgAAAAABAFICAAAAAcGqJW4hS5ahgi+T3kK/87Xz/40FGTBuNRXXUVpegFsSAAAAAAD/////ARjGmjsAAAAAFgAUsKOvFEIIQSaTyn0WaFK1LbCu8G4AAAAAAQEfGMaaOwAAAAAWABSwo68UQghBJpPKfRZoUrUtsK7wbgEOIAsK2SFBnByHGXNdctxzn56p4GONH+TB7vD5lECEgV/IAQ8EAAAAAAEQBP7///8BEQSMjcRiARIEECcAAAAiAgLWAfhIRqZ1X3dr4A49nej7EKzJNfuDxF+wFi1MrVq3khj2nYc+VAAAgAEAAIAAAACAAAAAACoAAAABAwgACK8vAAAAAAEEFgAUxDD2TEdW2jENvRoIVXLvKZkmJywAIgIC42+/9T3VNAcM+P05ZhRoDzV6m4Xbc0C/HPp0XSrXs0AY9p2HPlQAAIABAACAAAAAgAEAAABkAAAAAQMIi73rCwAAAAABBBYAFE3Rk6yWSlasG54cyoRU/i9HT4UTAA=="
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__required_locktimes__expected)
+{
+    const auto response = rpc("decodepsbt", "[\"" PSBT_REQUIRED_LOCKTIMES "\"]");
+    const auto& input = response.at("result").at("inputs").at(0);
+    BOOST_REQUIRE_EQUAL(input.at("time_locktime").as_int64(), 1657048460);
+    BOOST_REQUIRE_EQUAL(input.at("height_locktime").as_int64(), 10000);
+}
 // utility
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__not_hex__invalid_parameter)
@@ -3431,6 +3477,20 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_er
     const auto hex = encode_base16(missing.to_data(true));
     const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
     BOOST_REQUIRE_MESSAGE(has_code(response, -25), response);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// broadcast
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_broadcast_tests, bitcoind_broadcast_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__spendable__txid)
+{
+    const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
