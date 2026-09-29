@@ -507,7 +507,7 @@ jobs:
               exit 1
           fi
 
-          cp --dereference --no-clobber ${CANDIDATE} candidate/${CANONICAL}
+          cp -L -n ${CANDIDATE} candidate/${CANONICAL}
           echo "candidate_identifier=${CANONICAL}" >> "$GITHUB_OUTPUT"
 
       - name: Strip symbols from binaries
