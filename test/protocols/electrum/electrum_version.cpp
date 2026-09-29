@@ -43,6 +43,14 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__no_params__minimum)
     BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "server_name");
 }
 
+BOOST_AUTO_TEST_CASE(electrum__server_version__single_value_params__minimum)
+{
+    const auto response = get(R"({"jsonrpc":"2.0","id":5,"method":"server.version","params":"foobar"})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), "server_name");
+}
+
 BOOST_AUTO_TEST_CASE(electrum__server_version__trailing_arguments__ignored)
 {
     const auto response = get(R"({"id":1,"method":"server.version","params":["foobar","1.7",42,"extra"]})" "\n");
@@ -414,6 +422,62 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__restricted__configured_bounds)
     REQUIRE_NO_THROW_TRUE(result.at("protocol_max").is_string());
     BOOST_REQUIRE_EQUAL(result.at("protocol_min").as_string(), "1.2");
     BOOST_REQUIRE_EQUAL(result.at("protocol_max").as_string(), "1.5");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// Configured protocol_minimum (0.6), a non-version opener is served at 0.6.
+
+BOOST_FIXTURE_TEST_SUITE(electrum_legacy_version_tests, electrum_legacy_version_setup_fixture)
+
+static const std::string legacy_opener{ R"({"id":1,"method":"server.banner","params":[]})" "\n" };
+
+BOOST_AUTO_TEST_CASE(electrum__server_banner__below_v1_0__invalid_argument)
+{
+    const auto response = get(legacy_opener + R"({"id":2,"method":"server.banner","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_donation_address__below_v1_0__invalid_argument)
+{
+    const auto response = get(legacy_opener + R"({"id":2,"method":"server.donation_address","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_features__below_v1_0__invalid_argument)
+{
+    const auto response = get(legacy_opener + R"({"id":2,"method":"server.features","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__below_v1_0__invalid_argument)
+{
+    const auto response = get(legacy_opener + R"({"id":2,"method":"server.peers.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__below_v1_0__invalid_argument)
+{
+    const auto response = get(legacy_opener + R"({"id":2,"method":"blockchain.estimatefee","params":[1]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_v1_0__invalid_argument)
+{
+    const auto response = get(legacy_opener + R"({"id":2,"method":"blockchain.transaction.broadcast","params":["00"]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

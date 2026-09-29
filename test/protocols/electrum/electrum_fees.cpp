@@ -70,6 +70,36 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__uninitialized__negative_
     BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__geometric_uninitialized__negative_one)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"geometric"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__economical_uninitialized__negative_one)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"economical"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__conservative_uninitialized__negative_one)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"conservative"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));

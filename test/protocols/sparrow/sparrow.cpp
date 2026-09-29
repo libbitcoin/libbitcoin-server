@@ -78,6 +78,14 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_block_stats__stub__method_not_found)
     BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_block_stats__missing_arguments__dropped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":903,"method":"blockchain.block.stats","params":[]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
 BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__stub__method_not_found)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
