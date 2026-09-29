@@ -198,60 +198,60 @@ jobs:
             options: "-Denable-avx512=ON"
             basename: "bs-macos-arm64-static-release-avx512"
 
-          - image: macos-latest-large
-            toolchain: gnu
-            cc: "clang"
-            cxx: "clang++"
-            configuration: debug
-            link: static
-            options: "--enable-avx2"
-            basename: "bs-macos-static-debug"
-
-          - image: macos-latest-large
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-avx2=ON"
-            basename: "bs-macos-static-release"
-
-          - image: macos-latest-large
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: debug
-            link: static
-            options: "-Denable-shani=ON"
-            basename: "bs-macos-static-debug-shani"
-
-          - image: macos-latest-large
-            toolchain: gnu
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "--enable-shani"
-            basename: "bs-macos-static-release-shani"
-
-          - image: macos-latest-large
-            toolchain: gnu
-            cc: "clang"
-            cxx: "clang++"
-            configuration: debug
-            link: static
-            options: "--enable-avx512"
-            basename: "bs-macos-static-debug-avx512"
-
-          - image: macos-latest-large
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-avx512=ON"
-            basename: "bs-macos-static-release-avx512"
-
+#          - image: macos-latest-large
+#            toolchain: gnu
+#            cc: "clang"
+#            cxx: "clang++"
+#            configuration: debug
+#            link: static
+#            options: "--enable-avx2"
+#            basename: "bs-macos-static-debug"
+#
+#          - image: macos-latest-large
+#            toolchain: cmake
+#            cc: "clang"
+#            cxx: "clang++"
+#            configuration: release
+#            link: static
+#            options: "-Denable-avx2=ON"
+#            basename: "bs-macos-static-release"
+#
+#          - image: macos-latest-large
+#            toolchain: cmake
+#            cc: "clang"
+#            cxx: "clang++"
+#            configuration: debug
+#            link: static
+#            options: "-Denable-shani=ON"
+#            basename: "bs-macos-static-debug-shani"
+#
+#          - image: macos-latest-large
+#            toolchain: gnu
+#            cc: "clang"
+#            cxx: "clang++"
+#            configuration: release
+#            link: static
+#            options: "--enable-shani"
+#            basename: "bs-macos-static-release-shani"
+#
+#          - image: macos-latest-large
+#            toolchain: gnu
+#            cc: "clang"
+#            cxx: "clang++"
+#            configuration: debug
+#            link: static
+#            options: "--enable-avx512"
+#            basename: "bs-macos-static-debug-avx512"
+#
+#          - image: macos-latest-large
+#            toolchain: cmake
+#            cc: "clang"
+#            cxx: "clang++"
+#            configuration: release
+#            link: static
+#            options: "-Denable-avx512=ON"
+#            basename: "bs-macos-static-release-avx512"
+#
           - image: ubuntu-latest
             toolchain: gnu
             cc: "gcc"
