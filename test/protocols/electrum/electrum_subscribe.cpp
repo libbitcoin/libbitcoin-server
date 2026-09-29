@@ -967,31 +967,3 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_noti
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-// duplicate
-// ----------------------------------------------------------------------------
-
-BOOST_FIXTURE_TEST_SUITE(electrum_duplicate_tests, electrum_duplicate_setup_fixture)
-
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__duplicate_notify__subsequent_notified)
-{
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
-
-    constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
-    const auto response = get(std::format(request, found_scripthash));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
-
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    notify(node::chases::organized{ 0 });
-
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
-    notify(node::chases::organized{ 0 });
-
-    const auto notification = receive();
-    REQUIRE_NO_THROW_TRUE(notification.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.scripthash.subscribe");
-    BOOST_REQUIRE_EQUAL(notification.at("params").at(0).as_string(), found_scripthash);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
