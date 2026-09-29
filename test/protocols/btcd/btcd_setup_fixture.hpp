@@ -68,7 +68,7 @@ struct btcd_setup_fixture
 
     // Read one further (unprompted) server push, e.g. a blockconnected
     // notification. Returns the parsed json-rpc notification object.
-    boost::json::value receive_notification();
+    boost::json::value receive_notification(bool checked=true);
 
 private:
     // The ws connection, plus the plain one used by http_rpc or tcp_rpc.
